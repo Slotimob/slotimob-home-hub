@@ -126,41 +126,7 @@ export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegot
         });
       }
 
-      // Fetch deals with expected close dates
-      const { data: deals, error: dealsError } = await supabase
-        .from('deals')
-        .select(`
-          id,
-          expected_close_date,
-          estimated_value,
-          leads!inner (name),
-          properties!inner (name)
-        `)
-        .eq('broker_id', user.id)
-        .not('expected_close_date', 'is', null)
-        .gte('expected_close_date', startDate.toISOString().split('T')[0])
-        .lte('expected_close_date', endDate.toISOString().split('T')[0])
-        .not('stage', 'in', '("won","lost")');
-
-      if (!dealsError && deals) {
-        deals.forEach((deal: any) => {
-          const closeDateTime = new Date(deal.expected_close_date);
-          closeDateTime.setHours(10, 0, 0, 0);
-
-          items.push({
-            id: `close_${deal.id}`,
-            type: 'expected_close',
-            title: `Previsão de Fechamento`,
-            description: deal.estimated_value 
-              ? `Valor: R$ ${deal.estimated_value.toLocaleString('pt-BR')}`
-              : null,
-            scheduled_at: closeDateTime.toISOString(),
-            deal_id: deal.id,
-            deal_lead_name: deal.leads?.name || 'Lead',
-            deal_property_name: deal.properties?.name || 'Imóvel',
-          });
-        });
-      }
+      // Note: expected_close_date is NOT synced to the agenda - it's only visible in the Pipeline
 
       return items.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
     },

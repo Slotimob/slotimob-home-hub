@@ -751,9 +751,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="estimated_commission">Comissão (R$)</Label>
-                </div>
+                <Label htmlFor="estimated_commission">Comissão (R$)</Label>
                 <CurrencyInput
                   id="estimated_commission"
                   value={formData.estimated_commission}
@@ -887,7 +885,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
               Cancelar
             </Button>
             <Button type="submit" disabled={saving || !formData.lead_id}>
-              {saving ? 'Criando...' : 'Criar Deal'}
+              {saving ? 'Criando...' : 'Criar Negociação'}
             </Button>
           </div>
         </form>

@@ -6,10 +6,27 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, CalendarDays, Loader2, AlertTriangle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Plus, CalendarDays, Loader2, AlertTriangle, MoreVertical, Pencil, Trash2, Clock } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AddTaskDialog } from './AddTaskDialog';
+import { EditTaskDialog } from './EditTaskDialog';
 
 interface Task {
   id: string;
@@ -44,6 +61,9 @@ export const DealTasks = ({ dealId }: DealTasksProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadTasks = async () => {
     try {
@@ -90,6 +110,36 @@ export const DealTasks = ({ dealId }: DealTasksProps) => {
         description: error.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingTaskId) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('deal_tasks')
+        .delete()
+        .eq('id', deletingTaskId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Tarefa excluída!',
+        description: 'A tarefa foi removida.',
+      });
+
+      loadTasks();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao excluir tarefa',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeletingTaskId(null);
     }
   };
 
@@ -168,11 +218,31 @@ export const DealTasks = ({ dealId }: DealTasksProps) => {
                           <div className={`flex items-center gap-1 mt-2 text-xs ${overdue ? 'text-destructive' : 'text-muted-foreground'}`}>
                             <CalendarDays className="h-3 w-3" />
                             {isToday(new Date(task.due_date))
-                              ? 'Hoje'
-                              : format(new Date(task.due_date), "dd 'de' MMM", { locale: ptBR })}
+                              ? `Hoje às ${format(new Date(task.due_date), 'HH:mm')}`
+                              : format(new Date(task.due_date), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
                           </div>
                         )}
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditingTask(task)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => setDeletingTaskId(task.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </Card>
                 );
@@ -202,6 +272,22 @@ export const DealTasks = ({ dealId }: DealTasksProps) => {
                         </p>
                       )}
                     </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          onClick={() => setDeletingTaskId(task.id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </Card>
               ))}
@@ -216,6 +302,30 @@ export const DealTasks = ({ dealId }: DealTasksProps) => {
         onOpenChange={setIsDialogOpen}
         onSuccess={loadTasks}
       />
+
+      <EditTaskDialog
+        task={editingTask}
+        open={!!editingTask}
+        onOpenChange={(open) => !open && setEditingTask(null)}
+        onSuccess={loadTasks}
+      />
+
+      <AlertDialog open={!!deletingTaskId} onOpenChange={(open) => !open && setDeletingTaskId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir tarefa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A tarefa será permanentemente removida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isDeleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
