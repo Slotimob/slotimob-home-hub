@@ -1,208 +1,328 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { Home, DollarSign, Ruler, Bed, Bath } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { Calculator, Home, TrendingUp, Landmark, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface Unit {
-  id: string;
-  unit_number: string;
-  price: number | null;
-  area: number | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  condo_fee: number | null;
-  iptu: number | null;
-  property: {
-    name: string;
-    city: string | null;
-    state: string | null;
+interface YearlyProjection {
+  year: number;
+  rentScenario: {
+    propertyValue: number;
+    accumulatedRent: number;
+    totalWealth: number;
+  };
+  sellScenario: {
+    investedValue: number;
+    totalWealth: number;
   };
 }
 
 export const PropertyComparison = () => {
-  const { toast } = useToast();
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [unit1Id, setUnit1Id] = useState('');
-  const [unit2Id, setUnit2Id] = useState('');
-  const [unit1, setUnit1] = useState<Unit | null>(null);
-  const [unit2, setUnit2] = useState<Unit | null>(null);
+  const [formData, setFormData] = useState({
+    propertyValue: '',
+    annualAppreciation: '5',
+    monthlyNetRent: '',
+    investmentRate: '12',
+    years: '10',
+  });
 
-  useEffect(() => {
-    loadUnits();
-  }, []);
+  const [result, setResult] = useState<{
+    projections: YearlyProjection[];
+    rentFinalWealth: number;
+    sellFinalWealth: number;
+    difference: number;
+    winner: 'rent' | 'sell';
+  } | null>(null);
 
-  const loadUnits = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('units')
-        .select('*, property:properties(name, city, state)')
-        .eq('status', 'available')
-        .order('unit_number');
+  const calculateComparison = () => {
+    const propertyValue = parseFloat(formData.propertyValue);
+    const appreciation = parseFloat(formData.annualAppreciation) / 100;
+    const monthlyRent = parseFloat(formData.monthlyNetRent);
+    const investmentRate = parseFloat(formData.investmentRate) / 100;
+    const years = parseInt(formData.years);
 
-      if (error) throw error;
-      setUnits(data as Unit[]);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar unidades',
-        description: error.message,
-        variant: 'destructive',
+    if (!propertyValue || !monthlyRent || !years) return;
+
+    const projections: YearlyProjection[] = [];
+    
+    // Calculate year by year
+    let currentPropertyValue = propertyValue;
+    let accumulatedRent = 0;
+    let rentReinvested = 0; // Rent reinvested at investment rate
+    
+    let investedValue = propertyValue; // If sold, amount invested
+
+    for (let year = 1; year <= years; year++) {
+      // Cenário A: Alugar
+      currentPropertyValue = currentPropertyValue * (1 + appreciation);
+      const yearlyRent = monthlyRent * 12;
+      
+      // Reinvest rent at the investment rate (compound monthly)
+      rentReinvested = (rentReinvested + yearlyRent) * (1 + investmentRate);
+      accumulatedRent += yearlyRent;
+      
+      const rentTotalWealth = currentPropertyValue + rentReinvested;
+      
+      // Cenário B: Vender e Investir
+      investedValue = investedValue * (1 + investmentRate);
+      
+      projections.push({
+        year,
+        rentScenario: {
+          propertyValue: currentPropertyValue,
+          accumulatedRent: rentReinvested,
+          totalWealth: rentTotalWealth,
+        },
+        sellScenario: {
+          investedValue,
+          totalWealth: investedValue,
+        },
       });
     }
+
+    const rentFinalWealth = projections[projections.length - 1]?.rentScenario.totalWealth || 0;
+    const sellFinalWealth = projections[projections.length - 1]?.sellScenario.totalWealth || 0;
+    const difference = Math.abs(rentFinalWealth - sellFinalWealth);
+    const winner: 'rent' | 'sell' = rentFinalWealth > sellFinalWealth ? 'rent' : 'sell';
+
+    setResult({
+      projections,
+      rentFinalWealth,
+      sellFinalWealth,
+      difference,
+      winner,
+    });
   };
 
-  const handleCompare = () => {
-    const u1 = units.find((u) => u.id === unit1Id);
-    const u2 = units.find((u) => u.id === unit2Id);
-
-    if (u1 && u2) {
-      setUnit1(u1);
-      setUnit2(u2);
-    }
+  const formatCurrency = (value: number) => {
+    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
-
-  const ComparisonRow = ({ label, value1, value2, icon: Icon }: { label: string; value1: string; value2: string; icon?: any }) => (
-    <div className="grid grid-cols-3 gap-4 py-3">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-        {label}
-      </div>
-      <div className="text-sm">{value1}</div>
-      <div className="text-sm">{value2}</div>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="unit1">Unidade 1</Label>
-          <Select value={unit1Id} onValueChange={setUnit1Id}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a primeira unidade" />
-            </SelectTrigger>
-            <SelectContent>
-              {units.map((unit) => (
-                <SelectItem key={unit.id} value={unit.id}>
-                  {unit.property.name} - Un. {unit.unit_number}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="propertyValue">Valor Atual do Imóvel (R$)</Label>
+          <CurrencyInput
+            id="propertyValue"
+            value={formData.propertyValue}
+            onChange={(value) => setFormData({ ...formData, propertyValue: value })}
+            placeholder="500.000,00"
+          />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="unit2">Unidade 2</Label>
-          <Select value={unit2Id} onValueChange={setUnit2Id}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a segunda unidade" />
-            </SelectTrigger>
-            <SelectContent>
-              {units.map((unit) => (
-                <SelectItem key={unit.id} value={unit.id} disabled={unit.id === unit1Id}>
-                  {unit.property.name} - Un. {unit.unit_number}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="annualAppreciation">Valorização Anual do Imóvel (%)</Label>
+          <Input
+            id="annualAppreciation"
+            type="number"
+            step="0.1"
+            value={formData.annualAppreciation}
+            onChange={(e) => setFormData({ ...formData, annualAppreciation: e.target.value })}
+            placeholder="5"
+          />
+          <p className="text-xs text-muted-foreground">Histórico BR: 3-6% a.a.</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="monthlyNetRent">Aluguel Líquido Mensal (R$)</Label>
+          <CurrencyInput
+            id="monthlyNetRent"
+            value={formData.monthlyNetRent}
+            onChange={(value) => setFormData({ ...formData, monthlyNetRent: value })}
+            placeholder="2.000,00"
+          />
+          <p className="text-xs text-muted-foreground">Já descontadas taxas e despesas</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="investmentRate">Taxa de Investimento Alternativo (%)</Label>
+          <Input
+            id="investmentRate"
+            type="number"
+            step="0.1"
+            value={formData.investmentRate}
+            onChange={(e) => setFormData({ ...formData, investmentRate: e.target.value })}
+            placeholder="12"
+          />
+          <p className="text-xs text-muted-foreground">CDI/SELIC: ~10-13% a.a.</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="years">Horizonte (Anos)</Label>
+          <Input
+            id="years"
+            type="number"
+            min="1"
+            max="30"
+            value={formData.years}
+            onChange={(e) => setFormData({ ...formData, years: e.target.value })}
+            placeholder="10"
+          />
         </div>
       </div>
 
-      <Button onClick={handleCompare} className="w-full" disabled={!unit1Id || !unit2Id}>
-        Comparar Unidades
+      <Button onClick={calculateComparison} className="w-full" size="lg">
+        <Calculator className="mr-2 h-4 w-4" />
+        Comparar Cenários
       </Button>
 
-      {unit1 && unit2 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-3 gap-4 pb-3 font-semibold text-sm border-b">
-              <div>Característica</div>
-              <div className="text-primary">{unit1.property.name}</div>
-              <div className="text-primary">{unit2.property.name}</div>
-            </div>
+      {result && (
+        <div className="space-y-6">
+          {/* Winner Summary */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card className={cn(
+              "transition-all",
+              result.winner === 'rent' && "border-accent bg-accent/5 ring-2 ring-accent/20"
+            )}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Home className="h-5 w-5" />
+                  Cenário A: Alugar
+                  {result.winner === 'rent' && (
+                    <CheckCircle2 className="h-5 w-5 text-accent ml-auto" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Manter o imóvel + reinvestir aluguéis
+                </p>
+                <p className={cn(
+                  "text-2xl font-bold",
+                  result.winner === 'rent' ? "text-accent" : "text-foreground"
+                )}>
+                  {formatCurrency(result.rentFinalWealth)}
+                </p>
+                <div className="mt-3 text-sm text-muted-foreground space-y-1">
+                  <p>Imóvel valorizado: {formatCurrency(result.projections[result.projections.length - 1]?.rentScenario.propertyValue || 0)}</p>
+                  <p>Aluguéis reinvestidos: {formatCurrency(result.projections[result.projections.length - 1]?.rentScenario.accumulatedRent || 0)}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-            <ComparisonRow
-              label="Unidade"
-              value1={unit1.unit_number}
-              value2={unit2.unit_number}
-              icon={Home}
-            />
-            <Separator />
+            <Card className={cn(
+              "transition-all",
+              result.winner === 'sell' && "border-primary bg-primary/5 ring-2 ring-primary/20"
+            )}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Landmark className="h-5 w-5" />
+                  Cenário B: Vender e Investir
+                  {result.winner === 'sell' && (
+                    <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Vender agora e aplicar o valor
+                </p>
+                <p className={cn(
+                  "text-2xl font-bold",
+                  result.winner === 'sell' ? "text-primary" : "text-foreground"
+                )}>
+                  {formatCurrency(result.sellFinalWealth)}
+                </p>
+                <div className="mt-3 text-sm text-muted-foreground">
+                  <p>Capital inicial aplicado à taxa de {formData.investmentRate}% a.a.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-            <ComparisonRow
-              label="Localização"
-              value1={unit1.property.city && unit1.property.state ? `${unit1.property.city}, ${unit1.property.state}` : 'N/A'}
-              value2={unit2.property.city && unit2.property.state ? `${unit2.property.city}, ${unit2.property.state}` : 'N/A'}
-            />
-            <Separator />
+          {/* Difference Banner */}
+          <Card className="bg-muted/30">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <span className="text-lg">
+                  <strong className={result.winner === 'rent' ? 'text-green-600' : 'text-primary'}>
+                    {result.winner === 'rent' ? 'Alugar' : 'Vender e Investir'}
+                  </strong>
+                  {' '}gera{' '}
+                  <strong>{formatCurrency(result.difference)}</strong>
+                  {' '}a mais em {formData.years} anos
+                </span>
+              </div>
+            </CardContent>
+          </Card>
 
-            <ComparisonRow
-              label="Preço"
-              value1={unit1.price ? `R$ ${unit1.price.toLocaleString('pt-BR')}` : 'N/A'}
-              value2={unit2.price ? `R$ ${unit2.price.toLocaleString('pt-BR')}` : 'N/A'}
-              icon={DollarSign}
-            />
-            <Separator />
+          {/* Yearly Projection Table */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Projeção Ano a Ano</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="w-full">
+                <div className="min-w-[600px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16 text-center">Ano</TableHead>
+                        <TableHead className="text-right" colSpan={2}>
+                          <span className="flex items-center justify-end gap-1">
+                            <Home className="h-4 w-4" /> Cenário Alugar
+                          </span>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <span className="flex items-center justify-end gap-1">
+                            <Landmark className="h-4 w-4" /> Cenário Vender
+                          </span>
+                        </TableHead>
+                        <TableHead className="text-right">Diferença</TableHead>
+                      </TableRow>
+                      <TableRow className="text-xs text-muted-foreground">
+                        <TableHead></TableHead>
+                        <TableHead className="text-right">Imóvel</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-right"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {result.projections.map((row) => {
+                        const diff = row.rentScenario.totalWealth - row.sellScenario.totalWealth;
+                        return (
+                          <TableRow key={row.year}>
+                            <TableCell className="text-center font-medium">{row.year}</TableCell>
+                            <TableCell className="text-right text-sm">
+                              {formatCurrency(row.rentScenario.propertyValue)}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(row.rentScenario.totalWealth)}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(row.sellScenario.totalWealth)}
+                            </TableCell>
+                            <TableCell className={cn(
+                              "text-right font-medium",
+                              diff > 0 ? "text-accent" : "text-primary"
+                            )}>
+                              {diff > 0 ? '+' : ''}{formatCurrency(diff)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </CardContent>
+          </Card>
 
-            <ComparisonRow
-              label="Área"
-              value1={unit1.area ? `${unit1.area}m²` : 'N/A'}
-              value2={unit2.area ? `${unit2.area}m²` : 'N/A'}
-              icon={Ruler}
-            />
-            <Separator />
-
-            <ComparisonRow
-              label="Quartos"
-              value1={unit1.bedrooms?.toString() || 'N/A'}
-              value2={unit2.bedrooms?.toString() || 'N/A'}
-              icon={Bed}
-            />
-            <Separator />
-
-            <ComparisonRow
-              label="Banheiros"
-              value1={unit1.bathrooms?.toString() || 'N/A'}
-              value2={unit2.bathrooms?.toString() || 'N/A'}
-              icon={Bath}
-            />
-            <Separator />
-
-            <ComparisonRow
-              label="Condomínio"
-              value1={unit1.condo_fee ? `R$ ${unit1.condo_fee.toLocaleString('pt-BR')}` : 'N/A'}
-              value2={unit2.condo_fee ? `R$ ${unit2.condo_fee.toLocaleString('pt-BR')}` : 'N/A'}
-            />
-            <Separator />
-
-            <ComparisonRow
-              label="IPTU"
-              value1={unit1.iptu ? `R$ ${unit1.iptu.toLocaleString('pt-BR')}` : 'N/A'}
-              value2={unit2.iptu ? `R$ ${unit2.iptu.toLocaleString('pt-BR')}` : 'N/A'}
-            />
-            <Separator />
-
-            {unit1.price && unit2.price && unit1.area && unit2.area && (
-              <>
-                <ComparisonRow
-                  label="Preço/m²"
-                  value1={`R$ ${(unit1.price / unit1.area).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`}
-                  value2={`R$ ${(unit2.price / unit2.area).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`}
-                />
-              </>
-            )}
-          </CardContent>
-        </Card>
+          {/* Assumptions Note */}
+          <p className="text-xs text-muted-foreground text-center">
+            * Cálculo simplificado. Não considera impostos (IR, ITBI), custos de transação, 
+            inflação diferenciada ou variações de mercado. Consulte um especialista para decisões reais.
+          </p>
+        </div>
       )}
     </div>
   );

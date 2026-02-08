@@ -105,17 +105,7 @@ const menuItems: MenuItem[] = [
   },
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { title: 'Documentos', url: '/documents', icon: FileText },
-  {
-    title: 'Simulador', 
-    icon: Calculator,
-    items: [
-      { title: 'Financiamento', url: '/simulator/financing' },
-      { title: 'Taxas e IPTU', url: '/simulator/taxes' },
-      { title: 'Retorno de Aluguel', url: '/rentability/yield' },
-      { title: 'Payback', url: '/rentability/payback' },
-      { title: 'Comparativos', url: '/simulator/comparison' },
-    ]
-  },
+  { title: 'Simulador', url: '/simulator', icon: Calculator },
   { 
     title: 'Integrações', 
     icon: Plug,
