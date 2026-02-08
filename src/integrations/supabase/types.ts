@@ -1836,6 +1836,7 @@ export type Database = {
           email: string
           full_name: string
           glow_intensity: number | null
+          ical_token: string | null
           id: string
           notification_sound_enabled: boolean | null
           notification_vibration_enabled: boolean | null
@@ -1858,6 +1859,7 @@ export type Database = {
           email: string
           full_name: string
           glow_intensity?: number | null
+          ical_token?: string | null
           id: string
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
@@ -1880,6 +1882,7 @@ export type Database = {
           email?: string
           full_name?: string
           glow_intensity?: number | null
+          ical_token?: string | null
           id?: string
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
@@ -2963,6 +2966,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      regenerate_ical_token: { Args: { user_id: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

@@ -1,1 +1,4 @@
 project_id = "nelmmrqdiycmdhhslxfz"
+
+[functions.ical-feed]
+verify_jwt = false
