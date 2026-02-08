@@ -22,7 +22,7 @@ import { BulkActionsBar } from '@/components/crm/BulkActionsBar';
 import { AddStageCard } from '@/components/crm/AddStageCard';
 import { EditStageDialog } from '@/components/crm/EditStageDialog';
 import { ReorderStagesDialog } from '@/components/crm/ReorderStagesDialog';
-import { PipelineMinimap } from '@/components/crm/PipelineMinimap';
+
 import { PipelineScrollHint } from '@/components/crm/PipelineScrollHint';
 import { AppLayout } from '@/components/AppLayout';
 import { isPast, isToday } from 'date-fns';
@@ -1181,22 +1181,6 @@ const Pipeline = () => {
             </DndContext>
           </div>
         </div>
-
-        {/* Minimap */}
-        <PipelineMinimap
-          stages={allStages.map(stage => {
-            const dealsInStage = stage.isCustom
-              ? filteredDeals.filter(d => d.custom_stage_id === stage.id.replace('custom_', ''))
-              : filteredDeals.filter(d => d.stage === stage.id);
-            return {
-              ...stage,
-              dealCount: dealsInStage.length,
-              totalValue: dealsInStage.reduce((sum, d) => sum + (d.estimated_value || 0), 0),
-            };
-          })}
-          scrollRef={kanbanScrollRef}
-          columnWidth={COLUMN_WIDTH}
-        />
       </div>
 
       {/* Floating Scroll Hint */}

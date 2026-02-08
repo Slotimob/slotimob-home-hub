@@ -178,22 +178,24 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-6 lg:space-y-8">
                 {/* ═══════════════════════════════════════════════════════════════
-                    SEÇÃO 1: VISÃO PATRIMONIAL (Snapshot Atual - Sem Filtro de Data)
-                    Representa o estado atual "Hoje" - números absolutos All-time
+                    LINHA 1: ACESSOS RÁPIDOS
                    ═══════════════════════════════════════════════════════════════ */}
-                <section>
-                  {/* Portfolio Strategic Indicators - Always at the top */}
-                  <PortfolioWidget refreshKey={refreshKey} />
-                </section>
-
-                {/* Shortcuts Widget - Full width after Portfolio */}
                 {preferences.widgets.shortcuts && (
                   <section>
                     <ShortcutsWidget shortcuts={preferences.shortcuts} />
                   </section>
                 )}
 
-                {/* Assets Widget - Full width on its own row */}
+                {/* ═══════════════════════════════════════════════════════════════
+                    LINHA 2: INDICADORES PATRIMONIAIS (Patrimônio | Yield | Vacância)
+                   ═══════════════════════════════════════════════════════════════ */}
+                <section>
+                  <PortfolioWidget refreshKey={refreshKey} />
+                </section>
+
+                {/* ═══════════════════════════════════════════════════════════════
+                    LINHA 3: PATRIMÔNIO (Contagem de Ativos)
+                   ═══════════════════════════════════════════════════════════════ */}
                 {preferences.widgets.assets && (
                   <section>
                     <AssetsWidget />
@@ -201,8 +203,7 @@ const Dashboard = () => {
                 )}
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    SEÇÃO 2: CONTROLADOR DE PERÍODO (Divisor Visual)
-                    Indica que tudo abaixo será recalculado com base nas datas
+                    CONTROLADOR DE PERÍODO (Divisor Visual)
                    ═══════════════════════════════════════════════════════════════ */}
                 <section className="py-2">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border/50">
@@ -226,28 +227,30 @@ const Dashboard = () => {
                 </section>
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    SEÇÃO 3: ANÁLISE DE PERFORMANCE (Com Filtro de Data)
-                    Widgets de fluxo financeiro e operacional
+                    LINHA 4: FINANCEIRO (Full width com gráfico maior)
                    ═══════════════════════════════════════════════════════════════ */}
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-                  {/* Financial Widget */}
-                  {preferences.widgets.financial && (
+                {preferences.widgets.financial && (
+                  <section className="w-full">
                     <FinancialWidget
                       dateRange={dateRange}
                       refreshKey={refreshKey}
                     />
-                  )}
+                  </section>
+                )}
 
-                  {/* Pipeline Widget */}
-                  {preferences.widgets.pipeline && (
+                {/* ═══════════════════════════════════════════════════════════════
+                    LINHA 5: PIPELINE CRM (Full width)
+                   ═══════════════════════════════════════════════════════════════ */}
+                {preferences.widgets.pipeline && (
+                  <section className="w-full">
                     <PipelineWidget
                       dateRange={dateRange}
                       refreshKey={refreshKey}
                       enabledStages={preferences.pipelineStages}
                       onStagesLoaded={syncPipelineStages}
                     />
-                  )}
-                </section>
+                  </section>
+                )}
               </div>
             )}
 

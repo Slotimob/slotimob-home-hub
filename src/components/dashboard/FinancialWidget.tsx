@@ -174,9 +174,10 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
             <ArrowRight className="h-4 w-4 sm:ml-1" />
           </Button>
         </CardHeader>
-        <CardContent className="space-y-3 px-3 lg:px-6 pb-3 lg:pb-6">
-          {/* Big Numbers with consistent typography */}
-          <div className="grid grid-cols-2 gap-3">
+        <CardContent className="space-y-4 px-3 lg:px-6 pb-4 lg:pb-6">
+          {/* Big Numbers - Full width row with 3 cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Receitas */}
             <div className="rounded-lg border p-3 lg:p-4 bg-green-500/5 border-green-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
@@ -195,6 +196,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                 </TooltipContent>
               </Tooltip>
             </div>
+            {/* Despesas */}
             <div className="rounded-lg border p-3 lg:p-4 bg-red-500/5 border-red-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
@@ -213,10 +215,34 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                 </TooltipContent>
               </Tooltip>
             </div>
+            {/* Saldo */}
+            <div className="rounded-lg border p-3 lg:p-4 bg-primary/5 border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-xs text-muted-foreground">Saldo</span>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className={`text-lg md:text-xl lg:text-2xl font-bold cursor-help break-words ${
+                    (data.totalRevenue - data.totalExpenses) >= 0 
+                      ? 'text-green-600 dark:text-green-500' 
+                      : 'text-red-600 dark:text-red-500'
+                  }`}>
+                    <SmartCurrency value={data.totalRevenue - data.totalExpenses} showTooltip={false} />
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-mono">{formatCurrencyFull(data.totalRevenue - data.totalExpenses)}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
 
           {/* Receivables and Payables - Stack on small screens */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-3">
+          {/* Receivables and Payables - Taller for better readability */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
             {/* Contas a Receber */}
             <div className="rounded-lg border">
               <div className="px-2 lg:px-3 py-1.5 lg:py-2 border-b flex items-center gap-1.5">
@@ -226,7 +252,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                   {data.receivables.length}
                 </Badge>
               </div>
-              <ScrollArea className="h-[120px] lg:h-[140px]">
+              <ScrollArea className="h-[160px] lg:h-[200px]">
                 {data.receivables.length === 0 ? (
                   <p className="text-[10px] lg:text-xs text-muted-foreground text-center py-4">
                     Nenhuma receita pendente
@@ -272,7 +298,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                   {data.payables.length}
                 </Badge>
               </div>
-              <ScrollArea className="h-[120px] lg:h-[140px]">
+              <ScrollArea className="h-[160px] lg:h-[200px]">
                 {data.payables.length === 0 ? (
                   <p className="text-[10px] lg:text-xs text-muted-foreground text-center py-4">
                     Nenhuma despesa pendente

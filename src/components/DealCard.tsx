@@ -1,4 +1,5 @@
 import { useDraggable } from '@dnd-kit/core';
+import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -177,18 +178,16 @@ export const DealCard = ({
     <Card
       data-deal-card
       ref={setNodeRef}
-      style={{ ...style, ...getGlowStyle() }}
-      className={`transition-shadow hover:shadow-md ${
-        isDragging ? 'opacity-50 rotate-2' : ''
-      } ${overdueTasksCount > 0 ? 'border-destructive/50' : ''} ${
-        hasNoTasks && deal.stage !== 'won' && deal.stage !== 'lost' ? 'border-amber-500/50' : ''
-      } ${
-        isRotting ? 'border-amber-500 border-2' : ''
-      } ${
-        isUnitUnavailable ? 'border-red-500/50 bg-red-500/5' : ''
-      } ${
-        isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
-      }`}
+      style={{ ...style }}
+      className={cn(
+        "transition-all shadow-sm hover:shadow-md bg-card border",
+        isDragging && 'opacity-50 rotate-2',
+        overdueTasksCount > 0 && 'border-destructive/50',
+        hasNoTasks && deal.stage !== 'won' && deal.stage !== 'lost' && 'border-amber-500/50',
+        isRotting && 'border-amber-500 border-2',
+        isUnitUnavailable && 'border-red-500/50 bg-red-500/5',
+        isSelected && 'ring-2 ring-primary bg-primary/5',
+      )}
     >
       <CardContent className="p-4 space-y-3">
         {/* Unit Unavailable Warning */}
@@ -226,7 +225,7 @@ export const DealCard = ({
             onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
           >
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-semibold text-sm truncate flex-1">{deal.lead.name}</h4>
+              <h4 className="font-bold text-base text-foreground truncate flex-1">{deal.lead.name}</h4>
               {/* Lead Rotting Indicator */}
               {isRotting && (
                 <Badge className="text-xs gap-1 bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30">
@@ -257,14 +256,14 @@ export const DealCard = ({
           </div>
         </div>
 
-        {/* Value - Prominent display */}
+        {/* Value - Prominent display with larger font */}
         {deal.estimated_value && (
           <div 
-            className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/50 cursor-pointer"
+            className="flex items-center gap-2 py-2.5 px-3 rounded-lg bg-primary/10 border border-primary/20 cursor-pointer"
             onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
           >
-            <DollarSign className="h-4 w-4 text-primary" />
-            <span className="text-base font-bold">
+            <DollarSign className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="text-lg font-bold text-foreground">
               R$ {deal.estimated_value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
           </div>

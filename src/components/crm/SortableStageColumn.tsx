@@ -128,14 +128,12 @@ export const SortableStageColumn = ({
       <div ref={setDroppableRef}>
         <Card 
           className={cn(
-            "h-full transition-all",
-            isOver && !isDraggingStage && 'ring-2 ring-primary',
+            "h-full transition-all bg-muted/30",
+            isOver && !isDraggingStage && 'ring-2 ring-primary bg-muted/50',
             isDragging && 'shadow-lg',
-            "shadow-[0_0_15px_-3px_rgba(var(--stage-glow-rgb),0.3)] hover:shadow-[0_0_20px_-2px_rgba(var(--stage-glow-rgb),0.4)]"
           )}
-          style={getGlowStyle()}
         >
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 border-b bg-card rounded-t-lg">
             <CardTitle className="text-sm font-medium">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -158,8 +156,15 @@ export const SortableStageColumn = ({
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: color }}
                   />
-                  <span className="truncate">{title}</span>
-                  <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                  <span className="truncate font-semibold">{title}</span>
+                  {/* Badge com contagem */}
+                  <span 
+                    className="text-xs font-bold px-2 py-0.5 rounded-full"
+                    style={{ 
+                      backgroundColor: `${color}20`,
+                      color: color
+                    }}
+                  >
                     {deals.length}
                   </span>
                 </div>
@@ -206,15 +211,18 @@ export const SortableStageColumn = ({
                   )}
                 </div>
               </div>
+              {/* Valor total da coluna */}
               {totalValue > 0 && (
-                <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground font-normal">
-                  <DollarSign className="h-3 w-3" />
-                  R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                <div className="flex items-center gap-1.5 mt-2 py-1.5 px-2 rounded bg-muted/50 w-fit">
+                  <DollarSign className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-bold text-foreground">
+                    R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                  </span>
                 </div>
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
+          <CardContent className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent px-3 py-3">
             {deals.map((deal) => (
               <DealCard
                 key={deal.id}
