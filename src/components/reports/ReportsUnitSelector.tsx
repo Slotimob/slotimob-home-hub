@@ -76,7 +76,7 @@ export const ReportsUnitSelector = ({ selectedUnitId, onUnitChange }: ReportsUni
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between h-9 min-w-[180px] max-w-[280px]"
+          className="justify-between h-9 w-full sm:min-w-[220px] sm:max-w-[340px]"
           disabled={loading}
         >
           <Building2 className="mr-2 h-4 w-4 shrink-0" />
@@ -90,7 +90,10 @@ export const ReportsUnitSelector = ({ selectedUnitId, onUnitChange }: ReportsUni
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] min-w-[300px] max-w-[calc(100vw-2rem)] p-0"
+        align="start"
+      >
         <Command>
           <CommandInput placeholder="Buscar unidade..." />
           <CommandList>

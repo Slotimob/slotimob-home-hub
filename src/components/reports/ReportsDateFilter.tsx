@@ -37,7 +37,7 @@ export const ReportsDateFilter = ({ dateRange, onDateRangeChange }: ReportsDateF
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end">
       {/* Preset buttons */}
       <div className="hidden sm:flex items-center gap-1.5">
         {presets.slice(0, 3).map((preset) => (
@@ -59,23 +59,27 @@ export const ReportsDateFilter = ({ dateRange, onDateRangeChange }: ReportsDateF
           <Button
             variant="outline"
             className={cn(
-              "justify-start text-left font-normal h-9",
+              "w-full sm:w-[260px] justify-between text-left font-normal h-9",
               !dateRange && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} -{" "}
-                  {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
-                </>
-              ) : (
-                format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
-              )
-            ) : (
-              <span>Selecionar período</span>
-            )}
+            <span className="flex items-center min-w-0">
+              <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+              <span className="truncate">
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} -{" "}
+                      {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                  )
+                ) : (
+                  <span>Selecionar período</span>
+                )}
+              </span>
+            </span>
             <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
