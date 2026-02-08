@@ -281,11 +281,11 @@ const Documents = () => {
     >
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="meus-documentos">Meus Documentos</TabsTrigger>
             <TabsTrigger value="modelos">Modelos Padrão</TabsTrigger>
             <TabsTrigger value="personalizados">Modelos Personalizados</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="historico">Rascunhos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="meus-documentos" className="space-y-6 mt-6">

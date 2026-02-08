@@ -10,28 +10,48 @@ declare module 'jspdf' {
   }
 }
 
-// Use a simple drawn logo instead of base64 PNG to avoid jspdf decoding issues
+// ============================================================================
+// CONFIGURAÇÕES DE LAYOUT
+// ============================================================================
+
+const MARGINS = {
+  left: 20,
+  right: 20,
+  top: 25,
+  bottom: 25,
+};
+
+const COLORS = {
+  primary: [99, 102, 241] as [number, number, number],
+  primaryDark: [79, 70, 229] as [number, number, number],
+  text: [30, 30, 30] as [number, number, number],
+  textMuted: [100, 100, 100] as [number, number, number],
+  divider: [200, 200, 200] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
+};
+
+// ============================================================================
+// LOGO HELPERS
+// ============================================================================
+
 const drawSlotiLogo = (doc: jsPDF, x: number, y: number, size: number): void => {
-  // Draw a simple "S" shape representing Sloti logo
-  doc.setFillColor(99, 102, 241);
+  doc.setFillColor(...COLORS.primary);
   doc.roundedRect(x, y, size, size, 3, 3, 'F');
   
-  // White "S" letter
   doc.setFontSize(size * 0.6);
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(...COLORS.white);
   doc.setFont('helvetica', 'bold');
   doc.text('S', x + size / 2, y + size * 0.7, { align: 'center' });
 };
 
 const drawSlotiLogoWatermark = (doc: jsPDF, x: number, y: number, size: number): void => {
-  // Draw a subtle watermark version
-  doc.setFillColor(99, 102, 241);
+  doc.setFillColor(...COLORS.primary);
   doc.saveGraphicsState();
   // @ts-ignore
-  doc.setGState(new doc.GState({ opacity: 0.1 }));
+  doc.setGState(new doc.GState({ opacity: 0.08 }));
   doc.roundedRect(x, y, size, size, 3, 3, 'F');
   doc.setFontSize(size * 0.6);
-  doc.setTextColor(99, 102, 241);
+  doc.setTextColor(...COLORS.primary);
   doc.setFont('helvetica', 'bold');
   doc.text('S', x + size / 2, y + size * 0.7, { align: 'center' });
   doc.restoreGraphicsState();
@@ -69,7 +89,10 @@ export const formatPhone = (value: string): string => {
 };
 
 const formatFieldValue = (field: TemplateField, value: string): string => {
-  if (!value) return '____________________';
+  // Se o valor estiver vazio, retorna linha pontilhada
+  if (!value || value.trim() === '') {
+    return '..............................';
+  }
   
   switch (field.type) {
     case 'currency':
@@ -85,151 +108,185 @@ const formatFieldValue = (field: TemplateField, value: string): string => {
   }
 };
 
+// Processa variáveis não preenchidas no conteúdo
+const processEmptyVariables = (content: string): string => {
+  // Substitui variáveis não preenchidas por linha pontilhada
+  return content.replace(/\{\{[^}]+\}\}/g, '..............................');
+};
+
 export const fillTemplateContent = (
   template: DocumentTemplate,
   filledFields: Record<string, string>
 ): string => {
   let content = template.templateContent;
   
+  // Primeiro, substitui as variáveis com valores preenchidos
   template.fields.forEach((field) => {
     const value = filledFields[field.id] || '';
     const formattedValue = formatFieldValue(field, value);
-    const regex = new RegExp(`{{${field.id}}}`, 'g');
+    const regex = new RegExp(`\\{\\{${field.id}\\}\\}`, 'g');
     content = content.replace(regex, formattedValue);
   });
+  
+  // Depois, processa quaisquer variáveis restantes que não foram mapeadas
+  content = processEmptyVariables(content);
   
   return content;
 };
 
 // ============================================================================
-// RENDERIZAÇÃO DE PDF APRIMORADA
+// DESENHO DE ELEMENTOS
 // ============================================================================
 
-interface PDFStyle {
+const drawHorizontalDivider = (doc: jsPDF, y: number, style: 'solid' | 'dashed' = 'solid'): void => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  doc.setDrawColor(...COLORS.divider);
+  doc.setLineWidth(0.3);
+  
+  if (style === 'dashed') {
+    // Desenha linha tracejada manualmente
+    const startX = MARGINS.left;
+    const endX = pageWidth - MARGINS.right;
+    const dashLength = 3;
+    const gapLength = 2;
+    let currentX = startX;
+    
+    while (currentX < endX) {
+      const dashEnd = Math.min(currentX + dashLength, endX);
+      doc.line(currentX, y, dashEnd, y);
+      currentX = dashEnd + gapLength;
+    }
+  } else {
+    doc.line(MARGINS.left, y, pageWidth - MARGINS.right, y);
+  }
+};
+
+const drawSectionHeader = (doc: jsPDF, text: string, y: number): number => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  // Linha decorativa antes do título
+  doc.setDrawColor(...COLORS.primary);
+  doc.setLineWidth(0.8);
+  doc.line(MARGINS.left, y - 1, MARGINS.left + 30, y - 1);
+  
+  // Título da seção
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text(text, MARGINS.left, y + 4);
+  
+  return y + 10;
+};
+
+// ============================================================================
+// RENDERIZAÇÃO DE TEXTO
+// ============================================================================
+
+interface TextStyle {
   fontSize: number;
-  fontStyle: 'normal' | 'bold' | 'italic' | 'bolditalic';
+  fontStyle: 'normal' | 'bold';
   textColor: [number, number, number];
   indent: number;
 }
 
-const STYLES: Record<string, PDFStyle> = {
-  title: { fontSize: 14, fontStyle: 'bold', textColor: [99, 102, 241], indent: 0 },
-  subtitle: { fontSize: 11, fontStyle: 'bold', textColor: [60, 60, 60], indent: 0 },
-  clauseHeader: { fontSize: 11, fontStyle: 'bold', textColor: [0, 0, 0], indent: 0 },
-  clauseSubheader: { fontSize: 10, fontStyle: 'bold', textColor: [40, 40, 40], indent: 0 },
-  body: { fontSize: 10, fontStyle: 'normal', textColor: [0, 0, 0], indent: 0 },
-  indented: { fontSize: 10, fontStyle: 'normal', textColor: [0, 0, 0], indent: 10 },
-  romanItem: { fontSize: 10, fontStyle: 'normal', textColor: [0, 0, 0], indent: 15 },
-  letterItem: { fontSize: 10, fontStyle: 'normal', textColor: [0, 0, 0], indent: 15 },
-  signature: { fontSize: 10, fontStyle: 'normal', textColor: [0, 0, 0], indent: 0 },
-  footer: { fontSize: 8, fontStyle: 'normal', textColor: [128, 128, 128], indent: 0 },
-};
-
-const addWatermarkAndFooter = (doc: jsPDF, pageNumber: number, totalPages: number): void => {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  
-  // Watermark logo no canto inferior direito (semi-transparente)
-  const logoSize = 20;
-  const logoX = pageWidth - logoSize - 12;
-  const logoY = pageHeight - logoSize - 22;
-  
-  drawSlotiLogoWatermark(doc, logoX, logoY, logoSize);
-  
-  // Footer
-  doc.setFontSize(8);
-  doc.setTextColor(128, 128, 128);
-  
-  const footerY = pageHeight - 8;
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
-  
-  doc.text('Documento gerado por SLOTIMOB | Lei 8.245/91', 15, footerY);
-  doc.text(dateStr, pageWidth / 2, footerY, { align: 'center' });
-  doc.text(`Página ${pageNumber} de ${totalPages}`, pageWidth - 15, footerY, { align: 'right' });
-};
-
-// Normaliza texto para suporte UTF-8
 const normalizeText = (text: string): string => {
   return text.normalize('NFC');
 };
 
-// Detecta o tipo de linha e retorna o estilo apropriado
-const getLineStyle = (line: string): { style: PDFStyle; processedLine: string; skipLine?: boolean } => {
+const getLineStyle = (line: string): { style: TextStyle; processedLine: string; isHeader: boolean; isDivider: boolean } => {
   const trimmed = line.trim();
   
-  // Linhas de separação (█ ou ━)
-  if (trimmed.match(/^[█━]+$/)) {
-    return { style: STYLES.body, processedLine: '', skipLine: true };
+  // Detecta divisores (linhas com símbolos repetidos)
+  if (trimmed.match(/^[━═─\-_]+$/) || trimmed.match(/^[█▓▒░]+$/)) {
+    return { 
+      style: { fontSize: 10, fontStyle: 'normal', textColor: COLORS.text, indent: 0 },
+      processedLine: '',
+      isHeader: false,
+      isDivider: true,
+    };
   }
   
-  // Títulos principais (████)
-  if (trimmed.includes('████') || trimmed.includes('CONTRATO DE LOCAÇÃO')) {
-    return { style: STYLES.title, processedLine: trimmed.replace(/█/g, '').trim() };
+  // Headers de cláusula
+  if (trimmed.startsWith('CLÁUSULA') || trimmed.match(/^[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]+$/) && trimmed.length > 10 && !trimmed.includes(':')) {
+    return {
+      style: { fontSize: 11, fontStyle: 'bold', textColor: COLORS.text, indent: 0 },
+      processedLine: trimmed,
+      isHeader: true,
+      isDivider: false,
+    };
   }
   
-  // Headers de seção (━━━ seguido de texto ━━━)
-  if (trimmed.startsWith('CLÁUSULA') || (trimmed.match(/^[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]+$/) && trimmed.length > 10 && !trimmed.includes(':'))) {
-    return { style: STYLES.clauseHeader, processedLine: trimmed };
+  // Seções com dois pontos (LOCADOR:, LOCATÁRIO:, etc)
+  if (trimmed.match(/^[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]+:$/)) {
+    return {
+      style: { fontSize: 10, fontStyle: 'bold', textColor: COLORS.text, indent: 0 },
+      processedLine: trimmed,
+      isHeader: true,
+      isDivider: false,
+    };
   }
   
   // Subseções numeradas (1.1, 1.2, etc.)
   if (trimmed.match(/^\d+\.\d+\.?\s/)) {
-    const hasBold = trimmed.includes('**');
-    return { 
-      style: hasBold ? STYLES.clauseSubheader : STYLES.body, 
-      processedLine: trimmed.replace(/\*\*/g, '') 
+    return {
+      style: { fontSize: 10, fontStyle: 'normal', textColor: COLORS.text, indent: 0 },
+      processedLine: trimmed.replace(/\*\*/g, ''),
+      isHeader: false,
+      isDivider: false,
     };
   }
   
-  // Itens com numeração romana (I., II., III., etc.)
+  // Itens com numeração romana
   if (trimmed.match(/^[IVXLC]+\.\s/)) {
-    return { style: STYLES.romanItem, processedLine: trimmed };
+    return {
+      style: { fontSize: 10, fontStyle: 'normal', textColor: COLORS.text, indent: 10 },
+      processedLine: trimmed,
+      isHeader: false,
+      isDivider: false,
+    };
   }
   
-  // Itens com letras (a), b), etc.)
+  // Itens com letras
   if (trimmed.match(/^[a-z]\)\s/i)) {
-    return { style: STYLES.letterItem, processedLine: trimmed };
-  }
-  
-  // Linhas com checkbox
-  if (trimmed.startsWith('□')) {
-    return { style: STYLES.indented, processedLine: trimmed };
+    return {
+      style: { fontSize: 10, fontStyle: 'normal', textColor: COLORS.text, indent: 10 },
+      processedLine: trimmed,
+      isHeader: false,
+      isDivider: false,
+    };
   }
   
   // Assinaturas
-  if (trimmed.startsWith('_____') || trimmed.startsWith('**LOCADOR') || trimmed.startsWith('**LOCATÁRIO') || 
-      trimmed.startsWith('**FIADOR') || trimmed.startsWith('**CÔNJUGE') || trimmed.startsWith('**TESTEMUNHAS')) {
-    return { style: STYLES.signature, processedLine: trimmed.replace(/\*\*/g, '') };
+  if (trimmed.startsWith('_____') || trimmed.match(/^Assinatura/i)) {
+    return {
+      style: { fontSize: 10, fontStyle: 'normal', textColor: COLORS.text, indent: 0 },
+      processedLine: trimmed,
+      isHeader: false,
+      isDivider: false,
+    };
   }
   
-  // Parágrafos com **negrito**
-  if (trimmed.includes('**')) {
-    return { style: STYLES.body, processedLine: trimmed };
-  }
-  
-  // Parágrafo único ou observações
-  if (trimmed.startsWith('Parágrafo') || trimmed.startsWith('Observação')) {
-    return { style: STYLES.indented, processedLine: trimmed };
-  }
-  
-  // Texto normal
-  return { style: STYLES.body, processedLine: trimmed };
+  // Texto padrão
+  return {
+    style: { fontSize: 10, fontStyle: 'normal', textColor: COLORS.text, indent: 0 },
+    processedLine: trimmed,
+    isHeader: false,
+    isDivider: false,
+  };
 };
 
-// Renderiza texto com suporte a **negrito**
 const renderTextWithBold = (
   doc: jsPDF, 
   text: string, 
   x: number, 
   y: number, 
   maxWidth: number,
-  baseStyle: PDFStyle
+  baseStyle: TextStyle
 ): number => {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   let currentX = x;
   let currentY = y;
-  let lineHeight = 5;
+  const lineHeight = 5;
   
   doc.setFontSize(baseStyle.fontSize);
   doc.setTextColor(...baseStyle.textColor);
@@ -242,14 +299,12 @@ const renderTextWithBold = (
     
     doc.setFont('helvetica', isBold ? 'bold' : baseStyle.fontStyle);
     
-    // Verifica se precisa quebrar linha
     const textWidth = doc.getTextWidth(cleanText);
     if (currentX + textWidth > x + maxWidth && currentX > x) {
       currentY += lineHeight;
       currentX = x;
     }
     
-    // Quebra texto longo em múltiplas linhas
     if (textWidth > maxWidth) {
       const splitLines = doc.splitTextToSize(cleanText, maxWidth);
       for (let i = 0; i < splitLines.length; i++) {
@@ -270,6 +325,34 @@ const renderTextWithBold = (
 };
 
 // ============================================================================
+// WATERMARK E FOOTER
+// ============================================================================
+
+const addWatermarkAndFooter = (doc: jsPDF, pageNumber: number, totalPages: number): void => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  
+  // Watermark logo
+  const logoSize = 18;
+  const logoX = pageWidth - logoSize - 15;
+  const logoY = pageHeight - logoSize - 20;
+  drawSlotiLogoWatermark(doc, logoX, logoY, logoSize);
+  
+  // Footer
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.setFont('helvetica', 'normal');
+  
+  const footerY = pageHeight - 10;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  
+  doc.text('Documento gerado por SLOTIMOB', MARGINS.left, footerY);
+  doc.text(dateStr, pageWidth / 2, footerY, { align: 'center' });
+  doc.text(`Página ${pageNumber} de ${totalPages}`, pageWidth - MARGINS.right, footerY, { align: 'right' });
+};
+
+// ============================================================================
 // GERADOR DE PDF PRINCIPAL
 // ============================================================================
 
@@ -285,87 +368,70 @@ export const generateDocumentPDF = (
   
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
-  const maxWidth = pageWidth - (margin * 2);
+  const maxWidth = pageWidth - MARGINS.left - MARGINS.right;
   
   // Header com gradiente
-  doc.setFillColor(99, 102, 241);
+  doc.setFillColor(...COLORS.primary);
   doc.rect(0, 0, pageWidth, 22, 'F');
   
-  // Logo no header (drawn)
-  drawSlotiLogo(doc, 10, 4, 14);
+  // Logo no header
+  drawSlotiLogo(doc, 12, 4, 14);
   
   // Título no header
-  doc.setFontSize(13);
-  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(12);
+  doc.setTextColor(...COLORS.white);
   doc.setFont('helvetica', 'bold');
   
   const headerTitle = normalizeText(template.name.toUpperCase());
-  doc.text(headerTitle, 28, 13);
+  doc.text(headerTitle, 30, 12);
   
   // Subtítulo
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('Lei nº 8.245/91 - Lei do Inquilinato', 28, 18);
+  doc.text('Lei nº 8.245/91 - Lei do Inquilinato', 30, 18);
   
   // Reset para conteúdo
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(...COLORS.text);
   doc.setFont('helvetica', 'normal');
   
   let currentY = 32;
   const lineSpacing = 5;
-  const sectionSpacing = 8;
   
   // Processa conteúdo
   const content = blank
-    ? template.templateContent
+    ? processEmptyVariables(template.templateContent)
     : fillTemplateContent(template, filledFields);
   
   const lines = content.trim().split('\n');
   
   for (const line of lines) {
-    const { style, processedLine, skipLine } = getLineStyle(line);
+    const { style, processedLine, isHeader, isDivider } = getLineStyle(line);
     
-    if (skipLine) {
-      // Desenha linha de separação
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.3);
-      doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 4;
+    // Desenha divisor
+    if (isDivider) {
+      drawHorizontalDivider(doc, currentY);
+      currentY += 6;
       continue;
     }
     
+    // Linha vazia
     if (!processedLine) {
       currentY += 3;
       continue;
     }
     
     // Verifica necessidade de nova página
-    if (currentY > pageHeight - 35) {
+    if (currentY > pageHeight - MARGINS.bottom - 10) {
       doc.addPage();
-      currentY = 20;
+      currentY = MARGINS.top;
     }
     
-    const xPosition = margin + style.indent;
+    const xPosition = MARGINS.left + style.indent;
     
-    // Renderiza cabeçalhos de cláusula com destaque
-    if (style === STYLES.clauseHeader) {
-      currentY += 3;
-      
-      // Linha decorativa antes
-      doc.setDrawColor(99, 102, 241);
-      doc.setLineWidth(0.5);
-      doc.line(margin, currentY - 2, margin + 40, currentY - 2);
-      
-      doc.setFontSize(style.fontSize);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...style.textColor);
-      
-      const clauseText = normalizeText(processedLine);
-      const splitClause = doc.splitTextToSize(clauseText, maxWidth);
-      doc.text(splitClause, xPosition, currentY);
-      
-      currentY += (splitClause.length * lineSpacing) + 3;
+    // Renderiza cabeçalhos de seção
+    if (isHeader) {
+      currentY += 2;
+      currentY = drawSectionHeader(doc, processedLine, currentY);
       continue;
     }
     
@@ -385,17 +451,12 @@ export const generateDocumentPDF = (
     const splitText = doc.splitTextToSize(normalizedText, maxWidth - style.indent);
     
     for (const textLine of splitText) {
-      if (currentY > pageHeight - 35) {
+      if (currentY > pageHeight - MARGINS.bottom - 10) {
         doc.addPage();
-        currentY = 20;
+        currentY = MARGINS.top;
       }
       doc.text(textLine, xPosition, currentY);
       currentY += lineSpacing;
-    }
-    
-    // Espaço extra após cláusulas
-    if (processedLine.match(/^\d+\.\d+\./)) {
-      currentY += 1;
     }
   }
   
@@ -419,7 +480,7 @@ export const generateBlankTemplatePDF = (template: DocumentTemplate): void => {
 };
 
 // ============================================================================
-// GERADOR DE PDF PARA CONTRATOS COMPLETOS (Lei 8.245/91)
+// GERADOR DE PDF PARA CONTRATOS COMPLETOS
 // ============================================================================
 
 export const generateFullContractPDF = (contractContent: string, fileName?: string): void => {
@@ -430,48 +491,47 @@ export const generateFullContractPDF = (contractContent: string, fileName?: stri
   
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
-  const maxWidth = pageWidth - (margin * 2);
+  const maxWidth = pageWidth - MARGINS.left - MARGINS.right;
   
   // Header profissional
-  doc.setFillColor(99, 102, 241);
-  doc.rect(0, 0, pageWidth, 25, 'F');
+  doc.setFillColor(...COLORS.primary);
+  doc.rect(0, 0, pageWidth, 24, 'F');
   
   // Linha decorativa inferior
-  doc.setFillColor(79, 70, 229);
-  doc.rect(0, 25, pageWidth, 2, 'F');
+  doc.setFillColor(...COLORS.primaryDark);
+  doc.rect(0, 24, pageWidth, 2, 'F');
   
-  // Logo (drawn)
-  drawSlotiLogo(doc, 12, 5, 16);
+  // Logo
+  drawSlotiLogo(doc, 12, 4, 16);
   
   // Títulos
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(13);
+  doc.setTextColor(...COLORS.white);
   doc.setFont('helvetica', 'bold');
-  doc.text('CONTRATO DE LOCAÇÃO', 32, 13);
+  doc.text('CONTRATO DE LOCAÇÃO', 32, 12);
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Lei nº 8.245/91 - Lei do Inquilinato | Documento gerado por SLOTIMOB', 32, 20);
+  doc.text('Lei nº 8.245/91 - Lei do Inquilinato | SLOTIMOB', 32, 19);
   
   // Reset
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(...COLORS.text);
   doc.setFont('helvetica', 'normal');
   
   let currentY = 35;
   const lineSpacing = 4.5;
   
-  const lines = contractContent.trim().split('\n');
+  // Processa variáveis não preenchidas
+  const processedContent = processEmptyVariables(contractContent);
+  const lines = processedContent.trim().split('\n');
   
   for (const line of lines) {
-    const { style, processedLine, skipLine } = getLineStyle(line);
+    const { style, processedLine, isHeader, isDivider } = getLineStyle(line);
     
-    // Separadores
-    if (skipLine || line.trim().match(/^[━═]+$/)) {
-      doc.setDrawColor(180, 180, 180);
-      doc.setLineWidth(0.3);
-      doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 5;
+    // Divisores
+    if (isDivider) {
+      drawHorizontalDivider(doc, currentY, 'dashed');
+      currentY += 6;
       continue;
     }
     
@@ -482,42 +542,27 @@ export const generateFullContractPDF = (contractContent: string, fileName?: stri
     }
     
     // Nova página se necessário
-    if (currentY > pageHeight - 30) {
+    if (currentY > pageHeight - MARGINS.bottom - 10) {
       doc.addPage();
-      currentY = 18;
+      currentY = MARGINS.top;
     }
     
-    const xPos = margin + style.indent;
+    const xPos = MARGINS.left + style.indent;
     
-    // Headers de cláusula
-    if (style === STYLES.clauseHeader || processedLine.startsWith('CLÁUSULA')) {
-      currentY += 4;
+    // Headers de seção
+    if (isHeader) {
+      currentY += 3;
       
-      doc.setFillColor(245, 245, 250);
-      doc.rect(margin - 2, currentY - 4, maxWidth + 4, 7, 'F');
+      // Background suave
+      doc.setFillColor(248, 248, 252);
+      doc.rect(MARGINS.left - 2, currentY - 4, maxWidth + 4, 8, 'F');
       
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(60, 60, 100);
+      doc.text(normalizeText(processedLine), xPos, currentY);
       
-      const clauseText = normalizeText(processedLine);
-      doc.text(clauseText, xPos, currentY);
-      
-      currentY += 8;
-      continue;
-    }
-    
-    // Títulos principais
-    if (style === STYLES.title || processedLine.includes('CONTRATO DE LOCAÇÃO')) {
-      currentY += 3;
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(99, 102, 241);
-      
-      const titleText = normalizeText(processedLine.replace(/[█]/g, '').trim());
-      doc.text(titleText, pageWidth / 2, currentY, { align: 'center' });
-      
-      currentY += 8;
+      currentY += 10;
       continue;
     }
     
@@ -533,13 +578,12 @@ export const generateFullContractPDF = (contractContent: string, fileName?: stri
     doc.setFont('helvetica', style.fontStyle);
     doc.setTextColor(...style.textColor);
     
-    const normalizedText = normalizeText(processedLine);
-    const splitLines = doc.splitTextToSize(normalizedText, maxWidth - style.indent);
+    const splitLines = doc.splitTextToSize(normalizeText(processedLine), maxWidth - style.indent);
     
     for (const textLine of splitLines) {
-      if (currentY > pageHeight - 30) {
+      if (currentY > pageHeight - MARGINS.bottom - 10) {
         doc.addPage();
-        currentY = 18;
+        currentY = MARGINS.top;
       }
       doc.text(textLine, xPos, currentY);
       currentY += lineSpacing;
@@ -573,24 +617,23 @@ export const generateDocumentPDFBlob = async (
   
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
-  const maxWidth = pageWidth - (margin * 2);
+  const maxWidth = pageWidth - MARGINS.left - MARGINS.right;
   
   // Header
-  doc.setFillColor(99, 102, 241);
+  doc.setFillColor(...COLORS.primary);
   doc.rect(0, 0, pageWidth, 22, 'F');
-  drawSlotiLogo(doc, 10, 4, 14);
+  drawSlotiLogo(doc, 12, 4, 14);
   
-  doc.setFontSize(13);
-  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(12);
+  doc.setTextColor(...COLORS.white);
   doc.setFont('helvetica', 'bold');
-  doc.text(normalizeText(template.name.toUpperCase()), 28, 13);
+  doc.text(normalizeText(template.name.toUpperCase()), 30, 12);
   
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('Lei nº 8.245/91 - Lei do Inquilinato', 28, 18);
+  doc.text('Lei nº 8.245/91 - Lei do Inquilinato', 30, 18);
   
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(...COLORS.text);
   doc.setFont('helvetica', 'normal');
   
   let currentY = 32;
@@ -598,12 +641,11 @@ export const generateDocumentPDFBlob = async (
   const lines = content.trim().split('\n');
   
   for (const line of lines) {
-    const { style, processedLine, skipLine } = getLineStyle(line);
+    const { style, processedLine, isHeader, isDivider } = getLineStyle(line);
     
-    if (skipLine) {
-      doc.setDrawColor(200, 200, 200);
-      doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 4;
+    if (isDivider) {
+      drawHorizontalDivider(doc, currentY);
+      currentY += 6;
       continue;
     }
     
@@ -612,12 +654,12 @@ export const generateDocumentPDFBlob = async (
       continue;
     }
     
-    if (currentY > pageHeight - 35) {
+    if (currentY > pageHeight - MARGINS.bottom - 10) {
       doc.addPage();
-      currentY = 20;
+      currentY = MARGINS.top;
     }
     
-    const xPos = margin + style.indent;
+    const xPos = MARGINS.left + style.indent;
     
     if (processedLine.includes('**')) {
       currentY = renderTextWithBold(doc, processedLine, xPos, currentY, maxWidth - style.indent, style);
@@ -631,9 +673,9 @@ export const generateDocumentPDFBlob = async (
     
     const splitText = doc.splitTextToSize(normalizeText(processedLine), maxWidth - style.indent);
     for (const textLine of splitText) {
-      if (currentY > pageHeight - 35) {
+      if (currentY > pageHeight - MARGINS.bottom - 10) {
         doc.addPage();
-        currentY = 20;
+        currentY = MARGINS.top;
       }
       doc.text(textLine, xPos, currentY);
       currentY += 5;
@@ -657,39 +699,38 @@ export const generateFullContractPDFBlob = async (contractContent: string): Prom
   
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
-  const maxWidth = pageWidth - (margin * 2);
+  const maxWidth = pageWidth - MARGINS.left - MARGINS.right;
   
   // Header
-  doc.setFillColor(99, 102, 241);
-  doc.rect(0, 0, pageWidth, 25, 'F');
-  doc.setFillColor(79, 70, 229);
-  doc.rect(0, 25, pageWidth, 2, 'F');
+  doc.setFillColor(...COLORS.primary);
+  doc.rect(0, 0, pageWidth, 24, 'F');
+  doc.setFillColor(...COLORS.primaryDark);
+  doc.rect(0, 24, pageWidth, 2, 'F');
   
-  drawSlotiLogo(doc, 12, 5, 16);
+  drawSlotiLogo(doc, 12, 4, 16);
   
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(13);
+  doc.setTextColor(...COLORS.white);
   doc.setFont('helvetica', 'bold');
-  doc.text('CONTRATO DE LOCAÇÃO', 32, 13);
+  doc.text('CONTRATO DE LOCAÇÃO', 32, 12);
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Lei nº 8.245/91 | SLOTIMOB', 32, 20);
+  doc.text('Lei nº 8.245/91 | SLOTIMOB', 32, 19);
   
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(...COLORS.text);
   doc.setFont('helvetica', 'normal');
   
   let currentY = 35;
-  const lines = contractContent.trim().split('\n');
+  const processedContent = processEmptyVariables(contractContent);
+  const lines = processedContent.trim().split('\n');
   
   for (const line of lines) {
-    const { style, processedLine, skipLine } = getLineStyle(line);
+    const { style, processedLine, isDivider } = getLineStyle(line);
     
-    if (skipLine) {
-      doc.setDrawColor(180, 180, 180);
-      doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 5;
+    if (isDivider) {
+      drawHorizontalDivider(doc, currentY, 'dashed');
+      currentY += 6;
       continue;
     }
     
@@ -698,12 +739,12 @@ export const generateFullContractPDFBlob = async (contractContent: string): Prom
       continue;
     }
     
-    if (currentY > pageHeight - 30) {
+    if (currentY > pageHeight - MARGINS.bottom - 10) {
       doc.addPage();
-      currentY = 18;
+      currentY = MARGINS.top;
     }
     
-    const xPos = margin + style.indent;
+    const xPos = MARGINS.left + style.indent;
     
     if (processedLine.includes('**')) {
       currentY = renderTextWithBold(doc, processedLine, xPos, currentY, maxWidth - style.indent, style);
@@ -717,9 +758,9 @@ export const generateFullContractPDFBlob = async (contractContent: string): Prom
     
     const splitLines = doc.splitTextToSize(normalizeText(processedLine), maxWidth - style.indent);
     for (const textLine of splitLines) {
-      if (currentY > pageHeight - 30) {
+      if (currentY > pageHeight - MARGINS.bottom - 10) {
         doc.addPage();
-        currentY = 18;
+        currentY = MARGINS.top;
       }
       doc.text(textLine, xPos, currentY);
       currentY += 4.5;

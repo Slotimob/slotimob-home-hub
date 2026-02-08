@@ -31,7 +31,8 @@ import {
   RefreshCw,
   Filter,
   CalendarIcon,
-  X
+  X,
+  FileEdit
 } from 'lucide-react';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -86,14 +87,12 @@ export function GeneratedDocumentsHistory() {
   useEffect(() => {
     let filtered = [...documents];
 
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(doc => 
         doc.template_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Filter by category
     if (categoryFilter !== 'all') {
       filtered = filtered.filter(doc => {
         const template = doc.template_id ? getTemplateById(doc.template_id) : null;
@@ -101,7 +100,6 @@ export function GeneratedDocumentsHistory() {
       });
     }
 
-    // Filter by date range
     if (dateFrom) {
       filtered = filtered.filter(doc => 
         isAfter(new Date(doc.created_at), startOfDay(dateFrom)) || 
@@ -192,8 +190,8 @@ export function GeneratedDocumentsHistory() {
       if (error) throw error;
 
       toast({
-        title: 'Documento excluído!',
-        description: 'O documento foi removido do histórico.',
+        title: 'Rascunho excluído!',
+        description: 'O rascunho foi removido do histórico.',
       });
       setDeleteDoc(null);
       loadDocuments();
@@ -222,6 +220,19 @@ export function GeneratedDocumentsHistory() {
 
   return (
     <div className="space-y-6">
+      {/* Header Info */}
+      <div className="bg-muted/50 rounded-lg p-4 border">
+        <div className="flex items-start gap-3">
+          <FileEdit className="h-5 w-5 text-primary mt-0.5" />
+          <div>
+            <h3 className="font-medium text-sm">Rascunhos e Documentos Gerados</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Aqui ficam salvos os documentos pré-preenchidos que você pode continuar editando ou baixar novamente.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Search and Filter Header */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -344,7 +355,7 @@ export function GeneratedDocumentsHistory() {
       {/* Results Summary */}
       {hasActiveFilters && (
         <div className="text-sm text-muted-foreground">
-          {filteredDocuments.length} documento(s) encontrado(s)
+          {filteredDocuments.length} rascunho(s) encontrado(s)
         </div>
       )}
 
@@ -353,12 +364,12 @@ export function GeneratedDocumentsHistory() {
           <CardContent>
             <Clock className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="mb-2 text-lg font-semibold">
-              {searchTerm ? 'Nenhum documento encontrado' : 'Nenhum documento gerado'}
+              {searchTerm ? 'Nenhum rascunho encontrado' : 'Nenhum rascunho salvo'}
             </h3>
             <p className="text-sm text-muted-foreground">
               {searchTerm 
                 ? 'Tente ajustar a busca' 
-                : 'Os documentos que você gerar aparecerão aqui'}
+                : 'Os documentos que você preencher serão salvos aqui automaticamente'}
             </p>
           </CardContent>
         </Card>
@@ -382,9 +393,15 @@ export function GeneratedDocumentsHistory() {
                     </Badge>
                   </div>
 
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {format(new Date(doc.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      <FileEdit className="h-3 w-3 mr-1" />
+                      Rascunho
+                    </Badge>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date(doc.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </span>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -392,17 +409,17 @@ export function GeneratedDocumentsHistory() {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => handleDownload(doc)}
+                      onClick={() => setEditDoc(doc)}
                     >
-                      <Download className="mr-1 h-3 w-3" />
-                      Baixar
+                      <Edit className="mr-1 h-3 w-3" />
+                      Continuar
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setEditDoc(doc)}
+                      onClick={() => handleDownload(doc)}
                     >
-                      <Edit className="h-3 w-3" />
+                      <Download className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="outline"
@@ -451,9 +468,9 @@ export function GeneratedDocumentsHistory() {
       <AlertDialog open={!!deleteDoc} onOpenChange={(open) => !open && setDeleteDoc(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir documento</AlertDialogTitle>
+            <AlertDialogTitle>Excluir rascunho</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir este documento do histórico? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir este rascunho? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
