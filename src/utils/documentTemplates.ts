@@ -22,7 +22,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   captacao: 'Fichas de Captação',
   recibos: 'Recibos',
   vistorias: 'Visitas e Vistorias',
-  diversos: 'Documentos Diversos',
+  diversos: 'Venda',
   locacao: 'Locação',
 };
 
