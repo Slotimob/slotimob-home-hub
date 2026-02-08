@@ -18,7 +18,7 @@ import Units from "./pages/Units";
 import Documents from "./pages/Documents";
 import Simulator from "./pages/Simulator";
 import Schedule from "./pages/Schedule";
-import NotificationHistory from "./pages/NotificationHistory";
+
 import ActivityHistory from "./pages/ActivityHistory";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -104,7 +104,7 @@ const App = () => (
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/training" element={<Training />} />
             <Route path="/users" element={<Users />} />
-            <Route path="/notification-history" element={<NotificationHistory />} />
+            
             <Route path="/history" element={<ActivityHistory />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/apresentacao" element={<Presentation />} />
