@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,17 +8,10 @@ import { PropertyComparison } from '@/components/PropertyComparison';
 import { TaxCalculator } from '@/components/TaxCalculator';
 import { AppLayout } from '@/components/AppLayout';
 
-// Map routes to tab values
-const getTabFromPath = (pathname: string): string => {
-  if (pathname.includes('/simulator/taxes')) return 'taxes';
-  if (pathname.includes('/simulator/comparison')) return 'comparison';
-  return 'financing';
-};
-
 const Simulator = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [activeTab, setActiveTab] = useState('financing');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,29 +27,13 @@ const Simulator = () => {
     );
   }
 
-  // Sync tab with route
-  const activeTab = getTabFromPath(location.pathname);
-  
-  const handleTabChange = (value: string) => {
-    switch (value) {
-      case 'taxes':
-        navigate('/simulator/taxes');
-        break;
-      case 'comparison':
-        navigate('/simulator/comparison');
-        break;
-      default:
-        navigate('/simulator/financing');
-    }
-  };
-
   return (
     <AppLayout title="Simulador Financeiro">
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="financing">Financiamento</TabsTrigger>
-          <TabsTrigger value="taxes">Taxas e IPTU</TabsTrigger>
-          <TabsTrigger value="comparison">Comparativo</TabsTrigger>
+          <TabsTrigger value="taxes">Rentabilidade</TabsTrigger>
+          <TabsTrigger value="comparison">Vender vs Alugar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="financing" className="mt-6">
@@ -64,7 +41,7 @@ const Simulator = () => {
             <CardHeader>
               <CardTitle>Calculadora de Financiamento</CardTitle>
               <CardDescription>
-                Simule financiamentos SFH e SBPE para seus clientes
+                Simule financiamentos SAC e PRICE com memorial de cálculo exportável
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -76,9 +53,9 @@ const Simulator = () => {
         <TabsContent value="taxes" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Calculadora de Taxas</CardTitle>
+              <CardTitle>Calculadora de Rentabilidade</CardTitle>
               <CardDescription>
-                Calcule IPTU proporcional e taxas de aluguel
+                Analise IPTU proporcional e retorno de investimento imobiliário
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -90,9 +67,9 @@ const Simulator = () => {
         <TabsContent value="comparison" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Comparativo de Imóveis</CardTitle>
+              <CardTitle>Comparativo: Vender vs Alugar</CardTitle>
               <CardDescription>
-                Compare diferentes unidades lado a lado
+                Análise de cenários para decisão patrimonial
               </CardDescription>
             </CardHeader>
             <CardContent>
