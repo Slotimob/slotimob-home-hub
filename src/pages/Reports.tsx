@@ -55,16 +55,16 @@ const Reports = () => {
   }
 
   return (
-    <AppLayout title="Intelligence Center">
+    <AppLayout title="Relatórios Gerenciais">
       <div className="space-y-6">
-        {/* Header section - Clean and responsive */}
-        <div className="flex flex-col gap-4">
-          <p className="text-muted-foreground text-sm">
+        {/* Header section - Clean and organized */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <p className="text-muted-foreground text-sm max-w-md">
             Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
           </p>
           
-          {/* Filters row - stacks on mobile, inline on desktop */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Filters - aligned right on desktop */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <ReportsUnitSelector 
               selectedUnitId={selectedUnitId} 
               onUnitChange={setSelectedUnitId} 
