@@ -152,7 +152,7 @@ const Sidebar = React.forwardRef<
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent
           data-sidebar="sidebar"
           data-mobile="true"
@@ -164,7 +164,13 @@ const Sidebar = React.forwardRef<
           }
           side={side}
         >
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <div
+            ref={ref}
+            className={cn("flex h-full w-full flex-col", className)}
+            {...props}
+          >
+            {children}
+          </div>
         </SheetContent>
       </Sheet>
     );
