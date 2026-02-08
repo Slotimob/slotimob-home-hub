@@ -76,18 +76,18 @@ export const ReportsUnitSelector = ({ selectedUnitId, onUnitChange }: ReportsUni
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between h-9 w-full sm:min-w-[220px] sm:max-w-[340px]"
+          className="justify-between gap-2 h-9 w-full min-w-0"
           disabled={loading}
         >
-          <Building2 className="mr-2 h-4 w-4 shrink-0" />
-          <span className="truncate">
+          <Building2 className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1 truncate text-left">
             {loading 
               ? 'Carregando...' 
               : selectedUnit 
                 ? selectedUnit.label 
                 : 'Todas as Unidades'}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent

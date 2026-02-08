@@ -37,9 +37,9 @@ export const ReportsDateFilter = ({ dateRange, onDateRangeChange }: ReportsDateF
   };
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end">
+    <div className="flex w-full flex-col gap-2 sm:w-auto lg:flex-row lg:items-center lg:justify-end">
       {/* Preset buttons */}
-      <div className="hidden sm:flex items-center gap-1.5">
+      <div className="hidden lg:flex flex-wrap items-center justify-end gap-1.5 lg:max-w-[520px]">
         {presets.slice(0, 3).map((preset) => (
           <Button
             key={preset.label}
