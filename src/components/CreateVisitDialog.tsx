@@ -22,16 +22,19 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Building2, Home } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CreateVisitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
+
+type AssetType = "property" | "standalone";
 
 export function CreateVisitDialog({
   open,
@@ -47,7 +50,9 @@ export function CreateVisitDialog({
   const [leadId, setLeadId] = useState("");
   const [propertyId, setPropertyId] = useState("");
   const [unitId, setUnitId] = useState("");
+  const [standaloneUnitId, setStandaloneUnitId] = useState("");
   const [notes, setNotes] = useState("");
+  const [assetType, setAssetType] = useState<AssetType>("property");
 
   const { data: leads } = useQuery({
     queryKey: ["leads", user?.id],
@@ -84,6 +89,7 @@ export function CreateVisitDialog({
         .from("units")
         .select("*")
         .eq("property_id", propertyId)
+        .eq("is_standalone", false)
         .order("unit_number");
       if (error) throw error;
       return data;
@@ -91,12 +97,48 @@ export function CreateVisitDialog({
     enabled: !!propertyId,
   });
 
+  // Fetch standalone units (Imóveis Avulsos)
+  const { data: standaloneUnits } = useQuery({
+    queryKey: ["standalone-units", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("units")
+        .select("*")
+        .eq("broker_id", user?.id)
+        .eq("is_standalone", true)
+        .order("unit_number");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !leadId || !propertyId) {
+    
+    // Validate based on asset type
+    if (!selectedDate || !leadId) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha data, lead e empreendimento",
+        description: "Preencha data e cliente",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (assetType === "property" && !propertyId) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Selecione um empreendimento",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (assetType === "standalone" && !standaloneUnitId) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Selecione um imóvel avulso",
         variant: "destructive",
       });
       return;
@@ -108,16 +150,19 @@ export function CreateVisitDialog({
       const scheduledAt = new Date(selectedDate);
       scheduledAt.setHours(hours, minutes, 0, 0);
 
-      const { error } = await supabase.from("visits").insert({
+      // Determine which IDs to use based on asset type
+      const visitData = {
         broker_id: user?.id,
         lead_id: leadId,
-        property_id: propertyId,
-        unit_id: unitId || null,
+        property_id: assetType === "property" ? propertyId : null,
+        unit_id: assetType === "property" ? (unitId || null) : standaloneUnitId,
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: parseInt(duration),
         notes,
-        status: "scheduled",
-      });
+        status: "scheduled" as const,
+      };
+
+      const { error } = await supabase.from("visits").insert(visitData);
 
       if (error) throw error;
 
@@ -133,7 +178,9 @@ export function CreateVisitDialog({
       setLeadId("");
       setPropertyId("");
       setUnitId("");
+      setStandaloneUnitId("");
       setNotes("");
+      setAssetType("property");
 
       onSuccess();
     } catch (error: any) {
@@ -145,6 +192,22 @@ export function CreateVisitDialog({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAssetTypeChange = (value: string) => {
+    setAssetType(value as AssetType);
+    // Reset selections when switching
+    setPropertyId("");
+    setUnitId("");
+    setStandaloneUnitId("");
+  };
+
+  const formatPrice = (price: number | null) => {
+    if (!price) return "";
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(price);
   };
 
   return (
@@ -230,50 +293,94 @@ export function CreateVisitDialog({
             </Select>
           </div>
 
+          {/* Asset Type Selection */}
           <div className="space-y-2">
-            <Label htmlFor="property">Empreendimento *</Label>
-            <Select
-              value={propertyId}
-              onValueChange={(value) => {
-                setPropertyId(value);
-                setUnitId("");
-              }}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o empreendimento" />
-              </SelectTrigger>
-              <SelectContent>
-                {properties?.map((property) => (
-                  <SelectItem key={property.id} value={property.id}>
-                    {property.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <Label>Tipo de Imóvel *</Label>
+            <Tabs value={assetType} onValueChange={handleAssetTypeChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="property" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Empreendimento
+                </TabsTrigger>
+                <TabsTrigger value="standalone" className="flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  Imóvel Avulso
+                </TabsTrigger>
+              </TabsList>
 
-          {propertyId && units && units.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="unit">Unidade (opcional)</Label>
-              <Select value={unitId} onValueChange={setUnitId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a unidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {units.map((unit) => (
-                    <SelectItem key={unit.id} value={unit.id}>
-                      Unidade {unit.unit_number} - {unit.area}m² -{" "}
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(unit.price || 0)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+              <TabsContent value="property" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="property">Empreendimento *</Label>
+                  <Select
+                    value={propertyId}
+                    onValueChange={(value) => {
+                      setPropertyId(value);
+                      setUnitId("");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o empreendimento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties?.map((property) => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {propertyId && units && units.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">Unidade (opcional)</Label>
+                    <Select value={unitId} onValueChange={setUnitId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a unidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {units.map((unit) => (
+                          <SelectItem key={unit.id} value={unit.id}>
+                            Unidade {unit.unit_number} - {unit.area}m² - {formatPrice(unit.price)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="standalone" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="standaloneUnit">Imóvel Avulso *</Label>
+                  <Select value={standaloneUnitId} onValueChange={setStandaloneUnitId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o imóvel avulso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {standaloneUnits?.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{unit.unit_number}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {unit.area ? `${unit.area}m²` : ""} 
+                              {unit.price ? ` • ${formatPrice(unit.price)}` : ""}
+                              {unit.neighborhood ? ` • ${unit.neighborhood}` : ""}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                      {(!standaloneUnits || standaloneUnits.length === 0) && (
+                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                          Nenhum imóvel avulso cadastrado
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
