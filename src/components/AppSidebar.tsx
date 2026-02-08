@@ -13,9 +13,10 @@ import {
   Settings,
   ChevronRight,
   ChevronDown,
-  Filter,
   Wallet,
   UsersRound,
+  MessageSquare,
+  Kanban,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -62,6 +63,15 @@ interface MenuItem {
   items?: SubMenuItem[];
 }
 
+// CRM group items - displayed prominently
+const crmItems: MenuItem[] = [
+  { title: 'Mensagens', url: '/whatsapp', icon: MessageSquare },
+  { title: 'Pipeline', url: '/pipeline', icon: Kanban },
+  { title: 'Contatos', url: '/contacts', icon: Users },
+  { title: 'Agenda', url: '/schedule', icon: CalendarDays },
+];
+
+// Main menu items (without CRM items that are now in the CRM group)
 const menuItems: MenuItem[] = [
   { title: 'Dashboard', url: '/dashboard', icon: Home },
   { 
@@ -91,7 +101,6 @@ const menuItems: MenuItem[] = [
       { title: 'Categorias', url: '/finance/categories' },
     ]
   },
-  { title: 'Pipeline', url: '/pipeline', icon: Filter },
   { 
     title: 'Relatórios', 
     icon: BarChart3,
@@ -101,8 +110,6 @@ const menuItems: MenuItem[] = [
       { title: 'Resumo Mensal', url: '/reports/monthly' },
     ]
   },
-  { title: 'Contatos', url: '/contacts', icon: Users },
-  { title: 'Agenda', url: '/schedule', icon: CalendarDays },
   { 
     title: 'Documentos', 
     icon: FileText,
@@ -129,7 +136,6 @@ const menuItems: MenuItem[] = [
     items: [
       { title: 'Conexões', url: '/integrations' },
       { title: 'Portais', url: '/portals' },
-      { title: 'WhatsApp', url: '/whatsapp' },
     ]
   },
   { title: 'Treinamentos', url: '/training', icon: GraduationCap },
@@ -207,6 +213,33 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="pt-4 flex-1">
+        {/* CRM Group - Featured prominently */}
+        <SidebarGroup>
+          <SidebarGroupLabel className={`transition-opacity duration-300 ${collapsed ? 'sr-only' : ''}`}>
+            CRM
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {crmItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url!)} tooltip={item.title}>
+                    <NavLink 
+                      to={item.url!} 
+                      className="flex items-center gap-3 transition-all duration-200" 
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                      onClick={() => isMobile && setOpenMobile(false)}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                      <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Main Menu Group */}
         <SidebarGroup>
           <SidebarGroupLabel className={`transition-opacity duration-300 ${collapsed ? 'sr-only' : ''}`}>
             Menu Principal
