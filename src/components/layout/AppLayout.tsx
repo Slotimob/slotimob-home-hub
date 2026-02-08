@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { UserMenu } from "./UserMenu";
 import { Separator } from "@/components/ui/separator";
 
 export function AppLayout() {
@@ -13,6 +14,7 @@ export function AppLayout() {
             <SidebarTrigger />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex-1" />
+            <UserMenu />
           </header>
           <main className="flex-1 overflow-auto p-6">
             <Outlet />

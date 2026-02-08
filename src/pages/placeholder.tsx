@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { useLocation } from "react-router-dom";
 
 const pageNames: Record<string, string> = {
@@ -14,14 +15,18 @@ const pageNames: Record<string, string> = {
   "/settings": "Configurações",
 };
 
-export default function PlaceholderPage() {
+const PlaceholderPage = forwardRef<HTMLDivElement>((_, ref) => {
   const location = useLocation();
   const name = pageNames[location.pathname] || "Página";
 
   return (
-    <div>
+    <div ref={ref}>
       <h1 className="text-2xl font-bold">{name}</h1>
       <p className="text-muted-foreground mt-1">Esta página será implementada em breve.</p>
     </div>
   );
-}
+});
+
+PlaceholderPage.displayName = "PlaceholderPage";
+
+export default PlaceholderPage;
