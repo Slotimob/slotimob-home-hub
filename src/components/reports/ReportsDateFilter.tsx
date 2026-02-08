@@ -37,89 +37,71 @@ export const ReportsDateFilter = ({ dateRange, onDateRangeChange }: ReportsDateF
   };
 
   return (
-    <div className="flex w-full flex-col gap-2 sm:w-auto lg:flex-row lg:items-center lg:justify-end">
-      {/* Preset buttons */}
-      <div className="hidden lg:flex flex-wrap items-center justify-end gap-1.5 lg:max-w-[520px]">
-        {presets.slice(0, 3).map((preset) => (
-          <Button
-            key={preset.label}
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs"
-            onClick={() => onDateRangeChange(preset.getValue())}
-          >
-            {preset.label}
-          </Button>
-        ))}
-      </div>
-
-      {/* Date range picker */}
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "w-full sm:w-[260px] justify-between text-left font-normal h-9",
-              !dateRange && "text-muted-foreground"
-            )}
-          >
-            <span className="flex items-center min-w-0">
-              <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-              <span className="truncate">
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} -{" "}
-                      {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
-                    </>
-                  ) : (
-                    format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
-                  )
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            "w-full sm:w-[280px] justify-between text-left font-normal h-9",
+            !dateRange && "text-muted-foreground"
+          )}
+        >
+          <span className="flex items-center min-w-0">
+            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+            <span className="truncate">
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} -{" "}
+                    {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
+                  </>
                 ) : (
-                  <span>Selecionar período</span>
-                )}
-              </span>
+                  format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                )
+              ) : (
+                <span>Selecionar período</span>
+              )}
             </span>
-            <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
-          <div className="flex">
-            {/* Presets sidebar */}
-            <div className="border-r p-2 space-y-1 hidden sm:block">
-              <p className="text-xs font-medium text-muted-foreground px-2 py-1">
-                Atalhos
-              </p>
-              {presets.map((preset) => (
-                <Button
-                  key={preset.label}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-xs h-8"
-                  onClick={() => {
-                    onDateRangeChange(preset.getValue());
-                    setIsOpen(false);
-                  }}
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
-            
-            {/* Calendar */}
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={dateRange?.from}
-              selected={{ from: dateRange.from, to: dateRange.to }}
-              onSelect={handleSelect}
-              numberOfMonths={2}
-              locale={ptBR}
-              className="p-3 pointer-events-auto"
-            />
+          </span>
+          <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <div className="flex">
+          {/* Presets sidebar */}
+          <div className="border-r p-2 space-y-1 hidden sm:block">
+            <p className="text-xs font-medium text-muted-foreground px-2 py-1">
+              Atalhos
+            </p>
+            {presets.map((preset) => (
+              <Button
+                key={preset.label}
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-xs h-8"
+                onClick={() => {
+                  onDateRangeChange(preset.getValue());
+                  setIsOpen(false);
+                }}
+              >
+                {preset.label}
+              </Button>
+            ))}
           </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+          
+          {/* Calendar */}
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={dateRange?.from}
+            selected={{ from: dateRange.from, to: dateRange.to }}
+            onSelect={handleSelect}
+            numberOfMonths={2}
+            locale={ptBR}
+            className="p-3 pointer-events-auto"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
