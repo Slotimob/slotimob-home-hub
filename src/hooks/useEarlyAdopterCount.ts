@@ -13,20 +13,19 @@ export const useEarlyAdopterCount = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['early-adopter-slots'],
     queryFn: async (): Promise<EarlyAdopterSlots> => {
-      // Get remaining slots for both plans
-      const [ouroResult, diamanteResult] = await Promise.all([
+      // Use RPC functions to get counts securely without exposing user data
+      // get_early_adopter_remaining_slots uses SECURITY DEFINER to bypass RLS
+      // get_early_adopter_count is a simpler count function for public display
+      const [ouroResult, diamanteResult, plansResult] = await Promise.all([
         supabase.rpc('get_early_adopter_remaining_slots', { p_plan_id: 'ouro' }),
         supabase.rpc('get_early_adopter_remaining_slots', { p_plan_id: 'diamante' }),
+        supabase.from('subscription_plans')
+          .select('id, early_adopter_limit')
+          .in('id', ['ouro', 'diamante']),
       ]);
 
-      // Get total limits from plans
-      const { data: plans } = await supabase
-        .from('subscription_plans')
-        .select('id, early_adopter_limit')
-        .in('id', ['ouro', 'diamante']);
-
-      const ouroLimit = plans?.find(p => p.id === 'ouro')?.early_adopter_limit || 200;
-      const diamanteLimit = plans?.find(p => p.id === 'diamante')?.early_adopter_limit || 100;
+      const ouroLimit = plansResult.data?.find(p => p.id === 'ouro')?.early_adopter_limit || 200;
+      const diamanteLimit = plansResult.data?.find(p => p.id === 'diamante')?.early_adopter_limit || 100;
 
       return {
         ouro: ouroResult.data !== null ? { remaining: ouroResult.data, total: ouroLimit } : null,

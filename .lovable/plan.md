@@ -197,4 +197,3 @@ Your security posture is **above average** for a SaaS application. The main acti
 3. Tighten `early_adopter_claims` access (15 minutes)
 
 Total estimated remediation time: ~1 hour for critical/high items.
-
