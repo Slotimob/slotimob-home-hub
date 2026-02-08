@@ -2,7 +2,6 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 
 interface AppLayoutProps {
@@ -35,12 +34,6 @@ export function AppLayout({ children, title, headerActions }: AppLayoutProps) {
               </div>
             </div>
           </header>
-
-          {/* Breadcrumbs */}
-          <div className="px-4 lg:px-8 pt-4">
-            <Breadcrumbs />
-          </div>
-
           {/* Main Content */}
           <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-4 py-6 lg:px-8">
             {children}
