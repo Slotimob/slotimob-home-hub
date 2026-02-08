@@ -153,24 +153,39 @@ export const KanbanColumn = ({
                 {isCustomStage && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
+                        onPointerDown={(e) => e.stopPropagation()}
                         onSelect={(e) => {
+                          console.debug('[pipeline] select:edit-stage (kanban)', { id, title });
                           e.stopPropagation();
-                          window.setTimeout(() => onEditStage?.(), 0);
+                          window.setTimeout(() => {
+                            console.debug('[pipeline] action:edit-stage (kanban)', { id, title });
+                            onEditStage?.();
+                          }, 0);
                         }}
                       >
                         <Pencil className="mr-2 h-4 w-4" />
                         Editar estágio
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onPointerDown={(e) => e.stopPropagation()}
                         onSelect={(e) => {
+                          console.debug('[pipeline] select:delete-stage (kanban)', { id, title });
                           e.stopPropagation();
-                          window.setTimeout(() => onDeleteStage?.(), 0);
+                          window.setTimeout(() => {
+                            console.debug('[pipeline] action:delete-stage (kanban)', { id, title });
+                            onDeleteStage?.();
+                          }, 0);
                         }}
                         className="text-destructive"
                       >

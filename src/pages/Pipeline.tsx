@@ -581,6 +581,8 @@ const Pipeline = () => {
   };
 
   const handleDeleteStage = async (stageId: string) => {
+    console.debug('[pipeline] handleDeleteStage called', { stageId });
+
     // Check if there are deals associated with this stage
     const dealsInStage = deals.filter(d => d.custom_stage_id === stageId);
     
@@ -633,6 +635,7 @@ const Pipeline = () => {
   };
 
   const handleEditStage = (stage: CustomStage) => {
+    console.debug('[pipeline] handleEditStage called', { stage });
     setEditingStage(stage);
     setIsEditStageDialogOpen(true);
   };
