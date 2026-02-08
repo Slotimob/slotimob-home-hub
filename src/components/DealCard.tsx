@@ -224,34 +224,38 @@ export const DealCard = ({
             className="flex-1 min-w-0 cursor-pointer"
             onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
           >
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-bold text-base text-foreground truncate flex-1">{deal.lead.name}</h4>
-              {/* Lead Rotting Indicator */}
-              {isRotting && (
-                <Badge className="text-xs gap-1 bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30">
-                  <Hourglass className="h-3 w-3" />
-                  Parado
-                </Badge>
-              )}
-              {/* Temperature Badge */}
-              {tempConfig && TempIcon && !isRotting && (
-                <Badge className={`text-xs gap-1 ${tempConfig.className}`}>
-                  <TempIcon className="h-3 w-3" />
-                  {tempConfig.label}
-                </Badge>
-              )}
-            </div>
-            
-            {/* Property/Unit info */}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              {isStandalone ? (
-                <Home className="h-3 w-3" />
-              ) : (
-                <Building2 className="h-3 w-3" />
-              )}
-              <span className="truncate">
-                {deal.unit?.unit_number || deal.property.name}
-              </span>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-base text-foreground truncate">{deal.lead.name}</h4>
+                {/* Property/Unit info */}
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  {isStandalone ? (
+                    <Home className="h-3 w-3" />
+                  ) : (
+                    <Building2 className="h-3 w-3" />
+                  )}
+                  <span className="truncate">
+                    {deal.unit?.unit_number || deal.property.name}
+                  </span>
+                </div>
+              </div>
+              {/* Badges container - stacked vertically */}
+              <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                {/* Lead Rotting Indicator - Priority badge */}
+                {isRotting && (
+                  <Badge className="text-xs gap-1 bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30 whitespace-nowrap">
+                    <Hourglass className="h-3 w-3" />
+                    Parado
+                  </Badge>
+                )}
+                {/* Temperature Badge - Only show if not rotting */}
+                {tempConfig && TempIcon && !isRotting && (
+                  <Badge className={`text-xs gap-1 whitespace-nowrap ${tempConfig.className}`}>
+                    <TempIcon className="h-3 w-3" />
+                    {tempConfig.label}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -269,21 +273,29 @@ export const DealCard = ({
           </div>
         )}
 
-        {/* Time in stage & Origin badges */}
-        {(timeLabel || originLabel) && (
-          <div className="flex flex-wrap gap-1.5">
-            {timeLabel && (
-              <Badge variant="outline" className={`text-xs gap-1 font-normal ${isRotting ? 'border-amber-500 text-amber-600' : ''}`}>
-                {isRotting ? <Hourglass className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                {timeLabel}
-              </Badge>
-            )}
+        {/* Time in stage - Shown separately below */}
+        {timeLabel && (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={`text-xs gap-1 font-normal ${isRotting ? 'border-amber-500 text-amber-600' : ''}`}>
+              {isRotting ? <Hourglass className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+              {timeLabel}
+            </Badge>
             {originLabel && (
               <Badge variant="secondary" className="text-xs gap-1 font-normal">
                 <MapPin className="h-3 w-3" />
                 {originLabel}
               </Badge>
             )}
+          </div>
+        )}
+
+        {/* Origin only (if no time label) */}
+        {!timeLabel && originLabel && (
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant="secondary" className="text-xs gap-1 font-normal">
+              <MapPin className="h-3 w-3" />
+              {originLabel}
+            </Badge>
           </div>
         )}
 
