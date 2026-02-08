@@ -155,7 +155,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
       if (error) throw error;
 
       toast({
-        title: 'Deal atualizado!',
+        title: 'Negociação atualizada!',
         description: 'As informações foram salvas com sucesso.',
       });
       onUpdate();

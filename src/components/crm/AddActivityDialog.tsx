@@ -5,7 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Phone, Mail, MessageSquare, Calendar, MapPin, FileText, Loader2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Phone, Mail, MessageSquare, Calendar as CalendarIcon, MapPin, FileText, Loader2, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -21,10 +26,15 @@ const activityTypes = [
   { value: 'call', label: 'Ligação', icon: Phone },
   { value: 'email', label: 'Email', icon: Mail },
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
-  { value: 'meeting', label: 'Reunião', icon: Calendar },
+  { value: 'meeting', label: 'Reunião', icon: CalendarIcon },
   { value: 'visit', label: 'Visita', icon: MapPin },
   { value: 'note', label: 'Nota', icon: FileText },
 ];
+
+const hourOptions = Array.from({ length: 14 }, (_, i) => i + 7).map(h => ({
+  value: h.toString(),
+  label: `${h.toString().padStart(2, '0')}:00`,
+}));
 
 export const AddActivityDialog = ({ dealId, open, onOpenChange, onSuccess }: AddActivityDialogProps) => {
   const { user } = useAuth();
@@ -34,6 +44,8 @@ export const AddActivityDialog = ({ dealId, open, onOpenChange, onSuccess }: Add
     activity_type: 'note',
     title: '',
     description: '',
+    scheduled_date: null as Date | null,
+    scheduled_hour: '9',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,22 +54,33 @@ export const AddActivityDialog = ({ dealId, open, onOpenChange, onSuccess }: Add
 
     setIsLoading(true);
     try {
+      let scheduledAt: string | null = null;
+      
+      if (formData.scheduled_date) {
+        const dateTime = new Date(formData.scheduled_date);
+        dateTime.setHours(parseInt(formData.scheduled_hour), 0, 0, 0);
+        scheduledAt = dateTime.toISOString();
+      }
+
       const { error } = await supabase.from('deal_activities').insert({
         deal_id: dealId,
         broker_id: user.id,
         activity_type: formData.activity_type,
         title: formData.title,
         description: formData.description || null,
+        scheduled_at: scheduledAt,
       });
 
       if (error) throw error;
 
       toast({
         title: 'Atividade registrada!',
-        description: 'A atividade foi adicionada ao histórico.',
+        description: scheduledAt 
+          ? 'A atividade foi agendada e aparecerá na sua Agenda.'
+          : 'A atividade foi adicionada ao histórico.',
       });
 
-      setFormData({ activity_type: 'note', title: '', description: '' });
+      setFormData({ activity_type: 'note', title: '', description: '', scheduled_date: null, scheduled_hour: '9' });
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
@@ -112,6 +135,68 @@ export const AddActivityDialog = ({ dealId, open, onOpenChange, onSuccess }: Add
               placeholder="Ex: Ligação para apresentar proposta"
               required
             />
+          </div>
+
+          {/* Schedule Section */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Agendar (opcional - aparece na Agenda)
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'justify-start text-left font-normal',
+                      !formData.scheduled_date && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.scheduled_date
+                      ? format(formData.scheduled_date, 'dd/MM/yyyy', { locale: ptBR })
+                      : 'Data'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.scheduled_date ?? undefined}
+                    onSelect={(date) => setFormData({ ...formData, scheduled_date: date ?? null })}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <Select
+                value={formData.scheduled_hour}
+                onValueChange={(value) => setFormData({ ...formData, scheduled_hour: value })}
+                disabled={!formData.scheduled_date}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Hora" />
+                </SelectTrigger>
+                <SelectContent>
+                  {hourOptions.map((hour) => (
+                    <SelectItem key={hour.value} value={hour.value}>
+                      {hour.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {formData.scheduled_date && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setFormData({ ...formData, scheduled_date: null })}
+              >
+                Remover agendamento
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2">

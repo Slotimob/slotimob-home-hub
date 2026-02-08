@@ -385,7 +385,7 @@ const Pipeline = () => {
       setDeals(data as Deal[]);
     } catch (error: any) {
       toast({
-        title: 'Erro ao carregar pipeline',
+        title: 'Erro ao carregar negociações',
         description: error.message,
         variant: 'destructive',
       });
@@ -564,7 +564,7 @@ const Pipeline = () => {
     
     if (dealsInStage.length > 0) {
       const confirmed = window.confirm(
-        `Este estágio possui ${dealsInStage.length} deal${dealsInStage.length > 1 ? 's' : ''} associado${dealsInStage.length > 1 ? 's' : ''}. Os deals serão movidos para "Novo Lead". Deseja continuar?`
+        `Este estágio possui ${dealsInStage.length} negociação${dealsInStage.length > 1 ? 'ões' : ''} associada${dealsInStage.length > 1 ? 's' : ''}. As negociações serão movidas para "Novo Lead". Deseja continuar?`
       );
       if (!confirmed) return;
 
@@ -578,7 +578,7 @@ const Pipeline = () => {
         if (moveError) throw moveError;
       } catch (error: any) {
         toast({
-          title: 'Erro ao mover deals',
+          title: 'Erro ao mover negociações',
           description: error.message,
           variant: 'destructive',
         });
@@ -838,10 +838,10 @@ const Pipeline = () => {
       }
 
       toast({
-        title: 'Deal atualizado!',
+        title: 'Negociação atualizada!',
         description: newStage === 'lost' 
-          ? 'Deal marcado como perdido com motivo registrado.'
-          : 'A etapa do deal foi alterada com sucesso.',
+          ? 'Negociação marcada como perdida com motivo registrado.'
+          : 'A etapa da negociação foi alterada com sucesso.',
       });
 
       // Reload stage history
@@ -850,7 +850,7 @@ const Pipeline = () => {
       // Revert on error
       loadDeals();
       toast({
-        title: 'Erro ao atualizar deal',
+        title: 'Erro ao atualizar negociação',
         description: error.message,
         variant: 'destructive',
       });
@@ -960,8 +960,8 @@ const Pipeline = () => {
       }
 
       toast({
-        title: 'Deals atualizados!',
-        description: `${dealIds.length} deal${dealIds.length > 1 ? 's' : ''} movido${dealIds.length > 1 ? 's' : ''} para ${allStages.find(s => s.id === targetStage)?.label}.`,
+        title: 'Negociações atualizadas!',
+        description: `${dealIds.length} negociação${dealIds.length > 1 ? 'ões' : ''} movida${dealIds.length > 1 ? 's' : ''} para ${allStages.find(s => s.id === targetStage)?.label}.`,
       });
 
       // Clear selection and exit selection mode
@@ -974,7 +974,7 @@ const Pipeline = () => {
       // Revert on error
       loadDeals();
       toast({
-        title: 'Erro ao atualizar deals',
+        title: 'Erro ao atualizar negociações',
         description: error.message,
         variant: 'destructive',
       });
@@ -1000,7 +1000,7 @@ const Pipeline = () => {
       headerActions={
         <>
           <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
-            Novo Deal
+            Nova Negociação
           </HeaderButton>
           <HeaderButton
             variant={showMetrics ? 'secondary' : 'outline'}
