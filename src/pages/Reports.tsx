@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startOfMonth, subMonths } from 'date-fns';
-import { Building2, FileText, ShieldAlert, Users, Wallet } from 'lucide-react';
+import { Building2, Download, FileText, ShieldAlert, Users, Wallet } from 'lucide-react';
 
 import { AppLayout } from '@/components/AppLayout';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UnitSelector } from '@/components/finance/UnitSelector';
 import { ReportsAssetsSection } from '@/components/reports/ReportsAssetsSection';
 import { ReportsAuditSection } from '@/components/reports/ReportsAuditSection';
 import { ReportsCrmSection } from '@/components/reports/ReportsCrmSection';
 import { ReportsDateFilter } from '@/components/reports/ReportsDateFilter';
 import { ReportsFinanceSection } from '@/components/reports/ReportsFinanceSection';
 import { ReportsFiscalSection } from '@/components/reports/ReportsFiscalSection';
-import { ReportsUnitSelector } from '@/components/reports/ReportsUnitSelector';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,7 +33,7 @@ const Reports = () => {
     from: startOfMonth(subMonths(new Date(), 5)),
     to: new Date(),
   });
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
   const [userName, setUserName] = useState<string>();
 
   useEffect(() => {
@@ -56,27 +63,64 @@ const Reports = () => {
     );
   }
 
+  // Convert empty string to null for child components
+  const unitIdForChildren = selectedUnitId || null;
+
   return (
     <AppLayout title="Relatórios Gerenciais">
       <div className="space-y-4">
-        {/* Description (always on top) */}
+        {/* Description */}
         <p className="text-muted-foreground text-sm">
           Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
         </p>
 
-        {/* Filters Bar */}
+        {/* Header: Filters Bar with Interaction Zones */}
         <div className="rounded-lg border bg-card p-3 sm:p-4 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 md:items-end">
-            {/* Left: Unit */}
-            <div className="md:col-span-3 min-w-0 space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Unidade</Label>
-              <ReportsUnitSelector selectedUnitId={selectedUnitId} onUnitChange={setSelectedUnitId} />
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            
+            {/* Zona de Filtros (Esquerda) */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+              {/* Filtro: Unidade */}
+              <div className="w-full sm:w-auto sm:min-w-[220px] space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  Unidade
+                </Label>
+                <UnitSelector
+                  value={selectedUnitId}
+                  onChange={setSelectedUnitId}
+                  placeholder="Todas as unidades"
+                />
+              </div>
+
+              {/* Filtro: Período */}
+              <div className="w-full sm:w-auto space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  Período
+                </Label>
+                <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+              </div>
             </div>
 
-            {/* Right: Period */}
-            <div className="md:col-span-9 min-w-0 space-y-1.5 md:flex md:flex-col md:items-end md:justify-self-end">
-              <Label className="text-xs text-muted-foreground md:text-right">Período</Label>
-              <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+            {/* Zona de Ações (Direita) */}
+            <div className="flex items-end lg:ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2 h-9">
+                    <Download className="h-4 w-4" />
+                    <span>Exportar</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Exportar PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Exportar CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -129,23 +173,23 @@ const Reports = () => {
 
           {/* Tab content */}
           <TabsContent value="financeiro" className="mt-0">
-            <ReportsFinanceSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
+            <ReportsFinanceSection dateRange={dateRange} userName={userName} selectedUnitId={unitIdForChildren} />
           </TabsContent>
 
           <TabsContent value="ativos" className="mt-0">
-            <ReportsAssetsSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
+            <ReportsAssetsSection dateRange={dateRange} userName={userName} selectedUnitId={unitIdForChildren} />
           </TabsContent>
 
           <TabsContent value="crm" className="mt-0">
-            <ReportsCrmSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
+            <ReportsCrmSection dateRange={dateRange} userName={userName} selectedUnitId={unitIdForChildren} />
           </TabsContent>
 
           <TabsContent value="auditoria" className="mt-0">
-            <ReportsAuditSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
+            <ReportsAuditSection dateRange={dateRange} userName={userName} selectedUnitId={unitIdForChildren} />
           </TabsContent>
 
           <TabsContent value="fiscal" className="mt-0">
-            <ReportsFiscalSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
+            <ReportsFiscalSection dateRange={dateRange} userName={userName} selectedUnitId={unitIdForChildren} />
           </TabsContent>
         </Tabs>
       </div>
