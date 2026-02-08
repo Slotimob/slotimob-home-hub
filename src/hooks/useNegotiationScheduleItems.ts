@@ -108,9 +108,8 @@ export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegot
 
       if (!tasksError && tasks) {
         tasks.forEach((task: any) => {
-          // Convert due_date to a datetime at 09:00
+          // Parse due_date - it now contains time information
           const dueDateTime = new Date(task.due_date);
-          dueDateTime.setHours(9, 0, 0, 0);
           
           items.push({
             id: task.id,

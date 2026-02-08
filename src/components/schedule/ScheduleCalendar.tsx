@@ -40,16 +40,15 @@ function ScheduleCalendar({
     const isOutside = date.getMonth() !== displayMonth.getMonth();
     
     return (
-      <div className="relative w-full h-full flex items-center justify-center">
+      <div className="relative w-full h-full flex flex-col items-center justify-center gap-0.5">
         <span>{date.getDate()}</span>
         {count > 0 && !isOutside && (
           <span 
             className={cn(
-              "absolute -bottom-0.5 left-1/2 -translate-x-1/2",
               "min-w-4 h-4 px-1 rounded-full",
               "bg-primary text-primary-foreground",
               "text-[10px] font-medium flex items-center justify-center",
-              compact && "min-w-3 h-3 text-[8px] -bottom-1"
+              compact && "min-w-3 h-3 text-[8px]"
             )}
           >
             {count}

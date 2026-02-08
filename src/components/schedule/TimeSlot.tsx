@@ -3,17 +3,30 @@ import { cn } from '@/lib/utils';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DraggableActivity } from './DraggableActivity';
+import { Briefcase, CheckSquare, Target } from 'lucide-react';
+import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItems';
 
 interface TimeSlotProps {
   hour: number;
   date: Date;
   activities: any[];
+  negotiationItems?: NegotiationScheduleItem[];
   hourHeight?: number;
   onActivityClick?: (activity: any) => void;
   onActivityResize?: (activityId: string, newDuration: number) => void;
+  onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
 }
 
-export function TimeSlot({ hour, date, activities, hourHeight = 60, onActivityClick, onActivityResize }: TimeSlotProps) {
+export function TimeSlot({ 
+  hour, 
+  date, 
+  activities, 
+  negotiationItems = [],
+  hourHeight = 60, 
+  onActivityClick, 
+  onActivityResize,
+  onNegotiationItemClick 
+}: TimeSlotProps) {
   const slotId = `slot-${format(date, 'yyyy-MM-dd')}-${hour}`;
   
   const { isOver, setNodeRef } = useDroppable({
@@ -29,6 +42,17 @@ export function TimeSlot({ hour, date, activities, hourHeight = 60, onActivityCl
     return isSameDay(activityDate, date) && activityDate.getHours() === hour;
   });
 
+  const slotNegotiationItems = negotiationItems.filter((item) => {
+    const itemDate = new Date(item.scheduled_at);
+    return isSameDay(itemDate, date) && itemDate.getHours() === hour;
+  });
+
+  const getTypeIcon = (type: string) => {
+    if (type === 'task') return CheckSquare;
+    if (type === 'expected_close') return Target;
+    return Briefcase;
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -39,6 +63,7 @@ export function TimeSlot({ hour, date, activities, hourHeight = 60, onActivityCl
       )}
     >
       <div className="flex flex-col gap-1">
+        {/* Regular activities */}
         {slotActivities.map((activity) => (
           onActivityResize ? (
             <DraggableActivity
@@ -64,6 +89,31 @@ export function TimeSlot({ hour, date, activities, hourHeight = 60, onActivityCl
             </div>
           )
         ))}
+
+        {/* Negotiation items (from Pipeline) */}
+        {slotNegotiationItems.map((item) => {
+          const Icon = getTypeIcon(item.type);
+          return (
+            <div
+              key={item.id}
+              onClick={() => onNegotiationItemClick?.(item)}
+              className={cn(
+                'text-xs px-2 py-1 rounded border cursor-pointer hover:opacity-80 transition-opacity',
+                'bg-primary/10 border-primary/30 text-primary',
+                item.is_completed && 'opacity-50 line-through'
+              )}
+            >
+              <div className="flex items-center gap-1">
+                <Icon className="h-3 w-3 flex-shrink-0" />
+                <span className="font-medium truncate">{item.title}</span>
+              </div>
+              <div className="text-[10px] opacity-70 flex items-center gap-1">
+                <Briefcase className="h-2.5 w-2.5" />
+                {item.deal_lead_name}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

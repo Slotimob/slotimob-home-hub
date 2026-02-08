@@ -1,18 +1,28 @@
 import { TimeSlot } from './TimeSlot';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItems';
 
 interface DayScheduleGridProps {
   date: Date;
   activities: any[];
+  negotiationItems?: NegotiationScheduleItem[];
   onActivityClick?: (activity: any) => void;
   onActivityResize?: (activityId: string, newDuration: number) => void;
+  onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
 }
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
 const HOUR_HEIGHT = 60;
 
-export function DayScheduleGrid({ date, activities, onActivityClick, onActivityResize }: DayScheduleGridProps) {
+export function DayScheduleGrid({ 
+  date, 
+  activities, 
+  negotiationItems = [],
+  onActivityClick, 
+  onActivityResize,
+  onNegotiationItemClick 
+}: DayScheduleGridProps) {
   return (
     <div className="bg-card rounded-lg border overflow-hidden">
       <div className="bg-muted px-4 py-2 font-semibold text-center border-b">
@@ -29,9 +39,11 @@ export function DayScheduleGrid({ date, activities, onActivityClick, onActivityR
                 hour={hour}
                 date={date}
                 activities={activities}
+                negotiationItems={negotiationItems}
                 hourHeight={HOUR_HEIGHT}
                 onActivityClick={onActivityClick}
                 onActivityResize={onActivityResize}
+                onNegotiationItemClick={onNegotiationItemClick}
               />
             </div>
           </div>
