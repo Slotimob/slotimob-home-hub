@@ -291,7 +291,11 @@ const Pipeline = () => {
 
   // Loss reason dialog state
   const [isLossDialogOpen, setIsLossDialogOpen] = useState(false);
-  const [pendingLossDeal, setPendingLossDeal] = useState<{ dealId: string; oldStage: PipelineStage } | null>(null);
+  const [pendingLossDeal, setPendingLossDeal] = useState<{
+    dealId: string;
+    oldStage: PipelineStage;
+    oldVisibleStageId: string;
+  } | null>(null);
 
   // Commission dialog state (for "won" deals)
   const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
@@ -766,6 +770,83 @@ const Pipeline = () => {
     setIsDraggingStage(false);
   };
 
+  const getDealVisibleStageId = (deal: Deal): string => {
+    return deal.custom_stage_id ? `custom_${deal.custom_stage_id}` : deal.stage;
+  };
+
+  const updateDealPlacement = async (
+    dealId: string,
+    oldVisibleStageId: string,
+    newVisibleStageId: string,
+    updates: {
+      stage: PipelineStage;
+      custom_stage_id: string | null;
+      loss_reason?: string | null;
+    },
+    lossNotes?: string | null
+  ) => {
+    // Optimistic update
+    setDeals((prev) =>
+      prev.map((d) =>
+        d.id === dealId
+          ? {
+              ...d,
+              stage: updates.stage,
+              custom_stage_id: updates.custom_stage_id,
+              loss_reason: updates.loss_reason ?? d.loss_reason,
+            }
+          : d
+      )
+    );
+
+    try {
+      const updateData: Record<string, any> = {
+        stage: updates.stage,
+        custom_stage_id: updates.custom_stage_id,
+      };
+
+      if (typeof updates.loss_reason === 'string') {
+        updateData.loss_reason = updates.loss_reason;
+      }
+
+      const { error: updateError } = await supabase
+        .from('deals')
+        .update(updateData)
+        .eq('id', dealId);
+
+      if (updateError) throw updateError;
+
+      // Log stage change history using VISIBLE stage ids (default enum OR custom_*)
+      if (user) {
+        await supabase.from('deal_stage_history').insert({
+          deal_id: dealId,
+          broker_id: user.id,
+          from_stage: oldVisibleStageId,
+          to_stage: newVisibleStageId,
+          notes: lossNotes || null,
+        });
+      }
+
+      toast({
+        title: 'Negociação atualizada!',
+        description:
+          updates.stage === 'lost'
+            ? 'Negociação marcada como perdida com motivo registrado.'
+            : 'A etapa da negociação foi alterada com sucesso.',
+      });
+
+      loadStageHistory();
+    } catch (error: any) {
+      // Revert on error
+      loadDeals();
+      toast({
+        title: 'Erro ao atualizar negociação',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDeal(null);
@@ -782,94 +863,65 @@ const Pipeline = () => {
       return;
     }
 
-    // Otherwise, moving a deal to a new stage
+    // Otherwise, moving a deal to a new (visible) stage
     const dealId = activeId;
-    const newStage = overId;
     const deal = deals.find((d) => d.id === dealId);
-    const oldStage = deal?.stage;
+    if (!deal) return;
 
-    if (!deal || oldStage === newStage) return;
+    const oldVisibleStageId = getDealVisibleStageId(deal);
+    const newVisibleStageId = overId;
+
+    if (oldVisibleStageId === newVisibleStageId) return;
 
     // If moving to lost, show loss reason dialog first
-    if (newStage === 'lost') {
-      setPendingLossDeal({ dealId, oldStage: oldStage! });
+    if (newVisibleStageId === 'lost') {
+      setPendingLossDeal({ dealId, oldStage: deal.stage, oldVisibleStageId });
       setIsLossDialogOpen(true);
       return;
     }
 
     // If moving to won, update first then show commission dialog
-    if (newStage === 'won') {
-      await updateDealStage(dealId, oldStage!, newStage as PipelineStage);
-      // Show commission dialog after successful stage update
-      const wonDeal = deals.find(d => d.id === dealId);
-      if (wonDeal) {
-        setPendingWonDeal({ ...wonDeal, stage: 'won' });
-        setIsCommissionDialogOpen(true);
-      }
+    if (newVisibleStageId === 'won') {
+      await updateDealPlacement(
+        dealId,
+        oldVisibleStageId,
+        'won',
+        { stage: 'won', custom_stage_id: null }
+      );
+
+      setPendingWonDeal({ ...deal, stage: 'won', custom_stage_id: null });
+      setIsCommissionDialogOpen(true);
       return;
     }
 
-    await updateDealStage(dealId, oldStage!, newStage as PipelineStage);
-  };
-
-  const updateDealStage = async (dealId: string, oldStage: PipelineStage, newStage: PipelineStage, lossReason?: string, lossNotes?: string) => {
-    // Optimistic update
-    setDeals((prev) =>
-      prev.map((d) =>
-        d.id === dealId ? { ...d, stage: newStage, loss_reason: lossReason || d.loss_reason } : d
-      )
-    );
-
-    try {
-      // Update deal stage
-      const updateData: { stage: PipelineStage; loss_reason?: string } = { stage: newStage };
-      if (lossReason) {
-        updateData.loss_reason = lossReason;
-      }
-
-      const { error: updateError } = await supabase
-        .from('deals')
-        .update(updateData)
-        .eq('id', dealId);
-
-      if (updateError) throw updateError;
-
-      // Log stage change history
-      if (user) {
-        await supabase.from('deal_stage_history').insert({
-          deal_id: dealId,
-          broker_id: user.id,
-          from_stage: oldStage,
-          to_stage: newStage,
-          notes: lossNotes || null,
-        });
-      }
-
-      toast({
-        title: 'Negociação atualizada!',
-        description: newStage === 'lost' 
-          ? 'Negociação marcada como perdida com motivo registrado.'
-          : 'A etapa da negociação foi alterada com sucesso.',
+    // Custom stage target (droppable ids are like: custom_<uuid>)
+    if (newVisibleStageId.startsWith('custom_')) {
+      const customStageDbId = newVisibleStageId.replace('custom_', '');
+      await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
+        stage: deal.stage,
+        custom_stage_id: customStageDbId,
       });
-
-      // Reload stage history
-      loadStageHistory();
-    } catch (error: any) {
-      // Revert on error
-      loadDeals();
-      toast({
-        title: 'Erro ao atualizar negociação',
-        description: error.message,
-        variant: 'destructive',
-      });
+      return;
     }
+
+    // Default stage target
+    await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
+      stage: newVisibleStageId as PipelineStage,
+      custom_stage_id: null,
+    });
   };
 
   const handleLossReasonConfirm = async (reason: string, notes: string) => {
     if (!pendingLossDeal) return;
-    
+
     setIsLossDialogOpen(false);
-    await updateDealStage(pendingLossDeal.dealId, pendingLossDeal.oldStage, 'lost', reason, notes);
+    await updateDealPlacement(
+      pendingLossDeal.dealId,
+      pendingLossDeal.oldVisibleStageId,
+      'lost',
+      { stage: 'lost', custom_stage_id: null, loss_reason: reason },
+      notes
+    );
     setPendingLossDeal(null);
   };
 
@@ -938,7 +990,9 @@ const Pipeline = () => {
     // Optimistic update
     setDeals((prev) =>
       prev.map((d) =>
-        selectedDeals.has(d.id) ? { ...d, stage: typedTargetStage } : d
+        selectedDeals.has(d.id)
+          ? { ...d, stage: typedTargetStage, custom_stage_id: null }
+          : d
       )
     );
 
@@ -946,7 +1000,7 @@ const Pipeline = () => {
       // Update all selected deals
       const { error: updateError } = await supabase
         .from('deals')
-        .update({ stage: typedTargetStage })
+        .update({ stage: typedTargetStage, custom_stage_id: null })
         .in('id', dealIds);
 
       if (updateError) throw updateError;
@@ -958,7 +1012,7 @@ const Pipeline = () => {
           return {
             deal_id: dealId,
             broker_id: user.id,
-            from_stage: deal?.stage || 'new_lead',
+            from_stage: deal ? getDealVisibleStageId(deal) : 'new_lead',
             to_stage: targetStage,
             notes: 'Movimentação em massa',
           };
@@ -1094,24 +1148,28 @@ const Pipeline = () => {
               >
                 <div className="flex gap-4 min-w-max">
                   {/* Default stages (not sortable) */}
-                  {allStages.filter(s => !s.isCustom && s.id !== 'lost' && s.id !== 'won').map((stage) => (
-                    <KanbanColumn
-                      key={stage.id}
-                      id={stage.id}
-                      title={stage.label}
-                      color={stage.color}
-                      deals={filteredDeals.filter((deal) => deal.stage === stage.id)}
-                      onDealClick={handleDealClick}
-                      taskCounts={taskCounts}
-                      selectionMode={selectionMode}
-                      selectedDeals={selectedDeals}
-                      onSelectionChange={handleSelectionChange}
-                      onSelectAll={handleSelectAll}
-                      onToggleSelectionMode={handleToggleSelectionMode}
-                      isCustomStage={false}
-                      stageHistory={stageHistory}
-                    />
-                  ))}
+                  {allStages
+                    .filter((s) => !s.isCustom && s.id !== 'lost' && s.id !== 'won')
+                    .map((stage) => (
+                      <KanbanColumn
+                        key={stage.id}
+                        id={stage.id}
+                        title={stage.label}
+                        color={stage.color}
+                        deals={filteredDeals.filter(
+                          (deal) => deal.stage === stage.id && !deal.custom_stage_id
+                        )}
+                        onDealClick={handleDealClick}
+                        taskCounts={taskCounts}
+                        selectionMode={selectionMode}
+                        selectedDeals={selectedDeals}
+                        onSelectionChange={handleSelectionChange}
+                        onSelectAll={handleSelectAll}
+                        onToggleSelectionMode={handleToggleSelectionMode}
+                        isCustomStage={false}
+                        stageHistory={stageHistory}
+                      />
+                    ))}
 
                   {/* Custom stages (sortable) */}
                   {customStages.map((stage) => {
@@ -1142,24 +1200,28 @@ const Pipeline = () => {
                   })}
 
                   {/* Final stages (lost/won) */}
-                  {allStages.filter(s => !s.isCustom && (s.id === 'lost' || s.id === 'won')).map((stage) => (
-                    <KanbanColumn
-                      key={stage.id}
-                      id={stage.id}
-                      title={stage.label}
-                      color={stage.color}
-                      deals={filteredDeals.filter((deal) => deal.stage === stage.id)}
-                      onDealClick={handleDealClick}
-                      taskCounts={taskCounts}
-                      selectionMode={selectionMode}
-                      selectedDeals={selectedDeals}
-                      onSelectionChange={handleSelectionChange}
-                      onSelectAll={handleSelectAll}
-                      onToggleSelectionMode={handleToggleSelectionMode}
-                      isCustomStage={false}
-                      stageHistory={stageHistory}
-                    />
-                  ))}
+                  {allStages
+                    .filter((s) => !s.isCustom && (s.id === 'lost' || s.id === 'won'))
+                    .map((stage) => (
+                      <KanbanColumn
+                        key={stage.id}
+                        id={stage.id}
+                        title={stage.label}
+                        color={stage.color}
+                        deals={filteredDeals.filter(
+                          (deal) => deal.stage === stage.id && !deal.custom_stage_id
+                        )}
+                        onDealClick={handleDealClick}
+                        taskCounts={taskCounts}
+                        selectionMode={selectionMode}
+                        selectedDeals={selectedDeals}
+                        onSelectionChange={handleSelectionChange}
+                        onSelectAll={handleSelectAll}
+                        onToggleSelectionMode={handleToggleSelectionMode}
+                        isCustomStage={false}
+                        stageHistory={stageHistory}
+                      />
+                    ))}
 
                   {/* Add Stage Card - always at the end */}
                   <AddStageCard 
