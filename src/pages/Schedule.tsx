@@ -1,16 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, CheckCircle2, Briefcase } from "lucide-react";
 import { HeaderButton } from "@/components/ui/header-button";
-import { format, isSameDay, startOfWeek, endOfWeek } from "date-fns";
+import { format, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CreateVisitDialog } from "@/components/CreateVisitDialog";
 import { AppLayout } from "@/components/AppLayout";
@@ -21,7 +20,9 @@ import { WeekScheduleGrid } from "@/components/schedule/WeekScheduleGrid";
 import { CreateActivityDialog } from "@/components/schedule/CreateActivityDialog";
 import { CalendarSyncDialog } from "@/components/schedule/CalendarSyncDialog";
 import { NegotiationScheduleCard } from "@/components/schedule/NegotiationScheduleCard";
+import { ScheduleCalendar } from "@/components/schedule/ScheduleCalendar";
 import { useNegotiationScheduleItems } from "@/hooks/useNegotiationScheduleItems";
+import { useScheduleEventCounts } from "@/hooks/useScheduleEventCounts";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -30,6 +31,7 @@ export default function Schedule() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'day' | 'week'>('day');
@@ -52,18 +54,27 @@ export default function Schedule() {
     })
   );
 
-  const { data: visits, refetch: refetchVisits } = useQuery({
-    queryKey: ["visits", user?.id],
+  // Fetch ALL visits for event counting (not filtered by date)
+  const { data: allVisits } = useQuery({
+    queryKey: ["all-visits", user?.id],
     queryFn: async () => {
+      const monthStart = startOfMonth(subMonths(currentMonth, 1));
+      const monthEnd = endOfMonth(addMonths(currentMonth, 1));
+      
       const { data, error } = await supabase
         .from("visits")
         .select(`
-          *,
+          id,
+          scheduled_at,
+          status,
+          lead_confirmed,
           leads!visits_lead_id_fkey (name, phone, email),
           units!visits_unit_id_fkey (unit_number, price, area),
           properties!visits_property_id_fkey (name, address)
         `)
         .eq("broker_id", user?.id)
+        .gte("scheduled_at", monthStart.toISOString())
+        .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
 
       if (error) throw error;
@@ -72,7 +83,106 @@ export default function Schedule() {
     enabled: !!user?.id,
   });
 
-  // Fetch negotiation items (activities, tasks, expected close dates from deals)
+  // Fetch ALL activities for event counting
+  const { data: allActivities } = useQuery({
+    queryKey: ["all-schedule-activities", user?.id, currentMonth.toISOString()],
+    queryFn: async () => {
+      const monthStart = startOfMonth(subMonths(currentMonth, 1));
+      const monthEnd = endOfMonth(addMonths(currentMonth, 1));
+
+      const { data, error } = await supabase
+        .from("schedule_activities")
+        .select(`
+          id,
+          scheduled_at,
+          activity_type,
+          title,
+          duration_minutes,
+          leads:lead_id (name, phone)
+        `)
+        .eq("broker_id", user?.id)
+        .gte("scheduled_at", monthStart.toISOString())
+        .lte("scheduled_at", monthEnd.toISOString())
+        .order("scheduled_at", { ascending: true });
+
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch ALL negotiation items for event counting
+  const { data: allNegotiationItems } = useQuery({
+    queryKey: ["all-negotiation-items", user?.id, currentMonth.toISOString()],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const monthStart = startOfMonth(subMonths(currentMonth, 1));
+      const monthEnd = endOfMonth(addMonths(currentMonth, 1));
+      const items: any[] = [];
+
+      // Fetch deal activities
+      const { data: activities } = await supabase
+        .from('deal_activities')
+        .select('id, scheduled_at')
+        .eq('broker_id', user.id)
+        .not('scheduled_at', 'is', null)
+        .gte('scheduled_at', monthStart.toISOString())
+        .lte('scheduled_at', monthEnd.toISOString());
+
+      activities?.forEach((a: any) => {
+        if (a.scheduled_at) items.push({ id: a.id, scheduled_at: a.scheduled_at });
+      });
+
+      // Fetch deal tasks
+      const { data: tasks } = await supabase
+        .from('deal_tasks')
+        .select('id, due_date')
+        .eq('broker_id', user.id)
+        .not('due_date', 'is', null)
+        .gte('due_date', monthStart.toISOString().split('T')[0])
+        .lte('due_date', monthEnd.toISOString().split('T')[0]);
+
+      tasks?.forEach((t: any) => {
+        if (t.due_date) {
+          const dt = new Date(t.due_date);
+          dt.setHours(9, 0, 0, 0);
+          items.push({ id: t.id, scheduled_at: dt.toISOString() });
+        }
+      });
+
+      // Fetch deals with expected close dates
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('id, expected_close_date')
+        .eq('broker_id', user.id)
+        .not('expected_close_date', 'is', null)
+        .gte('expected_close_date', monthStart.toISOString().split('T')[0])
+        .lte('expected_close_date', monthEnd.toISOString().split('T')[0])
+        .not('stage', 'in', '("won","lost")');
+
+      deals?.forEach((d: any) => {
+        if (d.expected_close_date) {
+          const dt = new Date(d.expected_close_date);
+          dt.setHours(10, 0, 0, 0);
+          items.push({ id: `close_${d.id}`, scheduled_at: dt.toISOString() });
+        }
+      });
+
+      return items;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Calculate event counts for calendar display
+  const { getEventCount } = useScheduleEventCounts({
+    visits: allVisits,
+    activities: allActivities,
+    negotiationItems: allNegotiationItems,
+    currentMonth,
+  });
+
+  // Fetch negotiation items for selected date (for display)
   const { data: negotiationItems } = useNegotiationScheduleItems({
     selectedDate,
     viewMode: viewMode === 'calendar' ? 'day' : viewMode,
@@ -158,7 +268,8 @@ export default function Schedule() {
     },
   });
 
-  const visitsOnSelectedDate = visits?.filter((visit: any) => {
+  // Filter visits for selected date
+  const visitsOnSelectedDate = allVisits?.filter((visit: any) => {
     const matchesDate = isSameDay(new Date(visit.scheduled_at), selectedDate);
     const matchesStatus = !statusFilter || visit.status === statusFilter;
     return matchesDate && matchesStatus;
@@ -241,12 +352,14 @@ export default function Schedule() {
         return status;
     }
   };
-
-  const datesWithVisits = visits?.map((visit: any) => new Date(visit.scheduled_at)) || [];
   
   const draggedActivity = draggedActivityType 
     ? ACTIVITY_TYPES.find(a => a.id === draggedActivityType) 
     : null;
+
+  const handleMonthChange = (month: Date) => {
+    setCurrentMonth(month);
+  };
 
   return (
     <AppLayout
@@ -293,20 +406,15 @@ export default function Schedule() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3 pt-0">
-                    <Calendar
+                    <ScheduleCalendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={(date) => date && setSelectedDate(date)}
-                      modifiers={{
-                        hasVisit: datesWithVisits,
-                      }}
-                      modifiersStyles={{
-                        hasVisit: {
-                          fontWeight: "bold",
-                          textDecoration: "underline",
-                        },
-                      }}
+                      month={currentMonth}
+                      onMonthChange={handleMonthChange}
+                      getEventCount={getEventCount}
                       locale={ptBR}
+                      compact
                       className="rounded-md w-full"
                     />
                   </CardContent>
@@ -337,20 +445,15 @@ export default function Schedule() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3 pt-0">
-                    <Calendar
+                    <ScheduleCalendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={(date) => date && setSelectedDate(date)}
-                      modifiers={{
-                        hasVisit: datesWithVisits,
-                      }}
-                      modifiersStyles={{
-                        hasVisit: {
-                          fontWeight: "bold",
-                          textDecoration: "underline",
-                        },
-                      }}
+                      month={currentMonth}
+                      onMonthChange={handleMonthChange}
+                      getEventCount={getEventCount}
                       locale={ptBR}
+                      compact
                       className="rounded-md w-full"
                     />
                   </CardContent>
@@ -368,43 +471,18 @@ export default function Schedule() {
             </div>
           ) : (
             <div className="flex flex-col gap-6">
-              {/* Row 1: Full-width Calendar */}
+              {/* Row 1: Compact Calendar */}
               <Card>
-                <CardContent className="p-4 sm:p-6">
-                  <Calendar
+                <CardContent className="p-4">
+                  <ScheduleCalendar
                     mode="single"
                     selected={selectedDate}
                     onSelect={(date) => date && setSelectedDate(date)}
-                    modifiers={{
-                      hasVisit: datesWithVisits,
-                    }}
-                    modifiersStyles={{
-                      hasVisit: {
-                        fontWeight: "bold",
-                        textDecoration: "underline",
-                      },
-                    }}
+                    month={currentMonth}
+                    onMonthChange={handleMonthChange}
+                    getEventCount={getEventCount}
                     locale={ptBR}
                     className="rounded-md w-full"
-                    classNames={{
-                      months: "flex flex-col sm:flex-row justify-center",
-                      month: "space-y-4 w-full",
-                      table: "w-full border-collapse",
-                      head_row: "flex w-full justify-between",
-                      head_cell: "text-muted-foreground rounded-md flex-1 font-normal text-sm text-center",
-                      row: "flex w-full mt-2 justify-between",
-                      cell: "flex-1 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 aspect-square",
-                      day: "h-full w-full p-2 sm:p-3 font-normal aria-selected:opacity-100 hover:bg-accent rounded-md transition-colors flex items-center justify-center",
-                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                      day_today: "bg-accent text-accent-foreground font-semibold",
-                      day_outside: "text-muted-foreground opacity-50",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-8 w-8 sm:h-9 sm:w-9 bg-transparent p-0 opacity-50 hover:opacity-100 border rounded-md",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      caption: "flex justify-center pt-1 relative items-center mb-4",
-                      caption_label: "text-base sm:text-lg font-medium",
-                    }}
                   />
                 </CardContent>
               </Card>
@@ -574,7 +652,7 @@ export default function Schedule() {
             open={isCreateDialogOpen}
             onOpenChange={setIsCreateDialogOpen}
             onSuccess={() => {
-              refetchVisits();
+              queryClient.invalidateQueries({ queryKey: ["all-visits"] });
               setIsCreateDialogOpen(false);
             }}
           />
@@ -587,6 +665,7 @@ export default function Schedule() {
             scheduledHour={createActivityDialog.hour}
             onSuccess={() => {
               refetchActivities();
+              queryClient.invalidateQueries({ queryKey: ["all-schedule-activities"] });
             }}
           />
 
