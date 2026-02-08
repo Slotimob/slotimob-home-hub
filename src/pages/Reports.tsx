@@ -1,16 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startOfMonth, subMonths } from 'date-fns';
-import { Building2, Download, FileText, ShieldAlert, Users, Wallet } from 'lucide-react';
+import { Building2, FileText, ShieldAlert, Users, Wallet } from 'lucide-react';
 
 import { AppLayout } from '@/components/AppLayout';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -74,53 +67,28 @@ const Reports = () => {
           Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
         </p>
 
-        {/* Header: Filters Bar with Interaction Zones */}
+        {/* Header: Filters Bar */}
         <div className="rounded-lg border bg-card p-3 sm:p-4 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             
-            {/* Zona de Filtros (Esquerda) */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-              {/* Filtro: Unidade */}
-              <div className="w-full sm:w-auto sm:min-w-[220px] space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  Unidade
-                </Label>
-                <UnitSelector
-                  value={selectedUnitId}
-                  onChange={setSelectedUnitId}
-                  placeholder="Todas as unidades"
-                />
-              </div>
-
-              {/* Filtro: Período */}
-              <div className="w-full sm:w-auto space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  Período
-                </Label>
-                <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
-              </div>
+            {/* Filtro: Unidade */}
+            <div className="w-full sm:w-auto sm:min-w-[220px] sm:max-w-[280px] space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Unidade
+              </Label>
+              <UnitSelector
+                value={selectedUnitId}
+                onChange={setSelectedUnitId}
+                placeholder="Todas as unidades"
+              />
             </div>
 
-            {/* Zona de Ações (Direita) */}
-            <div className="flex items-end lg:ml-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 h-9">
-                    <Download className="h-4 w-4" />
-                    <span>Exportar</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Exportar PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Exportar CSV
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {/* Filtro: Período */}
+            <div className="w-full sm:flex-1 space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Período
+              </Label>
+              <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
             </div>
           </div>
         </div>

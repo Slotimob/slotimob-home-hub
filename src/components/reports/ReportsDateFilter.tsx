@@ -42,7 +42,7 @@ export const ReportsDateFilter = ({ dateRange, onDateRangeChange }: ReportsDateF
         <Button
           variant="outline"
           className={cn(
-            "w-full sm:w-[280px] justify-between text-left font-normal h-9",
+            "w-full justify-between text-left font-normal h-9",
             !dateRange && "text-muted-foreground"
           )}
         >
