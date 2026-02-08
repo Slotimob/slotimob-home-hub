@@ -74,6 +74,7 @@ const App = () => (
             {/* Documents routes */}
             <Route path="/documents" element={<Documents />} />
             <Route path="/documents/templates" element={<Documents />} />
+            <Route path="/documents/custom" element={<Documents />} />
             <Route path="/documents/history" element={<Documents />} />
             {/* Simulator routes */}
             <Route path="/simulator" element={<Simulator />} />
