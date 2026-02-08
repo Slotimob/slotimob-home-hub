@@ -97,7 +97,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
             formatDate(t.due_date || t.transaction_date),
             unitName,
             t.description,
-            t.type === 'income' ? 'Receita' : 'Despesa',
+            t.category?.name || '-',
             formatCurrency(valorBruto),
             formatCurrency(taxaAdmin),
             formatCurrency(outrasDed),
@@ -111,17 +111,20 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
         subtitle: selectedUnitId ? 'Movimentações da unidade selecionada' : 'Movimentações agrupadas por unidade',
         userName,
         dateRange,
-        columns: ['Data', 'Unidade', 'Descrição', 'Tipo', 'Valor Bruto', 'Taxa Admin.', 'Outras Ded.', 'Valor Líquido'],
+        columns: ['Data', 'Unidade', 'Descrição', 'Categoria', 'Valor Bruto', 'Taxa Admin.', 'Outras Ded.', 'Valor Líquido'],
         data: tableData,
         filename: 'extrato-repasse',
         landscape: true,
         footerTotals: ['TOTAIS', '', '', '', formatCurrency(totalBruto), formatCurrency(totalTaxaAdmin), formatCurrency(totalOutras), formatCurrency(totalLiquido)],
         summary: [
-          { label: 'Total Bruto', value: formatCurrency(totalBruto) },
+          { label: 'Total Bruto (Receitas)', value: formatCurrency(totalBruto) },
           { label: 'Total Taxa Administração', value: formatCurrency(totalTaxaAdmin) },
           { label: 'Total Outras Deduções', value: formatCurrency(totalOutras) },
-          { label: 'Valor Líquido Final', value: formatCurrency(totalLiquido) },
+          { label: 'Total a Repassar ao Proprietário', value: formatCurrency(totalLiquido) },
         ],
+        insights: totalLiquido > 0 
+          ? [`Total líquido a repassar ao proprietário: ${formatCurrency(totalLiquido)}`]
+          : undefined,
       });
       toast({ title: 'PDF gerado com sucesso!' });
     } catch (error: any) {
@@ -152,7 +155,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
     }
   };
 
-  // Saldo Bancário - Progressive daily view
+  // Saldo Bancário - Progressive daily view with proper initial balance
   const handleSaldoBancarioPdf = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -163,7 +166,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
         .select('*')
         .eq('broker_id', user.id);
 
-      // Get initial balances (before date range)
+      // Calculate initial balance from account initial_balance + all transactions before date range
       const { data: initialTransactions } = await supabase
         .from('financial_transactions')
         .select('amount, type, bank_account_id')
@@ -171,11 +174,13 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
         .eq('status', 'paid')
         .lt('paid_date', dateRange.from.toISOString().split('T')[0]);
 
-      // Calculate initial balance from account initial_balance + pre-period transactions
+      // Start with account initial balances
       const initialBalances: Record<string, number> = {};
       (accounts || []).forEach(a => {
         initialBalances[a.id] = a.initial_balance || 0;
       });
+      
+      // Add all transactions before the date range
       (initialTransactions || []).forEach(t => {
         if (t.bank_account_id) {
           const change = t.type === 'income' ? t.amount : -t.amount;
@@ -185,7 +190,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
 
       const totalInitialBalance = Object.values(initialBalances).reduce((sum, b) => sum + b, 0);
 
-      // Get daily movements
+      // Get daily movements within date range
       const { data: dailyTransactions } = await supabase
         .from('financial_transactions')
         .select('amount, type, paid_date, bank_account_id')
@@ -207,15 +212,16 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
       const tableData: (string | number)[][] = [];
       let runningBalance = totalInitialBalance;
 
-      // Add initial balance row
+      // Add initial balance row (saldo anterior)
       tableData.push([
-        formatDate(dateRange.from),
-        'Saldo Inicial',
+        'Saldo Anterior',
+        '-',
         '-',
         '-',
         formatCurrency(totalInitialBalance),
       ]);
 
+      // Add daily movements
       Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b)).forEach(([date, { credits, debits }]) => {
         const dailyChange = credits - debits;
         runningBalance += dailyChange;
@@ -230,16 +236,22 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
 
       await generateReportPdf({
         title: 'Saldo Bancário Progressivo',
-        subtitle: 'Evolução diária de saldos consolidados',
+        subtitle: 'Evolução diária de saldos consolidados com saldo inicial do período',
         userName,
         dateRange,
         columns: ['Data', 'Créditos', 'Débitos', 'Variação Dia', 'Saldo Acumulado'],
         data: tableData,
         filename: 'saldo-bancario-progressivo',
+        landscape: true,
         summary: [
-          { label: 'Saldo Inicial do Período', value: formatCurrency(totalInitialBalance) },
+          { label: 'Saldo Inicial (antes do período)', value: formatCurrency(totalInitialBalance) },
+          { label: 'Total Créditos no Período', value: formatCurrency(Object.values(byDate).reduce((s, d) => s + d.credits, 0)) },
+          { label: 'Total Débitos no Período', value: formatCurrency(Object.values(byDate).reduce((s, d) => s + d.debits, 0)) },
           { label: 'Saldo Final', value: formatCurrency(runningBalance) },
           { label: 'Contas Cadastradas', value: (accounts || []).length.toString() },
+        ],
+        insights: [
+          `Saldo inicial calculado: ${formatCurrency(totalInitialBalance)} (soma dos saldos das ${(accounts || []).length} contas antes de ${formatDate(dateRange.from)})`,
         ],
       });
       toast({ title: 'PDF gerado com sucesso!' });

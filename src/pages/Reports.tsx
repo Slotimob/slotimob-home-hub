@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Wallet, Users, FileText } from 'lucide-react';
+import { Building2, Wallet, Users, FileText, ShieldAlert } from 'lucide-react';
 import { startOfMonth, subMonths } from 'date-fns';
 import { ReportsDateFilter } from '@/components/reports/ReportsDateFilter';
 import { ReportsUnitSelector } from '@/components/reports/ReportsUnitSelector';
@@ -12,6 +12,7 @@ import { ReportsFinanceSection } from '@/components/reports/ReportsFinanceSectio
 import { ReportsAssetsSection } from '@/components/reports/ReportsAssetsSection';
 import { ReportsCrmSection } from '@/components/reports/ReportsCrmSection';
 import { ReportsFiscalSection } from '@/components/reports/ReportsFiscalSection';
+import { ReportsAuditSection } from '@/components/reports/ReportsAuditSection';
 
 const Reports = () => {
   const { user, loading } = useAuth();
@@ -55,13 +56,15 @@ const Reports = () => {
 
   return (
     <AppLayout title="Intelligence Center">
-      <div className="space-y-4 sm:space-y-6">
-        {/* Header with description and filters */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-6">
+        {/* Header section - Clean and responsive */}
+        <div className="flex flex-col gap-4">
           <p className="text-muted-foreground text-sm">
             Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
           </p>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          
+          {/* Filters row - stacks on mobile, inline on desktop */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <ReportsUnitSelector 
               selectedUnitId={selectedUnitId} 
               onUnitChange={setSelectedUnitId} 
@@ -71,54 +74,66 @@ const Reports = () => {
         </div>
 
         {/* Tab navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex h-auto p-1 w-auto min-w-full sm:min-w-0 sm:w-full sm:grid sm:grid-cols-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {/* Scrollable tab list for mobile */}
+          <div className="w-full overflow-x-auto -mx-1 px-1 pb-1">
+            <TabsList className="inline-flex h-auto p-1 w-max min-w-full sm:w-full sm:grid sm:grid-cols-5 gap-1">
               <TabsTrigger 
                 value="financeiro" 
-                className="flex items-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex items-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
-                <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                Financeiro
+                <Wallet className="h-4 w-4 shrink-0" />
+                <span>Financeiro</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="ativos" 
-                className="flex items-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex items-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
-                <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                Ativos
+                <Building2 className="h-4 w-4 shrink-0" />
+                <span>Ativos</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="crm" 
-                className="flex items-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex items-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
-                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                CRM
+                <Users className="h-4 w-4 shrink-0" />
+                <span>CRM</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="auditoria" 
+                className="flex items-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <ShieldAlert className="h-4 w-4 shrink-0" />
+                <span>Auditoria</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="fiscal" 
-                className="flex items-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex items-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
-                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <FileText className="h-4 w-4 shrink-0" />
                 <span className="hidden xs:inline">Fiscal/</span>DIMOB
               </TabsTrigger>
             </TabsList>
           </div>
 
           {/* Tab content */}
-          <TabsContent value="financeiro" className="mt-4 sm:mt-6">
+          <TabsContent value="financeiro" className="mt-0">
             <ReportsFinanceSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
           </TabsContent>
 
-          <TabsContent value="ativos" className="mt-4 sm:mt-6">
+          <TabsContent value="ativos" className="mt-0">
             <ReportsAssetsSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
           </TabsContent>
 
-          <TabsContent value="crm" className="mt-4 sm:mt-6">
+          <TabsContent value="crm" className="mt-0">
             <ReportsCrmSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
           </TabsContent>
 
-          <TabsContent value="fiscal" className="mt-4 sm:mt-6">
+          <TabsContent value="auditoria" className="mt-0">
+            <ReportsAuditSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
+          </TabsContent>
+
+          <TabsContent value="fiscal" className="mt-0">
             <ReportsFiscalSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
           </TabsContent>
         </Tabs>

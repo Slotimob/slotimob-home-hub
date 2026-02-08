@@ -207,12 +207,11 @@ export const formatDate = (date: string | Date): string => {
   return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR });
 };
 
-// Helper to calculate penalty and interest (2% + 1% pro-rata monthly)
+// Helper to calculate penalty and interest (2% + 0.033% per day - approximately 1% per month)
 export const calculatePenaltyAndInterest = (originalValue: number, daysOverdue: number): { penalty: number; interest: number; total: number } => {
   const penalty = originalValue * 0.02; // 2% fixed penalty
-  const monthlyInterest = 0.01; // 1% per month
-  const dailyInterest = monthlyInterest / 30;
-  const interest = originalValue * dailyInterest * daysOverdue;
+  const dailyInterestRate = 0.00033; // 0.033% per day (approximately 1% per month)
+  const interest = originalValue * dailyInterestRate * daysOverdue;
   return {
     penalty,
     interest,
