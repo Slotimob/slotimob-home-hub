@@ -2950,6 +2950,7 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      get_early_adopter_count: { Args: { p_plan_id: string }; Returns: number }
       get_early_adopter_remaining_slots: {
         Args: { p_plan_id: string }
         Returns: number
