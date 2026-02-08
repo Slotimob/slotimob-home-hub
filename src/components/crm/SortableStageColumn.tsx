@@ -123,7 +123,7 @@ export const SortableStageColumn = ({
     <div 
       ref={setSortableRef} 
       style={style} 
-      className="flex-shrink-0 w-80 snap-start"
+      className="flex-shrink-0 w-72 sm:w-80 snap-start"
     >
       <div ref={setDroppableRef}>
         <Card 
@@ -198,11 +198,11 @@ export const SortableStageColumn = ({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={onEditStage}>
+                        <DropdownMenuItem onClick={() => onEditStage?.()}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar estágio
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={onDeleteStage} className="text-destructive">
+                        <DropdownMenuItem onClick={() => onDeleteStage?.()} className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" />
                           Excluir estágio
                         </DropdownMenuItem>
@@ -222,7 +222,7 @@ export const SortableStageColumn = ({
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent px-3 py-3">
+          <CardContent data-card-scroll className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent px-3 py-3">
             {deals.map((deal) => (
               <DealCard
                 key={deal.id}

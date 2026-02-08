@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { GripVertical } from 'lucide-react';
 import {
   Dialog,
@@ -48,7 +48,7 @@ interface SortableStageItemProps {
   stage: Stage;
 }
 
-const SortableStageItem = ({ stage }: SortableStageItemProps) => {
+const SortableStageItem = forwardRef<HTMLDivElement, SortableStageItemProps>(({ stage }, forwardedRef) => {
   const {
     attributes,
     listeners,
@@ -63,9 +63,19 @@ const SortableStageItem = ({ stage }: SortableStageItemProps) => {
     transition,
   };
 
+  // Merge refs
+  const mergedRef = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    if (typeof forwardedRef === 'function') {
+      forwardedRef(node);
+    } else if (forwardedRef) {
+      forwardedRef.current = node;
+    }
+  };
+
   return (
     <div
-      ref={setNodeRef}
+      ref={mergedRef}
       style={style}
       className={cn(
         "flex items-center gap-3 p-3 bg-card border rounded-lg",
@@ -106,7 +116,9 @@ const SortableStageItem = ({ stage }: SortableStageItemProps) => {
       )}
     </div>
   );
-};
+});
+
+SortableStageItem.displayName = 'SortableStageItem';
 
 export const ReorderStagesDialog = ({
   open,

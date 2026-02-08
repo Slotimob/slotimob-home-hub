@@ -104,7 +104,7 @@ export const KanbanColumn = ({
   };
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 w-80 snap-start">
+    <div ref={setNodeRef} className="flex-shrink-0 w-72 sm:w-80 snap-start">
       <Card 
         className={cn(
           "h-full transition-shadow",
@@ -158,11 +158,11 @@ export const KanbanColumn = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={onEditStage}>
+                      <DropdownMenuItem onClick={() => onEditStage?.()}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Editar estágio
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={onDeleteStage} className="text-destructive">
+                      <DropdownMenuItem onClick={() => onDeleteStage?.()} className="text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Excluir estágio
                       </DropdownMenuItem>
@@ -179,7 +179,7 @@ export const KanbanColumn = ({
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
+        <CardContent data-card-scroll className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto overscroll-contain">
           {deals.map((deal) => (
             <DealCard
               key={deal.id}

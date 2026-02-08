@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2 } from 'lucide-react';
+import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -61,6 +61,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     priority: string;
     probability: string;
     expected_close_date: Date | null;
+    temperature: 'hot' | 'warm' | 'cold';
   }>({
     estimated_value: deal?.estimated_value ?? null,
     commission_rate: deal?.estimated_commission && deal?.estimated_value 
@@ -70,6 +71,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     priority: (deal as any)?.priority ?? 'medium',
     probability: getProbabilityLabel((deal as any)?.probability ?? 50),
     expected_close_date: (deal as any)?.expected_close_date ? new Date((deal as any).expected_close_date) : null,
+    temperature: (deal as any)?.temperature ?? 'warm',
   });
 
   // Load linked contact from unit
@@ -131,6 +133,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
         priority: (deal as any).priority ?? 'medium',
         probability: getProbabilityLabel((deal as any).probability ?? 50),
         expected_close_date: (deal as any).expected_close_date ? new Date((deal as any).expected_close_date) : null,
+        temperature: (deal as any).temperature ?? 'warm',
       });
     }
   }, [deal?.id, open]);
@@ -149,6 +152,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
           priority: editedDeal.priority,
           probability: getProbabilityValue(editedDeal.probability),
           expected_close_date: editedDeal.expected_close_date?.toISOString().split('T')[0] ?? null,
+          temperature: editedDeal.temperature,
         })
         .eq('id', deal.id);
 
@@ -255,6 +259,55 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
             </TabsList>
 
             <TabsContent value="details" className="space-y-4 pt-4">
+              {/* Temperature */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <Thermometer className="h-3 w-3" />
+                  Temperatura do Lead
+                </Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={editedDeal.temperature === 'hot' ? 'default' : 'outline'}
+                    size="sm"
+                    className={cn(
+                      "flex-1 gap-2",
+                      editedDeal.temperature === 'hot' && "bg-emerald-600 hover:bg-emerald-700"
+                    )}
+                    onClick={() => setEditedDeal({ ...editedDeal, temperature: 'hot' })}
+                  >
+                    <Flame className="h-4 w-4" />
+                    Quente
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={editedDeal.temperature === 'warm' ? 'default' : 'outline'}
+                    size="sm"
+                    className={cn(
+                      "flex-1 gap-2",
+                      editedDeal.temperature === 'warm' && "bg-amber-500 hover:bg-amber-600"
+                    )}
+                    onClick={() => setEditedDeal({ ...editedDeal, temperature: 'warm' })}
+                  >
+                    <Thermometer className="h-4 w-4" />
+                    Morno
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={editedDeal.temperature === 'cold' ? 'default' : 'outline'}
+                    size="sm"
+                    className={cn(
+                      "flex-1 gap-2",
+                      editedDeal.temperature === 'cold' && "bg-blue-500 hover:bg-blue-600"
+                    )}
+                    onClick={() => setEditedDeal({ ...editedDeal, temperature: 'cold' })}
+                  >
+                    <Snowflake className="h-4 w-4" />
+                    Frio
+                  </Button>
+                </div>
+              </div>
+
               {/* Priority and Probability */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

@@ -137,8 +137,8 @@ const Pipeline = () => {
   const dragStartX = useRef(0);
   const scrollStartLeft = useRef(0);
 
-  const COLUMN_WIDTH = 336; // 320px column + 16px gap
-  const MOBILE_COLUMN_WIDTH = 304; // 288px column + 16px gap for mobile
+  const COLUMN_WIDTH = 336; // 320px column + 16px gap (desktop)
+  const MOBILE_COLUMN_WIDTH = 304; // 288px column + 16px gap (mobile)
 
   // Initialize swipe navigation for mobile
   useSwipeNavigation({
@@ -194,6 +194,14 @@ const Pipeline = () => {
 
     // If the user is already doing horizontal scrolling (trackpad), don't interfere.
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+
+    // Check if scroll originated from inside a card content area (inner scrollable)
+    const target = e.target as HTMLElement;
+    const cardContent = target.closest('[data-card-scroll]');
+    if (cardContent) {
+      // Let the card handle its own vertical scroll - don't convert to horizontal
+      return;
+    }
 
     // Check if we can scroll
     const canScrollLeft = el.scrollLeft > 0;
