@@ -9,8 +9,10 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
+import { translateType, translateLeaseStatus } from '@/utils/reportTranslations';
 import { useToast } from '@/hooks/use-toast';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface ReportsAuditSectionProps {
   dateRange: { from: Date; to: Date };
@@ -52,37 +54,38 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
 
       const tableData = orphans.map(t => {
         const problems: string[] = [];
-        if (!t.bank_account_id) problems.push('Sem Conta Bancária');
-        if (!t.unit_id) problems.push('Sem Unidade');
-        if (!t.category_id) problems.push('Sem Categoria');
+        if (!t.bank_account_id) problems.push('Conta Bancaria');
+        if (!t.unit_id) problems.push('Unidade');
+        if (!t.category_id) problems.push('Categoria');
 
         return [
           formatDate(t.transaction_date),
-          t.description,
+          t.description?.substring(0, 40) || '-',
+          translateType(t.type),
           formatCurrency(t.amount),
           problems.join(', '),
         ];
       });
 
       await generateReportPdf({
-        title: 'Inconsistências de Lançamento',
-        subtitle: 'Transações incompletas ou órfãs que precisam de correção',
+        title: 'Inconsistencias de Lancamento',
+        subtitle: 'Transacoes incompletas ou orfas que precisam de correcao',
         userName,
         dateRange,
-        columns: ['Data', 'Descrição', 'Valor', 'O que falta?'],
+        columns: ['Data', 'Descricao', 'Tipo', 'Valor', 'Campos Ausentes'],
         data: tableData,
         filename: 'inconsistencias-lancamento',
         landscape: true,
-        highlightCondition: () => true, // All rows are issues
+        highlightCondition: () => true,
         summary: [
-          { label: 'Total de Inconsistências', value: orphans.length.toString() },
-          { label: 'Sem Conta Bancária', value: orphans.filter(t => !t.bank_account_id).length.toString() },
+          { label: 'Total de Inconsistencias', value: orphans.length.toString() },
+          { label: 'Sem Conta Bancaria', value: orphans.filter(t => !t.bank_account_id).length.toString() },
           { label: 'Sem Unidade', value: orphans.filter(t => !t.unit_id).length.toString() },
           { label: 'Sem Categoria', value: orphans.filter(t => !t.category_id).length.toString() },
         ],
         insights: orphans.length > 0 
-          ? [`Foram encontradas ${orphans.length} transações com dados incompletos. Corrija-as para garantir integridade nos relatórios.`]
-          : ['Nenhuma inconsistência encontrada. Seus lançamentos estão completos!'],
+          ? [`Foram encontradas ${orphans.length} transacoes com dados incompletos. Corrija-as para garantir integridade nos relatorios.`]
+          : ['Nenhuma inconsistencia encontrada. Seus lancamentos estao completos!'],
       });
       toast({ title: 'PDF gerado com sucesso!' });
     } catch (error: any) {
@@ -169,22 +172,22 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       });
 
       await generateReportPdf({
-        title: 'Risco de Conciliação',
-        subtitle: 'Transações marcadas como pagas que não foram validadas no extrato bancário',
+        title: 'Risco de Conciliacao',
+        subtitle: 'Transacoes marcadas como pagas que nao foram validadas no extrato bancario',
         userName,
         dateRange,
-        columns: ['Vencimento', 'Pagamento', 'Descrição', 'Conta', 'Valor', 'Status'],
+        columns: ['Vencimento', 'Pagamento', 'Descricao', 'Conta', 'Valor', 'Status'],
         data: tableData,
         filename: 'risco-conciliacao',
         landscape: true,
         highlightCondition: () => true,
         summary: [
-          { label: 'Transações em Risco', value: (transactions || []).length.toString() },
-          { label: 'Valor Total Não Conciliado', value: formatCurrency(totalValue) },
+          { label: 'Transacoes em Risco', value: (transactions || []).length.toString() },
+          { label: 'Valor Total Nao Conciliado', value: formatCurrency(totalValue) },
         ],
         insights: (transactions || []).length > 0
-          ? [`Existem ${(transactions || []).length} transações (${formatCurrency(totalValue)}) marcadas como pagas, mas sem confirmação no extrato. Verifique possíveis erros de lançamento.`]
-          : ['Todas as transações pagas foram devidamente conciliadas.'],
+          ? [`Existem ${(transactions || []).length} transacoes (${formatCurrency(totalValue)}) marcadas como pagas, mas sem confirmacao no extrato. Verifique possiveis erros de lancamento.`]
+          : ['Todas as transacoes pagas foram devidamente conciliadas.'],
       });
       toast({ title: 'PDF gerado com sucesso!' });
     } catch (error: any) {
@@ -280,16 +283,16 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       });
 
       await generateReportPdf({
-        title: 'Transferências Internas',
-        subtitle: 'Auditoria de movimentações entre contas próprias',
+        title: 'Transferencias Internas',
+        subtitle: 'Auditoria de movimentacoes entre contas proprias',
         userName,
         dateRange,
-        columns: ['Data', 'Conta Origem', 'Conta Destino', 'Valor', 'Descrição'],
+        columns: ['Data', 'Conta Origem', 'Conta Destino', 'Valor', 'Descricao'],
         data: tableData,
         filename: 'transferencias-internas',
         landscape: true,
         summary: [
-          { label: 'Total de Transferências', value: tableData.length.toString() },
+          { label: 'Total de Transferencias', value: tableData.length.toString() },
           { label: 'Volume Total Movimentado', value: formatCurrency(totalTransfers) },
         ],
       });
@@ -390,33 +393,52 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
         l.unit_id && !unitsWithProjections.has(l.unit_id)
       );
 
+      // Get last income transaction per unit to show "Última Parcela Lançada"
+      const unitIds = (leases || []).map(l => l.unit_id).filter(Boolean);
+      const { data: lastTransactions } = unitIds.length > 0 
+        ? await supabase
+            .from('financial_transactions')
+            .select('unit_id, due_date')
+            .eq('broker_id', user.id)
+            .eq('type', 'income')
+            .in('unit_id', unitIds)
+            .order('due_date', { ascending: false })
+        : { data: [] };
+
+      // Build map of last transaction per unit
+      const lastTxMap = new Map<string, string>();
+      (lastTransactions || []).forEach(t => {
+        if (t.unit_id && !lastTxMap.has(t.unit_id)) {
+          lastTxMap.set(t.unit_id, t.due_date);
+        }
+      });
+
       const tableData = missingProjections.map(l => [
         l.unit?.unit_number || '-',
         l.tenant?.name || '-',
-        formatCurrency(l.rent_amount || 0),
-        formatDate(l.start_date || ''),
         formatDate(l.end_date || ''),
-        'Sem projeção para 60 dias',
+        lastTxMap.get(l.unit_id) ? formatDate(lastTxMap.get(l.unit_id)!) : 'Nunca',
+        translateLeaseStatus(l.status),
       ]);
 
       await generateReportPdf({
-        title: 'Auditoria de Projeções',
-        subtitle: 'Unidades com contrato ativo sem lançamentos futuros de receita (próximos 60 dias)',
+        title: 'Auditoria de Projecoes',
+        subtitle: 'Unidades com contrato ativo sem lancamentos futuros de receita (proximos 60 dias)',
         userName,
         dateRange,
-        columns: ['Unidade', 'Inquilino', 'Aluguel', 'Início Contrato', 'Fim Contrato', 'Alerta'],
+        columns: ['Unidade', 'Inquilino', 'Termino Contrato', 'Ultima Parcela', 'Status'],
         data: tableData,
         filename: 'auditoria-projecoes',
         landscape: true,
         highlightCondition: () => true,
         summary: [
           { label: 'Contratos Ativos', value: (leases || []).length.toString() },
-          { label: 'Sem Projeção Futura', value: missingProjections.length.toString() },
-          { label: 'Com Projeção OK', value: ((leases || []).length - missingProjections.length).toString() },
+          { label: 'Sem Projecao Futura', value: missingProjections.length.toString() },
+          { label: 'Com Projecao OK', value: ((leases || []).length - missingProjections.length).toString() },
         ],
         insights: missingProjections.length > 0
-          ? [`${missingProjections.length} unidades com contrato ativo não possuem receitas projetadas para os próximos 60 dias. Verifique se as parcelas foram lançadas corretamente.`]
-          : ['Todas as unidades com contrato ativo possuem projeções de receita para os próximos 60 dias.'],
+          ? [`${missingProjections.length} unidades com contrato ativo nao possuem receitas projetadas para os proximos 60 dias. Verifique se as parcelas foram lancadas corretamente.`]
+          : ['Todas as unidades com contrato ativo possuem projecoes de receita para os proximos 60 dias.'],
       });
       toast({ title: 'PDF gerado com sucesso!' });
     } catch (error: any) {

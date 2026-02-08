@@ -4,6 +4,7 @@ import { Building2, TrendingUp, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
+import { translateUnitStatus } from '@/utils/reportTranslations';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
 
@@ -16,17 +17,18 @@ interface ReportsAssetsSectionProps {
 export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: ReportsAssetsSectionProps) => {
   const { toast } = useToast();
 
-  // Vacância - Enhanced with opportunity cost
+  // Vacância - Enhanced with owner, address and opportunity cost
   const handleVacanciaPdf = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) throw new Error('Usuario nao autenticado');
 
       let query = supabase
         .from('units')
         .select(`
           *,
-          property:properties(name)
+          property:properties(name, address),
+          owner:contacts!units_owner_contact_id_fkey(name)
         `)
         .eq('broker_id', user.id);
 
@@ -36,8 +38,8 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
 
       const { data: units } = await query;
 
-      // Calculate vacancy days and opportunity cost
-      const today = new Date();
+      // Calculate vacancy days and opportunity cost within date range
+      const periodDays = differenceInDays(dateRange.to, dateRange.from);
       let totalOpportunityCost = 0;
 
       const tableData = (units || []).map(u => {
@@ -45,23 +47,29 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
         const estimatedRent = u.rent_price || 0;
         const dailyRate = estimatedRent / 30;
         
-        // For vacant units, calculate days vacant (simplified: using updated_at as reference)
-        let daysVacant = 0;
+        // Calculate days vacant within the period
+        let daysVacantInPeriod = 0;
         let opportunityCost = 0;
         
-        if (isVacant && u.updated_at) {
-          const lastUpdate = new Date(u.updated_at);
-          daysVacant = Math.max(0, differenceInDays(today, lastUpdate));
-          opportunityCost = dailyRate * daysVacant;
+        if (isVacant) {
+          // Use period days for calculation (simplified)
+          daysVacantInPeriod = periodDays;
+          opportunityCost = dailyRate * daysVacantInPeriod;
           totalOpportunityCost += opportunityCost;
         }
 
+        // Build simplified address
+        const address = u.address || u.property?.address || '';
+        const shortAddress = address.length > 30 ? address.substring(0, 30) + '...' : address;
+
         return [
           u.unit_number || u.id.substring(0, 8),
-          u.property?.name || 'Imóvel Avulso',
-          isVacant ? 'Vago' : 'Ocupado',
+          u.property?.name || 'Imovel Avulso',
+          u.owner?.name || '-',
+          shortAddress || '-',
+          translateUnitStatus(u.status),
           formatCurrency(estimatedRent),
-          isVacant ? daysVacant.toString() : '-',
+          isVacant ? daysVacantInPeriod.toString() : '-',
           isVacant ? formatCurrency(opportunityCost) : '-',
         ];
       });
@@ -71,21 +79,22 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
       const vacancyRate = units?.length ? (vacant.length / units.length) * 100 : 0;
 
       await generateReportPdf({
-        title: 'Relatório de Vacância',
-        subtitle: 'Análise de ocupação com custo de oportunidade',
+        title: 'Relatorio de Vacancia',
+        subtitle: 'Analise de ocupacao com custo de oportunidade',
         userName,
         dateRange,
-        columns: ['Unidade', 'Empreendimento', 'Status', 'Valor Estimado', 'Dias Vago', 'Perda Acumulada'],
+        columns: ['Unidade', 'Empreendimento', 'Proprietario', 'Endereco', 'Status', 'Aluguel', 'Dias Vago', 'Perda Acumulada'],
         data: tableData,
         filename: 'relatorio-vacancia',
+        landscape: true,
         summary: [
           { label: 'Total de Unidades', value: (units || []).length.toString() },
           { label: 'Unidades Vagas', value: vacant.length.toString() },
           { label: 'Unidades Ocupadas', value: occupied.length.toString() },
-          { label: 'Taxa de Vacância', value: `${vacancyRate.toFixed(1)}%` },
+          { label: 'Taxa de Vacancia', value: `${vacancyRate.toFixed(1)}%` },
         ],
         insights: totalOpportunityCost > 0 
-          ? [`Neste período, você deixou de arrecadar ${formatCurrency(totalOpportunityCost)} devido à vacância.`]
+          ? [`Neste periodo, voce deixou de arrecadar ${formatCurrency(totalOpportunityCost)} devido a vacancia.`]
           : undefined,
       });
       toast({ title: 'PDF gerado com sucesso!' });

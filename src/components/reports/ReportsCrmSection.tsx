@@ -1,11 +1,11 @@
 import { ReportRow } from './ReportRow';
 import { ReportsTable } from './ReportsTable';
-import { Target, Megaphone, Clock, Users, TrendingUp } from 'lucide-react';
+import { Target, Clock, Users, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
+import { translateStage, translateOrigin } from '@/utils/reportTranslations';
 import { useToast } from '@/hooks/use-toast';
-
 interface ReportsCrmSectionProps {
   dateRange: { from: Date; to: Date };
   userName?: string;
@@ -46,27 +46,28 @@ export const ReportsCrmSection = ({ dateRange, userName, selectedUnitId }: Repor
       const totalValue = (deals || []).filter(d => d.stage === 'won').reduce((sum, d) => sum + (d.estimated_value || 0), 0);
 
       await generateReportPdf({
-        title: 'Performance de Conversão',
-        subtitle: 'Análise de negociações do período',
+        title: 'Performance de Conversao',
+        subtitle: 'Analise de negociacoes do periodo',
         userName,
         dateRange,
-        columns: ['Data', 'Lead', 'Imóvel', 'Unidade', 'Valor (R$)', 'Etapa', 'Status'],
+        columns: ['Data', 'Lead', 'Origem', 'Imovel', 'Unidade', 'Valor (R$)', 'Etapa', 'Status'],
         data: (deals || []).map(d => [
           formatDate(d.created_at),
           d.lead?.name || '-',
+          translateOrigin(d.lead?.origin),
           d.property?.name || '-',
           d.unit?.unit_number || '-',
           formatCurrency(d.estimated_value || 0),
-          d.stage,
+          translateStage(d.stage),
           d.stage === 'won' ? 'Ganho' : d.stage === 'lost' ? 'Perdido' : 'Em andamento',
         ]),
         filename: 'performance-conversao',
         landscape: true,
         summary: [
-          { label: 'Total de Negociações', value: total.toString() },
-          { label: 'Negociações Ganhas', value: won.toString() },
-          { label: 'Negociações Perdidas', value: lost.toString() },
-          { label: 'Taxa de Conversão', value: `${conversionRate.toFixed(1)}%` },
+          { label: 'Total de Negociacoes', value: total.toString() },
+          { label: 'Negociacoes Ganhas', value: won.toString() },
+          { label: 'Negociacoes Perdidas', value: lost.toString() },
+          { label: 'Taxa de Conversao', value: `${conversionRate.toFixed(1)}%` },
           { label: 'Valor Total Convertido', value: formatCurrency(totalValue) },
         ],
       });
@@ -233,19 +234,25 @@ export const ReportsCrmSection = ({ dateRange, userName, selectedUnitId }: Repor
         insights.push(`Menor tempo de fechamento: ${fastestOrigin} (${Math.round(fastestData.avgCycleDays / fastestData.cycleCount)} dias)`);
       }
 
+      // Translate origins in table data
+      const translatedTableData = tableData.map(row => {
+        const [origin, ...rest] = row;
+        return [translateOrigin(String(origin)), ...rest];
+      });
+
       await generateReportPdf({
-        title: 'Funil de Conversão Analítico',
-        subtitle: 'Performance por canal de aquisição com métricas de conversão',
+        title: 'Funil de Conversao Analitico',
+        subtitle: 'Performance por canal de aquisicao com metricas de conversao',
         userName,
         dateRange,
-        columns: ['Origem', 'Leads', 'Visitas', 'Propostas', 'Ganhos', '% Conv.', 'Ticket Médio', 'Ciclo Médio'],
-        data: tableData,
+        columns: ['Origem', 'Leads', 'Visitas', 'Propostas', 'Ganhos', '% Conv.', 'Ticket Medio', 'Ciclo Medio'],
+        data: translatedTableData,
         filename: 'funil-conversao-analitico',
         landscape: true,
         insights: insights.length > 0 ? insights : undefined,
         summary: [
           { label: 'Total de Leads', value: (leads || []).length.toString() },
-          { label: 'Total de Conversões', value: Object.values(byOrigin).reduce((sum, d) => sum + d.won, 0).toString() },
+          { label: 'Total de Conversoes', value: Object.values(byOrigin).reduce((sum, d) => sum + d.won, 0).toString() },
           { label: 'Valor Total Gerado', value: formatCurrency(Object.values(byOrigin).reduce((sum, d) => sum + d.value, 0)) },
         ],
       });
