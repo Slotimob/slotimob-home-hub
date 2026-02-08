@@ -2,95 +2,528 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
 @layer base {
-  :root {
+  /* Tema: Branco e Verde */
+  :root[data-theme="light-green"] {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    --foreground: 246 100% 23%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 246 100% 23%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-
+    --popover-foreground: 246 100% 23%;
+    --primary: 246 100% 23%;
+    --primary-rgb: 23, 0, 117;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 170 62% 49%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 246 30% 96%;
+    --muted-foreground: 246 20% 50%;
+    --accent: 170 62% 49%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 246 20% 88%;
+    --input: 246 20% 88%;
+    --ring: 170 62% 49%;
     --radius: 0.5rem;
-
-    --sidebar-background: 222.2 47.4% 11.2%;
-    --sidebar-foreground: 210 40% 96.1%;
-    --sidebar-primary: 221.2 83.2% 53.3%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 96.1%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 221.2 83.2% 53.3%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 246 100% 23%;
+    --sidebar-primary: 246 100% 23%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 170 62% 95%;
+    --sidebar-accent-foreground: 246 100% 23%;
+    --sidebar-border: 246 20% 88%;
+    --sidebar-ring: 170 62% 49%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 170 62% 49%;
+    --info-foreground: 0 0% 100%;
+    --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(170, 62%, 49%));
+    --gradient-secondary: linear-gradient(135deg, hsl(170, 62%, 49%), hsl(170, 62%, 49%));
+    --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(170, 62%, 49%));
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+  /* Tema: Branco e Azul */
+  :root[data-theme="light-blue"] {
+    --background: 0 0% 100%;
+    --foreground: 246 100% 23%;
+    --card: 0 0% 100%;
+    --card-foreground: 246 100% 23%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 246 100% 23%;
+    --primary: 246 100% 23%;
+    --primary-rgb: 23, 0, 117;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 246 100% 23%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 246 30% 96%;
+    --muted-foreground: 246 20% 50%;
+    --accent: 246 100% 23%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 246 20% 88%;
+    --input: 246 20% 88%;
+    --ring: 246 100% 23%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 246 100% 23%;
+    --sidebar-primary: 246 100% 23%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 246 100% 95%;
+    --sidebar-accent-foreground: 246 100% 23%;
+    --sidebar-border: 246 20% 88%;
+    --sidebar-ring: 246 100% 23%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 246 100% 23%;
+    --info-foreground: 0 0% 100%;
+    --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(246, 100%, 23%));
+    --gradient-secondary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(246, 100%, 23%));
+    --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(246, 100%, 23%));
+  }
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+  /* Tema: Branco e Roxo */
+  :root[data-theme="light-purple"] {
+    --background: 0 0% 100%;
+    --foreground: 246 100% 23%;
+    --card: 0 0% 100%;
+    --card-foreground: 246 100% 23%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 246 100% 23%;
+    --primary: 246 100% 23%;
+    --primary-rgb: 23, 0, 117;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 170 62% 49%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 246 30% 96%;
+    --muted-foreground: 246 20% 50%;
+    --accent: 267 75% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 246 20% 88%;
+    --input: 246 20% 88%;
+    --ring: 267 75% 40%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 246 100% 23%;
+    --sidebar-primary: 246 100% 23%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 267 75% 95%;
+    --sidebar-accent-foreground: 246 100% 23%;
+    --sidebar-border: 246 20% 88%;
+    --sidebar-ring: 267 75% 40%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 170 62% 49%;
+    --info-foreground: 0 0% 100%;
+    --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(267, 75%, 40%));
+    --gradient-secondary: linear-gradient(135deg, hsl(267, 75%, 40%), hsl(170, 62%, 49%));
+    --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(267, 75%, 40%), hsl(170, 62%, 49%));
+  }
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+  /* Tema: Modo Escuro com Verde (padrão: roxo → verde) */
+  :root[data-theme="dark-green"] {
+    --background: 246 50% 8%;
+    --foreground: 0 0% 98%;
+    --card: 246 40% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 246 40% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 170 62% 60%;
+    --primary-rgb: 69, 201, 183;
+    --primary-foreground: 246 100% 15%;
+    --secondary: 170 62% 60%;
+    --secondary-foreground: 246 100% 15%;
+    --muted: 246 30% 20%;
+    --muted-foreground: 246 15% 70%;
+    --accent: 170 62% 55%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 246 30% 25%;
+    --input: 246 30% 25%;
+    --ring: 170 62% 60%;
+    --sidebar-background: 246 50% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 170 62% 60%;
+    --sidebar-primary-foreground: 246 100% 15%;
+    --sidebar-accent: 246 40% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 246 30% 25%;
+    --sidebar-ring: 170 62% 60%;
+    --gradient-primary: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(170, 62%, 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(170, 62%, 55%), hsl(170, 62%, 55%));
+    --gradient-full: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(170, 62%, 55%));
+  }
 
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+  /* Tema: Modo Escuro com Roxo */
+  :root[data-theme="dark-purple"] {
+    --background: 246 50% 8%;
+    --foreground: 0 0% 98%;
+    --card: 246 40% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 246 40% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 267 75% 65%;
+    --primary-rgb: 165, 89, 224;
+    --primary-foreground: 246 100% 15%;
+    --secondary: 170 62% 60%;
+    --secondary-foreground: 246 100% 15%;
+    --muted: 246 30% 20%;
+    --muted-foreground: 246 15% 70%;
+    --accent: 267 75% 50%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 246 30% 25%;
+    --input: 246 30% 25%;
+    --ring: 267 75% 65%;
+    --sidebar-background: 246 50% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 267 75% 65%;
+    --sidebar-primary-foreground: 246 100% 15%;
+    --sidebar-accent: 246 40% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 246 30% 25%;
+    --sidebar-ring: 267 75% 65%;
+    --gradient-primary: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(267, 75%, 50%));
+    --gradient-secondary: linear-gradient(135deg, hsl(267, 75%, 50%), hsl(170, 62%, 55%));
+    --gradient-full: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(267, 75%, 50%), hsl(170, 62%, 55%));
+  }
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 96.1%;
-    --sidebar-primary: 217.2 91.2% 59.8%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 96.1%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+  /* Fallback para root sem data-theme (usar tema padrão light-purple) */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 246 100% 23%;
+    --card: 0 0% 100%;
+    --card-foreground: 246 100% 23%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 246 100% 23%;
+    --primary: 246 100% 23%;
+    --primary-rgb: 23, 0, 117;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 170 62% 49%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 246 30% 96%;
+    --muted-foreground: 246 20% 50%;
+    --accent: 267 75% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 246 20% 88%;
+    --input: 246 20% 88%;
+    --ring: 267 75% 40%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 246 100% 23%;
+    --sidebar-primary: 246 100% 23%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 267 75% 95%;
+    --sidebar-accent-foreground: 246 100% 23%;
+    --sidebar-border: 246 20% 88%;
+    --sidebar-ring: 267 75% 40%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 170 62% 49%;
+    --info-foreground: 0 0% 100%;
+    --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(267, 75%, 40%));
+    --gradient-secondary: linear-gradient(135deg, hsl(267, 75%, 40%), hsl(170, 62%, 49%));
+    --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(267, 75%, 40%), hsl(170, 62%, 49%));
   }
 }
 
 @layer base {
+  /* Fix Radix UI pointer-events lock after modal close */
+  body[style*="pointer-events: none"],
+  body[data-scroll-locked] {
+    pointer-events: auto !important;
+  }
+
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    overflow-x: clip;
+    -webkit-overflow-scrolling: touch;
   }
 
   body {
     @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    overflow-x: clip;
+    max-width: 100vw;
+    min-height: 100dvh;
   }
+
+  /* Prevent page horizontal scroll but allow internal scrollers */
+  #root {
+    @apply w-full;
+    overflow-x: clip;
+    max-width: 100vw;
+    min-height: 100dvh;
+  }
+
+  /* Ensure containers don't overflow on mobile */
+  .container {
+    @apply px-4;
+    max-width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      @apply px-6;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      @apply px-8;
+      max-width: 1280px;
+    }
+  }
+
+  /* Prevent images and media from causing overflow */
+  img, video, iframe {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Ensure flex containers don't cause overflow */
+  .flex-wrap-mobile {
+    @apply flex-wrap;
+  }
+
+  @media (max-width: 639px) {
+    /* Force word break on mobile for long text */
+    h1, h2, h3, h4, h5, h6, p, span, a {
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+  }
+}
+
+/* Custom spacing utilities for design consistency */
+@layer utilities {
+  .min-w-4\.5 {
+    min-width: 1.125rem;
+  }
+  .h-4\.5 {
+    height: 1.125rem;
+  }
+  .w-4\.5 {
+    width: 1.125rem;
+  }
+}
+
+/* Rotating glow effect for cards */
+@keyframes border-rotate {
+  0% {
+    --angle: 0deg;
+  }
+  100% {
+    --angle: 360deg;
+  }
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+:root {
+  --glow-intensity: 0.5;
+  --glow-color-rgb: var(--primary-rgb);
+  --stage-glow-rgb: var(--primary-rgb);
+  --card-glow-rgb: var(--glow-color-rgb, var(--primary-rgb));
+}
+
+.card-glow-hover {
+  @apply relative transition-all duration-300;
+  --card-glow-rgb: var(--glow-color-rgb, var(--primary-rgb));
+}
+
+/* Color variants for glow */
+.glow-green { --card-glow-rgb: 34, 197, 94; }
+.glow-blue { --card-glow-rgb: 59, 130, 246; }
+.glow-yellow { --card-glow-rgb: 234, 179, 8; }
+.glow-red { --card-glow-rgb: 239, 68, 68; }
+.glow-purple { --card-glow-rgb: 168, 85, 247; }
+.glow-pink { --card-glow-rgb: 236, 72, 153; }
+.glow-orange { --card-glow-rgb: 249, 115, 22; }
+.glow-indigo { --card-glow-rgb: 99, 102, 241; }
+.glow-cyan { --card-glow-rgb: 6, 182, 212; }
+.glow-teal { --card-glow-rgb: 20, 184, 166; }
+
+.card-glow-hover::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--radius) + 2px);
+  padding: 2px;
+  background: conic-gradient(
+    from var(--angle, 0deg) at 50% 50%,
+    transparent 0deg,
+    transparent 60deg,
+    rgba(var(--card-glow-rgb), calc(0.5 * var(--glow-intensity))) 90deg,
+    rgba(var(--card-glow-rgb), calc(0.8 * var(--glow-intensity))) 120deg,
+    rgba(var(--card-glow-rgb), calc(0.5 * var(--glow-intensity))) 150deg,
+    transparent 180deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.card-glow-hover:hover::before {
+  opacity: 1;
+  animation: border-rotate 3s linear infinite;
+}
+
+.card-glow-hover:hover {
+  @apply -translate-y-0.5;
+  box-shadow: 0 4px 20px -4px rgba(var(--card-glow-rgb), calc(0.15 * var(--glow-intensity)));
+}
+
+/* Disable glow when intensity is 0 */
+.glow-disabled .card-glow-hover::before,
+.glow-disabled .card-glow-hover:hover::before {
+  display: none;
+}
+
+.glow-disabled .card-glow-hover:hover {
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
+}
+
+/* Pipeline styled horizontal scrollbar */
+.pipeline-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted));
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+}
+
+.pipeline-scrollbar::-webkit-scrollbar {
+  height: 10px;
+}
+
+.pipeline-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 9999px;
+}
+
+.pipeline-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.5), hsl(var(--accent) / 0.6));
+  border-radius: 9999px;
+  border: 2px solid hsl(var(--muted));
+  transition: background 0.2s ease;
+}
+
+.pipeline-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.7), hsl(var(--accent) / 0.8));
+}
+
+/* Drag to scroll cursor */
+.pipeline-scrollbar.cursor-grab {
+  cursor: grab;
+}
+
+.pipeline-scrollbar.cursor-grabbing {
+  cursor: grabbing;
+}
+
+/* Scroll snap for pipeline columns on mobile */
+.pipeline-scrollbar.snap-x .flex-shrink-0 {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+
+/* Ensure last items have proper margin and scroll into view */
+.pipeline-scrollbar .flex.gap-4 > .flex-shrink-0:nth-last-child(2) {
+  scroll-snap-align: end;
+  scroll-margin-right: 2rem;
+}
+
+/* Global scrollbar styling for webkit browsers */
+/* This ensures consistent scrollbar appearance across the app */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted) / 0.3);
+}
+
+/* Touch device optimizations - hide scrollbar on touch but allow scrolling */
+@media (hover: none) and (pointer: coarse) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+  }
+}
+
+/* Dialog/Modal specific scrollbar styling for better visibility */
+[role="dialog"] ::-webkit-scrollbar,
+[data-radix-scroll-area-viewport] ~ ::-webkit-scrollbar {
+  width: 10px;
+}
+
+[role="dialog"] ::-webkit-scrollbar-thumb,
+[data-radix-scroll-area-viewport] ~ ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+[role="dialog"] ::-webkit-scrollbar-thumb:hover,
+[data-radix-scroll-area-viewport] ~ ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.6);
 }
