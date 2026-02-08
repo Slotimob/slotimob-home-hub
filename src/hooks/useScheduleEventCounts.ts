@@ -41,9 +41,9 @@ export function useScheduleEventCounts({
       }
     });
 
-    // Count negotiation items
+    // Count negotiation items (excluding expected_close which should not appear in agenda)
     negotiationItems?.forEach((item: any) => {
-      if (item.scheduled_at) {
+      if (item.scheduled_at && item.type !== 'expected_close') {
         addToCount(new Date(item.scheduled_at));
       }
     });
