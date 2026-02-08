@@ -1,4 +1,4 @@
-import { forwardRef, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 
@@ -13,7 +13,7 @@ interface ReportRowProps {
   warningMessage?: string;
 }
 
-export const ReportRow = forwardRef<HTMLDivElement, ReportRowProps>(({
+export function ReportRow({
   title,
   description,
   icon,
@@ -22,7 +22,7 @@ export const ReportRow = forwardRef<HTMLDivElement, ReportRowProps>(({
   pdfDisabled = false,
   csvDisabled = false,
   warningMessage,
-}, ref) => {
+}: ReportRowProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
 
@@ -30,6 +30,8 @@ export const ReportRow = forwardRef<HTMLDivElement, ReportRowProps>(({
     setIsGeneratingPDF(true);
     try {
       await onGeneratePDF();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -39,13 +41,15 @@ export const ReportRow = forwardRef<HTMLDivElement, ReportRowProps>(({
     setIsDownloadingCSV(true);
     try {
       await onDownloadCSV();
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
     } finally {
       setIsDownloadingCSV(false);
     }
   };
 
   return (
-    <div ref={ref} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
       {/* Icon and content */}
       <div className="flex items-start gap-3 flex-1 min-w-0">
         {icon && (
@@ -102,6 +106,4 @@ export const ReportRow = forwardRef<HTMLDivElement, ReportRowProps>(({
       </div>
     </div>
   );
-});
-
-ReportRow.displayName = 'ReportRow';
+}
