@@ -159,13 +159,19 @@ export const KanbanColumn = ({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onSelect={() => onEditStage?.()}
+                        onSelect={(e) => {
+                          e.stopPropagation();
+                          window.setTimeout(() => onEditStage?.(), 0);
+                        }}
                       >
                         <Pencil className="mr-2 h-4 w-4" />
                         Editar estágio
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onSelect={() => onDeleteStage?.()}
+                        onSelect={(e) => {
+                          e.stopPropagation();
+                          window.setTimeout(() => onDeleteStage?.(), 0);
+                        }}
                         className="text-destructive"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
