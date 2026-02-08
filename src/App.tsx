@@ -1,54 +1,128 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AppLayout } from "@/components/layout/AppLayout";
-import Auth from "./pages/Auth";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { GlowInitializer } from "@/components/GlowInitializer";
+import { UtmCaptureProvider } from "@/components/UtmCaptureProvider";
+import { SEOProvider } from "@/components/SEOHead";
+import { JsonLdSchema } from "@/components/JsonLdSchema";
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import PlaceholderPage from "./pages/placeholder";
+import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+import Properties from "./pages/Properties";
+import Pipeline from "./pages/Pipeline";
+
+import Units from "./pages/Units";
+import Documents from "./pages/Documents";
+import Simulator from "./pages/Simulator";
+import Schedule from "./pages/Schedule";
+import NotificationHistory from "./pages/NotificationHistory";
+import ActivityHistory from "./pages/ActivityHistory";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Legal from "./pages/Legal";
+import TermsAdmin from "./pages/TermsAdmin";
+import UsersAdmin from "./pages/UsersAdmin";
+import Presentation from "./pages/Presentation";
+import WhatsApp from "./pages/WhatsApp";
+import WhatsAppSettings from "./pages/WhatsAppSettings";
+import RealEstate from "./pages/RealEstate";
+import ContactsUnified from "./pages/ContactsUnified";
+import Portals from "./pages/Portals";
+import Reports from "./pages/Reports";
+import WeeklyReport from "./pages/WeeklyReport";
+import MonthlyReport from "./pages/MonthlyReport";
+import Integrations from "./pages/Integrations";
+import Training from "./pages/Training";
+import Rentability from "./pages/Rentability";
+import ProductDemo from "./pages/ProductDemo";
+import Finance from "./pages/Finance";
+import FinanceTransactions from "./pages/FinanceTransactions";
+import FinanceReconciliation from "./pages/FinanceReconciliation";
+import FinanceCategories from "./pages/FinanceCategories";
+import FinanceDRE from "./pages/FinanceDRE";
+import AssetHealth from "./pages/AssetHealth";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutCancel from "./pages/CheckoutCancel";
+import Users from "./pages/Users";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
+  <SEOProvider>
+    <JsonLdSchema />
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <GlowInitializer />
+          <UtmCaptureProvider />
           <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/demo" element={<ProductDemo />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/properties" element={<PlaceholderPage />} />
-              <Route path="/units" element={<PlaceholderPage />} />
-              <Route path="/real-estate" element={<PlaceholderPage />} />
-              <Route path="/asset-health" element={<PlaceholderPage />} />
-              <Route path="/contacts" element={<PlaceholderPage />} />
-              <Route path="/pipeline" element={<PlaceholderPage />} />
-              <Route path="/schedule" element={<PlaceholderPage />} />
-              <Route path="/finance" element={<PlaceholderPage />} />
-              <Route path="/documents" element={<PlaceholderPage />} />
-              <Route path="/reports" element={<PlaceholderPage />} />
-              <Route path="/settings" element={<PlaceholderPage />} />
-            </Route>
+            <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Checkout routes */}
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
+            <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+            <Route path="/properties" element={<Properties />} />
+            <Route path="/units" element={<Units />} />
+            <Route path="/real-estate" element={<RealEstate />} />
+            <Route path="/pipeline" element={<Pipeline />} />
+            {/* Contacts route - single unified page */}
+            <Route path="/contacts" element={<ContactsUnified />} />
+            {/* Documents routes */}
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/documents/templates" element={<Documents />} />
+            <Route path="/documents/history" element={<Documents />} />
+            {/* Simulator routes */}
+            <Route path="/simulator" element={<Simulator />} />
+            <Route path="/simulator/financing" element={<Simulator />} />
+            <Route path="/simulator/taxes" element={<Simulator />} />
+            <Route path="/simulator/comparison" element={<Simulator />} />
+            {/* Rentability routes */}
+            <Route path="/rentability" element={<Rentability />} />
+            <Route path="/rentability/yield" element={<Rentability />} />
+            <Route path="/rentability/payback" element={<Rentability />} />
+            <Route path="/rentability/comparison" element={<Rentability />} />
+            {/* Finance routes */}
+            <Route path="/finance" element={<Finance />} />
+            <Route path="/finance/dre" element={<FinanceDRE />} />
+            <Route path="/finance/transactions" element={<FinanceTransactions />} />
+            <Route path="/finance/reconciliation" element={<FinanceReconciliation />} />
+            <Route path="/finance/categories" element={<FinanceCategories />} />
+            {/* Asset Health route */}
+            <Route path="/asset-health" element={<AssetHealth />} />
+            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/portals" element={<Portals />} />
+            {/* Reports routes */}
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports/weekly" element={<WeeklyReport />} />
+            <Route path="/reports/monthly" element={<MonthlyReport />} />
+            <Route path="/integrations" element={<Integrations />} />
+            <Route path="/training" element={<Training />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/notification-history" element={<NotificationHistory />} />
+            <Route path="/history" element={<ActivityHistory />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/apresentacao" element={<Presentation />} />
+            <Route path="/whatsapp" element={<WhatsApp />} />
+            <Route path="/whatsapp/settings" element={<WhatsAppSettings />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/admin/terms" element={<TermsAdmin />} />
+            <Route path="/admin/users" element={<UsersAdmin />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+        </BrowserRouter>
+        <Toaster />
+        <Sonner />
+      </TooltipProvider>
+    </QueryClientProvider>
+  </SEOProvider>
 );
 
 export default App;
+
