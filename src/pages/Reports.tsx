@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { Building2, Wallet, Users, FileText, ShieldAlert } from 'lucide-react';
 import { startOfMonth, subMonths } from 'date-fns';
 import { ReportsDateFilter } from '@/components/reports/ReportsDateFilter';
@@ -57,21 +59,30 @@ const Reports = () => {
   return (
     <AppLayout title="Relatórios Gerenciais">
       <div className="space-y-6">
-        {/* Header section - Clean and organized */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        {/* Header Section - Professional ERP Layout */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          {/* Description */}
           <p className="text-muted-foreground text-sm max-w-md">
             Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
           </p>
           
-          {/* Filters - aligned right on desktop */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <ReportsUnitSelector 
-              selectedUnitId={selectedUnitId} 
-              onUnitChange={setSelectedUnitId} 
-            />
-            <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+          {/* Filters Zone */}
+          <div className="flex flex-wrap items-end gap-3 w-full md:w-auto">
+            <div className="space-y-1.5 w-full md:w-auto">
+              <Label className="text-xs text-muted-foreground">Unidade</Label>
+              <ReportsUnitSelector 
+                selectedUnitId={selectedUnitId} 
+                onUnitChange={setSelectedUnitId} 
+              />
+            </div>
+            <div className="space-y-1.5 w-full md:w-auto">
+              <Label className="text-xs text-muted-foreground">Período</Label>
+              <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+            </div>
           </div>
         </div>
+
+        <Separator />
 
         {/* Tab navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
