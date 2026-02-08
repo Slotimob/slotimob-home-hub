@@ -120,8 +120,8 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     : 0;
 
   // Reset form when deal changes
-  useState(() => {
-    if (deal) {
+  useEffect(() => {
+    if (deal && open) {
       setEditedDeal({
         estimated_value: deal.estimated_value,
         commission_rate: deal.estimated_commission && deal.estimated_value 
@@ -133,7 +133,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
         expected_close_date: (deal as any).expected_close_date ? new Date((deal as any).expected_close_date) : null,
       });
     }
-  });
+  }, [deal?.id, open]);
 
   const handleSave = async () => {
     if (!deal) return;

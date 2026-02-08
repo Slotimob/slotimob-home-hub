@@ -5,10 +5,27 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Phone, Mail, MessageSquare, Calendar, MapPin, FileText, Loader2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Plus, Phone, Mail, MessageSquare, Calendar, MapPin, FileText, Loader2, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AddActivityDialog } from './AddActivityDialog';
+import { EditActivityDialog } from './EditActivityDialog';
 
 interface Activity {
   id: string;
@@ -57,6 +74,9 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadActivities = async () => {
     try {
@@ -82,6 +102,36 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
   useEffect(() => {
     loadActivities();
   }, [dealId]);
+
+  const handleDelete = async () => {
+    if (!deletingActivityId) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('deal_activities')
+        .delete()
+        .eq('id', deletingActivityId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Atividade excluída!',
+        description: 'A atividade foi removida.',
+      });
+
+      loadActivities();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao excluir atividade',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeletingActivityId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -126,6 +176,12 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                       <Badge variant="secondary" className="text-xs">
                         {activityLabels[activity.activity_type] || activity.activity_type}
                       </Badge>
+                      {activity.scheduled_at && (
+                        <Badge variant="outline" className="text-xs">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {format(new Date(activity.scheduled_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                        </Badge>
+                      )}
                     </div>
                     {activity.description && (
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
@@ -136,6 +192,26 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                       {format(new Date(activity.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingActivity(activity)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeletingActivityId(activity.id)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </Card>
             );
@@ -149,6 +225,30 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
         onOpenChange={setIsDialogOpen}
         onSuccess={loadActivities}
       />
+
+      <EditActivityDialog
+        activity={editingActivity}
+        open={!!editingActivity}
+        onOpenChange={(open) => !open && setEditingActivity(null)}
+        onSuccess={loadActivities}
+      />
+
+      <AlertDialog open={!!deletingActivityId} onOpenChange={(open) => !open && setDeletingActivityId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir atividade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A atividade será permanentemente removida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isDeleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
