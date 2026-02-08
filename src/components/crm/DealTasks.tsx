@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, CalendarDays, Loader2, AlertTriangle, MoreVertical, Pencil, Trash2, Clock } from 'lucide-react';
+import { Plus, CalendarDays, Loader2, AlertTriangle, MoreVertical, Pencil, Trash2, Clock, Info } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AddTaskDialog } from './AddTaskDialog';
@@ -167,6 +167,11 @@ export const DealTasks = ({ dealId }: DealTasksProps) => {
           <Plus className="h-4 w-4 mr-1" />
           Nova Tarefa
         </Button>
+      </div>
+
+      <div className="flex items-start gap-2 p-2 rounded-md bg-muted/50 text-xs text-muted-foreground">
+        <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+        <span>Tarefas com data de vencimento aparecerão automaticamente na Agenda.</span>
       </div>
 
       {tasks.length === 0 ? (
