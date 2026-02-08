@@ -104,16 +104,8 @@ const menuItems: MenuItem[] = [
     ]
   },
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
-  { 
-    title: 'Documentos', 
-    icon: FileText,
-    items: [
-      { title: 'Meus Documentos', url: '/documents' },
-      { title: 'Modelos Padrão', url: '/documents/templates' },
-      { title: 'Histórico', url: '/documents/history' },
-    ]
-  },
-  { 
+  { title: 'Documentos', url: '/documents', icon: FileText },
+  {
     title: 'Simulador', 
     icon: Calculator,
     items: [

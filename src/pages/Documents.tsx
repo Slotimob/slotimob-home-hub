@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, FileText, Search, Download, Trash2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Plus, FileText, Search, Download, Trash2, Building2, ExternalLink } from 'lucide-react';
 import { HeaderButton } from "@/components/ui/header-button";
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+interface DocumentUnit {
+  unit_number: string | null;
+  is_standalone?: boolean;
+  properties: { name: string } | null;
+}
 
 interface Document {
   id: string;
@@ -42,14 +61,24 @@ interface Document {
   file_size: number | null;
   version: number;
   created_at: string;
+  unit_id: string | null;
+  units: DocumentUnit | null;
 }
 
-const DOCUMENT_TYPE_LABELS = {
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   contract: 'Contrato',
   proposal: 'Proposta',
-  client_doc: 'Documento do Cliente',
-  property_doc: 'Documento do Imóvel',
+  client_doc: 'Doc. Cliente',
+  property_doc: 'Doc. Imóvel',
   other: 'Outro',
+};
+
+const DOCUMENT_TYPE_COLORS: Record<string, string> = {
+  contract: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  proposal: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  client_doc: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  property_doc: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  other: 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-300',
 };
 
 // Map routes to tab values
@@ -121,12 +150,12 @@ const Documents = () => {
     try {
       const { data, error } = await supabase
         .from('documents')
-        .select('*')
+        .select('*, units(unit_number, is_standalone, properties(name))')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data as Document[] || []);
-      setFilteredDocuments(data as Document[] || []);
+      setDocuments((data as Document[]) || []);
+      setFilteredDocuments((data as Document[]) || []);
     } catch (error: any) {
       toast({
         title: 'Erro ao carregar documentos',
@@ -197,10 +226,30 @@ const Documents = () => {
   };
 
   const formatFileSize = (bytes: number | null) => {
-    if (!bytes) return 'Desconhecido';
+    if (!bytes) return '—';
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getUnitLabel = (doc: Document): string => {
+    if (!doc.units) return 'Não vinculado';
+    if (doc.units.is_standalone) {
+      return doc.units.unit_number || 'Imóvel Avulso';
+    }
+    const unitNumber = doc.units.unit_number || 'Unidade';
+    const propertyName = doc.units.properties?.name || '';
+    return propertyName ? `${unitNumber} - ${propertyName}` : unitNumber;
+  };
+
+  const handleNavigateToUnit = (doc: Document) => {
+    if (!doc.unit_id) return;
+    // Check if it's standalone (real estate) or a unit in a property
+    if (doc.units?.is_standalone) {
+      navigate(`/real-estate?selected=${doc.unit_id}`);
+    } else {
+      navigate(`/units?selected=${doc.unit_id}`);
+    }
   };
 
   if (loading || loadingDocs) {
@@ -234,6 +283,7 @@ const Documents = () => {
           </TabsList>
 
           <TabsContent value="meus-documentos" className="space-y-6 mt-6">
+            {/* Filters Row */}
             <div className="flex flex-col gap-4 sm:flex-row">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -282,51 +332,113 @@ const Documents = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredDocuments.map((doc) => (
-                  <Card key={doc.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-base">{doc.title}</CardTitle>
-                        <Badge variant="secondary">
-                          {DOCUMENT_TYPE_LABELS[doc.document_type]}
-                        </Badge>
-                      </div>
-                      {doc.description && (
-                        <CardDescription className="line-clamp-2">
-                          {doc.description}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{formatFileSize(doc.file_size)}</span>
-                        <span>v{doc.version}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(doc.created_at).toLocaleDateString('pt-BR')}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleDownload(doc)}
-                        >
-                          <Download className="mr-2 h-3 w-3" />
-                          Baixar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setDeleteDoc(doc)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="min-w-[200px]">Nome</TableHead>
+                        <TableHead className="w-[120px]">Tipo</TableHead>
+                        <TableHead className="min-w-[180px]">Imóvel</TableHead>
+                        <TableHead className="w-[120px] text-center">Tamanho / Versão</TableHead>
+                        <TableHead className="w-[100px] text-center">Data</TableHead>
+                        <TableHead className="w-[140px] text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredDocuments.map((doc) => (
+                        <TableRow key={doc.id} className="hover:bg-muted/30 transition-colors">
+                          {/* Nome */}
+                          <TableCell>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-medium text-foreground line-clamp-1">{doc.title}</span>
+                              {doc.description && (
+                                <span className="text-xs text-muted-foreground line-clamp-1">{doc.description}</span>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* Tipo */}
+                          <TableCell>
+                            <Badge className={`text-xs font-normal ${DOCUMENT_TYPE_COLORS[doc.document_type]}`}>
+                              {DOCUMENT_TYPE_LABELS[doc.document_type]}
+                            </Badge>
+                          </TableCell>
+
+                          {/* Imóvel */}
+                          <TableCell>
+                            <span className={`text-sm ${doc.unit_id ? 'text-foreground' : 'text-muted-foreground italic'}`}>
+                              {getUnitLabel(doc)}
+                            </span>
+                          </TableCell>
+
+                          {/* Tamanho / Versão */}
+                          <TableCell className="text-center">
+                            <span className="text-sm text-muted-foreground">
+                              {formatFileSize(doc.file_size)} | v{doc.version}
+                            </span>
+                          </TableCell>
+
+                          {/* Data */}
+                          <TableCell className="text-center">
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(doc.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          </TableCell>
+
+                          {/* Ações */}
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-1">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => handleDownload(doc)}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Baixar</TooltipContent>
+                              </Tooltip>
+
+                              {doc.unit_id && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => handleNavigateToUnit(doc)}
+                                    >
+                                      <Building2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Ir para Imóvel</TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => setDeleteDoc(doc)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Excluir</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             )}
           </TabsContent>
