@@ -17,7 +17,18 @@ interface PdfOptions {
   highlightCondition?: (row: (string | number)[]) => boolean;
   footerTotals?: (string | number)[];
   insights?: string[];
+  selectedUnit?: string;
 }
+
+// Normalize text for helvetica font compatibility (removes encoding issues)
+const normalizeText = (text: string): string => {
+  if (!text) return '';
+  return text
+    .normalize('NFC')
+    .replace(/[\u{1F600}-\u{1F6FF}]/gu, '') // Remove emojis
+    .replace(/[Ø=Ü¡]/g, '') // Remove encoding artifacts
+    .trim();
+};
 
 export const generateReportPdf = async (options: PdfOptions) => {
   const { 
@@ -33,41 +44,51 @@ export const generateReportPdf = async (options: PdfOptions) => {
     highlightCondition,
     footerTotals,
     insights,
+    selectedUnit,
   } = options;
   
-  const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait' });
+  // Auto-detect landscape for tables with 7+ columns
+  const shouldUseLandscape = landscape || columns.length >= 7;
+  
+  const doc = new jsPDF({ orientation: shouldUseLandscape ? 'landscape' : 'portrait' });
+  doc.setFont('helvetica', 'normal');
   const pageWidth = doc.internal.pageSize.getWidth();
   
-  // Header background - dark gray
+  // Header background - professional dark gray
   doc.setFillColor(55, 65, 81);
-  doc.rect(0, 0, pageWidth, 45, 'F');
+  doc.rect(0, 0, pageWidth, 48, 'F');
   
-  // Logo placeholder
+  // Centered Logo and Title
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('SLOTIMOB', 14, 18);
+  doc.text('SLOTIMOB', pageWidth / 2, 14, { align: 'center' });
   
-  // Title
-  doc.setFontSize(16);
-  doc.text(title.toUpperCase(), 14, 30);
+  // Report Title - centered
+  doc.setFontSize(14);
+  doc.text(normalizeText(title.toUpperCase()), pageWidth / 2, 26, { align: 'center' });
   
-  // Subtitle/Period
-  doc.setFontSize(10);
+  // Period and Unit - centered
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  const periodText = `Período: ${format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} a ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`;
-  doc.text(periodText, 14, 38);
+  const periodText = `Periodo: ${format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} a ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`;
+  doc.text(normalizeText(periodText), pageWidth / 2, 35, { align: 'center' });
+  
+  // Show selected unit if provided
+  if (selectedUnit) {
+    doc.text(normalizeText(`Unidade: ${selectedUnit}`), pageWidth / 2, 42, { align: 'center' });
+  }
   
   // User name on right
   if (userName) {
-    doc.setFontSize(9);
-    doc.text(`Gerado por: ${userName}`, pageWidth - 14, 38, { align: 'right' });
+    doc.setFontSize(8);
+    doc.text(normalizeText(`Gerado por: ${userName}`), pageWidth - 14, 42, { align: 'right' });
   }
   
   // Reset text color
   doc.setTextColor(0, 0, 0);
   
-  let yPos = 55;
+  let yPos = 58;
   
   // Subtitle description
   if (subtitle) {
@@ -105,19 +126,24 @@ export const generateReportPdf = async (options: PdfOptions) => {
     yPos = (doc as any).lastAutoTable.finalY + 12;
   }
 
-  // Insights section
+  // Insights section (clean text without emojis)
   if (insights && insights.length > 0) {
     doc.setFillColor(240, 253, 244); // Light green background
-    doc.roundedRect(14, yPos, pageWidth - 28, 8 + insights.length * 6, 2, 2, 'F');
-    doc.setFontSize(9);
+    doc.roundedRect(14, yPos, pageWidth - 28, 10 + insights.length * 7, 2, 2, 'F');
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(22, 101, 52);
-    doc.text('💡 Insights:', 18, yPos + 6);
+    doc.text('ANALISE ESTRATEGICA:', 18, yPos + 7);
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     insights.forEach((insight, idx) => {
-      doc.text(`• ${insight}`, 18, yPos + 12 + idx * 6);
+      const cleanInsight = normalizeText(insight);
+      const splitInsight = doc.splitTextToSize(cleanInsight, pageWidth - 40);
+      splitInsight.forEach((line: string, lineIdx: number) => {
+        doc.text(lineIdx === 0 ? `- ${line}` : `  ${line}`, 18, yPos + 14 + idx * 7 + lineIdx * 5);
+      });
     });
-    yPos += 16 + insights.length * 6;
+    yPos += 18 + insights.length * 7;
     doc.setTextColor(0, 0, 0);
   }
   
