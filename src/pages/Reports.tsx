@@ -64,19 +64,13 @@ const Reports = () => {
           Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
         </p>
 
-        {/* Filters Row: Unit left, Period right */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Unidade</Label>
-            <ReportsUnitSelector 
-              selectedUnitId={selectedUnitId} 
-              onUnitChange={setSelectedUnitId} 
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Período</Label>
-            <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
-          </div>
+        {/* Filters Row: Unit left, Period right - Clean layout */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <ReportsUnitSelector 
+            selectedUnitId={selectedUnitId} 
+            onUnitChange={setSelectedUnitId} 
+          />
+          <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
 
         <Separator />
