@@ -281,12 +281,14 @@ const Documents = () => {
     >
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="meus-documentos">Meus Documentos</TabsTrigger>
-            <TabsTrigger value="modelos">Modelos Padrão</TabsTrigger>
-            <TabsTrigger value="personalizados">Modelos Personalizados</TabsTrigger>
-            <TabsTrigger value="historico">Rascunhos</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex h-auto min-w-max">
+              <TabsTrigger value="meus-documentos" className="text-xs sm:text-sm whitespace-nowrap">Meus Documentos</TabsTrigger>
+              <TabsTrigger value="modelos" className="text-xs sm:text-sm whitespace-nowrap">Modelos Padrão</TabsTrigger>
+              <TabsTrigger value="personalizados" className="text-xs sm:text-sm whitespace-nowrap">Personalizados</TabsTrigger>
+              <TabsTrigger value="historico" className="text-xs sm:text-sm whitespace-nowrap">Rascunhos</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="meus-documentos" className="space-y-6 mt-6">
             {/* Filters Row */}

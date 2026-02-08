@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, Save, Copy, FileText, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ContractTemplate {
   id: string;
@@ -40,10 +42,12 @@ export const CustomTemplateEditorDialog = ({
   template,
 }: CustomTemplateEditorDialogProps) => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'config' | 'preview'>('config');
 
   useEffect(() => {
     if (template) {
@@ -133,128 +137,212 @@ export const CustomTemplateEditorDialog = ({
     toast.success('PDF gerado com sucesso');
   };
 
-  const insertVariable = (variableName: string) => {
-    const newContent = content + `{{${variableName}}}`;
-    setContent(newContent);
-  };
-
   if (!template) return null;
+
+  // Form Content
+  const FormContent = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Nome do Modelo</Label>
+        <Input
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Nome do modelo"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Descrição</Label>
+        <Input
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Breve descrição do modelo"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="content">Conteúdo do Contrato</Label>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <Info className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p>Use {'{{nome_variavel}}'} para inserir campos dinâmicos que serão substituídos ao gerar o documento.</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <Textarea
+          id="content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Digite o conteúdo do contrato..."
+          className="min-h-[250px] sm:min-h-[300px] font-mono text-sm resize-none"
+        />
+      </div>
+
+      {/* Variables Preview */}
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Variáveis Encontradas ({variables.length})</Label>
+        <div className="flex flex-wrap gap-1.5">
+          {variables.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">
+              Nenhuma variável encontrada. Use {'{{nome}}'} para adicionar.
+            </p>
+          ) : (
+            variables.slice(0, 10).map((v) => (
+              <Badge key={v} variant="secondary" className="text-xs">
+                {`{{${v}}}`}
+              </Badge>
+            ))
+          )}
+          {variables.length > 10 && (
+            <Badge variant="outline" className="text-xs">+{variables.length - 10} mais</Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Preview Content
+  const PreviewContent = () => (
+    <div 
+      className="bg-white dark:bg-card border rounded-lg shadow-sm mx-auto"
+      style={{
+        maxWidth: isMobile ? '100%' : '210mm',
+        minHeight: isMobile ? '300px' : '400px',
+        padding: isMobile ? '16px' : '25mm 20mm',
+      }}
+    >
+      <pre 
+        className="whitespace-pre-wrap font-mono leading-relaxed text-foreground"
+        style={{ fontSize: isMobile ? '10px' : '12px' }}
+      >
+        {content || 'O conteúdo do contrato aparecerá aqui...'}
+      </pre>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0">
-        <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+      <DialogContent 
+        className={`flex flex-col p-0 ${
+          isMobile 
+            ? 'w-[95vw] max-w-[95vw] h-[90vh] max-h-[90vh]' 
+            : 'max-w-5xl h-[85vh]'
+        }`}
+      >
+        <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
             Editar Modelo Personalizado
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden">
-          {/* Form Section */}
-          <div className="border-r overflow-hidden flex flex-col">
-            <div className="px-4 py-2 bg-muted/50 border-b">
-              <h3 className="font-medium text-sm">Configurações do Modelo</h3>
+        {/* Mobile: Tabs layout */}
+        {isMobile ? (
+          <Tabs 
+            value={mobileTab} 
+            onValueChange={(v) => setMobileTab(v as 'config' | 'preview')} 
+            className="flex-1 flex flex-col overflow-hidden min-h-0"
+          >
+            <div className="px-3 py-2 border-b shrink-0">
+              <TabsList className="grid w-full grid-cols-2 h-9">
+                <TabsTrigger value="config" className="text-xs">Configurações</TabsTrigger>
+                <TabsTrigger value="preview" className="text-xs">Pré-visualização</TabsTrigger>
+              </TabsList>
             </div>
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Modelo</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nome do modelo"
-                  />
+            <TabsContent value="config" className="flex-1 overflow-hidden m-0 min-h-0">
+              <ScrollArea className="h-full">
+                <div className="p-4">
+                  <FormContent />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
-                  <Input
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Breve descrição do modelo"
-                  />
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="preview" className="flex-1 overflow-hidden m-0 min-h-0 bg-muted/30">
+              <ScrollArea className="h-full">
+                <div className="p-4">
+                  <PreviewContent />
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="content">Conteúdo do Contrato</Label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                          <Info className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Use {'{{nome_variavel}}'} para inserir campos dinâmicos que serão substituídos ao gerar o documento.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <Textarea
-                    id="content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Digite o conteúdo do contrato..."
-                    className="min-h-[300px] font-mono text-sm"
-                  />
-                </div>
-
-                {/* Variables Preview */}
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Variáveis Encontradas ({variables.length})</Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {variables.length === 0 ? (
-                      <p className="text-xs text-muted-foreground italic">
-                        Nenhuma variável encontrada. Use {'{{nome}}'} para adicionar.
-                      </p>
-                    ) : (
-                      variables.map((v) => (
-                        <Badge key={v} variant="secondary" className="text-xs">
-                          {`{{${v}}}`}
-                        </Badge>
-                      ))
-                    )}
-                  </div>
-                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          /* Desktop: Split view */
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden min-h-0">
+            {/* Form Section */}
+            <div className="border-r overflow-hidden flex flex-col">
+              <div className="px-4 py-2 bg-muted/50 border-b shrink-0">
+                <h3 className="font-medium text-sm">Configurações do Modelo</h3>
               </div>
-            </ScrollArea>
-          </div>
-
-          {/* Preview Section */}
-          <div className="overflow-hidden flex flex-col">
-            <div className="px-4 py-2 bg-muted/50 border-b">
-              <h3 className="font-medium text-sm">Pré-visualização</h3>
+              <ScrollArea className="flex-1">
+                <div className="p-4">
+                  <FormContent />
+                </div>
+              </ScrollArea>
             </div>
-            <ScrollArea className="flex-1 p-4">
-              <div className="bg-white border rounded-lg p-6 shadow-sm min-h-full">
-                <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground">
-                  {content || 'O conteúdo do contrato aparecerá aqui...'}
-                </pre>
+
+            {/* Preview Section */}
+            <div className="overflow-hidden flex flex-col bg-muted/30">
+              <div className="px-4 py-2 bg-muted/50 border-b shrink-0">
+                <h3 className="font-medium text-sm">Pré-visualização</h3>
               </div>
-            </ScrollArea>
+              <ScrollArea className="flex-1">
+                <div className="p-4">
+                  <PreviewContent />
+                </div>
+              </ScrollArea>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Actions Footer */}
-        <div className="px-6 py-4 border-t flex justify-between">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" />
-              Baixar PDF
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t shrink-0">
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              size={isMobile ? "sm" : "default"}
+              className="order-2 sm:order-1"
+            >
+              Cancelar
             </Button>
-            <Button variant="secondary" onClick={handleSaveAsNew} disabled={saving}>
-              <Copy className="mr-2 h-4 w-4" />
-              Salvar como Novo
-            </Button>
-            <Button onClick={handleSaveUpdate} disabled={saving}>
-              <Save className="mr-2 h-4 w-4" />
-              {saving ? 'Salvando...' : 'Atualizar'}
-            </Button>
+            <div className="flex flex-wrap gap-2 order-1 sm:order-2">
+              <Button 
+                variant="outline" 
+                onClick={handleDownload}
+                size={isMobile ? "sm" : "default"}
+                className="flex-1 sm:flex-none"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Baixar PDF</span>
+                <span className="sm:hidden">PDF</span>
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={handleSaveAsNew} 
+                disabled={saving}
+                size={isMobile ? "sm" : "default"}
+                className="flex-1 sm:flex-none"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Salvar como Novo</span>
+                <span className="sm:hidden">Novo</span>
+              </Button>
+              <Button 
+                onClick={handleSaveUpdate} 
+                disabled={saving}
+                size={isMobile ? "sm" : "default"}
+                className="flex-1 sm:flex-none"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {saving ? 'Salvando...' : 'Atualizar'}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

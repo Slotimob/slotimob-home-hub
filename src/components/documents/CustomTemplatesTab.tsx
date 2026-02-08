@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FileText, Download, Pencil, Trash2, Plus, FileCheck } from 'lucide-react';
+import { FileText, Download, Pencil, Trash2, Plus, FileCheck, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -28,9 +29,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { CustomTemplateEditorDialog } from './CustomTemplateEditorDialog';
 import { generateDocumentPDF } from '@/utils/pdfGenerator';
 import { DocumentTemplate, TemplateField } from '@/utils/documentTemplates';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ContractTemplate {
   id: string;
@@ -44,6 +52,7 @@ interface ContractTemplate {
 
 export const CustomTemplatesTab = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTemplate, setDeleteTemplate] = useState<ContractTemplate | null>(null);
@@ -93,7 +102,6 @@ export const CustomTemplatesTab = () => {
   };
 
   const handleDownload = (template: ContractTemplate) => {
-    // Convert to DocumentTemplate format for PDF generation
     const docTemplate: DocumentTemplate = {
       id: template.id,
       name: template.name,
@@ -142,15 +150,15 @@ export const CustomTemplatesTab = () => {
 
   if (templates.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 text-center">
         <div className="rounded-full bg-muted p-4 mb-4">
           <FileText className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">Nenhum modelo personalizado</h3>
-        <p className="text-sm text-muted-foreground max-w-md mb-4">
+        <h3 className="text-base sm:text-lg font-semibold mb-2">Nenhum modelo personalizado</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground max-w-md mb-4">
           Você ainda não criou modelos customizados. Comece editando um modelo padrão na aba "Modelos Padrão" e clique em "Salvar Modelo" para criar sua versão personalizada.
         </p>
-        <Button variant="outline" onClick={() => window.location.href = '/documents/templates'}>
+        <Button variant="outline" size="sm" onClick={() => window.location.href = '/documents/templates'}>
           <Plus className="h-4 w-4 mr-2" />
           Ir para Modelos Padrão
         </Button>
@@ -158,6 +166,98 @@ export const CustomTemplatesTab = () => {
     );
   }
 
+  // Mobile Card View
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {/* Header Info */}
+        <div className="bg-muted/50 rounded-lg p-3 border">
+          <div className="flex items-start gap-3">
+            <FileCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <h3 className="font-medium text-sm">Modelos Personalizados</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Modelos salvos a partir de edições nos modelos padrão.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Card Grid for Mobile */}
+        <div className="grid gap-3">
+          {templates.map((template) => (
+            <Card key={template.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-3 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-sm truncate">{template.name}</span>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(template)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(template)}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Baixar PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeleteTemplate(template)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {template.description || 'Sem descrição'}
+                </p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Criado em {new Date(template.created_at).toLocaleDateString('pt-BR')}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Delete Dialog */}
+        <AlertDialog open={!!deleteTemplate} onOpenChange={(open) => !open && setDeleteTemplate(null)}>
+          <AlertDialogContent className="max-w-[90vw]">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir o modelo "{deleteTemplate?.name}"? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col gap-2">
+              <AlertDialogCancel className="w-full">Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Editor Dialog */}
+        <CustomTemplateEditorDialog
+          open={isEditorOpen}
+          onOpenChange={handleEditorClose}
+          template={editTemplate}
+        />
+      </div>
+    );
+  }
+
+  // Desktop Table View
   return (
     <div className="space-y-6">
       {/* Header Info */}

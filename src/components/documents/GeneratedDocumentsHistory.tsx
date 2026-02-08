@@ -25,14 +25,13 @@ import {
   Search, 
   Download, 
   Trash2, 
-  Edit, 
-  Send,
   Clock,
   RefreshCw,
   Filter,
   CalendarIcon,
   X,
-  FileEdit
+  FileEdit,
+  Send
 } from 'lucide-react';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -50,6 +49,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GeneratedDocument {
   id: string;
@@ -64,6 +64,7 @@ type CategoryFilter = 'all' | 'captacao' | 'recibos' | 'vistorias' | 'diversos' 
 export function GeneratedDocumentsHistory() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [documents, setDocuments] = useState<GeneratedDocument[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<GeneratedDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -219,12 +220,12 @@ export function GeneratedDocumentsHistory() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Info */}
-      <div className="bg-muted/50 rounded-lg p-4 border">
+      <div className="bg-muted/50 rounded-lg p-3 sm:p-4 border">
         <div className="flex items-start gap-3">
-          <FileEdit className="h-5 w-5 text-primary mt-0.5" />
-          <div>
+          <FileEdit className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          <div className="min-w-0">
             <h3 className="font-medium text-sm">Rascunhos e Documentos Gerados</h3>
             <p className="text-xs text-muted-foreground mt-1">
               Aqui ficam salvos os documentos pré-preenchidos que você pode continuar editando ou baixar novamente.
@@ -234,12 +235,12 @@ export function GeneratedDocumentsHistory() {
       </div>
 
       {/* Search and Filter Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome do template..."
+              placeholder="Buscar por nome..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -250,29 +251,30 @@ export function GeneratedDocumentsHistory() {
               variant={showFilters ? "default" : "outline"} 
               size="sm" 
               onClick={() => setShowFilters(!showFilters)}
+              className="flex-1 sm:flex-none"
             >
               <Filter className="mr-2 h-4 w-4" />
               Filtros
               {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
                   !
                 </Badge>
               )}
             </Button>
-            <Button variant="outline" size="sm" onClick={loadDocuments}>
+            <Button variant="outline" size="sm" onClick={loadDocuments} className="flex-1 sm:flex-none">
               <RefreshCw className="mr-2 h-4 w-4" />
-              Atualizar
+              <span className="hidden sm:inline">Atualizar</span>
             </Button>
           </div>
         </div>
 
         {/* Advanced Filters Panel */}
         {showFilters && (
-          <Card className="p-4">
-            <CardContent className="p-0 space-y-4">
-              <div className="flex flex-wrap gap-4">
+          <Card className="p-3 sm:p-4">
+            <CardContent className="p-0 space-y-3 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
                 {/* Category Filter */}
-                <div className="flex flex-col gap-2 min-w-[200px]">
+                <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[180px]">
                   <Label className="text-sm font-medium">Categoria</Label>
                   <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
                     <SelectTrigger>
@@ -290,16 +292,16 @@ export function GeneratedDocumentsHistory() {
                 </div>
 
                 {/* Date From Filter */}
-                <div className="flex flex-col gap-2 min-w-[200px]">
+                <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[160px]">
                   <Label className="text-sm font-medium">Data inicial</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="justify-start text-left font-normal"
+                        className="justify-start text-left font-normal w-full"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                        {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -315,16 +317,16 @@ export function GeneratedDocumentsHistory() {
                 </div>
 
                 {/* Date To Filter */}
-                <div className="flex flex-col gap-2 min-w-[200px]">
+                <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[160px]">
                   <Label className="text-sm font-medium">Data final</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="justify-start text-left font-normal"
+                        className="justify-start text-left font-normal w-full"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                        {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -360,13 +362,13 @@ export function GeneratedDocumentsHistory() {
       )}
 
       {filteredDocuments.length === 0 ? (
-        <Card className="py-12 text-center">
+        <Card className="py-8 sm:py-12 text-center">
           <CardContent>
-            <Clock className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">
+            <Clock className="mx-auto mb-4 h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-base sm:text-lg font-semibold">
               {searchTerm ? 'Nenhum rascunho encontrado' : 'Nenhum rascunho salvo'}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto">
               {searchTerm 
                 ? 'Tente ajustar a busca' 
                 : 'Os documentos que você preencher serão salvos aqui automaticamente'}
@@ -374,7 +376,7 @@ export function GeneratedDocumentsHistory() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filteredDocuments.map((doc) => {
             const category = getTemplateCategory(doc.template_id);
             const categoryColor = category ? CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] : 'bg-muted';
@@ -382,41 +384,42 @@ export function GeneratedDocumentsHistory() {
 
             return (
               <Card key={doc.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-4 space-y-3">
+                <CardContent className="p-3 sm:p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <h3 className="font-medium text-sm line-clamp-2">{doc.template_name}</h3>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+                      <h3 className="font-medium text-xs sm:text-sm line-clamp-2">{doc.template_name}</h3>
                     </div>
-                    <Badge className={`${categoryColor} text-white text-xs shrink-0`}>
+                    <Badge className={`${categoryColor} text-white text-[10px] sm:text-xs shrink-0`}>
                       {categoryLabel}
                     </Badge>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs">
                       <FileEdit className="h-3 w-3 mr-1" />
                       Rascunho
                     </Badge>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {format(new Date(doc.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {format(new Date(doc.created_at), "dd/MM/yy HH:mm", { locale: ptBR })}
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-8 text-xs"
                       onClick={() => setEditDoc(doc)}
                     >
-                      <Edit className="mr-1 h-3 w-3" />
+                      <FileEdit className="mr-1 h-3 w-3" />
                       Continuar
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-8 w-8 p-0"
                       onClick={() => handleDownload(doc)}
                     >
                       <Download className="h-3 w-3" />
@@ -424,6 +427,7 @@ export function GeneratedDocumentsHistory() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-8 w-8 p-0"
                       onClick={() => setSendDoc(doc)}
                     >
                       <Send className="h-3 w-3" />
@@ -431,6 +435,7 @@ export function GeneratedDocumentsHistory() {
                     <Button
                       variant="destructive"
                       size="sm"
+                      className="h-8 w-8 p-0"
                       onClick={() => setDeleteDoc(doc)}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -443,13 +448,14 @@ export function GeneratedDocumentsHistory() {
         </div>
       )}
 
-      {/* Edit Dialog */}
+      {/* Edit Dialog - Pass existingDraftId for UPDATE behavior */}
       {editDoc && editDoc.template_id && (
         <DocumentEditorDialog
           template={getTemplateById(editDoc.template_id)!}
           open={!!editDoc}
           onOpenChange={(open) => !open && setEditDoc(null)}
           initialValues={editDoc.filled_fields}
+          existingDraftId={editDoc.id}
           onSuccess={loadDocuments}
         />
       )}
@@ -466,18 +472,18 @@ export function GeneratedDocumentsHistory() {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteDoc} onOpenChange={(open) => !open && setDeleteDoc(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir rascunho</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir este rascunho? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
             </AlertDialogAction>
