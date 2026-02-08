@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, CheckCircle2, Briefcase } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, CheckCircle2, Briefcase, RefreshCw } from "lucide-react";
 import { HeaderButton } from "@/components/ui/header-button";
 import { format, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -381,13 +381,30 @@ export default function Schedule() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Gerencie suas atividades e visitas</p>
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'calendar' | 'day' | 'week')}>
-              <TabsList>
-                <TabsTrigger value="day">Dia</TabsTrigger>
-                <TabsTrigger value="week">Semana</TabsTrigger>
-                <TabsTrigger value="calendar">Calendário</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-2">
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'calendar' | 'day' | 'week')}>
+                <TabsList>
+                  <TabsTrigger value="day">Dia</TabsTrigger>
+                  <TabsTrigger value="week">Semana</TabsTrigger>
+                  <TabsTrigger value="calendar">Calendário</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ["all-visits"] });
+                  queryClient.invalidateQueries({ queryKey: ["all-schedule-activities"] });
+                  queryClient.invalidateQueries({ queryKey: ["all-negotiation-items"] });
+                  queryClient.invalidateQueries({ queryKey: ["schedule-activities"] });
+                  queryClient.invalidateQueries({ queryKey: ["negotiation-schedule-items"] });
+                  toast.success("Agenda atualizada");
+                }}
+                title="Atualizar agenda"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {viewMode === 'day' ? (
