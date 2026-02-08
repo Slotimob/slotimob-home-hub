@@ -58,27 +58,24 @@ const Reports = () => {
 
   return (
     <AppLayout title="Relatórios Gerenciais">
-      <div className="space-y-6">
-        {/* Header Section - Professional ERP Layout */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-          {/* Description */}
-          <p className="text-muted-foreground text-sm max-w-md">
-            Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
-          </p>
-          
-          {/* Filters Zone */}
-          <div className="flex flex-wrap items-end gap-3 w-full md:w-auto">
-            <div className="space-y-1.5 w-full md:w-auto">
-              <Label className="text-xs text-muted-foreground">Unidade</Label>
-              <ReportsUnitSelector 
-                selectedUnitId={selectedUnitId} 
-                onUnitChange={setSelectedUnitId} 
-              />
-            </div>
-            <div className="space-y-1.5 w-full md:w-auto">
-              <Label className="text-xs text-muted-foreground">Período</Label>
-              <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
-            </div>
+      <div className="space-y-4">
+        {/* Description */}
+        <p className="text-muted-foreground text-sm">
+          Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
+        </p>
+
+        {/* Filters Row: Unit left, Period right */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Unidade</Label>
+            <ReportsUnitSelector 
+              selectedUnitId={selectedUnitId} 
+              onUnitChange={setSelectedUnitId} 
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Período</Label>
+            <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
           </div>
         </div>
 
