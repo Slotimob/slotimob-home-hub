@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, CheckCircle2 } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, CheckCircle2, Briefcase } from "lucide-react";
 import { HeaderButton } from "@/components/ui/header-button";
 import { format, isSameDay, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -20,6 +20,8 @@ import { DayScheduleGrid } from "@/components/schedule/DayScheduleGrid";
 import { WeekScheduleGrid } from "@/components/schedule/WeekScheduleGrid";
 import { CreateActivityDialog } from "@/components/schedule/CreateActivityDialog";
 import { CalendarSyncDialog } from "@/components/schedule/CalendarSyncDialog";
+import { NegotiationScheduleCard } from "@/components/schedule/NegotiationScheduleCard";
+import { useNegotiationScheduleItems } from "@/hooks/useNegotiationScheduleItems";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -68,6 +70,12 @@ export default function Schedule() {
       return data as any;
     },
     enabled: !!user?.id,
+  });
+
+  // Fetch negotiation items (activities, tasks, expected close dates from deals)
+  const { data: negotiationItems } = useNegotiationScheduleItems({
+    selectedDate,
+    viewMode: viewMode === 'calendar' ? 'day' : viewMode,
   });
 
   // For weekly view, fetch activities for the entire week
@@ -458,12 +466,45 @@ export default function Schedule() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {!visitsOnSelectedDate || visitsOnSelectedDate.length === 0 ? (
+                  {/* Negotiation Items Section */}
+                  {negotiationItems && negotiationItems.length > 0 && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Briefcase className="h-4 w-4 text-primary" />
+                        <h3 className="text-sm font-medium">Itens de Negociações</h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {negotiationItems.length}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {negotiationItems.map((item) => (
+                          <NegotiationScheduleCard
+                            key={item.id}
+                            item={item}
+                            onClick={() => navigate(`/pipeline`)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Visits Section */}
+                  {negotiationItems && negotiationItems.length > 0 && visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="text-sm font-medium">Visitas</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {visitsOnSelectedDate.length}
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  {(!visitsOnSelectedDate || visitsOnSelectedDate.length === 0) && (!negotiationItems || negotiationItems.length === 0) ? (
                     <div className="text-center py-12 text-muted-foreground">
                       <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma visita agendada para esta data</p>
+                      <p>Nenhum compromisso para esta data</p>
                     </div>
-                  ) : (
+                  ) : visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {visitsOnSelectedDate.map((visit: any) => (
                         <Card key={visit.id} className="relative">

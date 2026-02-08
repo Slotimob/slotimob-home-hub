@@ -354,15 +354,15 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
       }
 
       toast({
-        title: 'Deal criado!',
-        description: 'O deal foi adicionado ao pipeline.',
+        title: 'Negociação criada!',
+        description: 'A negociação foi adicionada ao pipeline.',
       });
 
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
       toast({
-        title: 'Erro ao criar deal',
+        title: 'Erro ao criar negociação',
         description: error.message,
         variant: 'destructive',
       });
@@ -391,8 +391,8 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo Deal</DialogTitle>
-          <DialogDescription>Adicione um novo negócio ao pipeline de vendas</DialogDescription>
+          <DialogTitle>Nova Negociação</DialogTitle>
+          <DialogDescription>Adicione uma nova negociação ao pipeline de vendas</DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
