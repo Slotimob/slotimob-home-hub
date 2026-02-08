@@ -188,7 +188,7 @@ const Pipeline = () => {
     el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   }, []);
 
-  const handleKanbanWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+  const handleKanbanWheel = useCallback((e: WheelEvent) => {
     const el = kanbanScrollRef.current;
     if (!el) return;
 
@@ -196,8 +196,8 @@ const Pipeline = () => {
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
 
     // Check if scroll originated from inside a card content area (inner scrollable)
-    const target = e.target as HTMLElement;
-    const cardContent = target.closest('[data-card-scroll]');
+    const target = e.target as HTMLElement | null;
+    const cardContent = target?.closest?.('[data-card-scroll]');
     if (cardContent) {
       // Let the card handle its own vertical scroll - don't convert to horizontal
       return;
@@ -206,13 +206,23 @@ const Pipeline = () => {
     // Check if we can scroll
     const canScrollLeft = el.scrollLeft > 0;
     const canScrollRight = el.scrollLeft < el.scrollWidth - el.clientWidth;
-    
+
     // Only prevent default if we can actually scroll in the intended direction
     if ((e.deltaY > 0 && canScrollRight) || (e.deltaY < 0 && canScrollLeft)) {
       el.scrollLeft += e.deltaY;
       e.preventDefault();
     }
   }, []);
+
+  useEffect(() => {
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+
+    // React may attach wheel handlers as passive; use a native non-passive listener.
+    const listener = handleKanbanWheel as unknown as EventListener;
+    el.addEventListener('wheel', listener, { passive: false });
+    return () => el.removeEventListener('wheel', listener);
+  }, [handleKanbanWheel]);
 
   // Drag-to-scroll handlers (mouse only). Touch uses native swipe.
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -1127,7 +1137,6 @@ const Pipeline = () => {
           <div
             ref={kanbanScrollRef}
             className="w-full min-w-0 overflow-x-scroll overflow-y-visible pb-4 touch-pan-x overscroll-x-contain pipeline-scrollbar cursor-grab px-6 snap-x snap-proximity md:snap-none"
-            onWheel={handleKanbanWheel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={endPointerDrag}
