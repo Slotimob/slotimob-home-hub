@@ -32,8 +32,6 @@ import RealEstate from "./pages/RealEstate";
 import ContactsUnified from "./pages/ContactsUnified";
 import Portals from "./pages/Portals";
 import Reports from "./pages/Reports";
-import WeeklyReport from "./pages/WeeklyReport";
-import MonthlyReport from "./pages/MonthlyReport";
 import Integrations from "./pages/Integrations";
 import Training from "./pages/Training";
 import Rentability from "./pages/Rentability";
@@ -97,10 +95,8 @@ const App = () => (
             <Route path="/asset-health" element={<AssetHealth />} />
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/portals" element={<Portals />} />
-            {/* Reports routes */}
+            {/* Reports route */}
             <Route path="/reports" element={<Reports />} />
-            <Route path="/reports/weekly" element={<WeeklyReport />} />
-            <Route path="/reports/monthly" element={<MonthlyReport />} />
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/training" element={<Training />} />
             <Route path="/users" element={<Users />} />

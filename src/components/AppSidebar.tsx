@@ -103,15 +103,7 @@ const menuItems: MenuItem[] = [
       { title: 'Agenda', url: '/schedule' },
     ]
   },
-  { 
-    title: 'Relatórios', 
-    icon: BarChart3,
-    items: [
-      { title: 'Visão Geral', url: '/reports' },
-      { title: 'Resumo Semanal', url: '/reports/weekly' },
-      { title: 'Resumo Mensal', url: '/reports/monthly' },
-    ]
-  },
+  { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { 
     title: 'Documentos', 
     icon: FileText,
