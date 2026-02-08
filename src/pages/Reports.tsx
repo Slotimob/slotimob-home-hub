@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Wallet, Users, FileText, BarChart3 } from 'lucide-react';
+import { Building2, Wallet, Users, FileText } from 'lucide-react';
 import { startOfMonth, subMonths } from 'date-fns';
 import { ReportsDateFilter } from '@/components/reports/ReportsDateFilter';
 import { ReportsFinanceSection } from '@/components/reports/ReportsFinanceSection';
@@ -53,104 +53,65 @@ const Reports = () => {
 
   return (
     <AppLayout title="Intelligence Center">
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header with description and filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-muted-foreground text-sm">
-              Gere relatórios profissionais em PDF ou exporte dados brutos em CSV para análise.
-            </p>
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-muted-foreground text-sm">
+            Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
+          </p>
           <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
 
         {/* Tab navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1">
-            <TabsTrigger 
-              value="financeiro" 
-              className="flex items-center gap-2 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <Wallet className="h-4 w-4" />
-              <span className="hidden sm:inline">Financeiro</span>
-              <span className="sm:hidden">Fin.</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="ativos" 
-              className="flex items-center gap-2 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Ativos</span>
-              <span className="sm:hidden">Ativos</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="crm" 
-              className="flex items-center gap-2 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <Users className="h-4 w-4" />
-              <span>CRM</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="fiscal" 
-              className="flex items-center gap-2 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Fiscal/DIMOB</span>
-              <span className="sm:hidden">Fiscal</span>
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex h-auto p-1 w-auto min-w-full sm:min-w-0 sm:w-full sm:grid sm:grid-cols-4">
+              <TabsTrigger 
+                value="financeiro" 
+                className="flex items-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                Financeiro
+              </TabsTrigger>
+              <TabsTrigger 
+                value="ativos" 
+                className="flex items-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                Ativos
+              </TabsTrigger>
+              <TabsTrigger 
+                value="crm" 
+                className="flex items-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                CRM
+              </TabsTrigger>
+              <TabsTrigger 
+                value="fiscal" 
+                className="flex items-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Fiscal/</span>DIMOB
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Tab content */}
-          <TabsContent value="financeiro" className="mt-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Relatórios Financeiros</h2>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Controle de fluxo de caixa, extratos de repasse, inadimplência e conciliação bancária.
-              </p>
-              <ReportsFinanceSection dateRange={dateRange} userName={userName} />
-            </div>
+          <TabsContent value="financeiro" className="mt-4 sm:mt-6">
+            <ReportsFinanceSection dateRange={dateRange} userName={userName} />
           </TabsContent>
 
-          <TabsContent value="ativos" className="mt-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Relatórios de Ativos</h2>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Análise de vacância, projeção de reajustes e controle de seguros do portfólio.
-              </p>
-              <ReportsAssetsSection dateRange={dateRange} userName={userName} />
-            </div>
+          <TabsContent value="ativos" className="mt-4 sm:mt-6">
+            <ReportsAssetsSection dateRange={dateRange} userName={userName} />
           </TabsContent>
 
-          <TabsContent value="crm" className="mt-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Relatórios de CRM</h2>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Performance de conversão, análise de origens de leads e ciclo médio de vendas.
-              </p>
-              <ReportsCrmSection dateRange={dateRange} userName={userName} />
-            </div>
+          <TabsContent value="crm" className="mt-4 sm:mt-6">
+            <ReportsCrmSection dateRange={dateRange} userName={userName} />
           </TabsContent>
 
-          <TabsContent value="fiscal" className="mt-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Relatórios Fiscais</h2>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Exportação prévia para DIMOB com validação de dados obrigatórios.
-              </p>
-              <ReportsFiscalSection dateRange={dateRange} userName={userName} />
-            </div>
+          <TabsContent value="fiscal" className="mt-4 sm:mt-6">
+            <ReportsFiscalSection dateRange={dateRange} userName={userName} />
           </TabsContent>
         </Tabs>
       </div>

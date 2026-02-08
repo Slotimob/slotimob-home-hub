@@ -1,10 +1,12 @@
-import { ReportCard } from './ReportCard';
+import { ReportRow } from './ReportRow';
+import { ReportsTable } from './ReportsTable';
 import { 
   Wallet, 
   TrendingUp, 
   AlertTriangle, 
   Calculator, 
   FileCheck,
+  BarChart3,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
@@ -105,7 +107,6 @@ export const ReportsFinanceSection = ({ dateRange, userName }: ReportsFinanceSec
     try {
       const transactions = await fetchTransactions();
       
-      // Group by month
       const byMonth: Record<string, { income: number; expense: number }> = {};
       transactions.forEach(t => {
         const month = t.transaction_date.substring(0, 7);
@@ -385,42 +386,46 @@ export const ReportsFinanceSection = ({ dateRange, userName }: ReportsFinanceSec
   };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <ReportCard
+    <ReportsTable
+      title="Relatórios Financeiros"
+      icon={<BarChart3 className="h-5 w-5" />}
+      description="Controle de fluxo de caixa, extratos de repasse, inadimplência e conciliação bancária."
+    >
+      <ReportRow
         title="Extrato de Repasse"
         description="Todas as movimentações financeiras do período, separadas por receita e despesa."
-        icon={<Wallet className="h-5 w-5" />}
+        icon={<Wallet className="h-4 w-4" />}
         onGeneratePDF={handleRepassePdf}
         onDownloadCSV={handleRepasseCsv}
       />
-      <ReportCard
+      <ReportRow
         title="Fluxo de Caixa"
         description="Comparativo mensal de entradas e saídas, mostrando o saldo resultante por período."
-        icon={<TrendingUp className="h-5 w-5" />}
+        icon={<TrendingUp className="h-4 w-4" />}
         onGeneratePDF={handleFluxoCaixaPdf}
         onDownloadCSV={handleFluxoCaixaCsv}
       />
-      <ReportCard
+      <ReportRow
         title="Inadimplência Analítica"
         description="Lista detalhada de recebíveis em atraso, com dias de atraso e contato devedor."
-        icon={<AlertTriangle className="h-5 w-5" />}
+        icon={<AlertTriangle className="h-4 w-4" />}
         onGeneratePDF={handleInadimplenciaPdf}
         onDownloadCSV={handleInadimplenciaCsv}
       />
-      <ReportCard
+      <ReportRow
         title="Saldo Bancário"
         description="Posição consolidada de todas as contas bancárias cadastradas."
-        icon={<Calculator className="h-5 w-5" />}
+        icon={<Calculator className="h-4 w-4" />}
         onGeneratePDF={handleSaldoBancarioPdf}
         onDownloadCSV={handleSaldoBancarioCsv}
       />
-      <ReportCard
+      <ReportRow
         title="Conciliação Bancária"
         description="Comparativo entre extratos importados e lançamentos do sistema."
-        icon={<FileCheck className="h-5 w-5" />}
+        icon={<FileCheck className="h-4 w-4" />}
         onGeneratePDF={handleConciliacaoPdf}
         onDownloadCSV={handleConciliacaoCsv}
       />
-    </div>
+    </ReportsTable>
   );
 };

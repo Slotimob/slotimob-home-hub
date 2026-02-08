@@ -1,5 +1,6 @@
-import { ReportCard } from './ReportCard';
-import { Target, Megaphone, Clock } from 'lucide-react';
+import { ReportRow } from './ReportRow';
+import { ReportsTable } from './ReportsTable';
+import { Target, Megaphone, Clock, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
@@ -117,7 +118,6 @@ export const ReportsCrmSection = ({ dateRange, userName }: ReportsCrmSectionProp
         .gte('created_at', dateRange.from.toISOString())
         .lte('created_at', dateRange.to.toISOString());
 
-      // Group by origin
       const byOrigin: Record<string, { leads: number; conversions: number; value: number }> = {};
       
       (leads || []).forEach(l => {
@@ -282,28 +282,32 @@ export const ReportsCrmSection = ({ dateRange, userName }: ReportsCrmSectionProp
   };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <ReportCard
+    <ReportsTable
+      title="Relatórios de CRM"
+      icon={<Users className="h-5 w-5" />}
+      description="Performance de conversão, análise de origens de leads e ciclo médio de vendas."
+    >
+      <ReportRow
         title="Performance de Conversão"
         description="Análise de negociações com taxa de conversão e valor total convertido no período."
-        icon={<Target className="h-5 w-5" />}
+        icon={<Target className="h-4 w-4" />}
         onGeneratePDF={handleConversaoPdf}
         onDownloadCSV={handleConversaoCsv}
       />
-      <ReportCard
+      <ReportRow
         title="Origem de Leads (ROI)"
         description="Performance por canal de aquisição: leads, conversões e valor gerado por origem."
-        icon={<Megaphone className="h-5 w-5" />}
+        icon={<Megaphone className="h-4 w-4" />}
         onGeneratePDF={handleOrigemLeadsPdf}
         onDownloadCSV={handleOrigemLeadsCsv}
       />
-      <ReportCard
+      <ReportRow
         title="Ciclo Médio de Venda"
         description="Tempo médio do primeiro contato até fechamento da negociação."
-        icon={<Clock className="h-5 w-5" />}
+        icon={<Clock className="h-4 w-4" />}
         onGeneratePDF={handleCicloVendaPdf}
         onDownloadCSV={handleCicloVendaCsv}
       />
-    </div>
+    </ReportsTable>
   );
 };

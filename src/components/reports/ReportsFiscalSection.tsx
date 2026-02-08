@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ReportCard } from './ReportCard';
-import { FileWarning } from 'lucide-react';
+import { ReportRow } from './ReportRow';
+import { ReportsTable } from './ReportsTable';
+import { FileWarning, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
@@ -23,7 +24,6 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
 
     const errors: string[] = [];
 
-    // Check leads without CPF
     const { data: leads } = await supabase
       .from('leads')
       .select('id, name, cpf_cnpj')
@@ -34,7 +34,6 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
       errors.push(`${leadsWithoutCpf.length} lead(s) sem CPF/CNPJ cadastrado`);
     }
 
-    // Check contacts (tenants) without document
     const { data: leases } = await supabase
       .from('leases')
       .select(`
@@ -65,7 +64,6 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         });
       }
 
-      // Get leases with transactions
       const { data: leases } = await supabase
         .from('leases')
         .select(`
@@ -78,7 +76,6 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         .gte('start_date', dateRange.from.toISOString().split('T')[0])
         .or(`end_date.is.null,end_date.gte.${dateRange.from.toISOString().split('T')[0]}`);
 
-      // Get rent payments
       const { data: payments } = await supabase
         .from('financial_transactions')
         .select('*')
@@ -219,16 +216,20 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         </Alert>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <ReportCard
+      <ReportsTable
+        title="Relatórios Fiscais"
+        icon={<FileText className="h-5 w-5" />}
+        description="Exportação prévia para DIMOB com validação de dados obrigatórios."
+      >
+        <ReportRow
           title="Exportação DIMOB"
           description="Prévia da declaração de atividades imobiliárias com validação de dados obrigatórios (CPF/CNPJ)."
-          icon={<FileWarning className="h-5 w-5" />}
+          icon={<FileWarning className="h-4 w-4" />}
           onGeneratePDF={handleDimobPdf}
           onDownloadCSV={handleDimobCsv}
           warningMessage={validationErrors.length > 0 ? `${validationErrors.length} pendência(s)` : undefined}
         />
-      </div>
+      </ReportsTable>
     </div>
   );
 };

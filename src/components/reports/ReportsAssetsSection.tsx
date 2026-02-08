@@ -1,4 +1,5 @@
-import { ReportCard } from './ReportCard';
+import { ReportRow } from './ReportRow';
+import { ReportsTable } from './ReportsTable';
 import { Building2, TrendingUp, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
@@ -159,7 +160,7 @@ export const ReportsAssetsSection = ({ dateRange, userName }: ReportsAssetsSecti
     }
   };
 
-  // Vigência de Seguros (placeholder - would need insurance table)
+  // Vigência de Seguros
   const handleSegurosPdf = async () => {
     toast({ 
       title: 'Em desenvolvimento', 
@@ -175,29 +176,33 @@ export const ReportsAssetsSection = ({ dateRange, userName }: ReportsAssetsSecti
   };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <ReportCard
+    <ReportsTable
+      title="Relatórios de Ativos"
+      icon={<Building2 className="h-5 w-5" />}
+      description="Análise de vacância, projeção de reajustes e controle de seguros do portfólio."
+    >
+      <ReportRow
         title="Relatório de Vacância"
         description="Análise de ocupação do portfólio, com taxa de vacância e valor potencial de aluguel."
-        icon={<Building2 className="h-5 w-5" />}
+        icon={<Building2 className="h-4 w-4" />}
         onGeneratePDF={handleVacanciaPdf}
         onDownloadCSV={handleVacanciaCsv}
       />
-      <ReportCard
+      <ReportRow
         title="Projeção de Reajustes"
         description="Contratos com reajuste previsto no período, incluindo índice aplicável (IGP-M/IPCA)."
-        icon={<TrendingUp className="h-5 w-5" />}
+        icon={<TrendingUp className="h-4 w-4" />}
         onGeneratePDF={handleReajustesPdf}
         onDownloadCSV={handleReajustesCsv}
       />
-      <ReportCard
+      <ReportRow
         title="Vigência de Seguros"
         description="Controle de vencimento de seguros dos imóveis administrados."
-        icon={<Shield className="h-5 w-5" />}
+        icon={<Shield className="h-4 w-4" />}
         onGeneratePDF={handleSegurosPdf}
         onDownloadCSV={handleSegurosCsv}
-        warningMessage="Módulo em desenvolvimento"
+        warningMessage="Em desenvolvimento"
       />
-    </div>
+    </ReportsTable>
   );
 };
