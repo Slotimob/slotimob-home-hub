@@ -15,6 +15,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentTemplatesSection } from '@/components/documents/DocumentTemplatesSection';
 import { GeneratedDocumentsHistory } from '@/components/documents/GeneratedDocumentsHistory';
+import { CustomTemplatesTab } from '@/components/documents/CustomTemplatesTab';
 import {
   Select,
   SelectContent,
@@ -84,6 +85,7 @@ const DOCUMENT_TYPE_COLORS: Record<string, string> = {
 // Map routes to tab values
 const getTabFromPath = (pathname: string): string => {
   if (pathname.includes('/documents/templates')) return 'modelos';
+  if (pathname.includes('/documents/custom')) return 'personalizados';
   if (pathname.includes('/documents/history')) return 'historico';
   return 'meus-documentos';
 };
@@ -109,6 +111,9 @@ const Documents = () => {
     switch (value) {
       case 'modelos':
         navigate('/documents/templates');
+        break;
+      case 'personalizados':
+        navigate('/documents/custom');
         break;
       case 'historico':
         navigate('/documents/history');
@@ -279,6 +284,7 @@ const Documents = () => {
           <TabsList>
             <TabsTrigger value="meus-documentos">Meus Documentos</TabsTrigger>
             <TabsTrigger value="modelos">Modelos Padrão</TabsTrigger>
+            <TabsTrigger value="personalizados">Modelos Personalizados</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
@@ -445,6 +451,10 @@ const Documents = () => {
 
           <TabsContent value="modelos" className="mt-6">
             <DocumentTemplatesSection />
+          </TabsContent>
+
+          <TabsContent value="personalizados" className="mt-6">
+            <CustomTemplatesTab />
           </TabsContent>
 
           <TabsContent value="historico" className="mt-6">
