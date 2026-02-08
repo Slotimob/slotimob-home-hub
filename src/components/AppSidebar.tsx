@@ -63,15 +63,7 @@ interface MenuItem {
   items?: SubMenuItem[];
 }
 
-// CRM group items - displayed prominently
-const crmItems: MenuItem[] = [
-  { title: 'Mensagens', url: '/whatsapp', icon: MessageSquare },
-  { title: 'Pipeline', url: '/pipeline', icon: Kanban },
-  { title: 'Contatos', url: '/contacts', icon: Users },
-  { title: 'Agenda', url: '/schedule', icon: CalendarDays },
-];
-
-// Main menu items (without CRM items that are now in the CRM group)
+// Main menu items
 const menuItems: MenuItem[] = [
   { title: 'Dashboard', url: '/dashboard', icon: Home },
   { 
@@ -99,6 +91,16 @@ const menuItems: MenuItem[] = [
       { title: 'Lançamentos', url: '/finance/transactions' },
       { title: 'Conciliação', url: '/finance/reconciliation' },
       { title: 'Categorias', url: '/finance/categories' },
+    ]
+  },
+  { 
+    title: 'CRM', 
+    icon: Users,
+    items: [
+      { title: 'Mensagens', url: '/whatsapp' },
+      { title: 'Pipeline', url: '/pipeline' },
+      { title: 'Contatos', url: '/contacts' },
+      { title: 'Agenda', url: '/schedule' },
     ]
   },
   { 
@@ -213,32 +215,6 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="pt-4 flex-1">
-        {/* CRM Group - Featured prominently */}
-        <SidebarGroup>
-          <SidebarGroupLabel className={`transition-opacity duration-300 ${collapsed ? 'sr-only' : ''}`}>
-            CRM
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {crmItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url!)} tooltip={item.title}>
-                    <NavLink 
-                      to={item.url!} 
-                      className="flex items-center gap-3 transition-all duration-200" 
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                      onClick={() => isMobile && setOpenMobile(false)}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                      <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         {/* Main Menu Group */}
         <SidebarGroup>
           <SidebarGroupLabel className={`transition-opacity duration-300 ${collapsed ? 'sr-only' : ''}`}>
