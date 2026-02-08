@@ -158,11 +158,16 @@ export const KanbanColumn = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEditStage?.()}>
+                      <DropdownMenuItem
+                        onSelect={() => onEditStage?.()}
+                      >
                         <Pencil className="mr-2 h-4 w-4" />
                         Editar estágio
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDeleteStage?.()} className="text-destructive">
+                      <DropdownMenuItem
+                        onSelect={() => onDeleteStage?.()}
+                        className="text-destructive"
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Excluir estágio
                       </DropdownMenuItem>
