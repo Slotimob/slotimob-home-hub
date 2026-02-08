@@ -1159,10 +1159,41 @@ const Pipeline = () => {
                 strategy={horizontalListSortingStrategy}
               >
                 <div className="flex gap-4 min-w-max">
-                  {/* Default stages (not sortable) */}
-                  {allStages
-                    .filter((s) => !s.isCustom && s.id !== 'lost' && s.id !== 'won')
-                    .map((stage) => (
+                  {/* Render all stages in the correct order from allStages */}
+                  {allStages.map((stage) => {
+                    // Custom stage
+                    if (stage.isCustom) {
+                      const customStageId = stage.id.replace('custom_', '');
+                      const customStage = customStages.find(cs => cs.id === customStageId);
+                      if (!customStage) return null;
+                      
+                      return (
+                        <SortableStageColumn
+                          key={stage.id}
+                          id={`stage_${customStageId}`}
+                          stageId={stage.id}
+                          title={stage.label}
+                          color={stage.color}
+                          deals={filteredDeals.filter((deal) => deal.custom_stage_id === customStageId)}
+                          onDealClick={handleDealClick}
+                          taskCounts={taskCounts}
+                          selectionMode={selectionMode}
+                          selectedDeals={selectedDeals}
+                          onSelectionChange={handleSelectionChange}
+                          onSelectAll={handleSelectAll}
+                          onToggleSelectionMode={handleToggleSelectionMode}
+                          isCustomStage={true}
+                          onEditStage={() => handleEditStage(customStage)}
+                          onDeleteStage={() => handleDeleteStage(customStageId)}
+                          isDraggingStage={isDraggingStage}
+                          isReorderMode={isReorderMode}
+                          stageHistory={stageHistory}
+                        />
+                      );
+                    }
+                    
+                    // Default stage (including lost/won)
+                    return (
                       <KanbanColumn
                         key={stage.id}
                         id={stage.id}
@@ -1179,61 +1210,10 @@ const Pipeline = () => {
                         onSelectAll={handleSelectAll}
                         onToggleSelectionMode={handleToggleSelectionMode}
                         isCustomStage={false}
-                        stageHistory={stageHistory}
-                      />
-                    ))}
-
-                  {/* Custom stages (sortable) */}
-                  {customStages.map((stage) => {
-                    const stageId = `custom_${stage.id}`;
-                    return (
-                      <SortableStageColumn
-                        key={stage.id}
-                        id={`stage_${stage.id}`}
-                        stageId={stageId}
-                        title={stage.name}
-                        color={stage.color}
-                        deals={filteredDeals.filter((deal) => deal.custom_stage_id === stage.id)}
-                        onDealClick={handleDealClick}
-                        taskCounts={taskCounts}
-                        selectionMode={selectionMode}
-                        selectedDeals={selectedDeals}
-                        onSelectionChange={handleSelectionChange}
-                        onSelectAll={handleSelectAll}
-                        onToggleSelectionMode={handleToggleSelectionMode}
-                        isCustomStage={true}
-                        onEditStage={() => handleEditStage(stage)}
-                        onDeleteStage={() => handleDeleteStage(stage.id)}
-                        isDraggingStage={isDraggingStage}
-                        isReorderMode={isReorderMode}
                         stageHistory={stageHistory}
                       />
                     );
                   })}
-
-                  {/* Final stages (lost/won) */}
-                  {allStages
-                    .filter((s) => !s.isCustom && (s.id === 'lost' || s.id === 'won'))
-                    .map((stage) => (
-                      <KanbanColumn
-                        key={stage.id}
-                        id={stage.id}
-                        title={stage.label}
-                        color={stage.color}
-                        deals={filteredDeals.filter(
-                          (deal) => deal.stage === stage.id && !deal.custom_stage_id
-                        )}
-                        onDealClick={handleDealClick}
-                        taskCounts={taskCounts}
-                        selectionMode={selectionMode}
-                        selectedDeals={selectedDeals}
-                        onSelectionChange={handleSelectionChange}
-                        onSelectAll={handleSelectAll}
-                        onToggleSelectionMode={handleToggleSelectionMode}
-                        isCustomStage={false}
-                        stageHistory={stageHistory}
-                      />
-                    ))}
 
                   {/* Add Stage Card - always at the end */}
                   <AddStageCard 
