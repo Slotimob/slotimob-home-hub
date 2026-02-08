@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, Bell, GripVertical } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, Bell } from "lucide-react";
 import { HeaderButton } from "@/components/ui/header-button";
-import { format, isSameDay, addDays, startOfWeek, endOfWeek } from "date-fns";
+import { format, isSameDay, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CreateVisitDialog } from "@/components/CreateVisitDialog";
 import { AppLayout } from "@/components/AppLayout";
@@ -19,6 +19,7 @@ import { ActivityPalette, ACTIVITY_TYPES } from "@/components/schedule/ActivityP
 import { DayScheduleGrid } from "@/components/schedule/DayScheduleGrid";
 import { WeekScheduleGrid } from "@/components/schedule/WeekScheduleGrid";
 import { CreateActivityDialog } from "@/components/schedule/CreateActivityDialog";
+import { CalendarSyncDialog } from "@/components/schedule/CalendarSyncDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -244,6 +245,7 @@ export default function Schedule() {
       title="Agenda"
       headerActions={
         <>
+          <CalendarSyncDialog />
           <HeaderButton variant="outline" iconOnly showTextAt="lg" icon={<Bell className="h-4 w-4" />} onClick={() => navigate("/notification-history")}>
             Notificações
           </HeaderButton>
