@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Phone, Mail, MessageSquare, Calendar, MapPin, FileText, Loader2, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Phone, Mail, MessageSquare, Calendar, MapPin, FileText, Loader2, MoreVertical, Pencil, Trash2, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AddActivityDialog } from './AddActivityDialog';
@@ -149,6 +149,11 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
           <Plus className="h-4 w-4 mr-1" />
           Nova Atividade
         </Button>
+      </div>
+
+      <div className="flex items-start gap-2 p-2 rounded-md bg-muted/50 text-xs text-muted-foreground">
+        <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+        <span>Atividades com data/hora agendados aparecerão automaticamente na Agenda.</span>
       </div>
 
       {activities.length === 0 ? (

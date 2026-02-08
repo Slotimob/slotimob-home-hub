@@ -111,7 +111,7 @@ export default function Schedule() {
     enabled: !!user?.id,
   });
 
-  // Fetch ALL negotiation items for event counting
+  // Fetch ALL negotiation items for event counting (excluding expected_close_date)
   const { data: allNegotiationItems } = useQuery({
     queryKey: ["all-negotiation-items", user?.id, currentMonth.toISOString()],
     queryFn: async () => {
@@ -131,7 +131,7 @@ export default function Schedule() {
         .lte('scheduled_at', monthEnd.toISOString());
 
       activities?.forEach((a: any) => {
-        if (a.scheduled_at) items.push({ id: a.id, scheduled_at: a.scheduled_at });
+        if (a.scheduled_at) items.push({ id: a.id, scheduled_at: a.scheduled_at, type: 'activity' });
       });
 
       // Fetch deal tasks
@@ -147,27 +147,12 @@ export default function Schedule() {
         if (t.due_date) {
           const dt = new Date(t.due_date);
           dt.setHours(9, 0, 0, 0);
-          items.push({ id: t.id, scheduled_at: dt.toISOString() });
+          items.push({ id: t.id, scheduled_at: dt.toISOString(), type: 'task' });
         }
       });
 
-      // Fetch deals with expected close dates
-      const { data: deals } = await supabase
-        .from('deals')
-        .select('id, expected_close_date')
-        .eq('broker_id', user.id)
-        .not('expected_close_date', 'is', null)
-        .gte('expected_close_date', monthStart.toISOString().split('T')[0])
-        .lte('expected_close_date', monthEnd.toISOString().split('T')[0])
-        .not('stage', 'in', '("won","lost")');
-
-      deals?.forEach((d: any) => {
-        if (d.expected_close_date) {
-          const dt = new Date(d.expected_close_date);
-          dt.setHours(10, 0, 0, 0);
-          items.push({ id: `close_${d.id}`, scheduled_at: dt.toISOString() });
-        }
-      });
+      // NOTE: expected_close_date is NOT included in the agenda
+      // It's only stored in the deal record for management purposes
 
       return items;
     },
