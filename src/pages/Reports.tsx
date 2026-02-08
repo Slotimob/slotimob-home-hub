@@ -59,18 +59,29 @@ const Reports = () => {
   return (
     <AppLayout title="Relatórios Gerenciais">
       <div className="space-y-4">
-        {/* Description */}
+        {/* Description (always on top) */}
         <p className="text-muted-foreground text-sm">
           Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
         </p>
 
-        {/* Filters Row: Unit left, Period right - Clean layout */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <ReportsUnitSelector 
-            selectedUnitId={selectedUnitId} 
-            onUnitChange={setSelectedUnitId} 
-          />
-          <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+        {/* Filters Bar */}
+        <div className="rounded-lg border bg-card p-3 sm:p-4 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 md:items-end">
+            {/* Left: Unit */}
+            <div className="md:col-span-4 space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Unidade</Label>
+              <ReportsUnitSelector
+                selectedUnitId={selectedUnitId}
+                onUnitChange={setSelectedUnitId}
+              />
+            </div>
+
+            {/* Right: Period */}
+            <div className="md:col-span-8 space-y-1.5 md:flex md:flex-col md:items-end">
+              <Label className="text-xs text-muted-foreground md:text-right">Período</Label>
+              <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+            </div>
+          </div>
         </div>
 
         <Separator />
