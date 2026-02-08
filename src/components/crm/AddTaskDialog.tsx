@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarDays, Loader2 } from 'lucide-react';
+import { CalendarDays, Loader2, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,11 @@ interface AddTaskDialogProps {
   onSuccess: () => void;
 }
 
+const hourOptions = Array.from({ length: 14 }, (_, i) => i + 7).map(h => ({
+  value: h.toString(),
+  label: `${h.toString().padStart(2, '0')}:00`,
+}));
+
 export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTaskDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -31,6 +36,7 @@ export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTask
     description: '',
     priority: 'medium',
     due_date: null as Date | null,
+    due_hour: '9',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,23 +45,33 @@ export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTask
 
     setIsLoading(true);
     try {
+      let dueDateTime: string | null = null;
+      
+      if (formData.due_date) {
+        const dateTime = new Date(formData.due_date);
+        dateTime.setHours(parseInt(formData.due_hour), 0, 0, 0);
+        dueDateTime = dateTime.toISOString();
+      }
+
       const { error } = await supabase.from('deal_tasks').insert({
         deal_id: dealId,
         broker_id: user.id,
         title: formData.title,
         description: formData.description || null,
         priority: formData.priority,
-        due_date: formData.due_date?.toISOString() ?? null,
+        due_date: dueDateTime,
       });
 
       if (error) throw error;
 
       toast({
         title: 'Tarefa criada!',
-        description: 'A tarefa foi adicionada à lista.',
+        description: dueDateTime 
+          ? 'A tarefa foi agendada e aparecerá na sua Agenda.'
+          : 'A tarefa foi adicionada à lista.',
       });
 
-      setFormData({ title: '', description: '', priority: 'medium', due_date: null });
+      setFormData({ title: '', description: '', priority: 'medium', due_date: null, due_hour: '9' });
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
@@ -97,39 +113,42 @@ export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTask
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Prioridade</Label>
-              <Select
-                value={formData.priority}
-                onValueChange={(value) => setFormData({ ...formData, priority: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Baixa</SelectItem>
-                  <SelectItem value="medium">Média</SelectItem>
-                  <SelectItem value="high">Alta</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>Prioridade</Label>
+            <Select
+              value={formData.priority}
+              onValueChange={(value) => setFormData({ ...formData, priority: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Baixa</SelectItem>
+                <SelectItem value="medium">Média</SelectItem>
+                <SelectItem value="high">Alta</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="space-y-2">
-              <Label>Data de Vencimento</Label>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Data e Horário de Vencimento
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      'w-full justify-start text-left font-normal',
+                      'justify-start text-left font-normal',
                       !formData.due_date && 'text-muted-foreground'
                     )}
                   >
                     <CalendarDays className="mr-2 h-4 w-4" />
                     {formData.due_date
                       ? format(formData.due_date, 'dd/MM/yyyy', { locale: ptBR })
-                      : 'Selecionar'}
+                      : 'Selecionar data'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -138,9 +157,27 @@ export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTask
                     selected={formData.due_date ?? undefined}
                     onSelect={(date) => setFormData({ ...formData, due_date: date ?? null })}
                     locale={ptBR}
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
+              
+              <Select
+                value={formData.due_hour}
+                onValueChange={(value) => setFormData({ ...formData, due_hour: value })}
+                disabled={!formData.due_date}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Hora" />
+                </SelectTrigger>
+                <SelectContent>
+                  {hourOptions.map((hour) => (
+                    <SelectItem key={hour.value} value={hour.value}>
+                      {hour.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

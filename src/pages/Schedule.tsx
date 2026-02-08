@@ -425,8 +425,10 @@ export default function Schedule() {
               <DayScheduleGrid 
                 date={selectedDate} 
                 activities={activities || []}
+                negotiationItems={negotiationItems || []}
                 onActivityClick={(activity) => console.log('Activity clicked:', activity)}
                 onActivityResize={handleActivityResize}
+                onNegotiationItemClick={() => navigate('/pipeline')}
               />
             </div>
           ) : viewMode === 'week' ? (
@@ -464,9 +466,11 @@ export default function Schedule() {
               <WeekScheduleGrid 
                 selectedDate={selectedDate}
                 activities={activities || []}
+                negotiationItems={negotiationItems || []}
                 onActivityClick={(activity) => console.log('Activity clicked:', activity)}
                 onActivityResize={handleActivityResize}
                 onDateChange={setSelectedDate}
+                onNegotiationItemClick={() => navigate('/pipeline')}
               />
             </div>
           ) : (

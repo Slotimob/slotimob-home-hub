@@ -4,13 +4,17 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DraggableActivity } from './DraggableActivity';
 import { WeekNavigation } from './WeekNavigation';
+import { Briefcase, CheckSquare, Target } from 'lucide-react';
+import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItems';
 
 interface WeekScheduleGridProps {
   selectedDate: Date;
   activities: any[];
+  negotiationItems?: NegotiationScheduleItem[];
   onActivityClick?: (activity: any) => void;
   onActivityResize: (activityId: string, newDuration: number) => void;
   onDateChange?: (date: Date) => void;
+  onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
 }
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
@@ -20,11 +24,21 @@ interface WeekSlotProps {
   hour: number;
   date: Date;
   activities: any[];
+  negotiationItems: NegotiationScheduleItem[];
   onActivityClick?: (activity: any) => void;
   onActivityResize: (activityId: string, newDuration: number) => void;
+  onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
 }
 
-function WeekSlot({ hour, date, activities, onActivityClick, onActivityResize }: WeekSlotProps) {
+function WeekSlot({ 
+  hour, 
+  date, 
+  activities, 
+  negotiationItems,
+  onActivityClick, 
+  onActivityResize,
+  onNegotiationItemClick 
+}: WeekSlotProps) {
   const slotId = `week-slot-${format(date, 'yyyy-MM-dd')}-${hour}`;
   
   const { isOver, setNodeRef } = useDroppable({
@@ -40,6 +54,17 @@ function WeekSlot({ hour, date, activities, onActivityClick, onActivityResize }:
     return isSameDay(activityDate, date) && activityDate.getHours() === hour;
   });
 
+  const slotNegotiationItems = negotiationItems.filter((item) => {
+    const itemDate = new Date(item.scheduled_at);
+    return isSameDay(itemDate, date) && itemDate.getHours() === hour;
+  });
+
+  const getTypeIcon = (type: string) => {
+    if (type === 'task') return CheckSquare;
+    if (type === 'expected_close') return Target;
+    return Briefcase;
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -49,6 +74,7 @@ function WeekSlot({ hour, date, activities, onActivityClick, onActivityResize }:
         isOver && 'bg-primary/10 ring-2 ring-primary ring-inset'
       )}
     >
+      {/* Regular activities */}
       {slotActivities.map((activity) => (
         <DraggableActivity
           key={activity.id}
@@ -58,11 +84,40 @@ function WeekSlot({ hour, date, activities, onActivityClick, onActivityResize }:
           onClick={onActivityClick}
         />
       ))}
+
+      {/* Negotiation items */}
+      {slotNegotiationItems.map((item) => {
+        const Icon = getTypeIcon(item.type);
+        return (
+          <div
+            key={item.id}
+            onClick={() => onNegotiationItemClick?.(item)}
+            className={cn(
+              'text-[10px] px-1 py-0.5 rounded border cursor-pointer hover:opacity-80 transition-opacity mb-0.5',
+              'bg-primary/10 border-primary/30 text-primary',
+              item.is_completed && 'opacity-50'
+            )}
+          >
+            <div className="flex items-center gap-0.5 truncate">
+              <Icon className="h-2.5 w-2.5 flex-shrink-0" />
+              <span className="truncate">{item.title}</span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-export function WeekScheduleGrid({ selectedDate, activities, onActivityClick, onActivityResize, onDateChange }: WeekScheduleGridProps) {
+export function WeekScheduleGrid({ 
+  selectedDate, 
+  activities, 
+  negotiationItems = [],
+  onActivityClick, 
+  onActivityResize, 
+  onDateChange,
+  onNegotiationItemClick 
+}: WeekScheduleGridProps) {
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 }); // Sunday
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -112,8 +167,10 @@ export function WeekScheduleGrid({ selectedDate, activities, onActivityClick, on
                   hour={hour}
                   date={day}
                   activities={activities}
+                  negotiationItems={negotiationItems}
                   onActivityClick={onActivityClick}
                   onActivityResize={onActivityResize}
+                  onNegotiationItemClick={onNegotiationItemClick}
                 />
               ))}
             </div>
