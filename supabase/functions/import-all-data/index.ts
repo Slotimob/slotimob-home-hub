@@ -83,7 +83,8 @@ Deno.serve(async (req) => {
             tableResults.inserted++;
           }
         } catch (e) {
-          tableResults.errors.push(`${record[idColumn]}: ${e.message}`);
+          const message = e instanceof Error ? e.message : String(e);
+          tableResults.errors.push(`${record[idColumn]}: ${message}`);
         }
       }
       
@@ -113,7 +114,8 @@ Deno.serve(async (req) => {
             tableResults.inserted++;
           }
         } catch (e) {
-          tableResults.errors.push(`${record.id}: ${e.message}`);
+          const message = e instanceof Error ? e.message : String(e);
+          tableResults.errors.push(`${record.id}: ${message}`);
         }
       }
       
@@ -206,8 +208,9 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Import error:', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: 'Failed to import data', details: error.message }),
+      JSON.stringify({ error: 'Failed to import data', details: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
