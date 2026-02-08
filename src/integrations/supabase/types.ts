@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -166,13 +166,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "bank_accounts_assigned_user_id_fkey"
-            columns: ["assigned_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "bank_accounts_broker_id_fkey"
             columns: ["broker_id"]
@@ -440,13 +433,6 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "contacts_assigned_user_id_fkey"
-            columns: ["assigned_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "contacts_broker_id_fkey"
             columns: ["broker_id"]
@@ -741,13 +727,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "deals_assigned_user_id_fkey"
-            columns: ["assigned_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "deals_broker_id_fkey"
             columns: ["broker_id"]
@@ -1102,13 +1081,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "financial_transactions_assigned_user_id_fkey"
-            columns: ["assigned_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "financial_transactions_bank_account_id_fkey"
             columns: ["bank_account_id"]
@@ -2657,13 +2629,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "units_assigned_user_id_fkey"
-            columns: ["assigned_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "units_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
@@ -2701,13 +2666,6 @@ export type Database = {
           {
             foreignKeyName: "units_tenant_contact_id_fkey"
             columns: ["tenant_contact_id"]
-            isOneToOne: false
-            referencedRelation: "contacts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "units_tenant_id_fkey"
-            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "contacts"
             referencedColumns: ["id"]
