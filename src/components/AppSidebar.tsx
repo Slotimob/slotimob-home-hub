@@ -106,14 +106,7 @@ const menuItems: MenuItem[] = [
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { title: 'Documentos', url: '/documents', icon: FileText },
   { title: 'Simulador', url: '/simulator', icon: Calculator },
-  { 
-    title: 'Integrações', 
-    icon: Plug,
-    items: [
-      { title: 'Conexões', url: '/integrations' },
-      { title: 'Portais', url: '/portals' },
-    ]
-  },
+  { title: 'Integrações', url: '/integrations', icon: Plug },
   { title: 'Treinamentos', url: '/training', icon: GraduationCap },
   { title: 'Usuários', url: '/users', icon: UsersRound },
   { title: 'Histórico', url: '/history', icon: History },
