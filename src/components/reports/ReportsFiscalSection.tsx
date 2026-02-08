@@ -12,9 +12,10 @@ import { AlertTriangle } from 'lucide-react';
 interface ReportsFiscalSectionProps {
   dateRange: { from: Date; to: Date };
   userName?: string;
+  selectedUnitId: string | null;
 }
 
-export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSectionProps) => {
+export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: ReportsFiscalSectionProps) => {
   const { toast } = useToast();
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
@@ -34,7 +35,7 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
       errors.push(`${leadsWithoutCpf.length} lead(s) sem CPF/CNPJ cadastrado`);
     }
 
-    const { data: leases } = await supabase
+    let leasesQuery = supabase
       .from('leases')
       .select(`
         id,
@@ -42,6 +43,12 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
       `)
       .eq('broker_id', user.id)
       .eq('status', 'active');
+
+    if (selectedUnitId) {
+      leasesQuery = leasesQuery.eq('unit_id', selectedUnitId);
+    }
+
+    const { data: leases } = await leasesQuery;
 
     const leasesWithoutDoc = (leases || []).filter(l => !l.tenant?.document_number);
     if (leasesWithoutDoc.length > 0) {
@@ -64,7 +71,7 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         });
       }
 
-      const { data: leases } = await supabase
+      let leasesQuery = supabase
         .from('leases')
         .select(`
           *,
@@ -76,7 +83,13 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         .gte('start_date', dateRange.from.toISOString().split('T')[0])
         .or(`end_date.is.null,end_date.gte.${dateRange.from.toISOString().split('T')[0]}`);
 
-      const { data: payments } = await supabase
+      if (selectedUnitId) {
+        leasesQuery = leasesQuery.eq('unit_id', selectedUnitId);
+      }
+
+      const { data: leases } = await leasesQuery;
+
+      let paymentsQuery = supabase
         .from('financial_transactions')
         .select('*')
         .eq('broker_id', user.id)
@@ -85,6 +98,12 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         .eq('status', 'paid')
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
+
+      if (selectedUnitId) {
+        paymentsQuery = paymentsQuery.eq('unit_id', selectedUnitId);
+      }
+
+      const { data: payments } = await paymentsQuery;
 
       const totalRent = (payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
 
@@ -109,6 +128,7 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
           ];
         }),
         filename: 'dimob-previa',
+        highlightCondition: (row) => row[3] === 'NÃO INFORMADO',
         summary: [
           { label: 'Ano-Calendário', value: dateRange.from.getFullYear().toString() },
           { label: 'Total de Contratos', value: (leases || []).length.toString() },
@@ -135,7 +155,7 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         });
       }
 
-      const { data: leases } = await supabase
+      let leasesQuery = supabase
         .from('leases')
         .select(`
           *,
@@ -145,7 +165,13 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         `)
         .eq('broker_id', user.id);
 
-      const { data: payments } = await supabase
+      if (selectedUnitId) {
+        leasesQuery = leasesQuery.eq('unit_id', selectedUnitId);
+      }
+
+      const { data: leases } = await leasesQuery;
+
+      let paymentsQuery = supabase
         .from('financial_transactions')
         .select('*')
         .eq('broker_id', user.id)
@@ -154,6 +180,12 @@ export const ReportsFiscalSection = ({ dateRange, userName }: ReportsFiscalSecti
         .eq('status', 'paid')
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
+
+      if (selectedUnitId) {
+        paymentsQuery = paymentsQuery.eq('unit_id', selectedUnitId);
+      }
+
+      const { data: payments } = await paymentsQuery;
 
       generateReportCsv({
         columns: [

@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Wallet, Users, FileText } from 'lucide-react';
 import { startOfMonth, subMonths } from 'date-fns';
 import { ReportsDateFilter } from '@/components/reports/ReportsDateFilter';
+import { ReportsUnitSelector } from '@/components/reports/ReportsUnitSelector';
 import { ReportsFinanceSection } from '@/components/reports/ReportsFinanceSection';
 import { ReportsAssetsSection } from '@/components/reports/ReportsAssetsSection';
 import { ReportsCrmSection } from '@/components/reports/ReportsCrmSection';
@@ -21,6 +22,7 @@ const Reports = () => {
     from: startOfMonth(subMonths(new Date(), 5)),
     to: new Date(),
   });
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>();
 
   useEffect(() => {
@@ -59,7 +61,13 @@ const Reports = () => {
           <p className="text-muted-foreground text-sm">
             Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
           </p>
-          <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <ReportsUnitSelector 
+              selectedUnitId={selectedUnitId} 
+              onUnitChange={setSelectedUnitId} 
+            />
+            <ReportsDateFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+          </div>
         </div>
 
         {/* Tab navigation */}
@@ -99,19 +107,19 @@ const Reports = () => {
 
           {/* Tab content */}
           <TabsContent value="financeiro" className="mt-4 sm:mt-6">
-            <ReportsFinanceSection dateRange={dateRange} userName={userName} />
+            <ReportsFinanceSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
           </TabsContent>
 
           <TabsContent value="ativos" className="mt-4 sm:mt-6">
-            <ReportsAssetsSection dateRange={dateRange} userName={userName} />
+            <ReportsAssetsSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
           </TabsContent>
 
           <TabsContent value="crm" className="mt-4 sm:mt-6">
-            <ReportsCrmSection dateRange={dateRange} userName={userName} />
+            <ReportsCrmSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
           </TabsContent>
 
           <TabsContent value="fiscal" className="mt-4 sm:mt-6">
-            <ReportsFiscalSection dateRange={dateRange} userName={userName} />
+            <ReportsFiscalSection dateRange={dateRange} userName={userName} selectedUnitId={selectedUnitId} />
           </TabsContent>
         </Tabs>
       </div>

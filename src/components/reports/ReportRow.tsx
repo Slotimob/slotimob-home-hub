@@ -1,7 +1,6 @@
+import { forwardRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
 
 interface ReportRowProps {
   title: string;
@@ -14,7 +13,7 @@ interface ReportRowProps {
   warningMessage?: string;
 }
 
-export const ReportRow = ({
+export const ReportRow = forwardRef<HTMLDivElement, ReportRowProps>(({
   title,
   description,
   icon,
@@ -23,7 +22,7 @@ export const ReportRow = ({
   pdfDisabled = false,
   csvDisabled = false,
   warningMessage,
-}: ReportRowProps) => {
+}, ref) => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
 
@@ -46,7 +45,7 @@ export const ReportRow = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
+    <div ref={ref} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
       {/* Icon and content */}
       <div className="flex items-start gap-3 flex-1 min-w-0">
         {icon && (
@@ -103,4 +102,6 @@ export const ReportRow = ({
       </div>
     </div>
   );
-};
+});
+
+ReportRow.displayName = 'ReportRow';
