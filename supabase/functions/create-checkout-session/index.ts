@@ -1,0 +1,185 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const STRIPE_PRICES = {
+  ouro: {
+    original: 'price_1SuNomAUMiQcSICyW6GhxhEC',     // R$ 147
+    promotional: 'price_1SuNpcAUMiQcSICyg0XYpsNO',  // R$ 97
+    early_adopter: 'price_1SuNr7AUMiQcSICyjR9xnebu' // R$ 79
+  },
+  diamante: {
+    original: 'price_1SuNp5AUMiQcSICytokOVuVj',     // R$ 297
+    promotional: 'price_1SuNqKAUMiQcSICydaBCrPHu',  // R$ 197
+    early_adopter: 'price_1SuNrPAUMiQcSICybHpYiKQJ' // R$ 179
+  }
+};
+
+const logStep = (step: string, details?: Record<string, unknown>) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    logStep("Function started");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Auth client for user verification
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
+
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = claimsData.claims.sub as string;
+    const userEmail = claimsData.claims.email as string;
+    logStep("User authenticated", { userId, email: userEmail });
+
+    // Service client for database operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Parse request body
+    const { plan_id } = await req.json();
+    if (!plan_id || !['ouro', 'diamante'].includes(plan_id)) {
+      throw new Error("Invalid plan_id. Must be 'ouro' or 'diamante'");
+    }
+    logStep("Plan selected", { plan_id });
+
+    // Initialize Stripe
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+    // Check if user already has an active subscription
+    const { data: existingSub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('id, status, plan_id')
+      .eq('user_id', userId)
+      .in('status', ['active', 'trialing'])
+      .maybeSingle();
+
+    if (existingSub) {
+      logStep("User already has active subscription", { 
+        subscriptionId: existingSub.id, 
+        currentPlan: existingSub.plan_id 
+      });
+      
+      // If same plan, redirect to customer portal instead
+      if (existingSub.plan_id === plan_id) {
+        // Get Stripe customer
+        const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+        if (customers.data.length > 0) {
+          const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
+          const portalSession = await stripe.billingPortal.sessions.create({
+            customer: customers.data[0].id,
+            return_url: `${origin}/settings`,
+          });
+          return new Response(JSON.stringify({ 
+            url: portalSession.url,
+            message: 'Você já possui este plano. Redirecionando para gerenciamento.' 
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+      }
+      
+      // Different plan - allow upgrade/downgrade through checkout
+      logStep("Allowing plan change checkout", { from: existingSub.plan_id, to: plan_id });
+    }
+
+    // Check for Early Adopter availability
+    const { data: remainingSlots, error: slotsError } = await supabaseAdmin.rpc(
+      'get_early_adopter_remaining_slots',
+      { p_plan_id: plan_id }
+    );
+
+    if (slotsError) {
+      logStep("Error checking early adopter slots", { error: slotsError.message });
+    }
+
+    const isEarlyAdopter = remainingSlots && remainingSlots > 0;
+    const priceId = isEarlyAdopter 
+      ? STRIPE_PRICES[plan_id as keyof typeof STRIPE_PRICES].early_adopter
+      : STRIPE_PRICES[plan_id as keyof typeof STRIPE_PRICES].promotional;
+
+    logStep("Price selected", { 
+      priceId, 
+      isEarlyAdopter, 
+      remainingSlots: remainingSlots || 0 
+    });
+
+    // Check if customer already exists in Stripe
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    let customerId: string | undefined;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+      logStep("Existing Stripe customer found", { customerId });
+    }
+
+    // Create checkout session
+    const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
+    
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      customer_email: customerId ? undefined : userEmail,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: "subscription",
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/checkout/cancel`,
+      metadata: {
+        user_id: userId,
+        plan_id: plan_id,
+        is_early_adopter: isEarlyAdopter.toString(),
+      },
+      subscription_data: {
+        metadata: {
+          user_id: userId,
+          plan_id: plan_id,
+          is_early_adopter: isEarlyAdopter.toString(),
+        },
+      },
+    });
+
+    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+
+    return new Response(JSON.stringify({ url: session.url }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR", { message: errorMessage });
+    // Return generic error to prevent information leakage
+    return new Response(JSON.stringify({ error: "Failed to create checkout session" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});

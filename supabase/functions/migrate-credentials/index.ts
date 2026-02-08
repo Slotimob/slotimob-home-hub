@@ -1,0 +1,342 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { encrypt, isEncrypted } from '../_shared/encryption.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+/**
+ * Migration endpoint to encrypt all existing plain text credentials
+ * This should be run once to migrate existing data, then the plain text columns can be dropped
+ */
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Require authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Admin client for migration
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { action } = await req.json();
+
+    if (action === 'migrate_all') {
+      // Only allow admins to run full migration
+      const { data: userRole } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (!userRole) {
+        return new Response(JSON.stringify({ error: 'Admin access required for full migration' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const results = {
+        portal_connections: { migrated: 0, skipped: 0, errors: 0 },
+        integrations: { migrated: 0, skipped: 0, errors: 0 },
+        whatsapp_connections: { migrated: 0, skipped: 0, errors: 0 },
+      };
+
+      // Migrate portal_connections
+      const { data: portalConnections, error: portalError } = await supabaseAdmin
+        .from('portal_connections')
+        .select('id, api_key, credentials, encrypted_credentials');
+
+      if (portalError) {
+        console.error('[migrate] Portal connections fetch error:', portalError);
+      } else {
+        for (const conn of portalConnections || []) {
+          try {
+            // Skip if already encrypted or no plain text data
+            if (conn.encrypted_credentials && isEncrypted(conn.encrypted_credentials)) {
+              results.portal_connections.skipped++;
+              continue;
+            }
+
+            const dataToEncrypt = conn.api_key || (conn.credentials ? JSON.stringify(conn.credentials) : null);
+            if (!dataToEncrypt) {
+              results.portal_connections.skipped++;
+              continue;
+            }
+
+            const encrypted = await encrypt(dataToEncrypt);
+            
+            const { error: updateError } = await supabaseAdmin
+              .from('portal_connections')
+              .update({
+                encrypted_credentials: encrypted,
+                api_key: null,
+                credentials: null,
+              })
+              .eq('id', conn.id);
+
+            if (updateError) {
+              console.error(`[migrate] Portal connection ${conn.id} update error:`, updateError);
+              results.portal_connections.errors++;
+            } else {
+              results.portal_connections.migrated++;
+            }
+          } catch (err) {
+            console.error(`[migrate] Portal connection ${conn.id} error:`, err);
+            results.portal_connections.errors++;
+          }
+        }
+      }
+
+      // Migrate integrations
+      const { data: integrations, error: intError } = await supabaseAdmin
+        .from('integrations')
+        .select('id, api_key, config, encrypted_api_key, encrypted_config');
+
+      if (intError) {
+        console.error('[migrate] Integrations fetch error:', intError);
+      } else {
+        for (const int of integrations || []) {
+          try {
+            let needsUpdate = false;
+            const updateData: Record<string, any> = {};
+
+            // Migrate API key
+            if (int.api_key && (!int.encrypted_api_key || !isEncrypted(int.encrypted_api_key))) {
+              updateData.encrypted_api_key = await encrypt(int.api_key);
+              updateData.api_key = null;
+              needsUpdate = true;
+            }
+
+            // Migrate config
+            if (int.config && (!int.encrypted_config || !isEncrypted(int.encrypted_config))) {
+              updateData.encrypted_config = await encrypt(JSON.stringify(int.config));
+              updateData.config = null;
+              needsUpdate = true;
+            }
+
+            if (!needsUpdate) {
+              results.integrations.skipped++;
+              continue;
+            }
+
+            const { error: updateError } = await supabaseAdmin
+              .from('integrations')
+              .update(updateData)
+              .eq('id', int.id);
+
+            if (updateError) {
+              console.error(`[migrate] Integration ${int.id} update error:`, updateError);
+              results.integrations.errors++;
+            } else {
+              results.integrations.migrated++;
+            }
+          } catch (err) {
+            console.error(`[migrate] Integration ${int.id} error:`, err);
+            results.integrations.errors++;
+          }
+        }
+      }
+
+      // Migrate whatsapp_connections (if any have unencrypted keys)
+      const { data: waConnections, error: waError } = await supabaseAdmin
+        .from('whatsapp_connections')
+        .select('id, evolution_api_key, encrypted_api_key');
+
+      if (waError) {
+        console.error('[migrate] WhatsApp connections fetch error:', waError);
+      } else {
+        for (const conn of waConnections || []) {
+          try {
+            // Skip if already encrypted or no plain text data
+            if (conn.encrypted_api_key && isEncrypted(conn.encrypted_api_key)) {
+              results.whatsapp_connections.skipped++;
+              continue;
+            }
+
+            if (!conn.evolution_api_key) {
+              results.whatsapp_connections.skipped++;
+              continue;
+            }
+
+            const encrypted = await encrypt(conn.evolution_api_key);
+            
+            const { error: updateError } = await supabaseAdmin
+              .from('whatsapp_connections')
+              .update({
+                encrypted_api_key: encrypted,
+                evolution_api_key: null,
+              })
+              .eq('id', conn.id);
+
+            if (updateError) {
+              console.error(`[migrate] WhatsApp connection ${conn.id} update error:`, updateError);
+              results.whatsapp_connections.errors++;
+            } else {
+              results.whatsapp_connections.migrated++;
+            }
+          } catch (err) {
+            console.error(`[migrate] WhatsApp connection ${conn.id} error:`, err);
+            results.whatsapp_connections.errors++;
+          }
+        }
+      }
+
+      // Audit log for migration
+      await supabaseAdmin.from('audit_logs').insert({
+        broker_id: user.id,
+        action: 'credentials_migration_completed',
+        table_name: 'system',
+        metadata: results,
+      });
+
+      console.log('[migrate] Migration completed:', results);
+
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Credential migration completed',
+        results,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Migrate only user's own data
+    if (action === 'migrate_my_data') {
+      const results = {
+        portal_connections: { migrated: 0, skipped: 0, errors: 0 },
+        integrations: { migrated: 0, skipped: 0, errors: 0 },
+      };
+
+      // Migrate user's portal_connections
+      const { data: portalConnections } = await supabaseAdmin
+        .from('portal_connections')
+        .select('id, api_key, credentials, encrypted_credentials')
+        .eq('broker_id', user.id);
+
+      for (const conn of portalConnections || []) {
+        try {
+          if (conn.encrypted_credentials && isEncrypted(conn.encrypted_credentials)) {
+            results.portal_connections.skipped++;
+            continue;
+          }
+
+          const dataToEncrypt = conn.api_key || (conn.credentials ? JSON.stringify(conn.credentials) : null);
+          if (!dataToEncrypt) {
+            results.portal_connections.skipped++;
+            continue;
+          }
+
+          const encrypted = await encrypt(dataToEncrypt);
+          
+          const { error } = await supabaseAdmin
+            .from('portal_connections')
+            .update({
+              encrypted_credentials: encrypted,
+              api_key: null,
+              credentials: null,
+            })
+            .eq('id', conn.id);
+
+          if (error) {
+            results.portal_connections.errors++;
+          } else {
+            results.portal_connections.migrated++;
+          }
+        } catch {
+          results.portal_connections.errors++;
+        }
+      }
+
+      // Migrate user's integrations
+      const { data: integrations } = await supabaseAdmin
+        .from('integrations')
+        .select('id, api_key, config, encrypted_api_key, encrypted_config')
+        .eq('broker_id', user.id);
+
+      for (const int of integrations || []) {
+        try {
+          let needsUpdate = false;
+          const updateData: Record<string, any> = {};
+
+          if (int.api_key && (!int.encrypted_api_key || !isEncrypted(int.encrypted_api_key))) {
+            updateData.encrypted_api_key = await encrypt(int.api_key);
+            updateData.api_key = null;
+            needsUpdate = true;
+          }
+
+          if (int.config && (!int.encrypted_config || !isEncrypted(int.encrypted_config))) {
+            updateData.encrypted_config = await encrypt(JSON.stringify(int.config));
+            updateData.config = null;
+            needsUpdate = true;
+          }
+
+          if (!needsUpdate) {
+            results.integrations.skipped++;
+            continue;
+          }
+
+          const { error } = await supabaseAdmin
+            .from('integrations')
+            .update(updateData)
+            .eq('id', int.id);
+
+          if (error) {
+            results.integrations.errors++;
+          } else {
+            results.integrations.migrated++;
+          }
+        } catch {
+          results.integrations.errors++;
+        }
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Your credentials have been encrypted',
+        results,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: 'Invalid action. Use migrate_all or migrate_my_data' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[migrate-credentials] Error:', error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
