@@ -1,0 +1,1290 @@
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
+import { HeaderButton } from "@/components/ui/header-button";
+import { useToast } from '@/hooks/use-toast';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
+import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { KanbanColumn } from '@/components/KanbanColumn';
+import { SortableStageColumn } from '@/components/crm/SortableStageColumn';
+import { DealCard } from '@/components/DealCard';
+import { CreateDealDialog } from '@/components/CreateDealDialog';
+import { DealDetailsSheet } from '@/components/crm/DealDetailsSheet';
+import { CreateCommissionDialog } from '@/components/crm/CreateCommissionDialog';
+import { DealClosingDialog } from '@/components/crm/DealClosingDialog';
+import { PipelineMetrics } from '@/components/crm/PipelineMetrics';
+import { PipelineFilters, type PipelineFiltersState } from '@/components/crm/PipelineFilters';
+import { LossReasonDialog } from '@/components/crm/LossReasonDialog';
+import { BulkActionsBar } from '@/components/crm/BulkActionsBar';
+import { AddStageCard } from '@/components/crm/AddStageCard';
+import { EditStageDialog } from '@/components/crm/EditStageDialog';
+import { ReorderStagesDialog } from '@/components/crm/ReorderStagesDialog';
+import { PipelineMinimap } from '@/components/crm/PipelineMinimap';
+import { PipelineScrollHint } from '@/components/crm/PipelineScrollHint';
+import { AppLayout } from '@/components/AppLayout';
+import { isPast, isToday } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
+import { useIsMobile } from '@/hooks/use-mobile';
+import type { Database } from '@/integrations/supabase/types';
+
+type PipelineStage = Database['public']['Enums']['pipeline_stage'];
+
+export interface Deal {
+  id: string;
+  stage: PipelineStage;
+  custom_stage_id?: string | null;
+  estimated_value: number | null;
+  estimated_commission: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at?: string;
+  priority?: string;
+  probability?: number;
+  expected_close_date?: string | null;
+  loss_reason?: string | null;
+  temperature?: 'hot' | 'warm' | 'cold';
+  business_type?: 'sale' | 'rental';
+  lead: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    origin?: string | null;
+  };
+  property: {
+    id: string;
+    name: string;
+  };
+  unit: {
+    id: string;
+    unit_number: string;
+    status?: string;
+  } | null;
+}
+
+interface TaskCount {
+  deal_id: string;
+  is_completed: boolean;
+  due_date: string | null;
+}
+
+interface StageHistoryEntry {
+  deal_id: string;
+  from_stage: string | null;
+  to_stage: string;
+  changed_at: string;
+}
+
+interface Property {
+  id: string;
+  name: string;
+}
+
+interface CustomStage {
+  id: string;
+  name: string;
+  display_order: number;
+  color: string;
+  is_won_stage: boolean;
+  is_lost_stage: boolean;
+}
+
+interface DisplayStage {
+  id: string;
+  label: string;
+  color: string;
+  isCustom: boolean;
+}
+
+const DEFAULT_STAGES: DisplayStage[] = [
+  { id: 'new_lead', label: 'Novo Lead', color: '#6366f1', isCustom: false },
+  { id: 'in_contact', label: 'Em Contato', color: '#8b5cf6', isCustom: false },
+  { id: 'visit_scheduled', label: 'Visita Agendada', color: '#f59e0b', isCustom: false },
+  { id: 'proposal', label: 'Proposta', color: '#ec4899', isCustom: false },
+  { id: 'lost', label: 'Perdido', color: '#ef4444', isCustom: false },
+  { id: 'won', label: 'Ganho', color: '#22c55e', isCustom: false },
+];
+
+const Pipeline = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loadingDeals, setLoadingDeals] = useState(true);
+  const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [taskCounts, setTaskCounts] = useState<Record<string, { pending: number; overdue: number }>>({});
+  const [showMetrics, setShowMetrics] = useState(false);
+  const [stageHistory, setStageHistory] = useState<StageHistoryEntry[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [customStages, setCustomStages] = useState<CustomStage[]>([]);
+  const [stageOrder, setStageOrder] = useState<string[] | null>(null);
+  const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
+
+  const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollRight, setShowScrollRight] = useState(true);
+  const [showScrollLeft, setShowScrollLeft] = useState(false);
+  const isMobile = useIsMobile();
+  
+  // Drag-to-scroll state
+  const isDraggingScroll = useRef(false);
+  const dragStartX = useRef(0);
+  const scrollStartLeft = useRef(0);
+
+  const COLUMN_WIDTH = 336; // 320px column + 16px gap
+  const MOBILE_COLUMN_WIDTH = 304; // 288px column + 16px gap for mobile
+
+  // Initialize swipe navigation for mobile
+  useSwipeNavigation({
+    containerRef: kanbanScrollRef,
+    columnWidth: isMobile ? MOBILE_COLUMN_WIDTH : COLUMN_WIDTH,
+    threshold: 60,
+    velocityThreshold: 0.25,
+    enabled: isMobile,
+  });
+
+  // Check scroll position to show/hide indicators
+  const updateScrollIndicators = useCallback(() => {
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+    
+    const isAtStart = el.scrollLeft <= 20;
+    const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 20;
+    const hasOverflow = el.scrollWidth > el.clientWidth;
+    
+    setShowScrollLeft(!isAtStart && hasOverflow);
+    setShowScrollRight(!isAtEnd && hasOverflow);
+  }, []);
+
+  // Initial check for scroll indicators
+  useEffect(() => {
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+    
+    // Small delay to ensure layout is complete
+    const timer = setTimeout(updateScrollIndicators, 100);
+    
+    el.addEventListener('scroll', updateScrollIndicators, { passive: true });
+    window.addEventListener('resize', updateScrollIndicators);
+    
+    return () => {
+      clearTimeout(timer);
+      el.removeEventListener('scroll', updateScrollIndicators);
+      window.removeEventListener('resize', updateScrollIndicators);
+    };
+  }, [updateScrollIndicators, loadingDeals]);
+
+  const scrollKanban = useCallback((direction: 'left' | 'right') => {
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+    
+    const scrollAmount = direction === 'right' ? COLUMN_WIDTH : -COLUMN_WIDTH;
+    el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  }, []);
+
+  const handleKanbanWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+
+    // If the user is already doing horizontal scrolling (trackpad), don't interfere.
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+
+    // Check if we can scroll
+    const canScrollLeft = el.scrollLeft > 0;
+    const canScrollRight = el.scrollLeft < el.scrollWidth - el.clientWidth;
+    
+    // Only prevent default if we can actually scroll in the intended direction
+    if ((e.deltaY > 0 && canScrollRight) || (e.deltaY < 0 && canScrollLeft)) {
+      el.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  }, []);
+
+  // Drag-to-scroll handlers (mouse only). Touch uses native swipe.
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'mouse') return;
+
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+
+    // Don’t hijack interactions on draggable handles or interactive controls
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('[data-dnd-handle]') ||
+      target.closest('[data-deal-card]') ||
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('textarea') ||
+      target.closest('[role="button"]')
+    ) {
+      return;
+    }
+
+    isDraggingScroll.current = true;
+    dragStartX.current = e.clientX;
+    scrollStartLeft.current = el.scrollLeft;
+
+    // Keep receiving move events even if pointer leaves the element
+    try {
+      (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
+    e.currentTarget.classList.add('cursor-grabbing');
+    el.style.userSelect = 'none';
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingScroll.current || e.pointerType !== 'mouse') return;
+
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+
+    const deltaX = dragStartX.current - e.clientX;
+    el.scrollLeft = scrollStartLeft.current + deltaX;
+    e.preventDefault();
+  }, []);
+
+  const endPointerDrag = useCallback((e?: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingScroll.current = false;
+    const el = kanbanScrollRef.current;
+    if (el) {
+      el.style.userSelect = '';
+    }
+    if (e?.currentTarget) {
+      e.currentTarget.classList.remove('cursor-grabbing');
+    }
+  }, []);
+
+
+  const [filters, setFilters] = useState<PipelineFiltersState>({
+    search: '',
+    priority: '',
+    temperature: '',
+    origin: '',
+    minValue: '',
+    maxValue: '',
+    propertyId: '',
+    dateFrom: undefined,
+    dateTo: undefined,
+  });
+
+  // Selection mode state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedDeals, setSelectedDeals] = useState<Set<string>>(new Set());
+
+  // Loss reason dialog state
+  const [isLossDialogOpen, setIsLossDialogOpen] = useState(false);
+  const [pendingLossDeal, setPendingLossDeal] = useState<{ dealId: string; oldStage: PipelineStage } | null>(null);
+
+  // Commission dialog state (for "won" deals)
+  const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
+  const [pendingWonDeal, setPendingWonDeal] = useState<Deal | null>(null);
+
+  // Edit stage dialog state
+  const [isEditStageDialogOpen, setIsEditStageDialogOpen] = useState(false);
+  const [editingStage, setEditingStage] = useState<CustomStage | null>(null);
+
+  // Reorder mode state (now used to open dialog)
+  const [isReorderMode, setIsReorderMode] = useState(false);
+
+  // Drag state
+  const [isDraggingStage, setIsDraggingStage] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  // Combine default and custom stages with custom ordering
+  const allStages = useMemo((): DisplayStage[] => {
+    const customDisplayStages: DisplayStage[] = customStages.map((cs) => ({
+      id: `custom_${cs.id}`,
+      label: cs.name,
+      color: cs.color,
+      isCustom: true,
+    }));
+    
+    // Default order: default stages (except lost/won), then custom, then lost/won
+    const lostIndex = DEFAULT_STAGES.findIndex(s => s.id === 'lost');
+    const regularStages = DEFAULT_STAGES.slice(0, lostIndex);
+    const finalStages = DEFAULT_STAGES.slice(lostIndex);
+    const defaultOrder = [...regularStages, ...customDisplayStages, ...finalStages];
+    
+    // If custom order exists, use it
+    if (stageOrder && stageOrder.length > 0) {
+      const stageMap = new Map(defaultOrder.map(s => [s.id, s]));
+      const ordered: DisplayStage[] = [];
+      
+      // Add stages in custom order
+      for (const id of stageOrder) {
+        const stage = stageMap.get(id);
+        if (stage) {
+          ordered.push(stage);
+          stageMap.delete(id);
+        }
+      }
+      
+      // Add any new stages that weren't in the saved order
+      stageMap.forEach(stage => ordered.push(stage));
+      
+      return ordered;
+    }
+    
+    return defaultOrder;
+  }, [customStages, stageOrder]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      loadDeals();
+      loadTaskCounts();
+      loadStageHistory();
+      loadProperties();
+      loadCustomStages();
+      loadStageOrder();
+    }
+  }, [user]);
+
+  // Clear selection when exiting selection mode
+  useEffect(() => {
+    if (!selectionMode) {
+      setSelectedDeals(new Set());
+    }
+  }, [selectionMode]);
+
+  const loadDeals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deals')
+        .select(`
+          *,
+          lead:leads(id, name, email, phone, origin),
+          property:properties(id, name),
+          unit:units(id, unit_number, status)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDeals(data as Deal[]);
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao carregar pipeline',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingDeals(false);
+    }
+  };
+
+  const loadCustomStages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pipeline_stages')
+        .select('*')
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      setCustomStages(data || []);
+    } catch (error) {
+      console.error('Error loading custom stages:', error);
+    }
+  };
+
+  const loadStageOrder = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('pipeline_stage_order')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      if (data?.pipeline_stage_order) {
+        setStageOrder(data.pipeline_stage_order as string[]);
+      }
+    } catch (error) {
+      console.error('Error loading stage order:', error);
+    }
+  };
+
+  const saveStageOrder = async (orderedIds: string[]) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ pipeline_stage_order: orderedIds })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      setStageOrder(orderedIds);
+      toast({
+        title: 'Ordem salva!',
+        description: 'A ordem dos estágios foi atualizada com sucesso.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao salvar ordem',
+        description: error.message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  const loadTaskCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deal_tasks')
+        .select('deal_id, is_completed, due_date');
+
+      if (error) throw error;
+
+      const counts: Record<string, { pending: number; overdue: number }> = {};
+      
+      (data as TaskCount[])?.forEach((task) => {
+        if (!counts[task.deal_id]) {
+          counts[task.deal_id] = { pending: 0, overdue: 0 };
+        }
+        
+        if (!task.is_completed) {
+          counts[task.deal_id].pending++;
+          
+          if (task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date))) {
+            counts[task.deal_id].overdue++;
+          }
+        }
+      });
+
+      setTaskCounts(counts);
+    } catch (error) {
+      console.error('Error loading task counts:', error);
+    }
+  };
+
+  const loadStageHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deal_stage_history')
+        .select('deal_id, from_stage, to_stage, changed_at')
+        .order('changed_at', { ascending: false });
+
+      if (error) throw error;
+      setStageHistory(data || []);
+    } catch (error) {
+      console.error('Error loading stage history:', error);
+    }
+  };
+
+  const loadProperties = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setProperties(data || []);
+    } catch (error) {
+      console.error('Error loading properties:', error);
+    }
+  };
+
+  const handleAddStage = async (name: string, color: string, isWonStage?: boolean, isLostStage?: boolean, insertAfterStageId?: string | null) => {
+    if (!user) return;
+
+    try {
+      let newDisplayOrder = customStages.length;
+
+      if (insertAfterStageId) {
+        const targetStage = customStages.find(s => s.id === insertAfterStageId);
+        if (targetStage) {
+          newDisplayOrder = targetStage.display_order + 1;
+          
+          // Incrementar display_order dos estágios subsequentes
+          const stagesToUpdate = customStages.filter(s => s.display_order >= newDisplayOrder);
+          for (const stage of stagesToUpdate) {
+            await supabase
+              .from('pipeline_stages')
+              .update({ display_order: stage.display_order + 1 })
+              .eq('id', stage.id);
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from('pipeline_stages')
+        .insert({
+          broker_id: user.id,
+          name,
+          color,
+          display_order: newDisplayOrder,
+          is_won_stage: isWonStage || false,
+          is_lost_stage: isLostStage || false,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Estágio criado!',
+        description: `O estágio "${name}" foi adicionado ao pipeline.`,
+      });
+
+      loadCustomStages();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao criar estágio',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteStage = async (stageId: string) => {
+    // Check if there are deals associated with this stage
+    const dealsInStage = deals.filter(d => d.custom_stage_id === stageId);
+    
+    if (dealsInStage.length > 0) {
+      const confirmed = window.confirm(
+        `Este estágio possui ${dealsInStage.length} deal${dealsInStage.length > 1 ? 's' : ''} associado${dealsInStage.length > 1 ? 's' : ''}. Os deals serão movidos para "Novo Lead". Deseja continuar?`
+      );
+      if (!confirmed) return;
+
+      // Move deals to new_lead stage before deleting
+      try {
+        const { error: moveError } = await supabase
+          .from('deals')
+          .update({ custom_stage_id: null, stage: 'new_lead' as PipelineStage })
+          .eq('custom_stage_id', stageId);
+
+        if (moveError) throw moveError;
+      } catch (error: any) {
+        toast({
+          title: 'Erro ao mover deals',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    try {
+      const { error } = await supabase
+        .from('pipeline_stages')
+        .delete()
+        .eq('id', stageId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Estágio excluído!',
+        description: 'O estágio foi removido do pipeline.',
+      });
+
+      loadCustomStages();
+      loadDeals();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao excluir estágio',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEditStage = (stage: CustomStage) => {
+    setEditingStage(stage);
+    setIsEditStageDialogOpen(true);
+  };
+
+  const handleSaveStage = async (id: string, name: string, color: string, isWonStage: boolean, isLostStage: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('pipeline_stages')
+        .update({
+          name,
+          color,
+          is_won_stage: isWonStage,
+          is_lost_stage: isLostStage,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Estágio atualizado!',
+        description: `O estágio "${name}" foi atualizado com sucesso.`,
+      });
+
+      loadCustomStages();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao atualizar estágio',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleReorderStages = async (activeId: string, overId: string) => {
+    const activeIndex = customStages.findIndex(s => `stage_${s.id}` === activeId);
+    const overIndex = customStages.findIndex(s => `stage_${s.id}` === overId);
+
+    if (activeIndex === -1 || overIndex === -1) return;
+
+    const newStages = arrayMove(customStages, activeIndex, overIndex);
+    
+    // Optimistic update
+    setCustomStages(newStages);
+
+    try {
+      // Update display_order for all affected stages
+      const updates = newStages.map((stage, index) => ({
+        id: stage.id,
+        display_order: index,
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from('pipeline_stages')
+          .update({ display_order: update.display_order })
+          .eq('id', update.id);
+      }
+
+      toast({
+        title: 'Estágios reordenados!',
+        description: 'A ordem dos estágios foi atualizada.',
+      });
+    } catch (error: any) {
+      // Revert on error
+      loadCustomStages();
+      toast({
+        title: 'Erro ao reordenar estágios',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Filter deals
+  const filteredDeals = useMemo(() => {
+    return deals.filter((deal) => {
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesSearch =
+          deal.lead.name.toLowerCase().includes(searchLower) ||
+          deal.lead.email?.toLowerCase().includes(searchLower) ||
+          deal.lead.phone?.includes(filters.search) ||
+          deal.property.name.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      // Priority filter
+      if (filters.priority && filters.priority !== 'all') {
+        if ((deal.priority || 'medium') !== filters.priority) return false;
+      }
+
+      // Temperature filter
+      if (filters.temperature && filters.temperature !== 'all') {
+        if (((deal as any).temperature || 'warm') !== filters.temperature) return false;
+      }
+
+      // Origin filter
+      if (filters.origin && filters.origin !== 'all') {
+        if (deal.lead.origin?.toLowerCase() !== filters.origin.toLowerCase()) return false;
+      }
+
+      // Property filter
+      if (filters.propertyId && filters.propertyId !== 'all') {
+        if (deal.property.id !== filters.propertyId) return false;
+      }
+
+      // Value range filter
+      if (filters.minValue) {
+        if (!deal.estimated_value || deal.estimated_value < Number(filters.minValue)) return false;
+      }
+      if (filters.maxValue) {
+        if (!deal.estimated_value || deal.estimated_value > Number(filters.maxValue)) return false;
+      }
+
+      // Date range filter
+      if (filters.dateFrom) {
+        const dealDate = new Date(deal.created_at);
+        if (dealDate < filters.dateFrom) return false;
+      }
+      if (filters.dateTo) {
+        const dealDate = new Date(deal.created_at);
+        const endOfDay = new Date(filters.dateTo);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (dealDate > endOfDay) return false;
+      }
+
+      return true;
+    });
+  }, [deals, filters]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeId = event.active.id as string;
+    
+    // Check if dragging a stage (stage IDs start with "stage_")
+    if (activeId.startsWith('stage_')) {
+      setIsDraggingStage(true);
+      setActiveDeal(null);
+      return;
+    }
+    
+    // Otherwise dragging a deal
+    const deal = deals.find((d) => d.id === activeId);
+    setActiveDeal(deal || null);
+    setIsDraggingStage(false);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDeal(null);
+    setIsDraggingStage(false);
+
+    if (!over || active.id === over.id) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Check if reordering stages
+    if (activeId.startsWith('stage_') && overId.startsWith('stage_')) {
+      await handleReorderStages(activeId, overId);
+      return;
+    }
+
+    // Otherwise, moving a deal to a new stage
+    const dealId = activeId;
+    const newStage = overId;
+    const deal = deals.find((d) => d.id === dealId);
+    const oldStage = deal?.stage;
+
+    if (!deal || oldStage === newStage) return;
+
+    // If moving to lost, show loss reason dialog first
+    if (newStage === 'lost') {
+      setPendingLossDeal({ dealId, oldStage: oldStage! });
+      setIsLossDialogOpen(true);
+      return;
+    }
+
+    // If moving to won, update first then show commission dialog
+    if (newStage === 'won') {
+      await updateDealStage(dealId, oldStage!, newStage as PipelineStage);
+      // Show commission dialog after successful stage update
+      const wonDeal = deals.find(d => d.id === dealId);
+      if (wonDeal) {
+        setPendingWonDeal({ ...wonDeal, stage: 'won' });
+        setIsCommissionDialogOpen(true);
+      }
+      return;
+    }
+
+    await updateDealStage(dealId, oldStage!, newStage as PipelineStage);
+  };
+
+  const updateDealStage = async (dealId: string, oldStage: PipelineStage, newStage: PipelineStage, lossReason?: string, lossNotes?: string) => {
+    // Optimistic update
+    setDeals((prev) =>
+      prev.map((d) =>
+        d.id === dealId ? { ...d, stage: newStage, loss_reason: lossReason || d.loss_reason } : d
+      )
+    );
+
+    try {
+      // Update deal stage
+      const updateData: { stage: PipelineStage; loss_reason?: string } = { stage: newStage };
+      if (lossReason) {
+        updateData.loss_reason = lossReason;
+      }
+
+      const { error: updateError } = await supabase
+        .from('deals')
+        .update(updateData)
+        .eq('id', dealId);
+
+      if (updateError) throw updateError;
+
+      // Log stage change history
+      if (user) {
+        await supabase.from('deal_stage_history').insert({
+          deal_id: dealId,
+          broker_id: user.id,
+          from_stage: oldStage,
+          to_stage: newStage,
+          notes: lossNotes || null,
+        });
+      }
+
+      toast({
+        title: 'Deal atualizado!',
+        description: newStage === 'lost' 
+          ? 'Deal marcado como perdido com motivo registrado.'
+          : 'A etapa do deal foi alterada com sucesso.',
+      });
+
+      // Reload stage history
+      loadStageHistory();
+    } catch (error: any) {
+      // Revert on error
+      loadDeals();
+      toast({
+        title: 'Erro ao atualizar deal',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleLossReasonConfirm = async (reason: string, notes: string) => {
+    if (!pendingLossDeal) return;
+    
+    setIsLossDialogOpen(false);
+    await updateDealStage(pendingLossDeal.dealId, pendingLossDeal.oldStage, 'lost', reason, notes);
+    setPendingLossDeal(null);
+  };
+
+  const handleLossReasonCancel = () => {
+    setIsLossDialogOpen(false);
+    setPendingLossDeal(null);
+  };
+
+  const handleDealClick = (deal: Deal) => {
+    setSelectedDeal(deal);
+    setIsDetailsOpen(true);
+  };
+
+  const handleDealUpdate = () => {
+    loadDeals();
+    loadTaskCounts();
+    loadStageHistory();
+  };
+
+  // Selection handlers
+  const handleSelectionChange = (dealId: string, selected: boolean) => {
+    setSelectedDeals((prev) => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(dealId);
+      } else {
+        newSet.delete(dealId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (dealIds: string[], selected: boolean) => {
+    setSelectedDeals((prev) => {
+      const newSet = new Set(prev);
+      if (selected) {
+        dealIds.forEach((id) => newSet.add(id));
+      } else {
+        dealIds.forEach((id) => newSet.delete(id));
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleSelectionMode = () => {
+    setSelectionMode((prev) => !prev);
+  };
+
+  const handleBulkMove = async (targetStage: string) => {
+    if (selectedDeals.size === 0) return;
+
+    // Only allow moving to default stages (enum values)
+    const isDefaultStage = DEFAULT_STAGES.some(s => s.id === targetStage);
+    if (!isDefaultStage) {
+      toast({
+        title: 'Ação não suportada',
+        description: 'Movimentação em massa só é permitida para estágios padrão.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const dealIds = Array.from(selectedDeals);
+    const typedTargetStage = targetStage as PipelineStage;
+    
+    // Optimistic update
+    setDeals((prev) =>
+      prev.map((d) =>
+        selectedDeals.has(d.id) ? { ...d, stage: typedTargetStage } : d
+      )
+    );
+
+    try {
+      // Update all selected deals
+      const { error: updateError } = await supabase
+        .from('deals')
+        .update({ stage: typedTargetStage })
+        .in('id', dealIds);
+
+      if (updateError) throw updateError;
+
+      // Log stage change history for each deal
+      if (user) {
+        const historyEntries = dealIds.map((dealId) => {
+          const deal = deals.find((d) => d.id === dealId);
+          return {
+            deal_id: dealId,
+            broker_id: user.id,
+            from_stage: deal?.stage || 'new_lead',
+            to_stage: targetStage,
+            notes: 'Movimentação em massa',
+          };
+        });
+
+        await supabase.from('deal_stage_history').insert(historyEntries);
+      }
+
+      toast({
+        title: 'Deals atualizados!',
+        description: `${dealIds.length} deal${dealIds.length > 1 ? 's' : ''} movido${dealIds.length > 1 ? 's' : ''} para ${allStages.find(s => s.id === targetStage)?.label}.`,
+      });
+
+      // Clear selection and exit selection mode
+      setSelectedDeals(new Set());
+      setSelectionMode(false);
+
+      // Reload stage history
+      loadStageHistory();
+    } catch (error: any) {
+      // Revert on error
+      loadDeals();
+      toast({
+        title: 'Erro ao atualizar deals',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCancelSelection = () => {
+    setSelectedDeals(new Set());
+    setSelectionMode(false);
+  };
+
+  if (loading || loadingDeals) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  return (
+    <AppLayout
+      title="Pipeline Vendas"
+      headerActions={
+        <>
+          <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
+            Novo Deal
+          </HeaderButton>
+          <HeaderButton
+            variant={showMetrics ? 'secondary' : 'outline'}
+            iconOnly
+            showTextAt="lg"
+            icon={<BarChart3 className="h-4 w-4" />}
+            onClick={() => setShowMetrics(!showMetrics)}
+          >
+            Métricas
+          </HeaderButton>
+          <HeaderButton
+            variant="ghost"
+            iconOnly
+            showTextAt="lg"
+            icon={<ArrowUpDown className="h-4 w-4" />}
+            onClick={() => setIsReorderDialogOpen(true)}
+          >
+            Reordenar
+          </HeaderButton>
+        </>
+      }
+    >
+      <div className="space-y-6">
+        {/* Metrics Section */}
+        <Collapsible open={showMetrics} onOpenChange={setShowMetrics}>
+          <CollapsibleContent className="space-y-4">
+            <PipelineMetrics deals={deals} stageHistory={stageHistory} />
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Filters */}
+        <PipelineFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          properties={properties}
+        />
+
+        {/* Pipeline Kanban */}
+        <div className="relative group">
+          {/* Left navigation button - discrete, hidden on mobile */}
+          <button
+            onClick={() => scrollKanban('left')}
+            className={`hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 h-8 w-8 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground ${
+              showScrollLeft ? 'opacity-70 hover:opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            aria-label="Scroll esquerda"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {/* Right navigation button - discrete, hidden on mobile */}
+          <button
+            onClick={() => scrollKanban('right')}
+            className={`hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 h-8 w-8 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground ${
+              showScrollRight ? 'opacity-70 hover:opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            aria-label="Scroll direita"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          
+          <div
+            ref={kanbanScrollRef}
+            className="w-full min-w-0 overflow-x-scroll overflow-y-visible pb-4 touch-pan-x overscroll-x-contain pipeline-scrollbar cursor-grab px-6 snap-x snap-proximity md:snap-none"
+            onWheel={handleKanbanWheel}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endPointerDrag}
+            onPointerCancel={endPointerDrag}
+            onPointerLeave={endPointerDrag}
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <div className="min-w-max px-2 py-3 select-none pr-8 md:pr-2">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={customStages.map(s => `stage_${s.id}`)}
+                strategy={horizontalListSortingStrategy}
+              >
+                <div className="flex gap-4 min-w-max">
+                  {/* Default stages (not sortable) */}
+                  {allStages.filter(s => !s.isCustom && s.id !== 'lost' && s.id !== 'won').map((stage) => (
+                    <KanbanColumn
+                      key={stage.id}
+                      id={stage.id}
+                      title={stage.label}
+                      color={stage.color}
+                      deals={filteredDeals.filter((deal) => deal.stage === stage.id)}
+                      onDealClick={handleDealClick}
+                      taskCounts={taskCounts}
+                      selectionMode={selectionMode}
+                      selectedDeals={selectedDeals}
+                      onSelectionChange={handleSelectionChange}
+                      onSelectAll={handleSelectAll}
+                      onToggleSelectionMode={handleToggleSelectionMode}
+                      isCustomStage={false}
+                      stageHistory={stageHistory}
+                    />
+                  ))}
+
+                  {/* Custom stages (sortable) */}
+                  {customStages.map((stage) => {
+                    const stageId = `custom_${stage.id}`;
+                    return (
+                      <SortableStageColumn
+                        key={stage.id}
+                        id={`stage_${stage.id}`}
+                        stageId={stageId}
+                        title={stage.name}
+                        color={stage.color}
+                        deals={filteredDeals.filter((deal) => deal.custom_stage_id === stage.id)}
+                        onDealClick={handleDealClick}
+                        taskCounts={taskCounts}
+                        selectionMode={selectionMode}
+                        selectedDeals={selectedDeals}
+                        onSelectionChange={handleSelectionChange}
+                        onSelectAll={handleSelectAll}
+                        onToggleSelectionMode={handleToggleSelectionMode}
+                        isCustomStage={true}
+                        onEditStage={() => handleEditStage(stage)}
+                        onDeleteStage={() => handleDeleteStage(stage.id)}
+                        isDraggingStage={isDraggingStage}
+                        isReorderMode={isReorderMode}
+                        stageHistory={stageHistory}
+                      />
+                    );
+                  })}
+
+                  {/* Final stages (lost/won) */}
+                  {allStages.filter(s => !s.isCustom && (s.id === 'lost' || s.id === 'won')).map((stage) => (
+                    <KanbanColumn
+                      key={stage.id}
+                      id={stage.id}
+                      title={stage.label}
+                      color={stage.color}
+                      deals={filteredDeals.filter((deal) => deal.stage === stage.id)}
+                      onDealClick={handleDealClick}
+                      taskCounts={taskCounts}
+                      selectionMode={selectionMode}
+                      selectedDeals={selectedDeals}
+                      onSelectionChange={handleSelectionChange}
+                      onSelectAll={handleSelectAll}
+                      onToggleSelectionMode={handleToggleSelectionMode}
+                      isCustomStage={false}
+                      stageHistory={stageHistory}
+                    />
+                  ))}
+
+                  {/* Add Stage Card - always at the end */}
+                  <AddStageCard 
+                    onAddStage={handleAddStage}
+                    existingStages={[
+                      ...DEFAULT_STAGES.filter(s => s.id !== 'lost' && s.id !== 'won').map(s => ({
+                        id: s.id,
+                        name: s.label,
+                        isCustom: false,
+                      })),
+                      ...customStages.map(s => ({
+                        id: s.id,
+                        name: s.name,
+                        isCustom: true,
+                      })),
+                    ]}
+                  />
+                  
+                  {/* Spacer para garantir scroll completo no mobile */}
+                  <div className="flex-shrink-0 w-8 md:hidden" aria-hidden="true" />
+                </div>
+              </SortableContext>
+
+              <DragOverlay>
+                {activeDeal ? <DealCard deal={activeDeal} isDragging /> : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
+        </div>
+
+        {/* Minimap */}
+        <PipelineMinimap
+          stages={allStages.map(stage => {
+            const dealsInStage = stage.isCustom
+              ? filteredDeals.filter(d => d.custom_stage_id === stage.id.replace('custom_', ''))
+              : filteredDeals.filter(d => d.stage === stage.id);
+            return {
+              ...stage,
+              dealCount: dealsInStage.length,
+              totalValue: dealsInStage.reduce((sum, d) => sum + (d.estimated_value || 0), 0),
+            };
+          })}
+          scrollRef={kanbanScrollRef}
+          columnWidth={COLUMN_WIDTH}
+        />
+      </div>
+
+      {/* Floating Scroll Hint */}
+      <PipelineScrollHint />
+
+      {/* Mobile FAB to scroll to Add Stage */}
+      <Button
+        className="fixed bottom-24 right-4 z-50 rounded-full shadow-lg md:hidden h-14 w-14"
+        size="icon"
+        onClick={() => {
+          const el = kanbanScrollRef.current;
+          if (el) {
+            el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
+          }
+        }}
+        aria-label="Adicionar estágio"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
+        {/* Bulk Actions Bar */}
+        <BulkActionsBar
+          selectedCount={selectedDeals.size}
+          stages={allStages.map(s => ({ id: s.id as PipelineStage, label: s.label }))}
+          onMove={handleBulkMove}
+          onCancel={handleCancelSelection}
+        />
+      </div>
+
+      <CreateDealDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSuccess={loadDeals}
+      />
+
+      <DealDetailsSheet
+        deal={selectedDeal}
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        onUpdate={handleDealUpdate}
+      />
+
+      <LossReasonDialog
+        open={isLossDialogOpen}
+        onOpenChange={setIsLossDialogOpen}
+        onConfirm={handleLossReasonConfirm}
+        onCancel={handleLossReasonCancel}
+        dealName={deals.find(d => d.id === pendingLossDeal?.dealId)?.lead.name}
+      />
+
+      <EditStageDialog
+        open={isEditStageDialogOpen}
+        onOpenChange={setIsEditStageDialogOpen}
+        stage={editingStage}
+        onSave={handleSaveStage}
+      />
+
+      <ReorderStagesDialog
+        open={isReorderDialogOpen}
+        onOpenChange={setIsReorderDialogOpen}
+        stages={allStages.map(s => {
+          const customStage = customStages.find(cs => `custom_${cs.id}` === s.id);
+          return {
+            id: s.id,
+            name: s.label,
+            color: s.color,
+            isCustom: s.isCustom,
+            isWonStage: customStage?.is_won_stage || s.id === 'won',
+            isLostStage: customStage?.is_lost_stage || s.id === 'lost',
+          };
+        })}
+        onSave={saveStageOrder}
+      />
+
+      <DealClosingDialog
+        deal={pendingWonDeal}
+        open={isCommissionDialogOpen}
+        onOpenChange={(open) => {
+          setIsCommissionDialogOpen(open);
+          if (!open) setPendingWonDeal(null);
+        }}
+        onSuccess={() => {
+          setPendingWonDeal(null);
+          loadDeals(); // Reload deals to reflect updated unit status
+        }}
+      />
+    </AppLayout>
+  );
+};
+
+export default Pipeline;

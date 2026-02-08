@@ -1,0 +1,160 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarDays, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+
+interface AddTaskDialogProps {
+  dealId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
+export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTaskDialogProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+    due_date: null as Date | null,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from('deal_tasks').insert({
+        deal_id: dealId,
+        broker_id: user.id,
+        title: formData.title,
+        description: formData.description || null,
+        priority: formData.priority,
+        due_date: formData.due_date?.toISOString() ?? null,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Tarefa criada!',
+        description: 'A tarefa foi adicionada à lista.',
+      });
+
+      setFormData({ title: '', description: '', priority: 'medium', due_date: null });
+      onOpenChange(false);
+      onSuccess();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao criar tarefa',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Nova Tarefa</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Título *</Label>
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Ex: Enviar proposta por email"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Descrição</Label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Detalhes sobre a tarefa..."
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Prioridade</Label>
+              <Select
+                value={formData.priority}
+                onValueChange={(value) => setFormData({ ...formData, priority: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Baixa</SelectItem>
+                  <SelectItem value="medium">Média</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Data de Vencimento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !formData.due_date && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    {formData.due_date
+                      ? format(formData.due_date, 'dd/MM/yyyy', { locale: ptBR })
+                      : 'Selecionar'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.due_date ?? undefined}
+                    onSelect={(date) => setFormData({ ...formData, due_date: date ?? null })}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isLoading || !formData.title}>
+              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Criar Tarefa
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};

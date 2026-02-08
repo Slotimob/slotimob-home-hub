@@ -1,0 +1,54 @@
+import { ReactNode } from 'react';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
+import { BottomNavigation } from '@/components/BottomNavigation';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
+
+interface AppLayoutProps {
+  children: ReactNode;
+  title?: string;
+  headerActions?: ReactNode;
+}
+
+export function AppLayout({ children, title, headerActions }: AppLayoutProps) {
+  return (
+    <SidebarProvider>
+      <div className="min-h-[100dvh] flex w-full bg-gradient-to-br from-primary/5 via-background to-accent/10 pb-16 md:pb-0">
+        <AppSidebar />
+
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Header */}
+          <header className="border-b bg-card sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 gap-1 sm:gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+                <SidebarTrigger className="flex-shrink-0" />
+                {title && (
+                  <h1 className="text-base sm:text-lg md:text-xl font-bold whitespace-nowrap truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
+                    {title}
+                  </h1>
+                )}
+              </div>
+              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0">
+                <OfflineIndicator />
+                {headerActions}
+              </div>
+            </div>
+          </header>
+
+          {/* Breadcrumbs */}
+          <div className="px-4 lg:px-8 pt-4">
+            <Breadcrumbs />
+          </div>
+
+          {/* Main Content */}
+          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-4 py-6 lg:px-8">
+            {children}
+          </main>
+        </div>
+      </div>
+
+      <BottomNavigation />
+    </SidebarProvider>
+  );
+}
