@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FileText, Download, Pencil, Trash2, Plus } from 'lucide-react';
+import { FileText, Download, Pencil, Trash2, Plus, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -148,7 +148,7 @@ export const CustomTemplatesTab = () => {
         </div>
         <h3 className="text-lg font-semibold mb-2">Nenhum modelo personalizado</h3>
         <p className="text-sm text-muted-foreground max-w-md mb-4">
-          Você ainda não criou modelos customizados. Comece editando um modelo padrão na aba "Modelos Padrão" para criar sua primeira versão personalizada.
+          Você ainda não criou modelos customizados. Comece editando um modelo padrão na aba "Modelos Padrão" e clique em "Salvar Modelo" para criar sua versão personalizada.
         </p>
         <Button variant="outline" onClick={() => window.location.href = '/documents/templates'}>
           <Plus className="h-4 w-4 mr-2" />
@@ -160,6 +160,19 @@ export const CustomTemplatesTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header Info */}
+      <div className="bg-muted/50 rounded-lg p-4 border">
+        <div className="flex items-start gap-3">
+          <FileCheck className="h-5 w-5 text-primary mt-0.5" />
+          <div>
+            <h3 className="font-medium text-sm">Modelos Personalizados</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Modelos salvos a partir de edições nos modelos padrão. Estes modelos são exclusivos da sua conta.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
