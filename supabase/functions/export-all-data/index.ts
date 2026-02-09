@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       supabaseAdmin.from('contract_templates').select('*').or(`broker_id.eq.${brokerId},is_public.eq.true`),
       supabaseAdmin.from('integrations').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('portal_connections').select('*').eq('broker_id', brokerId),
-      supabaseAdmin.from('portal_listings').select('*'),
+      supabaseAdmin.from('portal_listings').select('*, portal_connections!inner(broker_id)').eq('portal_connections.broker_id', brokerId),
       supabaseAdmin.from('notification_logs').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('import_history').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('custom_obligation_types').select('*').eq('broker_id', brokerId),
@@ -190,9 +190,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Export error:', error);
-    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: 'Failed to export data', details: message }),
+      JSON.stringify({ error: 'Failed to export data' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
