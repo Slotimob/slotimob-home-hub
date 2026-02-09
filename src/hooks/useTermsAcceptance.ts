@@ -68,6 +68,15 @@ export const useTermsAcceptance = (userId: string | undefined) => {
     checkTermsAcceptance();
   }, [userId]);
 
+  const markAccepted = () => {
+    setStatus(prev => ({
+      ...prev,
+      needsReaccept: false,
+      userVersion: prev.currentVersion,
+      acceptedAt: new Date().toISOString(),
+    }));
+  };
+
   const refreshStatus = async () => {
     if (!userId) return;
 
@@ -107,6 +116,6 @@ export const useTermsAcceptance = (userId: string | undefined) => {
     }
   };
 
-  return { ...status, refreshStatus };
+  return { ...status, markAccepted, refreshStatus };
 };
 
