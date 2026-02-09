@@ -1,31 +1,41 @@
-import { useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { cleanupExpiredDrafts } from '@/hooks/useFormDraft';
 
 export function GlowInitializer() {
-  const { user } = useAuth();
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Cleanup expired drafts on app load
+  // Listen to auth state without useAuth (avoids useNavigate hook)
   useEffect(() => {
     cleanupExpiredDrafts();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUserId(session?.user?.id ?? null);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (user) {
-      loadGlowSettings();
+    if (userId) {
+      loadGlowSettings(userId);
     } else {
-      // Default intensity for non-logged users
       document.documentElement.style.setProperty('--glow-intensity', '0.5');
     }
-  }, [user]);
+  }, [userId]);
 
-  const loadGlowSettings = async () => {
+  const loadGlowSettings = async (uid: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('glow_intensity')
-        .eq('id', user?.id)
+        .eq('id', uid)
         .single();
 
       if (error) throw error;
