@@ -27,7 +27,7 @@ import {
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const { needsReaccept, refreshStatus, currentVersion } = useTermsAcceptance(user?.id);
+  const { needsReaccept, markAccepted, currentVersion } = useTermsAcceptance(user?.id);
   const { 
     preferences, 
     isLoaded, 
@@ -111,7 +111,7 @@ const Dashboard = () => {
           open={needsReaccept}
           userId={user.id}
           currentVersion={currentVersion}
-          onAccepted={refreshStatus}
+          onAccepted={markAccepted}
         />
       )}
 
