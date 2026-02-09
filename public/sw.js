@@ -1,8 +1,25 @@
 // Service Worker for Push Notifications
+// Note: The PWA/Workbox service worker handles caching separately.
+// This SW only handles push notifications.
 
 self.addEventListener('install', function(event) {
   console.log('Service Worker installing.');
-  self.skipWaiting();
+  // Clean up old caches on install
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          // Remove any manually created caches (keep workbox ones managed by workbox)
+          if (!cacheName.startsWith('workbox-')) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(function() {
+      return self.skipWaiting();
+    })
+  );
 });
 
 self.addEventListener('activate', function(event) {
@@ -11,8 +28,6 @@ self.addEventListener('activate', function(event) {
 });
 
 self.addEventListener('push', function(event) {
-  console.log('Push event received:', event);
-  
   var data = {
     title: 'Sloti',
     body: 'Você tem uma nova notificação',
@@ -45,7 +60,6 @@ self.addEventListener('push', function(event) {
 });
 
 self.addEventListener('notificationclick', function(event) {
-  console.log('Notification clicked:', event);
   event.notification.close();
 
   var urlToOpen = (event.notification.data && event.notification.data.url) || '/';
