@@ -49,6 +49,27 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Rate limiting: max 30 requests per token per 15 minutes
+    const windowStart = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { count: recentRequests } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', `ical:${token}`)
+      .gte('window_start', windowStart);
+
+    if ((recentRequests || 0) >= 30) {
+      return new Response('Too many requests', { 
+        status: 429,
+        headers: corsHeaders
+      });
+    }
+
+    // Record this request
+    await supabase.from('rate_limits').insert({
+      identifier: `ical:${token}`,
+      window_start: new Date().toISOString(),
+    });
+
     // Find user by ical_token
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -219,7 +240,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error generating iCal feed:', error);
-    return new Response(`Error: ${error.message}`, { 
+    return new Response('Internal server error', { 
       status: 500,
       headers: corsHeaders
     });

@@ -208,9 +208,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Import error:', error);
-    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: 'Failed to import data', details: message }),
+      JSON.stringify({ error: 'Failed to import data' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
