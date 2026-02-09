@@ -128,14 +128,11 @@ const Integrations = () => {
                 </ul>
               </div>
 
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => navigate('/whatsapp-settings')}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Configurar Instância
-              </Button>
+              <div className="rounded-lg bg-muted/50 p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  🚧 Esta funcionalidade está em desenvolvimento. Em breve você poderá conectar seu WhatsApp Business diretamente.
+                </p>
+              </div>
             </CardContent>
           </Card>
 
