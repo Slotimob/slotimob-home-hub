@@ -42,9 +42,12 @@ export const TermsReacceptDialog = ({
       return;
     }
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
+    // Close dialog optimistically first
+    onAccepted();
+
+    try {
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -53,20 +56,11 @@ export const TermsReacceptDialog = ({
         })
         .eq('id', userId);
 
-      if (error) throw error;
-
-      toast({
-        title: 'Termos aceitos',
-        description: 'Obrigado por aceitar os novos termos de uso.',
-      });
-
-      onAccepted();
+      if (error) {
+        console.error('Error saving terms acceptance:', error);
+      }
     } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar',
-        description: error.message || 'Tente novamente.',
-        variant: 'destructive',
-      });
+      console.error('Error saving terms acceptance:', error);
     } finally {
       setLoading(false);
     }

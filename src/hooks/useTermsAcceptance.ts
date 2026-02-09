@@ -43,7 +43,12 @@ export const useTermsAcceptance = (userId: string | undefined) => {
             .maybeSingle(),
         ]);
 
-        if (profileResult.error) throw profileResult.error;
+        if (profileResult.error) {
+          console.error('Error fetching profile for terms:', profileResult.error);
+          // On error, don't block the user - assume terms accepted
+          setStatus(prev => ({ ...prev, loading: false, needsReaccept: false }));
+          return;
+        }
 
         const userVersion = profileResult.data?.terms_version || null;
         const acceptedAt = profileResult.data?.terms_accepted_at || null;
@@ -61,7 +66,8 @@ export const useTermsAcceptance = (userId: string | undefined) => {
         });
       } catch (error) {
         console.error('Error checking terms acceptance:', error);
-        setStatus(prev => ({ ...prev, loading: false }));
+        // On error, don't block the user
+        setStatus(prev => ({ ...prev, loading: false, needsReaccept: false }));
       }
     };
 
