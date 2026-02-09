@@ -250,7 +250,7 @@ export default function WhatsApp() {
     return <Navigate to="/auth" replace />;
   }
 
-  // If no connection, show setup prompt
+  // If no connection, show setup prompt (redirects to Integrations page)
   if (!connection) {
     return (
       <SidebarProvider>
@@ -266,10 +266,10 @@ export default function WhatsApp() {
               <MessageSquare className="h-16 w-16 text-muted-foreground" />
               <h2 className="text-xl font-semibold">Conecte seu WhatsApp</h2>
               <p className="text-muted-foreground text-center max-w-md">
-                Para começar a gerenciar suas conversas, você precisa conectar seu WhatsApp Business.
+                Em breve: Integração direta via API Oficial da Meta para gestão de conversas e leads centralizada.
               </p>
               <Button asChild>
-                <Link to="/whatsapp/settings">
+                <Link to="/integrations">
                   <Settings className="h-4 w-4 mr-2" />
                   Configurar WhatsApp
                 </Link>
@@ -291,7 +291,7 @@ export default function WhatsApp() {
             <h1 className="text-xl font-bold">WhatsApp</h1>
             <div className="ml-auto">
               <Button variant="ghost" size="icon" asChild>
-                <Link to="/whatsapp/settings">
+                <Link to="/integrations">
                   <Settings className="h-5 w-5" />
                 </Link>
               </Button>
