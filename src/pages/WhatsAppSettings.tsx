@@ -11,31 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { WhatsAppUsageStatus } from '@/components/whatsapp/WhatsAppUsageStatus';
+import { BuyCreditsDialog } from '@/components/whatsapp/BuyCreditsDialog';
 import { 
-  ArrowLeft,
-  Wifi, 
-  WifiOff, 
-  RefreshCw,
-  Trash2,
-  Phone,
-  QrCode,
-  Loader2,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  ShieldCheck
+  ArrowLeft, Wifi, WifiOff, RefreshCw, Trash2, Phone, QrCode,
+  Loader2, CheckCircle, XCircle, AlertCircle, ShieldCheck
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
 type Connection = {
@@ -60,6 +45,7 @@ export default function WhatsAppSettings() {
   const [instanceName, setInstanceName] = useState('');
   const [evolutionApiUrl, setEvolutionApiUrl] = useState('');
   const [evolutionApiKey, setEvolutionApiKey] = useState('');
+  const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   // DISABLED: WhatsApp connections query - causing 406 errors that block network
   // TODO: Re-enable once whatsapp_connections table RLS is fixed
@@ -259,6 +245,9 @@ export default function WhatsAppSettings() {
           </div>
 
           <div className="max-w-3xl space-y-6">
+            {/* Usage Status */}
+            <WhatsAppUsageStatus onBuyCredits={() => setShowBuyCredits(true)} />
+
             {/* Existing Connections */}
             {connections?.map((conn) => (
               <Card key={conn.id}>
@@ -487,6 +476,7 @@ export default function WhatsAppSettings() {
           </div>
         </main>
       </div>
+      <BuyCreditsDialog open={showBuyCredits} onOpenChange={setShowBuyCredits} />
     </SidebarProvider>
   );
 }
