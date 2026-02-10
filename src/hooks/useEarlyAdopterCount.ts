@@ -3,8 +3,9 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EarlyAdopterSlots {
-  ouro: { remaining: number; total: number } | null;
-  diamante: { remaining: number; total: number } | null;
+  essencial: { remaining: number; total: number } | null;
+  pro: { remaining: number; total: number } | null;
+  business: { remaining: number; total: number } | null;
 }
 
 export const useEarlyAdopterCount = () => {
@@ -13,54 +14,40 @@ export const useEarlyAdopterCount = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['early-adopter-slots'],
     queryFn: async (): Promise<EarlyAdopterSlots> => {
-      // Use RPC functions to get counts securely without exposing user data
-      // get_early_adopter_remaining_slots uses SECURITY DEFINER to bypass RLS
-      // get_early_adopter_count is a simpler count function for public display
-      const [ouroResult, diamanteResult, plansResult] = await Promise.all([
-        supabase.rpc('get_early_adopter_remaining_slots', { p_plan_id: 'ouro' }),
-        supabase.rpc('get_early_adopter_remaining_slots', { p_plan_id: 'diamante' }),
+      const [essencialResult, proResult, businessResult, plansResult] = await Promise.all([
+        supabase.rpc('get_early_adopter_remaining_slots', { p_plan_id: 'essencial' }),
+        supabase.rpc('get_early_adopter_remaining_slots', { p_plan_id: 'pro' }),
+        supabase.rpc('get_early_adopter_remaining_slots', { p_plan_id: 'business' }),
         supabase.from('subscription_plans')
           .select('id, early_adopter_limit')
-          .in('id', ['ouro', 'diamante']),
+          .in('id', ['essencial', 'pro', 'business']),
       ]);
 
-      const ouroLimit = plansResult.data?.find(p => p.id === 'ouro')?.early_adopter_limit || 200;
-      const diamanteLimit = plansResult.data?.find(p => p.id === 'diamante')?.early_adopter_limit || 100;
+      const getLimit = (id: string) => plansResult.data?.find(p => p.id === id)?.early_adopter_limit || 50;
 
       return {
-        ouro: ouroResult.data !== null ? { remaining: ouroResult.data, total: ouroLimit } : null,
-        diamante: diamanteResult.data !== null ? { remaining: diamanteResult.data, total: diamanteLimit } : null,
+        essencial: essencialResult.data !== null ? { remaining: essencialResult.data, total: getLimit('essencial') } : null,
+        pro: proResult.data !== null ? { remaining: proResult.data, total: getLimit('pro') } : null,
+        business: businessResult.data !== null ? { remaining: businessResult.data, total: getLimit('business') } : null,
       };
     },
-    staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every minute
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
   });
 
-  // Subscribe to realtime updates
   useEffect(() => {
     const channel = supabase
       .channel('early-adopter-claims-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'early_adopter_claims',
-        },
-        () => {
-          // Invalidate query to refetch counts
-          queryClient.invalidateQueries({ queryKey: ['early-adopter-slots'] });
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'early_adopter_claims' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['early-adopter-slots'] });
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
   return {
-    slots: data || { ouro: null, diamante: null },
+    slots: data || { essencial: null, pro: null, business: null },
     isLoading,
     error,
   };

@@ -2270,6 +2270,42 @@ export type Database = {
           },
         ]
       }
+      subscription_addons: {
+        Row: {
+          addon_type: string
+          applicable_plans: string[]
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          quantity_per_addon: number
+        }
+        Insert: {
+          addon_type: string
+          applicable_plans?: string[]
+          created_at?: string | null
+          description?: string | null
+          id: string
+          is_active?: boolean | null
+          name: string
+          price: number
+          quantity_per_addon?: number
+        }
+        Update: {
+          addon_type?: string
+          applicable_plans?: string[]
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          quantity_per_addon?: number
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           created_at: string | null
@@ -2280,6 +2316,8 @@ export type Database = {
           is_active: boolean | null
           name: string
           price_anchor: number | null
+          price_annual: number | null
+          price_annual_early_adopter: number | null
           price_early_adopter: number | null
           price_original: number | null
         }
@@ -2292,6 +2330,8 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price_anchor?: number | null
+          price_annual?: number | null
+          price_annual_early_adopter?: number | null
           price_early_adopter?: number | null
           price_original?: number | null
         }
@@ -2304,6 +2344,8 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price_anchor?: number | null
+          price_annual?: number | null
+          price_annual_early_adopter?: number | null
           price_early_adopter?: number | null
           price_original?: number | null
         }

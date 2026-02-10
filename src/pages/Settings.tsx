@@ -30,7 +30,7 @@ const Settings = () => {
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [creciUrl, setCreciUrl] = useState('');
-  const [subscriptionPlan, setSubscriptionPlan] = useState('free');
+  const [subscriptionPlan, setSubscriptionPlan] = useState('essencial');
   
   const [uploading, setUploading] = useState(false);
   const [uploadingCreci, setUploadingCreci] = useState(false);
@@ -68,7 +68,7 @@ const Settings = () => {
         setAvatarUrl(data.avatar_url || '');
         setCreciUrl(data.creci_document_url || '');
         setTheme(data.theme_preference || 'light-purple');
-        setSubscriptionPlan(data.subscription_plan || 'free');
+        setSubscriptionPlan(data.subscription_plan || 'essencial');
       }
     } catch (error: any) {
       toast({
@@ -657,13 +657,13 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Plano {subscriptionPlan === 'free' ? 'Gratuito' : subscriptionPlan.toUpperCase()}</p>
+                <p className="font-medium">Plano {subscriptionPlan === 'essencial' ? 'Essencial' : subscriptionPlan === 'pro' ? 'Pro' : subscriptionPlan === 'business' ? 'Business' : subscriptionPlan}</p>
                 <p className="text-sm text-muted-foreground">
-                  {subscriptionPlan === 'free' ? 'Recursos básicos' : 'Recursos premium'}
+                  {subscriptionPlan === 'essencial' ? 'Recursos básicos' : 'Recursos premium'}
                 </p>
               </div>
-              <Badge variant={subscriptionPlan === 'free' ? 'secondary' : 'default'}>
-                {subscriptionPlan === 'free' ? 'Gratuito' : 'Premium'}
+              <Badge variant={subscriptionPlan === 'essencial' ? 'secondary' : 'default'}>
+                {subscriptionPlan === 'essencial' ? 'Essencial' : subscriptionPlan === 'pro' ? 'Pro' : 'Business'}
               </Badge>
             </div>
             <Separator />
