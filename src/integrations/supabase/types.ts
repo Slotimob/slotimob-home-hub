@@ -2861,6 +2861,8 @@ export type Database = {
       }
       whatsapp_conversations: {
         Row: {
+          assigned_at: string | null
+          assigned_user_id: string | null
           connection_id: string
           contact_name: string | null
           contact_phone: string
@@ -2872,10 +2874,13 @@ export type Database = {
           last_message_at: string | null
           lead_id: string | null
           remote_jid: string
+          status: string
           unread_count: number
           updated_at: string
         }
         Insert: {
+          assigned_at?: string | null
+          assigned_user_id?: string | null
           connection_id: string
           contact_name?: string | null
           contact_phone: string
@@ -2887,10 +2892,13 @@ export type Database = {
           last_message_at?: string | null
           lead_id?: string | null
           remote_jid: string
+          status?: string
           unread_count?: number
           updated_at?: string
         }
         Update: {
+          assigned_at?: string | null
+          assigned_user_id?: string | null
           connection_id?: string
           contact_name?: string | null
           contact_phone?: string
@@ -2902,6 +2910,7 @@ export type Database = {
           last_message_at?: string | null
           lead_id?: string | null
           remote_jid?: string
+          status?: string
           unread_count?: number
           updated_at?: string
         }
@@ -2922,6 +2931,80 @@ export type Database = {
           },
         ]
       }
+      whatsapp_credit_packs: {
+        Row: {
+          created_at: string | null
+          credits: number
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          stripe_price_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credits: number
+          id: string
+          is_active?: boolean | null
+          name: string
+          price: number
+          stripe_price_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credits?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          stripe_price_id?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_message_credits: {
+        Row: {
+          broker_id: string
+          created_at: string
+          credits_purchased: number
+          credits_remaining: number
+          expires_at: string | null
+          id: string
+          price_paid: number
+          purchased_at: string
+          stripe_payment_id: string | null
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string
+          credits_purchased: number
+          credits_remaining: number
+          expires_at?: string | null
+          id?: string
+          price_paid: number
+          purchased_at?: string
+          stripe_payment_id?: string | null
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string
+          credits_purchased?: number
+          credits_remaining?: number
+          expires_at?: string | null
+          id?: string
+          price_paid?: number
+          purchased_at?: string
+          stripe_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_credits_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_messages: {
         Row: {
           content: string | null
@@ -2930,12 +3013,15 @@ export type Database = {
           delivered_at: string | null
           direction: Database["public"]["Enums"]["whatsapp_message_direction"]
           id: string
+          is_billing_event: boolean
+          is_internal_note: boolean
           media_filename: string | null
           media_mime_type: string | null
           media_url: string | null
           message_id: string
           message_type: Database["public"]["Enums"]["whatsapp_message_type"]
           read_at: string | null
+          sender_user_id: string | null
           sent_at: string
           status: Database["public"]["Enums"]["whatsapp_message_status"]
         }
@@ -2946,12 +3032,15 @@ export type Database = {
           delivered_at?: string | null
           direction: Database["public"]["Enums"]["whatsapp_message_direction"]
           id?: string
+          is_billing_event?: boolean
+          is_internal_note?: boolean
           media_filename?: string | null
           media_mime_type?: string | null
           media_url?: string | null
           message_id: string
           message_type?: Database["public"]["Enums"]["whatsapp_message_type"]
           read_at?: string | null
+          sender_user_id?: string | null
           sent_at?: string
           status?: Database["public"]["Enums"]["whatsapp_message_status"]
         }
@@ -2962,12 +3051,15 @@ export type Database = {
           delivered_at?: string | null
           direction?: Database["public"]["Enums"]["whatsapp_message_direction"]
           id?: string
+          is_billing_event?: boolean
+          is_internal_note?: boolean
           media_filename?: string | null
           media_mime_type?: string | null
           media_url?: string | null
           message_id?: string
           message_type?: Database["public"]["Enums"]["whatsapp_message_type"]
           read_at?: string | null
+          sender_user_id?: string | null
           sent_at?: string
           status?: Database["public"]["Enums"]["whatsapp_message_status"]
         }
@@ -2977,6 +3069,53 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_usage_stats: {
+        Row: {
+          billing_events: number
+          broker_id: string
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          service_conversations: number
+          total_messages_received: number
+          total_messages_sent: number
+          updated_at: string
+        }
+        Insert: {
+          billing_events?: number
+          broker_id: string
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          service_conversations?: number
+          total_messages_received?: number
+          total_messages_sent?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_events?: number
+          broker_id?: string
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          service_conversations?: number
+          total_messages_received?: number
+          total_messages_sent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_usage_stats_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3001,6 +3140,10 @@ export type Database = {
         Returns: number
       }
       get_user_plan_features: { Args: { p_user_id: string }; Returns: Json }
+      get_whatsapp_monthly_usage: {
+        Args: { p_broker_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
