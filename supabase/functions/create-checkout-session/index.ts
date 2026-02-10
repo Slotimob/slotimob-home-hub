@@ -7,17 +7,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const STRIPE_PRICES = {
-  ouro: {
-    original: 'price_1SuNomAUMiQcSICyW6GhxhEC',     // R$ 147
-    promotional: 'price_1SuNpcAUMiQcSICyg0XYpsNO',  // R$ 97
-    early_adopter: 'price_1SuNr7AUMiQcSICyjR9xnebu' // R$ 79
+// Stripe Price IDs for each plan and billing cycle
+const STRIPE_PRICES: Record<string, Record<string, Record<string, string>>> = {
+  essencial: {
+    monthly: {
+      original: 'price_essencial_monthly',      // R$ 39,90
+      early_adopter: 'price_essencial_ea',       // R$ 19,90
+    },
+    annual: {
+      original: 'price_essencial_annual',        // R$ 29,90/mês (billed annually)
+      early_adopter: 'price_essencial_ea_annual', // R$ 19,90/mês (billed annually)
+    },
   },
-  diamante: {
-    original: 'price_1SuNp5AUMiQcSICytokOVuVj',     // R$ 297
-    promotional: 'price_1SuNqKAUMiQcSICydaBCrPHu',  // R$ 197
-    early_adopter: 'price_1SuNrPAUMiQcSICybHpYiKQJ' // R$ 179
-  }
+  pro: {
+    monthly: {
+      original: 'price_1SuNpcAUMiQcSICyg0XYpsNO',   // R$ 97 (promotional)
+      early_adopter: 'price_1SuNr7AUMiQcSICyjR9xnebu', // R$ 79
+    },
+    annual: {
+      original: 'price_pro_annual',              // R$ 97/mês (billed annually)
+      early_adopter: 'price_pro_ea_annual',      // R$ 79/mês (billed annually)
+    },
+  },
+  business: {
+    monthly: {
+      original: 'price_1SuNqKAUMiQcSICydaBCrPHu',   // R$ 197 (promotional)
+      early_adopter: 'price_1SuNrPAUMiQcSICybHpYiKQJ', // R$ 179
+    },
+    annual: {
+      original: 'price_business_annual',         // R$ 197/mês (billed annually)
+      early_adopter: 'price_business_ea_annual', // R$ 179/mês (billed annually)
+    },
+  },
 };
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
@@ -40,7 +61,6 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Auth client for user verification
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
@@ -50,28 +70,26 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      throw new Error("Unauthorized");
-    }
+    if (claimsError || !claimsData?.claims) throw new Error("Unauthorized");
 
     const userId = claimsData.claims.sub as string;
     const userEmail = claimsData.claims.email as string;
     logStep("User authenticated", { userId, email: userEmail });
 
-    // Service client for database operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse request body
-    const { plan_id } = await req.json();
-    if (!plan_id || !['ouro', 'diamante'].includes(plan_id)) {
-      throw new Error("Invalid plan_id. Must be 'ouro' or 'diamante'");
+    const { plan_id, billing_cycle = 'monthly' } = await req.json();
+    if (!plan_id || !['essencial', 'pro', 'business'].includes(plan_id)) {
+      throw new Error("Invalid plan_id. Must be 'essencial', 'pro', or 'business'");
     }
-    logStep("Plan selected", { plan_id });
+    if (!['monthly', 'annual'].includes(billing_cycle)) {
+      throw new Error("Invalid billing_cycle. Must be 'monthly' or 'annual'");
+    }
+    logStep("Plan selected", { plan_id, billing_cycle });
 
-    // Initialize Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Check if user already has an active subscription
+    // Check existing subscription
     const { data: existingSub } = await supabaseAdmin
       .from('subscriptions')
       .select('id, status, plan_id')
@@ -79,37 +97,25 @@ serve(async (req) => {
       .in('status', ['active', 'trialing'])
       .maybeSingle();
 
-    if (existingSub) {
-      logStep("User already has active subscription", { 
-        subscriptionId: existingSub.id, 
-        currentPlan: existingSub.plan_id 
-      });
-      
-      // If same plan, redirect to customer portal instead
-      if (existingSub.plan_id === plan_id) {
-        // Get Stripe customer
-        const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
-        if (customers.data.length > 0) {
-          const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
-          const portalSession = await stripe.billingPortal.sessions.create({
-            customer: customers.data[0].id,
-            return_url: `${origin}/settings`,
-          });
-          return new Response(JSON.stringify({ 
-            url: portalSession.url,
-            message: 'Você já possui este plano. Redirecionando para gerenciamento.' 
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
-        }
+    if (existingSub && existingSub.plan_id === plan_id) {
+      const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+      if (customers.data.length > 0) {
+        const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customers.data[0].id,
+          return_url: `${origin}/settings`,
+        });
+        return new Response(JSON.stringify({ 
+          url: portalSession.url,
+          message: 'Você já possui este plano. Redirecionando para gerenciamento.' 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
       }
-      
-      // Different plan - allow upgrade/downgrade through checkout
-      logStep("Allowing plan change checkout", { from: existingSub.plan_id, to: plan_id });
     }
 
-    // Check for Early Adopter availability
+    // Check Early Adopter availability
     const { data: remainingSlots, error: slotsError } = await supabaseAdmin.rpc(
       'get_early_adopter_remaining_slots',
       { p_plan_id: plan_id }
@@ -120,17 +126,16 @@ serve(async (req) => {
     }
 
     const isEarlyAdopter = remainingSlots && remainingSlots > 0;
-    const priceId = isEarlyAdopter 
-      ? STRIPE_PRICES[plan_id as keyof typeof STRIPE_PRICES].early_adopter
-      : STRIPE_PRICES[plan_id as keyof typeof STRIPE_PRICES].promotional;
+    const priceConfig = STRIPE_PRICES[plan_id]?.[billing_cycle];
+    const priceId = isEarlyAdopter ? priceConfig?.early_adopter : priceConfig?.original;
 
-    logStep("Price selected", { 
-      priceId, 
-      isEarlyAdopter, 
-      remainingSlots: remainingSlots || 0 
-    });
+    if (!priceId) {
+      throw new Error(`No price configured for ${plan_id} ${billing_cycle}`);
+    }
 
-    // Check if customer already exists in Stripe
+    logStep("Price selected", { priceId, isEarlyAdopter, remainingSlots: remainingSlots || 0, billing_cycle });
+
+    // Find or create Stripe customer
     const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
@@ -138,32 +143,29 @@ serve(async (req) => {
       logStep("Existing Stripe customer found", { customerId });
     }
 
-    // Create checkout session
     const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : userEmail,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
+      subscription_data: {
+        trial_period_days: 14,
+        metadata: {
+          user_id: userId,
+          plan_id: plan_id,
+          billing_cycle: billing_cycle,
+          is_early_adopter: isEarlyAdopter.toString(),
+        },
+      },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout/cancel`,
       metadata: {
         user_id: userId,
         plan_id: plan_id,
+        billing_cycle: billing_cycle,
         is_early_adopter: isEarlyAdopter.toString(),
-      },
-      subscription_data: {
-        metadata: {
-          user_id: userId,
-          plan_id: plan_id,
-          is_early_adopter: isEarlyAdopter.toString(),
-        },
       },
     });
 
@@ -176,7 +178,6 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
-    // Return generic error to prevent information leakage
     return new Response(JSON.stringify({ error: "Failed to create checkout session" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

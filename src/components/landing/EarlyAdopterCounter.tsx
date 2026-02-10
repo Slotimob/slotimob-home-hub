@@ -3,18 +3,16 @@ import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { cn } from '@/lib/utils';
 
 interface EarlyAdopterCounterProps {
-  planId: 'ouro' | 'diamante';
+  planId: 'essencial' | 'pro' | 'business';
   className?: string;
 }
 
 export const EarlyAdopterCounter = ({ planId, className }: EarlyAdopterCounterProps) => {
   const { slots, isLoading } = useEarlyAdopterCount();
   
-  const slotData = planId === 'ouro' ? slots.ouro : slots.diamante;
+  const slotData = slots[planId];
 
-  if (isLoading || !slotData || slotData.remaining <= 0) {
-    return null;
-  }
+  if (isLoading || !slotData || slotData.remaining <= 0) return null;
 
   const percentRemaining = (slotData.remaining / slotData.total) * 100;
   const isUrgent = percentRemaining <= 25;
@@ -29,47 +27,23 @@ export const EarlyAdopterCounter = ({ planId, className }: EarlyAdopterCounterPr
       className
     )}>
       <div className="flex items-center justify-center gap-2 mb-1">
-        {isCritical ? (
-          <Zap className="h-4 w-4 text-red-500" />
-        ) : (
-          <Clock className="h-4 w-4 text-amber-500" />
-        )}
-        <span className={cn(
-          'text-xs font-semibold uppercase tracking-wide',
-          isCritical ? 'text-red-500' : 'text-amber-500'
-        )}>
+        {isCritical ? <Zap className="h-4 w-4 text-red-500" /> : <Clock className="h-4 w-4 text-amber-500" />}
+        <span className={cn('text-xs font-semibold uppercase tracking-wide', isCritical ? 'text-red-500' : 'text-amber-500')}>
           Early Adopter
         </span>
       </div>
-      
       <div className="flex items-baseline justify-center gap-1">
-        <span className={cn(
-          'text-2xl font-bold tabular-nums',
-          isCritical ? 'text-red-500' : isUrgent ? 'text-amber-500' : 'text-foreground'
-        )}>
+        <span className={cn('text-2xl font-bold tabular-nums', isCritical ? 'text-red-500' : isUrgent ? 'text-amber-500' : 'text-foreground')}>
           {slotData.remaining}
         </span>
-        <span className="text-sm text-muted-foreground">
-          /{slotData.total}
-        </span>
+        <span className="text-sm text-muted-foreground">/{slotData.total}</span>
       </div>
-      
-      <p className={cn(
-        'text-xs',
-        isCritical ? 'text-red-500' : 'text-muted-foreground'
-      )}>
+      <p className={cn('text-xs', isCritical ? 'text-red-500' : 'text-muted-foreground')}>
         {isCritical ? 'Últimas vagas!' : 'vagas restantes'}
       </p>
-
-      {/* Progress bar */}
       <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div 
-          className={cn(
-            'h-full rounded-full transition-all duration-500',
-            isCritical ? 'bg-red-500' : isUrgent ? 'bg-amber-500' : 'bg-secondary'
-          )}
-          style={{ width: `${100 - percentRemaining}%` }}
-        />
+        <div className={cn('h-full rounded-full transition-all duration-500', isCritical ? 'bg-red-500' : isUrgent ? 'bg-amber-500' : 'bg-secondary')}
+          style={{ width: `${100 - percentRemaining}%` }} />
       </div>
     </div>
   );

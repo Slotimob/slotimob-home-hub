@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useSubscriptionLimits, PlanFeatures } from '@/hooks/useSubscriptionLimits';
-import { Lock, Crown, Sparkles } from 'lucide-react';
+import { Lock, Rocket, Building2, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -9,7 +9,7 @@ interface FeatureGateProps {
   children: ReactNode;
   fallback?: ReactNode;
   showUpgradeOverlay?: boolean;
-  requiredPlan?: 'ouro' | 'diamante';
+  requiredPlan?: 'essencial' | 'pro' | 'business';
 }
 
 export const FeatureGate = ({ 
@@ -21,37 +21,24 @@ export const FeatureGate = ({
 }: FeatureGateProps) => {
   const { canUse, getUpgradeReason, plan, isLoading } = useSubscriptionLimits();
 
-  if (isLoading) {
-    return <>{children}</>;
-  }
+  if (isLoading) return <>{children}</>;
 
-  const hasAccess = canUse(feature);
+  if (canUse(feature)) return <>{children}</>;
 
-  if (hasAccess) {
-    return <>{children}</>;
-  }
+  if (fallback) return <>{fallback}</>;
 
-  if (fallback) {
-    return <>{fallback}</>;
-  }
+  if (!showUpgradeOverlay) return null;
 
-  if (!showUpgradeOverlay) {
-    return null;
-  }
-
-  const targetPlan = requiredPlan || (plan === 'free' ? 'ouro' : 'diamante');
-  const planIcon = targetPlan === 'diamante' ? <Sparkles className="h-8 w-8" /> : <Crown className="h-8 w-8" />;
-  const planName = targetPlan === 'diamante' ? 'Diamante' : 'Ouro';
-  const planColor = targetPlan === 'diamante' ? 'text-purple-500' : 'text-amber-500';
+  const targetPlan = requiredPlan || (plan === 'essencial' ? 'pro' : 'business');
+  const planIcon = targetPlan === 'business' ? <Building2 className="h-8 w-8" /> : targetPlan === 'pro' ? <Rocket className="h-8 w-8" /> : <Briefcase className="h-8 w-8" />;
+  const planName = targetPlan === 'business' ? 'Business' : targetPlan === 'pro' ? 'Pro' : 'Essencial';
+  const planColor = targetPlan === 'business' ? 'text-purple-500' : targetPlan === 'pro' ? 'text-blue-500' : 'text-emerald-500';
 
   return (
     <div className="relative">
-      {/* Blurred content */}
       <div className="blur-sm pointer-events-none select-none opacity-50">
         {children}
       </div>
-      
-      {/* Upgrade overlay */}
       <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
         <div className="text-center p-6 max-w-md">
           <div className={`mx-auto mb-4 ${planColor}`}>
@@ -64,7 +51,7 @@ export const FeatureGate = ({
           <p className="text-foreground font-medium mb-4">
             {getUpgradeReason(feature)}
           </p>
-          <Button asChild className={targetPlan === 'diamante' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-amber-600 hover:bg-amber-700'}>
+          <Button asChild className={targetPlan === 'business' ? 'bg-purple-600 hover:bg-purple-700' : targetPlan === 'pro' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}>
             <Link to="/#pricing">
               Upgrade para {planName}
             </Link>

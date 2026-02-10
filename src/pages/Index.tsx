@@ -14,7 +14,7 @@ export default function Index() {
     // Handle post-OAuth checkout redirect
     const checkoutPlan = searchParams.get('checkout_plan');
     
-    if (!loading && user && checkoutPlan && ['ouro', 'diamante'].includes(checkoutPlan)) {
+    if (!loading && user && checkoutPlan && ['essencial', 'pro', 'business'].includes(checkoutPlan)) {
       // User came back from Google OAuth with pending checkout intent
       const handleCheckout = async () => {
         try {

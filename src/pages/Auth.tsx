@@ -119,9 +119,9 @@ const Auth = () => {
 
   // Show intent message if user came from pricing
   useEffect(() => {
-    if (pendingPlan && ['ouro', 'diamante'].includes(pendingPlan)) {
-      const planName = pendingPlan === 'ouro' ? 'Ouro' : 'Diamante';
-      sonnerToast.info(`Faça login ou crie uma conta para assinar o plano ${planName}`);
+    if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
+      const planNames: Record<string, string> = { essencial: 'Essencial', pro: 'Pro', business: 'Business' };
+      sonnerToast.info(`Faça login ou crie uma conta para assinar o plano ${planNames[pendingPlan] || pendingPlan}`);
     }
   }, [pendingPlan]);
 
@@ -188,7 +188,7 @@ const Auth = () => {
     try {
       setGoogleLoading(true);
       // Preserve plan intent in OAuth redirect
-      const redirectUrl = pendingPlan && ['ouro', 'diamante'].includes(pendingPlan)
+      const redirectUrl = pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)
         ? `${window.location.origin}/?checkout_plan=${pendingPlan}`
         : `${window.location.origin}/`;
       const {
@@ -228,7 +228,7 @@ const Auth = () => {
       });
       
       // Check if user had a pending plan purchase intent
-      if (pendingPlan && ['ouro', 'diamante'].includes(pendingPlan)) {
+      if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
         await handlePostAuthCheckout(pendingPlan);
       } else {
         navigate('/dashboard');
@@ -339,7 +339,7 @@ const Auth = () => {
         });
         
         // Check if user had a pending plan purchase intent
-        if (pendingPlan && ['ouro', 'diamante'].includes(pendingPlan)) {
+        if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
           await handlePostAuthCheckout(pendingPlan);
         } else {
           navigate('/dashboard');
