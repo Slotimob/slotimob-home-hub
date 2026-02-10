@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import { AppLayout } from '@/components/AppLayout';
 const Settings = () => {
   const { user, loading } = useAuth();
   const { isAdmin } = useAdminAccess();
+  const { isAgent } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -648,7 +650,8 @@ const Settings = () => {
         {/* Glow Settings */}
         <GlowSettings />
 
-        {/* Subscription Section */}
+        {/* Subscription Section - Owner only */}
+        {!isAgent && (
         <Card>
           <CardHeader>
             <CardTitle>Plano Atual</CardTitle>
@@ -672,6 +675,7 @@ const Settings = () => {
             </Button>
           </CardContent>
         </Card>
+        )}
 
         {/* Legal Section */}
         <Card>

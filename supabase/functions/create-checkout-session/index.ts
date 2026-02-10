@@ -7,40 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Stripe Price IDs for each plan and billing cycle
-const STRIPE_PRICES: Record<string, Record<string, Record<string, string>>> = {
-  essencial: {
-    monthly: {
-      original: 'price_essencial_monthly',      // R$ 39,90
-      early_adopter: 'price_essencial_ea',       // R$ 19,90
-    },
-    annual: {
-      original: 'price_essencial_annual',        // R$ 29,90/mês (billed annually)
-      early_adopter: 'price_essencial_ea_annual', // R$ 19,90/mês (billed annually)
-    },
-  },
-  pro: {
-    monthly: {
-      original: 'price_1SuNpcAUMiQcSICyg0XYpsNO',   // R$ 97 (promotional)
-      early_adopter: 'price_1SuNr7AUMiQcSICyjR9xnebu', // R$ 79
-    },
-    annual: {
-      original: 'price_pro_annual',              // R$ 97/mês (billed annually)
-      early_adopter: 'price_pro_ea_annual',      // R$ 79/mês (billed annually)
-    },
-  },
-  business: {
-    monthly: {
-      original: 'price_1SuNqKAUMiQcSICydaBCrPHu',   // R$ 197 (promotional)
-      early_adopter: 'price_1SuNrPAUMiQcSICybHpYiKQJ', // R$ 179
-    },
-    annual: {
-      original: 'price_business_annual',         // R$ 197/mês (billed annually)
-      early_adopter: 'price_business_ea_annual', // R$ 179/mês (billed annually)
-    },
-  },
-};
-
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
@@ -115,6 +81,17 @@ serve(async (req) => {
       }
     }
 
+    // Fetch plan price IDs from database
+    const { data: planData, error: planError } = await supabaseAdmin
+      .from('subscription_plans')
+      .select('stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter')
+      .eq('id', plan_id)
+      .single();
+
+    if (planError || !planData) {
+      throw new Error(`Plan '${plan_id}' not found in database`);
+    }
+
     // Check Early Adopter availability
     const { data: remainingSlots, error: slotsError } = await supabaseAdmin.rpc(
       'get_early_adopter_remaining_slots',
@@ -126,11 +103,19 @@ serve(async (req) => {
     }
 
     const isEarlyAdopter = remainingSlots && remainingSlots > 0;
-    const priceConfig = STRIPE_PRICES[plan_id]?.[billing_cycle];
-    const priceId = isEarlyAdopter ? priceConfig?.early_adopter : priceConfig?.original;
+
+    // Select the correct Stripe price ID based on early adopter status and billing cycle
+    let priceId: string | null = null;
+    if (isEarlyAdopter) {
+      priceId = planData.stripe_price_id_early_adopter;
+    } else if (billing_cycle === 'annual') {
+      priceId = planData.stripe_price_id_yearly;
+    } else {
+      priceId = planData.stripe_price_id_monthly;
+    }
 
     if (!priceId) {
-      throw new Error(`No price configured for ${plan_id} ${billing_cycle}`);
+      throw new Error(`No Stripe price configured for ${plan_id} ${billing_cycle} (early_adopter: ${isEarlyAdopter})`);
     }
 
     logStep("Price selected", { priceId, isEarlyAdopter, remainingSlots: remainingSlots || 0, billing_cycle });
@@ -156,7 +141,7 @@ serve(async (req) => {
           user_id: userId,
           plan_id: plan_id,
           billing_cycle: billing_cycle,
-          is_early_adopter: isEarlyAdopter.toString(),
+          is_early_adopter: String(isEarlyAdopter),
         },
       },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -165,7 +150,7 @@ serve(async (req) => {
         user_id: userId,
         plan_id: plan_id,
         billing_cycle: billing_cycle,
-        is_early_adopter: isEarlyAdopter.toString(),
+        is_early_adopter: String(isEarlyAdopter),
       },
     });
 
