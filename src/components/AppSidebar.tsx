@@ -5,7 +5,6 @@ import {
   FileText, 
   Calculator, 
   Home, 
-  CalendarDays, 
   History, 
   BarChart3, 
   Plug, 
@@ -15,8 +14,6 @@ import {
   ChevronDown,
   Wallet,
   UsersRound,
-  MessageSquare,
-  Kanban,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -44,6 +41,8 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 
 interface NestedSubMenuItem {
   title: string;
@@ -61,66 +60,77 @@ interface MenuItem {
   url?: string;
   icon: LucideIcon;
   items?: SubMenuItem[];
+  ownerOnly?: boolean;
+  hiddenOnPlan?: string[];
 }
-
-// Main menu items
-const menuItems: MenuItem[] = [
-  { title: 'Dashboard', url: '/dashboard', icon: Home },
-  { 
-    title: 'Ativos', 
-    icon: Building2,
-    items: [
-      { title: 'Gestão', url: '/asset-health' },
-      { 
-        title: 'Empreendimentos', 
-        url: '/properties', 
-        nestedItems: [
-          { title: 'Lista Geral', url: '/properties' },
-          { title: 'Unidades', url: '/units' },
-        ]
-      },
-      { title: 'Imóveis Avulsos', url: '/real-estate' },
-    ]
-  },
-  { 
-    title: 'Financeiro', 
-    icon: Wallet,
-    items: [
-      { title: 'Visão Geral', url: '/finance' },
-      { title: 'DRE', url: '/finance/dre' },
-      { title: 'Lançamentos', url: '/finance/transactions' },
-      { title: 'Conciliação', url: '/finance/reconciliation' },
-      { title: 'Categorias', url: '/finance/categories' },
-    ]
-  },
-  { 
-    title: 'CRM', 
-    icon: Users,
-    items: [
-      { title: 'Mensagens', url: '/whatsapp' },
-      { title: 'Pipeline', url: '/pipeline' },
-      { title: 'Contatos', url: '/contacts' },
-      { title: 'Agenda', url: '/schedule' },
-    ]
-  },
-  { title: 'Relatórios', url: '/reports', icon: BarChart3 },
-  { title: 'Documentos', url: '/documents', icon: FileText },
-  { title: 'Simulador', url: '/simulator', icon: Calculator },
-  { title: 'Integrações', url: '/integrations', icon: Plug },
-  { title: 'Treinamentos', url: '/training', icon: GraduationCap },
-  { title: 'Usuários', url: '/users', icon: UsersRound },
-  { title: 'Histórico', url: '/history', icon: History },
-];
 
 export function AppSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
   const collapsed = state === 'collapsed' && !isMobile;
+  const { isAgent } = useUserRole();
+  const { plan } = useSubscriptionLimits();
+
+  // Build menu items with role/plan gating
+  const menuItems: MenuItem[] = [
+    { title: 'Dashboard', url: '/dashboard', icon: Home },
+    { 
+      title: 'Ativos', 
+      icon: Building2,
+      items: [
+        { title: 'Gestão', url: '/asset-health' },
+        { 
+          title: 'Empreendimentos', 
+          url: '/properties', 
+          nestedItems: [
+            { title: 'Lista Geral', url: '/properties' },
+            { title: 'Unidades', url: '/units' },
+          ]
+        },
+        { title: 'Imóveis Avulsos', url: '/real-estate' },
+      ]
+    },
+    { 
+      title: 'Financeiro', 
+      icon: Wallet,
+      ownerOnly: true,
+      items: [
+        { title: 'Visão Geral', url: '/finance' },
+        { title: 'DRE', url: '/finance/dre' },
+        { title: 'Lançamentos', url: '/finance/transactions' },
+        { title: 'Conciliação', url: '/finance/reconciliation' },
+        { title: 'Categorias', url: '/finance/categories' },
+      ]
+    },
+    { 
+      title: 'CRM', 
+      icon: Users,
+      items: [
+        { title: 'Mensagens', url: '/whatsapp' },
+        { title: 'Pipeline', url: '/pipeline' },
+        { title: 'Contatos', url: '/contacts' },
+        { title: 'Agenda', url: '/schedule' },
+      ]
+    },
+    { title: 'Relatórios', url: '/reports', icon: BarChart3, ownerOnly: true },
+    { title: 'Documentos', url: '/documents', icon: FileText },
+    { title: 'Simulador', url: '/simulator', icon: Calculator },
+    { title: 'Integrações', url: '/integrations', icon: Plug },
+    { title: 'Treinamentos', url: '/training', icon: GraduationCap },
+    { title: 'Usuários', url: '/users', icon: UsersRound, ownerOnly: true, hiddenOnPlan: ['essencial'] },
+    { title: 'Histórico', url: '/history', icon: History },
+  ];
+
+  // Filter menu items based on role and plan
+  const filteredMenuItems = menuItems.filter(item => {
+    if (item.ownerOnly && isAgent) return false;
+    if (item.hiddenOnPlan?.includes(plan)) return false;
+    return true;
+  });
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/';
-    // Use strict equality for all finance subroutes to prevent parent highlighting
     if (path.startsWith('/finance')) return location.pathname === path;
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
@@ -136,13 +146,11 @@ export function AppSidebar() {
     });
   };
 
-  // Track which groups and nested groups are open
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    menuItems.forEach(item => {
+    filteredMenuItems.forEach(item => {
       if (item.items && isGroupActive(item.items)) {
         initial[item.title] = true;
-        // Also open nested groups with active items
         item.items.forEach(subItem => {
           if (subItem.nestedItems?.some(nested => isActive(nested.url))) {
             initial[`${item.title}-${subItem.title}`] = true;
@@ -162,8 +170,6 @@ export function AppSidebar() {
   const handleGroupClick = (item: MenuItem) => {
     const firstSubItem = item.items?.[0];
     if (firstSubItem) {
-      // If first subitem has nested items, navigate to first nested item's URL
-      // Otherwise, navigate to the subitem's direct URL
       const targetUrl = firstSubItem.nestedItems?.[0]?.url || firstSubItem.url;
       navigate(targetUrl);
       setOpenGroups(prev => ({ ...prev, [item.title]: true }));
@@ -182,15 +188,13 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="pt-4 flex-1">
-        {/* Main Menu Group */}
         <SidebarGroup>
           <SidebarGroupLabel className={`transition-opacity duration-300 ${collapsed ? 'sr-only' : ''}`}>
             Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
-                // Simple menu item (no subitems)
+              {filteredMenuItems.map((item) => {
                 if (!item.items) {
                   return (
                     <SidebarMenuItem key={item.title}>
@@ -209,7 +213,6 @@ export function AppSidebar() {
                   );
                 }
 
-                // Collapsible menu item with subitems
                 const groupActive = isGroupActive(item.items);
                 const isOpen = openGroups[item.title] ?? groupActive;
 
@@ -245,7 +248,6 @@ export function AppSidebar() {
                       <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                         <SidebarMenuSub className="animate-fade-in">
                           {item.items.map((subItem) => {
-                            // Check if this subitem has nested items
                             if (subItem.nestedItems && subItem.nestedItems.length > 0) {
                               const nestedKey = `${item.title}-${subItem.title}`;
                               const nestedActive = subItem.nestedItems.some(nested => isActive(nested.url));
@@ -312,7 +314,6 @@ export function AppSidebar() {
                               );
                             }
 
-                            // Regular sub item without nesting
                             return (
                               <SidebarMenuSubItem key={subItem.url}>
                                 <SidebarMenuSubButton asChild isActive={isActive(subItem.url)}>
