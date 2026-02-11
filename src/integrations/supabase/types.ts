@@ -1706,6 +1706,53 @@ export type Database = {
           },
         ]
       }
+      organization_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by_name: string | null
+          organization_owner_id: string
+          permissions: Json
+          role_label: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by_name?: string | null
+          organization_owner_id: string
+          permissions?: Json
+          role_label?: string
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by_name?: string | null
+          organization_owner_id?: string
+          permissions?: Json
+          role_label?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invitations_organization_owner_id_fkey"
+            columns: ["organization_owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           accepted_at: string | null
