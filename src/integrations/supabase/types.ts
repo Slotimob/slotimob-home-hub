@@ -3227,7 +3227,7 @@ export type Database = {
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "super_admin"
       pipeline_stage:
         | "new_lead"
         | "in_contact"
@@ -3385,7 +3385,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "super_admin"],
       pipeline_stage: [
         "new_lead",
         "in_contact",
