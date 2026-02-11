@@ -101,8 +101,11 @@ const AdminCockpit = () => {
     staleTime: 30 * 1000,
   });
 
+  console.log('[Cockpit] State:', { authLoading, roleLoading, userId: user?.id, isSuperAdmin, orgsLoading, orgsCount: organizations?.length });
+
   useEffect(() => {
     if (!authLoading && !roleLoading && (!user || !isSuperAdmin)) {
+      console.log('[Cockpit] Redirecting - no access');
       navigate('/dashboard');
     }
   }, [authLoading, roleLoading, user, isSuperAdmin, navigate]);
