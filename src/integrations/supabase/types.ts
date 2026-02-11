@@ -2505,6 +2505,36 @@ export type Database = {
           },
         ]
       }
+      support_debug_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          started_at: string
+          started_by: string
+          target_user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          started_at?: string
+          started_by: string
+          target_user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          started_at?: string
+          started_by?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       terms_versions: {
         Row: {
           created_at: string
@@ -3277,7 +3307,12 @@ export type Database = {
         Returns: number
       }
       get_effective_limits: { Args: { p_user_id: string }; Returns: Json }
+      get_user_audit_logs: {
+        Args: { p_limit?: number; p_target_user_id: string }
+        Returns: Json
+      }
       get_user_plan_features: { Args: { p_user_id: string }; Returns: Json }
+      get_user_support_info: { Args: { p_search: string }; Returns: Json }
       get_user_trial_status: { Args: { p_user_id: string }; Returns: Json }
       get_whatsapp_monthly_usage: {
         Args: { p_broker_id: string }

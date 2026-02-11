@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { useCockpitAccess } from '@/hooks/useCockpitAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,7 @@ const CATEGORIES = [
 
 const Training = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, isLoading: adminLoading } = useAdminAccess();
+  const { isModerator: isAdmin, isLoading: adminLoading } = useCockpitAccess();
   const navigate = useNavigate();
   
   const [content, setContent] = useState<TrainingContent[]>([]);

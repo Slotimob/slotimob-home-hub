@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useSuperAdminAccess } from '@/hooks/useSuperAdminAccess';
+import { useCockpitAccess } from '@/hooks/useCockpitAccess';
 import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -21,9 +22,11 @@ import {
 } from '@/components/ui/table';
 import {
   Building2, CreditCard, Loader2, MessageSquare, Plus, Settings2,
-  Shield, Sparkles, Users, Search, Crown, UserCog,
+  Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { CockpitOverviewTab } from '@/components/cockpit/CockpitOverviewTab';
+import { CockpitSupportTab } from '@/components/cockpit/CockpitSupportTab';
 
 interface Organization {
   user_id: string;
@@ -48,31 +51,20 @@ interface Organization {
 }
 
 const planLabels: Record<string, string> = {
-  free: 'Gratuito',
-  essencial: 'Essencial',
-  pro: 'Pro',
-  business: 'Business',
+  free: 'Gratuito', essencial: 'Essencial', pro: 'Pro', business: 'Business',
 };
 
 const statusLabels: Record<string, string> = {
-  active: 'Ativa',
-  trialing: 'Trial',
-  past_due: 'Inadimplente',
-  cancelled: 'Cancelada',
-  none: 'Sem assinatura',
+  active: 'Ativa', trialing: 'Trial', past_due: 'Inadimplente', cancelled: 'Cancelada', none: 'Sem assinatura',
 };
 
 const statusColors: Record<string, string> = {
-  active: 'default',
-  trialing: 'secondary',
-  past_due: 'destructive',
-  cancelled: 'outline',
-  none: 'outline',
+  active: 'default', trialing: 'secondary', past_due: 'destructive', cancelled: 'outline', none: 'outline',
 };
 
 const AdminCockpit = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isSuperAdmin, isLoading: roleLoading } = useSuperAdminAccess();
+  const { cockpitRole, isSuperAdmin, isAdmin, isSupport, hasCockpitAccess, isLoading: roleLoading } = useCockpitAccess();
   const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
@@ -97,17 +89,17 @@ const AdminCockpit = () => {
       if (error) throw error;
       return (data as unknown as Organization[]) || [];
     },
-    enabled: isSuperAdmin,
+    enabled: hasCockpitAccess,
     staleTime: 30 * 1000,
   });
 
   useEffect(() => {
-    if (!authLoading && !roleLoading && (!user || !isSuperAdmin)) {
+    if (!authLoading && !roleLoading && (!user || !hasCockpitAccess)) {
       navigate('/dashboard');
     }
-  }, [authLoading, roleLoading, user, isSuperAdmin, navigate]);
+  }, [authLoading, roleLoading, user, hasCockpitAccess, navigate]);
 
-  if (!authLoading && !roleLoading && (!user || !isSuperAdmin)) {
+  if (!authLoading && !roleLoading && (!user || !hasCockpitAccess)) {
     return null;
   }
 
@@ -235,184 +227,253 @@ const AdminCockpit = () => {
     setPlanDialog(org);
   };
 
-  const totalOrgs = organizations?.length || 0;
-  const activeOrgs = organizations?.filter((o) => o.subscription_status === 'active').length || 0;
-  const trialOrgs = organizations?.filter((o) => o.subscription_status === 'trialing' || (o.trial_ends_at && new Date(o.trial_ends_at) > new Date())).length || 0;
+  // Determine default tab based on role
+  const defaultTab = isSupport && !isAdmin ? 'support' : 'overview';
+
+  // Role label for header
+  const roleLabel = cockpitRole === 'super_admin' ? 'Super Admin' : cockpitRole === 'admin' ? 'Admin' : 'Suporte';
 
   return (
     <AppLayout title="Cockpit Master">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Shield className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Cockpit Master</h1>
-            <p className="text-sm text-muted-foreground">Gestão global da plataforma SlotiMob</p>
-          </div>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Organizações</p>
-                  <p className="text-2xl font-bold">{totalOrgs}</p>
-                </div>
-                <Users className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Assinaturas Ativas</p>
-                  <p className="text-2xl font-bold">{activeOrgs}</p>
-                </div>
-                <CreditCard className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Em Trial</p>
-                  <p className="text-2xl font-bold">{trialOrgs}</p>
-                </div>
-                <Sparkles className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Organizations Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Organizações</CardTitle>
-            <CardDescription>{filtered.length} resultados</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome / Email</TableHead>
-                    <TableHead>Plano</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Roles</TableHead>
-                    <TableHead className="text-center">Unidades</TableHead>
-                    <TableHead className="text-center">WhatsApp</TableHead>
-                    <TableHead className="text-center">IA</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((org) => {
-                    const isTrialActive = org.trial_ends_at && new Date(org.trial_ends_at) > new Date();
-                    return (
-                      <TableRow key={org.user_id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-sm">{org.full_name || 'Sem nome'}</p>
-                            <p className="text-xs text-muted-foreground">{org.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <Badge variant="secondary" className="text-xs">
-                              {planLabels[org.plan_id] || org.plan_id}
-                            </Badge>
-            {org.is_early_adopter && (
-                              <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">EA</Badge>
-                            )}
-                            {isTrialActive && (
-                              <Badge variant="outline" className="text-xs">Trial</Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={statusColors[org.subscription_status] as 'default' | 'secondary' | 'destructive' | 'outline'}>
-                            {statusLabels[org.subscription_status] || org.subscription_status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {(org.roles || []).map((role) => (
-                              <Badge key={role} variant="outline" className="text-xs">
-                                {role === 'super_admin' ? '🛡️ Super' : role}
-                              </Badge>
-                            ))}
-                            {(!org.roles || org.roles.length === 0) && (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-sm font-medium">{org.units_count}</span>
-                          {org.extra_unit_packs > 0 && (
-                            <span className="text-xs text-muted-foreground ml-1">(+{org.extra_unit_packs * 50})</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="text-sm">
-                            <span className="font-medium">{org.whatsapp_credits}</span>
-                            <span className="text-xs text-muted-foreground ml-1">créditos</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{org.whatsapp_sent_month} enviadas/mês</p>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-sm font-medium">{org.ai_credits}</span>
-                          <span className="text-xs text-muted-foreground ml-1">créditos</span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Alterar Plano"
-                              onClick={() => openPlanDialog(org)}>
-                              <Crown className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Gerenciar Roles"
-                              onClick={() => setRoleDialog(org)}>
-                              <UserCog className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Adicionar Créditos"
-                              onClick={() => { setCreditAmount(''); setCreditReason(''); setCreditType('whatsapp'); setCreditsDialog(org); }}>
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Ajustar Limites"
-                              onClick={() => openLimitsDialog(org)}>
-                              <Settings2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {filtered.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                        Nenhuma organização encontrada.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Shield className="h-6 w-6 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">Cockpit Master</h1>
+              <p className="text-sm text-muted-foreground">Gestão global da plataforma SlotiMob</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <Badge variant="outline" className="text-xs gap-1">
+            <Shield className="h-3 w-3" /> {roleLabel}
+          </Badge>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue={defaultTab} className="space-y-4">
+          <TabsList>
+            {(isAdmin || isSuperAdmin) && (
+              <TabsTrigger value="overview" className="gap-2">
+                <BarChart3 className="h-4 w-4" /> Visão Geral
+              </TabsTrigger>
+            )}
+            {(isAdmin || isSuperAdmin) && (
+              <TabsTrigger value="organizations" className="gap-2">
+                <Users className="h-4 w-4" /> Organizações
+              </TabsTrigger>
+            )}
+            {isSuperAdmin && (
+              <TabsTrigger value="roles" className="gap-2">
+                <UserCog className="h-4 w-4" /> Roles
+              </TabsTrigger>
+            )}
+            {isSupport && (
+              <TabsTrigger value="support" className="gap-2">
+                <HeadphonesIcon className="h-4 w-4" /> Suporte
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* Overview Tab */}
+          {(isAdmin || isSuperAdmin) && (
+            <TabsContent value="overview">
+              <CockpitOverviewTab organizations={organizations || []} />
+            </TabsContent>
+          )}
+
+          {/* Organizations Tab */}
+          {(isAdmin || isSuperAdmin) && (
+            <TabsContent value="organizations">
+              <div className="space-y-4">
+                <div className="relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou email..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Organizações</CardTitle>
+                    <CardDescription>{filtered.length} resultados</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome / Email</TableHead>
+                            <TableHead>Plano</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-center">Unidades</TableHead>
+                            <TableHead className="text-center">WhatsApp</TableHead>
+                            <TableHead className="text-center">IA</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filtered.map((org) => {
+                            const isTrialActive = org.trial_ends_at && new Date(org.trial_ends_at) > new Date();
+                            return (
+                              <TableRow key={org.user_id}>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium text-sm">{org.full_name || 'Sem nome'}</p>
+                                    <p className="text-xs text-muted-foreground">{org.email}</p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {planLabels[org.plan_id] || org.plan_id}
+                                    </Badge>
+                                    {org.is_early_adopter && (
+                                      <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">EA</Badge>
+                                    )}
+                                    {isTrialActive && (
+                                      <Badge variant="outline" className="text-xs">Trial</Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={statusColors[org.subscription_status] as 'default' | 'secondary' | 'destructive' | 'outline'}>
+                                    {statusLabels[org.subscription_status] || org.subscription_status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <span className="text-sm font-medium">{org.units_count}</span>
+                                  {org.extra_unit_packs > 0 && (
+                                    <span className="text-xs text-muted-foreground ml-1">(+{org.extra_unit_packs * 50})</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <div className="text-sm">
+                                    <span className="font-medium">{org.whatsapp_credits}</span>
+                                    <span className="text-xs text-muted-foreground ml-1">créditos</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">{org.whatsapp_sent_month} enviadas/mês</p>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <span className="text-sm font-medium">{org.ai_credits}</span>
+                                  <span className="text-xs text-muted-foreground ml-1">créditos</span>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    {isAdmin && (
+                                      <>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Alterar Plano"
+                                          onClick={() => openPlanDialog(org)}>
+                                          <Crown className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Adicionar Créditos"
+                                          onClick={() => { setCreditAmount(''); setCreditReason(''); setCreditType('whatsapp'); setCreditsDialog(org); }}>
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Ajustar Limites"
+                                          onClick={() => openLimitsDialog(org)}>
+                                          <Settings2 className="h-4 w-4" />
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                          {filtered.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                Nenhuma organização encontrada.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* Roles Tab - super_admin only */}
+          {isSuperAdmin && (
+            <TabsContent value="roles">
+              <div className="space-y-4">
+                <div className="relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou email..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Gerenciamento de Roles</CardTitle>
+                    <CardDescription>Apenas super admins podem gerenciar roles</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome / Email</TableHead>
+                            <TableHead>Roles Atuais</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filtered.map((org) => (
+                            <TableRow key={org.user_id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium text-sm">{org.full_name || 'Sem nome'}</p>
+                                  <p className="text-xs text-muted-foreground">{org.email}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {(org.roles || []).map((role) => (
+                                    <Badge key={role} variant="outline" className="text-xs">
+                                      {role === 'super_admin' ? '🛡️ Super Admin' : role}
+                                    </Badge>
+                                  ))}
+                                  {(!org.roles || org.roles.length === 0) && (
+                                    <span className="text-xs text-muted-foreground">Assinante</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" title="Gerenciar Roles"
+                                  onClick={() => setRoleDialog(org)}>
+                                  <UserCog className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* Support Tab */}
+          {isSupport && (
+            <TabsContent value="support">
+              <CockpitSupportTab />
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
 
       {/* Change Plan Dialog */}
@@ -452,7 +513,7 @@ const AdminCockpit = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Manage Roles Dialog */}
+      {/* Manage Roles Dialog - super_admin only */}
       <Dialog open={!!roleDialog} onOpenChange={() => setRoleDialog(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -464,14 +525,15 @@ const AdminCockpit = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {['super_admin', 'admin', 'moderator'].map((role) => (
+            {['super_admin', 'admin', 'moderator', 'support'].map((role) => (
               <div key={role} className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
                   <p className="font-medium text-sm capitalize">{role.replace('_', ' ')}</p>
                   <p className="text-xs text-muted-foreground">
-                    {role === 'super_admin' && 'Acesso total ao Cockpit e gestão global'}
-                    {role === 'admin' && 'Administração da própria organização'}
-                    {role === 'moderator' && 'Moderação de conteúdo'}
+                    {role === 'super_admin' && 'Acesso total — gestão global e roles'}
+                    {role === 'admin' && 'Planos, créditos e limites — sem roles'}
+                    {role === 'moderator' && 'CRUD de conteúdos na aba Treinamentos'}
+                    {role === 'support' && 'Visualização de usuários e logs — somente leitura'}
                   </p>
                 </div>
                 <Switch
