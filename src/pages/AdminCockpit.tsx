@@ -12,32 +12,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Building2,
-  CreditCard,
-  Loader2,
-  MessageSquare,
-  Plus,
-  Settings2,
-  Shield,
-  Sparkles,
-  Users,
-  Search,
+  Building2, CreditCard, Loader2, MessageSquare, Plus, Settings2,
+  Shield, Sparkles, Users, Search, Crown, UserCog,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -60,6 +44,7 @@ interface Organization {
   whatsapp_credits: number;
   whatsapp_sent_month: number;
   ai_credits: number;
+  roles: string[];
 }
 
 const planLabels: Record<string, string> = {
@@ -93,12 +78,16 @@ const AdminCockpit = () => {
   const [search, setSearch] = useState('');
   const [creditsDialog, setCreditsDialog] = useState<Organization | null>(null);
   const [limitsDialog, setLimitsDialog] = useState<Organization | null>(null);
+  const [planDialog, setPlanDialog] = useState<Organization | null>(null);
+  const [roleDialog, setRoleDialog] = useState<Organization | null>(null);
   const [creditType, setCreditType] = useState('whatsapp');
   const [creditAmount, setCreditAmount] = useState('');
   const [creditReason, setCreditReason] = useState('');
   const [extraUsers, setExtraUsers] = useState(0);
   const [extraUnits, setExtraUnits] = useState(0);
   const [limitReason, setLimitReason] = useState('');
+  const [newPlan, setNewPlan] = useState('');
+  const [planReason, setPlanReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const { data: organizations, isLoading: orgsLoading, refetch } = useQuery({
@@ -112,7 +101,6 @@ const AdminCockpit = () => {
     staleTime: 30 * 1000,
   });
 
-  // Redirect if not super admin
   if (!authLoading && !roleLoading && (!user || !isSuperAdmin)) {
     navigate('/dashboard');
     return null;
@@ -148,14 +136,13 @@ const AdminCockpit = () => {
         p_reason: creditReason,
       });
       if (error) throw error;
-      toast.success(`Créditos de ${creditType === 'whatsapp' ? 'WhatsApp' : 'IA'} adicionados com sucesso!`);
+      toast.success('Créditos adicionados com sucesso!');
       setCreditsDialog(null);
       setCreditAmount('');
       setCreditReason('');
       refetch();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro ao adicionar créditos.';
-      toast.error(msg);
+      toast.error(err instanceof Error ? err.message : 'Erro ao adicionar créditos.');
     } finally {
       setSubmitting(false);
     }
@@ -180,8 +167,51 @@ const AdminCockpit = () => {
       setLimitReason('');
       refetch();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro ao ajustar limites.';
-      toast.error(msg);
+      toast.error(err instanceof Error ? err.message : 'Erro ao ajustar limites.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleChangePlan = async () => {
+    if (!planDialog || !newPlan || !planReason) {
+      toast.error('Preencha todos os campos.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.rpc('admin_change_plan', {
+        p_target_user_id: planDialog.user_id,
+        p_new_plan_id: newPlan,
+        p_reason: planReason,
+      });
+      if (error) throw error;
+      toast.success(`Plano alterado para ${planLabels[newPlan] || newPlan}!`);
+      setPlanDialog(null);
+      setPlanReason('');
+      refetch();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao alterar plano.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleRole = async (org: Organization, role: string) => {
+    const hasRole = org.roles?.includes(role);
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.rpc('admin_change_role', {
+        p_target_user_id: org.user_id,
+        p_role: role,
+        p_action: hasRole ? 'revoke' : 'grant',
+        p_reason: `Toggle ${role} via Cockpit`,
+      });
+      if (error) throw error;
+      toast.success(`Role ${role} ${hasRole ? 'removida' : 'concedida'}!`);
+      refetch();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao alterar role.');
     } finally {
       setSubmitting(false);
     }
@@ -192,6 +222,12 @@ const AdminCockpit = () => {
     setExtraUnits(org.extra_unit_packs);
     setLimitReason('');
     setLimitsDialog(org);
+  };
+
+  const openPlanDialog = (org: Organization) => {
+    setNewPlan(org.plan_id);
+    setPlanReason('');
+    setPlanDialog(org);
   };
 
   const totalOrgs = organizations?.length || 0;
@@ -272,6 +308,7 @@ const AdminCockpit = () => {
                     <TableHead>Nome / Email</TableHead>
                     <TableHead>Plano</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Roles</TableHead>
                     <TableHead className="text-center">Unidades</TableHead>
                     <TableHead className="text-center">WhatsApp</TableHead>
                     <TableHead className="text-center">IA</TableHead>
@@ -294,8 +331,8 @@ const AdminCockpit = () => {
                             <Badge variant="secondary" className="text-xs">
                               {planLabels[org.plan_id] || org.plan_id}
                             </Badge>
-                            {org.is_early_adopter && (
-                              <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">EA</Badge>
+            {org.is_early_adopter && (
+                              <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">EA</Badge>
                             )}
                             {isTrialActive && (
                               <Badge variant="outline" className="text-xs">Trial</Badge>
@@ -306,6 +343,18 @@ const AdminCockpit = () => {
                           <Badge variant={statusColors[org.subscription_status] as 'default' | 'secondary' | 'destructive' | 'outline'}>
                             {statusLabels[org.subscription_status] || org.subscription_status}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {(org.roles || []).map((role) => (
+                              <Badge key={role} variant="outline" className="text-xs">
+                                {role === 'super_admin' ? '🛡️ Super' : role}
+                              </Badge>
+                            ))}
+                            {(!org.roles || org.roles.length === 0) && (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-center">
                           <span className="text-sm font-medium">{org.units_count}</span>
@@ -326,27 +375,20 @@ const AdminCockpit = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Adicionar Créditos"
-                              onClick={() => {
-                                setCreditAmount('');
-                                setCreditReason('');
-                                setCreditType('whatsapp');
-                                setCreditsDialog(org);
-                              }}
-                            >
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Alterar Plano"
+                              onClick={() => openPlanDialog(org)}>
+                              <Crown className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Gerenciar Roles"
+                              onClick={() => setRoleDialog(org)}>
+                              <UserCog className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Adicionar Créditos"
+                              onClick={() => { setCreditAmount(''); setCreditReason(''); setCreditType('whatsapp'); setCreditsDialog(org); }}>
                               <Plus className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Ajustar Limites"
-                              onClick={() => openLimitsDialog(org)}
-                            >
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Ajustar Limites"
+                              onClick={() => openLimitsDialog(org)}>
                               <Settings2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -356,7 +398,7 @@ const AdminCockpit = () => {
                   })}
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         Nenhuma organização encontrada.
                       </TableCell>
                     </TableRow>
@@ -368,13 +410,85 @@ const AdminCockpit = () => {
         </Card>
       </div>
 
+      {/* Change Plan Dialog */}
+      <Dialog open={!!planDialog} onOpenChange={() => setPlanDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5" /> Alterar Plano
+            </DialogTitle>
+            <DialogDescription>
+              {planDialog?.full_name} ({planDialog?.email})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Novo Plano</Label>
+              <Select value={newPlan} onValueChange={setNewPlan}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Gratuito</SelectItem>
+                  <SelectItem value="essencial">Essencial</SelectItem>
+                  <SelectItem value="pro">Pro</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Motivo (obrigatório)</Label>
+              <Textarea value={planReason} onChange={(e) => setPlanReason(e.target.value)}
+                placeholder="Ex: Upgrade cortesia, suporte comercial..." rows={2} />
+            </div>
+            <Button className="w-full" onClick={handleChangePlan} disabled={submitting || !planReason}>
+              {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Alterar Plano
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Roles Dialog */}
+      <Dialog open={!!roleDialog} onOpenChange={() => setRoleDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="h-5 w-5" /> Gerenciar Roles
+            </DialogTitle>
+            <DialogDescription>
+              {roleDialog?.full_name} ({roleDialog?.email})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {['super_admin', 'admin', 'moderator'].map((role) => (
+              <div key={role} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium text-sm capitalize">{role.replace('_', ' ')}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {role === 'super_admin' && 'Acesso total ao Cockpit e gestão global'}
+                    {role === 'admin' && 'Administração da própria organização'}
+                    {role === 'moderator' && 'Moderação de conteúdo'}
+                  </p>
+                </div>
+                <Switch
+                  checked={roleDialog?.roles?.includes(role) || false}
+                  disabled={submitting}
+                  onCheckedChange={() => roleDialog && handleToggleRole(roleDialog, role)}
+                />
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground text-center">
+              Alterações são aplicadas imediatamente e registradas no log de auditoria.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Credits Dialog */}
       <Dialog open={!!creditsDialog} onOpenChange={() => setCreditsDialog(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Adicionar Créditos Manuais
+              <Plus className="h-5 w-5" /> Adicionar Créditos
             </DialogTitle>
             <DialogDescription>
               {creditsDialog?.full_name} ({creditsDialog?.email})
@@ -384,50 +498,28 @@ const AdminCockpit = () => {
             <div className="space-y-2">
               <Label>Tipo de Crédito</Label>
               <Select value={creditType} onValueChange={setCreditType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="whatsapp">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      WhatsApp
-                    </div>
+                    <div className="flex items-center gap-2"><MessageSquare className="h-4 w-4" /> WhatsApp</div>
                   </SelectItem>
                   <SelectItem value="ai">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      IA
-                    </div>
+                    <div className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> IA</div>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Quantidade</Label>
-              <Input
-                type="number"
-                min="1"
-                value={creditAmount}
-                onChange={(e) => setCreditAmount(e.target.value)}
-                placeholder="Ex: 500"
-              />
+              <Input type="number" min="1" value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} placeholder="Ex: 500" />
             </div>
             <div className="space-y-2">
               <Label>Motivo (obrigatório)</Label>
-              <Textarea
-                value={creditReason}
-                onChange={(e) => setCreditReason(e.target.value)}
-                placeholder="Ex: Bônus por falha no sistema, suporte técnico..."
-                rows={2}
-              />
+              <Textarea value={creditReason} onChange={(e) => setCreditReason(e.target.value)}
+                placeholder="Ex: Bônus por falha no sistema..." rows={2} />
             </div>
-            <Button
-              className="w-full"
-              onClick={handleAddCredits}
-              disabled={submitting || !creditAmount || !creditReason}
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            <Button className="w-full" onClick={handleAddCredits} disabled={submitting || !creditAmount || !creditReason}>
+              {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Adicionar Créditos
             </Button>
           </div>
@@ -439,8 +531,7 @@ const AdminCockpit = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Settings2 className="h-5 w-5" />
-              Ajustar Limites
+              <Settings2 className="h-5 w-5" /> Ajustar Limites
             </DialogTitle>
             <DialogDescription>
               {limitsDialog?.full_name} ({limitsDialog?.email})
@@ -448,46 +539,22 @@ const AdminCockpit = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Usuários Extras
-              </Label>
-              <Input
-                type="number"
-                min="0"
-                value={extraUsers}
-                onChange={(e) => setExtraUsers(parseInt(e.target.value) || 0)}
-              />
+              <Label className="flex items-center gap-2"><Users className="h-4 w-4" /> Usuários Extras</Label>
+              <Input type="number" min="0" value={extraUsers} onChange={(e) => setExtraUsers(parseInt(e.target.value) || 0)} />
               <p className="text-xs text-muted-foreground">Cada unidade = 1 usuário adicional (R$ 19,90/mês)</p>
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Packs de Unidades Extras (+50 cada)
-              </Label>
-              <Input
-                type="number"
-                min="0"
-                value={extraUnits}
-                onChange={(e) => setExtraUnits(parseInt(e.target.value) || 0)}
-              />
+              <Label className="flex items-center gap-2"><Building2 className="h-4 w-4" /> Packs de Unidades Extras (+50 cada)</Label>
+              <Input type="number" min="0" value={extraUnits} onChange={(e) => setExtraUnits(parseInt(e.target.value) || 0)} />
               <p className="text-xs text-muted-foreground">Cada pack = +50 unidades (R$ 29,90/mês)</p>
             </div>
             <div className="space-y-2">
               <Label>Motivo (obrigatório)</Label>
-              <Textarea
-                value={limitReason}
-                onChange={(e) => setLimitReason(e.target.value)}
-                placeholder="Ex: Ajuste manual solicitado pelo cliente, promoção..."
-                rows={2}
-              />
+              <Textarea value={limitReason} onChange={(e) => setLimitReason(e.target.value)}
+                placeholder="Ex: Ajuste manual solicitado pelo cliente..." rows={2} />
             </div>
-            <Button
-              className="w-full"
-              onClick={handleAdjustLimits}
-              disabled={submitting || !limitReason}
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            <Button className="w-full" onClick={handleAdjustLimits} disabled={submitting || !limitReason}>
+              {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Salvar Ajustes
             </Button>
           </div>

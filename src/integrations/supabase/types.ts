@@ -3244,6 +3244,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_change_plan: {
+        Args: {
+          p_new_plan_id: string
+          p_reason: string
+          p_target_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_change_role: {
+        Args: {
+          p_action: string
+          p_reason: string
+          p_role: string
+          p_target_user_id: string
+        }
+        Returns: undefined
+      }
       check_user_limit: {
         Args: {
           p_current_count?: number
@@ -3277,7 +3294,7 @@ export type Database = {
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "super_admin"
+      app_role: "admin" | "moderator" | "user" | "super_admin" | "agent"
       pipeline_stage:
         | "new_lead"
         | "in_contact"
@@ -3435,7 +3452,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "super_admin"],
+      app_role: ["admin", "moderator", "user", "super_admin", "agent"],
       pipeline_stage: [
         "new_lead",
         "in_contact",
