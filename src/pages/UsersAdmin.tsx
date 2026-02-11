@@ -44,7 +44,7 @@ import { ptBR } from 'date-fns/locale';
 interface UserWithRole {
   id: string;
   user_id: string;
-  role: 'admin' | 'agent' | 'moderator' | 'user' | 'super_admin';
+  role: 'admin' | 'agent' | 'moderator' | 'user' | 'super_admin' | 'support';
   created_at: string;
   profile?: {
     full_name: string;

@@ -44,7 +44,7 @@ import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
-import { useSuperAdminAccess } from '@/hooks/useSuperAdminAccess';
+import { useCockpitAccess } from '@/hooks/useCockpitAccess';
 
 interface NestedSubMenuItem {
   title: string;
@@ -73,7 +73,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed' && !isMobile;
   const { isAgent } = useUserRole();
   const { plan } = useSubscriptionLimits();
-  const { isSuperAdmin } = useSuperAdminAccess();
+  const { hasCockpitAccess } = useCockpitAccess();
 
   // Build menu items with role/plan gating
   const menuItems: MenuItem[] = [
@@ -132,8 +132,8 @@ export function AppSidebar() {
     return true;
   });
 
-  // Add Cockpit for super_admins
-  if (isSuperAdmin) {
+  // Add Cockpit for staff roles (super_admin, admin, support)
+  if (hasCockpitAccess) {
     filteredMenuItems.push({ title: 'Cockpit Master', url: '/admin/cockpit', icon: Shield });
   }
 
