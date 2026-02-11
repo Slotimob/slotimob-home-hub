@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,11 @@ import { SlotiLogo } from '@/components/SlotiLogo';
 import { Separator } from '@/components/ui/separator';
 import { SEOHead } from '@/components/SEOHead';
 import { toast as sonnerToast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { UserPlus } from 'lucide-react';
+
+const SITE_URL = 'https://slotimob.com.br';
+
 const loginSchema = z.object({
   email: z.string().email({
     message: 'Email inválido'
@@ -89,7 +94,8 @@ const getAuthErrorMessage = (error: any): { title: string; description: string }
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const pendingPlan = searchParams.get('plan'); // Capture plan intent from URL
+  const inviteToken = searchParams.get('token');
+  const pendingPlan = searchParams.get('plan');
   const {
     toast
   } = useToast();
@@ -117,6 +123,37 @@ const Auth = () => {
   // Anti-spam: track when form was loaded
   const [formLoadTime] = useState(() => Date.now());
 
+  // Invitation data from token
+  const [invitation, setInvitation] = useState<{ email: string; invited_by_name: string; organization_owner_id: string } | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
+
+  // Fetch invitation data if token present
+  useEffect(() => {
+    if (!inviteToken) return;
+    const fetchInvitation = async () => {
+      setInviteLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('organization_invitations')
+          .select('email, invited_by_name, organization_owner_id')
+          .eq('token', inviteToken)
+          .maybeSingle();
+        
+        if (error || !data) {
+          sonnerToast.error('Convite inválido, expirado ou já utilizado.');
+        } else {
+          setInvitation(data);
+          setSignupForm(prev => ({ ...prev, email: data.email }));
+        }
+      } catch {
+        sonnerToast.error('Erro ao verificar convite.');
+      } finally {
+        setInviteLoading(false);
+      }
+    };
+    fetchInvitation();
+  }, [inviteToken]);
+
   // Show intent message if user came from pricing
   useEffect(() => {
     if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
@@ -124,6 +161,23 @@ const Auth = () => {
       sonnerToast.info(`Faça login ou crie uma conta para assinar o plano ${planNames[pendingPlan] || pendingPlan}`);
     }
   }, [pendingPlan]);
+
+  // Function to accept invite after auth
+  const handleAcceptInvite = useCallback(async () => {
+    if (!inviteToken) return false;
+    try {
+      const { data, error } = await supabase.functions.invoke('accept-invite', {
+        body: { token: inviteToken },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      sonnerToast.success(data?.message || 'Você foi adicionado à equipe!');
+      return true;
+    } catch (err: any) {
+      sonnerToast.error(err.message || 'Erro ao aceitar convite');
+      return false;
+    }
+  }, [inviteToken]);
 
   // Function to handle post-auth checkout redirect
   const handlePostAuthCheckout = async (planId: string) => {
@@ -165,7 +219,7 @@ const Auth = () => {
       const {
         error
       } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${SITE_URL}/reset-password`
       });
       if (error) throw error;
       toast({
@@ -189,8 +243,8 @@ const Auth = () => {
       setGoogleLoading(true);
       // Preserve plan intent in OAuth redirect
       const redirectUrl = pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)
-        ? `${window.location.origin}/?checkout_plan=${pendingPlan}`
-        : `${window.location.origin}/`;
+        ? `${SITE_URL}/?checkout_plan=${pendingPlan}`
+        : `${SITE_URL}/`;
       const {
         error
       } = await supabase.auth.signInWithOAuth({
@@ -226,6 +280,11 @@ const Auth = () => {
         title: 'Login realizado!',
         description: 'Bem-vindo de volta.'
       });
+      
+      // Accept invite if token present
+      if (inviteToken) {
+        await handleAcceptInvite();
+      }
       
       // Check if user had a pending plan purchase intent
       if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
@@ -293,7 +352,7 @@ const Auth = () => {
         // Fail open - continue with signup
       }
       
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = invitation ? `${SITE_URL}/auth?token=${inviteToken}` : `${SITE_URL}/`;
       const {
         data,
         error
@@ -333,6 +392,11 @@ const Auth = () => {
         });
         setAcceptedTerms(false);
       } else {
+        // Accept invite if token present
+        if (inviteToken) {
+          await handleAcceptInvite();
+        }
+        
         toast({
           title: 'Conta criada!',
           description: 'Sua conta foi criada com sucesso.'
@@ -373,7 +437,7 @@ const Auth = () => {
         type: 'signup',
         email: pendingVerificationEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${SITE_URL}/`
         }
       });
       if (error) throw error;
@@ -463,7 +527,7 @@ const Auth = () => {
                 </div>
               </div>
 
-              <Tabs defaultValue="login" className="w-full">
+              <Tabs defaultValue={invitation ? "signup" : "login"} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="login">Login</TabsTrigger>
                   <TabsTrigger value="signup">Criar Conta</TabsTrigger>
@@ -512,6 +576,15 @@ const Auth = () => {
 
                 <TabsContent value="signup">
                   <form onSubmit={handleSignup} className="space-y-4">
+                    {invitation && (
+                      <Alert className="border-primary/30 bg-primary/5">
+                        <UserPlus className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          <strong>{invitation.invited_by_name}</strong> convidou você para a equipe da SlotiMob.
+                          Crie sua conta para ingressar.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="signup-name">Nome Completo</Label>
                       <Input id="signup-name" type="text" placeholder="Seu nome" value={signupForm.fullName} onChange={e => setSignupForm({
@@ -521,10 +594,24 @@ const Auth = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
-                      <Input id="signup-email" type="email" placeholder="seu@email.com" value={signupForm.email} onChange={e => setSignupForm({
-                    ...signupForm,
-                    email: e.target.value
-                  })} required />
+                      <Input 
+                        id="signup-email" 
+                        type="email" 
+                        placeholder="seu@email.com" 
+                        value={signupForm.email} 
+                        onChange={e => !invitation && setSignupForm({
+                          ...signupForm,
+                          email: e.target.value
+                        })} 
+                        readOnly={!!invitation}
+                        className={invitation ? 'bg-muted cursor-not-allowed' : ''}
+                        required 
+                      />
+                      {invitation && (
+                        <p className="text-xs text-muted-foreground">
+                          Email bloqueado — deve corresponder ao convite recebido.
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-phone">Telefone (opcional)</Label>

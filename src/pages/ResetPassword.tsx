@@ -18,6 +18,8 @@ const passwordSchema = z.object({
   path: ['confirmPassword'],
 });
 
+const SITE_URL = 'https://slotimob.com.br';
+
 const ResetPassword = () => {
   const navigate = useNavigate();
   const { toast } = useToast();

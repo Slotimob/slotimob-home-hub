@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader2, UserPlus } from 'lucide-react';
+import { Loader2, UserPlus, Mail } from 'lucide-react';
 import { PermissionsMatrix } from './PermissionsMatrix';
 import { RoleTemplateSelector } from './RoleTemplateSelector';
 import type { Permissions } from '@/hooks/usePermissions';
@@ -34,33 +34,22 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
     mutationFn: async () => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Look up user by email
-      const { data: profile, error: lookupError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
-
-      if (lookupError) throw lookupError;
-      if (!profile) throw new Error('Usuário não encontrado. Ele precisa ter uma conta na SlotiMob.');
-
-      const { error } = await supabase.from('organization_members').insert({
-        organization_owner_id: user.id,
-        user_id: profile.id,
-        role_label: roleLabel,
-        permissions,
-        is_active: true,
-        accepted_at: new Date().toISOString(),
+      const { data, error } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          email: email.trim().toLowerCase(),
+          role_label: roleLabel,
+          permissions,
+        },
       });
 
-      if (error) {
-        if (error.code === '23505') throw new Error('Este usuário já faz parte da sua equipe.');
-        throw error;
-      }
+      if (error) throw new Error(error.message || 'Erro ao enviar convite');
+      if (data?.error) throw new Error(data.error);
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-members'] });
-      toast.success('Membro adicionado com sucesso');
+      toast.success('Convite enviado por email com sucesso!');
       onOpenChange(false);
       setEmail('');
       setPermissions({});
@@ -76,24 +65,31 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto w-[calc(100%-2rem)] sm:w-full">
         <DialogHeader>
           <DialogTitle>Convidar Membro</DialogTitle>
           <DialogDescription>
-            Adicione um membro à sua equipe e configure suas permissões.
+            Um email será enviado com um link para o convidado criar sua conta e ingressar na equipe.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="invite-email">Email do usuário</Label>
-            <Input
-              id="invite-email"
-              type="email"
-              placeholder="email@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <Label htmlFor="invite-email">Email do convidado</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="invite-email"
+                type="email"
+                placeholder="email@exemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O convite expira em 48 horas. O convidado receberá um link para criar conta e será vinculado automaticamente.
+            </p>
           </div>
 
           <RoleTemplateSelector onApply={handleApplyTemplate} />
@@ -106,7 +102,7 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
             disabled={!email.trim() || invite.isPending}
           >
             {invite.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-            Adicionar Membro
+            Enviar Convite por Email
           </Button>
         </div>
       </DialogContent>
