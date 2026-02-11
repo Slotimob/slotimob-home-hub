@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, FileText, Search, Download, Trash2, Building2, ExternalLink } from 'lucide-react';
 import { HeaderButton } from "@/components/ui/header-button";
+import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -270,9 +271,11 @@ const Documents = () => {
       title="Documentos"
       headerActions={
         <>
-          <HeaderButton variant="outline" icon={<Plus className="h-4 w-4" />} onClick={() => setIsProposalDialogOpen(true)}>
-            Nova Proposta
-          </HeaderButton>
+          <PermissionGate permission="documents.generate">
+            <HeaderButton variant="outline" icon={<Plus className="h-4 w-4" />} onClick={() => setIsProposalDialogOpen(true)}>
+              Nova Proposta
+            </HeaderButton>
+          </PermissionGate>
           <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsUploadDialogOpen(true)}>
             Upload
           </HeaderButton>
@@ -427,19 +430,21 @@ const Documents = () => {
                                 </Tooltip>
                               )}
 
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    onClick={() => setDeleteDoc(doc)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Excluir</TooltipContent>
-                              </Tooltip>
+                              <PermissionGate permission="documents.delete">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      onClick={() => setDeleteDoc(doc)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Excluir</TooltipContent>
+                                </Tooltip>
+                              </PermissionGate>
                             </div>
                           </TableCell>
                         </TableRow>
