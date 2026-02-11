@@ -29,7 +29,7 @@ export const FeatureGate = ({
 
   if (!showUpgradeOverlay) return null;
 
-  const targetPlan = requiredPlan || (plan === 'essencial' ? 'pro' : 'business');
+  const targetPlan = requiredPlan || (plan === 'free' ? 'essencial' : plan === 'essencial' ? 'pro' : 'business');
   const planIcon = targetPlan === 'business' ? <Building2 className="h-8 w-8" /> : targetPlan === 'pro' ? <Rocket className="h-8 w-8" /> : <Briefcase className="h-8 w-8" />;
   const planName = targetPlan === 'business' ? 'Business' : targetPlan === 'pro' ? 'Pro' : 'Essencial';
   const planColor = targetPlan === 'business' ? 'text-purple-500' : targetPlan === 'pro' ? 'text-blue-500' : 'text-emerald-500';

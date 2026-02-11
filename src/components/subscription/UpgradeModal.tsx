@@ -9,11 +9,17 @@ import { Link } from 'react-router-dom';
 interface UpgradeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  targetPlan?: 'pro' | 'business';
+  targetPlan?: 'essencial' | 'pro' | 'business';
   feature?: string;
 }
 
 const planBenefits = {
+  essencial: [
+    'Até 10 unidades',
+    'CRM básico com Pipeline',
+    'Financeiro: Visão Geral e Lançamentos',
+    'Contatos ilimitados',
+  ],
   pro: [
     'Até 50 unidades',
     'CRM completo com histórico',
@@ -32,7 +38,7 @@ const planBenefits = {
   ],
 };
 
-export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'pro', feature }: UpgradeModalProps) => {
+export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', feature }: UpgradeModalProps) => {
   const { plan: currentPlan } = useSubscriptionLimits();
   const { slots } = useEarlyAdopterCount();
 
@@ -40,6 +46,16 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'pro', feature }
   const hasEarlyAdopterSlots = earlyAdopterSlots && earlyAdopterSlots.remaining > 0;
 
   const planConfig = {
+    essencial: {
+      name: 'Essencial',
+      icon: Zap,
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500',
+      borderColor: 'border-emerald-500',
+      priceOriginal: 39.90,
+      priceAnchor: 29.90,
+      priceEarlyAdopter: 19.90,
+    },
     pro: {
       name: 'Pro',
       icon: Rocket,
@@ -138,6 +154,12 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'pro', feature }
             </Button>
           </div>
 
+          {currentPlan === 'free' && targetPlan === 'essencial' && (
+            <p className="text-xs text-center text-muted-foreground">
+              O Essencial desbloqueia 10 unidades. Para gestão completa, veja o{' '}
+              <Link to="/#pricing" className="text-blue-500 hover:underline" onClick={() => onOpenChange(false)}>Plano Pro a partir de R$ 79/mês</Link>
+            </p>
+          )}
           {currentPlan === 'essencial' && targetPlan === 'business' && (
             <p className="text-xs text-center text-muted-foreground">
               Também disponível: <Link to="/#pricing" className="text-blue-500 hover:underline">Plano Pro a partir de R$ 79/mês</Link>
