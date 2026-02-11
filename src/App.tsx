@@ -45,6 +45,7 @@ import AssetHealth from "./pages/AssetHealth";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
 import Users from "./pages/Users";
+import AdminCockpit from "./pages/AdminCockpit";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
             <Route path="/legal" element={<Legal />} />
             <Route path="/admin/terms" element={<TermsAdmin />} />
             <Route path="/admin/users" element={<UsersAdmin />} />
+            <Route path="/admin/cockpit" element={<AdminCockpit />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
