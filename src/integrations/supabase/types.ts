@@ -1706,6 +1706,45 @@ export type Database = {
           },
         ]
       }
+      organization_members: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invited_at: string
+          is_active: boolean
+          organization_owner_id: string
+          permissions: Json
+          role_label: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          is_active?: boolean
+          organization_owner_id: string
+          permissions?: Json
+          role_label?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          is_active?: boolean
+          organization_owner_id?: string
+          permissions?: Json
+          role_label?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       owners: {
         Row: {
           address: string | null
@@ -2170,6 +2209,39 @@ export type Database = {
           identifier?: string
           request_count?: number | null
           window_start?: string | null
+        }
+        Relationships: []
+      }
+      role_templates: {
+        Row: {
+          broker_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          permissions: Json
+          updated_at: string
+        }
+        Insert: {
+          broker_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          permissions?: Json
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3290,6 +3362,10 @@ export type Database = {
           p_target_user_id: string
         }
         Returns: undefined
+      }
+      check_member_permission: {
+        Args: { _action: string; _module: string; _user_id: string }
+        Returns: boolean
       }
       check_user_limit: {
         Args: {
