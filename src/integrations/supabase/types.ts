@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          details: Json
+          id: string
+          reason: string | null
+          target_user_id: string
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          reason?: string | null
+          target_user_id: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          reason?: string | null
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       ai_credits: {
         Row: {
           broker_id: string
@@ -3196,6 +3226,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_add_credits: {
+        Args: {
+          p_amount: number
+          p_credit_type: string
+          p_reason: string
+          p_target_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_adjust_limits: {
+        Args: {
+          p_extra_unit_packs: number
+          p_extra_users: number
+          p_reason: string
+          p_target_user_id: string
+        }
+        Returns: undefined
+      }
       check_user_limit: {
         Args: {
           p_current_count?: number
@@ -3205,6 +3253,7 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      get_cockpit_organizations: { Args: never; Returns: Json }
       get_early_adopter_count: { Args: { p_plan_id: string }; Returns: number }
       get_early_adopter_remaining_slots: {
         Args: { p_plan_id: string }
@@ -3224,6 +3273,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
     }
     Enums: {

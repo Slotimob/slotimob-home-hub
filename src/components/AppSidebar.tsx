@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Wallet,
   UsersRound,
+  Shield,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -43,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useSuperAdminAccess } from '@/hooks/useSuperAdminAccess';
 
 interface NestedSubMenuItem {
   title: string;
@@ -71,6 +73,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed' && !isMobile;
   const { isAgent } = useUserRole();
   const { plan } = useSubscriptionLimits();
+  const { isSuperAdmin } = useSuperAdminAccess();
 
   // Build menu items with role/plan gating
   const menuItems: MenuItem[] = [
@@ -128,6 +131,11 @@ export function AppSidebar() {
     if (item.hiddenOnPlan?.includes(plan)) return false;
     return true;
   });
+
+  // Add Cockpit for super_admins
+  if (isSuperAdmin) {
+    filteredMenuItems.push({ title: 'Cockpit Master', url: '/admin/cockpit', icon: Shield });
+  }
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/';
