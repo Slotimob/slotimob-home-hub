@@ -22,11 +22,12 @@ import {
 } from '@/components/ui/table';
 import {
   Building2, CreditCard, Loader2, MessageSquare, Plus, Settings2,
-  Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon,
+  Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon, FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CockpitOverviewTab } from '@/components/cockpit/CockpitOverviewTab';
 import { CockpitSupportTab } from '@/components/cockpit/CockpitSupportTab';
+import { CockpitBlogTab } from '@/components/cockpit/CockpitBlogTab';
 
 interface Organization {
   user_id: string;
@@ -273,6 +274,11 @@ const AdminCockpit = () => {
                 <HeadphonesIcon className="h-4 w-4" /> Suporte
               </TabsTrigger>
             )}
+            {isSuperAdmin && (
+              <TabsTrigger value="blog" className="gap-2">
+                <FileText className="h-4 w-4" /> Blog
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Overview Tab */}
@@ -471,6 +477,13 @@ const AdminCockpit = () => {
           {isSupport && (
             <TabsContent value="support">
               <CockpitSupportTab />
+            </TabsContent>
+          )}
+
+          {/* Blog Tab - super_admin only */}
+          {isSuperAdmin && (
+            <TabsContent value="blog">
+              <CockpitBlogTab />
             </TabsContent>
           )}
         </Tabs>
