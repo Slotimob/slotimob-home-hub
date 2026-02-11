@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,8 +101,13 @@ const AdminCockpit = () => {
     staleTime: 30 * 1000,
   });
 
+  useEffect(() => {
+    if (!authLoading && !roleLoading && (!user || !isSuperAdmin)) {
+      navigate('/dashboard');
+    }
+  }, [authLoading, roleLoading, user, isSuperAdmin, navigate]);
+
   if (!authLoading && !roleLoading && (!user || !isSuperAdmin)) {
-    navigate('/dashboard');
     return null;
   }
 
