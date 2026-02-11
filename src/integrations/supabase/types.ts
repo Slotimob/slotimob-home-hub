@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_credits: {
+        Row: {
+          broker_id: string
+          created_at: string
+          credits_purchased: number
+          credits_remaining: number
+          expires_at: string | null
+          id: string
+          price_paid: number
+          purchased_at: string
+          stripe_payment_id: string | null
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string
+          credits_purchased: number
+          credits_remaining: number
+          expires_at?: string | null
+          id?: string
+          price_paid: number
+          purchased_at?: string
+          stripe_payment_id?: string | null
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string
+          credits_purchased?: number
+          credits_remaining?: number
+          expires_at?: string | null
+          id?: string
+          price_paid?: number
+          purchased_at?: string
+          stripe_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_credits_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -2366,11 +2410,15 @@ export type Database = {
           created_at: string | null
           current_period_end: string | null
           current_period_start: string | null
+          extra_unit_packs: number
+          extra_users_count: number
           id: string
           is_early_adopter: boolean | null
           plan_id: string
           price_locked: number | null
           status: string
+          stripe_addon_units_item_id: string | null
+          stripe_addon_users_item_id: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           trial_ends_at: string | null
@@ -2382,11 +2430,15 @@ export type Database = {
           created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
+          extra_unit_packs?: number
+          extra_users_count?: number
           id?: string
           is_early_adopter?: boolean | null
           plan_id?: string
           price_locked?: number | null
           status?: string
+          stripe_addon_units_item_id?: string | null
+          stripe_addon_users_item_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
@@ -2398,11 +2450,15 @@ export type Database = {
           created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
+          extra_unit_packs?: number
+          extra_users_count?: number
           id?: string
           is_early_adopter?: boolean | null
           plan_id?: string
           price_locked?: number | null
           status?: string
+          stripe_addon_units_item_id?: string | null
+          stripe_addon_users_item_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
@@ -2977,6 +3033,7 @@ export type Database = {
         Row: {
           broker_id: string
           created_at: string
+          credit_type: string
           credits_purchased: number
           credits_remaining: number
           expires_at: string | null
@@ -2988,6 +3045,7 @@ export type Database = {
         Insert: {
           broker_id: string
           created_at?: string
+          credit_type?: string
           credits_purchased: number
           credits_remaining: number
           expires_at?: string | null
@@ -2999,6 +3057,7 @@ export type Database = {
         Update: {
           broker_id?: string
           created_at?: string
+          credit_type?: string
           credits_purchased?: number
           credits_remaining?: number
           expires_at?: string | null
@@ -3151,6 +3210,7 @@ export type Database = {
         Args: { p_plan_id: string }
         Returns: number
       }
+      get_effective_limits: { Args: { p_user_id: string }; Returns: Json }
       get_user_plan_features: { Args: { p_user_id: string }; Returns: Json }
       get_user_trial_status: { Args: { p_user_id: string }; Returns: Json }
       get_whatsapp_monthly_usage: {
