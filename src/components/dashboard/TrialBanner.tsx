@@ -45,7 +45,7 @@ export function TrialBanner() {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-muted-foreground">
-          Seu trial Pro expirou. Comece pelo <strong className="text-foreground">Essencial por R$ 19,90/mês</strong> e desbloqueie até 10 unidades, ou escolha o Pro para gestão completa.
+          Seu trial expirou. Garanta o <strong className="text-foreground">Pro por R$ 79/mês</strong> e mantenha IA, Documentos, Relatórios e gestão completa desbloqueados.
         </p>
       </div>
       <Button asChild size="sm" className="bg-amber-500 hover:bg-amber-600 text-white shrink-0">
