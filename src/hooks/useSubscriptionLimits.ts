@@ -110,6 +110,23 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Fetch add-on counts from subscriptions
+  const { data: addonData } = useQuery({
+    queryKey: ['subscription-addons', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('extra_users_count, extra_unit_packs')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch trial status for free users
   const { data: trialData } = useQuery({
     queryKey: ['trial-status-limits', user?.id],
@@ -158,6 +175,17 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
       finance_dre: true,
       finance_categories_edit: true,
       // Keep assets_limit at 2 for free
+    };
+  }
+
+  // Apply add-on expansions
+  const extraUsers = addonData?.extra_users_count || 0;
+  const extraUnitPacks = addonData?.extra_unit_packs || 0;
+  if (features && (extraUsers > 0 || extraUnitPacks > 0)) {
+    features = {
+      ...features,
+      users_limit: (features.users_limit === -1 ? -1 : features.users_limit + extraUsers),
+      assets_limit: (features.assets_limit === -1 ? -1 : features.assets_limit + (extraUnitPacks * 50)),
     };
   }
 

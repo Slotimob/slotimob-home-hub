@@ -17,6 +17,7 @@ import { Camera, FileText, Loader2, Scale, Shield } from 'lucide-react';
 import { NotificationSettings } from '@/components/NotificationSettings';
 import { GlowSettings } from '@/components/GlowSettings';
 import { AppLayout } from '@/components/AppLayout';
+import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -651,31 +652,7 @@ const Settings = () => {
         <GlowSettings />
 
         {/* Subscription Section - Owner only */}
-        {!isAgent && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Plano Atual</CardTitle>
-            <CardDescription>Gerencie sua assinatura</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Plano {subscriptionPlan === 'essencial' ? 'Essencial' : subscriptionPlan === 'pro' ? 'Pro' : subscriptionPlan === 'business' ? 'Business' : subscriptionPlan}</p>
-                <p className="text-sm text-muted-foreground">
-                  {subscriptionPlan === 'essencial' ? 'Recursos básicos' : 'Recursos premium'}
-                </p>
-              </div>
-              <Badge variant={subscriptionPlan === 'essencial' ? 'secondary' : 'default'}>
-                {subscriptionPlan === 'essencial' ? 'Essencial' : subscriptionPlan === 'pro' ? 'Pro' : 'Business'}
-              </Badge>
-            </div>
-            <Separator />
-            <Button variant="outline" className="w-full" disabled>
-              Mudar de Plano (Em breve)
-            </Button>
-          </CardContent>
-        </Card>
-        )}
+        {!isAgent && <SubscriptionManagement />}
 
         {/* Legal Section */}
         <Card>
