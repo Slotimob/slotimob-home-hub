@@ -5,6 +5,7 @@ import { TransactionsFiltersCompact } from "@/components/finance/TransactionsFil
 import { CreateTransactionDialog } from "@/components/finance/CreateTransactionDialog";
 import { ImportStatementDialog } from "@/components/finance/ImportStatementDialog";
 import { Button } from "@/components/ui/button";
+import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { Plus, Upload, FileSpreadsheet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -175,10 +176,12 @@ const FinanceTransactions = () => {
             <p className="text-muted-foreground">Gerencie suas receitas e despesas</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setIsCreateOpen(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Lançamento
-            </Button>
+            <PermissionGate permission="financial.create">
+              <Button onClick={() => setIsCreateOpen(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Lançamento
+              </Button>
+            </PermissionGate>
             <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Importar</span>

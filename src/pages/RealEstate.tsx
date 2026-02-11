@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
+import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Home, DollarSign, Bed, Bath, Car, Square, Upload, Share2, Eye, Copy, Download } from 'lucide-react';
@@ -399,12 +400,14 @@ const RealEstate = () => {
         headerActions={
           <div className="flex items-center gap-1 sm:gap-1.5">
             {/* Primary: Novo Imóvel Avulso */}
-            <AddAssetButton
-              standalone={true}
-              variant="default"
-              size="sm"
-              onSuccess={loadRealEstateUnits}
-            />
+            <PermissionGate permission="assets.create">
+              <AddAssetButton
+                standalone={true}
+                variant="default"
+                size="sm"
+                onSuccess={loadRealEstateUnits}
+              />
+            </PermissionGate>
             {/* Secondary: Compartilhar */}
             <HeaderButton 
               variant="outline" 

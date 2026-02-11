@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
+import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { HeaderButton } from "@/components/ui/header-button";
 import { useToast } from '@/hooks/use-toast';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
@@ -1074,9 +1075,11 @@ const Pipeline = () => {
       title="Pipeline Vendas"
       headerActions={
         <>
-          <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
-            Nova Negociação
-          </HeaderButton>
+          <PermissionGate permission="crm.move_pipeline">
+            <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
+              Nova Negociação
+            </HeaderButton>
+          </PermissionGate>
           <HeaderButton
             variant={showMetrics ? 'secondary' : 'outline'}
             iconOnly
