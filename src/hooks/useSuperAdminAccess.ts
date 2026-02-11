@@ -3,26 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 export const useSuperAdminAccess = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
-    const check = async () => {
-      if (!user) {
-        console.log('[SuperAdmin] No user, setting false');
-        setIsSuperAdmin(false);
-        setIsLoading(false);
-        return;
-      }
+    // Don't check until auth is done loading
+    if (authLoading) return;
 
+    if (!user) {
+      setIsSuperAdmin(false);
+      setIsChecking(false);
+      return;
+    }
+
+    const check = async () => {
+      setIsChecking(true);
       try {
-        console.log('[SuperAdmin] Checking role for user:', user.id);
         const { data, error } = await supabase.rpc('is_super_admin', {
           p_user_id: user.id,
         });
-
-        console.log('[SuperAdmin] RPC result:', { data, error });
 
         if (error) {
           console.error('Error checking super_admin role:', error);
@@ -30,16 +30,18 @@ export const useSuperAdminAccess = () => {
         } else {
           setIsSuperAdmin(data === true);
         }
-      } catch (e) {
-        console.error('[SuperAdmin] Exception:', e);
+      } catch {
         setIsSuperAdmin(false);
       } finally {
-        setIsLoading(false);
+        setIsChecking(false);
       }
     };
 
     check();
-  }, [user]);
+  }, [user, authLoading]);
 
-  return { isSuperAdmin, isLoading };
+  // Still loading if auth is loading OR we're actively checking the role
+  const isLoading = authLoading || isChecking || (!!user && !isSuperAdmin && isChecking !== false && !isChecking);
+  
+  return { isSuperAdmin, isLoading: authLoading || isChecking };
 };
