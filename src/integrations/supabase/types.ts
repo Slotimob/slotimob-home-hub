@@ -2373,6 +2373,7 @@ export type Database = {
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          trial_ends_at: string | null
           updated_at: string | null
           user_id: string
         }
@@ -2388,6 +2389,7 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -2403,6 +2405,7 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -3149,6 +3152,7 @@ export type Database = {
         Returns: number
       }
       get_user_plan_features: { Args: { p_user_id: string }; Returns: Json }
+      get_user_trial_status: { Args: { p_user_id: string }; Returns: Json }
       get_whatsapp_monthly_usage: {
         Args: { p_broker_id: string }
         Returns: Json

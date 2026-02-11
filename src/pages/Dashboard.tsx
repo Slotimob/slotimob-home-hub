@@ -23,6 +23,7 @@ import {
   DatePreset,
   DateRange,
 } from '@/components/dashboard';
+import { TrialBanner } from '@/components/dashboard/TrialBanner';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -177,6 +178,11 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-6 lg:space-y-8">
+                {/* ═══════════════════════════════════════════════════════════════
+                    TRIAL BANNER (Free users only)
+                   ═══════════════════════════════════════════════════════════════ */}
+                <TrialBanner />
+
                 {/* ═══════════════════════════════════════════════════════════════
                     LINHA 1: ACESSOS RÁPIDOS
                    ═══════════════════════════════════════════════════════════════ */}

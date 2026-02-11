@@ -41,14 +41,14 @@ export interface SubscriptionLimits {
 }
 
 const defaultFeatures: PlanFeatures = {
-  assets_limit: 10,
+  assets_limit: 2,
   users_limit: 1,
   contacts_limit: -1,
   asset_health_tracking_limit: 0,
   crm_basic: true,
   crm_full: false,
   finance_simple: true,
-  finance_full: true,
+  finance_full: false,
   finance_dre: false,
   finance_categories_edit: false,
   reports_overview: false,
@@ -110,13 +110,56 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Map legacy plan names to new ones
-  const rawPlan = data?.plan || 'essencial';
-  const planMap: Record<string, PlanId> = { 'free': 'essencial', 'ouro': 'pro', 'diamante': 'business' };
+  // Fetch trial status for free users
+  const { data: trialData } = useQuery({
+    queryKey: ['trial-status-limits', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase.rpc('get_user_trial_status', {
+        p_user_id: user.id,
+      });
+      if (error) return null;
+      return data as unknown as {
+        plan_id: string;
+        trial_ends_at: string | null;
+        is_trial_active: boolean;
+        trial_days_remaining: number;
+      };
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Map legacy plan names to new ones, but keep 'free' as 'free'
+  const rawPlan = data?.plan || 'free';
+  const planMap: Record<string, PlanId> = { 'ouro': 'pro', 'diamante': 'business' };
   const plan = (planMap[rawPlan] || rawPlan) as PlanId;
   
   const isEarlyAdopter = data?.is_early_adopter || false;
-  const features = data?.features || defaultFeatures;
+  const isTrialActive = trialData?.is_trial_active || false;
+  
+  // During trial, free users get Pro features (except assets_limit stays at 2)
+  let features = data?.features || defaultFeatures;
+  if (plan === 'free' && isTrialActive && features) {
+    features = {
+      ...features,
+      ai_chat: true,
+      documents_my_docs: true,
+      documents_templates_per_month: -1,
+      documents_edit_layout: true,
+      reports_overview: true,
+      reports_weekly: true,
+      reports_monthly: true,
+      reports_period_limit_months: -1,
+      crm_full: true,
+      pipeline_create_stages: true,
+      asset_management: true,
+      asset_health_tracking_limit: -1,
+      finance_dre: true,
+      finance_categories_edit: true,
+      // Keep assets_limit at 2 for free
+    };
+  }
 
   const canUse = (feature: keyof PlanFeatures): boolean => {
     const value = features[feature];
