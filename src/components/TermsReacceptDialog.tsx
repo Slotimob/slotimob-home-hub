@@ -68,7 +68,7 @@ export const TermsReacceptDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto w-[calc(100%-2rem)] rounded-lg" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Shield className="h-6 w-6 text-primary" />
