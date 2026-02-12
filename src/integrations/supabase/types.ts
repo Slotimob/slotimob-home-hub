@@ -412,7 +412,9 @@ export type Database = {
           content: string
           created_at: string
           excerpt: string | null
+          faqs: Json | null
           featured_image: string | null
+          featured_image_alt: string | null
           geo_location: string | null
           id: string
           is_published: boolean
@@ -431,7 +433,9 @@ export type Database = {
           content?: string
           created_at?: string
           excerpt?: string | null
+          faqs?: Json | null
           featured_image?: string | null
+          featured_image_alt?: string | null
           geo_location?: string | null
           id?: string
           is_published?: boolean
@@ -450,7 +454,9 @@ export type Database = {
           content?: string
           created_at?: string
           excerpt?: string | null
+          faqs?: Json | null
           featured_image?: string | null
+          featured_image_alt?: string | null
           geo_location?: string | null
           id?: string
           is_published?: boolean
@@ -2096,7 +2102,9 @@ export type Database = {
       profiles: {
         Row: {
           agency_id: string | null
+          author_role: string | null
           avatar_url: string | null
+          bio_mini: string | null
           created_at: string
           creci_document_url: string | null
           dark_mode_preference: boolean | null
@@ -2106,6 +2114,8 @@ export type Database = {
           glow_intensity: number | null
           ical_token: string | null
           id: string
+          instagram_url: string | null
+          linkedin_url: string | null
           notification_sound_enabled: boolean | null
           notification_vibration_enabled: boolean | null
           phone: string | null
@@ -2119,7 +2129,9 @@ export type Database = {
         }
         Insert: {
           agency_id?: string | null
+          author_role?: string | null
           avatar_url?: string | null
+          bio_mini?: string | null
           created_at?: string
           creci_document_url?: string | null
           dark_mode_preference?: boolean | null
@@ -2129,6 +2141,8 @@ export type Database = {
           glow_intensity?: number | null
           ical_token?: string | null
           id: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
           phone?: string | null
@@ -2142,7 +2156,9 @@ export type Database = {
         }
         Update: {
           agency_id?: string | null
+          author_role?: string | null
           avatar_url?: string | null
+          bio_mini?: string | null
           created_at?: string
           creci_document_url?: string | null
           dark_mode_preference?: boolean | null
@@ -2152,6 +2168,8 @@ export type Database = {
           glow_intensity?: number | null
           ical_token?: string | null
           id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
           phone?: string | null
