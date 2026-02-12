@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Force update check on page visibility change (user returns to tab)
+// Service worker registration — gentle update without aggressive reload
 if ('serviceWorker' in navigator) {
   // Check for SW updates when page becomes visible again
   document.addEventListener('visibilitychange', () => {
@@ -13,14 +13,8 @@ if ('serviceWorker' in navigator) {
     }
   });
 
-  // Reload page when a new SW takes control
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!refreshing) {
-      refreshing = true;
-      window.location.reload();
-    }
-  });
+  // Only reload when user explicitly accepts (or on next natural navigation)
+  // Removed aggressive controllerchange reload that was closing dialogs and losing form data
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

@@ -346,7 +346,7 @@ export function CockpitBlogTab() {
       </Card>
 
       {/* Post Editor Dialog */}
-      <Dialog open={editorOpen} onOpenChange={() => closeEditor()}>
+      <Dialog open={editorOpen} onOpenChange={(isOpen) => { if (!isOpen) closeEditor(); }}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingPost ? 'Editar Post' : 'Novo Post'}</DialogTitle>
