@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -253,33 +254,33 @@ const AdminCockpit = () => {
 
         {/* Tabs */}
         <Tabs defaultValue={defaultTab} className="space-y-4">
-          <TabsList>
+          <ScrollableTabsList>
             {(isAdmin || isSuperAdmin) && (
-              <TabsTrigger value="overview" className="gap-2">
+              <TabsTrigger value="overview" className="gap-2 min-h-[44px]">
                 <BarChart3 className="h-4 w-4" /> Visão Geral
               </TabsTrigger>
             )}
             {(isAdmin || isSuperAdmin) && (
-              <TabsTrigger value="organizations" className="gap-2">
+              <TabsTrigger value="organizations" className="gap-2 min-h-[44px]">
                 <Users className="h-4 w-4" /> Organizações
               </TabsTrigger>
             )}
             {isSuperAdmin && (
-              <TabsTrigger value="roles" className="gap-2">
+              <TabsTrigger value="roles" className="gap-2 min-h-[44px]">
                 <UserCog className="h-4 w-4" /> Roles
               </TabsTrigger>
             )}
             {isSupport && (
-              <TabsTrigger value="support" className="gap-2">
+              <TabsTrigger value="support" className="gap-2 min-h-[44px]">
                 <HeadphonesIcon className="h-4 w-4" /> Suporte
               </TabsTrigger>
             )}
             {isSuperAdmin && (
-              <TabsTrigger value="blog" className="gap-2">
+              <TabsTrigger value="blog" className="gap-2 min-h-[44px]">
                 <FileText className="h-4 w-4" /> Blog
               </TabsTrigger>
             )}
-          </TabsList>
+          </ScrollableTabsList>
 
           {/* Overview Tab */}
           {(isAdmin || isSuperAdmin) && (

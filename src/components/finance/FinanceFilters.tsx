@@ -103,11 +103,11 @@ export function FinanceFilters({
   };
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm overflow-hidden">
       <CardContent className="py-3 px-3 sm:px-4">
-        <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-2 sm:gap-3">
           {/* Unit Filter */}
-          <div className="space-y-1 min-w-[140px] max-w-[200px]">
+          <div className="space-y-1 w-full sm:w-auto sm:min-w-[140px] sm:max-w-[200px]">
             <Label className="text-[10px] text-muted-foreground">Unidade</Label>
             <UnitSelector
               value={filters.unitId}
@@ -118,7 +118,7 @@ export function FinanceFilters({
 
           {/* Period Selector */}
           {showPeriodSelector && (
-            <div className="space-y-1 min-w-[130px] max-w-[180px]">
+            <div className="space-y-1 w-full sm:w-auto sm:min-w-[130px] sm:max-w-[180px]">
               <Label className="text-[10px] text-muted-foreground">Período</Label>
               <Select
                 value={filters.period}
@@ -141,7 +141,7 @@ export function FinanceFilters({
 
           {/* Date From */}
           {(filters.period === "custom" || !showPeriodSelector) && (
-            <div className="space-y-1 min-w-[120px] max-w-[150px]">
+            <div className="space-y-1 w-full sm:w-auto sm:min-w-[120px] sm:max-w-[150px]">
               <Label className="text-[10px] text-muted-foreground">De</Label>
               <Input
                 type="date"
@@ -154,7 +154,7 @@ export function FinanceFilters({
 
           {/* Date To */}
           {(filters.period === "custom" || !showPeriodSelector) && (
-            <div className="space-y-1 min-w-[120px] max-w-[150px]">
+            <div className="space-y-1 w-full sm:w-auto sm:min-w-[120px] sm:max-w-[150px]">
               <Label className="text-[10px] text-muted-foreground">Até</Label>
               <Input
                 type="date"

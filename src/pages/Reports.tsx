@@ -6,7 +6,8 @@ import { Building2, FileText, ShieldAlert, Users, Wallet } from 'lucide-react';
 import { AppLayout } from '@/components/AppLayout';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs';
 import { UnitSelector } from '@/components/finance/UnitSelector';
 import { ReportsAssetsSection } from '@/components/reports/ReportsAssetsSection';
 import { ReportsAuditSection } from '@/components/reports/ReportsAuditSection';
@@ -97,9 +98,7 @@ const Reports = () => {
 
         {/* Tab navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Scrollable tab list for mobile */}
-          <div className="w-full overflow-x-auto -mx-1 px-1 pb-1">
-            <TabsList className="inline-flex h-auto p-1 w-max min-w-full sm:w-full sm:grid sm:grid-cols-5 gap-1">
+          <ScrollableTabsList>
               <TabsTrigger
                 value="financeiro"
                 className="flex items-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -136,8 +135,7 @@ const Reports = () => {
                 <span className="hidden xs:inline">Fiscal/</span>
                 DIMOB
               </TabsTrigger>
-            </TabsList>
-          </div>
+          </ScrollableTabsList>
 
           {/* Tab content */}
           <TabsContent value="financeiro" className="mt-0">
