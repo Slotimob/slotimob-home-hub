@@ -22,6 +22,8 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { BlogImageUpload } from './BlogImageUpload';
+import { BlogFaqEditor, type FaqItem } from './BlogFaqEditor';
 
 interface BlogPost {
   id: string;
@@ -30,6 +32,7 @@ interface BlogPost {
   content: string;
   excerpt: string | null;
   featured_image: string | null;
+  featured_image_alt: string | null;
   category_id: string | null;
   author_id: string;
   seo_tags: Record<string, string>;
@@ -39,6 +42,7 @@ interface BlogPost {
   published_at: string | null;
   views_count: number;
   reading_time_min: number | null;
+  faqs: FaqItem[];
   created_at: string;
   updated_at: string;
 }
@@ -79,6 +83,7 @@ export function CockpitBlogTab() {
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
+  const [featuredImageAlt, setFeaturedImageAlt] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [geoLocation, setGeoLocation] = useState('');
   const [aiSummary, setAiSummary] = useState('');
@@ -86,6 +91,7 @@ export function CockpitBlogTab() {
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
   const [isPublished, setIsPublished] = useState(false);
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
 
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ['blog-posts-admin'],
@@ -95,7 +101,7 @@ export function CockpitBlogTab() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as BlogPost[];
+      return data as unknown as BlogPost[];
     },
   });
 
@@ -125,10 +131,12 @@ export function CockpitBlogTab() {
         content,
         excerpt: excerpt || null,
         featured_image: featuredImage || null,
+        featured_image_alt: featuredImageAlt || null,
         category_id: categoryId || null,
         geo_location: geoLocation || null,
         ai_summary: aiSummary || null,
         seo_tags,
+        faqs: faqs as any,
         is_published: publish,
         published_at: publish ? new Date().toISOString() : null,
         reading_time_min,
@@ -190,6 +198,7 @@ export function CockpitBlogTab() {
       setContent(post.content);
       setExcerpt(post.excerpt || '');
       setFeaturedImage(post.featured_image || '');
+      setFeaturedImageAlt(post.featured_image_alt || '');
       setCategoryId(post.category_id || '');
       setGeoLocation(post.geo_location || '');
       setAiSummary(post.ai_summary || '');
@@ -197,12 +206,13 @@ export function CockpitBlogTab() {
       setSeoDescription((post.seo_tags as Record<string, string>)?.description || '');
       setSeoKeywords((post.seo_tags as Record<string, string>)?.keywords || '');
       setIsPublished(post.is_published);
+      setFaqs(Array.isArray(post.faqs) ? post.faqs : []);
     } else {
       setEditingPost(null);
       setTitle(''); setSlug(''); setContent(''); setExcerpt('');
-      setFeaturedImage(''); setCategoryId(''); setGeoLocation('');
+      setFeaturedImage(''); setFeaturedImageAlt(''); setCategoryId(''); setGeoLocation('');
       setAiSummary(''); setSeoTitle(''); setSeoDescription('');
-      setSeoKeywords(''); setIsPublished(false);
+      setSeoKeywords(''); setIsPublished(false); setFaqs([]);
     }
     setEditorOpen(true);
   };
@@ -222,12 +232,15 @@ export function CockpitBlogTab() {
   // SEO score calculation
   const seoScore = (() => {
     let score = 0;
-    if (seoTitle && seoTitle.length <= 60) score += 25;
-    if (seoDescription && seoDescription.length <= 160) score += 25;
-    if (seoKeywords) score += 15;
-    if (excerpt) score += 15;
+    if (seoTitle && seoTitle.length <= 60) score += 20;
+    if (seoDescription && seoDescription.length <= 160) score += 20;
+    if (seoKeywords) score += 10;
+    if (excerpt) score += 10;
     if (featuredImage) score += 10;
-    if (geoLocation) score += 10;
+    if (featuredImageAlt) score += 10;
+    if (geoLocation) score += 5;
+    if (aiSummary) score += 5;
+    if (faqs.length > 0 && faqs.every(f => f.question && f.answer)) score += 10;
     return score;
   })();
 
@@ -289,7 +302,7 @@ export function CockpitBlogTab() {
                       </TableCell>
                       <TableCell>
                         {post.is_published ? (
-                          <Badge className="bg-success/10 text-success border-success/20 text-xs">
+                          <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs">
                             Publicado
                           </Badge>
                         ) : (
@@ -381,6 +394,9 @@ export function CockpitBlogTab() {
                   className="font-mono text-sm"
                 />
               </div>
+
+              {/* FAQ Editor */}
+              <BlogFaqEditor faqs={faqs} onChange={setFaqs} />
             </div>
 
             {/* Sidebar */}
@@ -390,15 +406,20 @@ export function CockpitBlogTab() {
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between mb-2">
                     <Label className="text-sm font-semibold">SEO Score</Label>
-                    <span className={`text-lg font-bold ${seoScore >= 70 ? 'text-secondary' : seoScore >= 40 ? 'text-warning' : 'text-destructive'}`}>
+                    <span className={`text-lg font-bold ${seoScore >= 70 ? 'text-emerald-600' : seoScore >= 40 ? 'text-amber-500' : 'text-destructive'}`}>
                       {seoScore}/100
                     </span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full transition-all ${seoScore >= 70 ? 'bg-secondary' : seoScore >= 40 ? 'bg-warning' : 'bg-destructive'}`}
+                      className={`h-2 rounded-full transition-all ${seoScore >= 70 ? 'bg-emerald-500' : seoScore >= 40 ? 'bg-amber-500' : 'bg-destructive'}`}
                       style={{ width: `${seoScore}%` }}
                     />
+                  </div>
+                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {!featuredImageAlt && <p>⚠ Adicione texto alt à imagem</p>}
+                    {faqs.length === 0 && <p>💡 Adicione FAQs para Rich Snippets</p>}
+                    {!aiSummary && <p>💡 Adicione resumo IA (TL;DR)</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -415,19 +436,21 @@ export function CockpitBlogTab() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Imagem Destacada (URL)</Label>
-                <Input value={featuredImage} onChange={(e) => setFeaturedImage(e.target.value)}
-                  placeholder="https://..." />
-                {featuredImage && (
-                  <img src={featuredImage} alt="Preview" className="w-full rounded-md mt-1 aspect-video object-cover" loading="lazy" />
-                )}
-              </div>
+              {/* Super Image Upload */}
+              <BlogImageUpload
+                value={featuredImage}
+                altText={featuredImageAlt}
+                onChange={setFeaturedImage}
+                onAltTextChange={setFeaturedImageAlt}
+              />
 
               <div className="space-y-2">
-                <Label className="flex items-center gap-1"><Globe className="h-3 w-3" /> GEO Location</Label>
+                <Label className="flex items-center gap-1"><Globe className="h-3 w-3" /> Regional Tag (GEO)</Label>
                 <Input value={geoLocation} onChange={(e) => setGeoLocation(e.target.value)}
-                  placeholder="Ex: São Paulo, SP" />
+                  placeholder="Ex: Curitiba, PR" />
+                <p className="text-xs text-muted-foreground">
+                  Usado para filtro regional e contentLocation no JSON-LD
+                </p>
               </div>
 
               <div className="border-t border-border pt-4 space-y-3">
