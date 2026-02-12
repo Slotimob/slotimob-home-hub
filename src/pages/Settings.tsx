@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { useSuperAdminAccess } from '@/hooks/useSuperAdminAccess';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import { SubscriptionManagement } from '@/components/settings/SubscriptionManage
 const Settings = () => {
   const { user, loading } = useAuth();
   const { isAdmin } = useAdminAccess();
+  const { isSuperAdmin } = useSuperAdminAccess();
   const { isAgent } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -579,8 +581,8 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Author Profile (E-E-A-T) */}
-        <Card>
+        {/* Author Profile (E-E-A-T) - Super Admin only */}
+        {isSuperAdmin && <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PenLine className="h-5 w-5" />
@@ -647,7 +649,7 @@ const Settings = () => {
               )}
             </Button>
           </CardContent>
-        </Card>
+        </Card>}
 
         {/* Security Section */}
         <Card>
