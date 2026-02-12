@@ -13,7 +13,8 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, FileText, Loader2, Scale, Shield } from 'lucide-react';
+import { Camera, FileText, Loader2, Scale, Shield, Linkedin, Instagram, PenLine } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { NotificationSettings } from '@/components/NotificationSettings';
 import { GlowSettings } from '@/components/GlowSettings';
 import { AppLayout } from '@/components/AppLayout';
@@ -35,11 +36,17 @@ const Settings = () => {
   const [creciUrl, setCreciUrl] = useState('');
   const [subscriptionPlan, setSubscriptionPlan] = useState('essencial');
   
+  const [bioMini, setBioMini] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [authorRole, setAuthorRole] = useState('');
+  
   const [uploading, setUploading] = useState(false);
   const [uploadingCreci, setUploadingCreci] = useState(false);
   const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [savingPhone, setSavingPhone] = useState(false);
+  const [savingAuthor, setSavingAuthor] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -72,6 +79,10 @@ const Settings = () => {
         setCreciUrl(data.creci_document_url || '');
         setTheme(data.theme_preference || 'light-purple');
         setSubscriptionPlan(data.subscription_plan || 'essencial');
+        setBioMini(data.bio_mini || '');
+        setLinkedinUrl(data.linkedin_url || '');
+        setInstagramUrl(data.instagram_url || '');
+        setAuthorRole(data.author_role || '');
       }
     } catch (error: any) {
       toast({
@@ -161,6 +172,36 @@ const Settings = () => {
       });
     } finally {
       setSavingPhone(false);
+    }
+  };
+
+  const updateAuthorProfile = async () => {
+    setSavingAuthor(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          bio_mini: bioMini || null,
+          linkedin_url: linkedinUrl || null,
+          instagram_url: instagramUrl || null,
+          author_role: authorRole || null,
+        })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Perfil de autor salvo!',
+        description: 'Seus dados serão exibidos nos artigos do blog.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingAuthor(false);
     }
   };
 
@@ -535,6 +576,76 @@ const Settings = () => {
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Author Profile (E-E-A-T) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PenLine className="h-5 w-5" />
+              Perfil de Autor
+            </CardTitle>
+            <CardDescription>
+              Dados exibidos nos artigos do blog para credibilidade (E-E-A-T)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="author-role">Cargo / Especialidade</Label>
+              <Input
+                id="author-role"
+                value={authorRole}
+                onChange={(e) => setAuthorRole(e.target.value)}
+                placeholder="Ex: CEO & Fundador, Especialista em Gestão Imobiliária"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio-mini">Mini Bio</Label>
+              <Textarea
+                id="bio-mini"
+                value={bioMini}
+                onChange={(e) => setBioMini(e.target.value)}
+                placeholder="Breve descrição profissional (2-3 frases)..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="linkedin-url" className="flex items-center gap-1.5">
+                <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+              </Label>
+              <Input
+                id="linkedin-url"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+                placeholder="https://linkedin.com/in/seu-perfil"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="instagram-url" className="flex items-center gap-1.5">
+                <Instagram className="h-3.5 w-3.5" /> Instagram
+              </Label>
+              <Input
+                id="instagram-url"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                placeholder="https://instagram.com/seu-perfil"
+              />
+            </div>
+
+            <Button onClick={updateAuthorProfile} disabled={savingAuthor}>
+              {savingAuthor ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Perfil de Autor'
+              )}
+            </Button>
           </CardContent>
         </Card>
 
