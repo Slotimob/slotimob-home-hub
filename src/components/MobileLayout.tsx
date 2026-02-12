@@ -9,7 +9,7 @@ interface MobileLayoutProps {
 export function MobileLayout({ children, className = '' }: MobileLayoutProps) {
   return (
     <>
-      <div className={`pb-16 md:pb-0 ${className}`}>
+      <div className={`pb-20 md:pb-0 ${className}`}>
         {children}
       </div>
       <BottomNavigation />

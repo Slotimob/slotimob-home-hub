@@ -1,29 +1,8 @@
 import { 
-  Home, 
-  Building2, 
-  Users, 
-  CalendarDays, 
   Menu, 
-  LayoutGrid, 
-  MessageCircle, 
-  FileText, 
-  Calculator, 
-  Settings,
   HelpCircle,
-  History,
-  LucideIcon,
-  Globe,
-  BarChart3,
-  Plug,
-  GraduationCap,
-  HomeIcon,
-  Filter,
   ChevronRight,
-  Wallet,
-  Receipt,
-  ArrowLeftRight,
-  HeartPulse,
-  TrendingUp
+  LucideIcon,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -49,116 +28,7 @@ import { SlotiLogo } from '@/components/SlotiLogo';
 import { NavLink } from '@/components/NavLink';
 import { useNotificationBadges } from '@/hooks/useNotificationBadges';
 import { Separator } from '@/components/ui/separator';
-
-interface MenuItem {
-  title: string;
-  url: string;
-  icon: LucideIcon;
-  badgeKey?: 'leads' | 'pipeline' | 'schedule' | 'whatsapp';
-}
-
-interface MenuGroup {
-  title: string;
-  icon: LucideIcon;
-  items: MenuItem[];
-}
-
-const mainTabs: MenuItem[] = [
-  { title: 'Home', url: '/dashboard', icon: Home },
-  { title: 'Ativos', url: '/asset-health', icon: Building2 },
-  { title: 'Financeiro', url: '/finance', icon: Wallet },
-  { title: 'Pipeline', url: '/pipeline', icon: Filter, badgeKey: 'pipeline' },
-  { title: 'Contatos', url: '/contacts', icon: Users, badgeKey: 'leads' },
-];
-
-const menuGroups: MenuGroup[] = [
-  {
-    title: 'Ativos',
-    icon: Building2,
-    items: [
-      { title: 'Gestão', url: '/asset-health', icon: HeartPulse },
-      { title: 'Empreendimentos', url: '/properties', icon: Building2 },
-      { title: 'Imóveis', url: '/real-estate', icon: HomeIcon },
-      { title: 'Unidades', url: '/units', icon: LayoutGrid },
-    ],
-  },
-  {
-    title: 'Contatos',
-    icon: Users,
-    items: [
-      { title: 'Proprietários', url: '/contacts/owners', icon: Users },
-      { title: 'Leads', url: '/contacts/leads', icon: Users, badgeKey: 'leads' },
-      { title: 'Empresas', url: '/contacts/companies', icon: Building2 },
-    ],
-  },
-  {
-    title: 'Financeiro',
-    icon: Wallet,
-    items: [
-      { title: 'Visão Geral', url: '/finance', icon: Wallet },
-      { title: 'DRE', url: '/finance/dre', icon: BarChart3 },
-      { title: 'Lançamentos', url: '/finance/transactions', icon: Receipt },
-      { title: 'Conciliação', url: '/finance/reconciliation', icon: ArrowLeftRight },
-      { title: 'Categorias', url: '/finance/categories', icon: Filter },
-    ],
-  },
-  {
-    title: 'Principal',
-    icon: Home,
-    items: [
-      { title: 'Dashboard', url: '/dashboard', icon: Home },
-      { title: 'Pipeline', url: '/pipeline', icon: Filter, badgeKey: 'pipeline' },
-      { title: 'Agenda', url: '/schedule', icon: CalendarDays, badgeKey: 'schedule' },
-    ],
-  },
-  {
-    title: 'Documentos',
-    icon: FileText,
-    items: [
-      { title: 'Meus Documentos', url: '/documents', icon: FileText },
-      { title: 'Modelos Padrão', url: '/documents/templates', icon: FileText },
-      { title: 'Histórico', url: '/documents/history', icon: History },
-    ],
-  },
-  {
-    title: 'Simulador',
-    icon: Calculator,
-    items: [
-      { title: 'Financiamento', url: '/simulator/financing', icon: Calculator },
-      { title: 'Taxas e IPTU', url: '/simulator/taxes', icon: Calculator },
-      { title: 'Retorno de Aluguel', url: '/rentability/yield', icon: TrendingUp },
-      { title: 'Payback', url: '/rentability/payback', icon: TrendingUp },
-      { title: 'Comparativos', url: '/simulator/comparison', icon: Calculator },
-    ],
-  },
-  {
-    title: 'Relatórios',
-    icon: BarChart3,
-    items: [
-      { title: 'Visão Geral', url: '/reports', icon: BarChart3 },
-      { title: 'Resumo Semanal', url: '/reports/weekly', icon: BarChart3 },
-      { title: 'Resumo Mensal', url: '/reports/monthly', icon: BarChart3 },
-    ],
-  },
-  {
-    title: 'Integrações',
-    icon: Plug,
-    items: [
-      { title: 'Conexões', url: '/integrations', icon: Plug },
-      { title: 'Portais', url: '/portals', icon: Globe },
-      { title: 'WhatsApp', url: '/whatsapp', icon: MessageCircle, badgeKey: 'whatsapp' },
-    ],
-  },
-  {
-    title: 'Outros',
-    icon: Settings,
-    items: [
-      { title: 'Treinamentos', url: '/training', icon: GraduationCap },
-      { title: 'Histórico', url: '/history', icon: History },
-      { title: 'Configurações', url: '/settings', icon: Settings },
-    ],
-  },
-];
+import { PRIMARY_TABS, NAV_GROUPS, type NavItem, type NavGroup } from '@/config/navigationItems';
 
 function Badge({ count }: { count: number }) {
   if (count === 0) return null;
@@ -181,14 +51,13 @@ export function BottomNavigation() {
     return location.pathname.startsWith(path);
   };
 
-  const isGroupActive = (items: MenuItem[]) => {
+  const isGroupActive = (items: NavItem[]) => {
     return items.some(item => isActive(item.url));
   };
 
-  // Initialize with groups that have active items open
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    menuGroups.forEach(group => {
+    NAV_GROUPS.forEach(group => {
       if (isGroupActive(group.items)) {
         initial[group.title] = true;
       }
@@ -202,7 +71,7 @@ export function BottomNavigation() {
     setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
   };
 
-  const handleGroupClick = (group: MenuGroup) => {
+  const handleGroupClick = (group: NavGroup) => {
     const firstItem = group.items[0];
     if (firstItem) {
       navigate(firstItem.url);
@@ -219,12 +88,12 @@ export function BottomNavigation() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t pb-[env(safe-area-inset-bottom)] md:hidden">
       <div className="flex items-center justify-around h-16">
-        {mainTabs.map((tab) => (
+        {PRIMARY_TABS.map((tab) => (
           <button
             key={tab.url}
             onClick={() => navigate(tab.url)}
             className={cn(
-              "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+              "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors min-h-[44px] min-w-[44px]",
               isActive(tab.url)
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
@@ -243,7 +112,7 @@ export function BottomNavigation() {
           <SheetTrigger asChild>
             <button
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors min-h-[44px] min-w-[44px]",
                 "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -260,7 +129,7 @@ export function BottomNavigation() {
             </SheetHeader>
             
             <div className="space-y-2 py-4">
-              {menuGroups.map((group, groupIndex) => {
+              {NAV_GROUPS.map((group, groupIndex) => {
                 const GroupIcon = group.icon;
                 const isOpen = openGroups[group.title] ?? isGroupActive(group.items);
                 
@@ -271,7 +140,7 @@ export function BottomNavigation() {
                     >
                       <div className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-muted transition-colors">
                         <button
-                          className="flex items-center gap-3 flex-1"
+                          className="flex items-center gap-3 flex-1 min-h-[44px]"
                           onClick={() => handleGroupClick(group)}
                         >
                           <GroupIcon className="h-5 w-5 text-muted-foreground" />
@@ -280,7 +149,7 @@ export function BottomNavigation() {
                         <CollapsibleTrigger asChild>
                           <button
                             onClick={(e) => toggleGroup(group.title, e)}
-                            className="p-1 hover:bg-muted-foreground/10 rounded"
+                            className="p-2 hover:bg-muted-foreground/10 rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                           >
                             <ChevronRight 
                               className={cn(
@@ -298,7 +167,7 @@ export function BottomNavigation() {
                               key={item.url}
                               to={item.url}
                               className={cn(
-                                "relative flex items-center gap-3 p-2.5 rounded-lg transition-colors",
+                                "relative flex items-center gap-3 p-3 rounded-lg transition-colors min-h-[44px]",
                                 "hover:bg-muted text-sm"
                               )}
                               activeClassName="bg-primary/10 text-primary font-medium"
@@ -314,7 +183,7 @@ export function BottomNavigation() {
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
-                    {groupIndex < menuGroups.length - 1 && (
+                    {groupIndex < NAV_GROUPS.length - 1 && (
                       <Separator className="mt-2" />
                     )}
                   </div>
@@ -322,7 +191,7 @@ export function BottomNavigation() {
               })}
             </div>
             
-            {/* Help button with legend */}
+            {/* Help button */}
             <div className="absolute bottom-6 right-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
               <Popover>
                 <PopoverTrigger asChild>
@@ -333,7 +202,7 @@ export function BottomNavigation() {
                 <PopoverContent side="top" align="end" className="w-64 p-3 max-h-[50vh] overflow-y-auto">
                   <p className="text-sm font-medium mb-2 text-foreground">Legenda dos ícones:</p>
                   <div className="space-y-3">
-                    {menuGroups.map((group) => (
+                    {NAV_GROUPS.map((group) => (
                       <div key={group.title}>
                         <p className="text-xs font-semibold text-muted-foreground mb-1">{group.title}</p>
                         <div className="space-y-1">

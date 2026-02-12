@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs';
 import { FinancingCalculator } from '@/components/FinancingCalculator';
 import { PropertyComparison } from '@/components/PropertyComparison';
 import { TaxCalculator } from '@/components/TaxCalculator';
@@ -30,11 +31,11 @@ const Simulator = () => {
   return (
     <AppLayout title="Simulador Financeiro">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <ScrollableTabsList>
           <TabsTrigger value="financing">Financiamento</TabsTrigger>
           <TabsTrigger value="taxes">Rentabilidade</TabsTrigger>
           <TabsTrigger value="comparison">Vender vs Alugar</TabsTrigger>
-        </TabsList>
+        </ScrollableTabsList>
 
         <TabsContent value="financing" className="mt-6">
           <Card>

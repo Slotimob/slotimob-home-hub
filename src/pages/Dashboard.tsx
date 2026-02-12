@@ -116,7 +116,7 @@ const Dashboard = () => {
         />
       )}
 
-      <div className="min-h-[100dvh] flex w-full bg-gradient-to-br from-primary/5 via-background to-accent/10 pb-16 md:pb-0">
+      <div className="min-h-[100dvh] flex w-full bg-gradient-to-br from-primary/5 via-background to-accent/10 pb-20 md:pb-0">
         <AppSidebar />
 
         <div className="flex-1 flex flex-col">
