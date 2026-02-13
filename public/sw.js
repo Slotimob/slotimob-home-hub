@@ -1,31 +1,6 @@
-// Service Worker for Push Notifications
-// Note: The PWA/Workbox service worker handles caching separately.
-// This SW only handles push notifications.
-
-self.addEventListener('install', function(event) {
-  console.log('Service Worker installing.');
-  // Clean up old caches on install
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          // Remove any manually created caches (keep workbox ones managed by workbox)
-          if (!cacheName.startsWith('workbox-')) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(function() {
-      return self.skipWaiting();
-    })
-  );
-});
-
-self.addEventListener('activate', function(event) {
-  console.log('Service Worker activated.');
-  event.waitUntil(self.clients.claim());
-});
+// Push Notification Handler
+// This file is loaded by the Workbox-generated SW via importScripts.
+// It ONLY handles push notifications — all caching is managed by Workbox.
 
 self.addEventListener('push', function(event) {
   var data = {
