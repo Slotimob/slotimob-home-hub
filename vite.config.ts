@@ -54,16 +54,36 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/api/, /^\/sw\.js/],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            // Cache Supabase data requests BUT exclude auth endpoints
+            urlPattern: ({ url }) => {
+              return (
+                url.hostname.endsWith('.supabase.co') &&
+                !url.pathname.startsWith('/auth/') &&
+                !url.pathname.includes('/token') &&
+                !url.pathname.includes('/session')
+              );
+            },
             handler: "NetworkFirst",
             options: {
-              cacheName: "supabase-cache",
+              cacheName: "supabase-data-cache",
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60,
+                maxAgeSeconds: 30 * 60, // 30 min instead of 1 hour
               },
               networkTimeoutSeconds: 5,
             },
+          },
+          {
+            // Auth requests: always network-only, never cache
+            urlPattern: ({ url }) => {
+              return (
+                url.hostname.endsWith('.supabase.co') &&
+                (url.pathname.startsWith('/auth/') ||
+                 url.pathname.includes('/token') ||
+                 url.pathname.includes('/session'))
+              );
+            },
+            handler: "NetworkOnly",
           },
         ],
       },
