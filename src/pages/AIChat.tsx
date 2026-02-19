@@ -106,15 +106,47 @@ export default function AIChat() {
         return;
       }
 
-      const data = await resp.json();
-      const assistantContent = data.content || '';
+      // Stream SSE response
+      const reader = resp.body?.getReader();
+      if (!reader) { setIsLoading(false); return; }
 
-      if (assistantContent) {
-        setMessages(prev => [...prev, { role: 'assistant', content: assistantContent }]);
-        saveMessage('assistant', assistantContent);
+      const decoder = new TextDecoder();
+      let assistantSoFar = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim() || !line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(payload);
+            if (parsed.text) {
+              assistantSoFar += parsed.text;
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.role === 'assistant' && !last.id) {
+                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
+                }
+                return [...prev, { role: 'assistant', content: assistantSoFar }];
+              });
+            }
+          } catch { /* skip */ }
+        }
       }
 
-      // Refresh credits after response
+      if (assistantSoFar) {
+        saveMessage('assistant', assistantSoFar);
+      }
+
       refetchCredits();
     } catch (err) {
       console.error('Chat error:', err);

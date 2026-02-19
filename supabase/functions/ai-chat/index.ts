@@ -6,6 +6,58 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function deductCredits(
+  serviceClient: any,
+  userId: string,
+  consumedCredits: number,
+  creditsData: any
+) {
+  try {
+    const planRemaining = creditsData?.remaining ?? 0;
+
+    if (consumedCredits <= planRemaining) {
+      await serviceClient
+        .from("subscriptions")
+        .update({ ai_credits_used: (creditsData?.used ?? 0) + consumedCredits })
+        .eq("user_id", userId);
+    } else {
+      const fromPlan = planRemaining;
+      const fromBonus = consumedCredits - fromPlan;
+
+      if (fromPlan > 0) {
+        await serviceClient
+          .from("subscriptions")
+          .update({ ai_credits_used: creditsData?.limit ?? 0 })
+          .eq("user_id", userId);
+      }
+
+      if (fromBonus > 0) {
+        let remaining = fromBonus;
+        const { data: bonusPacks } = await serviceClient
+          .from("ai_credits")
+          .select("id, credits_remaining")
+          .eq("broker_id", userId)
+          .gt("credits_remaining", 0)
+          .order("created_at", { ascending: true });
+
+        if (bonusPacks) {
+          for (const pack of bonusPacks) {
+            if (remaining <= 0) break;
+            const deduct = Math.min(remaining, pack.credits_remaining);
+            await serviceClient
+              .from("ai_credits")
+              .update({ credits_remaining: pack.credits_remaining - deduct })
+              .eq("id", pack.id);
+            remaining -= deduct;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error deducting credits:", err);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,22 +90,19 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub;
 
-    // Service client for checks
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check subscription: must be Pro or Business
+    // Check subscription
     const { data: planData } = await serviceClient.rpc("get_user_plan_features", {
       p_user_id: userId,
     });
-
     const plan = (planData as any)?.plan || "free";
     const features = (planData as any)?.features;
     const aiChatEnabled = features?.ai_chat === true;
 
-    // Check trial status for free users
     let trialActive = false;
     if (plan === "free") {
       const { data: trialData } = await serviceClient.rpc("get_user_trial_status", {
@@ -69,7 +118,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check member permissions (if invited user)
+    // Check member permissions
     const { data: membership } = await serviceClient
       .from("organization_members")
       .select("permissions, is_active")
@@ -87,14 +136,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check AI credits balance
+    // Check AI credits
     const { data: creditsData } = await serviceClient.rpc("get_ai_credits_balance", {
       p_user_id: userId,
     });
 
     const totalAvailable = (creditsData as any)?.total_available ?? 0;
-
-    // Block if no credits at all (plan + bonus)
     if (totalAvailable <= 0 && !trialActive) {
       return new Response(
         JSON.stringify({ error: "Saldo de Créditos IA esgotado. Recarregue no seu painel." }),
@@ -104,7 +151,6 @@ Deno.serve(async (req) => {
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
-      console.error("ANTHROPIC_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "Serviço de IA não configurado." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -112,7 +158,6 @@ Deno.serve(async (req) => {
     }
 
     const { messages } = await req.json();
-
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(
         JSON.stringify({ error: "Mensagens inválidas." }),
@@ -120,7 +165,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate messages
     const validatedMessages = messages
       .filter((m: any) => m.role && m.content && typeof m.content === "string")
       .map((m: any) => ({
@@ -128,7 +172,7 @@ Deno.serve(async (req) => {
         content: m.content.slice(0, 10000),
       }));
 
-    // Call Anthropic WITHOUT streaming so we can capture usage
+    // Call Anthropic WITH streaming
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -149,104 +193,104 @@ Deno.serve(async (req) => {
 
 Seja conciso, profissional e útil. Responda sempre em português brasileiro.`,
         messages: validatedMessages,
-        stream: false,
+        stream: true,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Claude API error:", response.status, errorText);
-
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
       return new Response(
         JSON.stringify({ error: "Erro ao processar sua mensagem." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const result = await response.json();
+    // Stream SSE to the client, track tokens from events
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let inputTokens = 0;
+    let outputTokens = 0;
 
-    // Calculate consumed credits from usage
-    const usage = result.usage;
-    const consumedTokens = (usage?.input_tokens || 0) + (usage?.output_tokens || 0);
-    const consumedCredits = Math.ceil(consumedTokens / 1000);
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        let buffer = "";
 
-    // Deduct credits: first from plan quota, then from bonus
-    const planRemaining = (creditsData as any)?.remaining ?? 0;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-    if (consumedCredits <= planRemaining) {
-      // All from plan quota
-      await serviceClient
-        .from("subscriptions")
-        .update({ ai_credits_used: ((creditsData as any)?.used ?? 0) + consumedCredits })
-        .eq("user_id", userId);
-    } else {
-      // Use remaining plan credits + bonus
-      const fromPlan = planRemaining;
-      const fromBonus = consumedCredits - fromPlan;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
 
-      if (fromPlan > 0) {
-        await serviceClient
-          .from("subscriptions")
-          .update({ ai_credits_used: ((creditsData as any)?.limit ?? 0) })
-          .eq("user_id", userId);
-      }
+            for (const line of lines) {
+              if (!line.trim() || line.startsWith(":")) continue;
 
-      // Deduct from bonus credits (FIFO from ai_credits table)
-      if (fromBonus > 0) {
-        let remaining = fromBonus;
-        const { data: bonusPacks } = await serviceClient
-          .from("ai_credits")
-          .select("id, credits_remaining")
-          .eq("broker_id", userId)
-          .gt("credits_remaining", 0)
-          .order("created_at", { ascending: true });
+              if (line.startsWith("data: ")) {
+                const jsonStr = line.slice(6).trim();
+                if (!jsonStr || jsonStr === "[DONE]") continue;
 
-        if (bonusPacks) {
-          for (const pack of bonusPacks) {
-            if (remaining <= 0) break;
-            const deduct = Math.min(remaining, pack.credits_remaining);
-            await serviceClient
-              .from("ai_credits")
-              .update({ credits_remaining: pack.credits_remaining - deduct })
-              .eq("id", pack.id);
-            remaining -= deduct;
+                try {
+                  const event = JSON.parse(jsonStr);
+
+                  // Track input tokens from message_start
+                  if (event.type === "message_start" && event.message?.usage) {
+                    inputTokens = event.message.usage.input_tokens || 0;
+                  }
+
+                  // Track output tokens from message_delta
+                  if (event.type === "message_delta" && event.usage) {
+                    outputTokens = event.usage.output_tokens || 0;
+                  }
+
+                  // Forward text deltas to the client
+                  if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
+                    controller.enqueue(
+                      encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`)
+                    );
+                  }
+                } catch {
+                  // skip malformed JSON
+                }
+              }
+            }
           }
-        }
-      }
-    }
 
-    // Get updated balance
-    const { data: updatedCredits } = await serviceClient.rpc("get_ai_credits_balance", {
-      p_user_id: userId,
+          // Send done signal
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        } catch (err) {
+          console.error("Stream processing error:", err);
+          controller.error(err);
+        }
+
+        // Background: deduct credits after stream ends
+        const consumedTokens = inputTokens + outputTokens;
+        const consumedCredits = Math.ceil(consumedTokens / 1000);
+
+        if (consumedCredits > 0) {
+          deductCredits(serviceClient, userId, consumedCredits, creditsData as any);
+        }
+      },
     });
 
-    // Extract assistant text
-    const assistantText = result.content
-      ?.filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("") || "";
-
-    return new Response(
-      JSON.stringify({
-        content: assistantText,
-        credits: updatedCredits,
-        usage: {
-          input_tokens: usage?.input_tokens || 0,
-          output_tokens: usage?.output_tokens || 0,
-          credits_consumed: consumedCredits,
-        },
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (err) {
     console.error("AI chat error:", err);
     return new Response(
