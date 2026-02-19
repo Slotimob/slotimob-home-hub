@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Send, Bot, User, Trash2, Loader2, Sparkles, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
 
 interface ChatMessage {
@@ -290,13 +292,38 @@ export default function AIChat() {
               )}
               <div
                 className={cn(
-                  'max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap',
+                  'max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
                   msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground rounded-br-md'
-                    : 'bg-muted text-foreground rounded-bl-md'
+                    ? 'bg-primary text-primary-foreground rounded-br-md whitespace-pre-wrap'
+                    : 'bg-muted text-foreground rounded-bl-md prose prose-sm dark:prose-invert max-w-none'
                 )}
               >
-                {msg.content}
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      h1: ({ children }) => <h1 className="text-lg font-bold mt-3 mb-1">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-base font-semibold mt-2.5 mb-1">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-0.5">{children}</h3>,
+                      p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc list-inside mb-1.5 space-y-0.5">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal list-inside mb-1.5 space-y-0.5">{children}</ol>,
+                      li: ({ children }) => <li className="text-sm">{children}</li>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      code: ({ children, className }) => {
+                        const isBlock = className?.includes('language-');
+                        return isBlock
+                          ? <code className="block bg-black/10 dark:bg-white/10 rounded p-2 my-1.5 text-xs overflow-x-auto whitespace-pre">{children}</code>
+                          : <code className="bg-black/10 dark:bg-white/10 rounded px-1 py-0.5 text-xs">{children}</code>;
+                      },
+                      table: ({ children }) => <div className="overflow-x-auto my-1.5"><table className="min-w-full text-xs border-collapse">{children}</table></div>,
+                      th: ({ children }) => <th className="border border-border px-2 py-1 bg-muted font-medium text-left">{children}</th>,
+                      td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                ) : msg.content}
               </div>
               {msg.role === 'user' && (
                 <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0 mt-1">
