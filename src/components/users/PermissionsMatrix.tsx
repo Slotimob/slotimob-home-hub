@@ -49,6 +49,13 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       { key: 'delete', label: 'Excluir modelos' },
     ],
   },
+  {
+    key: 'chat',
+    label: 'Chat IA',
+    actions: [
+      { key: 'use', label: 'Usar chat IA' },
+    ],
+  },
 ];
 
 interface PermissionsMatrixProps {
