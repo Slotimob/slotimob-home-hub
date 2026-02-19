@@ -172,32 +172,34 @@ Deno.serve(async (req) => {
         content: m.content.slice(0, 10000),
       }));
 
-    // RAG: Fetch user's units with property data via JOIN for tenant isolation
+    // RAG: Fetch user's units using authenticated client (RLS via JWT)
     let unitsData: any[] = [];
     try {
-      const { data, error } = await supabase
+      const { data, error: ragError } = await supabase
         .from("units")
-        .select("id, title, price, status, area, bedrooms, bathrooms, parking_spots, properties!inner(title, city, neighborhood, state, broker_id)")
-        .order("updated_at", { ascending: false })
+        .select(`
+          id, price, bedrooms, bathrooms, area, city, neighborhood, unit_number, status,
+          properties ( name )
+        `)
+        .eq("broker_id", userId)
+        .eq("status", "available")
+        .order("created_at", { ascending: false })
         .limit(20);
 
       console.log("RAG Units Found:", data?.length ?? 0);
-      if (error) console.error("RAG Error:", JSON.stringify(error));
+      if (ragError) console.error("RAG Error:", JSON.stringify(ragError));
 
       if (data && data.length > 0) {
         unitsData = data.map((u: any) => ({
           id: u.id,
-          unidade: u.title,
+          numero: u.unit_number,
           preco: u.price,
-          status: u.status,
           area_m2: u.area,
           quartos: u.bedrooms,
           banheiros: u.bathrooms,
-          vagas: u.parking_spots,
-          empreendimento: u.properties?.title,
-          cidade: u.properties?.city,
-          bairro: u.properties?.neighborhood,
-          estado: u.properties?.state,
+          cidade: u.city,
+          bairro: u.neighborhood,
+          empreendimento: u.properties?.name,
         }));
       }
     } catch (err) {
