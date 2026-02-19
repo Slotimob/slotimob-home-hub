@@ -83,8 +83,8 @@ const TABLE_ICONS: Record<string, any> = {
 };
 
 const IGNORED_FIELDS = new Set([
-  'id', 'broker_id', 'created_at', 'updated_at', 'metadata',
-  'user_agent', 'ip_address', 'assigned_user_id',
+  'id', 'broker_id', 'created_at', 'updated_at', 'deleted_at',
+  'metadata', 'user_agent', 'ip_address', 'tenant_id',
 ]);
 
 const FIELD_LABELS: Record<string, string> = {
@@ -92,16 +92,23 @@ const FIELD_LABELS: Record<string, string> = {
   title: 'Título',
   status: 'Status',
   stage: 'Etapa',
+  pipeline_stage: 'Etapa',
   price: 'Preço',
   rent_amount: 'Aluguel',
   estimated_value: 'Valor estimado',
+  estimated_commission: 'Comissão estimada',
   email: 'Email',
   phone: 'Telefone',
+  whatsapp: 'WhatsApp',
   city: 'Cidade',
   neighborhood: 'Bairro',
+  state: 'Estado',
+  address: 'Endereço',
   unit_number: 'Nº Unidade',
   bedrooms: 'Quartos',
+  bathrooms: 'Banheiros',
   area: 'Área',
+  parking_spots: 'Vagas',
   description: 'Descrição',
   notes: 'Notas',
   temperature: 'Temperatura',
@@ -109,27 +116,94 @@ const FIELD_LABELS: Record<string, string> = {
   amount: 'Valor',
   type: 'Tipo',
   due_date: 'Vencimento',
+  paid_date: 'Data pagamento',
+  transaction_date: 'Data transação',
   probability: 'Probabilidade',
+  expected_close_date: 'Previsão fechamento',
+  business_type: 'Tipo negócio',
+  guarantee_type: 'Tipo garantia',
+  contract_status: 'Status contrato',
+  signature_status: 'Status assinatura',
+  loss_reason: 'Motivo perda',
+  origin: 'Origem',
+  lead_type: 'Tipo lead',
+  payment_method: 'Forma pagamento',
+  document_type: 'Tipo documento',
+  adjustment_index: 'Índice reajuste',
+  admin_fee_percentage: 'Taxa administração',
+  deposit_amount: 'Valor caução',
+  due_day: 'Dia vencimento',
+  categories: 'Categorias',
+  initial_task: 'Tarefa inicial',
+};
+
+const ENUM_TRANSLATIONS: Record<string, string> = {
+  new_lead: 'Novo Lead',
+  in_contact: 'Em Contato',
+  scheduling: 'Agendamento',
+  visit_done: 'Visita Realizada',
+  proposal: 'Proposta',
+  negotiation: 'Negociação',
+  won: 'Ganho',
+  lost: 'Perdido',
+  available: 'Disponível',
+  sold: 'Vendido',
+  rented: 'Alugado',
+  reserved: 'Reservado',
+  unavailable: 'Indisponível',
+  high: 'Alta',
+  medium: 'Média',
+  low: 'Baixa',
+  hot: 'Quente',
+  warm: 'Morno',
+  cold: 'Frio',
+  sale: 'Venda',
+  rent: 'Locação',
+  income: 'Receita',
+  expense: 'Despesa',
+  pending: 'Pendente',
+  paid: 'Pago',
+  overdue: 'Atrasado',
+  cancelled: 'Cancelado',
+  active: 'Ativo',
+  inactive: 'Inativo',
+  terminated: 'Encerrado',
+  signed: 'Assinado',
+  caucao: 'Caução',
+  fiador: 'Fiador',
+  seguro_fianca: 'Seguro Fiança',
+  lead: 'Lead',
+  owner: 'Proprietário',
+  tenant: 'Inquilino',
 };
 
 const ITEMS_PER_PAGE = 30;
 
-// ── Humanization helpers ───────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────
+
+function shouldIgnoreField(key: string): boolean {
+  if (IGNORED_FIELDS.has(key)) return true;
+  if (key.endsWith('_id')) return true;
+  return false;
+}
+
+function translateValue(val: any): string {
+  if (val === null || val === undefined || val === '') return '—';
+  if (typeof val === 'boolean') return val ? 'Sim' : 'Não';
+  if (typeof val === 'number') {
+    if (val >= 100) return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return String(val);
+  }
+  if (typeof val === 'object') return '—';
+  const str = String(val);
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) return '—';
+  return ENUM_TRANSLATIONS[str] || str;
+}
 
 function getRecordName(log: AuditLog): string {
   const data = log.new_data || log.old_data;
   if (!data) return '';
   return data.name || data.title || (data.unit_number ? `Unidade ${data.unit_number}` : '') || data.description?.slice(0, 40) || '';
-}
-
-function formatValue(val: any): string {
-  if (val === null || val === undefined) return '—';
-  if (typeof val === 'number') {
-    if (val >= 100) return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    return String(val);
-  }
-  if (typeof val === 'boolean') return val ? 'Sim' : 'Não';
-  return String(val);
 }
 
 function getChangedFields(log: AuditLog): { label: string; from: string; to: string }[] {
@@ -139,13 +213,14 @@ function getChangedFields(log: AuditLog): { label: string; from: string; to: str
   const changes: { label: string; from: string; to: string }[] = [];
 
   for (const key of Object.keys(newD)) {
-    if (IGNORED_FIELDS.has(key)) continue;
+    if (shouldIgnoreField(key)) continue;
+    const label = FIELD_LABELS[key];
+    if (!label) continue;
     if (JSON.stringify(oldD[key]) !== JSON.stringify(newD[key])) {
-      changes.push({
-        label: FIELD_LABELS[key] || key,
-        from: formatValue(oldD[key]),
-        to: formatValue(newD[key]),
-      });
+      const from = translateValue(oldD[key]);
+      const to = translateValue(newD[key]);
+      if (from === to || (from === '—' && to === '—')) continue;
+      changes.push({ label, from, to });
     }
   }
   return changes.slice(0, 6);
