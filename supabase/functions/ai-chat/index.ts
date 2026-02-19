@@ -172,20 +172,33 @@ Deno.serve(async (req) => {
         content: m.content.slice(0, 10000),
       }));
 
-    // RAG: Fetch user's units using their JWT for tenant isolation
+    // RAG: Fetch user's units with property data via JOIN for tenant isolation
     let unitsData: any[] = [];
     try {
       const { data, error } = await supabase
         .from("units")
-        .select("id, title, price, status, city, neighborhood, area, bedrooms, bathrooms, parking_spots")
+        .select("id, title, price, status, area, bedrooms, bathrooms, parking_spots, properties!inner(title, city, neighborhood, state, broker_id)")
         .order("updated_at", { ascending: false })
         .limit(20);
 
-      console.log("RAG units count:", data?.length ?? 0);
-      if (error) console.error("RAG Error:", error);
+      console.log("RAG Units Found:", data?.length ?? 0);
+      if (error) console.error("RAG Error:", JSON.stringify(error));
 
       if (data && data.length > 0) {
-        unitsData = data;
+        unitsData = data.map((u: any) => ({
+          id: u.id,
+          unidade: u.title,
+          preco: u.price,
+          status: u.status,
+          area_m2: u.area,
+          quartos: u.bedrooms,
+          banheiros: u.bathrooms,
+          vagas: u.parking_spots,
+          empreendimento: u.properties?.title,
+          cidade: u.properties?.city,
+          bairro: u.properties?.neighborhood,
+          estado: u.properties?.state,
+        }));
       }
     } catch (err) {
       console.error("RAG fetch exception:", err);
