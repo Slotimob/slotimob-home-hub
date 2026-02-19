@@ -78,6 +78,7 @@ export function AppSidebar() {
 
   // Build menu items with role/plan gating
   const menuItems: MenuItem[] = [
+    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'] },
     { title: 'Dashboard', url: '/dashboard', icon: Home },
     { 
       title: 'Ativos', 
@@ -123,7 +124,6 @@ export function AppSidebar() {
     { title: 'Integrações', url: '/integrations', icon: Plug },
     { title: 'Treinamentos', url: '/training', icon: GraduationCap },
     { title: 'Usuários', url: '/users', icon: UsersRound, ownerOnly: true, hiddenOnPlan: ['essencial', 'free'] },
-    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'] },
     { title: 'Histórico', url: '/history', icon: History },
   ];
 
