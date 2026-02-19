@@ -15,6 +15,7 @@ import {
   Wallet,
   UsersRound,
   Shield,
+  Sparkles,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -122,6 +123,7 @@ export function AppSidebar() {
     { title: 'Integrações', url: '/integrations', icon: Plug },
     { title: 'Treinamentos', url: '/training', icon: GraduationCap },
     { title: 'Usuários', url: '/users', icon: UsersRound, ownerOnly: true, hiddenOnPlan: ['essencial', 'free'] },
+    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'] },
     { title: 'Histórico', url: '/history', icon: History },
   ];
 

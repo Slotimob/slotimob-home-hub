@@ -48,6 +48,7 @@ import Users from "./pages/Users";
 import AdminCockpit from "./pages/AdminCockpit";
 import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
+import AIChat from "./pages/AIChat";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,7 @@ const App = () => (
             <Route path="/admin/terms" element={<TermsAdmin />} />
             <Route path="/admin/users" element={<UsersAdmin />} />
             <Route path="/admin/cockpit" element={<AdminCockpit />} />
+            <Route path="/ai-chat" element={<AIChat />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
