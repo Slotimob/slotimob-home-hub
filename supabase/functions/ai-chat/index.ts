@@ -172,6 +172,34 @@ Deno.serve(async (req) => {
         content: m.content.slice(0, 10000),
       }));
 
+    // RAG: Fetch user's units using their JWT for tenant isolation
+    let portfolioContext = "";
+    try {
+      const { data: units } = await supabase
+        .from("units")
+        .select("id, title, price, status, city, neighborhood, area")
+        .order("updated_at", { ascending: false })
+        .limit(20);
+
+      if (units && units.length > 0) {
+        portfolioContext = `\n\nDados da carteira de imóveis do corretor (${units.length} imóveis mais recentes):\n${JSON.stringify(units)}`;
+      }
+    } catch (err) {
+      console.error("Error fetching units for RAG:", err);
+    }
+
+    const systemPrompt = `Você é o assistente IA da SlotiMob, uma plataforma de gestão imobiliária. Ajude corretores com:
+- Dúvidas sobre gestão de imóveis, contratos e locações
+- Cálculos financeiros (aluguel, taxas, comissões)
+- Estratégias de vendas e negociação
+- Redação de textos para anúncios de imóveis
+- Dicas de atendimento ao cliente
+- Análises de mercado imobiliário
+
+Se o usuário perguntar sobre imóveis, propriedades ou carteira, use os dados abaixo para responder de forma precisa. Se a pergunta estiver fora desse escopo, responda normalmente.
+
+Seja conciso, profissional e útil. Responda sempre em português brasileiro. Use formatação Markdown (negrito, listas, títulos) para organizar suas respostas.${portfolioContext}`;
+
     // Call Anthropic WITH streaming
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -183,15 +211,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 4096,
-        system: `Você é o assistente IA da SlotiMob, uma plataforma de gestão imobiliária. Ajude corretores com:
-- Dúvidas sobre gestão de imóveis, contratos e locações
-- Cálculos financeiros (aluguel, taxas, comissões)
-- Estratégias de vendas e negociação
-- Redação de textos para anúncios de imóveis
-- Dicas de atendimento ao cliente
-- Análises de mercado imobiliário
-
-Seja conciso, profissional e útil. Responda sempre em português brasileiro.`,
+        system: systemPrompt,
         messages: validatedMessages,
         stream: true,
       }),
