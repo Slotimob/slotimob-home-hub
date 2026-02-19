@@ -2,12 +2,13 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAICredits } from '@/hooks/useAICredits';
 import { supabase } from '@/integrations/supabase/client';
 import { Send, Bot, User, Trash2, Loader2, Sparkles, Zap } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ export default function AIChat() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isOwner } = usePermissions();
+  const { credits, isLoading: isLoadingCredits, refetch: refetchCredits } = useAICredits();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -87,8 +89,6 @@ export default function AIChat() {
       content: m.content,
     }));
 
-    let assistantContent = '';
-
     try {
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
@@ -106,50 +106,16 @@ export default function AIChat() {
         return;
       }
 
-      if (!resp.body) throw new Error('No response body');
+      const data = await resp.json();
+      const assistantContent = data.content || '';
 
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIdx: number;
-        while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, newlineIdx);
-          buffer = buffer.slice(newlineIdx + 1);
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line.startsWith('data: ') || line.trim() === '') continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            // Claude SSE format
-            if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-              assistantContent += parsed.delta.text;
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === 'assistant') {
-                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-                }
-                return [...prev, { role: 'assistant', content: assistantContent }];
-              });
-            }
-          } catch {
-            // partial JSON, skip
-          }
-        }
-      }
-
-      // Save assistant message
       if (assistantContent) {
+        setMessages(prev => [...prev, { role: 'assistant', content: assistantContent }]);
         saveMessage('assistant', assistantContent);
       }
+
+      // Refresh credits after response
+      refetchCredits();
     } catch (err) {
       console.error('Chat error:', err);
       toast.error('Erro de conexão. Tente novamente.');
@@ -178,6 +144,51 @@ export default function AIChat() {
     }
   };
 
+  const renderCreditsBadge = () => {
+    if (isLoadingCredits) {
+      return <Skeleton className="h-6 w-20 rounded-full" />;
+    }
+
+    if (!credits) return null;
+
+    const used = credits.used;
+    const total = credits.limit;
+    const pct = total > 0 ? Math.round((used / total) * 100) : 100;
+    const remaining = credits.remaining + credits.bonus_credits;
+    const badgeColor = pct > 90 ? 'border-red-500/50 text-red-500 bg-red-500/5' : pct >= 70 ? 'border-amber-500/50 text-amber-500 bg-amber-500/5' : 'border-emerald-500/50 text-emerald-500 bg-emerald-500/5';
+
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className={cn('flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-colors hover:opacity-80', badgeColor)}>
+            <Zap className="h-3 w-3" />
+            {remaining} / {total + credits.bonus_credits}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 text-sm" side="bottom" align="end">
+          <div className="space-y-3">
+            <p className="text-muted-foreground leading-relaxed">
+              Cada interação consome créditos com base no tamanho da pergunta e da resposta. Você ganha {total} créditos todo mês.
+              {credits.bonus_credits > 0 && (
+                <span className="block mt-1 font-medium text-foreground">
+                  + {credits.bonus_credits} créditos bônus comprados
+                </span>
+              )}
+            </p>
+            <Button
+              size="sm"
+              className="w-full gap-2"
+              onClick={() => navigate('/settings')}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Fazer Recarga de Créditos
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
   // For members: wrap in PermissionGate; for owners: just show
   const chatContent = (
     <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-5rem)]">
@@ -193,38 +204,7 @@ export default function AIChat() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* AI Credits Badge */}
-          {(() => {
-            const used = 120;
-            const total = 250;
-            const pct = Math.round((used / total) * 100);
-            const badgeColor = pct > 90 ? 'border-red-500/50 text-red-500 bg-red-500/5' : pct >= 70 ? 'border-amber-500/50 text-amber-500 bg-amber-500/5' : 'border-emerald-500/50 text-emerald-500 bg-emerald-500/5';
-            return (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className={cn('flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-colors hover:opacity-80', badgeColor)}>
-                    <Zap className="h-3 w-3" />
-                    {used} / {total}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 text-sm" side="bottom" align="end">
-                  <div className="space-y-3">
-                    <p className="text-muted-foreground leading-relaxed">
-                      Cada interação consome créditos com base no tamanho da pergunta e dos dados do imóvel lidos. Você ganha {total} créditos todo mês.
-                    </p>
-                    <Button
-                      size="sm"
-                      className="w-full gap-2"
-                      onClick={() => navigate('/settings')}
-                    >
-                      <Zap className="h-3.5 w-3.5" />
-                      Fazer Recarga de Créditos
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            );
-          })()}
+          {renderCreditsBadge()}
           {messages.length > 0 && (
             <Button variant="ghost" size="sm" onClick={handleClearChat} className="text-muted-foreground hover:text-destructive">
               <Trash2 className="h-4 w-4 mr-1" />
@@ -294,7 +274,7 @@ export default function AIChat() {
             </div>
           ))
         )}
-        {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+        {isLoading && (
           <div className="flex gap-3">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <Bot className="h-4 w-4 text-primary" />
