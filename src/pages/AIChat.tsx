@@ -5,12 +5,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Bot, User, Trash2, Loader2, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Trash2, Loader2, Sparkles, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface ChatMessage {
   id?: string;
@@ -22,6 +24,7 @@ interface ChatMessage {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 
 export default function AIChat() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { isOwner } = usePermissions();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -189,12 +192,46 @@ export default function AIChat() {
             <p className="text-xs text-muted-foreground">Assistente imobiliário inteligente</p>
           </div>
         </div>
-        {messages.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={handleClearChat} className="text-muted-foreground hover:text-destructive">
-            <Trash2 className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Limpar</span>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* AI Credits Badge */}
+          {(() => {
+            const used = 120;
+            const total = 250;
+            const pct = Math.round((used / total) * 100);
+            const badgeColor = pct > 90 ? 'border-red-500/50 text-red-500 bg-red-500/5' : pct >= 70 ? 'border-amber-500/50 text-amber-500 bg-amber-500/5' : 'border-emerald-500/50 text-emerald-500 bg-emerald-500/5';
+            return (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={cn('flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-colors hover:opacity-80', badgeColor)}>
+                    <Zap className="h-3 w-3" />
+                    {used} / {total}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 text-sm" side="bottom" align="end">
+                  <div className="space-y-3">
+                    <p className="text-muted-foreground leading-relaxed">
+                      Cada interação consome créditos com base no tamanho da pergunta e dos dados do imóvel lidos. Você ganha {total} créditos todo mês.
+                    </p>
+                    <Button
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={() => navigate('/settings')}
+                    >
+                      <Zap className="h-3.5 w-3.5" />
+                      Fazer Recarga de Créditos
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            );
+          })()}
+          {messages.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={handleClearChat} className="text-muted-foreground hover:text-destructive">
+              <Trash2 className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Limpar</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}

@@ -74,7 +74,7 @@ const plans: PlanDef[] = [
     users: '1 usuário',
     features: [
       'Tudo do Essencial',
-      'Chat IA',
+      'Chat IA (250 Créditos/mês)',
       'Documentos ilimitados',
       'Relatórios completos',
       'Gestão de ativos completa',
@@ -102,6 +102,7 @@ const plans: PlanDef[] = [
     units: 'Até 80 unidades',
     users: '3 usuários inclusos',
     features: [
+      'Chat IA (750 Créditos/mês)',
       'Tudo do Pro',
       'Gestão de Equipe (RBAC)',
       'Roleta de leads automática',

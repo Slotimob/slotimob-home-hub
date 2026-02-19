@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import {
   CreditCard,
   ExternalLink,
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { toast } from 'sonner';
-
+import { cn } from '@/lib/utils';
 const planLabels: Record<string, string> = {
   free: 'Gratuito',
   essencial: 'Essencial',
@@ -158,6 +159,56 @@ export const SubscriptionManagement = () => {
         </CardContent>
       </Card>
 
+      {/* AI Usage Card - before add-ons */}
+      {plan !== 'free' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              Uso do Chat IA
+            </CardTitle>
+            <CardDescription>Consumo de créditos de inteligência artificial</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(() => {
+              const used = 180;
+              const total = plan === 'business' ? 750 : 250;
+              const pct = Math.round((used / total) * 100);
+              const colorClass = pct > 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
+              const barClass = pct > 90 ? '[&>div]:bg-red-500' : pct >= 70 ? '[&>div]:bg-amber-500' : '[&>div]:bg-emerald-500';
+              return (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Créditos utilizados</span>
+                    <span className={cn('font-semibold', colorClass)}>
+                      {used} / {total}
+                    </span>
+                  </div>
+                  <Progress value={pct} className={cn('h-2', barClass)} />
+                  <p className="text-xs text-muted-foreground">
+                    Os créditos renovam automaticamente no seu próximo ciclo de faturamento.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => handleBuyCredits('credits_ai')}
+                    disabled={loadingAction === 'buy-credits_ai'}
+                  >
+                    {loadingAction === 'buy-credits_ai' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    Comprar mais Créditos
+                  </Button>
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Add-ons - only for paid plans */}
       {hasStripe && plan !== 'free' && (
         <Card>
@@ -277,7 +328,7 @@ export const SubscriptionManagement = () => {
               <Sparkles className="h-5 w-5 text-purple-500" />
               <div>
                 <p className="font-medium text-sm">Créditos IA</p>
-                <p className="text-xs text-muted-foreground">R$ 39,00 por pacote</p>
+                <p className="text-xs text-muted-foreground">R$ 39,00 por 1.000 Créditos (Não expiram)</p>
               </div>
             </div>
             <Button
