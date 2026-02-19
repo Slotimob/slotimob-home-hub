@@ -17,6 +17,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
+import { useAICredits } from '@/hooks/useAICredits';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 const planLabels: Record<string, string> = {
@@ -36,6 +38,7 @@ const planColors: Record<string, string> = {
 export const SubscriptionManagement = () => {
   const { subscription, isLoading, refetch, openCustomerPortal, manageAddon, buyCredits } =
     useSubscriptionDetails();
+  const { credits: aiCredits, isLoading: isLoadingCredits } = useAICredits();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   if (isLoading) {
@@ -170,10 +173,17 @@ export const SubscriptionManagement = () => {
             <CardDescription>Consumo de créditos de inteligência artificial</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(() => {
-              const used = 180;
-              const total = plan === 'business' ? 750 : 250;
-              const pct = Math.round((used / total) * 100);
+            {isLoadingCredits ? (
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-2 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ) : (() => {
+              const used = aiCredits?.used ?? 0;
+              const total = aiCredits?.limit ?? (plan === 'business' ? 750 : 250);
+              const bonus = aiCredits?.bonus_credits ?? 0;
+              const pct = total > 0 ? Math.round((used / total) * 100) : 0;
               const colorClass = pct > 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
               const barClass = pct > 90 ? '[&>div]:bg-red-500' : pct >= 70 ? '[&>div]:bg-amber-500' : '[&>div]:bg-emerald-500';
               return (
@@ -185,6 +195,11 @@ export const SubscriptionManagement = () => {
                     </span>
                   </div>
                   <Progress value={pct} className={cn('h-2', barClass)} />
+                  {bonus > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      + {bonus} créditos bônus comprados disponíveis
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Os créditos renovam automaticamente no seu próximo ciclo de faturamento.
                   </p>

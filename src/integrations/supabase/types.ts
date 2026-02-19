@@ -2713,6 +2713,8 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          ai_credits_limit: number
+          ai_credits_used: number
           cancel_at_period_end: boolean | null
           created_at: string | null
           current_period_end: string | null
@@ -2733,6 +2735,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_credits_limit?: number
+          ai_credits_used?: number
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
@@ -2753,6 +2757,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_credits_limit?: number
+          ai_credits_used?: number
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
@@ -3581,6 +3587,7 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      get_ai_credits_balance: { Args: { p_user_id: string }; Returns: Json }
       get_cockpit_organizations: { Args: never; Returns: Json }
       get_early_adopter_count: { Args: { p_plan_id: string }; Returns: number }
       get_early_adopter_remaining_slots: {
@@ -3608,6 +3615,10 @@ export type Database = {
       }
       is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
+      reset_ai_credits_for_user: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:

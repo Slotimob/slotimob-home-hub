@@ -87,19 +87,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check AI credits
-    const { data: credits } = await serviceClient
-      .from("ai_credits")
-      .select("id, credits_remaining")
-      .eq("broker_id", userId)
-      .gt("credits_remaining", 0)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+    // Check AI credits balance
+    const { data: creditsData } = await serviceClient.rpc("get_ai_credits_balance", {
+      p_user_id: userId,
+    });
 
-    // For Pro/Business users, allow even without credits (included in plan)
-    // For free trial, also allow
-    // Credits are for add-on consumption tracking
+    const totalAvailable = (creditsData as any)?.total_available ?? 0;
+
+    // Block if no credits at all (plan + bonus)
+    if (totalAvailable <= 0 && !trialActive) {
+      return new Response(
+        JSON.stringify({ error: "Saldo de Créditos IA esgotado. Recarregue no seu painel." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
@@ -124,9 +125,10 @@ Deno.serve(async (req) => {
       .filter((m: any) => m.role && m.content && typeof m.content === "string")
       .map((m: any) => ({
         role: m.role === "user" ? "user" : "assistant",
-        content: m.content.slice(0, 10000), // Limit content length
+        content: m.content.slice(0, 10000),
       }));
 
+    // Call Anthropic WITHOUT streaming so we can capture usage
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -147,43 +149,104 @@ Deno.serve(async (req) => {
 
 Seja conciso, profissional e útil. Responda sempre em português brasileiro.`,
         messages: validatedMessages,
-        stream: true,
+        stream: false,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Claude API error:", response.status, errorText);
-      
+
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
+
       return new Response(
         JSON.stringify({ error: "Erro ao processar sua mensagem." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Deduct 1 AI credit if available
-    if (credits) {
+    const result = await response.json();
+
+    // Calculate consumed credits from usage
+    const usage = result.usage;
+    const consumedTokens = (usage?.input_tokens || 0) + (usage?.output_tokens || 0);
+    const consumedCredits = Math.ceil(consumedTokens / 1000);
+
+    // Deduct credits: first from plan quota, then from bonus
+    const planRemaining = (creditsData as any)?.remaining ?? 0;
+
+    if (consumedCredits <= planRemaining) {
+      // All from plan quota
       await serviceClient
-        .from("ai_credits")
-        .update({ credits_remaining: credits.credits_remaining - 1 })
-        .eq("id", credits.id);
+        .from("subscriptions")
+        .update({ ai_credits_used: ((creditsData as any)?.used ?? 0) + consumedCredits })
+        .eq("user_id", userId);
+    } else {
+      // Use remaining plan credits + bonus
+      const fromPlan = planRemaining;
+      const fromBonus = consumedCredits - fromPlan;
+
+      if (fromPlan > 0) {
+        await serviceClient
+          .from("subscriptions")
+          .update({ ai_credits_used: ((creditsData as any)?.limit ?? 0) })
+          .eq("user_id", userId);
+      }
+
+      // Deduct from bonus credits (FIFO from ai_credits table)
+      if (fromBonus > 0) {
+        let remaining = fromBonus;
+        const { data: bonusPacks } = await serviceClient
+          .from("ai_credits")
+          .select("id, credits_remaining")
+          .eq("broker_id", userId)
+          .gt("credits_remaining", 0)
+          .order("created_at", { ascending: true });
+
+        if (bonusPacks) {
+          for (const pack of bonusPacks) {
+            if (remaining <= 0) break;
+            const deduct = Math.min(remaining, pack.credits_remaining);
+            await serviceClient
+              .from("ai_credits")
+              .update({ credits_remaining: pack.credits_remaining - deduct })
+              .eq("id", pack.id);
+            remaining -= deduct;
+          }
+        }
+      }
     }
 
-    // Stream the response back
-    return new Response(response.body, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-      },
+    // Get updated balance
+    const { data: updatedCredits } = await serviceClient.rpc("get_ai_credits_balance", {
+      p_user_id: userId,
     });
+
+    // Extract assistant text
+    const assistantText = result.content
+      ?.filter((c: any) => c.type === "text")
+      .map((c: any) => c.text)
+      .join("") || "";
+
+    return new Response(
+      JSON.stringify({
+        content: assistantText,
+        credits: updatedCredits,
+        usage: {
+          input_tokens: usage?.input_tokens || 0,
+          output_tokens: usage?.output_tokens || 0,
+          credits_consumed: consumedCredits,
+        },
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (err) {
     console.error("AI chat error:", err);
     return new Response(
