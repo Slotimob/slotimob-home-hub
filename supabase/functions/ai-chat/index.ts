@@ -173,32 +173,41 @@ Deno.serve(async (req) => {
       }));
 
     // RAG: Fetch user's units using their JWT for tenant isolation
-    let portfolioContext = "";
+    let unitsData: any[] = [];
     try {
-      const { data: units } = await supabase
+      const { data, error } = await supabase
         .from("units")
-        .select("id, title, price, status, city, neighborhood, area")
+        .select("id, title, price, status, city, neighborhood, area, bedrooms, bathrooms, parking_spots")
         .order("updated_at", { ascending: false })
         .limit(20);
 
-      if (units && units.length > 0) {
-        portfolioContext = `\n\nDados da carteira de imóveis do corretor (${units.length} imóveis mais recentes):\n${JSON.stringify(units)}`;
+      console.log("RAG units count:", data?.length ?? 0);
+      if (error) console.error("RAG Error:", error);
+
+      if (data && data.length > 0) {
+        unitsData = data;
       }
     } catch (err) {
-      console.error("Error fetching units for RAG:", err);
+      console.error("RAG fetch exception:", err);
     }
 
-    const systemPrompt = `Você é o assistente IA da SlotiMob, uma plataforma de gestão imobiliária. Ajude corretores com:
-- Dúvidas sobre gestão de imóveis, contratos e locações
-- Cálculos financeiros (aluguel, taxas, comissões)
-- Estratégias de vendas e negociação
-- Redação de textos para anúncios de imóveis
-- Dicas de atendimento ao cliente
-- Análises de mercado imobiliário
+    const portfolioJson = JSON.stringify(unitsData);
 
-Se o usuário perguntar sobre imóveis, propriedades ou carteira, use os dados abaixo para responder de forma precisa. Se a pergunta estiver fora desse escopo, responda normalmente.
+    const systemPrompt = `Você é o assistente virtual especialista do sistema SlotiMob. Seu objetivo é ajudar o corretor imobiliário.
 
-Seja conciso, profissional e útil. Responda sempre em português brasileiro. Use formatação Markdown (negrito, listas, títulos) para organizar suas respostas.${portfolioContext}`;
+Abaixo estão os dados dos imóveis ativos na carteira deste corretor no momento:
+
+<carteira_imoveis>
+${portfolioJson}
+</carteira_imoveis>
+
+REGRAS DE COMPORTAMENTO OBRIGATÓRIAS:
+- NUNCA diga que você não tem acesso ao banco de dados ou ao sistema. Os dados dentro da tag <carteira_imoveis> SÃO o seu acesso ao banco de dados em tempo real.
+- Se a tag <carteira_imoveis> estiver vazia (ex: [] ou nula) e o corretor perguntar sobre seus imóveis, responda educadamente: "Analisando sua carteira atual, não encontrei nenhum imóvel cadastrado que corresponda a essa busca (ou sua carteira está vazia no momento). Que tal cadastrarmos novos imóveis no sistema?"
+- Baseie suas respostas sobre valores, localizações e características EXCLUSIVAMENTE nos dados fornecidos na tag <carteira_imoveis>. Se a informação não estiver lá, diga que não tem esse dado específico daquele imóvel.
+- Responda sempre em português brasileiro. Use formatação Markdown (negrito, listas, títulos) para organizar suas respostas.
+- Seja conciso, profissional e útil.
+- Ajude também com: cálculos financeiros (aluguel, taxas, comissões), estratégias de vendas e negociação, redação de anúncios, dicas de atendimento ao cliente e análises de mercado imobiliário.`;
 
     // Call Anthropic WITH streaming
     const response = await fetch("https://api.anthropic.com/v1/messages", {
