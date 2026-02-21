@@ -52,7 +52,7 @@ serve(async (req) => {
       const webhookUrl = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook';
       console.log('Webhook URL:', webhookUrl);
 
-      // Step 1: Create instance with qrcode: true
+      // Step 1: Create instance (minimal payload)
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -60,19 +60,13 @@ serve(async (req) => {
           instanceName: instanceName,
           qrcode: true,
           integration: 'WHATSAPP-BAILEYS',
-          webhook: {
-            url: webhookUrl,
-            webhook_by_events: false,
-            webhook_base64: true,
-            events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-          },
         }),
       });
 
       const createData = await createRes.json();
       console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData));
 
-      // Step 2: If 403 (already exists), try connect to get QR
+      // If already exists, try connect; if that fails, delete + recreate
       if (!createRes.ok) {
         console.log('Create failed with', createRes.status, '— trying connect...');
         const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
@@ -82,7 +76,6 @@ serve(async (req) => {
         const connectData = await connectRes.json();
         console.log('Connect response:', JSON.stringify(connectData));
 
-        // If connect also fails, delete + recreate
         if (!connectRes.ok) {
           console.log('Connect failed, deleting and recreating...');
           try { await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (_e) { /* */ }
@@ -96,12 +89,6 @@ serve(async (req) => {
               instanceName: instanceName,
               qrcode: true,
               integration: 'WHATSAPP-BAILEYS',
-              webhook: {
-                url: webhookUrl,
-                webhook_by_events: false,
-                webhook_base64: true,
-                events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-              },
             }),
           });
           const retryData = await retryRes.json();
@@ -114,6 +101,27 @@ serve(async (req) => {
           }
         }
       }
+
+      // Step 2: Configure webhook separately
+      const webhookSetRes = await fetch(`${evolutionApiUrl}/webhook/set/${instanceName}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+        body: JSON.stringify({
+          url: webhookUrl,
+          webhook_by_events: false,
+          webhook_base64: true,
+          events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+        }),
+      });
+      console.log('Webhook set status:', webhookSetRes.status, 'body:', JSON.stringify(await webhookSetRes.json().catch(() => ({}))));
+
+      // Step 3: Trigger connect to generate QR code
+      const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+        method: 'GET',
+        headers: { 'apikey': evolutionApiKey },
+      });
+      const connectQrData = await connectQrRes.json();
+      console.log('Connect QR response:', JSON.stringify(connectQrData));
 
       // Step 3: Save to DB with status 'connecting' — QR will arrive via webhook
       const { data: existingConn } = await supabaseClient
