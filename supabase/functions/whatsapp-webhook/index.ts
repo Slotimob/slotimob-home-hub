@@ -7,9 +7,17 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // GET: Evolution API webhook verification (simple echo)
+  if (req.method === 'GET') {
+    return new Response('OK', { status: 200 });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
   }
 
   const supabaseAdmin = createClient(
@@ -17,36 +25,22 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  // ─── GET: Meta Webhook Verification ───
-  if (req.method === 'GET') {
-    const url = new URL(req.url);
-    const mode = url.searchParams.get('hub.mode');
-    const token = url.searchParams.get('hub.verify_token');
-    const challenge = url.searchParams.get('hub.challenge');
-
-    const verifyToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
-
-    if (mode === 'subscribe' && token === verifyToken) {
-      console.log('Webhook verified successfully');
-      return new Response(challenge, { status: 200 });
-    }
-
-    console.error('Webhook verification failed');
-    return new Response('Forbidden', { status: 403 });
-  }
-
-  // ─── POST: Receive Messages from Meta ───
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
-
-  // Return 200 immediately per Meta requirements, process async
   try {
     const body = await req.json();
-    console.log('Meta webhook payload:', JSON.stringify(body));
+    const event = body.event;
+    const instanceName = body.instance;
+    console.log(`Evolution webhook: event=${event} instance=${instanceName}`);
 
-    // Process in background - don't block the 200 response
-    processWebhook(supabaseAdmin, body).catch((err) => {
+    if (!event || !instanceName) {
+      console.log('Missing event or instance, ignoring');
+      return new Response(JSON.stringify({ received: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Process in background
+    processEvent(supabaseAdmin, event, instanceName, body.data).catch((err) => {
       console.error('Background processing error:', err);
     });
 
@@ -56,7 +50,6 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Webhook error:', error);
-    // Still return 200 to prevent Meta from disabling the webhook
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -64,135 +57,165 @@ serve(async (req) => {
   }
 });
 
-async function processWebhook(supabaseAdmin: any, body: any) {
-  const entry = body?.entry?.[0];
-  if (!entry) return;
+async function processEvent(supabaseAdmin: any, event: string, instanceName: string, data: any) {
+  switch (event) {
+    case 'connection.update':
+      await handleConnectionUpdate(supabaseAdmin, instanceName, data);
+      break;
+    case 'qrcode.updated':
+      await handleQrCodeUpdate(supabaseAdmin, instanceName, data);
+      break;
+    case 'messages.upsert':
+      await handleMessagesUpsert(supabaseAdmin, instanceName, data);
+      break;
+    default:
+      console.log(`Unhandled event: ${event}`);
+  }
+}
 
-  const changes = entry.changes?.[0];
-  if (!changes || changes.field !== 'messages') return;
+// ─── CONNECTION UPDATE ───
+async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, data: any) {
+  const state = data?.state;
+  if (!state) return;
 
-  const value = changes.value;
-  if (!value) return;
+  console.log(`Connection update: instance=${instanceName} state=${state}`);
 
-  const phoneNumberId = value.metadata?.phone_number_id;
-  if (!phoneNumberId) {
-    console.error('No phone_number_id in webhook payload');
+  if (state === 'open') {
+    await supabaseAdmin
+      .from('whatsapp_connections')
+      .update({
+        status: 'connected',
+        connection_status: 'open',
+        qr_code_base64: null,
+        connected_at: new Date().toISOString(),
+      })
+      .eq('instance_name', instanceName);
+    console.log(`Instance ${instanceName} marked as connected`);
+  } else if (state === 'close') {
+    await supabaseAdmin
+      .from('whatsapp_connections')
+      .update({
+        status: 'disconnected',
+        connection_status: 'close',
+        qr_code_base64: null,
+      })
+      .eq('instance_name', instanceName);
+    console.log(`Instance ${instanceName} marked as disconnected`);
+  } else if (state === 'connecting') {
+    await supabaseAdmin
+      .from('whatsapp_connections')
+      .update({ connection_status: 'connecting' })
+      .eq('instance_name', instanceName);
+  }
+}
+
+// ─── QR CODE UPDATE ───
+async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data: any) {
+  const qrBase64 = data?.qrcode?.base64;
+  if (!qrBase64) {
+    console.log('No QR base64 in payload');
     return;
   }
 
-  // Find the connection by phone_number_id
+  console.log(`QR code received for instance=${instanceName}`);
+
+  const { error } = await supabaseAdmin
+    .from('whatsapp_connections')
+    .update({
+      qr_code_base64: qrBase64,
+      connection_status: 'qrcode',
+      status: 'pending',
+    })
+    .eq('instance_name', instanceName);
+
+  if (error) {
+    console.error('Error updating QR code:', error);
+  } else {
+    console.log(`QR code stored for ${instanceName}`);
+  }
+}
+
+// ─── MESSAGES UPSERT ───
+async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, data: any) {
+  // Find connection by instance_name
   const { data: connection, error: connError } = await supabaseAdmin
     .from('whatsapp_connections')
     .select('*')
-    .eq('phone_number_id', phoneNumberId)
-    .eq('api_provider', 'meta')
+    .eq('instance_name', instanceName)
     .single();
 
   if (connError || !connection) {
-    console.error('Connection not found for phone_number_id:', phoneNumberId);
+    console.error('Connection not found for instance:', instanceName);
     return;
   }
 
-  // Process status updates
-  const statuses = value.statuses || [];
-  for (const status of statuses) {
-    await processStatusUpdate(supabaseAdmin, connection, status);
-  }
+  // data can be an array of messages or a single message
+  const messages = Array.isArray(data) ? data : [data];
 
-  // Process incoming messages
-  const messages = value.messages || [];
-  const contacts = value.contacts || [];
-
-  for (const msg of messages) {
-    await processIncomingMessage(supabaseAdmin, connection, msg, contacts);
+  for (const msgData of messages) {
+    await processIncomingMessage(supabaseAdmin, connection, msgData);
   }
 }
 
-async function processStatusUpdate(supabaseAdmin: any, connection: any, status: any) {
-  const messageId = status.id;
-  const statusValue = status.status; // sent, delivered, read, failed
+async function processIncomingMessage(supabaseAdmin: any, connection: any, msgData: any) {
+  const key = msgData.key;
+  if (!key) return;
 
-  if (!messageId || !statusValue) return;
+  // Skip outgoing messages
+  if (key.fromMe) return;
 
-  const updateData: Record<string, any> = { status: statusValue };
-  if (statusValue === 'delivered') updateData.delivered_at = new Date().toISOString();
-  if (statusValue === 'read') {
-    updateData.delivered_at = updateData.delivered_at || new Date().toISOString();
-    updateData.read_at = new Date().toISOString();
-  }
+  const remoteJid = key.remoteJid;
+  const waMessageId = key.id;
+  if (!remoteJid || !waMessageId) return;
 
-  // Find conversations for this connection
-  const { data: conversations } = await supabaseAdmin
-    .from('whatsapp_conversations')
-    .select('id')
-    .eq('connection_id', connection.id);
+  // Extract phone number from JID
+  const senderPhone = remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '');
+  const isGroup = remoteJid.endsWith('@g.us');
+  if (isGroup) return; // Skip group messages for now
 
-  if (conversations && conversations.length > 0) {
-    const conversationIds = conversations.map((c: any) => c.id);
-    await supabaseAdmin
-      .from('whatsapp_messages')
-      .update(updateData)
-      .eq('message_id', messageId)
-      .in('conversation_id', conversationIds);
-
-    console.log(`Message ${messageId} status updated to ${statusValue}`);
-  }
-}
-
-async function processIncomingMessage(
-  supabaseAdmin: any,
-  connection: any,
-  msg: any,
-  contacts: any[]
-) {
-  const senderPhone = msg.from;
-  const waMessageId = msg.id;
-  const timestamp = msg.timestamp;
-  if (!senderPhone || !waMessageId) return;
-
-  // Get sender profile name from contacts array
-  const contactProfile = contacts.find((c: any) => c.wa_id === senderPhone);
-  const senderName = contactProfile?.profile?.name || senderPhone;
+  const pushName = msgData.pushName || senderPhone;
+  const messageContent = msgData.message;
+  if (!messageContent) return;
 
   // Determine message type and content
   let messageType = 'text';
   let content = '';
-  let mediaUrl: string | null = null;
   let mediaMimeType: string | null = null;
   let mediaFilename: string | null = null;
 
-  if (msg.type === 'text') {
-    content = msg.text?.body || '';
-  } else if (msg.type === 'image') {
+  if (messageContent.conversation) {
+    content = messageContent.conversation;
+  } else if (messageContent.extendedTextMessage) {
+    content = messageContent.extendedTextMessage.text || '';
+  } else if (messageContent.imageMessage) {
     messageType = 'image';
-    content = msg.image?.caption || '';
-    mediaMimeType = msg.image?.mime_type || null;
-  } else if (msg.type === 'video') {
+    content = messageContent.imageMessage.caption || '';
+    mediaMimeType = messageContent.imageMessage.mimetype || null;
+  } else if (messageContent.videoMessage) {
     messageType = 'video';
-    content = msg.video?.caption || '';
-    mediaMimeType = msg.video?.mime_type || null;
-  } else if (msg.type === 'audio') {
+    content = messageContent.videoMessage.caption || '';
+    mediaMimeType = messageContent.videoMessage.mimetype || null;
+  } else if (messageContent.audioMessage) {
     messageType = 'audio';
-    mediaMimeType = msg.audio?.mime_type || null;
-  } else if (msg.type === 'document') {
+    mediaMimeType = messageContent.audioMessage.mimetype || null;
+  } else if (messageContent.documentMessage) {
     messageType = 'document';
-    mediaFilename = msg.document?.filename || 'document';
-    mediaMimeType = msg.document?.mime_type || null;
-  } else if (msg.type === 'sticker') {
+    mediaFilename = messageContent.documentMessage.fileName || 'document';
+    mediaMimeType = messageContent.documentMessage.mimetype || null;
+  } else if (messageContent.stickerMessage) {
     messageType = 'sticker';
-  } else if (msg.type === 'location') {
+  } else if (messageContent.locationMessage) {
     messageType = 'location';
     content = JSON.stringify({
-      latitude: msg.location?.latitude,
-      longitude: msg.location?.longitude,
+      latitude: messageContent.locationMessage.degreesLatitude,
+      longitude: messageContent.locationMessage.degreesLongitude,
     });
-  } else if (msg.type === 'contacts') {
+  } else if (messageContent.contactMessage) {
     messageType = 'contact';
-    content = msg.contacts?.[0]?.name?.formatted_name || '';
+    content = messageContent.contactMessage.displayName || '';
   } else {
-    // Unknown type, store as-is
-    messageType = msg.type || 'unknown';
-    content = JSON.stringify(msg[msg.type] || {});
+    messageType = 'unknown';
+    content = JSON.stringify(messageContent);
   }
 
   // ── Find or create Contact in CRM ──
@@ -209,12 +232,11 @@ async function processIncomingMessage(
   if (existingContacts && existingContacts.length > 0) {
     contactId = existingContacts[0].id;
   } else {
-    // Create new contact
     const { data: newContact, error: contactError } = await supabaseAdmin
       .from('contacts')
       .insert({
         broker_id: connection.broker_id,
-        name: senderName,
+        name: pushName,
         phone: cleanPhone,
         whatsapp: cleanPhone,
         categories: ['lead'],
@@ -230,14 +252,16 @@ async function processIncomingMessage(
   }
 
   // ── Find or create Conversation ──
-  const remoteJid = `${senderPhone}@s.whatsapp.net`;
-
   let { data: conversation, error: convError } = await supabaseAdmin
     .from('whatsapp_conversations')
     .select('*')
     .eq('connection_id', connection.id)
     .eq('remote_jid', remoteJid)
     .single();
+
+  const messageTimestamp = msgData.messageTimestamp
+    ? new Date(parseInt(msgData.messageTimestamp) * 1000).toISOString()
+    : new Date().toISOString();
 
   if (convError || !conversation) {
     const { data: newConv, error: createError } = await supabaseAdmin
@@ -246,10 +270,10 @@ async function processIncomingMessage(
         connection_id: connection.id,
         contact_id: contactId,
         remote_jid: remoteJid,
-        contact_name: senderName,
+        contact_name: pushName,
         contact_phone: cleanPhone,
         last_message: content || `[${messageType}]`,
-        last_message_at: new Date(parseInt(timestamp) * 1000).toISOString(),
+        last_message_at: messageTimestamp,
         unread_count: 1,
         status: 'active',
       })
@@ -262,14 +286,13 @@ async function processIncomingMessage(
     }
     conversation = newConv;
   } else {
-    // Update existing conversation
     await supabaseAdmin
       .from('whatsapp_conversations')
       .update({
-        contact_name: senderName,
+        contact_name: pushName,
         contact_id: contactId || conversation.contact_id,
         last_message: content || `[${messageType}]`,
-        last_message_at: new Date(parseInt(timestamp) * 1000).toISOString(),
+        last_message_at: messageTimestamp,
         unread_count: (conversation.unread_count || 0) + 1,
       })
       .eq('id', conversation.id);
@@ -285,11 +308,11 @@ async function processIncomingMessage(
         direction: 'incoming',
         message_type: messageType,
         content: content,
-        media_url: mediaUrl,
+        media_url: null,
         media_mime_type: mediaMimeType,
         media_filename: mediaFilename,
         status: 'delivered',
-        sent_at: new Date(parseInt(timestamp) * 1000).toISOString(),
+        sent_at: messageTimestamp,
       },
       { onConflict: 'conversation_id,message_id' }
     );
