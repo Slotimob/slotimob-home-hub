@@ -18,7 +18,6 @@ serve(async (req) => {
     const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY');
 
     if (!evolutionApiUrl || !evolutionApiKey) {
-      console.error('Missing EVOLUTION_API_URL or EVOLUTION_API_KEY secrets');
       return new Response(JSON.stringify({ error: 'WhatsApp integration not configured. Admin must set EVOLUTION_API_URL and EVOLUTION_API_KEY secrets.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -52,7 +51,9 @@ serve(async (req) => {
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
       const webhookUrl = `${supabaseUrl}/functions/v1/whatsapp-webhook`;
 
-      // Create instance on Evolution API
+      let qrBase64: string | null = null;
+
+      // Step 1: Try to create the instance with qrcode: true
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -69,28 +70,39 @@ serve(async (req) => {
         }),
       });
 
-      let createData = await createRes.json();
-      console.log('Evolution create response status:', createRes.status, 'body:', JSON.stringify(createData));
+      const createData = await createRes.json();
+      console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData));
 
-      // If instance already exists (403), try to connect/get QR instead
+      if (createRes.ok) {
+        // Instance created successfully — QR should be in the response
+        qrBase64 = createData?.qrcode?.base64 || null;
+        console.log('QR from create:', qrBase64 ? 'received' : 'not in response');
+      }
+
+      // Step 2: If 403 or error (instance already exists), fetch QR via connect
       if (!createRes.ok) {
-        console.log('Create failed, trying to connect existing instance...');
+        console.log('Create returned', createRes.status, '— trying connect endpoint...');
         const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
           method: 'GET',
           headers: { 'apikey': evolutionApiKey },
         });
         const connectData = await connectRes.json();
-        if (!connectRes.ok) {
-          // Try deleting and recreating
-          console.log('Connect failed, deleting and recreating...');
+        console.log('Connect response:', JSON.stringify(connectData));
+        qrBase64 = connectData?.qrcode?.base64 || connectData?.base64 || null;
+
+        // If connect also fails, delete and recreate
+        if (!qrBase64) {
+          console.log('No QR from connect, deleting and recreating...');
           try {
             await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } });
           } catch (_e) { /* ignore */ }
           try {
             await fetch(`${evolutionApiUrl}/instance/delete/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } });
           } catch (_e) { /* ignore */ }
-          
-          // Retry create
+
+          // Wait briefly for cleanup
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
           const retryRes = await fetch(`${evolutionApiUrl}/instance/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -98,94 +110,49 @@ serve(async (req) => {
               instanceName,
               qrcode: true,
               integration: 'WHATSAPP-BAILEYS',
-              webhook: { url: webhookUrl, enabled: true, webhookByEvents: false, events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'] },
+              webhook: {
+                url: webhookUrl,
+                enabled: true,
+                webhookByEvents: false,
+                events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+              },
             }),
           });
-          createData = await retryRes.json();
-          if (!retryRes.ok) {
-            return new Response(JSON.stringify({ error: createData?.message || 'Failed to create instance' }), {
+          const retryData = await retryRes.json();
+          console.log('Retry create status:', retryRes.status, 'body:', JSON.stringify(retryData));
+          
+          if (retryRes.ok) {
+            qrBase64 = retryData?.qrcode?.base64 || null;
+          }
+          
+          if (!retryRes.ok && !qrBase64) {
+            return new Response(JSON.stringify({ error: retryData?.message || 'Failed to create WhatsApp instance' }), {
               status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
           }
-        } else {
-          createData = { qrcode: { base64: connectData?.base64 || null } };
         }
       }
 
-      // Try multiple QR extraction paths from create response
-      let qrBase64 = createData?.qrcode?.base64 
-        || createData?.qrcode 
-        || createData?.base64 
-        || createData?.hash?.qrcode?.base64
-        || null;
-      
-      // If qrBase64 is an object, it's not a valid base64 string
-      if (qrBase64 && typeof qrBase64 !== 'string') {
-        console.log('QR is object, trying nested:', JSON.stringify(qrBase64));
-        qrBase64 = qrBase64?.base64 || null;
-      }
-
-      // Fallback: if no QR inline, wait briefly then fetch via connect endpoint
-      if (!qrBase64) {
-        console.log('No QR inline, waiting 2s then fetching via connect endpoint...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        try {
-          const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-            method: 'GET',
-            headers: { 'apikey': evolutionApiKey },
-          });
-          const connectData = await connectRes.json();
-          console.log('Connect endpoint response:', JSON.stringify(connectData));
-          qrBase64 = connectData?.base64 
-            || connectData?.qrcode?.base64 
-            || connectData?.code 
-            || null;
-          if (qrBase64 && typeof qrBase64 !== 'string') {
-            qrBase64 = qrBase64?.base64 || null;
-          }
-          console.log('Connect endpoint QR:', qrBase64 ? 'received' : 'not available');
-        } catch (e) {
-          console.error('Fallback QR fetch error:', e);
-        }
-      }
-
-      // Second fallback: try again after another delay
-      if (!qrBase64) {
-        console.log('Still no QR, retrying after 3s...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        try {
-          const retryConnectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-            method: 'GET',
-            headers: { 'apikey': evolutionApiKey },
-          });
-          const retryData = await retryConnectRes.json();
-          console.log('Retry connect response:', JSON.stringify(retryData));
-          qrBase64 = retryData?.base64 
-            || retryData?.qrcode?.base64
-            || null;
-        } catch (e) {
-          console.error('Second retry QR fetch error:', e);
-        }
-      }
-
-      // Upsert connection in DB - use broker_id since instance_name may be empty initially
+      // Step 3: Save to DB
       const { data: existingConn } = await supabaseClient
         .from('whatsapp_connections')
         .select('id')
         .eq('broker_id', userId)
         .maybeSingle();
 
+      const dbPayload = {
+        instance_name: instanceName,
+        status: qrBase64 ? 'pending' : 'pending',
+        connection_status: qrBase64 ? 'qrcode' : 'connecting',
+        qr_code_base64: qrBase64,
+        connected_at: null,
+      };
+
       let conn, dbError;
       if (existingConn) {
         const res = await supabaseClient
           .from('whatsapp_connections')
-          .update({
-            instance_name: instanceName,
-            status: 'pending',
-            connection_status: qrBase64 ? 'qrcode' : 'connecting',
-            qr_code_base64: qrBase64,
-            connected_at: null,
-          })
+          .update(dbPayload)
           .eq('broker_id', userId)
           .select()
           .single();
@@ -194,13 +161,7 @@ serve(async (req) => {
       } else {
         const res = await supabaseClient
           .from('whatsapp_connections')
-          .insert({
-            broker_id: userId,
-            instance_name: instanceName,
-            status: 'pending',
-            connection_status: qrBase64 ? 'qrcode' : 'connecting',
-            qr_code_base64: qrBase64,
-          })
+          .insert({ broker_id: userId, ...dbPayload })
           .select()
           .single();
         conn = res.data;
@@ -208,7 +169,7 @@ serve(async (req) => {
       }
 
       if (dbError) {
-        console.error('DB upsert error:', dbError);
+        console.error('DB error:', dbError);
         return new Response(JSON.stringify({ error: dbError.message }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -238,7 +199,8 @@ serve(async (req) => {
         headers: { 'apikey': evolutionApiKey },
       });
       const connectData = await connectRes.json();
-      const qrBase64 = connectData?.base64 || null;
+      console.log('Refresh QR response:', JSON.stringify(connectData));
+      const qrBase64 = connectData?.qrcode?.base64 || connectData?.base64 || null;
 
       if (qrBase64) {
         await supabaseClient
@@ -286,7 +248,6 @@ serve(async (req) => {
         .single();
 
       if (conn?.instance_name) {
-        // Logout + delete on Evolution
         try {
           await fetch(`${evolutionApiUrl}/instance/logout/${conn.instance_name}`, {
             method: 'DELETE', headers: { 'apikey': evolutionApiKey },
@@ -300,7 +261,6 @@ serve(async (req) => {
         } catch (e) { console.error('Delete error (non-fatal):', e); }
       }
 
-      // Clean DB record
       await supabaseClient
         .from('whatsapp_connections')
         .update({
