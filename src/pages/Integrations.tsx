@@ -115,15 +115,13 @@ const Integrations = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      if (data?.qrCode) {
-        setQrCodeBase64(data.qrCode);
-        setQrDialogOpen(true);
-      }
       if (data?.connection) {
         setWhatsappConnection(data.connection);
       }
 
-      toast({ title: 'Instância criada!', description: 'Escaneie o QR Code com seu WhatsApp.' });
+      // Open QR dialog immediately — QR will arrive via Realtime
+      setQrDialogOpen(true);
+      toast({ title: 'Instância criada!', description: 'Aguardando QR Code... ele aparecerá em instantes.' });
     } catch (error: any) {
       console.error('Error creating instance:', error);
       toast({ title: 'Erro ao conectar', description: error.message, variant: 'destructive' });
