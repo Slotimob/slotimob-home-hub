@@ -7,8 +7,19 @@ const corsHeaders = {
 };
 
 function normalizeEventName(event: string): string {
-  // CONNECTION_UPDATE -> connection.update, QRCODE_UPDATED -> qrcode.updated, etc.
   return event.toLowerCase().replace(/_/g, '.');
+}
+
+function extractQrBase64(data: any): string | null {
+  const candidates = [
+    data?.base64,
+    data?.qrcode?.base64,
+    typeof data?.qrcode === 'string' ? data.qrcode : null,
+  ];
+  for (const c of candidates) {
+    if (c && typeof c === 'string' && c.length > 100) return c;
+  }
+  return null;
 }
 
 serve(async (req) => {
@@ -16,7 +27,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // GET: Evolution API webhook verification
   if (req.method === 'GET') {
     return new Response('OK', { status: 200 });
   }
@@ -25,6 +35,7 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
+  // Always use SERVICE_ROLE_KEY for guaranteed write permissions
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -48,7 +59,6 @@ serve(async (req) => {
       });
     }
 
-    // Process in background
     processEvent(supabaseAdmin, event, instanceName, body.data).catch((err) => {
       console.error('Background processing error:', err);
     });
@@ -68,8 +78,9 @@ serve(async (req) => {
 
 async function processEvent(supabaseAdmin: any, event: string, instanceName: string, data: any) {
   // Debug: detect QR image in any event
-  if (data?.qrcode || data?.base64 || data?.qrcode?.base64) {
-    console.log('IMAGEM QR DETECTADA NO WEBHOOK', `event=${event}`);
+  const anyQr = extractQrBase64(data);
+  if (anyQr) {
+    console.log(`IMAGEM QR DETECTADA NO WEBHOOK event=${event} instance=${instanceName}`);
   }
 
   switch (event) {
@@ -83,7 +94,6 @@ async function processEvent(supabaseAdmin: any, event: string, instanceName: str
       await handleMessagesUpsert(supabaseAdmin, instanceName, data);
       break;
     case 'instance.created':
-      // First QR is often fired only on this event
       console.log('instance.created event received, checking for QR...');
       await handleQrCodeUpdate(supabaseAdmin, instanceName, data);
       break;
@@ -99,14 +109,11 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
 
   console.log(`Connection update: instance=${instanceName} state=${state} keys=${JSON.stringify(Object.keys(data || {}))}`);
 
-  // AGGRESSIVE QR capture: if state is "qr" OR data contains any long string in qrcode/base64
-  const rawQr = data?.base64 || data?.qrcode?.base64 || (typeof data?.qrcode === 'string' ? data?.qrcode : null);
-  const hasQrData = state === 'qr' || (rawQr && typeof rawQr === 'string' && rawQr.length > 100);
-  if (hasQrData) {
-    console.log('QR state detected inside connection.update, extracting QR...');
-    const qrBase64 = rawQr;
-    if (qrBase64 && typeof qrBase64 === 'string' && qrBase64.length > 100) {
-      console.log('IMAGEM QR DETECTADA NO WEBHOOK (via connection.update state=qr)');
+  // UNIVERSAL QR CAPTURE: For ANY state that is NOT 'open', check for QR data
+  if (state !== 'open') {
+    const qrBase64 = extractQrBase64(data);
+    if (qrBase64) {
+      console.log(`IMAGEM QR DETECTADA NO WEBHOOK (connection.update state=${state})`);
       const { error } = await supabaseAdmin
         .from('whatsapp_connections')
         .update({
@@ -117,11 +124,12 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
         .eq('instance_name', instanceName);
       if (error) console.error('Error updating QR from connection.update:', error);
       else console.log(`QR code stored for ${instanceName} via connection.update`);
+      return;
     }
-    return;
   }
 
   if (state === 'open') {
+    // Clear QR when connected
     await supabaseAdmin
       .from('whatsapp_connections')
       .update({
@@ -131,7 +139,7 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
         connected_at: new Date().toISOString(),
       })
       .eq('instance_name', instanceName);
-    console.log(`Instance ${instanceName} marked as connected`);
+    console.log(`Instance ${instanceName} marked as connected, QR cleared`);
   } else if (state === 'close') {
     await supabaseAdmin
       .from('whatsapp_connections')
@@ -154,11 +162,10 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
 async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data: any) {
   console.log('Dados do evento:', JSON.stringify(data));
   
-  // Try multiple extraction paths: data.base64, data.qrcode.base64, data.qrcode (string)
-  const qrBase64 = data?.base64 || data?.qrcode?.base64 || (typeof data?.qrcode === 'string' ? data?.qrcode : null);
+  const qrBase64 = extractQrBase64(data);
   
-  if (!qrBase64 || typeof qrBase64 !== 'string') {
-    console.log('No valid QR base64 string in payload, got:', typeof qrBase64);
+  if (!qrBase64) {
+    console.log('No valid QR base64 string in payload');
     return;
   }
 
@@ -258,7 +265,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     content = JSON.stringify(messageContent);
   }
 
-  // ── Find or create Contact in CRM ──
   let contactId: string | null = null;
   const cleanPhone = senderPhone.replace(/\D/g, '');
 
@@ -291,7 +297,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     }
   }
 
-  // ── Find or create Conversation ──
   let { data: conversation, error: convError } = await supabaseAdmin
     .from('whatsapp_conversations')
     .select('*')
@@ -338,7 +343,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
       .eq('id', conversation.id);
   }
 
-  // ── Insert Message ──
   const { error: msgError } = await supabaseAdmin
     .from('whatsapp_messages')
     .upsert(

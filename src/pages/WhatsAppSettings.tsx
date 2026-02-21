@@ -1,21 +1,20 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { WhatsAppUsageStatus } from '@/components/whatsapp/WhatsAppUsageStatus';
 import { BuyCreditsDialog } from '@/components/whatsapp/BuyCreditsDialog';
+import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { 
   ArrowLeft, Wifi, WifiOff, RefreshCw, Trash2, Phone, QrCode,
-  Loader2, CheckCircle, XCircle, AlertCircle, ShieldCheck
+  Loader2, CheckCircle, XCircle, AlertCircle, Clock
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import {
@@ -23,63 +22,49 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-type Connection = {
-  id: string;
-  broker_id: string;
-  instance_name: string;
-  evolution_api_url: string;
-  phone_number: string | null;
-  status: 'pending' | 'connecting' | 'connected' | 'disconnected';
-  webhook_url: string | null;
-  webhook_secret: string | null;
-  qr_code: string | null;
-  connected_at: string | null;
-  created_at: string;
-};
-
 export default function WhatsAppSettings() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { connection, loading: connectionLoading, waitingForQr, setWaitingForQr, refetch } = useWhatsAppSettingsConnection();
   
-  const [instanceName, setInstanceName] = useState('');
-  const [evolutionApiUrl, setEvolutionApiUrl] = useState('');
-  const [evolutionApiKey, setEvolutionApiKey] = useState('');
   const [showBuyCredits, setShowBuyCredits] = useState(false);
-
-  // DISABLED: WhatsApp connections query - causing 406 errors that block network
-  // TODO: Re-enable once whatsapp_connections table RLS is fixed
-  const connections: Connection[] = [];
-  const connectionsLoading = false;
-  const refetch = () => Promise.resolve();
+  const [isCreating, setIsCreating] = useState(false);
 
   // Create instance mutation
   const createInstance = useMutation({
     mutationFn: async () => {
+      setIsCreating(true);
+      setWaitingForQr(true);
       const response = await supabase.functions.invoke('whatsapp-instance', {
-        body: {
-          action: 'create',
-          instanceName,
-          evolutionApiUrl: evolutionApiUrl.replace(/\/$/, ''),
-          evolutionApiKey,
-        },
+        body: { action: 'create' },
       });
 
       if (response.error) throw response.error;
       if (response.data.error) throw new Error(response.data.error);
       return response.data;
     },
-    onSuccess: () => {
-      toast({
-        title: 'Instância criada',
-        description: 'Escaneie o QR Code para conectar seu WhatsApp.',
-      });
-      setInstanceName('');
-      setEvolutionApiUrl('');
-      setEvolutionApiKey('');
+    onSuccess: (data) => {
+      setIsCreating(false);
+      if (data?.connection?.qr_code_base64) {
+        setWaitingForQr(false);
+        toast({
+          title: 'QR Code gerado',
+          description: 'Escaneie o QR Code com seu WhatsApp.',
+        });
+      } else {
+        // Keep waitingForQr=true — Realtime will detect the update
+        toast({
+          title: 'Instância criada',
+          description: 'Aguardando QR Code via servidor. Isso pode levar até 30 segundos.',
+        });
+      }
+      refetch();
       queryClient.invalidateQueries({ queryKey: ['whatsapp-connections'] });
     },
     onError: (error) => {
+      setIsCreating(false);
+      setWaitingForQr(false);
       toast({
         title: 'Erro ao criar instância',
         description: error.message,
@@ -88,121 +73,66 @@ export default function WhatsAppSettings() {
     },
   });
 
-  // Connect mutation (refresh QR)
-  const connectInstance = useMutation({
-    mutationFn: async (connectionId: string) => {
+  // Refresh QR mutation
+  const refreshQr = useMutation({
+    mutationFn: async () => {
       const response = await supabase.functions.invoke('whatsapp-instance', {
-        body: {
-          action: 'connect',
-          connectionId,
-        },
+        body: { action: 'refresh_qr' },
       });
-
       if (response.error) throw response.error;
       if (response.data.error) throw new Error(response.data.error);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-connections'] });
+      refetch();
     },
     onError: (error) => {
-      toast({
-        title: 'Erro ao conectar',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao atualizar QR', description: error.message, variant: 'destructive' });
     },
   });
 
   // Check status mutation
   const checkStatus = useMutation({
-    mutationFn: async (connectionId: string) => {
+    mutationFn: async () => {
       const response = await supabase.functions.invoke('whatsapp-instance', {
-        body: {
-          action: 'status',
-          connectionId,
-        },
+        body: { action: 'status' },
       });
-
       if (response.error) throw response.error;
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-connections'] });
+      refetch();
     },
     onError: (error) => {
-      toast({
-        title: 'Erro ao verificar status',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao verificar status', description: error.message, variant: 'destructive' });
     },
   });
 
   // Disconnect mutation
   const disconnectInstance = useMutation({
-    mutationFn: async (connectionId: string) => {
+    mutationFn: async () => {
       const response = await supabase.functions.invoke('whatsapp-instance', {
-        body: {
-          action: 'disconnect',
-          connectionId,
-        },
+        body: { action: 'disconnect' },
       });
-
       if (response.error) throw response.error;
       return response.data;
     },
     onSuccess: () => {
-      toast({
-        title: 'Desconectado',
-        description: 'WhatsApp desconectado com sucesso.',
-      });
+      toast({ title: 'Desconectado', description: 'WhatsApp desconectado com sucesso.' });
+      refetch();
       queryClient.invalidateQueries({ queryKey: ['whatsapp-connections'] });
     },
     onError: (error) => {
-      toast({
-        title: 'Erro ao desconectar',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao desconectar', description: error.message, variant: 'destructive' });
     },
   });
 
-  // Delete mutation
-  const deleteInstance = useMutation({
-    mutationFn: async (connectionId: string) => {
-      const response = await supabase.functions.invoke('whatsapp-instance', {
-        body: {
-          action: 'delete',
-          connectionId,
-        },
-      });
-
-      if (response.error) throw response.error;
-      return response.data;
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Instância removida',
-        description: 'Configuração do WhatsApp removida com sucesso.',
-      });
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-connections'] });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Erro ao remover',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | null) => {
     switch (status) {
       case 'connected':
         return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />Conectado</Badge>;
-      case 'connecting':
-        return <Badge variant="secondary"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Conectando</Badge>;
+      case 'pending':
+        return <Badge variant="secondary"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Pendente</Badge>;
       case 'disconnected':
         return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Desconectado</Badge>;
       default:
@@ -210,7 +140,7 @@ export default function WhatsAppSettings() {
     }
   };
 
-  if (authLoading || connectionsLoading) {
+  if (authLoading || connectionLoading) {
     return (
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
@@ -227,7 +157,9 @@ export default function WhatsAppSettings() {
     return <Navigate to="/auth" replace />;
   }
 
-  const hasExistingConnection = connections && connections.length > 0;
+  const hasQrCode = connection?.qr_code_base64 && connection.qr_code_base64.length > 100;
+  const isConnecting = connection?.connection_status === 'connecting' || waitingForQr;
+  const isConnected = connection?.status === 'connected' || connection?.connection_status === 'open';
 
   return (
     <SidebarProvider>
@@ -248,43 +180,60 @@ export default function WhatsAppSettings() {
             {/* Usage Status */}
             <WhatsAppUsageStatus onBuyCredits={() => setShowBuyCredits(true)} />
 
-            {/* Existing Connections */}
-            {connections?.map((conn) => (
-              <Card key={conn.id}>
+            {/* Existing Connection */}
+            {connection && (
+              <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        {conn.status === 'connected' ? (
+                        {isConnected ? (
                           <Wifi className="h-5 w-5 text-green-500" />
                         ) : (
                           <WifiOff className="h-5 w-5 text-muted-foreground" />
                         )}
-                        {conn.instance_name}
+                        {connection.instance_name}
                       </CardTitle>
                       <CardDescription>
-                        {conn.phone_number ? (
+                        {connection.phone_number ? (
                           <span className="flex items-center gap-1 mt-1">
                             <Phone className="h-3 w-3" />
-                            +{conn.phone_number}
+                            +{connection.phone_number}
                           </span>
                         ) : (
                           'Nenhum número conectado'
                         )}
                       </CardDescription>
                     </div>
-                    {getStatusBadge(conn.status)}
+                    {getStatusBadge(connection.status)}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Waiting for QR — server is preparing */}
+                  {isConnecting && !hasQrCode && (
+                    <div className="flex flex-col items-center p-6 bg-muted/50 rounded-lg border border-dashed">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
+                      <p className="text-sm font-medium text-foreground">
+                        O servidor está preparando sua conexão...
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Isso pode levar até 30 segundos. O QR Code aparecerá automaticamente.
+                      </p>
+                      <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        Aguardando resposta do servidor...
+                      </div>
+                    </div>
+                  )}
+
                   {/* QR Code Display */}
-                  {(conn.status === 'pending' || conn.status === 'connecting') && conn.qr_code && (
+                  {hasQrCode && !isConnected && (
                     <div className="flex flex-col items-center p-4 bg-white rounded-lg">
                       <p className="text-sm text-muted-foreground mb-3">
                         Escaneie o QR Code com seu WhatsApp
                       </p>
                       <img 
-                        src={conn.qr_code} 
+                        src={connection.qr_code_base64!.startsWith('data:') ? connection.qr_code_base64! : `data:image/png;base64,${connection.qr_code_base64}`}
                         alt="QR Code" 
                         className="w-64 h-64"
                       />
@@ -296,7 +245,7 @@ export default function WhatsAppSettings() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => checkStatus.mutate(conn.id)}
+                      onClick={() => checkStatus.mutate()}
                       disabled={checkStatus.isPending}
                     >
                       {checkStatus.isPending ? (
@@ -307,14 +256,14 @@ export default function WhatsAppSettings() {
                       Verificar Status
                     </Button>
 
-                    {conn.status !== 'connected' && (
+                    {!isConnected && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => connectInstance.mutate(conn.id)}
-                        disabled={connectInstance.isPending}
+                        onClick={() => refreshQr.mutate()}
+                        disabled={refreshQr.isPending}
                       >
-                        {connectInstance.isPending ? (
+                        {refreshQr.isPending ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
                           <QrCode className="h-4 w-4 mr-2" />
@@ -323,11 +272,11 @@ export default function WhatsAppSettings() {
                       </Button>
                     )}
 
-                    {conn.status === 'connected' && (
+                    {isConnected && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => disconnectInstance.mutate(conn.id)}
+                        onClick={() => disconnectInstance.mutate()}
                         disabled={disconnectInstance.isPending}
                       >
                         {disconnectInstance.isPending ? (
@@ -357,7 +306,7 @@ export default function WhatsAppSettings() {
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => deleteInstance.mutate(conn.id)}
+                            onClick={() => disconnectInstance.mutate()}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Remover
@@ -366,84 +315,31 @@ export default function WhatsAppSettings() {
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
-
-                  {/* API Info */}
-                  <div className="text-xs text-muted-foreground pt-2 border-t space-y-1">
-                    <p>API URL: {conn.evolution_api_url}</p>
-                    <p className="flex items-center gap-1">
-                      API Key: 
-                      <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
-                        <ShieldCheck className="h-3 w-3" />
-                        Criptografada
-                      </span>
-                    </p>
-                    <p>Webhook: {conn.webhook_url}</p>
-                  </div>
                 </CardContent>
               </Card>
-            ))}
+            )}
 
             {/* Create New Connection */}
-            {!hasExistingConnection && (
+            {!connection && (
               <Card>
                 <CardHeader>
                   <CardTitle>Conectar WhatsApp</CardTitle>
                   <CardDescription>
-                    Configure sua conexão com a Evolution API para gerenciar mensagens do WhatsApp.
+                    Conecte seu WhatsApp Business para gerenciar conversas com clientes diretamente na plataforma.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="instanceName">Nome da Instância</Label>
-                    <Input
-                      id="instanceName"
-                      placeholder="minha-imobiliaria"
-                      value={instanceName}
-                      onChange={(e) => setInstanceName(e.target.value.replace(/\s+/g, '-').toLowerCase())}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Identificador único para sua conexão (apenas letras, números e hífens)
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="evolutionApiUrl">URL da Evolution API</Label>
-                    <Input
-                      id="evolutionApiUrl"
-                      placeholder="https://sua-api.evolution.com"
-                      value={evolutionApiUrl}
-                      onChange={(e) => setEvolutionApiUrl(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      URL do seu servidor Evolution API
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="evolutionApiKey">API Key</Label>
-                    <Input
-                      id="evolutionApiKey"
-                      type="password"
-                      placeholder="Sua chave de API"
-                      value={evolutionApiKey}
-                      onChange={(e) => setEvolutionApiKey(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Chave de autenticação da Evolution API
-                    </p>
-                  </div>
-
+                <CardContent>
                   <Button
                     onClick={() => createInstance.mutate()}
-                    disabled={!instanceName || !evolutionApiUrl || !evolutionApiKey || createInstance.isPending}
+                    disabled={isCreating || createInstance.isPending}
                     className="w-full"
                   >
-                    {createInstance.isPending ? (
+                    {isCreating || createInstance.isPending ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
                       <Wifi className="h-4 w-4 mr-2" />
                     )}
-                    Criar Conexão
+                    {isCreating ? 'Criando conexão...' : 'Criar Conexão WhatsApp'}
                   </Button>
                 </CardContent>
               </Card>
@@ -456,20 +352,16 @@ export default function WhatsAppSettings() {
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground space-y-2">
                 <p>
-                  Para usar esta funcionalidade, você precisa de um servidor Evolution API configurado.
+                  A integração com WhatsApp permite que você gerencie conversas com clientes diretamente na plataforma.
                 </p>
                 <p>
-                  A Evolution API é uma solução open-source que permite conectar seu WhatsApp Business
-                  à nossa plataforma para gerenciar conversas com clientes.
-                </p>
-                <p>
-                  <strong>Requisitos:</strong>
+                  <strong>Como funciona:</strong>
                 </p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Servidor Evolution API rodando (self-hosted ou contratado)</li>
-                  <li>URL de acesso à API</li>
-                  <li>Chave de API (API Key)</li>
-                  <li>Celular com WhatsApp para escanear o QR Code</li>
+                  <li>Clique em "Criar Conexão WhatsApp"</li>
+                  <li>Aguarde o QR Code aparecer (pode levar até 30 segundos)</li>
+                  <li>Escaneie o QR Code com seu WhatsApp</li>
+                  <li>Pronto! Suas mensagens aparecerão na aba WhatsApp</li>
                 </ul>
               </CardContent>
             </Card>

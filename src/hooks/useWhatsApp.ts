@@ -44,6 +44,82 @@ export function useWhatsAppConnection() {
   return { connection, loading };
 }
 
+// ─── useWhatsAppSettingsConnection ──────────────────────────────────
+// Used in WhatsAppSettings page: fetches ANY connection (not just connected)
+// and subscribes to Realtime for QR code updates from the webhook.
+
+export function useWhatsAppSettingsConnection() {
+  const { user } = useAuth();
+  const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [waitingForQr, setWaitingForQr] = useState(false);
+
+  const fetchConnection = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('whatsapp_connections')
+      .select('*')
+      .eq('broker_id', user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching WhatsApp connection:', error);
+    }
+    setConnection(data);
+    setLoading(false);
+
+    // If connection exists but no QR and status is connecting/pending, we're waiting
+    if (data && !data.qr_code_base64 && ['connecting', 'pending'].includes(data.connection_status || '')) {
+      setWaitingForQr(true);
+    } else {
+      setWaitingForQr(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchConnection();
+  }, [fetchConnection]);
+
+  // Realtime subscription: listen for changes to whatsapp_connections for this broker
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('whatsapp-connection-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'whatsapp_connections',
+          filter: `broker_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Realtime whatsapp_connections update:', payload.eventType);
+          if (payload.eventType === 'DELETE') {
+            setConnection(null);
+            setWaitingForQr(false);
+          } else {
+            const updated = payload.new as WhatsAppConnection;
+            setConnection(updated);
+            // Stop waiting if QR arrived or if connected
+            if (updated.qr_code_base64 || updated.connection_status === 'open') {
+              setWaitingForQr(false);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  return { connection, loading, waitingForQr, setWaitingForQr, refetch: fetchConnection };
+}
+
 // ─── useConversations ───────────────────────────────────────────────
 
 export function useConversations(connectionId: string | null) {
@@ -78,7 +154,6 @@ export function useConversations(connectionId: string | null) {
     fetchConversations();
   }, [fetchConversations]);
 
-  // Realtime: listen for conversation updates
   useEffect(() => {
     if (!connectionId) return;
 
@@ -152,7 +227,6 @@ export function useMessages(conversationId: string | null) {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Realtime: listen for new messages and status updates
   useEffect(() => {
     if (!conversationId) return;
 
@@ -169,7 +243,6 @@ export function useMessages(conversationId: string | null) {
         (payload) => {
           setMessages((prev) => {
             const newMsg = payload.new as WhatsAppMessage;
-            // Avoid duplicates
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
@@ -294,7 +367,6 @@ export function useContactActivities(contactId: string | null) {
 
     const fetch = async () => {
       setLoading(true);
-      // Fetch deal activities for deals related to this contact
       const { data: contactDeals } = await supabase
         .from('deals')
         .select('id')
@@ -342,7 +414,6 @@ export function useConversationContact(leadId: string | null) {
 
     const fetch = async () => {
       setLoading(true);
-      // First try to find a contact linked to this lead
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
