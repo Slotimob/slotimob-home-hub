@@ -49,7 +49,9 @@ serve(async (req) => {
     // ─── CREATE INSTANCE ───
     if (action === 'create') {
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
-      const webhookUrl = `${supabaseUrl}/functions/v1/whatsapp-webhook`;
+      const reqUrl = new URL(req.url);
+      const webhookUrl = `${reqUrl.origin}/functions/v1/whatsapp-webhook`;
+      console.log('Webhook URL:', webhookUrl);
 
       // Step 1: Create instance with qrcode: true
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
