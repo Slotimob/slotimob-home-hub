@@ -114,19 +114,44 @@ serve(async (req) => {
 
       const qrBase64 = createData?.qrcode?.base64 || null;
 
-      // Upsert connection in DB
-      const { data: conn, error: dbError } = await supabaseClient
+      // Upsert connection in DB - use broker_id since instance_name may be empty initially
+      const { data: existingConn } = await supabaseClient
         .from('whatsapp_connections')
-        .upsert({
-          broker_id: userId,
-          instance_name: instanceName,
-          status: 'pending',
-          connection_status: qrBase64 ? 'qrcode' : 'connecting',
-          qr_code_base64: qrBase64,
-          connected_at: null,
-        }, { onConflict: 'instance_name' })
-        .select()
-        .single();
+        .select('id')
+        .eq('broker_id', userId)
+        .maybeSingle();
+
+      let conn, dbError;
+      if (existingConn) {
+        const res = await supabaseClient
+          .from('whatsapp_connections')
+          .update({
+            instance_name: instanceName,
+            status: 'pending',
+            connection_status: qrBase64 ? 'qrcode' : 'connecting',
+            qr_code_base64: qrBase64,
+            connected_at: null,
+          })
+          .eq('broker_id', userId)
+          .select()
+          .single();
+        conn = res.data;
+        dbError = res.error;
+      } else {
+        const res = await supabaseClient
+          .from('whatsapp_connections')
+          .insert({
+            broker_id: userId,
+            instance_name: instanceName,
+            status: 'pending',
+            connection_status: qrBase64 ? 'qrcode' : 'connecting',
+            qr_code_base64: qrBase64,
+          })
+          .select()
+          .single();
+        conn = res.data;
+        dbError = res.error;
+      }
 
       if (dbError) {
         console.error('DB upsert error:', dbError);
