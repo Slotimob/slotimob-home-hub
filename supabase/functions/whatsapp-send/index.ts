@@ -7,51 +7,6 @@ const corsHeaders = {
 };
 
 const MAX_TEXT_LENGTH = 4096;
-const RATE_LIMIT_MAX = 30;
-const RATE_LIMIT_WINDOW_MIN = 1;
-
-function isValidUUID(str: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
-}
-
-function sanitizeContent(content: string): string {
-  if (!content) return '';
-  return content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
-}
-
-async function checkRateLimit(
-  supabaseAdmin: any, identifier: string, endpoint: string,
-  maxRequests: number, windowMinutes: number
-): Promise<{ allowed: boolean; remaining: number }> {
-  const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000);
-  const { data, error } = await supabaseAdmin
-    .from('rate_limits')
-    .select('request_count, window_start')
-    .eq('identifier', identifier)
-    .eq('endpoint', endpoint)
-    .gte('window_start', windowStart.toISOString())
-    .order('window_start', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) return { allowed: true, remaining: maxRequests };
-  const currentCount = data?.request_count || 0;
-  if (currentCount >= maxRequests) return { allowed: false, remaining: 0 };
-
-  if (data) {
-    await supabaseAdmin
-      .from('rate_limits')
-      .update({ request_count: currentCount + 1 })
-      .eq('identifier', identifier)
-      .eq('endpoint', endpoint)
-      .eq('window_start', data.window_start);
-  } else {
-    await supabaseAdmin
-      .from('rate_limits')
-      .insert({ identifier, endpoint, request_count: 1, window_start: new Date().toISOString() });
-  }
-  return { allowed: true, remaining: maxRequests - currentCount - 1 };
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -61,6 +16,14 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL');
+    const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY');
+
+    if (!evolutionApiUrl || !evolutionApiKey) {
+      return new Response(JSON.stringify({ error: 'Evolution API not configured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -72,7 +35,6 @@ serve(async (req) => {
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
-    const supabaseAdmin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
     const token = authHeader.replace('Bearer ', '');
     const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
@@ -83,43 +45,26 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    // Rate limit
-    const rl = await checkRateLimit(supabaseAdmin, userId, 'whatsapp-send', RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MIN);
-    if (!rl.allowed) {
-      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
-        status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' },
-      });
-    }
-
-    let requestBody: any;
-    try { requestBody = await req.json(); } catch {
-      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+    let body: any;
+    try { body = await req.json(); } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { conversationId, messageType, content } = requestBody;
+    const { conversationId, content, messageType } = body;
 
-    if (!conversationId || !isValidUUID(conversationId)) {
-      return new Response(JSON.stringify({ error: 'Invalid conversation ID' }), {
+    if (!conversationId || !content) {
+      return new Response(JSON.stringify({ error: 'conversationId and content are required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const validatedType = messageType || 'text';
-    if (!['text', 'image', 'document', 'audio', 'video'].includes(validatedType)) {
-      return new Response(JSON.stringify({ error: 'Unsupported message type' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (content && content.length > MAX_TEXT_LENGTH) {
+    if (content.length > MAX_TEXT_LENGTH) {
       return new Response(JSON.stringify({ error: 'Message too long' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    const sanitized = sanitizeContent(content || '');
 
     // Get conversation + connection
     const { data: conversation, error: convError } = await supabaseClient
@@ -140,69 +85,51 @@ serve(async (req) => {
       });
     }
 
-    const conn = conversation.connection;
-    const recipientPhone = conversation.contact_phone;
-
-    // ─── Send via Meta Cloud API ───
-    const whatsappToken = Deno.env.get('WHATSAPP_TOKEN');
-    const phoneNumberId = conn.phone_number_id;
-
-    if (!whatsappToken || !phoneNumberId) {
-      return new Response(JSON.stringify({ error: 'WhatsApp connection not configured for Meta API' }), {
+    const instanceName = conversation.connection.instance_name;
+    if (!instanceName) {
+      return new Response(JSON.stringify({ error: 'No Evolution instance configured' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const metaUrl = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
+    const recipientPhone = conversation.contact_phone;
+    const sanitized = (content || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
-    let metaBody: Record<string, unknown> = {
-      messaging_product: 'whatsapp',
-      to: recipientPhone,
-    };
+    // Send via Evolution API
+    const validatedType = messageType || 'text';
+    let evoUrl = '';
+    let evoBody: Record<string, unknown> = {};
 
-    switch (validatedType) {
-      case 'text':
-        metaBody.type = 'text';
-        metaBody.text = { body: sanitized };
-        break;
-      case 'image':
-        metaBody.type = 'image';
-        metaBody.image = { link: requestBody.mediaUrl, caption: sanitized || undefined };
-        break;
-      case 'document':
-        metaBody.type = 'document';
-        metaBody.document = { link: requestBody.mediaUrl, filename: requestBody.mediaFilename || 'document' };
-        break;
-      case 'audio':
-        metaBody.type = 'audio';
-        metaBody.audio = { link: requestBody.mediaUrl };
-        break;
-      case 'video':
-        metaBody.type = 'video';
-        metaBody.video = { link: requestBody.mediaUrl, caption: sanitized || undefined };
-        break;
+    if (validatedType === 'text') {
+      evoUrl = `${evolutionApiUrl}/message/sendText/${instanceName}`;
+      evoBody = { number: recipientPhone, text: sanitized };
+    } else if (validatedType === 'image') {
+      evoUrl = `${evolutionApiUrl}/message/sendMedia/${instanceName}`;
+      evoBody = { number: recipientPhone, mediatype: 'image', media: body.mediaUrl, caption: sanitized || undefined };
+    } else if (validatedType === 'document') {
+      evoUrl = `${evolutionApiUrl}/message/sendMedia/${instanceName}`;
+      evoBody = { number: recipientPhone, mediatype: 'document', media: body.mediaUrl, fileName: body.mediaFilename || 'document' };
+    } else if (validatedType === 'audio') {
+      evoUrl = `${evolutionApiUrl}/message/sendWhatsAppAudio/${instanceName}`;
+      evoBody = { number: recipientPhone, audio: body.mediaUrl };
+    } else {
+      evoUrl = `${evolutionApiUrl}/message/sendText/${instanceName}`;
+      evoBody = { number: recipientPhone, text: sanitized };
     }
 
-    console.log(`Sending to Meta Cloud API: ${metaUrl}`);
+    console.log(`Sending via Evolution: ${evoUrl}`);
 
-    const metaResponse = await fetch(metaUrl, {
+    const evoRes = await fetch(evoUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${whatsappToken}`,
-      },
-      body: JSON.stringify(metaBody),
+      headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+      body: JSON.stringify(evoBody),
     });
 
-    const metaData = await metaResponse.json();
-    console.log('Meta API response:', JSON.stringify(metaData));
+    const evoData = await evoRes.json();
+    console.log('Evolution response status:', evoRes.status);
 
-    const messageStatus = metaResponse.ok ? 'sent' : 'failed';
-    const waMessageId = metaData.messages?.[0]?.id || `sent_${Date.now()}`;
-
-    if (!metaResponse.ok) {
-      console.error('Meta API error:', metaData);
-    }
+    const messageStatus = evoRes.ok ? 'sent' : 'failed';
+    const waMessageId = evoData?.key?.id || `evo_${Date.now()}`;
 
     // Save message to DB
     const { data: message, error: msgError } = await supabaseClient
@@ -213,9 +140,9 @@ serve(async (req) => {
         direction: 'outgoing',
         message_type: validatedType,
         content: sanitized,
-        media_url: requestBody.mediaUrl || null,
-        media_mime_type: requestBody.mediaMimeType || null,
-        media_filename: requestBody.mediaFilename || null,
+        media_url: body.mediaUrl || null,
+        media_mime_type: body.mediaMimeType || null,
+        media_filename: body.mediaFilename || null,
         status: messageStatus,
         sent_at: new Date().toISOString(),
         sender_user_id: userId,
@@ -223,9 +150,9 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (msgError) console.error('Error saving message:', msgError);
+    if (msgError) console.error('DB insert error:', msgError);
 
-    // Update conversation
+    // Update conversation last_message
     await supabaseClient
       .from('whatsapp_conversations')
       .update({
@@ -234,18 +161,18 @@ serve(async (req) => {
       })
       .eq('id', conversationId);
 
-    if (!metaResponse.ok) {
-      return new Response(JSON.stringify({ error: metaData.error?.message || 'Failed to send', message }), {
+    if (!evoRes.ok) {
+      return new Response(JSON.stringify({ error: evoData?.message || 'Failed to send via Evolution', message }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify({ success: true, message, metaResponse: metaData }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-RateLimit-Remaining': String(rl.remaining) },
+    return new Response(JSON.stringify({ success: true, message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in whatsapp-send:', error);
-    return new Response(JSON.stringify({ error: 'Failed to send message. Please try again.' }), {
+    console.error('whatsapp-send error:', error);
+    return new Response(JSON.stringify({ error: 'Failed to send message' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

@@ -7,9 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Clock, Building2, Plug, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Clock, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const COMPATIBLE_PORTALS = [
@@ -29,12 +28,12 @@ const Integrations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  // WhatsApp connection state
+  // WhatsApp Evolution state
   const [whatsappConnection, setWhatsappConnection] = useState<any>(null);
-  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
-  const [phoneNumberId, setPhoneNumberId] = useState('');
-  const [wabaId, setWabaId] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
@@ -47,15 +46,41 @@ const Integrations = () => {
     }
   }, [user]);
 
+  // Realtime subscription for connection status changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('whatsapp-connection-status')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'whatsapp_connections',
+        filter: `broker_id=eq.${user.id}`,
+      }, (payload) => {
+        console.log('Realtime update:', payload.new);
+        const updated = payload.new as any;
+        setWhatsappConnection(updated);
+
+        if (updated.connection_status === 'open' || updated.status === 'connected') {
+          setQrDialogOpen(false);
+          setQrCodeBase64(null);
+          toast({ title: '✅ WhatsApp Conectado!', description: 'Seu WhatsApp foi vinculado com sucesso.' });
+        }
+
+        if (updated.qr_code_base64 && updated.connection_status === 'qrcode') {
+          setQrCodeBase64(updated.qr_code_base64);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   const loadUserToken = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('ical_token')
-        .eq('id', user!.id)
-        .single();
-      if (error) throw error;
+      const { data } = await supabase.from('profiles').select('ical_token').eq('id', user!.id).single();
       setXmlToken(data?.ical_token || null);
     } catch (error) {
       console.error('Error loading token:', error);
@@ -66,76 +91,79 @@ const Integrations = () => {
 
   const loadWhatsAppConnection = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('whatsapp_connections')
         .select('*')
         .eq('broker_id', user!.id)
-        .eq('api_provider', 'meta')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (!error && data) setWhatsappConnection(data);
+      if (data) setWhatsappConnection(data);
     } catch (error) {
       console.error('Error loading WhatsApp connection:', error);
     }
   };
 
   const handleConnectWhatsApp = async () => {
-    if (!phoneNumberId.trim() || !wabaId.trim()) {
-      toast({ title: 'Erro', description: 'Preencha todos os campos.', variant: 'destructive' });
-      return;
-    }
-
-    setIsSaving(true);
+    setIsConnecting(true);
     try {
-      const webhookUrl = `https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook`;
-
-      const { data, error } = await supabase
-        .from('whatsapp_connections')
-        .insert({
-          broker_id: user!.id,
-          phone_number_id: phoneNumberId.trim(),
-          waba_id: wabaId.trim(),
-          api_provider: 'meta',
-          status: 'connected',
-          webhook_url: webhookUrl,
-          connected_at: new Date().toISOString(),
-          evolution_api_url: '',
-          instance_name: '',
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
+        body: { action: 'create' },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      setWhatsappConnection(data);
-      setConnectDialogOpen(false);
-      setPhoneNumberId('');
-      setWabaId('');
-      toast({ title: 'WhatsApp conectado!', description: 'Sua integração com a API Oficial da Meta está ativa.' });
+      if (data?.qrCode) {
+        setQrCodeBase64(data.qrCode);
+        setQrDialogOpen(true);
+      }
+      if (data?.connection) {
+        setWhatsappConnection(data.connection);
+      }
+
+      toast({ title: 'Instância criada!', description: 'Escaneie o QR Code com seu WhatsApp.' });
     } catch (error: any) {
-      console.error('Error connecting WhatsApp:', error);
+      console.error('Error creating instance:', error);
       toast({ title: 'Erro ao conectar', description: error.message, variant: 'destructive' });
     } finally {
-      setIsSaving(false);
+      setIsConnecting(false);
     }
   };
 
-  const handleDisconnectWhatsApp = async () => {
-    if (!whatsappConnection) return;
+  const handleRefreshQr = async () => {
     try {
-      await supabase
-        .from('whatsapp_connections')
-        .update({ status: 'disconnected' })
-        .eq('id', whatsappConnection.id);
-
-      setWhatsappConnection({ ...whatsappConnection, status: 'disconnected' });
-      toast({ title: 'WhatsApp desconectado' });
+      const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
+        body: { action: 'refresh_qr' },
+      });
+      if (error) throw error;
+      if (data?.qrCode) setQrCodeBase64(data.qrCode);
     } catch (error: any) {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     }
   };
+
+  const handleDisconnectWhatsApp = async () => {
+    setIsDisconnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
+        body: { action: 'disconnect' },
+      });
+      if (error) throw error;
+
+      setWhatsappConnection((prev: any) => prev ? { ...prev, status: 'disconnected', connection_status: 'disconnected' } : null);
+      setQrCodeBase64(null);
+      toast({ title: 'WhatsApp desconectado' });
+    } catch (error: any) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
+  const isConnected = whatsappConnection?.status === 'connected' || whatsappConnection?.connection_status === 'open';
+  const isPending = whatsappConnection?.connection_status === 'qrcode' || whatsappConnection?.connection_status === 'connecting';
 
   const xmlFeedUrl = xmlToken
     ? `https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/xml-feed?token=${xmlToken}`
@@ -145,12 +173,10 @@ const Integrations = () => {
     if (xmlFeedUrl) {
       navigator.clipboard.writeText(xmlFeedUrl);
       setCopied(true);
-      toast({ title: 'URL copiada!', description: 'O link do feed XML foi copiado.' });
+      toast({ title: 'URL copiada!' });
       setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  const isWhatsAppConnected = whatsappConnection?.status === 'connected';
 
   if (loading || isLoading) {
     return (
@@ -163,11 +189,9 @@ const Integrations = () => {
   return (
     <AppLayout title="Integrações">
       <div className="space-y-6">
-        <div className="space-y-2">
-          <p className="text-muted-foreground">
-            Conecte seu sistema a canais de comunicação e portais imobiliários para aumentar sua visibilidade e eficiência.
-          </p>
-        </div>
+        <p className="text-muted-foreground">
+          Conecte seu sistema a canais de comunicação e portais imobiliários.
+        </p>
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* WhatsApp Card */}
@@ -178,119 +202,80 @@ const Integrations = () => {
                   <MessageSquare className="h-6 w-6 text-green-500" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl">WhatsApp Business</CardTitle>
-                  <CardDescription>API Oficial da Meta</CardDescription>
+                  <CardTitle className="text-xl">WhatsApp</CardTitle>
+                  <CardDescription>Conexão via QR Code</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
-                {isWhatsAppConnected ? (
+                {isConnected ? (
                   <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                    <CheckCircle className="h-3 w-3 mr-1" />
+                    <Wifi className="h-3 w-3 mr-1" />
                     Conectado
+                  </Badge>
+                ) : isPending ? (
+                  <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                    <QrCode className="h-3 w-3 mr-1" />
+                    Aguardando QR Code
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="bg-muted text-muted-foreground">
-                    <Clock className="h-3 w-3 mr-1" />
+                    <WifiOff className="h-3 w-3 mr-1" />
                     Não Conectado
                   </Badge>
                 )}
               </div>
 
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Integração direta via <strong>API Oficial da Meta</strong> para gestão de conversas e leads centralizada.
-                Envie mensagens, receba notificações e acompanhe todo o histórico no CRM.
+                Conecte seu WhatsApp pessoal ou comercial escaneando um QR Code.
+                Todas as mensagens serão sincronizadas com o CRM em tempo real.
               </p>
 
-              {isWhatsAppConnected && whatsappConnection && (
-                <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+              {isConnected && whatsappConnection && (
+                <div className="rounded-lg bg-muted/50 p-4 space-y-1">
                   <h4 className="font-medium text-sm">Detalhes da Conexão</h4>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p><strong>Phone Number ID:</strong> {whatsappConnection.phone_number_id}</p>
-                    <p><strong>WABA ID:</strong> {whatsappConnection.waba_id}</p>
-                    {whatsappConnection.phone_number && (
-                      <p><strong>Número:</strong> {whatsappConnection.phone_number}</p>
-                    )}
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Instância:</strong> {whatsappConnection.instance_name}
+                  </p>
                 </div>
               )}
 
               <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-                <h4 className="font-medium text-sm">Recursos Disponíveis:</h4>
+                <h4 className="font-medium text-sm">Recursos:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Envio e recebimento de mensagens em tempo real</li>
-                  <li>• Criação automática de contatos/leads</li>
+                  <li>• Envio e recebimento em tempo real</li>
+                  <li>• Criação automática de contatos</li>
                   <li>• Histórico vinculado ao CRM</li>
-                  <li>• Status de entrega e leitura</li>
+                  <li>• Sem custos adicionais por mensagem</li>
                 </ul>
               </div>
 
-              {isWhatsAppConnected ? (
+              {isConnected ? (
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => navigate('/whatsapp')}>
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Abrir Chat
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp}>
-                    Desconectar
+                  <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp} disabled={isDisconnecting}>
+                    {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
+                  </Button>
+                </div>
+              ) : isPending ? (
+                <div className="flex gap-2">
+                  <Button className="flex-1" onClick={() => setQrDialogOpen(true)}>
+                    <QrCode className="h-4 w-4 mr-2" />
+                    Ver QR Code
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp} disabled={isDisconnecting}>
+                    Cancelar
                   </Button>
                 </div>
               ) : (
-                <Dialog open={connectDialogOpen} onOpenChange={setConnectDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full">
-                      <Plug className="h-4 w-4 mr-2" />
-                      Conectar WhatsApp
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Conectar WhatsApp Business</DialogTitle>
-                      <DialogDescription>
-                        Insira os dados da sua conta do WhatsApp Business da Meta. O Token de acesso deve ser configurado como secret no Supabase (WHATSAPP_TOKEN).
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="phoneNumberId">Phone Number ID</Label>
-                        <Input
-                          id="phoneNumberId"
-                          placeholder="Ex: 123456789012345"
-                          value={phoneNumberId}
-                          onChange={(e) => setPhoneNumberId(e.target.value)}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Encontre em: Meta Business Suite → WhatsApp → Configurações da API
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="wabaId">WABA ID (WhatsApp Business Account ID)</Label>
-                        <Input
-                          id="wabaId"
-                          placeholder="Ex: 123456789012345"
-                          value={wabaId}
-                          onChange={(e) => setWabaId(e.target.value)}
-                        />
-                      </div>
-                      <div className="rounded-lg bg-blue-500/5 border border-blue-500/20 p-3">
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Webhook URL</strong> (configure na Meta):
-                        </p>
-                        <code className="text-xs break-all">
-                          https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook
-                        </code>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setConnectDialogOpen(false)}>Cancelar</Button>
-                      <Button onClick={handleConnectWhatsApp} disabled={isSaving}>
-                        {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        Salvar Conexão
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button className="w-full" onClick={handleConnectWhatsApp} disabled={isConnecting}>
+                  {isConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
+                  Conectar WhatsApp
+                </Button>
               )}
             </CardContent>
           </Card>
@@ -319,7 +304,6 @@ const Integrations = () => {
 
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Publique seus imóveis automaticamente nos principais portais do Brasil.
-                Seus imóveis com status <strong>"Disponível"</strong> são sincronizados a cada 24h.
               </p>
 
               <div className="space-y-2">
@@ -351,7 +335,7 @@ const Integrations = () => {
                 </h4>
                 <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                   <li>Copie a URL do Feed XML acima</li>
-                  <li>Acesse a área de "Carga de Dados" do portal desejado</li>
+                  <li>Acesse a área de "Carga de Dados" do portal</li>
                   <li>Cole a URL no campo indicado</li>
                   <li>Seus imóveis serão atualizados automaticamente</li>
                 </ol>
@@ -372,6 +356,47 @@ const Integrations = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* QR Code Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              Escaneie o QR Code
+            </DialogTitle>
+            <DialogDescription>
+              Abra o WhatsApp no seu celular, vá em <strong>Configurações → Dispositivos Conectados → Conectar Dispositivo</strong> e escaneie o código abaixo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-4 py-4">
+            {qrCodeBase64 ? (
+              <div className="rounded-xl border-2 border-green-500/20 p-4 bg-white">
+                <img
+                  src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
+                  alt="QR Code WhatsApp"
+                  className="w-64 h-64 object-contain"
+                />
+              </div>
+            ) : (
+              <div className="flex h-64 w-64 items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/20">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
+            <Button variant="outline" size="sm" onClick={handleRefreshQr}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar QR Code
+            </Button>
+
+            <p className="text-xs text-muted-foreground text-center">
+              O QR Code expira em poucos segundos. Clique em "Atualizar" se necessário.
+              A conexão será detectada automaticamente.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
