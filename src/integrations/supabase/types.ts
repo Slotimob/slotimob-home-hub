@@ -3230,6 +3230,7 @@ export type Database = {
           api_provider: string
           broker_id: string
           connected_at: string | null
+          connection_status: string
           created_at: string
           evolution_api_url: string | null
           id: string
@@ -3237,6 +3238,7 @@ export type Database = {
           phone_number: string | null
           phone_number_id: string | null
           qr_code: string | null
+          qr_code_base64: string | null
           status: Database["public"]["Enums"]["whatsapp_connection_status"]
           updated_at: string
           waba_id: string | null
@@ -3247,6 +3249,7 @@ export type Database = {
           api_provider?: string
           broker_id: string
           connected_at?: string | null
+          connection_status?: string
           created_at?: string
           evolution_api_url?: string | null
           id?: string
@@ -3254,6 +3257,7 @@ export type Database = {
           phone_number?: string | null
           phone_number_id?: string | null
           qr_code?: string | null
+          qr_code_base64?: string | null
           status?: Database["public"]["Enums"]["whatsapp_connection_status"]
           updated_at?: string
           waba_id?: string | null
@@ -3264,6 +3268,7 @@ export type Database = {
           api_provider?: string
           broker_id?: string
           connected_at?: string | null
+          connection_status?: string
           created_at?: string
           evolution_api_url?: string | null
           id?: string
@@ -3271,6 +3276,7 @@ export type Database = {
           phone_number?: string | null
           phone_number_id?: string | null
           qr_code?: string | null
+          qr_code_base64?: string | null
           status?: Database["public"]["Enums"]["whatsapp_connection_status"]
           updated_at?: string
           waba_id?: string | null
