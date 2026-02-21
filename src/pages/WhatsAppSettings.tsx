@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,19 +8,89 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { WhatsAppUsageStatus } from '@/components/whatsapp/WhatsAppUsageStatus';
 import { BuyCreditsDialog } from '@/components/whatsapp/BuyCreditsDialog';
 import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { 
   ArrowLeft, Wifi, WifiOff, RefreshCw, Trash2, Phone, QrCode,
-  Loader2, CheckCircle, XCircle, AlertCircle, Clock
+  Loader2, CheckCircle, XCircle, AlertCircle, Clock, Timer
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+
+const QR_EXPIRY_SECONDS = 14;
+
+function QrExpiryTimer({ onExpire }: { onExpire: () => void }) {
+  const [secondsLeft, setSecondsLeft] = useState(QR_EXPIRY_SECONDS);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    setSecondsLeft(QR_EXPIRY_SECONDS);
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft(prev => {
+        if (prev <= 1) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          onExpire();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [onExpire]);
+
+  const progress = (secondsLeft / QR_EXPIRY_SECONDS) * 100;
+  const isUrgent = secondsLeft <= 5;
+
+  return (
+    <div className="w-full space-y-2 mt-3">
+      <div className="flex items-center justify-between text-xs">
+        <span className={`flex items-center gap-1 font-medium ${isUrgent ? 'text-destructive animate-pulse' : 'text-amber-600 dark:text-amber-400'}`}>
+          <Timer className="h-3 w-3" />
+          {secondsLeft > 0 ? `Expira em ${secondsLeft}s — escaneie agora!` : 'QR expirado! Gere um novo.'}
+        </span>
+      </div>
+      <Progress value={progress} className={`h-1.5 ${isUrgent ? '[&>div]:bg-destructive' : '[&>div]:bg-amber-500'}`} />
+    </div>
+  );
+}
+
+function PreparingCard() {
+  const [progress, setProgress] = useState(10);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress(prev => Math.min(prev + Math.random() * 8, 90));
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center p-6 bg-muted/50 rounded-lg border border-dashed space-y-4">
+      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <div className="text-center space-y-1">
+        <p className="text-sm font-medium text-foreground">
+          Nosso servidor está configurando sua instância em segundo plano.
+        </p>
+        <p className="text-xs text-muted-foreground max-w-md">
+          Você pode continuar navegando na plataforma — avisaremos você quando o código estiver pronto.
+          Assim que o QR Code estiver pronto, vamos avisar e você precisa imediatamente fazer a conexão.
+          Ou se preferir, pode esperar alguns segundos por aqui.
+        </p>
+      </div>
+      <Progress value={progress} className="w-full max-w-xs h-2 [&>div]:bg-primary" />
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <Clock className="h-3 w-3" />
+        Aguardando resposta do servidor...
+      </div>
+    </div>
+  );
+}
 
 export default function WhatsAppSettings() {
   const { user, loading: authLoading } = useAuth();
@@ -30,8 +100,15 @@ export default function WhatsAppSettings() {
   
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [qrExpired, setQrExpired] = useState(false);
 
-  // Create instance mutation
+  // Reset expired state when QR changes
+  useEffect(() => {
+    if (connection?.qr_code_base64) {
+      setQrExpired(false);
+    }
+  }, [connection?.qr_code_base64]);
+
   const createInstance = useMutation({
     mutationFn: async () => {
       setIsCreating(true);
@@ -39,41 +116,26 @@ export default function WhatsAppSettings() {
       const response = await supabase.functions.invoke('whatsapp-instance', {
         body: { action: 'create' },
       });
-
       if (response.error) throw response.error;
       if (response.data.error) throw new Error(response.data.error);
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setIsCreating(false);
-      if (data?.connection?.qr_code_base64) {
-        setWaitingForQr(false);
-        toast({
-          title: 'QR Code gerado',
-          description: 'Escaneie o QR Code com seu WhatsApp.',
-        });
-      } else {
-        // Keep waitingForQr=true — Realtime will detect the update
-        toast({
-          title: 'Instância criada',
-          description: 'Aguardando QR Code via servidor. Isso pode levar até 30 segundos.',
-        });
-      }
+      toast({
+        title: 'Instância sendo criada',
+        description: 'O QR Code aparecerá automaticamente. Você pode navegar pela plataforma.',
+      });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['whatsapp-connections'] });
     },
     onError: (error) => {
       setIsCreating(false);
       setWaitingForQr(false);
-      toast({
-        title: 'Erro ao criar instância',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao criar instância', description: error.message, variant: 'destructive' });
     },
   });
 
-  // Refresh QR mutation
   const refreshQr = useMutation({
     mutationFn: async () => {
       const response = await supabase.functions.invoke('whatsapp-instance', {
@@ -83,37 +145,27 @@ export default function WhatsAppSettings() {
       if (response.data.error) throw new Error(response.data.error);
       return response.data;
     },
-    onSuccess: () => {
-      refetch();
-    },
+    onSuccess: () => { setQrExpired(false); refetch(); },
     onError: (error) => {
       toast({ title: 'Erro ao atualizar QR', description: error.message, variant: 'destructive' });
     },
   });
 
-  // Check status mutation
   const checkStatus = useMutation({
     mutationFn: async () => {
-      const response = await supabase.functions.invoke('whatsapp-instance', {
-        body: { action: 'status' },
-      });
+      const response = await supabase.functions.invoke('whatsapp-instance', { body: { action: 'status' } });
       if (response.error) throw response.error;
       return response.data;
     },
-    onSuccess: () => {
-      refetch();
-    },
+    onSuccess: () => { refetch(); },
     onError: (error) => {
       toast({ title: 'Erro ao verificar status', description: error.message, variant: 'destructive' });
     },
   });
 
-  // Disconnect mutation
   const disconnectInstance = useMutation({
     mutationFn: async () => {
-      const response = await supabase.functions.invoke('whatsapp-instance', {
-        body: { action: 'disconnect' },
-      });
+      const response = await supabase.functions.invoke('whatsapp-instance', { body: { action: 'disconnect' } });
       if (response.error) throw response.error;
       return response.data;
     },
@@ -132,7 +184,7 @@ export default function WhatsAppSettings() {
       case 'connected':
         return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />Conectado</Badge>;
       case 'pending':
-        return <Badge variant="secondary"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Pendente</Badge>;
+        return <Badge variant="secondary"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Preparando</Badge>;
       case 'disconnected':
         return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Desconectado</Badge>;
       default:
@@ -153,12 +205,11 @@ export default function WhatsAppSettings() {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (!user) return <Navigate to="/auth" replace />;
 
   const hasQrCode = connection?.qr_code_base64 && connection.qr_code_base64.length > 100;
-  const isConnecting = connection?.connection_status === 'connecting' || waitingForQr;
+  const isPreparing = connection?.connection_status === 'preparing' || waitingForQr;
+  const isConnecting = connection?.connection_status === 'connecting';
   const isConnected = connection?.status === 'connected' || connection?.connection_status === 'open';
 
   return (
@@ -169,65 +220,38 @@ export default function WhatsAppSettings() {
           <div className="flex items-center gap-4 mb-6">
             <SidebarTrigger />
             <Button variant="ghost" size="icon" asChild>
-              <Link to="/whatsapp">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
+              <Link to="/whatsapp"><ArrowLeft className="h-5 w-5" /></Link>
             </Button>
             <h1 className="text-2xl font-bold">Configurações do WhatsApp</h1>
           </div>
 
           <div className="max-w-3xl space-y-6">
-            {/* Usage Status */}
             <WhatsAppUsageStatus onBuyCredits={() => setShowBuyCredits(true)} />
 
-            {/* Existing Connection */}
             {connection && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        {isConnected ? (
-                          <Wifi className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <WifiOff className="h-5 w-5 text-muted-foreground" />
-                        )}
+                        {isConnected ? <Wifi className="h-5 w-5 text-green-500" /> : <WifiOff className="h-5 w-5 text-muted-foreground" />}
                         {connection.instance_name}
                       </CardTitle>
                       <CardDescription>
                         {connection.phone_number ? (
-                          <span className="flex items-center gap-1 mt-1">
-                            <Phone className="h-3 w-3" />
-                            +{connection.phone_number}
-                          </span>
-                        ) : (
-                          'Nenhum número conectado'
-                        )}
+                          <span className="flex items-center gap-1 mt-1"><Phone className="h-3 w-3" />+{connection.phone_number}</span>
+                        ) : 'Nenhum número conectado'}
                       </CardDescription>
                     </div>
                     {getStatusBadge(connection.status)}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Waiting for QR — server is preparing */}
-                  {isConnecting && !hasQrCode && (
-                    <div className="flex flex-col items-center p-6 bg-muted/50 rounded-lg border border-dashed">
-                      <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
-                      <p className="text-sm font-medium text-foreground">
-                        O servidor está preparando sua conexão...
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Isso pode levar até 30 segundos. O QR Code aparecerá automaticamente.
-                      </p>
-                      <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        Aguardando resposta do servidor...
-                      </div>
-                    </div>
-                  )}
+                  {/* Preparing state — background progress */}
+                  {(isPreparing || isConnecting) && !hasQrCode && <PreparingCard />}
 
-                  {/* QR Code Display */}
-                  {hasQrCode && !isConnected && (
+                  {/* QR Code Display with expiry timer */}
+                  {hasQrCode && !isConnected && !qrExpired && (
                     <div className="flex flex-col items-center p-4 bg-white rounded-lg">
                       <p className="text-sm text-muted-foreground mb-3">
                         Escaneie o QR Code com seu WhatsApp
@@ -237,78 +261,64 @@ export default function WhatsAppSettings() {
                         alt="QR Code" 
                         className="w-64 h-64"
                       />
+                      <QrExpiryTimer onExpire={() => setQrExpired(true)} />
+                    </div>
+                  )}
+
+                  {/* QR Expired */}
+                  {hasQrCode && qrExpired && !isConnected && (
+                    <div className="flex flex-col items-center p-6 bg-destructive/5 rounded-lg border border-destructive/20">
+                      <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+                      <p className="text-sm font-medium text-destructive">QR Code expirado</p>
+                      <p className="text-xs text-muted-foreground mt-1">Clique abaixo para gerar um novo código.</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => refreshQr.mutate()}
+                        disabled={refreshQr.isPending}
+                      >
+                        {refreshQr.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <QrCode className="h-4 w-4 mr-2" />}
+                        Gerar Novo QR Code
+                      </Button>
                     </div>
                   )}
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => checkStatus.mutate()}
-                      disabled={checkStatus.isPending}
-                    >
-                      {checkStatus.isPending ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                      )}
+                    <Button variant="outline" size="sm" onClick={() => checkStatus.mutate()} disabled={checkStatus.isPending}>
+                      {checkStatus.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                       Verificar Status
                     </Button>
 
-                    {!isConnected && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => refreshQr.mutate()}
-                        disabled={refreshQr.isPending}
-                      >
-                        {refreshQr.isPending ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <QrCode className="h-4 w-4 mr-2" />
-                        )}
+                    {!isConnected && !qrExpired && (
+                      <Button variant="outline" size="sm" onClick={() => refreshQr.mutate()} disabled={refreshQr.isPending}>
+                        {refreshQr.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <QrCode className="h-4 w-4 mr-2" />}
                         Novo QR Code
                       </Button>
                     )}
 
                     {isConnected && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => disconnectInstance.mutate()}
-                        disabled={disconnectInstance.isPending}
-                      >
-                        {disconnectInstance.isPending ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <WifiOff className="h-4 w-4 mr-2" />
-                        )}
+                      <Button variant="outline" size="sm" onClick={() => disconnectInstance.mutate()} disabled={disconnectInstance.isPending}>
+                        {disconnectInstance.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <WifiOff className="h-4 w-4 mr-2" />}
                         Desconectar
                       </Button>
                     )}
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Remover
-                        </Button>
+                        <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4 mr-2" />Remover</Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Remover configuração?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Esta ação irá remover a conexão do WhatsApp e todas as conversas serão perdidas.
-                            Esta ação não pode ser desfeita.
+                            Esta ação irá remover a conexão do WhatsApp e todas as conversas serão perdidas. Esta ação não pode ser desfeita.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => disconnectInstance.mutate()}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
+                          <AlertDialogAction onClick={() => disconnectInstance.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                             Remover
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -319,7 +329,6 @@ export default function WhatsAppSettings() {
               </Card>
             )}
 
-            {/* Create New Connection */}
             {!connection && (
               <Card>
                 <CardHeader>
@@ -329,38 +338,23 @@ export default function WhatsAppSettings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button
-                    onClick={() => createInstance.mutate()}
-                    disabled={isCreating || createInstance.isPending}
-                    className="w-full"
-                  >
-                    {isCreating || createInstance.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Wifi className="h-4 w-4 mr-2" />
-                    )}
+                  <Button onClick={() => createInstance.mutate()} disabled={isCreating || createInstance.isPending} className="w-full">
+                    {isCreating || createInstance.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wifi className="h-4 w-4 mr-2" />}
                     {isCreating ? 'Criando conexão...' : 'Criar Conexão WhatsApp'}
                   </Button>
                 </CardContent>
               </Card>
             )}
 
-            {/* Help Card */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Precisa de ajuda?</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-base">Precisa de ajuda?</CardTitle></CardHeader>
               <CardContent className="text-sm text-muted-foreground space-y-2">
-                <p>
-                  A integração com WhatsApp permite que você gerencie conversas com clientes diretamente na plataforma.
-                </p>
-                <p>
-                  <strong>Como funciona:</strong>
-                </p>
+                <p>A integração com WhatsApp permite que você gerencie conversas com clientes diretamente na plataforma.</p>
+                <p><strong>Como funciona:</strong></p>
                 <ul className="list-disc list-inside space-y-1">
                   <li>Clique em "Criar Conexão WhatsApp"</li>
-                  <li>Aguarde o QR Code aparecer (pode levar até 30 segundos)</li>
-                  <li>Escaneie o QR Code com seu WhatsApp</li>
+                  <li>Continue navegando — avisaremos quando o QR Code estiver pronto</li>
+                  <li>Escaneie o QR Code rapidamente (expira em ~14 segundos)</li>
                   <li>Pronto! Suas mensagens aparecerão na aba WhatsApp</li>
                 </ul>
               </CardContent>

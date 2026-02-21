@@ -82,20 +82,17 @@ serve(async (req) => {
     const { action } = await req.json();
     console.log(`whatsapp-instance action=${action} user=${userId}`);
 
-    // ─── CREATE INSTANCE ───
+    // ─── CREATE INSTANCE (ASYNC MODEL) ───
     if (action === 'create') {
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
       const webhookUrl = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook';
 
-      // WIPEOUT TOTAL: Force-delete from Evolution API first
+      // Step 1: WIPEOUT — clean ghost instances from Evolution API + DB
       await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
-      await new Promise(r => setTimeout(r, 1000));
-
-      // Delete DB records for this broker
       console.log('Cleaning existing DB connections for broker:', userId);
       await supabaseAdmin.from('whatsapp_connections').delete().eq('broker_id', userId);
 
-      // Robust webhook payload
+      // Step 2: Send create command to Evolution API (fire-and-forget style)
       const webhookPayload = {
         instanceName,
         qrcode: true,
@@ -110,7 +107,6 @@ serve(async (req) => {
         },
       };
 
-      // Step 1: Create instance
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -118,94 +114,38 @@ serve(async (req) => {
       });
 
       const createData = await createRes.json();
-      console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData));
+      console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData).substring(0, 300));
 
-      let qrBase64 = extractQrBase64(createData);
-
-      // If creation failed, try connect then delete+recreate
       if (!createRes.ok) {
-        console.log('Create failed with', createRes.status, '— trying connect...');
-        const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-          method: 'GET',
-          headers: { 'apikey': evolutionApiKey },
+        // Try force-delete and recreate once
+        console.log('Create failed, force-deleting and recreating...');
+        await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
+        await new Promise(r => setTimeout(r, 1500));
+
+        const retryRes = await fetch(`${evolutionApiUrl}/instance/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+          body: JSON.stringify(webhookPayload),
         });
-        const connectData = await connectRes.json();
-        console.log('Connect response:', JSON.stringify(connectData));
-        qrBase64 = extractQrBase64(connectData) || qrBase64;
+        const retryData = await retryRes.json();
+        console.log('Retry create status:', retryRes.status);
 
-        if (!connectRes.ok) {
-          console.log('Connect failed, force-deleting and recreating...');
-          await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
-          await new Promise(r => setTimeout(r, 2000));
-
-          const retryRes = await fetch(`${evolutionApiUrl}/instance/create`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-            body: JSON.stringify(webhookPayload),
+        if (!retryRes.ok) {
+          return new Response(JSON.stringify({ error: retryData?.message || 'Failed to create instance' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
-          const retryData = await retryRes.json();
-          console.log('Retry create status:', retryRes.status, 'body:', JSON.stringify(retryData));
-          qrBase64 = extractQrBase64(retryData) || qrBase64;
-
-          if (!retryRes.ok) {
-            return new Response(JSON.stringify({ error: retryData?.message || 'Failed to create instance' }), {
-              status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
         }
       }
 
-      // Step 2: Wait 10s for Baileys socket to initialize
-      console.log('Aguardando 10s para inicialização do Baileys...');
-      await new Promise(r => setTimeout(r, 10000));
-
-      // Step 3: Polling inteligente — 5 attempts with 4s interval
-      if (!qrBase64) {
-        for (let attempt = 1; attempt <= 5; attempt++) {
-          console.log(`Tentativa de captura QR ${attempt}/5 para: ${instanceName}`);
-          try {
-            const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-              method: 'GET',
-              headers: { 'apikey': evolutionApiKey },
-            });
-            const connectQrData = await connectQrRes.json();
-            const rawStr = JSON.stringify(connectQrData);
-            
-            // Log específico para count:0
-            if (rawStr.includes('"count":0') || rawStr.includes('"count": 0')) {
-              console.log(`Tentativa ${attempt}: Aguardando Baileys inicializar... (count=0)`);
-            } else {
-              console.log(`Connect QR attempt ${attempt}:`, rawStr.substring(0, 300));
-            }
-
-            qrBase64 = extractQrBase64(connectQrData);
-            if (qrBase64) {
-              console.log(`QR capturado na tentativa ${attempt}!`);
-              break;
-            }
-          } catch (e) {
-            console.error(`Erro na tentativa ${attempt}:`, e);
-          }
-          if (attempt < 5) await new Promise(r => setTimeout(r, 4000));
-        }
-      }
-
-      // Step 4: Save to DB — always use supabaseAdmin (service role)
-      const connectionStatus = qrBase64 ? 'qrcode' : 'connecting';
+      // Step 3: Save to DB IMMEDIATELY with status 'preparing' — NO POLLING
       const dbPayload = {
         broker_id: userId,
         instance_name: instanceName,
         status: 'pending',
-        connection_status: connectionStatus,
-        qr_code_base64: qrBase64,
+        connection_status: 'preparing',
+        qr_code_base64: null,
         connected_at: null,
       };
-
-      if (qrBase64) {
-        console.log('QR obtido! Salvando no banco via service role.');
-      } else {
-        console.log('QR não obtido no polling. Webhook assumirá a entrega. Status: connecting');
-      }
 
       const { data: conn, error: dbError } = await supabaseAdmin
         .from('whatsapp_connections')
@@ -220,11 +160,13 @@ serve(async (req) => {
         });
       }
 
+      console.log('Instance created, returning immediately. Webhook will deliver QR code.');
+
       return new Response(JSON.stringify({ 
         success: true, 
         connection: conn,
-        connection_status: connectionStatus,
-        message: qrBase64 ? 'QR Code gerado com sucesso.' : 'Instância criada. Aguardando QR Code via webhook (pode levar até 30s).' 
+        connection_status: 'preparing',
+        message: 'Instância criada. O QR Code será entregue automaticamente via webhook.' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
