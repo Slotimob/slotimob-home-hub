@@ -107,6 +107,7 @@ serve(async (req) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
         body: JSON.stringify({
+          enabled: true,
           url: webhookUrl,
           webhook_by_events: false,
           webhook_base64: true,
