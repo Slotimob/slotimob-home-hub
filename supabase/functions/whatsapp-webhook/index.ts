@@ -99,12 +99,13 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
 
   console.log(`Connection update: instance=${instanceName} state=${state} keys=${JSON.stringify(Object.keys(data || {}))}`);
 
-  // AGGRESSIVE QR capture: if state is "qr" OR data contains qrcode/base64 fields
-  const hasQrData = state === 'qr' || data?.qrcode || data?.base64;
+  // AGGRESSIVE QR capture: if state is "qr" OR data contains any long string in qrcode/base64
+  const rawQr = data?.base64 || data?.qrcode?.base64 || (typeof data?.qrcode === 'string' ? data?.qrcode : null);
+  const hasQrData = state === 'qr' || (rawQr && typeof rawQr === 'string' && rawQr.length > 100);
   if (hasQrData) {
     console.log('QR state detected inside connection.update, extracting QR...');
-    const qrBase64 = data?.qrcode?.base64 || data?.base64 || data?.qrcode || null;
-    if (qrBase64 && typeof qrBase64 === 'string') {
+    const qrBase64 = rawQr;
+    if (qrBase64 && typeof qrBase64 === 'string' && qrBase64.length > 100) {
       console.log('IMAGEM QR DETECTADA NO WEBHOOK (via connection.update state=qr)');
       const { error } = await supabaseAdmin
         .from('whatsapp_connections')
@@ -151,10 +152,10 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
 
 // ─── QR CODE UPDATE ───
 async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data: any) {
-  console.log('QR code event data:', JSON.stringify(data));
+  console.log('Dados do evento:', JSON.stringify(data));
   
-  // Try multiple extraction paths
-  const qrBase64 = data?.qrcode?.base64 || data?.base64 || data?.qrcode || null;
+  // Try multiple extraction paths: data.base64, data.qrcode.base64, data.qrcode (string)
+  const qrBase64 = data?.base64 || data?.qrcode?.base64 || (typeof data?.qrcode === 'string' ? data?.qrcode : null);
   
   if (!qrBase64 || typeof qrBase64 !== 'string') {
     console.log('No valid QR base64 string in payload, got:', typeof qrBase64);
