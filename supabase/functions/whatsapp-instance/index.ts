@@ -102,7 +102,7 @@ serve(async (req) => {
         }
       }
 
-      // Step 2: Configure webhook separately
+      // Step 2: Configure webhook separately (camelCase fields required by Evolution API)
       const webhookSetRes = await fetch(`${evolutionApiUrl}/webhook/set/${instanceName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -110,21 +110,27 @@ serve(async (req) => {
           webhook: {
             enabled: true,
             url: webhookUrl,
-            webhook_by_events: false,
-            webhook_base64: true,
+            webhookByEvents: false,
+            webhookBase64: true,
             events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
           }
         }),
       });
       console.log('Webhook set status:', webhookSetRes.status, 'body:', JSON.stringify(await webhookSetRes.json().catch(() => ({}))));
 
-      // Step 3: Trigger connect to generate QR code
-      const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-        method: 'GET',
-        headers: { 'apikey': evolutionApiKey },
-      });
-      const connectQrData = await connectQrRes.json();
-      console.log('Connect QR response:', JSON.stringify(connectQrData));
+      // Step 3: Trigger connect to generate QR code (with retry)
+      let qrBase64 = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
+        const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+          method: 'GET',
+          headers: { 'apikey': evolutionApiKey },
+        });
+        const connectQrData = await connectQrRes.json();
+        console.log(`Connect QR attempt ${attempt + 1}:`, JSON.stringify(connectQrData));
+        qrBase64 = connectQrData?.qrcode?.base64 || connectQrData?.base64 || null;
+        if (qrBase64) break;
+      }
 
       // Step 3: Save to DB with status 'connecting' — QR will arrive via webhook
       const { data: existingConn } = await supabaseClient
@@ -135,9 +141,9 @@ serve(async (req) => {
 
       const dbPayload = {
         instance_name: instanceName,
-        status: 'pending',
-        connection_status: 'connecting',
-        qr_code_base64: null,
+        status: qrBase64 ? 'pending' : 'pending',
+        connection_status: qrBase64 ? 'qrcode' : 'connecting',
+        qr_code_base64: qrBase64,
         connected_at: null,
       };
 
