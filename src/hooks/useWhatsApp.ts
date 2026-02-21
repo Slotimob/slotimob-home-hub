@@ -69,8 +69,8 @@ export function useWhatsAppSettingsConnection() {
     setConnection(data);
     setLoading(false);
 
-    // If connection exists but no QR and status is connecting/pending, we're waiting
-    if (data && !data.qr_code_base64 && ['connecting', 'pending'].includes(data.connection_status || '')) {
+    // If connection exists but no QR and status is preparing/connecting/pending, we're waiting
+    if (data && !data.qr_code_base64 && ['preparing', 'connecting', 'pending'].includes(data.connection_status || '')) {
       setWaitingForQr(true);
     } else {
       setWaitingForQr(false);
@@ -86,7 +86,7 @@ export function useWhatsAppSettingsConnection() {
     if (!user) return;
 
     const channel = supabase
-      .channel('whatsapp-connection-realtime')
+      .channel('whatsapp-settings-realtime')
       .on(
         'postgres_changes',
         {
@@ -103,7 +103,6 @@ export function useWhatsAppSettingsConnection() {
           } else {
             const updated = payload.new as WhatsAppConnection;
             setConnection(updated);
-            // Only stop loading/waiting if: QR arrived, connected, or real error
             if (updated.qr_code_base64 || updated.connection_status === 'open') {
               setWaitingForQr(false);
             }
@@ -112,13 +111,13 @@ export function useWhatsAppSettingsConnection() {
       )
       .subscribe();
 
-    // Timeout de segurança: após 60s, parar de esperar
+    // Safety timeout: 90s
     let timeout: ReturnType<typeof setTimeout> | null = null;
     if (waitingForQr) {
       timeout = setTimeout(() => {
-        console.log('Timeout de 60s atingido esperando QR Code');
+        console.log('Timeout de 90s atingido esperando QR Code');
         setWaitingForQr(false);
-      }, 60000);
+      }, 90000);
     }
 
     return () => {

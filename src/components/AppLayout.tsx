@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { useWhatsAppGlobalListener } from '@/hooks/useWhatsAppGlobalListener';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, title, headerActions }: AppLayoutProps) {
+  useWhatsAppGlobalListener();
   return (
     <SidebarProvider>
       <div className="min-h-[100dvh] flex w-full bg-gradient-to-br from-primary/5 via-background to-accent/10 pb-16 md:pb-0">
