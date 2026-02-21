@@ -59,14 +59,10 @@ serve(async (req) => {
           instanceName,
           qrcode: true,
           integration: 'WHATSAPP-BAILEYS',
-          webhook: {
-            url: webhookUrl,
-            enabled: true,
-            webhookByEvents: false,
-            events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-          },
-          webhook_events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-          events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          webhook: webhookUrl,
+          webhookByEvents: false,
+          webhookEvents: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          webhookBase64: true,
         }),
       });
 
@@ -97,9 +93,10 @@ serve(async (req) => {
               instanceName,
               qrcode: true,
               integration: 'WHATSAPP-BAILEYS',
-              webhook: { url: webhookUrl, enabled: true, webhookByEvents: false, events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'] },
-              webhook_events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-              events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+              webhook: webhookUrl,
+              webhookByEvents: false,
+              webhookEvents: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+              webhookBase64: true,
             }),
           });
           const retryData = await retryRes.json();
