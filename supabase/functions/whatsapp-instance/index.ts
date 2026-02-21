@@ -51,9 +51,7 @@ serve(async (req) => {
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
       const webhookUrl = `${supabaseUrl}/functions/v1/whatsapp-webhook`;
 
-      let qrBase64: string | null = null;
-
-      // Step 1: Try to create the instance with qrcode: true
+      // Step 1: Create instance with qrcode: true
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -73,35 +71,22 @@ serve(async (req) => {
       const createData = await createRes.json();
       console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData));
 
-      if (createRes.ok) {
-        // Instance created successfully — QR should be in the response
-        qrBase64 = createData?.qrcode?.base64 || null;
-        console.log('QR from create:', qrBase64 ? 'received' : 'not in response');
-      }
-
-      // Step 2: If 403 or error (instance already exists), fetch QR via connect
+      // Step 2: If 403 (already exists), try connect to get QR
       if (!createRes.ok) {
-        console.log('Create returned', createRes.status, '— trying connect endpoint...');
+        console.log('Create failed with', createRes.status, '— trying connect...');
         const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
           method: 'GET',
           headers: { 'apikey': evolutionApiKey },
         });
         const connectData = await connectRes.json();
         console.log('Connect response:', JSON.stringify(connectData));
-        qrBase64 = connectData?.qrcode?.base64 || connectData?.base64 || null;
 
-        // If connect also fails, delete and recreate
-        if (!qrBase64) {
-          console.log('No QR from connect, deleting and recreating...');
-          try {
-            await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } });
-          } catch (_e) { /* ignore */ }
-          try {
-            await fetch(`${evolutionApiUrl}/instance/delete/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } });
-          } catch (_e) { /* ignore */ }
-
-          // Wait briefly for cleanup
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        // If connect also fails, delete + recreate
+        if (!connectRes.ok) {
+          console.log('Connect failed, deleting and recreating...');
+          try { await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (_e) { /* */ }
+          try { await fetch(`${evolutionApiUrl}/instance/delete/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (_e) { /* */ }
+          await new Promise(r => setTimeout(r, 1000));
 
           const retryRes = await fetch(`${evolutionApiUrl}/instance/create`, {
             method: 'POST',
@@ -110,30 +95,21 @@ serve(async (req) => {
               instanceName,
               qrcode: true,
               integration: 'WHATSAPP-BAILEYS',
-              webhook: {
-                url: webhookUrl,
-                enabled: true,
-                webhookByEvents: false,
-                events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
-              },
+              webhook: { url: webhookUrl, enabled: true, webhookByEvents: false, events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'] },
             }),
           });
           const retryData = await retryRes.json();
           console.log('Retry create status:', retryRes.status, 'body:', JSON.stringify(retryData));
-          
-          if (retryRes.ok) {
-            qrBase64 = retryData?.qrcode?.base64 || null;
-          }
-          
-          if (!retryRes.ok && !qrBase64) {
-            return new Response(JSON.stringify({ error: retryData?.message || 'Failed to create WhatsApp instance' }), {
+
+          if (!retryRes.ok) {
+            return new Response(JSON.stringify({ error: retryData?.message || 'Failed to create instance' }), {
               status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
           }
         }
       }
 
-      // Step 3: Save to DB
+      // Step 3: Save to DB with status 'connecting' — QR will arrive via webhook
       const { data: existingConn } = await supabaseClient
         .from('whatsapp_connections')
         .select('id')
@@ -142,9 +118,9 @@ serve(async (req) => {
 
       const dbPayload = {
         instance_name: instanceName,
-        status: qrBase64 ? 'pending' : 'pending',
-        connection_status: qrBase64 ? 'qrcode' : 'connecting',
-        qr_code_base64: qrBase64,
+        status: 'pending',
+        connection_status: 'connecting',
+        qr_code_base64: null,
         connected_at: null,
       };
 
@@ -175,7 +151,12 @@ serve(async (req) => {
         });
       }
 
-      return new Response(JSON.stringify({ success: true, connection: conn, qrCode: qrBase64 }), {
+      // Return success — QR code will be delivered asynchronously via webhook + Realtime
+      return new Response(JSON.stringify({ 
+        success: true, 
+        connection: conn, 
+        message: 'Instância criada. Aguardando QR Code via webhook.' 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -248,27 +229,13 @@ serve(async (req) => {
         .single();
 
       if (conn?.instance_name) {
-        try {
-          await fetch(`${evolutionApiUrl}/instance/logout/${conn.instance_name}`, {
-            method: 'DELETE', headers: { 'apikey': evolutionApiKey },
-          });
-        } catch (e) { console.error('Logout error (non-fatal):', e); }
-
-        try {
-          await fetch(`${evolutionApiUrl}/instance/delete/${conn.instance_name}`, {
-            method: 'DELETE', headers: { 'apikey': evolutionApiKey },
-          });
-        } catch (e) { console.error('Delete error (non-fatal):', e); }
+        try { await fetch(`${evolutionApiUrl}/instance/logout/${conn.instance_name}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (e) { console.error('Logout error:', e); }
+        try { await fetch(`${evolutionApiUrl}/instance/delete/${conn.instance_name}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (e) { console.error('Delete error:', e); }
       }
 
       await supabaseClient
         .from('whatsapp_connections')
-        .update({
-          status: 'disconnected',
-          connection_status: 'disconnected',
-          qr_code_base64: null,
-          connected_at: null,
-        })
+        .update({ status: 'disconnected', connection_status: 'disconnected', qr_code_base64: null, connected_at: null })
         .eq('broker_id', userId);
 
       return new Response(JSON.stringify({ success: true }), {

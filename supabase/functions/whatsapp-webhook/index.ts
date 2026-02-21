@@ -111,9 +111,13 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
 
 // ─── QR CODE UPDATE ───
 async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data: any) {
-  const qrBase64 = data?.qrcode?.base64;
-  if (!qrBase64) {
-    console.log('No QR base64 in payload');
+  console.log('QR code event data:', JSON.stringify(data));
+  
+  // Try multiple extraction paths
+  const qrBase64 = data?.qrcode?.base64 || data?.base64 || data?.qrcode || null;
+  
+  if (!qrBase64 || typeof qrBase64 !== 'string') {
+    console.log('No valid QR base64 string in payload, got:', typeof qrBase64);
     return;
   }
 
