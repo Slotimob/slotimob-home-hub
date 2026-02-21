@@ -6,6 +6,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// Force-delete instance from Evolution API (ignore errors if not found)
+async function forceDeleteInstance(evolutionApiUrl: string, evolutionApiKey: string, instanceName: string) {
+  console.log(`forceDelete: Limpando instância fantasma ${instanceName}...`);
+  try {
+    await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, {
+      method: 'DELETE',
+      headers: { 'apikey': evolutionApiKey },
+    });
+  } catch (_e) { /* ignore */ }
+  try {
+    await fetch(`${evolutionApiUrl}/instance/delete/${instanceName}`, {
+      method: 'DELETE',
+      headers: { 'apikey': evolutionApiKey },
+    });
+  } catch (_e) { /* ignore */ }
+  console.log(`forceDelete: Limpeza concluída para ${instanceName}`);
+}
+
+function extractQrBase64(data: any): string | null {
+  const candidates = [
+    data?.base64,
+    data?.qrcode?.base64,
+    typeof data?.qrcode === 'string' ? data.qrcode : null,
+    data?.data?.base64,
+  ];
+  for (const c of candidates) {
+    if (c && typeof c === 'string' && c.length > 100) return c;
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -55,16 +86,16 @@ serve(async (req) => {
     if (action === 'create') {
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
       const webhookUrl = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook';
-      console.log('Webhook URL:', webhookUrl);
 
-      // ATOMICITY: Delete any existing connection for this broker before inserting
-      console.log('Cleaning existing connections for broker:', userId);
-      await supabaseAdmin
-        .from('whatsapp_connections')
-        .delete()
-        .eq('broker_id', userId);
+      // WIPEOUT TOTAL: Force-delete from Evolution API first
+      await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
+      await new Promise(r => setTimeout(r, 1000));
 
-      // Robust webhook payload with enabled: true and INSTANCE_CREATED event
+      // Delete DB records for this broker
+      console.log('Cleaning existing DB connections for broker:', userId);
+      await supabaseAdmin.from('whatsapp_connections').delete().eq('broker_id', userId);
+
+      // Robust webhook payload
       const webhookPayload = {
         instanceName,
         qrcode: true,
@@ -89,9 +120,9 @@ serve(async (req) => {
       const createData = await createRes.json();
       console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData));
 
-      let qrBase64 = createData?.qrcode?.base64 || null;
+      let qrBase64 = extractQrBase64(createData);
 
-      // If already exists, try connect; if that fails, delete + recreate
+      // If creation failed, try connect then delete+recreate
       if (!createRes.ok) {
         console.log('Create failed with', createRes.status, '— trying connect...');
         const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
@@ -100,13 +131,12 @@ serve(async (req) => {
         });
         const connectData = await connectRes.json();
         console.log('Connect response:', JSON.stringify(connectData));
-        qrBase64 = connectData?.base64 || connectData?.qrcode?.base64 || (typeof connectData?.qrcode === 'string' && connectData.qrcode.length > 100 ? connectData.qrcode : null) || qrBase64;
+        qrBase64 = extractQrBase64(connectData) || qrBase64;
 
         if (!connectRes.ok) {
-          console.log('Connect failed, deleting and recreating...');
-          try { await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (_e) { /* */ }
-          try { await fetch(`${evolutionApiUrl}/instance/delete/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (_e) { /* */ }
-          await new Promise(r => setTimeout(r, 1000));
+          console.log('Connect failed, force-deleting and recreating...');
+          await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
+          await new Promise(r => setTimeout(r, 2000));
 
           const retryRes = await fetch(`${evolutionApiUrl}/instance/create`, {
             method: 'POST',
@@ -115,7 +145,7 @@ serve(async (req) => {
           });
           const retryData = await retryRes.json();
           console.log('Retry create status:', retryRes.status, 'body:', JSON.stringify(retryData));
-          qrBase64 = retryData?.qrcode?.base64 || qrBase64;
+          qrBase64 = extractQrBase64(retryData) || qrBase64;
 
           if (!retryRes.ok) {
             return new Response(JSON.stringify({ error: retryData?.message || 'Failed to create instance' }), {
@@ -129,7 +159,7 @@ serve(async (req) => {
       console.log('Aguardando 10s para inicialização do Baileys...');
       await new Promise(r => setTimeout(r, 10000));
 
-      // Step 3: Resilience loop — 5 attempts with 5s interval
+      // Step 3: Polling inteligente — 5 attempts with 4s interval
       if (!qrBase64) {
         for (let attempt = 1; attempt <= 5; attempt++) {
           console.log(`Tentativa de captura QR ${attempt}/5 para: ${instanceName}`);
@@ -139,24 +169,28 @@ serve(async (req) => {
               headers: { 'apikey': evolutionApiKey },
             });
             const connectQrData = await connectQrRes.json();
-            console.log(`Connect QR attempt ${attempt}:`, JSON.stringify(connectQrData));
-            qrBase64 = connectQrData?.base64 || connectQrData?.qrcode?.base64 || null;
-            if (!qrBase64 && typeof connectQrData?.qrcode === 'string' && connectQrData.qrcode.length > 100) {
-              qrBase64 = connectQrData.qrcode;
+            const rawStr = JSON.stringify(connectQrData);
+            
+            // Log específico para count:0
+            if (rawStr.includes('"count":0') || rawStr.includes('"count": 0')) {
+              console.log(`Tentativa ${attempt}: Aguardando Baileys inicializar... (count=0)`);
+            } else {
+              console.log(`Connect QR attempt ${attempt}:`, rawStr.substring(0, 300));
             }
-            if (qrBase64 && typeof qrBase64 === 'string' && qrBase64.length > 100) {
+
+            qrBase64 = extractQrBase64(connectQrData);
+            if (qrBase64) {
               console.log(`QR capturado na tentativa ${attempt}!`);
               break;
             }
-            qrBase64 = null;
           } catch (e) {
             console.error(`Erro na tentativa ${attempt}:`, e);
           }
-          if (attempt < 5) await new Promise(r => setTimeout(r, 5000));
+          if (attempt < 5) await new Promise(r => setTimeout(r, 4000));
         }
       }
 
-      // Step 4: Save to DB — use supabaseAdmin (service role) for guaranteed write
+      // Step 4: Save to DB — always use supabaseAdmin (service role)
       const connectionStatus = qrBase64 ? 'qrcode' : 'connecting';
       const dbPayload = {
         broker_id: userId,
@@ -216,7 +250,7 @@ serve(async (req) => {
       });
       const connectData = await connectRes.json();
       console.log('Refresh QR response:', JSON.stringify(connectData));
-      const qrBase64 = connectData?.base64 || connectData?.qrcode?.base64 || (typeof connectData?.qrcode === 'string' && connectData.qrcode.length > 100 ? connectData.qrcode : null);
+      const qrBase64 = extractQrBase64(connectData);
 
       if (qrBase64) {
         await supabaseAdmin
@@ -264,8 +298,7 @@ serve(async (req) => {
         .single();
 
       if (conn?.instance_name) {
-        try { await fetch(`${evolutionApiUrl}/instance/logout/${conn.instance_name}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (e) { console.error('Logout error:', e); }
-        try { await fetch(`${evolutionApiUrl}/instance/delete/${conn.instance_name}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (e) { console.error('Delete error:', e); }
+        await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, conn.instance_name);
       }
 
       await supabaseAdmin

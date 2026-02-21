@@ -103,7 +103,7 @@ export function useWhatsAppSettingsConnection() {
           } else {
             const updated = payload.new as WhatsAppConnection;
             setConnection(updated);
-            // Stop waiting if QR arrived or if connected
+            // Only stop loading/waiting if: QR arrived, connected, or real error
             if (updated.qr_code_base64 || updated.connection_status === 'open') {
               setWaitingForQr(false);
             }
@@ -112,10 +112,20 @@ export function useWhatsAppSettingsConnection() {
       )
       .subscribe();
 
+    // Timeout de segurança: após 60s, parar de esperar
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    if (waitingForQr) {
+      timeout = setTimeout(() => {
+        console.log('Timeout de 60s atingido esperando QR Code');
+        setWaitingForQr(false);
+      }, 60000);
+    }
+
     return () => {
       supabase.removeChannel(channel);
+      if (timeout) clearTimeout(timeout);
     };
-  }, [user]);
+  }, [user, waitingForQr]);
 
   return { connection, loading, waitingForQr, setWaitingForQr, refetch: fetchConnection };
 }
