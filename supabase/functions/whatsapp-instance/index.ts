@@ -107,11 +107,13 @@ serve(async (req) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
         body: JSON.stringify({
-          enabled: true,
-          url: webhookUrl,
-          webhook_by_events: false,
-          webhook_base64: true,
-          events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          webhook: {
+            enabled: true,
+            url: webhookUrl,
+            webhook_by_events: false,
+            webhook_base64: true,
+            events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          }
         }),
       });
       console.log('Webhook set status:', webhookSetRes.status, 'body:', JSON.stringify(await webhookSetRes.json().catch(() => ({}))));
