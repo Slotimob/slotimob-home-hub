@@ -1,92 +1,70 @@
 
 
-# Plan: Fix WhatsApp QR Code Generation
+# Fix: WhatsApp QR Code Generation via Webhook Configuration
 
-## Problem Diagnosis
+## Problem
 
-After analyzing logs, database state, and code, I identified **two root causes** preventing QR code generation:
+The Evolution API's `/instance/create` endpoint only accepts a simple webhook URL. It silently ignores `events`, `webhook_base64`, and other settings passed in the create payload. This is confirmed by the response showing `"webhook":{"webhookUrl":"..."}` with no events registered and `"qrcode":{"count":0}`.
 
-1. **`whatsapp-webhook` is still using Meta's payload format.** Evolution API sends events like `{"event": "connection.update", "instance": "slotimob_...", "data": {"state": "connecting"}}`, but the webhook still looks for `body.entry[0].changes` (Meta format) and discards everything else. This means:
-   - QR code updates via `QRCODE_UPDATED` events are ignored
-   - `connection.update` events with `state: "open"` are ignored (connection never marked as connected)
-
-2. **The `whatsapp-instance` create response may not include the QR code inline.** The Evolution API often returns the QR code asynchronously through the webhook (`QRCODE_UPDATED` event). Since the webhook ignores it, the QR code is never stored in the database, and the frontend never receives it.
+Without the `QRCODE_UPDATED` event subscription and `webhook_base64: true`, the QR code image is never sent to our webhook.
 
 ## Solution
 
-### Step 1: Rewrite `whatsapp-webhook` for Evolution API
+Split the instance setup into two steps:
 
-Replace the Meta-format processing with Evolution API event handling:
+1. **Create the instance** with a simple webhook URL string
+2. **Configure the webhook** via `POST /webhook/set/{instanceName}` to register events and enable base64
 
-- Parse Evolution payload format: `{ event, instance, data }`
-- Handle `connection.update` event:
-  - If `state === "open"`: update `whatsapp_connections` to `status: 'connected'`, `connection_status: 'open'`, clear `qr_code_base64`
-  - If `state === "close"`: update status to `disconnected`
-- Handle `qrcode.updated` event:
-  - Extract base64 QR from `data.qrcode.base64`
-  - Update `whatsapp_connections` with the QR code and set `connection_status: 'qrcode'`
-- Handle `messages.upsert` event:
-  - Extract message from `data` array
-  - Find connection by `instance_name`
-  - Create/update contacts and conversations (reuse existing CRM logic)
-  - Insert messages into `whatsapp_messages`
-- Keep returning 200 for all requests to prevent webhook disabling
-
-### Step 2: Improve `whatsapp-instance` QR code retrieval
-
-After creating the instance, if no QR code is returned inline:
-- Call `GET /instance/connect/{instanceName}` to explicitly request the QR
-- Store whatever QR code is available immediately
-- The webhook will update it asynchronously if needed
-
-### Step 3: Frontend Realtime already works
-
-The `Integrations.tsx` page already listens to Realtime updates on `whatsapp_connections`. Once the webhook correctly updates `qr_code_base64` and `connection_status`, the frontend will automatically:
-- Show the QR code when `qr_code_base64` is populated
-- Close the dialog when `connection_status` changes to `open`
-
-## Files to Modify
-
-1. **`supabase/functions/whatsapp-webhook/index.ts`** -- Full rewrite from Meta format to Evolution API format
-2. **`supabase/functions/whatsapp-instance/index.ts`** -- Minor improvement to QR code retrieval after instance creation
+Then call `GET /instance/connect/{instanceName}` to trigger QR code generation.
 
 ## Technical Details
 
-### Evolution API Webhook Payload Examples
+### File: `supabase/functions/whatsapp-instance/index.ts`
 
-Connection update:
-```json
-{
-  "event": "connection.update",
-  "instance": "slotimob_b52081c9b1844125",
-  "data": { "state": "open" }
-}
+**Step 1 - Simplify create payload:**
+```typescript
+body: JSON.stringify({
+  instanceName: instanceName,
+  qrcode: true,
+  integration: 'WHATSAPP-BAILEYS',
+})
 ```
 
-QR Code update:
-```json
-{
-  "event": "qrcode.updated",
-  "instance": "slotimob_b52081c9b1844125",
-  "data": { "qrcode": { "base64": "data:image/png;base64,..." } }
-}
+**Step 2 - After successful creation, configure webhook separately:**
+```typescript
+const webhookSetRes = await fetch(
+  `${evolutionApiUrl}/webhook/set/${instanceName}`,
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: evolutionApiKey },
+    body: JSON.stringify({
+      url: webhookUrl,
+      webhook_by_events: false,
+      webhook_base64: true,
+      events: [
+        'QRCODE_UPDATED',
+        'MESSAGES_UPSERT',
+        'CONNECTION_UPDATE',
+      ],
+    }),
+  }
+);
+console.log('Webhook set status:', webhookSetRes.status);
 ```
 
-Messages:
-```json
-{
-  "event": "messages.upsert",
-  "instance": "slotimob_b52081c9b1844125",
-  "data": [{ "key": { "remoteJid": "5511999999999@s.whatsapp.net", "id": "MSG_ID" }, "message": { "conversation": "Hello" } }]
-}
+**Step 3 - Call connect to trigger QR generation:**
+```typescript
+const connectRes = await fetch(
+  `${evolutionApiUrl}/instance/connect/${instanceName}`,
+  { method: 'GET', headers: { apikey: evolutionApiKey } }
+);
 ```
 
-### Webhook Event-to-Action Mapping
+**Apply the same pattern to the retry (delete/recreate) flow.**
 
-| Evolution Event | Action |
-|---|---|
-| `connection.update` (state=open) | Mark connection as connected, clear QR |
-| `connection.update` (state=close) | Mark connection as disconnected |
-| `qrcode.updated` | Store QR base64 in DB, set status to qrcode |
-| `messages.upsert` | Process incoming message, create contact, save to DB |
+### Summary of Changes
 
+- Remove webhook config from the create payload (only `instanceName`, `qrcode`, `integration`)
+- Add a new `POST /webhook/set/{instanceName}` call after each successful creation
+- Log the webhook set response for debugging
+- Keep the rest of the function (status, disconnect, refresh_qr) unchanged
