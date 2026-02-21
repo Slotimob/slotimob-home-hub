@@ -74,7 +74,7 @@ serve(async (req) => {
           integration: 'WHATSAPP-BAILEYS',
           webhook: {
             url: webhookUrl,
-            byEvents: false,
+            byEvents: true,
             base64: true,
             events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
           },
@@ -112,7 +112,7 @@ serve(async (req) => {
               integration: 'WHATSAPP-BAILEYS',
               webhook: {
                 url: webhookUrl,
-                byEvents: false,
+                byEvents: true,
                 base64: true,
                 events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
               },
@@ -134,10 +134,10 @@ serve(async (req) => {
       console.log('Aguardando 8s para inicialização do Baileys...');
       await new Promise(r => setTimeout(r, 8000));
 
-      // Step 3: Loop de captura — 3 tentativas com intervalo de 3s
+      // Step 3: Loop de captura — 5 tentativas com intervalo de 4s
       if (!qrBase64) {
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          console.log(`Tentativa de captura QR ${attempt}/3 para: ${instanceName}`);
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          console.log(`Tentativa de captura QR ${attempt}/5 para: ${instanceName}`);
           try {
             const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
               method: 'GET',
@@ -145,15 +145,17 @@ serve(async (req) => {
             });
             const connectQrData = await connectQrRes.json();
             console.log(`Connect QR attempt ${attempt}:`, JSON.stringify(connectQrData));
-            qrBase64 = connectQrData?.qrcode?.base64 || connectQrData?.base64 || null;
-            if (qrBase64) {
+            qrBase64 = connectQrData?.base64 || connectQrData?.qrcode?.base64 || connectQrData?.qrcode || null;
+            // Validate it's actually a long base64 string
+            if (qrBase64 && typeof qrBase64 === 'string' && qrBase64.length > 100) {
               console.log(`QR capturado na tentativa ${attempt}!`);
               break;
             }
+            qrBase64 = null;
           } catch (e) {
             console.error(`Erro na tentativa ${attempt}:`, e);
           }
-          if (attempt < 3) await new Promise(r => setTimeout(r, 3000));
+          if (attempt < 5) await new Promise(r => setTimeout(r, 4000));
         }
       }
 
