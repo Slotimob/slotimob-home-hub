@@ -26,10 +26,13 @@ serve(async (req) => {
   );
 
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
+    console.log('Webhook raw body (first 500 chars):', rawBody.substring(0, 500));
+    
+    const body = JSON.parse(rawBody);
     const event = body.event;
     const instanceName = body.instance;
-    console.log(`Evolution webhook: event=${event} instance=${instanceName}`);
+    console.log(`Evolution webhook: event=${event} instance=${instanceName} keys=${Object.keys(body).join(',')}`);
 
     if (!event || !instanceName) {
       console.log('Missing event or instance, ignoring');

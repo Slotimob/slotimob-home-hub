@@ -63,8 +63,10 @@ serve(async (req) => {
             url: webhookUrl,
             enabled: true,
             webhookByEvents: false,
-            events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+            events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
           },
+          webhook_events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
         }),
       });
 
@@ -95,7 +97,9 @@ serve(async (req) => {
               instanceName,
               qrcode: true,
               integration: 'WHATSAPP-BAILEYS',
-              webhook: { url: webhookUrl, enabled: true, webhookByEvents: false, events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'] },
+              webhook: { url: webhookUrl, enabled: true, webhookByEvents: false, events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'] },
+              webhook_events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+              events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
             }),
           });
           const retryData = await retryRes.json();
