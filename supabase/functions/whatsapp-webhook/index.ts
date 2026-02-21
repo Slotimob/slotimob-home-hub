@@ -35,7 +35,9 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  // Always use SERVICE_ROLE_KEY for guaranteed write permissions
+  // Verificação de variáveis críticas
+  console.log('Service Role presente:', !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
+
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -114,23 +116,23 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
     const qrBase64 = extractQrBase64(data);
     if (qrBase64) {
       console.log(`IMAGEM QR DETECTADA NO WEBHOOK (connection.update state=${state})`);
-      const { error } = await supabaseAdmin
+      const { data: updateResult, error } = await supabaseAdmin
         .from('whatsapp_connections')
         .update({
           qr_code_base64: qrBase64,
           connection_status: 'qrcode',
           status: 'pending',
         })
-        .eq('instance_name', instanceName);
+        .eq('instance_name', instanceName)
+        .select();
       if (error) console.error('Error updating QR from connection.update:', error);
-      else console.log(`QR code stored for ${instanceName} via connection.update`);
+      else console.log(`QR code stored for ${instanceName} via connection.update. Rows affected:`, updateResult?.length ?? 0);
       return;
     }
   }
 
   if (state === 'open') {
-    // Clear QR when connected
-    await supabaseAdmin
+    const { data: updateResult, error } = await supabaseAdmin
       .from('whatsapp_connections')
       .update({
         status: 'connected',
@@ -138,18 +140,22 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
         qr_code_base64: null,
         connected_at: new Date().toISOString(),
       })
-      .eq('instance_name', instanceName);
-    console.log(`Instance ${instanceName} marked as connected, QR cleared`);
+      .eq('instance_name', instanceName)
+      .select();
+    if (error) console.error('Error updating open state:', error);
+    else console.log(`Instance ${instanceName} marked as connected, QR cleared. Rows:`, updateResult?.length ?? 0);
   } else if (state === 'close') {
-    await supabaseAdmin
+    const { data: updateResult, error } = await supabaseAdmin
       .from('whatsapp_connections')
       .update({
         status: 'disconnected',
         connection_status: 'close',
         qr_code_base64: null,
       })
-      .eq('instance_name', instanceName);
-    console.log(`Instance ${instanceName} marked as disconnected`);
+      .eq('instance_name', instanceName)
+      .select();
+    if (error) console.error('Error updating close state:', error);
+    else console.log(`Instance ${instanceName} marked as disconnected. Rows:`, updateResult?.length ?? 0);
   } else if (state === 'connecting') {
     await supabaseAdmin
       .from('whatsapp_connections')
@@ -172,19 +178,20 @@ async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data
   console.log('IMAGEM QR DETECTADA NO WEBHOOK (via qrcode.updated/instance.created)');
   console.log(`QR code received for instance=${instanceName}`);
 
-  const { error } = await supabaseAdmin
+  const { data: updateResult, error } = await supabaseAdmin
     .from('whatsapp_connections')
     .update({
       qr_code_base64: qrBase64,
       connection_status: 'qrcode',
       status: 'pending',
     })
-    .eq('instance_name', instanceName);
+    .eq('instance_name', instanceName)
+    .select();
 
   if (error) {
     console.error('Error updating QR code:', error);
   } else {
-    console.log(`QR code stored for ${instanceName}`);
+    console.log(`QR code stored for ${instanceName}. Rows affected:`, updateResult?.length ?? 0);
   }
 }
 
