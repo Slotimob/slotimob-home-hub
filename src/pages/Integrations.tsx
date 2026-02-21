@@ -378,8 +378,10 @@ const Integrations = () => {
                 />
               </div>
             ) : (
-              <div className="flex h-64 w-64 items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/20">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="flex h-64 w-64 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/20">
+                <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+                <p className="text-sm font-medium text-muted-foreground">Gerando QR Code...</p>
+                <p className="text-xs text-muted-foreground/60 text-center px-4">Aguarde alguns instantes enquanto o servidor gera o código.</p>
               </div>
             )}
 

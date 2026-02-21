@@ -134,9 +134,9 @@ serve(async (req) => {
         }
       }
 
-      // Step 3: Final "reminder" connect call to force QR generation
+      // Step 3: Final "reminder" connect call to force QR generation + save to DB immediately
       if (!qrBase64) {
-        console.log('No QR yet, sending final reminder connect call...');
+        console.log('Solicitando QR Code de fallback para:', instanceName);
         await new Promise(r => setTimeout(r, 3000));
         try {
           const reminderRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
@@ -144,10 +144,23 @@ serve(async (req) => {
             headers: { 'apikey': evolutionApiKey },
           });
           const reminderData = await reminderRes.json();
-          console.log('Reminder connect response:', JSON.stringify(reminderData));
+          console.log('Fallback connect response:', JSON.stringify(reminderData));
           qrBase64 = reminderData?.qrcode?.base64 || reminderData?.base64 || null;
+          
+          // If we got the QR, save it immediately to the DB so the frontend picks it up
+          if (qrBase64) {
+            console.log('QR obtido via fallback! Salvando no banco imediatamente.');
+            const supabaseAdmin = createClient(
+              Deno.env.get('SUPABASE_URL') ?? '',
+              Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+            );
+            await supabaseAdmin
+              .from('whatsapp_connections')
+              .update({ qr_code_base64: qrBase64, connection_status: 'qrcode', status: 'pending' })
+              .eq('instance_name', instanceName);
+          }
         } catch (e) {
-          console.error('Reminder connect error:', e);
+          console.error('Fallback connect error:', e);
         }
       }
 
