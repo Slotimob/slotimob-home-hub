@@ -1,70 +1,58 @@
 
 
-# Fix: WhatsApp QR Code Generation via Webhook Configuration
+# Fix: Webhook Set Payload Must Be Wrapped in `webhook` Object
 
-## Problem
+## Root Cause
 
-The Evolution API's `/instance/create` endpoint only accepts a simple webhook URL. It silently ignores `events`, `webhook_base64`, and other settings passed in the create payload. This is confirmed by the response showing `"webhook":{"webhookUrl":"..."}` with no events registered and `"qrcode":{"count":0}`.
+The logs show this error repeatedly:
+```
+Webhook set status: 400
+{"message":[["instance requires property \"webhook\""]]}
+```
 
-Without the `QRCODE_UPDATED` event subscription and `webhook_base64: true`, the QR code image is never sent to our webhook.
+The Evolution API's `POST /webhook/set/{instanceName}` endpoint expects the configuration nested inside a `webhook` key, not as flat top-level properties.
 
-## Solution
+## Current (broken)
+```json
+{
+  "enabled": true,
+  "url": "https://...",
+  "webhook_by_events": false,
+  "webhook_base64": true,
+  "events": [...]
+}
+```
 
-Split the instance setup into two steps:
-
-1. **Create the instance** with a simple webhook URL string
-2. **Configure the webhook** via `POST /webhook/set/{instanceName}` to register events and enable base64
-
-Then call `GET /instance/connect/{instanceName}` to trigger QR code generation.
+## Fix
+```json
+{
+  "webhook": {
+    "enabled": true,
+    "url": "https://...",
+    "webhook_by_events": false,
+    "webhook_base64": true,
+    "events": [...]
+  }
+}
+```
 
 ## Technical Details
 
 ### File: `supabase/functions/whatsapp-instance/index.ts`
 
-**Step 1 - Simplify create payload:**
+Lines 109-115 -- wrap the existing properties inside a `webhook` object:
+
 ```typescript
 body: JSON.stringify({
-  instanceName: instanceName,
-  qrcode: true,
-  integration: 'WHATSAPP-BAILEYS',
-})
-```
-
-**Step 2 - After successful creation, configure webhook separately:**
-```typescript
-const webhookSetRes = await fetch(
-  `${evolutionApiUrl}/webhook/set/${instanceName}`,
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: evolutionApiKey },
-    body: JSON.stringify({
-      url: webhookUrl,
-      webhook_by_events: false,
-      webhook_base64: true,
-      events: [
-        'QRCODE_UPDATED',
-        'MESSAGES_UPSERT',
-        'CONNECTION_UPDATE',
-      ],
-    }),
+  webhook: {
+    enabled: true,
+    url: webhookUrl,
+    webhook_by_events: false,
+    webhook_base64: true,
+    events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
   }
-);
-console.log('Webhook set status:', webhookSetRes.status);
+}),
 ```
 
-**Step 3 - Call connect to trigger QR generation:**
-```typescript
-const connectRes = await fetch(
-  `${evolutionApiUrl}/instance/connect/${instanceName}`,
-  { method: 'GET', headers: { apikey: evolutionApiKey } }
-);
-```
+This is the only change needed. The instance creation (Step 1) and connect call (Step 3) are working correctly -- only the webhook configuration call (Step 2) is failing.
 
-**Apply the same pattern to the retry (delete/recreate) flow.**
-
-### Summary of Changes
-
-- Remove webhook config from the create payload (only `instanceName`, `qrcode`, `integration`)
-- Add a new `POST /webhook/set/{instanceName}` call after each successful creation
-- Log the webhook set response for debugging
-- Keep the rest of the function (status, disconnect, refresh_qr) unchanged
