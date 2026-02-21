@@ -86,10 +86,11 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
   const state = data?.state;
   if (!state) return;
 
-  console.log(`Connection update: instance=${instanceName} state=${state}`);
+  console.log(`Connection update: instance=${instanceName} state=${state} keys=${JSON.stringify(Object.keys(data || {}))}`);
 
-  // Some Evolution versions send QR inside connection.update with state="qr"
-  if (state === 'qr') {
+  // AGGRESSIVE QR capture: if state is "qr" OR data contains qrcode/base64 fields
+  const hasQrData = state === 'qr' || data?.qrcode || data?.base64;
+  if (hasQrData) {
     console.log('QR state detected inside connection.update, extracting QR...');
     const qrBase64 = data?.qrcode?.base64 || data?.base64 || data?.qrcode || null;
     if (qrBase64 && typeof qrBase64 === 'string') {
