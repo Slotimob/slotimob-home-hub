@@ -57,28 +57,33 @@ serve(async (req) => {
       const webhookUrl = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook';
       console.log('Webhook URL:', webhookUrl);
 
-      // Fix 23505: Delete any existing connection for this broker before inserting
+      // ATOMICITY: Delete any existing connection for this broker before inserting
       console.log('Cleaning existing connections for broker:', userId);
       await supabaseAdmin
         .from('whatsapp_connections')
         .delete()
         .eq('broker_id', userId);
 
+      // Robust webhook payload with enabled: true and INSTANCE_CREATED event
+      const webhookPayload = {
+        instanceName,
+        qrcode: true,
+        integration: 'WHATSAPP-BAILEYS',
+        webhook: {
+          enabled: true,
+          url: webhookUrl,
+          byEvents: true,
+          base64: true,
+          webhookByEvents: true,
+          events: ['QRCODE_UPDATED', 'CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'INSTANCE_CREATED'],
+        },
+      };
+
       // Step 1: Create instance
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-        body: JSON.stringify({
-          instanceName,
-          qrcode: true,
-          integration: 'WHATSAPP-BAILEYS',
-          webhook: {
-            url: webhookUrl,
-            byEvents: true,
-            base64: true,
-            events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-          },
-        }),
+        body: JSON.stringify(webhookPayload),
       });
 
       const createData = await createRes.json();
@@ -95,7 +100,7 @@ serve(async (req) => {
         });
         const connectData = await connectRes.json();
         console.log('Connect response:', JSON.stringify(connectData));
-        qrBase64 = connectData?.qrcode?.base64 || connectData?.base64 || qrBase64;
+        qrBase64 = connectData?.base64 || connectData?.qrcode?.base64 || (typeof connectData?.qrcode === 'string' && connectData.qrcode.length > 100 ? connectData.qrcode : null) || qrBase64;
 
         if (!connectRes.ok) {
           console.log('Connect failed, deleting and recreating...');
@@ -106,17 +111,7 @@ serve(async (req) => {
           const retryRes = await fetch(`${evolutionApiUrl}/instance/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-            body: JSON.stringify({
-              instanceName,
-              qrcode: true,
-              integration: 'WHATSAPP-BAILEYS',
-              webhook: {
-                url: webhookUrl,
-                byEvents: true,
-                base64: true,
-                events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-              },
-            }),
+            body: JSON.stringify(webhookPayload),
           });
           const retryData = await retryRes.json();
           console.log('Retry create status:', retryRes.status, 'body:', JSON.stringify(retryData));
@@ -130,11 +125,11 @@ serve(async (req) => {
         }
       }
 
-      // Step 2: Wait 8s for Baileys socket to initialize
-      console.log('Aguardando 8s para inicialização do Baileys...');
-      await new Promise(r => setTimeout(r, 8000));
+      // Step 2: Wait 10s for Baileys socket to initialize
+      console.log('Aguardando 10s para inicialização do Baileys...');
+      await new Promise(r => setTimeout(r, 10000));
 
-      // Step 3: Loop de captura — 5 tentativas com intervalo de 4s
+      // Step 3: Resilience loop — 5 attempts with 5s interval
       if (!qrBase64) {
         for (let attempt = 1; attempt <= 5; attempt++) {
           console.log(`Tentativa de captura QR ${attempt}/5 para: ${instanceName}`);
@@ -145,8 +140,10 @@ serve(async (req) => {
             });
             const connectQrData = await connectQrRes.json();
             console.log(`Connect QR attempt ${attempt}:`, JSON.stringify(connectQrData));
-            qrBase64 = connectQrData?.base64 || connectQrData?.qrcode?.base64 || connectQrData?.qrcode || null;
-            // Validate it's actually a long base64 string
+            qrBase64 = connectQrData?.base64 || connectQrData?.qrcode?.base64 || null;
+            if (!qrBase64 && typeof connectQrData?.qrcode === 'string' && connectQrData.qrcode.length > 100) {
+              qrBase64 = connectQrData.qrcode;
+            }
             if (qrBase64 && typeof qrBase64 === 'string' && qrBase64.length > 100) {
               console.log(`QR capturado na tentativa ${attempt}!`);
               break;
@@ -155,23 +152,25 @@ serve(async (req) => {
           } catch (e) {
             console.error(`Erro na tentativa ${attempt}:`, e);
           }
-          if (attempt < 5) await new Promise(r => setTimeout(r, 4000));
+          if (attempt < 5) await new Promise(r => setTimeout(r, 5000));
         }
       }
 
-      // Step 4: Save to DB — always use insert (we deleted above)
+      // Step 4: Save to DB — use supabaseAdmin (service role) for guaranteed write
+      const connectionStatus = qrBase64 ? 'qrcode' : 'connecting';
       const dbPayload = {
         broker_id: userId,
         instance_name: instanceName,
         status: 'pending',
-        connection_status: qrBase64 ? 'qrcode' : 'connecting',
+        connection_status: connectionStatus,
         qr_code_base64: qrBase64,
         connected_at: null,
       };
 
-      // If we got QR, also save via admin to ensure it persists
       if (qrBase64) {
         console.log('QR obtido! Salvando no banco via service role.');
+      } else {
+        console.log('QR não obtido no polling. Webhook assumirá a entrega. Status: connecting');
       }
 
       const { data: conn, error: dbError } = await supabaseAdmin
@@ -189,8 +188,9 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({ 
         success: true, 
-        connection: conn, 
-        message: qrBase64 ? 'QR Code gerado com sucesso.' : 'Instância criada. Aguardando QR Code via webhook.' 
+        connection: conn,
+        connection_status: connectionStatus,
+        message: qrBase64 ? 'QR Code gerado com sucesso.' : 'Instância criada. Aguardando QR Code via webhook (pode levar até 30s).' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -216,7 +216,7 @@ serve(async (req) => {
       });
       const connectData = await connectRes.json();
       console.log('Refresh QR response:', JSON.stringify(connectData));
-      const qrBase64 = connectData?.qrcode?.base64 || connectData?.base64 || null;
+      const qrBase64 = connectData?.base64 || connectData?.qrcode?.base64 || (typeof connectData?.qrcode === 'string' && connectData.qrcode.length > 100 ? connectData.qrcode : null);
 
       if (qrBase64) {
         await supabaseAdmin
