@@ -69,13 +69,47 @@ serve(async (req) => {
         }),
       });
 
-      const createData = await createRes.json();
+      let createData = await createRes.json();
       console.log('Evolution create response status:', createRes.status);
 
+      // If instance already exists (403), try to connect/get QR instead
       if (!createRes.ok) {
-        return new Response(JSON.stringify({ error: createData?.message || 'Failed to create instance on Evolution API' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        console.log('Create failed, trying to connect existing instance...');
+        const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+          method: 'GET',
+          headers: { 'apikey': evolutionApiKey },
         });
+        const connectData = await connectRes.json();
+        if (!connectRes.ok) {
+          // Try deleting and recreating
+          console.log('Connect failed, deleting and recreating...');
+          try {
+            await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } });
+          } catch (_e) { /* ignore */ }
+          try {
+            await fetch(`${evolutionApiUrl}/instance/delete/${instanceName}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } });
+          } catch (_e) { /* ignore */ }
+          
+          // Retry create
+          const retryRes = await fetch(`${evolutionApiUrl}/instance/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+            body: JSON.stringify({
+              instanceName,
+              qrcode: true,
+              integration: 'WHATSAPP-BAILEYS',
+              webhook: { url: webhookUrl, enabled: true, webhookByEvents: false, events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'] },
+            }),
+          });
+          createData = await retryRes.json();
+          if (!retryRes.ok) {
+            return new Response(JSON.stringify({ error: createData?.message || 'Failed to create instance' }), {
+              status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        } else {
+          createData = { qrcode: { base64: connectData?.base64 || null } };
+        }
       }
 
       const qrBase64 = createData?.qrcode?.base64 || null;
@@ -86,13 +120,9 @@ serve(async (req) => {
         .upsert({
           broker_id: userId,
           instance_name: instanceName,
-          api_provider: 'evolution',
           status: 'pending',
           connection_status: qrBase64 ? 'qrcode' : 'connecting',
           qr_code_base64: qrBase64,
-          webhook_url: webhookUrl,
-          evolution_api_url: evolutionApiUrl,
-          evolution_api_key: 'stored_in_secrets',
           connected_at: null,
         }, { onConflict: 'instance_name' })
         .select()
