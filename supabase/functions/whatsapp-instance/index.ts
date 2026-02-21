@@ -49,8 +49,7 @@ serve(async (req) => {
     // ─── CREATE INSTANCE ───
     if (action === 'create') {
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
-      const reqUrl = new URL(req.url);
-      const webhookUrl = `${reqUrl.origin}/functions/v1/whatsapp-webhook`;
+      const webhookUrl = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook';
       console.log('Webhook URL:', webhookUrl);
 
       // Step 1: Create instance with qrcode: true
@@ -64,7 +63,6 @@ serve(async (req) => {
           webhook: webhookUrl,
           webhook_by_events: false,
           webhook_events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-          events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
           webhook_base64: true,
         }),
       });
@@ -99,7 +97,6 @@ serve(async (req) => {
               webhook: webhookUrl,
               webhook_by_events: false,
               webhook_events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-              events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
               webhook_base64: true,
             }),
           });
