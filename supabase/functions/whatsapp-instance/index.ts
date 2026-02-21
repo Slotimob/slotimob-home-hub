@@ -112,7 +112,23 @@ serve(async (req) => {
         }
       }
 
-      const qrBase64 = createData?.qrcode?.base64 || null;
+      let qrBase64 = createData?.qrcode?.base64 || null;
+
+      // Fallback: if no QR inline, explicitly request it via connect endpoint
+      if (!qrBase64) {
+        console.log('No QR inline, fetching via connect endpoint...');
+        try {
+          const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+            method: 'GET',
+            headers: { 'apikey': evolutionApiKey },
+          });
+          const connectData = await connectRes.json();
+          qrBase64 = connectData?.base64 || null;
+          console.log('Connect endpoint QR:', qrBase64 ? 'received' : 'not available');
+        } catch (e) {
+          console.error('Fallback QR fetch error:', e);
+        }
+      }
 
       // Upsert connection in DB - use broker_id since instance_name may be empty initially
       const { data: existingConn } = await supabaseClient
