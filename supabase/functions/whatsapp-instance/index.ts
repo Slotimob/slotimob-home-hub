@@ -70,7 +70,7 @@ serve(async (req) => {
       });
 
       let createData = await createRes.json();
-      console.log('Evolution create response status:', createRes.status);
+      console.log('Evolution create response status:', createRes.status, 'body:', JSON.stringify(createData));
 
       // If instance already exists (403), try to connect/get QR instead
       if (!createRes.ok) {
@@ -112,21 +112,59 @@ serve(async (req) => {
         }
       }
 
-      let qrBase64 = createData?.qrcode?.base64 || null;
+      // Try multiple QR extraction paths from create response
+      let qrBase64 = createData?.qrcode?.base64 
+        || createData?.qrcode 
+        || createData?.base64 
+        || createData?.hash?.qrcode?.base64
+        || null;
+      
+      // If qrBase64 is an object, it's not a valid base64 string
+      if (qrBase64 && typeof qrBase64 !== 'string') {
+        console.log('QR is object, trying nested:', JSON.stringify(qrBase64));
+        qrBase64 = qrBase64?.base64 || null;
+      }
 
-      // Fallback: if no QR inline, explicitly request it via connect endpoint
+      // Fallback: if no QR inline, wait briefly then fetch via connect endpoint
       if (!qrBase64) {
-        console.log('No QR inline, fetching via connect endpoint...');
+        console.log('No QR inline, waiting 2s then fetching via connect endpoint...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
         try {
           const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
             method: 'GET',
             headers: { 'apikey': evolutionApiKey },
           });
           const connectData = await connectRes.json();
-          qrBase64 = connectData?.base64 || null;
+          console.log('Connect endpoint response:', JSON.stringify(connectData));
+          qrBase64 = connectData?.base64 
+            || connectData?.qrcode?.base64 
+            || connectData?.code 
+            || null;
+          if (qrBase64 && typeof qrBase64 !== 'string') {
+            qrBase64 = qrBase64?.base64 || null;
+          }
           console.log('Connect endpoint QR:', qrBase64 ? 'received' : 'not available');
         } catch (e) {
           console.error('Fallback QR fetch error:', e);
+        }
+      }
+
+      // Second fallback: try again after another delay
+      if (!qrBase64) {
+        console.log('Still no QR, retrying after 3s...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        try {
+          const retryConnectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+            method: 'GET',
+            headers: { 'apikey': evolutionApiKey },
+          });
+          const retryData = await retryConnectRes.json();
+          console.log('Retry connect response:', JSON.stringify(retryData));
+          qrBase64 = retryData?.base64 
+            || retryData?.qrcode?.base64
+            || null;
+        } catch (e) {
+          console.error('Second retry QR fetch error:', e);
         }
       }
 
