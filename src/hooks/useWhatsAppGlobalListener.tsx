@@ -45,7 +45,7 @@ export function useWhatsAppGlobalListener() {
               action: (
                 <button
                   className="ml-2 text-xs font-semibold underline text-primary whitespace-nowrap"
-                  onClick={() => navigate('/whatsapp/settings')}
+                  onClick={() => navigate('/integrations')}
                 >
                   Ir para Conectar
                 </button>
