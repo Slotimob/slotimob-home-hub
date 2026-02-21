@@ -12,7 +12,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       closeButton
       richColors
-      duration={5000}
+      duration={3000}
       toastOptions={{
         classNames: {
           toast:
