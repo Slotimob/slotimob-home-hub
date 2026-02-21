@@ -134,7 +134,24 @@ serve(async (req) => {
         }
       }
 
-      // Step 3: Save to DB with status 'connecting' — QR will arrive via webhook
+      // Step 3: Final "reminder" connect call to force QR generation
+      if (!qrBase64) {
+        console.log('No QR yet, sending final reminder connect call...');
+        await new Promise(r => setTimeout(r, 3000));
+        try {
+          const reminderRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+            method: 'GET',
+            headers: { 'apikey': evolutionApiKey },
+          });
+          const reminderData = await reminderRes.json();
+          console.log('Reminder connect response:', JSON.stringify(reminderData));
+          qrBase64 = reminderData?.qrcode?.base64 || reminderData?.base64 || null;
+        } catch (e) {
+          console.error('Reminder connect error:', e);
+        }
+      }
+
+      // Step 4: Save to DB with status 'connecting' — QR will arrive via webhook
       const { data: existingConn } = await supabaseClient
         .from('whatsapp_connections')
         .select('id')

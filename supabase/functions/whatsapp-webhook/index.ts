@@ -61,6 +61,11 @@ serve(async (req) => {
 });
 
 async function processEvent(supabaseAdmin: any, event: string, instanceName: string, data: any) {
+  // Debug: detect QR image in any event
+  if (data?.qrcode || data?.base64 || data?.qrcode?.base64) {
+    console.log('IMAGEM QR DETECTADA NO WEBHOOK', `event=${event}`);
+  }
+
   switch (event) {
     case 'connection.update':
       await handleConnectionUpdate(supabaseAdmin, instanceName, data);
@@ -82,6 +87,26 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
   if (!state) return;
 
   console.log(`Connection update: instance=${instanceName} state=${state}`);
+
+  // Some Evolution versions send QR inside connection.update with state="qr"
+  if (state === 'qr') {
+    console.log('QR state detected inside connection.update, extracting QR...');
+    const qrBase64 = data?.qrcode?.base64 || data?.base64 || data?.qrcode || null;
+    if (qrBase64 && typeof qrBase64 === 'string') {
+      console.log('IMAGEM QR DETECTADA NO WEBHOOK (via connection.update state=qr)');
+      const { error } = await supabaseAdmin
+        .from('whatsapp_connections')
+        .update({
+          qr_code_base64: qrBase64,
+          connection_status: 'qrcode',
+          status: 'pending',
+        })
+        .eq('instance_name', instanceName);
+      if (error) console.error('Error updating QR from connection.update:', error);
+      else console.log(`QR code stored for ${instanceName} via connection.update`);
+    }
+    return;
+  }
 
   if (state === 'open') {
     await supabaseAdmin
