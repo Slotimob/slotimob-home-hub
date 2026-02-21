@@ -6,12 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function normalizeEventName(event: string): string {
+  // CONNECTION_UPDATE -> connection.update, QRCODE_UPDATED -> qrcode.updated, etc.
+  return event.toLowerCase().replace(/_/g, '.');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // GET: Evolution API webhook verification (simple echo)
+  // GET: Evolution API webhook verification
   if (req.method === 'GET') {
     return new Response('OK', { status: 200 });
   }
@@ -30,9 +35,10 @@ serve(async (req) => {
     console.log('Webhook raw body (first 500 chars):', rawBody.substring(0, 500));
     
     const body = JSON.parse(rawBody);
-    const event = body.event;
+    const rawEvent = body.event;
     const instanceName = body.instance;
-    console.log(`Evolution webhook: event=${event} instance=${instanceName} keys=${Object.keys(body).join(',')}`);
+    const event = rawEvent ? normalizeEventName(rawEvent) : null;
+    console.log(`Evolution webhook: rawEvent=${rawEvent} normalized=${event} instance=${instanceName} keys=${Object.keys(body).join(',')}`);
 
     if (!event || !instanceName) {
       console.log('Missing event or instance, ignoring');
@@ -75,6 +81,11 @@ async function processEvent(supabaseAdmin: any, event: string, instanceName: str
       break;
     case 'messages.upsert':
       await handleMessagesUpsert(supabaseAdmin, instanceName, data);
+      break;
+    case 'instance.created':
+      // First QR is often fired only on this event
+      console.log('instance.created event received, checking for QR...');
+      await handleQrCodeUpdate(supabaseAdmin, instanceName, data);
       break;
     default:
       console.log(`Unhandled event: ${event}`);
@@ -150,6 +161,7 @@ async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data
     return;
   }
 
+  console.log('IMAGEM QR DETECTADA NO WEBHOOK (via qrcode.updated/instance.created)');
   console.log(`QR code received for instance=${instanceName}`);
 
   const { error } = await supabaseAdmin
@@ -170,7 +182,6 @@ async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data
 
 // ─── MESSAGES UPSERT ───
 async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, data: any) {
-  // Find connection by instance_name
   const { data: connection, error: connError } = await supabaseAdmin
     .from('whatsapp_connections')
     .select('*')
@@ -182,7 +193,6 @@ async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, da
     return;
   }
 
-  // data can be an array of messages or a single message
   const messages = Array.isArray(data) ? data : [data];
 
   for (const msgData of messages) {
@@ -193,24 +203,20 @@ async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, da
 async function processIncomingMessage(supabaseAdmin: any, connection: any, msgData: any) {
   const key = msgData.key;
   if (!key) return;
-
-  // Skip outgoing messages
   if (key.fromMe) return;
 
   const remoteJid = key.remoteJid;
   const waMessageId = key.id;
   if (!remoteJid || !waMessageId) return;
 
-  // Extract phone number from JID
   const senderPhone = remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '');
   const isGroup = remoteJid.endsWith('@g.us');
-  if (isGroup) return; // Skip group messages for now
+  if (isGroup) return;
 
   const pushName = msgData.pushName || senderPhone;
   const messageContent = msgData.message;
   if (!messageContent) return;
 
-  // Determine message type and content
   let messageType = 'text';
   let content = '';
   let mediaMimeType: string | null = null;

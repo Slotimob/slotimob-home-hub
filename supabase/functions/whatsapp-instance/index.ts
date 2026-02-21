@@ -34,6 +34,11 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } }
     });
 
+    const supabaseAdmin = createClient(
+      supabaseUrl,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const token = authHeader.replace('Bearer ', '');
     const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
@@ -52,12 +57,19 @@ serve(async (req) => {
       const webhookUrl = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook';
       console.log('Webhook URL:', webhookUrl);
 
-      // Step 1: Create instance (minimal payload)
+      // Fix 23505: Delete any existing connection for this broker before inserting
+      console.log('Cleaning existing connections for broker:', userId);
+      await supabaseAdmin
+        .from('whatsapp_connections')
+        .delete()
+        .eq('broker_id', userId);
+
+      // Step 1: Create instance
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
         body: JSON.stringify({
-          instanceName: instanceName,
+          instanceName,
           qrcode: true,
           integration: 'WHATSAPP-BAILEYS',
           webhook: {
@@ -72,7 +84,6 @@ serve(async (req) => {
       const createData = await createRes.json();
       console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData));
 
-      // Extract QR from create response if available
       let qrBase64 = createData?.qrcode?.base64 || null;
 
       // If already exists, try connect; if that fails, delete + recreate
@@ -96,7 +107,7 @@ serve(async (req) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
             body: JSON.stringify({
-              instanceName: instanceName,
+              instanceName,
               qrcode: true,
               integration: 'WHATSAPP-BAILEYS',
               webhook: {
@@ -119,85 +130,53 @@ serve(async (req) => {
         }
       }
 
-      // Step 2: If no QR yet, trigger connect with retries
-      if (!qrBase64) {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          if (attempt > 0) await new Promise(r => setTimeout(r, 3000));
-          const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-            method: 'GET',
-            headers: { 'apikey': evolutionApiKey },
-          });
-          const connectQrData = await connectQrRes.json();
-          console.log(`Connect QR attempt ${attempt + 1}:`, JSON.stringify(connectQrData));
-          qrBase64 = connectQrData?.qrcode?.base64 || connectQrData?.base64 || null;
-          if (qrBase64) break;
-        }
-      }
+      // Step 2: Wait 8s for Baileys socket to initialize
+      console.log('Aguardando 8s para inicialização do Baileys...');
+      await new Promise(r => setTimeout(r, 8000));
 
-      // Step 3: Final "reminder" connect call to force QR generation + save to DB immediately
+      // Step 3: Loop de captura — 3 tentativas com intervalo de 3s
       if (!qrBase64) {
-        console.log('Solicitando QR Code de fallback para:', instanceName);
-        await new Promise(r => setTimeout(r, 3000));
-        try {
-          const reminderRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-            method: 'GET',
-            headers: { 'apikey': evolutionApiKey },
-          });
-          const reminderData = await reminderRes.json();
-          console.log('Fallback connect response:', JSON.stringify(reminderData));
-          qrBase64 = reminderData?.qrcode?.base64 || reminderData?.base64 || null;
-          
-          // If we got the QR, save it immediately to the DB so the frontend picks it up
-          if (qrBase64) {
-            console.log('QR obtido via fallback! Salvando no banco imediatamente.');
-            const supabaseAdmin = createClient(
-              Deno.env.get('SUPABASE_URL') ?? '',
-              Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-            );
-            await supabaseAdmin
-              .from('whatsapp_connections')
-              .update({ qr_code_base64: qrBase64, connection_status: 'qrcode', status: 'pending' })
-              .eq('instance_name', instanceName);
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          console.log(`Tentativa de captura QR ${attempt}/3 para: ${instanceName}`);
+          try {
+            const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+              method: 'GET',
+              headers: { 'apikey': evolutionApiKey },
+            });
+            const connectQrData = await connectQrRes.json();
+            console.log(`Connect QR attempt ${attempt}:`, JSON.stringify(connectQrData));
+            qrBase64 = connectQrData?.qrcode?.base64 || connectQrData?.base64 || null;
+            if (qrBase64) {
+              console.log(`QR capturado na tentativa ${attempt}!`);
+              break;
+            }
+          } catch (e) {
+            console.error(`Erro na tentativa ${attempt}:`, e);
           }
-        } catch (e) {
-          console.error('Fallback connect error:', e);
+          if (attempt < 3) await new Promise(r => setTimeout(r, 3000));
         }
       }
 
-      // Step 4: Save to DB with status 'connecting' — QR will arrive via webhook
-      const { data: existingConn } = await supabaseClient
-        .from('whatsapp_connections')
-        .select('id')
-        .eq('broker_id', userId)
-        .maybeSingle();
-
+      // Step 4: Save to DB — always use insert (we deleted above)
       const dbPayload = {
+        broker_id: userId,
         instance_name: instanceName,
-        status: qrBase64 ? 'pending' : 'pending',
+        status: 'pending',
         connection_status: qrBase64 ? 'qrcode' : 'connecting',
         qr_code_base64: qrBase64,
         connected_at: null,
       };
 
-      let conn, dbError;
-      if (existingConn) {
-        const res = await supabaseClient
-          .from('whatsapp_connections')
-          .update(dbPayload)
-          .eq('broker_id', userId)
-          .select()
-          .single();
-        conn = res.data;
-        dbError = res.error;
-      } else {
-        const res = await supabaseClient
-          .from('whatsapp_connections')
-          .insert({ broker_id: userId, ...dbPayload })
-          .select()
-          .single();
-        conn = res.data;
-        dbError = res.error;
+      // If we got QR, also save via admin to ensure it persists
+      if (qrBase64) {
+        console.log('QR obtido! Salvando no banco via service role.');
       }
+
+      const { data: conn, error: dbError } = await supabaseAdmin
+        .from('whatsapp_connections')
+        .insert(dbPayload)
+        .select()
+        .single();
 
       if (dbError) {
         console.error('DB error:', dbError);
@@ -206,11 +185,10 @@ serve(async (req) => {
         });
       }
 
-      // Return success — QR code will be delivered asynchronously via webhook + Realtime
       return new Response(JSON.stringify({ 
         success: true, 
         connection: conn, 
-        message: 'Instância criada. Aguardando QR Code via webhook.' 
+        message: qrBase64 ? 'QR Code gerado com sucesso.' : 'Instância criada. Aguardando QR Code via webhook.' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -239,7 +217,7 @@ serve(async (req) => {
       const qrBase64 = connectData?.qrcode?.base64 || connectData?.base64 || null;
 
       if (qrBase64) {
-        await supabaseClient
+        await supabaseAdmin
           .from('whatsapp_connections')
           .update({ qr_code_base64: qrBase64, connection_status: 'qrcode' })
           .eq('broker_id', userId);
@@ -288,7 +266,7 @@ serve(async (req) => {
         try { await fetch(`${evolutionApiUrl}/instance/delete/${conn.instance_name}`, { method: 'DELETE', headers: { 'apikey': evolutionApiKey } }); } catch (e) { console.error('Delete error:', e); }
       }
 
-      await supabaseClient
+      await supabaseAdmin
         .from('whatsapp_connections')
         .update({ status: 'disconnected', connection_status: 'disconnected', qr_code_base64: null, connected_at: null })
         .eq('broker_id', userId);
