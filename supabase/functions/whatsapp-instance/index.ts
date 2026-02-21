@@ -60,11 +60,20 @@ serve(async (req) => {
           instanceName: instanceName,
           qrcode: true,
           integration: 'WHATSAPP-BAILEYS',
+          webhook: {
+            url: webhookUrl,
+            byEvents: false,
+            base64: true,
+            events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          },
         }),
       });
 
       const createData = await createRes.json();
       console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData));
+
+      // Extract QR from create response if available
+      let qrBase64 = createData?.qrcode?.base64 || null;
 
       // If already exists, try connect; if that fails, delete + recreate
       if (!createRes.ok) {
@@ -75,6 +84,7 @@ serve(async (req) => {
         });
         const connectData = await connectRes.json();
         console.log('Connect response:', JSON.stringify(connectData));
+        qrBase64 = connectData?.qrcode?.base64 || connectData?.base64 || qrBase64;
 
         if (!connectRes.ok) {
           console.log('Connect failed, deleting and recreating...');
@@ -89,10 +99,17 @@ serve(async (req) => {
               instanceName: instanceName,
               qrcode: true,
               integration: 'WHATSAPP-BAILEYS',
+              webhook: {
+                url: webhookUrl,
+                byEvents: false,
+                base64: true,
+                events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+              },
             }),
           });
           const retryData = await retryRes.json();
           console.log('Retry create status:', retryRes.status, 'body:', JSON.stringify(retryData));
+          qrBase64 = retryData?.qrcode?.base64 || qrBase64;
 
           if (!retryRes.ok) {
             return new Response(JSON.stringify({ error: retryData?.message || 'Failed to create instance' }), {
@@ -102,34 +119,19 @@ serve(async (req) => {
         }
       }
 
-      // Step 2: Configure webhook separately (camelCase fields required by Evolution API)
-      const webhookSetRes = await fetch(`${evolutionApiUrl}/webhook/set/${instanceName}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-        body: JSON.stringify({
-          webhook: {
-            enabled: true,
-            url: webhookUrl,
-            webhookByEvents: false,
-            webhookBase64: true,
-            events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-          }
-        }),
-      });
-      console.log('Webhook set status:', webhookSetRes.status, 'body:', JSON.stringify(await webhookSetRes.json().catch(() => ({}))));
-
-      // Step 3: Trigger connect to generate QR code (with retry)
-      let qrBase64 = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
-        const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-          method: 'GET',
-          headers: { 'apikey': evolutionApiKey },
-        });
-        const connectQrData = await connectQrRes.json();
-        console.log(`Connect QR attempt ${attempt + 1}:`, JSON.stringify(connectQrData));
-        qrBase64 = connectQrData?.qrcode?.base64 || connectQrData?.base64 || null;
-        if (qrBase64) break;
+      // Step 2: If no QR yet, trigger connect with retries
+      if (!qrBase64) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) await new Promise(r => setTimeout(r, 3000));
+          const connectQrRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+            method: 'GET',
+            headers: { 'apikey': evolutionApiKey },
+          });
+          const connectQrData = await connectQrRes.json();
+          console.log(`Connect QR attempt ${attempt + 1}:`, JSON.stringify(connectQrData));
+          qrBase64 = connectQrData?.qrcode?.base64 || connectQrData?.base64 || null;
+          if (qrBase64) break;
+        }
       }
 
       // Step 3: Save to DB with status 'connecting' — QR will arrive via webhook
