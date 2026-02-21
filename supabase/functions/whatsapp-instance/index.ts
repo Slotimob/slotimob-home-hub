@@ -58,13 +58,14 @@ serve(async (req) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
         body: JSON.stringify({
-          instanceName,
+          instanceName: instanceName,
           qrcode: true,
           integration: 'WHATSAPP-BAILEYS',
           webhook: webhookUrl,
-          webhookByEvents: false,
-          webhookEvents: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-          webhookBase64: true,
+          webhook_by_events: false,
+          webhook_events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          webhook_base64: true,
         }),
       });
 
@@ -92,13 +93,14 @@ serve(async (req) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
             body: JSON.stringify({
-              instanceName,
+              instanceName: instanceName,
               qrcode: true,
               integration: 'WHATSAPP-BAILEYS',
               webhook: webhookUrl,
-              webhookByEvents: false,
-              webhookEvents: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-              webhookBase64: true,
+              webhook_by_events: false,
+              webhook_events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+              events: ['QRCODE_UPDATED', 'MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+              webhook_base64: true,
             }),
           });
           const retryData = await retryRes.json();
