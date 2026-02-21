@@ -1,24 +1,28 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, MessageSquarePlus, User } from 'lucide-react';
+import { Search, MessageSquarePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { MockConversation } from './mockData';
+import type { Database } from '@/integrations/supabase/types';
+
+type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
 interface ChatSidebarProps {
-  conversations: MockConversation[];
+  conversations: WhatsAppConversation[];
   selectedId: string | null;
-  onSelect: (conversation: MockConversation) => void;
-  onBack?: () => void;
+  onSelect: (conversation: WhatsAppConversation) => void;
+  loading?: boolean;
 }
 
-function formatTimestamp(dateStr: string): string {
+function formatTimestamp(dateStr: string | null): string {
+  if (!dateStr) return '';
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -33,20 +37,30 @@ function formatTimestamp(dateStr: string): string {
   return formatDistanceToNow(date, { addSuffix: true, locale: ptBR });
 }
 
-export function ChatSidebar({ conversations, selectedId, onSelect }: ChatSidebarProps) {
+function getInitials(name: string | null, phone: string): string {
+  if (name) {
+    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  }
+  return phone.slice(-2);
+}
+
+export function ChatSidebar({ conversations, selectedId, onSelect, loading }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
   const filtered = conversations.filter((conv) => {
+    const displayName = conv.contact_name || conv.contact_phone;
     const matchesSearch =
-      conv.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conv.contactPhone.includes(searchTerm);
+      displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conv.contact_phone.includes(searchTerm);
 
     if (!matchesSearch) return false;
-    if (activeTab === 'unread') return conv.unreadCount > 0;
+    if (activeTab === 'unread') return conv.unread_count > 0;
     if (activeTab === 'waiting') return conv.status === 'waiting';
     return true;
   });
+
+  const unreadTotal = conversations.filter(c => c.unread_count > 0).length;
 
   return (
     <div className="flex flex-col h-full bg-card">
@@ -75,9 +89,9 @@ export function ChatSidebar({ conversations, selectedId, onSelect }: ChatSidebar
             <TabsTrigger value="all" className="text-xs">Todas</TabsTrigger>
             <TabsTrigger value="unread" className="text-xs">
               Não lidas
-              {conversations.filter(c => c.unreadCount > 0).length > 0 && (
+              {unreadTotal > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 min-w-4 px-1 text-[10px] rounded-full">
-                  {conversations.filter(c => c.unreadCount > 0).length}
+                  {unreadTotal}
                 </Badge>
               )}
             </TabsTrigger>
@@ -88,64 +102,79 @@ export function ChatSidebar({ conversations, selectedId, onSelect }: ChatSidebar
 
       {/* Conversation List */}
       <ScrollArea className="flex-1">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="p-3 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3 p-2">
+                <Skeleton className="h-11 w-11 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Nenhuma conversa encontrada</p>
           </div>
         ) : (
           <div>
-            {filtered.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => onSelect(conv)}
-                className={cn(
-                  'w-full p-3 flex items-start gap-3 hover:bg-accent/30 transition-colors border-b border-border/50',
-                  selectedId === conv.id && 'bg-accent/40'
-                )}
-              >
-                <div className="relative flex-shrink-0">
-                  <Avatar className="h-11 w-11">
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                      {conv.contactName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {conv.isOnline && (
-                    <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-card rounded-full" />
+            {filtered.map((conv) => {
+              const displayName = conv.contact_name || conv.contact_phone;
+              return (
+                <button
+                  key={conv.id}
+                  onClick={() => onSelect(conv)}
+                  className={cn(
+                    'w-full p-3 flex items-start gap-3 hover:bg-accent/30 transition-colors border-b border-border/50',
+                    selectedId === conv.id && 'bg-accent/40'
                   )}
-                </div>
+                >
+                  <div className="relative flex-shrink-0">
+                    <Avatar className="h-11 w-11">
+                      {conv.contact_profile_pic && (
+                        <AvatarImage src={conv.contact_profile_pic} alt={displayName} />
+                      )}
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                        {getInitials(conv.contact_name, conv.contact_phone)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
 
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className={cn(
-                      'font-medium text-sm truncate',
-                      conv.unreadCount > 0 && 'font-semibold text-foreground'
-                    )}>
-                      {conv.contactName}
-                    </span>
-                    <span className={cn(
-                      'text-[11px] flex-shrink-0 ml-2',
-                      conv.unreadCount > 0 ? 'text-primary font-medium' : 'text-muted-foreground'
-                    )}>
-                      {formatTimestamp(conv.lastMessageAt)}
-                    </span>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className={cn(
+                        'font-medium text-sm truncate',
+                        conv.unread_count > 0 && 'font-semibold text-foreground'
+                      )}>
+                        {displayName}
+                      </span>
+                      <span className={cn(
+                        'text-[11px] flex-shrink-0 ml-2',
+                        conv.unread_count > 0 ? 'text-primary font-medium' : 'text-muted-foreground'
+                      )}>
+                        {formatTimestamp(conv.last_message_at)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={cn(
+                        'text-xs truncate pr-2',
+                        conv.unread_count > 0 ? 'text-foreground/80' : 'text-muted-foreground'
+                      )}>
+                        {conv.last_message || 'Sem mensagens'}
+                      </span>
+                      {conv.unread_count > 0 && (
+                        <Badge className="h-5 min-w-5 px-1.5 text-[10px] rounded-full bg-green-500 hover:bg-green-500 text-white flex-shrink-0">
+                          {conv.unread_count}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className={cn(
-                      'text-xs truncate pr-2',
-                      conv.unreadCount > 0 ? 'text-foreground/80' : 'text-muted-foreground'
-                    )}>
-                      {conv.lastMessage}
-                    </span>
-                    {conv.unreadCount > 0 && (
-                      <Badge className="h-5 min-w-5 px-1.5 text-[10px] rounded-full bg-green-500 hover:bg-green-500 text-white flex-shrink-0">
-                        {conv.unreadCount}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
       </ScrollArea>
