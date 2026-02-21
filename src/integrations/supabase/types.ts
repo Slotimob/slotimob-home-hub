@@ -3227,44 +3227,53 @@ export type Database = {
       }
       whatsapp_connections: {
         Row: {
+          api_provider: string
           broker_id: string
           connected_at: string | null
           created_at: string
-          evolution_api_url: string
+          evolution_api_url: string | null
           id: string
-          instance_name: string
+          instance_name: string | null
           phone_number: string | null
+          phone_number_id: string | null
           qr_code: string | null
           status: Database["public"]["Enums"]["whatsapp_connection_status"]
           updated_at: string
+          waba_id: string | null
           webhook_secret: string | null
           webhook_url: string | null
         }
         Insert: {
+          api_provider?: string
           broker_id: string
           connected_at?: string | null
           created_at?: string
-          evolution_api_url: string
+          evolution_api_url?: string | null
           id?: string
-          instance_name: string
+          instance_name?: string | null
           phone_number?: string | null
+          phone_number_id?: string | null
           qr_code?: string | null
           status?: Database["public"]["Enums"]["whatsapp_connection_status"]
           updated_at?: string
+          waba_id?: string | null
           webhook_secret?: string | null
           webhook_url?: string | null
         }
         Update: {
+          api_provider?: string
           broker_id?: string
           connected_at?: string | null
           created_at?: string
-          evolution_api_url?: string
+          evolution_api_url?: string | null
           id?: string
-          instance_name?: string
+          instance_name?: string | null
           phone_number?: string | null
+          phone_number_id?: string | null
           qr_code?: string | null
           status?: Database["public"]["Enums"]["whatsapp_connection_status"]
           updated_at?: string
+          waba_id?: string | null
           webhook_secret?: string | null
           webhook_url?: string | null
         }
@@ -3275,6 +3284,7 @@ export type Database = {
           assigned_at: string | null
           assigned_user_id: string | null
           connection_id: string
+          contact_id: string | null
           contact_name: string | null
           contact_phone: string
           contact_profile_pic: string | null
@@ -3293,6 +3303,7 @@ export type Database = {
           assigned_at?: string | null
           assigned_user_id?: string | null
           connection_id: string
+          contact_id?: string | null
           contact_name?: string | null
           contact_phone: string
           contact_profile_pic?: string | null
@@ -3311,6 +3322,7 @@ export type Database = {
           assigned_at?: string | null
           assigned_user_id?: string | null
           connection_id?: string
+          contact_id?: string | null
           contact_name?: string | null
           contact_phone?: string
           contact_profile_pic?: string | null
@@ -3331,6 +3343,13 @@ export type Database = {
             columns: ["connection_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
           {
