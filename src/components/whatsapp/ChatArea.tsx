@@ -1,24 +1,29 @@
 import { useState, useRef, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   MessageSquare, Send, Paperclip, FileText, Phone, MoreVertical,
-  Check, CheckCheck, ArrowLeft, ChevronRight,
+  Check, CheckCheck, ArrowLeft, ChevronRight, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { MockConversation, MockMessage } from './mockData';
+import type { Database } from '@/integrations/supabase/types';
 import { QUICK_REPLIES } from './mockData';
 
+type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
+type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
+
 interface ChatAreaProps {
-  conversation: MockConversation | null;
-  messages: MockMessage[];
+  conversation: WhatsAppConversation | null;
+  messages: WhatsAppMessage[];
   onSendMessage: (content: string) => void;
   onBack?: () => void;
   onToggleCrm?: () => void;
   showCrmToggle?: boolean;
+  loadingMessages?: boolean;
+  sending?: boolean;
 }
 
 function formatTime(dateStr: string): string {
@@ -27,18 +32,31 @@ function formatTime(dateStr: string): string {
 
 function StatusIcon({ status }: { status: string }) {
   switch (status) {
+    case 'pending':
+      return <Loader2 className="h-3 w-3 text-white/60 animate-spin" />;
     case 'sent':
       return <Check className="h-3 w-3 text-white/60" />;
     case 'delivered':
       return <CheckCheck className="h-3 w-3 text-white/60" />;
     case 'read':
       return <CheckCheck className="h-3 w-3 text-blue-300" />;
+    case 'failed':
+      return <span className="text-[10px] text-red-300">!</span>;
     default:
       return null;
   }
 }
 
-export function ChatArea({ conversation, messages, onSendMessage, onBack, onToggleCrm, showCrmToggle }: ChatAreaProps) {
+export function ChatArea({
+  conversation,
+  messages,
+  onSendMessage,
+  onBack,
+  onToggleCrm,
+  showCrmToggle,
+  loadingMessages,
+  sending,
+}: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -49,7 +67,7 @@ export function ChatArea({ conversation, messages, onSendMessage, onBack, onTogg
   }, [messages]);
 
   const handleSend = () => {
-    if (!messageText.trim()) return;
+    if (!messageText.trim() || sending) return;
     onSendMessage(messageText.trim());
     setMessageText('');
     if (textareaRef.current) {
@@ -94,6 +112,11 @@ export function ChatArea({ conversation, messages, onSendMessage, onBack, onTogg
     );
   }
 
+  const displayName = conversation.contact_name || conversation.contact_phone;
+  const initials = conversation.contact_name
+    ? conversation.contact_name.split(' ').map(n => n[0]).join('').slice(0, 2)
+    : conversation.contact_phone.slice(-2);
+
   return (
     <div className="flex-1 flex flex-col h-full min-w-0">
       {/* Chat Header */}
@@ -105,19 +128,19 @@ export function ChatArea({ conversation, messages, onSendMessage, onBack, onTogg
         )}
         <div className="relative flex-shrink-0">
           <Avatar className="h-10 w-10">
+            {conversation.contact_profile_pic && (
+              <AvatarImage src={conversation.contact_profile_pic} alt={displayName} />
+            )}
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              {conversation.contactName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              {initials}
             </AvatarFallback>
           </Avatar>
-          {conversation.isOnline && (
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 border-2 border-card rounded-full" />
-          )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm text-foreground truncate">{conversation.contactName}</h3>
+          <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Phone className="h-3 w-3" />
-            {conversation.contactPhone}
+            {conversation.contact_phone}
           </p>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -140,31 +163,51 @@ export function ChatArea({ conversation, messages, onSendMessage, onBack, onTogg
             backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.03\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         >
-          {messages.map((msg) => {
-            const isOutgoing = msg.direction === 'outgoing';
-            return (
-              <div key={msg.id} className={cn('flex', isOutgoing ? 'justify-end' : 'justify-start')}>
-                <div
-                  className={cn(
-                    'max-w-[75%] rounded-lg px-3 py-2 shadow-sm relative',
-                    isOutgoing
-                      ? 'bg-[hsl(142,70%,40%)] text-white rounded-br-sm'
-                      : 'bg-card text-foreground border border-border/50 rounded-bl-sm'
-                  )}
-                >
-                  <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                  <div className={cn(
-                    'flex items-center justify-end gap-1 mt-1 -mb-0.5',
-                    isOutgoing ? 'text-white/70' : 'text-muted-foreground'
-                  )}>
-                    <span className="text-[10px]">{formatTime(msg.sentAt)}</span>
-                    {isOutgoing && <StatusIcon status={msg.status} />}
-                  </div>
+          {loadingMessages ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className={cn('flex', i % 2 === 0 ? 'justify-start' : 'justify-end')}>
+                  <Skeleton className={cn('h-12 rounded-lg', i % 2 === 0 ? 'w-3/5' : 'w-2/5')} />
                 </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
+              ))}
+            </div>
+          ) : (
+            <>
+              {messages.map((msg) => {
+                const isOutgoing = msg.direction === 'outgoing';
+                const isNote = msg.is_internal_note;
+                return (
+                  <div key={msg.id} className={cn('flex', isOutgoing ? 'justify-end' : 'justify-start')}>
+                    <div
+                      className={cn(
+                        'max-w-[75%] rounded-lg px-3 py-2 shadow-sm relative',
+                        isNote
+                          ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-800 rounded-br-sm'
+                          : isOutgoing
+                            ? 'bg-[hsl(142,70%,40%)] text-white rounded-br-sm'
+                            : 'bg-card text-foreground border border-border/50 rounded-bl-sm'
+                      )}
+                    >
+                      {isNote && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider opacity-70 block mb-0.5">
+                          Nota interna
+                        </span>
+                      )}
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                      <div className={cn(
+                        'flex items-center justify-end gap-1 mt-1 -mb-0.5',
+                        isNote ? 'text-amber-700 dark:text-amber-300' : isOutgoing ? 'text-white/70' : 'text-muted-foreground'
+                      )}>
+                        <span className="text-[10px]">{formatTime(msg.sent_at)}</span>
+                        {isOutgoing && !isNote && <StatusIcon status={msg.status} />}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
+          )}
         </div>
       </ScrollArea>
 
@@ -217,11 +260,11 @@ export function ChatArea({ conversation, messages, onSendMessage, onBack, onTogg
 
           <Button
             onClick={handleSend}
-            disabled={!messageText.trim()}
+            disabled={!messageText.trim() || sending}
             size="icon"
             className="flex-shrink-0 h-9 w-9 rounded-full"
           >
-            <Send className="h-4 w-4" />
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
       </div>

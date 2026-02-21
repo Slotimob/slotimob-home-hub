@@ -14,26 +14,31 @@ import { ChatSidebar } from '@/components/whatsapp/ChatSidebar';
 import { ChatArea } from '@/components/whatsapp/ChatArea';
 import { CrmContextPanel } from '@/components/whatsapp/CrmContextPanel';
 import {
-  MOCK_CONVERSATIONS,
-  MOCK_MESSAGES,
-  MOCK_CONTACT_DETAILS,
-  type MockConversation,
-  type MockMessage,
-} from '@/components/whatsapp/mockData';
+  useWhatsAppConnection,
+  useConversations,
+  useMessages,
+  useSendMessage,
+  useConversationContact,
+} from '@/hooks/useWhatsApp';
+import type { Database } from '@/integrations/supabase/types';
 
-// For demo purposes we keep connection always "connected"
-const DEMO_MODE = true;
+type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
 export default function WhatsApp() {
   const { user, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
 
-  const [selectedConversation, setSelectedConversation] = useState<MockConversation | null>(null);
-  const [localMessages, setLocalMessages] = useState<Record<string, MockMessage[]>>(MOCK_MESSAGES);
+  const { connection, loading: connectionLoading } = useWhatsAppConnection();
+  const { conversations, loading: conversationsLoading } = useConversations(connection?.id || null);
+  const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
+  const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null);
+  const { sendMessage, sending } = useSendMessage();
+  const { contact, loading: contactLoading } = useConversationContact(selectedConversation?.lead_id || null);
+
   const [showCrmPanel, setShowCrmPanel] = useState(true);
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
-  const handleSelectConversation = useCallback((conv: MockConversation) => {
+  const handleSelectConversation = useCallback((conv: WhatsAppConversation) => {
     setSelectedConversation(conv);
     if (isMobile) setMobileView('chat');
   }, [isMobile]);
@@ -43,48 +48,12 @@ export default function WhatsApp() {
     setSelectedConversation(null);
   }, []);
 
-  const handleSendMessage = useCallback((content: string) => {
+  const handleSendMessage = useCallback(async (content: string) => {
     if (!selectedConversation) return;
-    const newMsg: MockMessage = {
-      id: `msg-${Date.now()}`,
-      conversationId: selectedConversation.id,
-      direction: 'outgoing',
-      content,
-      sentAt: new Date().toISOString(),
-      status: 'sent',
-    };
-    setLocalMessages((prev) => ({
-      ...prev,
-      [selectedConversation.id]: [...(prev[selectedConversation.id] || []), newMsg],
-    }));
-    // Simulate status update
-    setTimeout(() => {
-      setLocalMessages((prev) => ({
-        ...prev,
-        [selectedConversation.id]: prev[selectedConversation.id]?.map((m) =>
-          m.id === newMsg.id ? { ...m, status: 'delivered' as const } : m
-        ) || [],
-      }));
-    }, 1000);
-    setTimeout(() => {
-      setLocalMessages((prev) => ({
-        ...prev,
-        [selectedConversation.id]: prev[selectedConversation.id]?.map((m) =>
-          m.id === newMsg.id ? { ...m, status: 'read' as const } : m
-        ) || [],
-      }));
-    }, 2500);
-  }, [selectedConversation]);
+    await sendMessage(selectedConversation.id, content);
+  }, [selectedConversation, sendMessage]);
 
-  const currentMessages = selectedConversation
-    ? localMessages[selectedConversation.id] || []
-    : [];
-
-  const currentContact = selectedConversation
-    ? MOCK_CONTACT_DETAILS[selectedConversation.id] || null
-    : null;
-
-  if (authLoading) {
+  if (authLoading || connectionLoading) {
     return (
       <SidebarProvider>
         <div className="min-h-[100dvh] flex w-full bg-background">
@@ -97,8 +66,8 @@ export default function WhatsApp() {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  // "Not connected" state (when not in demo mode and no real connection)
-  if (!DEMO_MODE) {
+  // "Not connected" state
+  if (!connection) {
     return (
       <SidebarProvider>
         <div className="min-h-[100dvh] flex w-full bg-background">
@@ -130,7 +99,7 @@ export default function WhatsApp() {
         <AppSidebar />
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Top bar - visible only on desktop or when showing conversation list on mobile */}
+          {/* Top bar */}
           <header className="border-b bg-card flex-shrink-0 pt-[env(safe-area-inset-top)]">
             <div className="flex items-center gap-2 px-3 py-2">
               <SidebarTrigger className="flex-shrink-0" />
@@ -155,9 +124,10 @@ export default function WhatsApp() {
               )}
             >
               <ChatSidebar
-                conversations={MOCK_CONVERSATIONS}
+                conversations={conversations}
                 selectedId={selectedConversation?.id || null}
                 onSelect={handleSelectConversation}
+                loading={conversationsLoading}
               />
             </div>
 
@@ -170,11 +140,13 @@ export default function WhatsApp() {
             >
               <ChatArea
                 conversation={selectedConversation}
-                messages={currentMessages}
+                messages={messages}
                 onSendMessage={handleSendMessage}
                 onBack={isMobile ? handleBack : undefined}
                 onToggleCrm={() => setShowCrmPanel((p) => !p)}
                 showCrmToggle={!!selectedConversation && !isMobile}
+                loadingMessages={messagesLoading}
+                sending={sending}
               />
             </div>
 
@@ -182,10 +154,11 @@ export default function WhatsApp() {
             {!isMobile && showCrmPanel && selectedConversation && (
               <div className="w-72 xl:w-80 border-l flex-shrink-0 bg-card overflow-hidden">
                 <CrmContextPanel
-                  contact={currentContact}
+                  conversation={selectedConversation}
+                  contact={contact}
+                  contactLoading={contactLoading}
                   onCreateDeal={() => {
-                    // Will be integrated with CreateDealDialog later
-                    console.log('Create deal for contact', currentContact?.id);
+                    console.log('Create deal for contact', contact?.id);
                   }}
                 />
               </div>

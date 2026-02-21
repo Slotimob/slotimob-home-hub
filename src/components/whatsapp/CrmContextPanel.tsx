@@ -1,35 +1,45 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Mail, Phone, Tag, Plus, Calendar, StickyNote,
   PhoneCall, FileText, MessageCircle, TrendingUp,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { MockContactDetail } from './mockData';
+import type { Database } from '@/integrations/supabase/types';
+import { useContactDeals, useContactActivities } from '@/hooks/useWhatsApp';
+
+type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
 interface CrmContextPanelProps {
-  contact: MockContactDetail | null;
+  conversation: WhatsAppConversation | null;
+  contact: any | null;
+  contactLoading?: boolean;
   onCreateDeal?: () => void;
 }
 
 function getActivityIcon(type: string) {
   switch (type) {
-    case 'visit': return <Calendar className="h-3.5 w-3.5 text-primary" />;
-    case 'note': return <StickyNote className="h-3.5 w-3.5 text-amber-500" />;
-    case 'call': return <PhoneCall className="h-3.5 w-3.5 text-green-500" />;
-    case 'proposal': return <FileText className="h-3.5 w-3.5 text-blue-500" />;
-    case 'message': return <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />;
+    case 'visit': case 'Visita': return <Calendar className="h-3.5 w-3.5 text-primary" />;
+    case 'note': case 'Anotação': return <StickyNote className="h-3.5 w-3.5 text-amber-500" />;
+    case 'call': case 'Ligação': return <PhoneCall className="h-3.5 w-3.5 text-green-500" />;
+    case 'proposal': case 'Proposta': return <FileText className="h-3.5 w-3.5 text-blue-500" />;
+    case 'message': case 'Mensagem': return <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />;
     default: return <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />;
   }
 }
 
-export function CrmContextPanel({ contact, onCreateDeal }: CrmContextPanelProps) {
-  if (!contact) {
+export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal }: CrmContextPanelProps) {
+  const contactId = contact?.id || null;
+  const { deals, loading: dealsLoading } = useContactDeals(contactId);
+  const { activities, loading: activitiesLoading } = useContactActivities(contactId);
+
+  if (!conversation) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground p-6">
         <p className="text-sm text-center">Selecione uma conversa para ver os detalhes do CRM</p>
@@ -37,41 +47,64 @@ export function CrmContextPanel({ contact, onCreateDeal }: CrmContextPanelProps)
     );
   }
 
+  const displayName = contact?.name || conversation.contact_name || conversation.contact_phone;
+  const initials = (contact?.name || conversation.contact_name || '')
+    .split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '??';
+
+  const activeDeal = deals.length > 0 ? deals[0] : null;
+
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
         {/* Contact Info */}
-        <div className="flex flex-col items-center text-center space-y-2">
-          <Avatar className="h-16 w-16">
-            <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
-              {contact.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-semibold text-foreground">{contact.name}</h3>
+        {contactLoading ? (
+          <div className="flex flex-col items-center space-y-2">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-48" />
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="truncate">{contact.email}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-            <span>{contact.phone}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Tag className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-            <div className="flex flex-wrap gap-1">
-              {contact.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">
-                  {tag}
-                </Badge>
-              ))}
+        ) : (
+          <>
+            <div className="flex flex-col items-center text-center space-y-2">
+              <Avatar className="h-16 w-16">
+                {(contact?.avatar_url || conversation.contact_profile_pic) && (
+                  <AvatarImage src={contact?.avatar_url || conversation.contact_profile_pic} alt={displayName} />
+                )}
+                <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="font-semibold text-foreground">{displayName}</h3>
+              </div>
             </div>
-          </div>
-        </div>
+
+            <div className="space-y-2">
+              {contact?.email && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate">{contact.email}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>{contact?.phone || conversation.contact_phone}</span>
+              </div>
+              {contact?.categories && contact.categories.length > 0 && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Tag className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex flex-wrap gap-1">
+                    {contact.categories.map((tag: string) => (
+                      <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         <Separator />
 
@@ -82,26 +115,35 @@ export function CrmContextPanel({ contact, onCreateDeal }: CrmContextPanelProps)
             Negociação Atual
           </h4>
 
-          {contact.deal ? (
+          {dealsLoading ? (
+            <Skeleton className="h-24 w-full rounded-lg" />
+          ) : activeDeal ? (
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-3 space-y-2">
-                <p className="font-medium text-sm text-foreground">{contact.deal.title}</p>
+                <p className="font-medium text-sm text-foreground">
+                  {activeDeal.property?.name || 'Negociação'}
+                  {activeDeal.unit?.title ? ` - ${activeDeal.unit.title}` : ''}
+                </p>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
-                    {contact.deal.stage}
+                    {activeDeal.custom_stage?.name || activeDeal.stage}
                   </Badge>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground">Valor</span>
                     <p className="font-semibold text-foreground">
-                      {contact.deal.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {activeDeal.estimated_value
+                        ? activeDeal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                        : '—'}
                     </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Previsão</span>
                     <p className="font-semibold text-foreground">
-                      {format(new Date(contact.deal.expectedCloseDate), "dd/MM/yyyy", { locale: ptBR })}
+                      {activeDeal.expected_close_date
+                        ? format(new Date(activeDeal.expected_close_date), "dd/MM/yyyy", { locale: ptBR })
+                        : '—'}
                     </p>
                   </div>
                 </div>
@@ -128,28 +170,42 @@ export function CrmContextPanel({ contact, onCreateDeal }: CrmContextPanelProps)
             Últimas Atividades
           </h4>
 
-          <div className="space-y-0">
-            {contact.activities.map((activity, idx) => (
-              <div key={activity.id} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className="h-7 w-7 rounded-full bg-muted/80 flex items-center justify-center flex-shrink-0">
-                    {getActivityIcon(activity.type)}
+          {activitiesLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-3">
+                  <Skeleton className="h-7 w-7 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-2 w-20" />
                   </div>
-                  {idx < contact.activities.length - 1 && (
-                    <div className="w-px flex-1 bg-border my-1" />
-                  )}
                 </div>
-                <div className="pb-4 min-w-0">
-                  <p className="text-xs text-foreground leading-relaxed">{activity.description}</p>
-                  <span className="text-[10px] text-muted-foreground">
-                    {format(new Date(activity.date), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                  </span>
+              ))}
+            </div>
+          ) : activities.length > 0 ? (
+            <div className="space-y-0">
+              {activities.map((activity: any, idx: number) => (
+                <div key={activity.id} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="h-7 w-7 rounded-full bg-muted/80 flex items-center justify-center flex-shrink-0">
+                      {getActivityIcon(activity.activity_type)}
+                    </div>
+                    {idx < activities.length - 1 && (
+                      <div className="w-px flex-1 bg-border my-1" />
+                    )}
+                  </div>
+                  <div className="pb-4 min-w-0">
+                    <p className="text-xs text-foreground leading-relaxed">
+                      {activity.title || activity.description || activity.activity_type}
+                    </p>
+                    <span className="text-[10px] text-muted-foreground">
+                      {format(new Date(activity.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {contact.activities.length === 0 && (
+              ))}
+            </div>
+          ) : (
             <p className="text-xs text-muted-foreground text-center py-4">Nenhuma atividade registrada</p>
           )}
         </div>
