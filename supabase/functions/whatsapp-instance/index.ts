@@ -85,7 +85,7 @@ serve(async (req) => {
     // ─── CREATE INSTANCE (ASYNC MODEL) ───
     if (action === 'create') {
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
-      const webhookUrl = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/whatsapp-webhook';
+      const webhookUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/whatsapp-webhook`;
 
       // Step 1: WIPEOUT — clean ghost instances from Evolution API + DB
       await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
@@ -116,6 +116,8 @@ serve(async (req) => {
       const createData = await createRes.json();
       console.log('Create response status:', createRes.status, 'body:', JSON.stringify(createData).substring(0, 300));
 
+      let finalCreateData = createData;
+
       if (!createRes.ok) {
         // Try force-delete and recreate once
         console.log('Create failed, force-deleting and recreating...');
@@ -135,15 +137,25 @@ serve(async (req) => {
             status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
+        finalCreateData = retryData;
       }
 
-      // Step 3: Save to DB IMMEDIATELY with status 'preparing' — NO POLLING
+      // Step 3: Try to extract QR code directly from create response
+      const initialQr = extractQrBase64(finalCreateData);
+
+      if (initialQr) {
+        console.log('Initial QR Code captured directly from create response ✅');
+      } else {
+        console.log('Initial QR Code missing, waiting for webhook ⏳');
+      }
+
+      // Step 4: Save to DB with QR if available
       const dbPayload = {
         broker_id: userId,
         instance_name: instanceName,
         status: 'pending',
-        connection_status: 'preparing',
-        qr_code_base64: null,
+        connection_status: initialQr ? 'qrcode' : 'preparing',
+        qr_code_base64: initialQr || null,
         connected_at: null,
       };
 
@@ -160,13 +172,16 @@ serve(async (req) => {
         });
       }
 
-      console.log('Instance created, returning immediately. Webhook will deliver QR code.');
+      console.log(`Instance created. Status: ${dbPayload.connection_status}. QR present: ${!!initialQr}`);
 
       return new Response(JSON.stringify({ 
         success: true, 
         connection: conn,
-        connection_status: 'preparing',
-        message: 'Instância criada. O QR Code será entregue automaticamente via webhook.' 
+        connection_status: dbPayload.connection_status,
+        qrCode: initialQr || null,
+        message: initialQr 
+          ? 'Instância criada com QR Code disponível.' 
+          : 'Instância criada. O QR Code será entregue automaticamente via webhook.' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
