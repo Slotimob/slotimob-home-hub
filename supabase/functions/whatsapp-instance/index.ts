@@ -152,7 +152,29 @@ serve(async (req) => {
         }
       }
 
-      // Step 3: Save to DB IMMEDIATELY
+      // Step 3: Force Connect — if QR still missing, call /instance/connect explicitly
+      if (!initialQrCode) {
+        console.log('QR Code not in create response. Forcing /connect...');
+        try {
+          const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+            method: 'GET',
+            headers: { 'apikey': evolutionApiKey },
+          });
+          const connectData = await connectRes.json();
+          console.log('Force connect response status:', connectRes.status);
+          const secondQrCode = extractQrBase64(connectData);
+          if (secondQrCode) {
+            initialQrCode = secondQrCode;
+            console.log('✅ QR Code captured from force /connect endpoint');
+          } else {
+            console.log('⚠️ QR Code still missing after force /connect');
+          }
+        } catch (e) {
+          console.warn('Force /connect call failed (non-critical):', e);
+        }
+      }
+
+      // Step 4: Save to DB IMMEDIATELY
       const dbPayload = {
         broker_id: userId,
         instance_name: instanceName,
