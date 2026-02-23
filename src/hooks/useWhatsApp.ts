@@ -53,6 +53,8 @@ export function useWhatsAppSettingsConnection() {
   const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [waitingForQr, setWaitingForQr] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
 
   const fetchConnection = useCallback(async () => {
     if (!user) return;
@@ -69,7 +71,6 @@ export function useWhatsAppSettingsConnection() {
     setConnection(data);
     setLoading(false);
 
-    // If connection exists but no QR and status is preparing/connecting/pending, we're waiting
     if (data && !data.qr_code_base64 && ['preparing', 'connecting', 'pending'].includes(data.connection_status || '')) {
       setWaitingForQr(true);
     } else {
@@ -81,7 +82,48 @@ export function useWhatsAppSettingsConnection() {
     fetchConnection();
   }, [fetchConnection]);
 
-  // Realtime subscription: listen for changes to whatsapp_connections for this broker
+  // Countdown timer (60s) while waiting
+  useEffect(() => {
+    if (!waitingForQr) {
+      setCountdown(null);
+      setTimedOut(false);
+      return;
+    }
+
+    setCountdown(60);
+    setTimedOut(false);
+
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          setTimedOut(true);
+          setWaitingForQr(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [waitingForQr]);
+
+  // Cancel: reset local state and optionally disconnect backend
+  const cancelRequest = useCallback(async () => {
+    setWaitingForQr(false);
+    setCountdown(null);
+    setTimedOut(false);
+    try {
+      await supabase.functions.invoke('whatsapp-instance', {
+        body: { action: 'disconnect' },
+      });
+    } catch (e) {
+      console.warn('Cancel disconnect failed (non-critical):', e);
+    }
+    fetchConnection();
+  }, [fetchConnection]);
+
+  // Realtime subscription
   useEffect(() => {
     if (!user) return;
 
@@ -111,22 +153,22 @@ export function useWhatsAppSettingsConnection() {
       )
       .subscribe();
 
-    // Safety timeout: 90s
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    if (waitingForQr) {
-      timeout = setTimeout(() => {
-        console.log('Timeout de 90s atingido esperando QR Code');
-        setWaitingForQr(false);
-      }, 90000);
-    }
-
     return () => {
       supabase.removeChannel(channel);
-      if (timeout) clearTimeout(timeout);
     };
-  }, [user, waitingForQr]);
+  }, [user]);
 
-  return { connection, loading, waitingForQr, setWaitingForQr, refetch: fetchConnection };
+  return {
+    connection,
+    loading,
+    waitingForQr,
+    setWaitingForQr,
+    countdown,
+    timedOut,
+    setTimedOut,
+    cancelRequest,
+    refetch: fetchConnection,
+  };
 }
 
 // ─── useConversations ───────────────────────────────────────────────
