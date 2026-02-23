@@ -8,7 +8,7 @@ const corsHeaders = {
 
 // Force-delete instance from Evolution API (ignore errors if not found)
 async function forceDeleteInstance(evolutionApiUrl: string, evolutionApiKey: string, instanceName: string) {
-  console.log(`forceDelete: Limpando instância fantasma ${instanceName}...`);
+  console.log(`forceDelete: Iniciando limpeza profunda para ${instanceName}...`);
   try {
     await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, {
       method: 'DELETE',
@@ -21,7 +21,9 @@ async function forceDeleteInstance(evolutionApiUrl: string, evolutionApiKey: str
       headers: { 'apikey': evolutionApiKey },
     });
   } catch (_e) { /* ignore */ }
-  console.log(`forceDelete: Limpeza concluída para ${instanceName}`);
+  // FIX: Aguardar 4 segundos para garantir que a Evolution API libere a pasta da sessão
+  console.log('forceDelete: Aguardando liberação de recursos (Cool-down 4s)...');
+  await new Promise(resolve => setTimeout(resolve, 4000));
 }
 
 function extractQrBase64(data: any): string | null {
@@ -82,18 +84,18 @@ serve(async (req) => {
     const { action } = await req.json();
     console.log(`whatsapp-instance action=${action} user=${userId}`);
 
-    // ─── CREATE INSTANCE (ASYNC MODEL) ───
+    // ─── CREATE INSTANCE (ROBUST RETRY MODEL) ───
     if (action === 'create') {
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
-      // FIX: Construir URL dinâmica baseada no ambiente
       const webhookUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/whatsapp-webhook`;
 
-      // Step 1: WIPEOUT — clean ghost instances from Evolution API + DB
+      // Step 1: Limpeza profunda antes de criar
       await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
+      
       console.log('Cleaning existing DB connections for broker:', userId);
       await supabaseAdmin.from('whatsapp_connections').delete().eq('broker_id', userId);
 
-      // Step 2: Send create command to Evolution API
+      // Step 2: Criar Instância
       const webhookPayload = {
         instanceName,
         qrcode: true,
@@ -108,6 +110,7 @@ serve(async (req) => {
         },
       };
 
+      console.log('Solicitando criação da instância...');
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -115,72 +118,50 @@ serve(async (req) => {
       });
 
       const createData = await createRes.json();
-      console.log('Create response status:', createRes.status);
+      let finalQrCode = extractQrBase64(createData);
 
-      // FIX: Tentar extrair o QR Code imediatamente da resposta
-      let initialQrCode = extractQrBase64(createData);
-
-      if (initialQrCode) {
-        console.log('✅ Initial QR Code captured directly from create response');
-      } else {
-        console.log('⏳ Initial QR Code missing in response, waiting for webhook');
-      }
-
-      if (!createRes.ok) {
-        console.log('Create failed, force-deleting and recreating...');
-        await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
-        await new Promise(r => setTimeout(r, 1500));
-
-        const retryRes = await fetch(`${evolutionApiUrl}/instance/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-          body: JSON.stringify(webhookPayload),
-        });
-        const retryData = await retryRes.json();
-
-        if (!retryRes.ok) {
-          return new Response(JSON.stringify({ error: retryData?.message || 'Failed to create instance' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // Try to extract QR from retry response
-        const retryQr = extractQrBase64(retryData);
-        if (retryQr) {
-          initialQrCode = retryQr;
-          console.log('✅ QR Code captured from retry response');
-        }
-      }
-
-      // Step 3: Force Connect — if QR still missing, call /instance/connect explicitly
-      if (!initialQrCode) {
-        console.log('QR Code not in create response. Forcing /connect...');
+      // Step 3: Lógica de Retry se o QR Code falhar na criação
+      if (!finalQrCode) {
+        console.log('⚠️ QR Code não veio na criação. Iniciando protocolo de Force Connect...');
+        
+        // Tentativa 1: Forçar conexão imediata
         try {
-          const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+          const connectRes1 = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
             method: 'GET',
             headers: { 'apikey': evolutionApiKey },
           });
-          const connectData = await connectRes.json();
-          console.log('Force connect response status:', connectRes.status);
-          const secondQrCode = extractQrBase64(connectData);
-          if (secondQrCode) {
-            initialQrCode = secondQrCode;
-            console.log('✅ QR Code captured from force /connect endpoint');
-          } else {
-            console.log('⚠️ QR Code still missing after force /connect');
-          }
-        } catch (e) {
-          console.warn('Force /connect call failed (non-critical):', e);
+          const connectData1 = await connectRes1.json();
+          finalQrCode = extractQrBase64(connectData1);
+        } catch (_e) { /* ignore */ }
+
+        if (!finalQrCode) {
+          // Tentativa 2: Esperar 3 segundos e tentar novamente (Dando tempo para o driver bootar)
+          console.log('⏳ QR Code ainda ausente. Aguardando 3s para nova tentativa...');
+          await new Promise(r => setTimeout(r, 3000));
+          try {
+            const connectRes2 = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+              method: 'GET',
+              headers: { 'apikey': evolutionApiKey },
+            });
+            const connectData2 = await connectRes2.json();
+            finalQrCode = extractQrBase64(connectData2);
+          } catch (_e) { /* ignore */ }
         }
       }
 
-      // Step 4: Save to DB IMMEDIATELY
+      if (finalQrCode) {
+        console.log('✅ QR Code capturado com sucesso!');
+      } else {
+        console.error('❌ Falha ao obter QR Code após retentativas. O webhook será a última esperança.');
+      }
+
+      // Step 4: Save to DB
       const dbPayload = {
         broker_id: userId,
         instance_name: instanceName,
         status: 'pending',
-        connection_status: initialQrCode ? 'qrcode' : 'preparing',
-        qr_code_base64: initialQrCode || null,
+        connection_status: finalQrCode ? 'qrcode' : 'preparing',
+        qr_code_base64: finalQrCode,
         connected_at: null,
       };
 
@@ -191,7 +172,6 @@ serve(async (req) => {
         .single();
 
       if (dbError) {
-        console.error('DB error:', dbError);
         return new Response(JSON.stringify({ error: dbError.message }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
