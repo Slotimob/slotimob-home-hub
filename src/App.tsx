@@ -7,6 +7,7 @@ import { GlowInitializer } from "@/components/GlowInitializer";
 import { UtmCaptureProvider } from "@/components/UtmCaptureProvider";
 import { SEOProvider } from "@/components/SEOHead";
 import { JsonLdSchema } from "@/components/JsonLdSchema";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
@@ -55,6 +56,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <SEOProvider>
     <JsonLdSchema />
+    <PWAUpdatePrompt />
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
