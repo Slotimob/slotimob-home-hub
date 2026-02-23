@@ -82,11 +82,31 @@ export function useWhatsAppSettingsConnection() {
     fetchConnection();
   }, [fetchConnection]);
 
+  // Shared cleanup: reset local state + disconnect backend (fire-and-forget)
+  const cleanupInstance = useCallback(async (reason: 'cancel' | 'timeout') => {
+    setWaitingForQr(false);
+    setCountdown(null);
+    if (reason === 'timeout') setTimedOut(true);
+
+    // Fire-and-forget backend cleanup
+    supabase.functions.invoke('whatsapp-instance', {
+      body: { action: 'disconnect' },
+    }).then(() => {
+      toast({
+        title: reason === 'cancel' ? 'Solicitação cancelada' : 'Tempo esgotado',
+        description: 'Instância limpa com sucesso. Você pode tentar novamente.',
+      });
+    }).catch((e) => {
+      console.warn('Cleanup disconnect failed (non-critical):', e);
+    });
+
+    fetchConnection();
+  }, [fetchConnection]);
+
   // Countdown timer (60s) while waiting
   useEffect(() => {
     if (!waitingForQr) {
       setCountdown(null);
-      setTimedOut(false);
       return;
     }
 
@@ -97,8 +117,8 @@ export function useWhatsAppSettingsConnection() {
       setCountdown(prev => {
         if (prev === null || prev <= 1) {
           clearInterval(interval);
-          setTimedOut(true);
-          setWaitingForQr(false);
+          // Timeout reached — trigger full cleanup
+          cleanupInstance('timeout');
           return 0;
         }
         return prev - 1;
@@ -106,22 +126,12 @@ export function useWhatsAppSettingsConnection() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [waitingForQr]);
+  }, [waitingForQr, cleanupInstance]);
 
-  // Cancel: reset local state and optionally disconnect backend
-  const cancelRequest = useCallback(async () => {
-    setWaitingForQr(false);
-    setCountdown(null);
-    setTimedOut(false);
-    try {
-      await supabase.functions.invoke('whatsapp-instance', {
-        body: { action: 'disconnect' },
-      });
-    } catch (e) {
-      console.warn('Cancel disconnect failed (non-critical):', e);
-    }
-    fetchConnection();
-  }, [fetchConnection]);
+  // Cancel: user-initiated abort
+  const cancelRequest = useCallback(() => {
+    cleanupInstance('cancel');
+  }, [cleanupInstance]);
 
   // Realtime subscription
   useEffect(() => {
