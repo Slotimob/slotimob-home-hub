@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["sloti-logo.png", "favicon.ico"],
       manifest: {
         name: "SLOTIMOB - Gestão Imobiliária",
@@ -45,16 +45,20 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
+        skipWaiting: false,
         clientsClaim: true,
-        navigateFallback: "index.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/sw\.js/],
+        navigateFallback: null,
         runtimeCaching: [
           {
-            // Cache Supabase data requests BUT exclude auth endpoints
+            // index.html and navigation requests: always network
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: "NetworkOnly",
+          },
+          {
+            // Supabase data requests (exclude auth)
             urlPattern: ({ url }) => {
               return (
                 url.hostname.endsWith('.supabase.co') &&
@@ -67,14 +71,14 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: "supabase-data-cache",
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 30 * 60, // 30 min instead of 1 hour
+                maxEntries: 30,
+                maxAgeSeconds: 5 * 60, // 5 minutes
               },
-              networkTimeoutSeconds: 5,
+              networkTimeoutSeconds: 3,
             },
           },
           {
-            // Auth requests: always network-only, never cache
+            // Auth requests: always network-only
             urlPattern: ({ url }) => {
               return (
                 url.hostname.endsWith('.supabase.co') &&
