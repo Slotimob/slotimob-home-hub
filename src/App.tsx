@@ -8,6 +8,8 @@ import { UtmCaptureProvider } from "@/components/UtmCaptureProvider";
 import { SEOProvider } from "@/components/SEOHead";
 import { JsonLdSchema } from "@/components/JsonLdSchema";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
+import { AuthProvider } from "@/hooks/useAuth";
+import { AuthGuard } from "@/components/AuthGuard";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
@@ -53,6 +55,9 @@ import AIChat from "./pages/AIChat";
 
 const queryClient = new QueryClient();
 
+/** Wrap a page element with AuthGuard */
+const guarded = (element: React.ReactNode) => <AuthGuard>{element}</AuthGuard>;
+
 const App = () => (
   <SEOProvider>
     <JsonLdSchema />
@@ -60,69 +65,66 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
-          <GlowInitializer />
-          <UtmCaptureProvider />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/demo" element={<ProductDemo />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            {/* Checkout routes */}
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
-            <Route path="/checkout/cancel" element={<CheckoutCancel />} />
-            <Route path="/properties" element={<Properties />} />
-            <Route path="/units" element={<Units />} />
-            <Route path="/real-estate" element={<RealEstate />} />
-            <Route path="/pipeline" element={<Pipeline />} />
-            {/* Contacts route - single unified page */}
-            <Route path="/contacts" element={<ContactsUnified />} />
-            {/* Documents routes */}
-            <Route path="/documents" element={<Documents />} />
-            <Route path="/documents/templates" element={<Documents />} />
-            <Route path="/documents/custom" element={<Documents />} />
-            <Route path="/documents/history" element={<Documents />} />
-            {/* Simulator routes */}
-            <Route path="/simulator" element={<Simulator />} />
-            <Route path="/simulator/financing" element={<Simulator />} />
-            <Route path="/simulator/taxes" element={<Simulator />} />
-            <Route path="/simulator/comparison" element={<Simulator />} />
-            {/* Rentability routes */}
-            <Route path="/rentability" element={<Rentability />} />
-            <Route path="/rentability/yield" element={<Rentability />} />
-            <Route path="/rentability/payback" element={<Rentability />} />
-            <Route path="/rentability/comparison" element={<Rentability />} />
-            {/* Finance routes */}
-            <Route path="/finance" element={<Finance />} />
-            <Route path="/finance/dre" element={<FinanceDRE />} />
-            <Route path="/finance/transactions" element={<FinanceTransactions />} />
-            <Route path="/finance/reconciliation" element={<FinanceReconciliation />} />
-            <Route path="/finance/categories" element={<FinanceCategories />} />
-            {/* Asset Health route */}
-            <Route path="/asset-health" element={<AssetHealth />} />
-            <Route path="/schedule" element={<Schedule />} />
-            <Route path="/portals" element={<Portals />} />
-            {/* Reports route */}
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/integrations" element={<Integrations />} />
-            <Route path="/training" element={<Training />} />
-            <Route path="/users" element={<Users />} />
-            
-            <Route path="/history" element={<ActivityHistory />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/apresentacao" element={<Presentation />} />
-            <Route path="/whatsapp" element={<WhatsApp />} />
-            <Route path="/whatsapp/settings" element={<WhatsAppSettings />} />
-            <Route path="/legal" element={<Legal />} />
-            <Route path="/admin/terms" element={<TermsAdmin />} />
-            <Route path="/admin/users" element={<UsersAdmin />} />
-            <Route path="/admin/cockpit" element={<AdminCockpit />} />
-            <Route path="/ai-chat" element={<AIChat />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:slug" element={<BlogPostPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <GlowInitializer />
+            <UtmCaptureProvider />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/demo" element={<ProductDemo />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/legal" element={<Legal />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
+              <Route path="/apresentacao" element={<Presentation />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+
+              {/* Protected routes — wrapped with AuthGuard */}
+              <Route path="/dashboard" element={guarded(<Dashboard />)} />
+              <Route path="/properties" element={guarded(<Properties />)} />
+              <Route path="/units" element={guarded(<Units />)} />
+              <Route path="/real-estate" element={guarded(<RealEstate />)} />
+              <Route path="/pipeline" element={guarded(<Pipeline />)} />
+              <Route path="/contacts" element={guarded(<ContactsUnified />)} />
+              <Route path="/documents" element={guarded(<Documents />)} />
+              <Route path="/documents/templates" element={guarded(<Documents />)} />
+              <Route path="/documents/custom" element={guarded(<Documents />)} />
+              <Route path="/documents/history" element={guarded(<Documents />)} />
+              <Route path="/simulator" element={guarded(<Simulator />)} />
+              <Route path="/simulator/financing" element={guarded(<Simulator />)} />
+              <Route path="/simulator/taxes" element={guarded(<Simulator />)} />
+              <Route path="/simulator/comparison" element={guarded(<Simulator />)} />
+              <Route path="/rentability" element={guarded(<Rentability />)} />
+              <Route path="/rentability/yield" element={guarded(<Rentability />)} />
+              <Route path="/rentability/payback" element={guarded(<Rentability />)} />
+              <Route path="/rentability/comparison" element={guarded(<Rentability />)} />
+              <Route path="/finance" element={guarded(<Finance />)} />
+              <Route path="/finance/dre" element={guarded(<FinanceDRE />)} />
+              <Route path="/finance/transactions" element={guarded(<FinanceTransactions />)} />
+              <Route path="/finance/reconciliation" element={guarded(<FinanceReconciliation />)} />
+              <Route path="/finance/categories" element={guarded(<FinanceCategories />)} />
+              <Route path="/asset-health" element={guarded(<AssetHealth />)} />
+              <Route path="/schedule" element={guarded(<Schedule />)} />
+              <Route path="/portals" element={guarded(<Portals />)} />
+              <Route path="/reports" element={guarded(<Reports />)} />
+              <Route path="/integrations" element={guarded(<Integrations />)} />
+              <Route path="/training" element={guarded(<Training />)} />
+              <Route path="/users" element={guarded(<Users />)} />
+              <Route path="/history" element={guarded(<ActivityHistory />)} />
+              <Route path="/settings" element={guarded(<Settings />)} />
+              <Route path="/whatsapp" element={guarded(<WhatsApp />)} />
+              <Route path="/whatsapp/settings" element={guarded(<WhatsAppSettings />)} />
+              <Route path="/admin/terms" element={guarded(<TermsAdmin />)} />
+              <Route path="/admin/users" element={guarded(<UsersAdmin />)} />
+              <Route path="/admin/cockpit" element={guarded(<AdminCockpit />)} />
+              <Route path="/ai-chat" element={guarded(<AIChat />)} />
+
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
         <Toaster />
         <Sonner />
@@ -132,4 +134,3 @@ const App = () => (
 );
 
 export default App;
-
