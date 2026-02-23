@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
+import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle, XCircle, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 
@@ -33,7 +33,7 @@ const Integrations = () => {
   const [copied, setCopied] = useState(false);
 
   // WhatsApp — centralized hook
-  const { connection, loading: whatsappLoading, waitingForQr, setWaitingForQr, refetch } = useWhatsAppSettingsConnection();
+  const { connection, loading: whatsappLoading, waitingForQr, setWaitingForQr, countdown, timedOut, setTimedOut, cancelRequest, refetch } = useWhatsAppSettingsConnection();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -221,13 +221,50 @@ const Integrations = () => {
               </div>
 
               {/* Preparing State: Progress bar */}
-              {isPreparing && !hasQrCode && (
+              {isPreparing && !hasQrCode && !timedOut && (
                 <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4 space-y-3">
                   <Progress value={progress} className="h-2" />
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Nosso servidor está configurando sua instância em segundo plano. Você pode continuar navegando na plataforma; avisaremos quando o código estiver pronto.
-                    Assim que o QR Code estiver pronto, você precisa imediatamente fazer a conexão. Ou se preferir, pode esperar alguns segundos por aqui.
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+                      Nosso servidor está configurando sua instância em segundo plano. Você pode continuar navegando na plataforma; avisaremos quando o código estiver pronto.
+                    </p>
+                  </div>
+                  {countdown !== null && countdown > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Timer className="h-3 w-3" />
+                      <span>Tempo restante: <strong className={countdown <= 10 ? 'text-destructive' : ''}>{countdown}s</strong></span>
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={cancelRequest}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Cancelar Solicitação
+                  </Button>
+                </div>
+              )}
+
+              {/* Timeout Error */}
+              {timedOut && !isConnected && !hasQrCode && (
+                <div className="rounded-lg border-2 border-destructive/20 bg-destructive/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    <p className="text-sm font-medium text-destructive">O servidor demorou muito para responder.</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Isso pode acontecer quando o servidor está sobrecarregado. Tente novamente.
                   </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setTimedOut(false); handleConnectWhatsApp(); }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Tentar Novamente
+                  </Button>
                 </div>
               )}
 
@@ -305,7 +342,7 @@ const Integrations = () => {
                     {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
                   </Button>
                 </div>
-              ) : !isPreparing && !hasQrCode ? (
+              ) : !isPreparing && !hasQrCode && !timedOut ? (
                 <Button className="w-full" onClick={handleConnectWhatsApp} disabled={isConnecting}>
                   {isConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
                   Conectar WhatsApp

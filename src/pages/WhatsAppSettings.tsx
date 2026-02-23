@@ -15,7 +15,7 @@ import { BuyCreditsDialog } from '@/components/whatsapp/BuyCreditsDialog';
 import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { 
   ArrowLeft, Wifi, WifiOff, RefreshCw, Trash2, Phone, QrCode,
-  Loader2, CheckCircle, XCircle, AlertCircle, Clock, Timer
+  Loader2, CheckCircle, XCircle, AlertCircle, Clock, Timer, AlertTriangle
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import {
@@ -60,7 +60,7 @@ function QrExpiryTimer({ onExpire }: { onExpire: () => void }) {
   );
 }
 
-function PreparingCard() {
+function PreparingCard({ countdown, onCancel }: { countdown: number | null; onCancel: () => void }) {
   const [progress, setProgress] = useState(10);
 
   useEffect(() => {
@@ -79,15 +79,19 @@ function PreparingCard() {
         </p>
         <p className="text-xs text-muted-foreground max-w-md">
           Você pode continuar navegando na plataforma — avisaremos você quando o código estiver pronto.
-          Assim que o QR Code estiver pronto, vamos avisar e você precisa imediatamente fazer a conexão.
-          Ou se preferir, pode esperar alguns segundos por aqui.
         </p>
       </div>
       <Progress value={progress} className="w-full max-w-xs h-2 [&>div]:bg-primary" />
-      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-        <Clock className="h-3 w-3" />
-        Aguardando resposta do servidor...
-      </div>
+      {countdown !== null && countdown > 0 && (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Timer className="h-3 w-3" />
+          Tempo restante: <strong className={countdown <= 10 ? 'text-destructive' : ''}>{countdown}s</strong>
+        </div>
+      )}
+      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={onCancel}>
+        <XCircle className="h-4 w-4 mr-1" />
+        Cancelar Solicitação
+      </Button>
     </div>
   );
 }
@@ -96,7 +100,7 @@ export default function WhatsAppSettings() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { connection, loading: connectionLoading, waitingForQr, setWaitingForQr, refetch } = useWhatsAppSettingsConnection();
+  const { connection, loading: connectionLoading, waitingForQr, setWaitingForQr, countdown, timedOut, setTimedOut, cancelRequest, refetch } = useWhatsAppSettingsConnection();
   
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -248,7 +252,22 @@ export default function WhatsAppSettings() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Preparing state — background progress */}
-                  {(isPreparing || isConnecting) && !hasQrCode && <PreparingCard />}
+                  {(isPreparing || isConnecting) && !hasQrCode && !timedOut && (
+                    <PreparingCard countdown={countdown} onCancel={cancelRequest} />
+                  )}
+
+                  {/* Timeout Error */}
+                  {timedOut && !isConnected && !hasQrCode && (
+                    <div className="flex flex-col items-center p-6 bg-destructive/5 rounded-lg border border-destructive/20 space-y-3">
+                      <AlertTriangle className="h-8 w-8 text-destructive" />
+                      <p className="text-sm font-medium text-destructive">O servidor demorou muito para responder.</p>
+                      <p className="text-xs text-muted-foreground">Tente novamente.</p>
+                      <Button variant="outline" size="sm" onClick={() => { setTimedOut(false); createInstance.mutate(); }}>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Tentar Novamente
+                      </Button>
+                    </div>
+                  )}
 
                   {/* QR Code Display with expiry timer */}
                   {hasQrCode && !isConnected && !qrExpired && (
