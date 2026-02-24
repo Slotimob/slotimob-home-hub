@@ -84,16 +84,25 @@ serve(async (req) => {
     const { action } = await req.json();
     console.log(`whatsapp-instance action=${action} user=${userId}`);
 
-    // ─── CREATE INSTANCE (ROBUST RETRY MODEL) ───
+    // ─── CREATE INSTANCE (DYNAMIC NAMING STRATEGY) ───
     if (action === 'create') {
-      const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 16)}`;
       const webhookUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/whatsapp-webhook`;
 
-      // Step 1: Limpeza profunda antes de criar
-      await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, instanceName);
-      
-      console.log('Cleaning existing DB connections for broker:', userId);
+      // Step 1: Limpeza prévia — buscar conexão antiga e deletar na Evolution API
+      const { data: oldConn } = await supabaseAdmin
+        .from('whatsapp_connections')
+        .select('instance_name')
+        .eq('broker_id', userId)
+        .maybeSingle();
+
+      if (oldConn?.instance_name) {
+        console.log(`Limpando instância antiga: ${oldConn.instance_name}`);
+        await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, oldConn.instance_name);
+      }
       await supabaseAdmin.from('whatsapp_connections').delete().eq('broker_id', userId);
+
+      // Step 2: Nomenclatura dinâmica — garante fresh state sem conflitos de sessão
+      const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 8)}_${Date.now().toString(36)}`;
 
       // Step 2: Criar Instância
       const webhookPayload = {
