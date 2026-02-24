@@ -104,9 +104,10 @@ serve(async (req) => {
       // Step 2: Nomenclatura dinâmica — garante fresh state sem conflitos de sessão
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 8)}_${Date.now().toString(36)}`;
 
-      // Step 2: Criar Instância
+      // Step 3: Criar Instância com token
       const webhookPayload = {
         instanceName,
+        token: instanceName,
         qrcode: true,
         integration: 'WHATSAPP-BAILEYS',
         webhook: {
@@ -129,39 +130,37 @@ serve(async (req) => {
       const createData = await createRes.json();
       let finalQrCode = extractQrBase64(createData);
 
-      // Step 3: Lógica de Retry se o QR Code falhar na criação
+      // Step 4: Polling — tentar até 5x com delay de 5s entre cada tentativa
       if (!finalQrCode) {
-        console.log('⚠️ QR Code não veio na criação. Iniciando protocolo de Force Connect...');
-        
-        // Tentativa 1: Forçar conexão imediata
-        try {
-          const connectRes1 = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
-            method: 'GET',
-            headers: { 'apikey': evolutionApiKey },
-          });
-          const connectData1 = await connectRes1.json();
-          finalQrCode = extractQrBase64(connectData1);
-        } catch (_e) { /* ignore */ }
+        console.log('⚠️ QR Code não veio na criação. Iniciando polling (máx 5 tentativas, 5s delay)...');
 
-        if (!finalQrCode) {
-          // Tentativa 2: Esperar 3 segundos e tentar novamente (Dando tempo para o driver bootar)
-          console.log('⏳ QR Code ainda ausente. Aguardando 3s para nova tentativa...');
-          await new Promise(r => setTimeout(r, 3000));
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          console.log(`⏳ Polling tentativa ${attempt}/5 — aguardando 5s...`);
+          await new Promise(r => setTimeout(r, 5000));
+
           try {
-            const connectRes2 = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
+            const connectRes = await fetch(`${evolutionApiUrl}/instance/connect/${instanceName}`, {
               method: 'GET',
               headers: { 'apikey': evolutionApiKey },
             });
-            const connectData2 = await connectRes2.json();
-            finalQrCode = extractQrBase64(connectData2);
-          } catch (_e) { /* ignore */ }
+            const connectData = await connectRes.json();
+            console.log(`Polling ${attempt}/5 response status: ${connectRes.status}`);
+            finalQrCode = extractQrBase64(connectData);
+
+            if (finalQrCode) {
+              console.log(`✅ QR Code capturado na tentativa ${attempt}/5!`);
+              break;
+            }
+          } catch (e) {
+            console.log(`Polling ${attempt}/5 erro: ${e.message}`);
+          }
         }
+      } else {
+        console.log('✅ QR Code capturado na resposta inicial!');
       }
 
-      if (finalQrCode) {
-        console.log('✅ QR Code capturado com sucesso!');
-      } else {
-        console.error('❌ Falha ao obter QR Code após retentativas. O webhook será a última esperança.');
+      if (!finalQrCode) {
+        console.error('❌ Falha ao obter QR Code após 5 tentativas de polling. O webhook será a última esperança.');
       }
 
       // Step 4: Save to DB
