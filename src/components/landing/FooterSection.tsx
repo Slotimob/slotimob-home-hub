@@ -26,8 +26,8 @@ export function FooterSection() {
           <div>
             <h4 className="font-semibold text-foreground mb-4 text-sm">Legal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/legal" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
-              <li><Link to="/legal" className="hover:text-foreground transition-colors">Privacidade</Link></li>
+              <li><Link to="/legal?tab=terms" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
+              <li><Link to="/legal?tab=privacy" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
             </ul>
           </div>
         </div>

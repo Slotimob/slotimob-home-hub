@@ -3,16 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Shield, FileText, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { SEOHead } from "@/components/SEOHead";
 
 const Legal = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') === 'terms' ? 'terms' : 'privacy';
   const companyName = "SLOTI";
   const cnpj = "42.323.823/0001-06";
   const appName = "SLOTIMOB";
   const contactEmail = "ops@sloti.com.br";
-  const lastUpdate = "28 de dezembro de 2025";
+  const lastUpdate = "28 de fevereiro de 2026";
 
   return (
     <>
@@ -41,7 +43,7 @@ const Legal = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="privacy" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="privacy" className="gap-2">
               <Shield className="h-4 w-4" />
@@ -118,12 +120,35 @@ const Legal = () => {
                         Seus dados podem ser compartilhados com:
                       </p>
                       <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
-                        <li>Prestadores de serviços de infraestrutura e hospedagem</li>
-                        <li>Serviços de integração de WhatsApp (Evolution API)</li>
+                        <li>Prestadores de serviços de infraestrutura e hospedagem (Supabase/Google Cloud Platform)</li>
+                        <li>Serviços de integração de WhatsApp (Evolution API) para envio de notificações e mensagens automatizadas</li>
+                        <li>Serviços de processamento de pagamentos (Stripe)</li>
+                        <li>Serviços de envio de e-mail transacional (Resend)</li>
                         <li>Autoridades competentes, quando exigido por lei</li>
                       </ul>
                       <p className="text-muted-foreground mt-2">
                         Não vendemos ou comercializamos seus dados pessoais a terceiros.
+                      </p>
+                    </section>
+
+                    <section>
+                      <h2 className="text-lg font-semibold mb-3">5.1. Armazenamento e Infraestrutura</h2>
+                      <p className="text-muted-foreground">
+                        Seus dados são armazenados em servidores gerenciados pelo Supabase, hospedados na infraestrutura do Google Cloud Platform (GCP), em conformidade com as normas internacionais de segurança da informação (ISO 27001, SOC 2 Type II). Os dados podem ser processados em data centers localizados nos Estados Unidos, conforme permitido pela LGPD mediante a adoção de cláusulas contratuais padrão e garantias adequadas de proteção.
+                      </p>
+                    </section>
+
+                    <section>
+                      <h2 className="text-lg font-semibold mb-3">5.2. Automação de Mensagens via WhatsApp</h2>
+                      <p className="text-muted-foreground">
+                        Ao utilizar a funcionalidade de integração com WhatsApp, o usuário autoriza expressamente o envio de notificações, lembretes de visitas, cobranças e mensagens automatizadas aos seus leads e clientes através da API do WhatsApp. O usuário é o responsável por garantir que possui o consentimento adequado dos destinatários para o recebimento dessas comunicações, conforme exigido pela LGPD e pelos termos de uso do WhatsApp.
+                      </p>
+                    </section>
+
+                    <section>
+                      <h2 className="text-lg font-semibold mb-3">5.3. Dados Fiscais (CPF/CNPJ)</h2>
+                      <p className="text-muted-foreground">
+                        O usuário declara e garante a veracidade dos dados fiscais fornecidos (CPF ou CNPJ) no momento do cadastro. Esses dados são utilizados exclusivamente para fins de identificação, faturamento, emissão de notas fiscais e cumprimento de obrigações legais e tributárias. A falsidade nas informações prestadas pode acarretar a suspensão ou cancelamento da conta, sem prejuízo das medidas legais cabíveis.
                       </p>
                     </section>
 
@@ -258,9 +283,22 @@ const Legal = () => {
                     </section>
 
                     <section>
-                      <h2 className="text-lg font-semibold mb-3">7. Integração WhatsApp</h2>
+                      <h2 className="text-lg font-semibold mb-3">7. Integração WhatsApp e Automação de Mensagens</h2>
+                      <p className="text-muted-foreground mb-2">
+                        A integração com WhatsApp é fornecida através de APIs de terceiros (Evolution API). Ao ativar esta funcionalidade, o usuário:
+                      </p>
+                      <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
+                        <li>Autoriza o envio de notificações, lembretes e mensagens automatizadas em seu nome</li>
+                        <li>Assume a responsabilidade por garantir o consentimento dos destinatários</li>
+                        <li>Compromete-se a cumprir os termos de uso do WhatsApp e a legislação antispam</li>
+                        <li>Reconhece que o uso indevido pode resultar no bloqueio do número pelo WhatsApp</li>
+                      </ul>
+                    </section>
+
+                    <section>
+                      <h2 className="text-lg font-semibold mb-3">7.1. Dados Fiscais e Faturamento</h2>
                       <p className="text-muted-foreground">
-                        A integração com WhatsApp é fornecida através de APIs de terceiros. Você é responsável por cumprir os termos de uso do WhatsApp e garantir que possui consentimento adequado para contatar seus leads e clientes através desta plataforma.
+                        O usuário garante a veracidade dos dados fiscais (CPF/CNPJ) fornecidos durante o cadastro. Esses dados são utilizados para fins de faturamento, emissão de notas fiscais e cumprimento de obrigações tributárias. A prestação de informações falsas constitui violação destes Termos e pode resultar na rescisão imediata do contrato.
                       </p>
                     </section>
 

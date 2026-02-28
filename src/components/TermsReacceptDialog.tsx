@@ -48,10 +48,12 @@ export const TermsReacceptDialog = ({
     onAccepted();
 
     try {
+      const now = new Date().toISOString();
       const { error } = await supabase
         .from('profiles')
         .update({
-          terms_accepted_at: new Date().toISOString(),
+          accepted_terms: true,
+          terms_accepted_at: now,
           terms_version: currentVersion,
         })
         .eq('id', userId);
@@ -59,6 +61,15 @@ export const TermsReacceptDialog = ({
       if (error) {
         console.error('Error saving terms acceptance:', error);
       }
+
+      // Log consent for LGPD compliance
+      await supabase.from('consent_logs').insert({
+        user_id: userId,
+        consent_type: 'terms_reaccept',
+        terms_version: currentVersion,
+        user_agent: navigator.userAgent,
+        accepted_at: now,
+      });
     } catch (error: any) {
       console.error('Error saving terms acceptance:', error);
     } finally {
@@ -82,7 +93,7 @@ export const TermsReacceptDialog = ({
         <div className="space-y-4 py-4">
           <div className="flex gap-4 justify-center">
             <Link
-              to="/legal"
+              to="/legal?tab=privacy"
               target="_blank"
               className="flex items-center gap-2 text-sm text-primary hover:underline"
             >
@@ -90,7 +101,7 @@ export const TermsReacceptDialog = ({
               Política de Privacidade
             </Link>
             <Link
-              to="/legal"
+              to="/legal?tab=terms"
               target="_blank"
               className="flex items-center gap-2 text-sm text-primary hover:underline"
             >
