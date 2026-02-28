@@ -1,0 +1,268 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const FROM_DEFAULT = "Equipe SlotiMob <contato@slotimob.com.br>";
+
+// Brand colors (HSL from index.css)
+const BRAND = {
+  primary: "#170075",        // hsl(246,100%,23%)
+  accent: "#2db88a",         // hsl(170,62%,49%)
+  foreground: "#170075",
+  mutedFg: "#6b6e99",
+  bg: "#ffffff",
+  mutedBg: "#f4f4f9",
+  radius: "8px",
+};
+
+const LOGO_URL = "https://slotimob.lovable.app/sloti-logo.png";
+
+// ─── Shared layout wrapper ───────────────────────────────────────────────────
+function emailLayout(title: string, bodyHtml: string): string {
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title></head>
+<body style="margin:0;padding:0;background:${BRAND.bg};font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.bg};">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+<!-- Header -->
+<tr><td style="background:linear-gradient(135deg,${BRAND.primary},${BRAND.accent});padding:32px 24px;text-align:center;">
+<img src="${LOGO_URL}" alt="SlotiMob" width="160" style="display:block;margin:0 auto;" />
+</td></tr>
+<!-- Body -->
+<tr><td style="padding:32px 28px;background:${BRAND.bg};color:#333;font-size:16px;line-height:1.7;">
+${bodyHtml}
+</td></tr>
+<!-- Footer -->
+<tr><td style="padding:20px 28px;background:${BRAND.mutedBg};text-align:center;font-size:12px;color:${BRAND.mutedFg};">
+<p style="margin:0;">© ${new Date().getFullYear()} SlotiMob — O futuro da gestão imobiliária</p>
+<p style="margin:4px 0 0;">Este e-mail foi enviado automaticamente. Não é necessário responder.</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`;
+}
+
+function ctaButton(text: string, url: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto;">
+<tr><td style="background:${BRAND.primary};border-radius:${BRAND.radius};padding:14px 32px;">
+<a href="${url}" target="_blank" style="color:#fff;text-decoration:none;font-weight:600;font-size:16px;display:block;">${text}</a>
+</td></tr></table>`;
+}
+
+// ─── Templates ───────────────────────────────────────────────────────────────
+
+function welcomeEmail(userName: string, dashboardUrl: string): { subject: string; html: string } {
+  return {
+    subject: `Bem-vindo à SlotiMob, ${userName}! 🎉`,
+    html: emailLayout("Bem-vindo à SlotiMob", `
+      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Olá, ${userName}!</h1>
+      <p>Parabéns por dar o primeiro passo rumo ao <strong>futuro da gestão imobiliária</strong>. Sua conta está pronta e seu painel já está configurado.</p>
+      <p>Na SlotiMob, você tem tudo em um só lugar:</p>
+      <ul style="padding-left:20px;color:#555;">
+        <li>📊 Dashboard inteligente com métricas em tempo real</li>
+        <li>🤝 Pipeline de vendas e gestão de leads</li>
+        <li>💰 Controle financeiro completo</li>
+        <li>📱 WhatsApp integrado para atendimento ágil</li>
+      </ul>
+      ${ctaButton("Acessar meu Dashboard", dashboardUrl)}
+      <p style="color:${BRAND.mutedFg};font-size:14px;">Precisa de ajuda? Nossa equipe está pronta para te apoiar.</p>
+    `),
+  };
+}
+
+function leadAssignedEmail(
+  agentName: string,
+  leadName: string,
+  leadPhone: string,
+  chatUrl: string,
+): { subject: string; html: string } {
+  return {
+    subject: `🔔 Novo Lead atribuído: ${leadName}`,
+    html: emailLayout("Novo Lead no WhatsApp", `
+      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Você tem um novo Lead! 🚀</h1>
+      <p>Olá, <strong>${agentName}</strong>! Um novo lead foi atribuído a você via WhatsApp.</p>
+      <table role="presentation" width="100%" style="margin:20px 0;border:1px solid #e5e7eb;border-radius:${BRAND.radius};overflow:hidden;">
+        <tr style="background:${BRAND.mutedBg};">
+          <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};width:120px;">Nome</td>
+          <td style="padding:12px 16px;">${leadName}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};">Telefone</td>
+          <td style="padding:12px 16px;">${leadPhone || "Não informado"}</td>
+        </tr>
+      </table>
+      ${ctaButton("Abrir Conversa no WhatsApp", chatUrl)}
+      <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:0 ${BRAND.radius} ${BRAND.radius} 0;margin-top:20px;">
+        <p style="margin:0;font-size:14px;color:#92400e;">
+          ⏱️ <strong>Dica:</strong> Responda em menos de 5 minutos para aumentar as chances de fechamento em até 80%!
+        </p>
+      </div>
+    `),
+  };
+}
+
+// ─── Main handler ────────────────────────────────────────────────────────────
+
+interface SendEmailRequest {
+  template: "welcome" | "lead_assigned" | "custom";
+  to: string;
+  // welcome
+  user_name?: string;
+  dashboard_url?: string;
+  // lead_assigned
+  agent_name?: string;
+  lead_name?: string;
+  lead_phone?: string;
+  chat_url?: string;
+  // custom
+  subject?: string;
+  html?: string;
+}
+
+serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+  // Create admin client for logging
+  const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+  try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claimsData.claims.sub as string;
+
+    const body: SendEmailRequest = await req.json();
+    const { template, to } = body;
+
+    if (!to || !template) {
+      return new Response(JSON.stringify({ error: "Missing 'to' or 'template'" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let subject: string;
+    let html: string;
+
+    switch (template) {
+      case "welcome": {
+        const result = welcomeEmail(
+          body.user_name || "Usuário",
+          body.dashboard_url || "https://slotimob.lovable.app/dashboard",
+        );
+        subject = result.subject;
+        html = result.html;
+        break;
+      }
+      case "lead_assigned": {
+        const result = leadAssignedEmail(
+          body.agent_name || "Agente",
+          body.lead_name || "Novo Lead",
+          body.lead_phone || "",
+          body.chat_url || "https://slotimob.lovable.app/whatsapp",
+        );
+        subject = result.subject;
+        html = result.html;
+        break;
+      }
+      case "custom": {
+        if (!body.subject || !body.html) {
+          return new Response(JSON.stringify({ error: "Custom template requires 'subject' and 'html'" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        subject = body.subject;
+        html = body.html;
+        break;
+      }
+      default:
+        return new Response(JSON.stringify({ error: `Unknown template: ${template}` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+    }
+
+    console.log(`Sending ${template} email to: ${to}`);
+
+    const emailResponse = await resend.emails.send({
+      from: FROM_DEFAULT,
+      to: [to],
+      subject,
+      html,
+    });
+
+    console.log("Email sent:", emailResponse);
+
+    // Log to email_notifications
+    await adminClient.from("email_notifications").insert({
+      broker_id: userId,
+      recipient_email: to,
+      email_type: template,
+      subject,
+      status: "sent",
+      resend_id: emailResponse?.id || null,
+      metadata: { template, ...body },
+    });
+
+    return new Response(JSON.stringify({ success: true, id: emailResponse?.id }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error: any) {
+    console.error("Error in send-email:", error);
+
+    // Try to log the failure
+    try {
+      const body = { template: "unknown", to: "unknown" };
+      await adminClient.from("email_notifications").insert({
+        broker_id: "00000000-0000-0000-0000-000000000000",
+        recipient_email: "error",
+        email_type: "error",
+        subject: "Send failed",
+        status: "failed",
+        error_message: error.message?.substring(0, 500),
+      });
+    } catch (_) { /* ignore logging errors */ }
+
+    return new Response(JSON.stringify({ error: "Failed to send email" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

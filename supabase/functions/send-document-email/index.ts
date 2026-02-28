@@ -77,7 +77,7 @@ serve(async (req: Request): Promise<Response> => {
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
 
     const emailResponse = await resend.emails.send({
-      from: `${senderName} via SLOTIMOB <onboarding@resend.dev>`,
+      from: `${senderName} via SlotiMob <contato@slotimob.com.br>`,
       to: [to],
       subject: subject,
       html: `
