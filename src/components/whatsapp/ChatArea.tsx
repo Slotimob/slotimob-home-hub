@@ -60,7 +60,17 @@ function StatusIcon({ status, isOutgoing }: { status: string; isOutgoing: boolea
 
 function MediaContent({ msg }: { msg: WhatsAppMessage }) {
   const mediaUrl = msg.media_url;
+  const [mediaError, setMediaError] = useState(false);
   
+  if (mediaError && mediaUrl) {
+    return (
+      <div className="flex items-center gap-2 p-3 rounded bg-muted/50 border border-border/50 mb-1 text-xs text-muted-foreground">
+        <ImageIcon className="h-4 w-4 flex-shrink-0 opacity-60" />
+        <span>Mídia expirada no servidor. Consulte no seu aparelho celular.</span>
+      </div>
+    );
+  }
+
   if (msg.message_type === 'image' && mediaUrl) {
     return (
       <div className="mb-1">
@@ -69,9 +79,7 @@ function MediaContent({ msg }: { msg: WhatsAppMessage }) {
           alt={msg.content || 'Imagem'}
           className="rounded-md max-w-full max-h-64 object-contain cursor-pointer"
           loading="lazy"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-          }}
+          onError={() => setMediaError(true)}
         />
       </div>
     );

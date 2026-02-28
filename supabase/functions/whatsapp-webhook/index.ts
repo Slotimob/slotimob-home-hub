@@ -345,8 +345,9 @@ async function getNextAgentRoundRobin(supabaseAdmin: any, brokerId: string): Pro
       return null;
     }
 
-    // Build candidate list: owner + all active members
-    const candidates = [brokerId, ...members.map((m: any) => m.user_id)];
+    // Prioritize agents: only include owner if no agents exist
+    const agentIds = members.map((m: any) => m.user_id);
+    const candidates = agentIds.length > 0 ? agentIds : [brokerId];
 
     // Count current assigned conversations per candidate
     const { data: convCounts } = await supabaseAdmin
@@ -373,7 +374,7 @@ async function getNextAgentRoundRobin(supabaseAdmin: any, brokerId: string): Pro
       }
     }
 
-    console.log(`Round Robin: assigned to ${nextAgent} (${minCount} active convs)`);
+    console.log(`Round Robin: assigned to ${nextAgent} (${minCount} active convs, ${agentIds.length} agents available)`);
     return nextAgent;
   } catch (err) {
     console.error('Round Robin error:', err);

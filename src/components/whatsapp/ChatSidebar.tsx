@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Search, MessageSquarePlus, MessageCircle, RefreshCw } from 'lucide-react';
+import { Search, MessageSquarePlus, MessageCircle, RefreshCw, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -25,6 +26,10 @@ interface ChatSidebarProps {
   loading?: boolean;
   connectionId?: string | null;
   isConnected?: boolean;
+  isOwner?: boolean;
+  teamMembers?: { id: string; name: string }[];
+  agentFilter?: string;
+  onAgentFilterChange?: (value: string) => void;
 }
 
 function formatTimestamp(dateStr: string | null): string {
@@ -50,7 +55,7 @@ function getInitials(name: string | null, phone: string): string {
   return phone.slice(-2);
 }
 
-export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true }: ChatSidebarProps) {
+export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [newConvOpen, setNewConvOpen] = useState(false);
@@ -146,6 +151,24 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
             <TabsTrigger value="waiting" className="text-xs">Aguardando</TabsTrigger>
           </TabsList>
         </Tabs>
+
+        {/* Agent filter for owners */}
+        {isOwner && teamMembers.length > 0 && onAgentFilterChange && (
+          <Select value={agentFilter} onValueChange={onAgentFilterChange}>
+            <SelectTrigger className="h-8 text-xs">
+              <div className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue placeholder="Filtrar por agente" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">Todos os agentes</SelectItem>
+              {teamMembers.map(m => (
+                <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Conversation List */}
@@ -235,7 +258,7 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
                           : 'Sem mensagens'}
                       </span>
                       {conv.unread_count > 0 && (
-                        <Badge className="h-5 min-w-5 px-1.5 text-[10px] rounded-full bg-green-500 hover:bg-green-500 text-white flex-shrink-0">
+                        <Badge className="h-5 min-w-5 px-1.5 text-[10px] rounded-full bg-primary hover:bg-primary text-primary-foreground flex-shrink-0">
                           {conv.unread_count}
                         </Badge>
                       )}
