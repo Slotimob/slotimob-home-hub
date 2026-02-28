@@ -150,11 +150,12 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('token');
   const pendingPlan = searchParams.get('plan');
+  const completeProfile = searchParams.get('complete_profile') === 'true';
   const { toast } = useToast();
 
   // UI states
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(searchParams.get('token') ? 'signup' : 'login');
-  const [signupStep, setSignupStep] = useState(1);
+  const [signupStep, setSignupStep] = useState(completeProfile ? 3 : 1);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -163,6 +164,7 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isCompleteProfileMode] = useState(completeProfile);
 
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -170,7 +172,7 @@ const Auth = () => {
     email: '', password: '', fullName: '', phone: '', companyName: '', creci: '',
     personType: 'pf' as 'pf' | 'pj', cpf: '', cnpj: '', businessName: ''
   });
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(completeProfile); // auto-accept for profile completion
   const [honeypot, setHoneypot] = useState('');
   const [formLoadTime] = useState(() => Date.now());
 
@@ -268,7 +270,20 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl } });
       if (error) throw error;
     } catch (error: any) {
-      toast({ title: 'Erro ao entrar com Google', description: error.message || 'Tente novamente', variant: 'destructive' });
+      const msg = error?.message?.toLowerCase() || '';
+      let title = 'Erro ao entrar com Google';
+      let description = 'Não foi possível conectar com o Google. Tente novamente.';
+      if (msg.includes('popup') || msg.includes('closed')) {
+        title = 'Login cancelado';
+        description = 'A janela de login do Google foi fechada. Tente novamente.';
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        title = 'Erro de conexão';
+        description = 'Verifique sua conexão com a internet e tente novamente.';
+      } else if (msg.includes('403') || msg.includes('forbidden')) {
+        title = 'Acesso negado';
+        description = 'O login com Google não está disponível no momento. Tente via email e senha.';
+      }
+      toast({ title, description, variant: 'destructive' });
     } finally {
       setGoogleLoading(false);
     }
@@ -408,6 +423,55 @@ const Auth = () => {
       } else {
         toast({ title: 'Erro ao criar conta', description: error.message || 'Tente novamente', variant: 'destructive' });
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle profile completion for Google OAuth users
+  const handleCompleteProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFieldErrors({});
+    try {
+      step3Schema.parse({
+        personType: signupForm.personType,
+        cpf: signupForm.cpf,
+        cnpj: signupForm.cnpj,
+        businessName: signupForm.businessName,
+        creci: signupForm.creci,
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((e: any) => { errors[e.path[0]] = e.message; });
+        setFieldErrors(errors);
+      }
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sessão expirada');
+
+      const profileUpdate: Record<string, any> = {
+        person_type: signupForm.personType,
+      };
+      if (signupForm.personType === 'pf') {
+        profileUpdate.cpf = signupForm.cpf.replace(/\D/g, '');
+      } else {
+        profileUpdate.cnpj = signupForm.cnpj.replace(/\D/g, '');
+        profileUpdate.business_name = signupForm.businessName;
+      }
+      if (signupForm.creci) profileUpdate.creci = signupForm.creci;
+
+      const { error } = await supabase.from('profiles').update(profileUpdate).eq('id', user.id);
+      if (error) throw error;
+
+      toast({ title: 'Cadastro completo!', description: 'Seus dados fiscais foram salvos.' });
+      navigate('/dashboard', { replace: true });
+    } catch (error: any) {
+      toast({ title: 'Erro ao salvar', description: error.message || 'Tente novamente', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -557,6 +621,7 @@ const Auth = () => {
           <Input
             id="signup-cpf"
             type="text"
+            inputMode="numeric"
             placeholder="000.000.000-00"
             value={signupForm.cpf}
             onChange={e => setSignupForm({ ...signupForm, cpf: formatCPF(e.target.value) })}
@@ -572,6 +637,7 @@ const Auth = () => {
             <Input
               id="signup-cnpj"
               type="text"
+              inputMode="numeric"
               placeholder="00.000.000/0000-00"
               value={signupForm.cnpj}
               onChange={e => setSignupForm({ ...signupForm, cnpj: formatCNPJ(e.target.value) })}
@@ -717,7 +783,95 @@ const Auth = () => {
               <p className="text-xs text-muted-foreground">Sistema de gestão imobiliária</p>
             </div>
 
-            {showVerificationMessage ? (
+            {isCompleteProfileMode ? (
+              <form onSubmit={handleCompleteProfile} className="space-y-5">
+                <Alert className="border-primary/30 bg-primary/5">
+                  <UserPlus className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Bem-vindo! Para concluir seu cadastro e emitirmos suas notas fiscais, preencha os dados abaixo.
+                  </AlertDescription>
+                </Alert>
+
+                {/* Person type toggle */}
+                <div className="rounded-lg border border-border p-4 space-y-3">
+                  <Label className="text-sm font-medium">Tipo de pessoa</Label>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${signupForm.personType === 'pf' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                      Pessoa Física (CPF)
+                    </span>
+                    <Switch
+                      checked={signupForm.personType === 'pj'}
+                      onCheckedChange={checked => setSignupForm({ ...signupForm, personType: checked ? 'pj' : 'pf' })}
+                    />
+                    <span className={`text-sm ${signupForm.personType === 'pj' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                      Pessoa Jurídica (CNPJ)
+                    </span>
+                  </div>
+                </div>
+
+                {signupForm.personType === 'pf' ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="complete-cpf">CPF</Label>
+                    <Input
+                      id="complete-cpf"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="000.000.000-00"
+                      value={signupForm.cpf}
+                      onChange={e => setSignupForm({ ...signupForm, cpf: formatCPF(e.target.value) })}
+                      className={fieldErrors.cpf ? 'border-destructive' : ''}
+                      required
+                    />
+                    {fieldErrors.cpf && <p className="text-xs text-destructive">{fieldErrors.cpf}</p>}
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="complete-cnpj">CNPJ</Label>
+                      <Input
+                        id="complete-cnpj"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="00.000.000/0000-00"
+                        value={signupForm.cnpj}
+                        onChange={e => setSignupForm({ ...signupForm, cnpj: formatCNPJ(e.target.value) })}
+                        className={fieldErrors.cnpj ? 'border-destructive' : ''}
+                        required
+                      />
+                      {fieldErrors.cnpj && <p className="text-xs text-destructive">{fieldErrors.cnpj}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="complete-business-name">Razão Social / Nome da Imobiliária</Label>
+                      <Input
+                        id="complete-business-name"
+                        type="text"
+                        placeholder="Ex: Imobiliária Premium LTDA"
+                        value={signupForm.businessName}
+                        onChange={e => setSignupForm({ ...signupForm, businessName: e.target.value })}
+                        className={fieldErrors.businessName ? 'border-destructive' : ''}
+                        required
+                      />
+                      {fieldErrors.businessName && <p className="text-xs text-destructive">{fieldErrors.businessName}</p>}
+                    </div>
+                  </>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="complete-creci">CRECI <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                  <Input
+                    id="complete-creci"
+                    type="text"
+                    placeholder="Opcional"
+                    value={signupForm.creci}
+                    onChange={e => setSignupForm({ ...signupForm, creci: e.target.value })}
+                  />
+                </div>
+
+                <Button type="submit" className="w-full h-11" disabled={loading}>
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : 'Concluir Cadastro'}
+                </Button>
+              </form>
+            ) : showVerificationMessage ? (
               renderVerificationMessage()
             ) : (
               <>
