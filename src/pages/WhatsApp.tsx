@@ -128,6 +128,7 @@ export default function WhatsApp() {
                 selectedId={selectedConversation?.id || null}
                 onSelect={handleSelectConversation}
                 loading={conversationsLoading}
+                connectionId={connection?.id}
               />
             </div>
 
