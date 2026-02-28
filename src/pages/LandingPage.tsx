@@ -3,6 +3,7 @@ import { SEOHead } from '@/components/SEOHead';
 import { LandingThemeProvider } from '@/components/LandingThemeProvider';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroSection } from '@/components/landing/HeroSection';
+import { CrmProductTour } from '@/components/landing/CrmProductTour';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { DemoSection } from '@/components/landing/DemoSection';
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
@@ -25,6 +26,7 @@ export default function LandingPage() {
       <LandingHeader />
       <main className="min-h-screen scroll-smooth bg-background">
         <HeroSection segment={segment} />
+        <CrmProductTour />
         <FeaturesSection />
         <DemoSection />
         <TestimonialsSection />

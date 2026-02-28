@@ -1,8 +1,5 @@
+import type { LucideIcon } from 'lucide-react';
 import {
-  Users,
-  Shuffle,
-  Filter,
-  Target,
   Wallet,
   FileText,
   BarChart3,
@@ -26,23 +23,11 @@ interface ModuleSection {
   badge: string;
   title: string;
   subtitle: string;
-  features: { icon: typeof Users; title: string; desc: string }[];
+  features: { icon: LucideIcon; title: string; desc: string }[];
   reversed?: boolean;
 }
 
 const modules: ModuleSection[] = [
-  {
-    id: 'modulo-crm',
-    badge: 'CRM & Leads',
-    title: 'Pare de perder leads em planilhas.',
-    subtitle: 'Pipeline visual, distribuição automática e rastreamento de origem — tudo em um CRM pensado para o mercado imobiliário.',
-    features: [
-      { icon: Users, title: 'Kanban de Negociações', desc: 'Arraste e solte deals entre etapas personalizáveis. Veja o valor total por coluna e a temperatura de cada lead em tempo real.' },
-      { icon: Shuffle, title: 'Roleta de Leads (Round Robin)', desc: 'Distribua leads automaticamente entre corretores da equipe, com regras de prioridade e balanceamento de carga.' },
-      { icon: Target, title: 'Rastreio UTM Automático', desc: 'Saiba exatamente de qual anúncio, portal ou campanha cada lead veio. Métricas de custo por lead por canal.' },
-      { icon: Filter, title: 'Funil Personalizável', desc: 'Crie etapas sob medida para seu processo de venda: prospecção, visita, proposta, documentação e fechamento.' },
-    ],
-  },
   {
     id: 'modulo-financeiro',
     badge: 'Hub Financeiro',
