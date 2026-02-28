@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -5,14 +6,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Mail, Phone, Tag, Plus, Calendar, StickyNote,
-  PhoneCall, FileText, MessageCircle, TrendingUp,
+  PhoneCall, FileText, MessageCircle, TrendingUp, Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 import { useContactDeals, useContactActivities } from '@/hooks/useWhatsApp';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
@@ -22,6 +26,17 @@ interface CrmContextPanelProps {
   contactLoading?: boolean;
   onCreateDeal?: () => void;
 }
+
+const STAGE_LABELS: Record<string, string> = {
+  new_lead: 'Novo Lead',
+  contacted: 'Contactado',
+  visit_scheduled: 'Visita Agendada',
+  visit_done: 'Visita Realizada',
+  proposal: 'Proposta',
+  negotiation: 'Negociação',
+  won: 'Ganho',
+  lost: 'Perdido',
+};
 
 function getActivityIcon(type: string) {
   switch (type) {
@@ -38,6 +53,28 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const contactId = contact?.id || null;
   const { deals, loading: dealsLoading } = useContactDeals(contactId);
   const { activities, loading: activitiesLoading } = useContactActivities(contactId);
+  const { toast } = useToast();
+  const [updatingStage, setUpdatingStage] = useState(false);
+
+  const activeDeal = deals.length > 0 ? deals[0] : null;
+
+  const handleStageChange = useCallback(async (newStage: string) => {
+    if (!activeDeal) return;
+    setUpdatingStage(true);
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ stage: newStage as any })
+        .eq('id', activeDeal.id);
+      if (error) throw error;
+      toast({ title: 'Estágio atualizado!' });
+      // The deal will refresh via the hook
+    } catch (err: any) {
+      toast({ title: 'Erro ao atualizar estágio', description: err.message, variant: 'destructive' });
+    } finally {
+      setUpdatingStage(false);
+    }
+  }, [activeDeal, toast]);
 
   if (!conversation) {
     return (
@@ -50,8 +87,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const displayName = contact?.name || conversation.contact_name || conversation.contact_phone;
   const initials = (contact?.name || conversation.contact_name || '')
     .split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '??';
-
-  const activeDeal = deals.length > 0 ? deals[0] : null;
 
   return (
     <ScrollArea className="h-full">
@@ -124,11 +159,34 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                   {activeDeal.property?.name || 'Negociação'}
                   {activeDeal.unit?.title ? ` - ${activeDeal.unit.title}` : ''}
                 </p>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
-                    {activeDeal.custom_stage?.name || activeDeal.stage}
-                  </Badge>
+
+                {/* Stage Selector */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Estágio</span>
+                  <Select
+                    value={activeDeal.custom_stage_id ? undefined : activeDeal.stage}
+                    onValueChange={handleStageChange}
+                    disabled={updatingStage || !!activeDeal.custom_stage_id}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder={activeDeal.custom_stage?.name || STAGE_LABELS[activeDeal.stage] || activeDeal.stage} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STAGE_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value} className="text-xs">
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {updatingStage && (
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Atualizando...
+                    </div>
+                  )}
                 </div>
+
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground">Valor</span>
@@ -184,13 +242,13 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
             </div>
           ) : activities.length > 0 ? (
             <div className="space-y-0">
-              {activities.map((activity: any, idx: number) => (
+              {activities.slice(0, 5).map((activity: any, idx: number) => (
                 <div key={activity.id} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div className="h-7 w-7 rounded-full bg-muted/80 flex items-center justify-center flex-shrink-0">
                       {getActivityIcon(activity.activity_type)}
                     </div>
-                    {idx < activities.length - 1 && (
+                    {idx < Math.min(activities.length, 5) - 1 && (
                       <div className="w-px flex-1 bg-border my-1" />
                     )}
                   </div>

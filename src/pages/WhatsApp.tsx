@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -9,6 +9,7 @@ import { Settings, MessageSquare } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
 
 import { ChatSidebar } from '@/components/whatsapp/ChatSidebar';
 import { ChatArea } from '@/components/whatsapp/ChatArea';
@@ -33,7 +34,9 @@ export default function WhatsApp() {
   const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null);
   const { sendMessage, sending } = useSendMessage();
-  const { contact, loading: contactLoading } = useConversationContact(selectedConversation?.lead_id || null);
+  // Use contact_id (which is now synced with lead_id in the webhook)
+  const contactId = selectedConversation?.contact_id || selectedConversation?.lead_id || null;
+  const { contact, loading: contactLoading } = useConversationContact(contactId);
 
   const [showCrmPanel, setShowCrmPanel] = useState(true);
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
@@ -41,6 +44,17 @@ export default function WhatsApp() {
   const handleSelectConversation = useCallback((conv: WhatsAppConversation) => {
     setSelectedConversation(conv);
     if (isMobile) setMobileView('chat');
+
+    // Mark as read — optimistic + DB update
+    if (conv.unread_count > 0) {
+      supabase
+        .from('whatsapp_conversations')
+        .update({ unread_count: 0 })
+        .eq('id', conv.id)
+        .then(({ error }) => {
+          if (error) console.error('Error marking as read:', error);
+        });
+    }
   }, [isMobile]);
 
   const handleBack = useCallback(() => {

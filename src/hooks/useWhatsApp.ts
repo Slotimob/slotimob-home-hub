@@ -484,34 +484,34 @@ export function useContactActivities(contactId: string | null) {
 
 // ─── useConversationContact ─────────────────────────────────────────
 
-export function useConversationContact(leadId: string | null) {
+export function useConversationContact(contactId: string | null) {
   const [contact, setContact] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!leadId) {
+    if (!contactId) {
       setContact(null);
       return;
     }
 
     const fetch = async () => {
       setLoading(true);
+      // Try direct contact_id first
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .eq('legacy_lead_id', leadId)
-        .limit(1)
+        .eq('id', contactId)
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching contact for lead:', error);
+        console.error('Error fetching contact:', error);
       }
       setContact(data);
       setLoading(false);
     };
 
     fetch();
-  }, [leadId]);
+  }, [contactId]);
 
   return { contact, loading };
 }

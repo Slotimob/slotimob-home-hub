@@ -100,6 +100,9 @@ async function processEvent(supabaseAdmin: any, event: string, instanceName: str
     case 'messages.upsert':
       await handleMessagesUpsert(supabaseAdmin, instanceName, data);
       break;
+    case 'messages.update':
+      await handleMessagesUpdate(supabaseAdmin, instanceName, data);
+      break;
     case 'send.message':
       console.log('send.message event received (outgoing message confirmation)');
       await handleSendMessage(supabaseAdmin, instanceName, data);
@@ -204,7 +207,6 @@ async function handleSendMessage(supabaseAdmin: any, instanceName: string, data:
     const waMessageId = key?.id;
     if (!waMessageId) return;
 
-    // Update message status to 'delivered' if we have a record
     const { error } = await supabaseAdmin
       .from('whatsapp_messages')
       .update({ status: 'delivered' })
@@ -214,6 +216,43 @@ async function handleSendMessage(supabaseAdmin: any, instanceName: string, data:
     else console.log(`Mensagem ${waMessageId} confirmada como enviada`);
   } catch (e) {
     console.error('handleSendMessage error:', e);
+  }
+}
+
+// ─── MESSAGES UPDATE (read receipts) ───
+async function handleMessagesUpdate(supabaseAdmin: any, instanceName: string, data: any) {
+  try {
+    const updates = Array.isArray(data) ? data : (data?.messages || [data]);
+    
+    for (const update of updates) {
+      const keyId = update?.key?.id || update?.keyId;
+      const status = update?.status || update?.update?.status;
+      
+      if (!keyId) continue;
+      
+      // Map Evolution API status codes to our status
+      // 3 = DELIVERED, 4 = READ, 5 = PLAYED (for audio/video)
+      const statusNum = typeof status === 'number' ? status : parseInt(status);
+      let newStatus: string | null = null;
+      
+      if (statusNum === 4 || statusNum === 5 || status === 'READ' || status === 'VIEWED' || status === 'read') {
+        newStatus = 'read';
+      } else if (statusNum === 3 || status === 'DELIVERED' || status === 'delivered') {
+        newStatus = 'delivered';
+      }
+      
+      if (!newStatus) continue;
+      
+      const { error } = await supabaseAdmin
+        .from('whatsapp_messages')
+        .update({ status: newStatus })
+        .eq('message_id', keyId);
+      
+      if (error) console.error(`Erro update message status ${keyId}:`, error);
+      else console.log(`Mensagem ${keyId} → ${newStatus}`);
+    }
+  } catch (e) {
+    console.error('handleMessagesUpdate error:', e);
   }
 }
 
@@ -356,6 +395,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
       .insert({
         connection_id: connection.id,
         contact_id: contactId,
+        lead_id: contactId,
         remote_jid: remoteJid,
         contact_name: pushName,
         contact_phone: cleanPhone,
@@ -373,8 +413,11 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     }
     conversation = newConv;
   } else {
+    // Auto-link contact_id and lead_id if missing
+    const resolvedContactId = contactId || conversation.contact_id;
     const updatePayload: Record<string, any> = {
-      contact_id: contactId || conversation.contact_id,
+      contact_id: resolvedContactId,
+      lead_id: resolvedContactId || conversation.lead_id,
       last_message: lastMsgPreview,
       last_message_at: messageTimestamp,
     };

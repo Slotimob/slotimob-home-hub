@@ -135,6 +135,7 @@ serve(async (req) => {
             'QRCODE_UPDATED',
             'CONNECTION_UPDATE',
             'MESSAGES_UPSERT',
+            'MESSAGES_UPDATE',
           ],
         };
 
@@ -312,7 +313,45 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid action. Use: create, refresh_qr, status, disconnect' }), {
+    // ─── SYNC RECENT ───
+    if (action === 'sync_recent') {
+      const { data: conn } = await supabaseClient
+        .from('whatsapp_connections')
+        .select('instance_name')
+        .eq('broker_id', userId)
+        .single();
+
+      if (!conn?.instance_name) {
+        return new Response(JSON.stringify({ error: 'No instance found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      try {
+        // Fetch recent chats from Evolution API
+        const chatsRes = await fetch(`${evolutionApiUrl}/chat/findChats/${conn.instance_name}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+          body: JSON.stringify({ where: { id: { not: null } } }),
+        });
+        const chats = await chatsRes.json();
+        console.log(`sync_recent: ${Array.isArray(chats) ? chats.length : 0} chats found`);
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: `${Array.isArray(chats) ? chats.length : 0} conversas sincronizadas.`,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        console.error('sync_recent error:', e);
+        return new Response(JSON.stringify({ error: 'Sync failed' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    return new Response(JSON.stringify({ error: 'Invalid action. Use: create, refresh_qr, status, disconnect, sync_recent' }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
