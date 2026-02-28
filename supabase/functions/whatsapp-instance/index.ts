@@ -8,7 +8,7 @@ const corsHeaders = {
 
 // Force-delete instance from Evolution API (ignore errors if not found)
 async function forceDeleteInstance(evolutionApiUrl: string, evolutionApiKey: string, instanceName: string) {
-  console.log(`forceDelete: Iniciando limpeza profunda para ${instanceName}...`);
+  console.log(`forceDelete: Limpeza profunda para ${instanceName}...`);
   try {
     await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, {
       method: 'DELETE',
@@ -21,8 +21,7 @@ async function forceDeleteInstance(evolutionApiUrl: string, evolutionApiKey: str
       headers: { 'apikey': evolutionApiKey },
     });
   } catch (_e) { /* ignore */ }
-  // FIX: Aguardar 4 segundos para garantir que a Evolution API libere a pasta da sessão
-  console.log('forceDelete: Aguardando liberação de recursos (Cool-down 4s)...');
+  console.log('forceDelete: Cool-down 4s...');
   await new Promise(resolve => setTimeout(resolve, 4000));
 }
 
@@ -32,6 +31,8 @@ function extractQrBase64(data: any): string | null {
     data?.qrcode?.base64,
     typeof data?.qrcode === 'string' ? data.qrcode : null,
     data?.data?.base64,
+    data?.data?.qrcode?.base64,
+    typeof data?.data?.qrcode === 'string' ? data.data.qrcode : null,
   ];
   for (const c of candidates) {
     if (c && typeof c === 'string' && c.length > 100) return c;
@@ -47,7 +48,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL');
+    const evolutionApiUrl = (Deno.env.get('EVOLUTION_API_URL') ?? '').replace(/\/$/, '');
     const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY');
 
     if (!evolutionApiUrl || !evolutionApiKey) {
@@ -84,11 +85,11 @@ serve(async (req) => {
     const { action } = await req.json();
     console.log(`whatsapp-instance action=${action} user=${userId}`);
 
-    // ─── CREATE INSTANCE (DYNAMIC NAMING STRATEGY) ───
+    // ─── CREATE INSTANCE ───
     if (action === 'create') {
       const webhookUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/whatsapp-webhook`;
 
-      // Step 1: Limpeza prévia — buscar conexão antiga e deletar na Evolution API
+      // Step 1: Limpeza prévia
       const { data: oldConn } = await supabaseAdmin
         .from('whatsapp_connections')
         .select('instance_name')
@@ -101,38 +102,56 @@ serve(async (req) => {
       }
       await supabaseAdmin.from('whatsapp_connections').delete().eq('broker_id', userId);
 
-      // Step 2: Nomenclatura dinâmica — garante fresh state sem conflitos de sessão
+      // Step 2: Nome dinâmico
       const instanceName = `slotimob_${userId.replace(/-/g, '').slice(0, 8)}_${Date.now().toString(36)}`;
 
-      // Step 3: Criar Instância com token
-      const webhookPayload = {
+      // Step 3: Criar instância (payload v2.3.7)
+      const createPayload = {
         instanceName,
-        token: instanceName,
         qrcode: true,
         integration: 'WHATSAPP-BAILEYS',
-        webhook: {
-          enabled: true,
-          url: webhookUrl,
-          byEvents: true,
-          base64: true,
-          webhookByEvents: true,
-          events: ['QRCODE_UPDATED', 'CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'INSTANCE_CREATED'],
-        },
       };
 
-      console.log('Solicitando criação da instância...');
+      console.log('Criando instância na Evolution API v2.3.7...');
       const createRes = await fetch(`${evolutionApiUrl}/instance/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-        body: JSON.stringify(webhookPayload),
+        body: JSON.stringify(createPayload),
       });
 
       const createData = await createRes.json();
+      console.log('Create response status:', createRes.status, 'keys:', Object.keys(createData));
       let finalQrCode = extractQrBase64(createData);
 
-      // Step 4: Polling — tentar até 5x com delay de 5s entre cada tentativa
+      // Step 4: Registrar webhook via /webhook/set/{instanceName}
+      try {
+        const webhookSetPayload = {
+          url: webhookUrl,
+          webhook_by_events: true,
+          webhook_base64: true,
+          events: [
+            'CONNECTION_UPDATE',
+            'MESSAGES_UPSERT',
+            'SEND_MESSAGE',
+            'QRCODE_UPDATED',
+          ],
+        };
+
+        console.log(`Registrando webhook em ${evolutionApiUrl}/webhook/set/${instanceName}`);
+        const webhookRes = await fetch(`${evolutionApiUrl}/webhook/set/${instanceName}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+          body: JSON.stringify(webhookSetPayload),
+        });
+        const webhookData = await webhookRes.json();
+        console.log('Webhook set response:', webhookRes.status, JSON.stringify(webhookData).slice(0, 300));
+      } catch (e) {
+        console.error('Erro ao registrar webhook (não-bloqueante):', e.message);
+      }
+
+      // Step 5: Polling — tentar até 5x com delay de 5s
       if (!finalQrCode) {
-        console.log('⚠️ QR Code não veio na criação. Iniciando polling (máx 5 tentativas, 5s delay)...');
+        console.log('⚠️ QR Code não veio na criação. Polling (máx 5x, 5s delay)...');
 
         for (let attempt = 1; attempt <= 5; attempt++) {
           console.log(`⏳ Polling tentativa ${attempt}/5 — aguardando 5s...`);
@@ -144,7 +163,7 @@ serve(async (req) => {
               headers: { 'apikey': evolutionApiKey },
             });
             const connectData = await connectRes.json();
-            console.log(`Polling ${attempt}/5 response status: ${connectRes.status}`);
+            console.log(`Polling ${attempt}/5 status: ${connectRes.status}`);
             finalQrCode = extractQrBase64(connectData);
 
             if (finalQrCode) {
@@ -160,10 +179,10 @@ serve(async (req) => {
       }
 
       if (!finalQrCode) {
-        console.error('❌ Falha ao obter QR Code após 5 tentativas de polling. O webhook será a última esperança.');
+        console.error('❌ Falha ao obter QR Code após 5 tentativas. O webhook será a última esperança.');
       }
 
-      // Step 4: Save to DB
+      // Step 6: Salvar no DB
       const dbPayload = {
         broker_id: userId,
         instance_name: instanceName,
@@ -189,7 +208,7 @@ serve(async (req) => {
         success: true, 
         connection: conn,
         connection_status: dbPayload.connection_status,
-        message: 'Instância criada.' 
+        message: 'Instância criada com sucesso.' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -214,7 +233,7 @@ serve(async (req) => {
         headers: { 'apikey': evolutionApiKey },
       });
       const connectData = await connectRes.json();
-      console.log('Refresh QR response:', JSON.stringify(connectData));
+      console.log('Refresh QR response:', JSON.stringify(connectData).slice(0, 300));
       const qrBase64 = extractQrBase64(connectData);
 
       if (qrBase64) {
