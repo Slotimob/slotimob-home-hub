@@ -14,6 +14,7 @@ import {
   Calendar, Clock, ArrowLeft, Calculator, UserPlus, Loader2, Lightbulb, ChevronRight,
   Linkedin, Instagram, MapPin,
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Helmet } from 'react-helmet-async';
@@ -157,7 +158,7 @@ export default function BlogPost() {
   }, []);
 
   const toc = useMemo(() => post ? extractToc(post.content) : [], [post?.content]);
-  const processedContent = useMemo(() => post ? injectIds(post.content) : '', [post?.content]);
+  const processedContent = useMemo(() => post ? DOMPurify.sanitize(injectIds(post.content), { ADD_ATTR: ['id'], ALLOW_DATA_ATTR: false }) : '', [post?.content]);
   const faqs = useMemo(() => Array.isArray(post?.faqs) ? post!.faqs : [], [post?.faqs]);
 
   const seoTags = (post?.seo_tags || {}) as Record<string, string>;
