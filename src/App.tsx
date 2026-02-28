@@ -13,6 +13,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
 import Index from "./pages/Index";
 import LandingPage from "./pages/LandingPage";
+import { LandingThemeProvider } from "@/components/LandingThemeProvider";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -76,7 +77,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/lp/:segment" element={<LandingPage />} />
               <Route path="/demo" element={<ProductDemo />} />
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={<LandingThemeProvider><Auth /></LandingThemeProvider>} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/legal" element={<Legal />} />
               <Route path="/blog" element={<Blog />} />
