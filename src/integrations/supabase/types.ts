@@ -3512,6 +3512,27 @@ export type Database = {
           },
         ]
       }
+      whatsapp_terms_acceptances: {
+        Row: {
+          accepted_at: string
+          broker_id: string
+          id: string
+          ip_address: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          broker_id: string
+          id?: string
+          ip_address?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          broker_id?: string
+          id?: string
+          ip_address?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_usage_stats: {
         Row: {
           billing_events: number
