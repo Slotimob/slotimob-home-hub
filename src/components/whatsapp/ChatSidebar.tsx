@@ -74,9 +74,11 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
 
   const filtered = conversations.filter((conv) => {
     const displayName = conv.contact_name || conv.contact_phone;
+    const search = searchTerm.toLowerCase();
     const matchesSearch =
-      displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conv.contact_phone.includes(searchTerm);
+      displayName.toLowerCase().includes(search) ||
+      conv.contact_phone.includes(searchTerm) ||
+      (conv.last_message || '').toLowerCase().includes(search);
 
     if (!matchesSearch) return false;
     if (activeTab === 'unread') return conv.unread_count > 0;

@@ -67,14 +67,31 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
         .update({ stage: newStage as any })
         .eq('id', activeDeal.id);
       if (error) throw error;
+
+      // Insert internal audit message in the conversation
+      if (conversation?.id) {
+        const stageLabel = STAGE_LABELS[newStage] || newStage;
+        await supabase
+          .from('whatsapp_messages')
+          .insert({
+            conversation_id: conversation.id,
+            message_id: `stage-change-${Date.now()}`,
+            direction: 'outgoing' as const,
+            message_type: 'text' as const,
+            is_internal_note: true,
+            content: `📋 Estágio alterado para "${stageLabel}"`,
+            status: 'read' as const,
+            sent_at: new Date().toISOString(),
+          });
+      }
+
       toast({ title: 'Estágio atualizado!' });
-      // The deal will refresh via the hook
     } catch (err: any) {
       toast({ title: 'Erro ao atualizar estágio', description: err.message, variant: 'destructive' });
     } finally {
       setUpdatingStage(false);
     }
-  }, [activeDeal, toast]);
+  }, [activeDeal, conversation, toast]);
 
   if (!conversation) {
     return (

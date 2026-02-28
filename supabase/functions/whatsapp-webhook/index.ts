@@ -419,6 +419,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     .or(`phone.eq.${cleanPhone},whatsapp.eq.${cleanPhone},phone.eq.+${cleanPhone},whatsapp.eq.+${cleanPhone}`)
     .limit(1);
 
+  let isNewContact = false;
   if (existingContacts && existingContacts.length > 0) {
     contactId = existingContacts[0].id;
   } else if (direction === 'incoming') {
@@ -437,7 +438,51 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
 
     if (!contactError && newContact) {
       contactId = newContact.id;
+      isNewContact = true;
       console.log(`Novo contato ${contactId} para ${cleanPhone}`);
+
+      // ─── AUTO-LEAD: Create a lead + deal in the pipeline for new WhatsApp contacts ───
+      try {
+        // 1. Create a lead record
+        const { data: newLead, error: leadError } = await supabaseAdmin
+          .from('leads')
+          .insert({
+            broker_id: connection.broker_id,
+            name: pushName,
+            phone: cleanPhone,
+            origin: 'whatsapp',
+            lead_type: 'lead',
+          })
+          .select('id')
+          .single();
+
+        if (!leadError && newLead) {
+          // 2. Create a deal in the first pipeline stage
+          const { data: newDeal, error: dealError } = await supabaseAdmin
+            .from('deals')
+            .insert({
+              broker_id: connection.broker_id,
+              lead_id: newLead.id,
+              contact_id: contactId,
+              stage: 'new_lead',
+              notes: `Lead automático via WhatsApp (${cleanPhone})`,
+            })
+            .select('id')
+            .single();
+
+          if (!dealError && newDeal) {
+            console.log(`✅ Auto-deal ${newDeal.id} criado para novo contato WhatsApp ${cleanPhone}`);
+            // Store deal_id to associate with conversation later
+            (connection as any)._autoDealId = newDeal.id;
+          } else {
+            console.error('Erro ao criar deal automático:', dealError);
+          }
+        } else {
+          console.error('Erro ao criar lead automático:', leadError);
+        }
+      } catch (autoLeadErr) {
+        console.error('Auto-lead creation error (non-critical):', autoLeadErr);
+      }
     }
   }
 
@@ -464,6 +509,8 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     ? `Você: ${contentOrLabel}`
     : contentOrLabel;
 
+  const autoDealId = (connection as any)._autoDealId || null;
+
   if (convError || !conversation) {
     const { data: newConv, error: createError } = await supabaseAdmin
       .from('whatsapp_conversations')
@@ -478,6 +525,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
         last_message_at: messageTimestamp,
         unread_count: direction === 'incoming' ? 1 : 0,
         status: 'active',
+        ...(autoDealId ? { deal_id: autoDealId } : {}),
       })
       .select()
       .single();

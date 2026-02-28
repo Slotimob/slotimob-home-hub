@@ -1,5 +1,7 @@
+import { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   Briefcase, 
   Phone, 
@@ -11,11 +13,15 @@ import {
   CheckSquare,
   Target,
   Clock,
-  User
+  User,
+  Send,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItems';
 
 interface NegotiationScheduleCardProps {
@@ -48,6 +54,45 @@ const priorityColors: Record<string, string> = {
 };
 
 export function NegotiationScheduleCard({ item, onClick }: NegotiationScheduleCardProps) {
+  const { toast } = useToast();
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+
+  const handleSendWhatsAppConfirmation = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSendingWhatsApp(true);
+    try {
+      const dateStr = format(new Date(item.scheduled_at), "dd/MM/yyyy", { locale: ptBR });
+      const timeStr = format(new Date(item.scheduled_at), "HH:mm", { locale: ptBR });
+      const message = `Olá ${item.deal_lead_name}, confirmo nossa visita ao imóvel ${item.deal_property_name} no dia ${dateStr} às ${timeStr}. Podemos confirmar?`;
+
+      // Find the conversation for this lead
+      const { data: conversations } = await supabase
+        .from('whatsapp_conversations')
+        .select('id')
+        .eq('contact_name', item.deal_lead_name)
+        .limit(1);
+
+      if (!conversations || conversations.length === 0) {
+        toast({ title: 'Conversa não encontrada', description: 'Nenhuma conversa WhatsApp vinculada a esse lead.', variant: 'destructive' });
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('whatsapp-send', {
+        body: {
+          conversationId: conversations[0].id,
+          messageType: 'text',
+          content: message,
+        },
+      });
+
+      if (error) throw error;
+      toast({ title: 'Confirmação enviada!', description: 'Mensagem de confirmação enviada via WhatsApp.' });
+    } catch (err: any) {
+      toast({ title: 'Erro ao enviar', description: err.message, variant: 'destructive' });
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  }, [item, toast]);
   const getIcon = () => {
     if (item.type === 'task') return CheckSquare;
     if (item.type === 'expected_close') return Target;
@@ -149,6 +194,23 @@ export function NegotiationScheduleCard({ item, onClick }: NegotiationScheduleCa
             <MapPin className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">{item.deal_property_name}</span>
           </div>
+          {/* WhatsApp confirmation button */}
+          {!item.is_completed && (item.activity_type === 'visit' || item.type === 'task') && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full mt-2 gap-1.5 text-xs border-green-500/40 text-green-600 hover:bg-green-500/10 dark:text-green-400"
+              onClick={handleSendWhatsAppConfirmation}
+              disabled={sendingWhatsApp}
+            >
+              {sendingWhatsApp ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Send className="h-3 w-3" />
+              )}
+              Enviar Confirmação WhatsApp
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
