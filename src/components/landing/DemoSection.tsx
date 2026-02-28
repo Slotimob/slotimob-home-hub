@@ -5,11 +5,11 @@ import { MessageSquare, Brain, Building2, BarChart3 } from 'lucide-react';
 const tabs = [
   {
     id: 'whatsapp',
-    label: 'WhatsApp + IA',
+    label: 'WhatsApp',
     icon: MessageSquare,
     title: 'Converse e venda sem sair do sistema',
     description:
-      'Envie propostas, lembretes e acompanhe todo o histórico de conversas direto no CRM. Cada mensagem vira contexto para fechar mais rápido.',
+      'Envie propostas, lembretes e acompanhe o histórico de conversas direto no painel. Cada mensagem vira contexto para fechar mais rápido.',
     mockContent: (
       <div className="space-y-3 p-4">
         <div className="flex gap-3 items-end">
@@ -33,7 +33,7 @@ const tabs = [
         <div className="border-t border-border pt-3 mt-4">
           <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 rounded-lg p-3">
             <Brain className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-xs text-muted-foreground"><strong className="text-foreground">IA:</strong> Lead quente, interesse em 2 quartos, orçamento ~R$350k. Visita agendada.</p>
+            <p className="text-xs text-muted-foreground"><strong className="text-foreground">Resumo:</strong> Cliente interessado em 2 quartos, orçamento ~R$350k. Visita agendada para amanhã.</p>
           </div>
         </div>
       </div>
@@ -41,23 +41,23 @@ const tabs = [
   },
   {
     id: 'ai-summary',
-    label: 'IA de Resumo',
+    label: 'Resumo do Cliente',
     icon: Brain,
-    title: 'Resumos inteligentes de cada lead',
+    title: 'O sistema entende o cliente por você',
     description:
-      'A IA analisa o histórico e gera um resumo executivo: perfil, interesses, orçamento e próximo passo recomendado.',
+      'Com base nas conversas, o sistema monta um perfil completo: o que o cliente procura, quanto pode pagar e o que você precisa fazer agora.',
     mockContent: (
       <div className="p-4 space-y-4">
         <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
           <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
             <Brain className="h-4 w-4 text-primary" />
-            Resumo do Lead
+            Perfil do Cliente
           </h4>
           <div className="space-y-2 text-sm text-muted-foreground">
             <p><strong className="text-foreground">Nome:</strong> Maria Santos</p>
-            <p><strong className="text-foreground">Interesse:</strong> Apartamento 2-3 quartos, zona sul</p>
+            <p><strong className="text-foreground">Procura:</strong> Apartamento 2-3 quartos, zona sul</p>
             <p><strong className="text-foreground">Orçamento:</strong> R$ 300k — R$ 450k</p>
-            <p><strong className="text-foreground">Temperatura:</strong> 🔥 Quente — respondeu em &lt;5min</p>
+            <p><strong className="text-foreground">Interesse:</strong> 🔥 Alto — respondeu em menos de 5 minutos</p>
             <p><strong className="text-foreground">Próximo passo:</strong> Enviar 3 opções e agendar visita</p>
           </div>
         </div>
@@ -66,17 +66,17 @@ const tabs = [
   },
   {
     id: 'assets',
-    label: 'Gestão de Ativos',
+    label: 'Gestão de Imóveis',
     icon: Building2,
-    title: 'Controle total do seu portfólio',
+    title: 'Saiba quais imóveis precisam de atenção',
     description:
-      'Contratos, reajustes, obrigações e inadimplência em uma visão consolidada. Saiba exatamente a saúde de cada ativo.',
+      'Veja de relance a situação de cada imóvel: quem está pagando em dia, quem precisa de reajuste e onde está a inadimplência.',
     mockContent: (
       <div className="p-4 space-y-3">
         {[
           { name: 'Apto 301 — Ed. Solar', status: 'Em dia', color: 'bg-success' },
           { name: 'Sala 12 — Empresarial', status: 'Reajuste em 5 dias', color: 'bg-warning' },
-          { name: 'Casa 7 — Cond. Flores', status: 'Inadimplente', color: 'bg-destructive' },
+          { name: 'Casa 7 — Cond. Flores', status: 'Pagamento atrasado', color: 'bg-destructive' },
         ].map((item) => (
           <div key={item.name} className="flex items-center justify-between p-3 rounded-lg border border-border">
             <p className="text-sm font-medium text-foreground">{item.name}</p>
@@ -90,11 +90,11 @@ const tabs = [
   },
   {
     id: 'reports',
-    label: 'Relatórios',
+    label: 'Seus Números',
     icon: BarChart3,
-    title: 'Dados que geram decisão',
+    title: 'Dados que ajudam a tomar decisão',
     description:
-      'DRE por unidade, fluxo de caixa projetado, taxa de ocupação e performance de canal — tudo em tempo real.',
+      'Lucro por imóvel, receita do mês, taxa de ocupação e performance de cada canal — tudo atualizado automaticamente.',
     mockContent: (
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -102,7 +102,7 @@ const tabs = [
             { label: 'Receita Mensal', value: 'R$ 47.200', change: '+12%' },
             { label: 'Ocupação', value: '94%', change: '+3%' },
             { label: 'Inadimplência', value: '2.1%', change: '-0.8%' },
-            { label: 'Leads/mês', value: '142', change: '+28%' },
+            { label: 'Clientes/mês', value: '142', change: '+28%' },
           ].map((m) => (
             <div key={m.label} className="bg-muted/50 rounded-lg p-3">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{m.label}</p>
@@ -125,10 +125,10 @@ export function DemoSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-            Demonstração
+            Veja na Prática
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Veja o sistema em ação
+            Descubra como funciona
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Explore os módulos que mais geram resultado para corretores e imobiliárias.

@@ -34,35 +34,35 @@ import { cn } from '@/lib/utils';
 
 const solucoesColumns = [
   {
-    title: 'CRM & Vendas',
+    title: 'Vendas & Clientes',
     items: [
-      { icon: Users, label: 'CRM Imobiliário', desc: 'Pipeline visual com Kanban drag & drop', href: '#modulo-crm' },
-      { icon: Shuffle, label: 'Roleta de Leads', desc: 'Distribuição Round Robin automática', href: '#modulo-crm' },
-      { icon: Filter, label: 'Funil Personalizável', desc: 'Crie etapas sob medida para seu processo', href: '#modulo-crm' },
+      { icon: Users, label: 'Painel de Vendas', desc: 'Veja todas as negociações de forma visual', href: '#modulo-crm' },
+      { icon: Shuffle, label: 'Distribuição Automática', desc: 'Clientes divididos entre corretores na hora', href: '#modulo-crm' },
+      { icon: Filter, label: 'Funil Personalizável', desc: 'Monte as etapas do jeito que você trabalha', href: '#modulo-crm' },
     ],
   },
   {
     title: 'Financeiro & Contratos',
     items: [
-      { icon: Wallet, label: 'Hub Financeiro', desc: 'Fluxo de caixa, DRE e conciliação bancária', href: '#modulo-financeiro' },
-      { icon: FileText, label: 'Contratos Digitais', desc: 'Templates inteligentes com preenchimento automático', href: '#modulo-financeiro' },
-      { icon: BarChart3, label: 'Relatórios & DRE', desc: 'Visão financeira completa por unidade', href: '#modulo-financeiro' },
+      { icon: Wallet, label: 'Controle Financeiro', desc: 'Receitas, despesas e conciliação bancária', href: '#modulo-financeiro' },
+      { icon: FileText, label: 'Contratos Prontos', desc: 'Modelos que preenchem sozinhos', href: '#modulo-financeiro' },
+      { icon: BarChart3, label: 'Lucro por Imóvel', desc: 'Saiba quanto cada imóvel rende de verdade', href: '#modulo-financeiro' },
     ],
   },
   {
-    title: 'Gestão de Ativos',
+    title: 'Seus Imóveis',
     items: [
-      { icon: Building2, label: 'Propriedades & Unidades', desc: 'Inventário organizado com galeria e docs', href: '#modulo-unidades' },
-      { icon: Shield, label: 'Saúde do Portfólio', desc: 'Alertas de vencimento e inadimplência', href: '#modulo-unidades' },
+      { icon: Building2, label: 'Vitrine Digital', desc: 'Fotos, documentos e dados organizados', href: '#modulo-unidades' },
+      { icon: Shield, label: 'Alertas Inteligentes', desc: 'Vencimentos e inadimplência destacados', href: '#modulo-unidades' },
     ],
   },
 ];
 
 const recursosItems = [
-  { icon: MessageSquare, label: 'WhatsApp Integrado', desc: 'Chat unificado com IA e histórico', href: '#modulo-whatsapp' },
-  { icon: Bot, label: 'Automação com IA', desc: 'Resumos inteligentes e respostas 24/7', href: '#modulo-whatsapp' },
-  { icon: Calculator, label: 'Simuladores', desc: 'Financiamento e cálculos fiscais', href: '#modulo-calculadoras' },
-  { icon: Phone, label: 'Multicanal', desc: 'Facebook Leads, portais e mais', href: '#features' },
+  { icon: MessageSquare, label: 'WhatsApp no Sistema', desc: 'Converse com clientes sem sair do painel', href: '#modulo-whatsapp' },
+  { icon: Bot, label: 'Resumos Automáticos', desc: 'O sistema entende o cliente por você', href: '#modulo-whatsapp' },
+  { icon: Calculator, label: 'Calculadoras', desc: 'Financiamento e impostos na hora', href: '#modulo-calculadoras' },
+  { icon: Phone, label: 'Captação Multicanal', desc: 'Receba clientes de todos os portais', href: '#features' },
 ];
 
 const empresaItems = [

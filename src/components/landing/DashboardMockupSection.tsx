@@ -6,9 +6,9 @@ import dashboardImg from '@/assets/dashboard-mockup.png';
 
 const metrics = [
   { label: 'Comissões', value: 'R$ 47.200', change: '+18%', icon: DollarSign },
-  { label: 'Leads Novos', value: '142', change: '+32%', icon: Users },
+  { label: 'Clientes Novos', value: '142', change: '+32%', icon: Users },
   { label: 'Imóveis Ativos', value: '87', change: '+5', icon: Home },
-  { label: 'Taxa de Conversão', value: '23%', change: '+4.2pp', icon: BarChart3 },
+  { label: 'Taxa de Fechamento', value: '23%', change: '+4.2pp', icon: BarChart3 },
 ];
 
 const commissionBars = [
@@ -36,7 +36,7 @@ export function DashboardMockupSection() {
             <span className="text-primary">um só lugar</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Acompanhe comissões, leads e performance de cada canal — atualizado a cada transação.
+            Acompanhe comissões, clientes e performance de cada canal — atualizado a cada transação.
           </p>
         </div>
 
@@ -65,10 +65,9 @@ export function DashboardMockupSection() {
 
             {/* Content area */}
             <div className="relative">
-              {/* Base dashboard image */}
               <img
                 src={dashboardImg}
-                alt="Dashboard SlotiMob em tempo real"
+                alt="Painel de controle SlotiMob mostrando resultados em tempo real"
                 className={cn(
                   'w-full transition-all duration-700',
                   isHovered ? 'opacity-20 blur-sm scale-105' : 'opacity-100'
@@ -83,7 +82,6 @@ export function DashboardMockupSection() {
                 animate={{ opacity: isHovered ? 1 : 0 }}
                 transition={{ duration: 0.4 }}
               >
-                {/* Metric cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                   {metrics.map((metric, i) => (
                     <motion.div
@@ -115,7 +113,7 @@ export function DashboardMockupSection() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h4 className="text-sm font-semibold text-foreground">Evolução de Comissões</h4>
+                      <h4 className="text-sm font-semibold text-foreground">Suas Comissões Crescendo</h4>
                       <p className="text-xs text-muted-foreground">Últimos 6 meses</p>
                     </div>
                     <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">+154%</span>
