@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import type { LandingSegment } from '@/config/landingSegments';
+import { SEGMENTS } from '@/config/landingSegments';
 
 const DashboardMockup = lazy(() =>
   import('@/assets/dashboard-mockup.png').then((mod) => ({
@@ -18,13 +20,13 @@ const DashboardMockup = lazy(() =>
   }))
 );
 
-const socialProof = [
-  '+200 corretores ativos',
-  '4.9★ de satisfação',
-  'Suporte em <2h',
-];
+interface HeroSectionProps {
+  segment?: LandingSegment;
+}
 
-export function HeroSection() {
+export function HeroSection({ segment = SEGMENTS.default }: HeroSectionProps) {
+  const authUrl = `/auth?utm_source=${segment.utmSource}`;
+
   return (
     <section id="hero" className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden">
       {/* Background */}
@@ -35,13 +37,12 @@ export function HeroSection() {
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center mb-12">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight tracking-tight">
-            A inteligência que sua imobiliária
-            <span className="block text-secondary mt-1">precisava para escalar.</span>
+            {segment.hero.headline}
+            <span className="block text-secondary mt-1">{segment.hero.highlightLine}</span>
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto leading-relaxed">
-            CRM, ERP e WhatsApp com IA integrados em um único lugar.
-            Comece com 2 unidades grátis e sinta o poder do Plano Pro por 14 dias.
+            {segment.hero.subtitle}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
@@ -50,7 +51,7 @@ export function HeroSection() {
               size="lg"
               className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-secondary-foreground px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
             >
-              <Link to="/auth">
+              <Link to={authUrl}>
                 Começar Grátis
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -70,7 +71,7 @@ export function HeroSection() {
 
           {/* Social proof */}
           <div className="mt-10 flex flex-wrap justify-center gap-6 text-primary-foreground/70 text-sm">
-            {socialProof.map((item) => (
+            {segment.socialProof.map((item) => (
               <div key={item} className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-secondary" />
                 {item}

@@ -2,7 +2,13 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export function CTASection() {
+interface CTASectionProps {
+  utmSource?: string;
+}
+
+export function CTASection({ utmSource = 'lp_geral' }: CTASectionProps) {
+  const authUrl = `/auth?utm_source=${utmSource}`;
+
   return (
     <section className="py-20 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-accent/80" />
@@ -22,7 +28,7 @@ export function CTASection() {
             size="lg"
             className="bg-secondary hover:bg-secondary/90 text-secondary-foreground px-8 py-6 text-lg font-semibold shadow-lg"
           >
-            <Link to="/auth">
+            <Link to={authUrl}>
               Criar Conta Grátis
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
