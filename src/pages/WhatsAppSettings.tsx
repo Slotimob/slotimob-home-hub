@@ -12,6 +12,8 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { WhatsAppUsageStatus } from '@/components/whatsapp/WhatsAppUsageStatus';
 import { BuyCreditsDialog } from '@/components/whatsapp/BuyCreditsDialog';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useQuery } from '@tanstack/react-query';
 import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { 
   ArrowLeft, Wifi, WifiOff, RefreshCw, Trash2, Phone, QrCode,
@@ -103,6 +105,24 @@ export default function WhatsAppSettings() {
   const { connection, loading: connectionLoading, waitingForQr, setWaitingForQr, countdown, timedOut, setTimedOut, cancelRequest, refetch } = useWhatsAppSettingsConnection();
   
   const [showBuyCredits, setShowBuyCredits] = useState(false);
+  const { features } = useSubscriptionLimits();
+  const instancesLimit = features?.whatsapp_instances_limit ?? 0;
+
+  const { data: activeConnectionsCount = 0 } = useQuery({
+    queryKey: ['whatsapp-active-connections-settings', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      const { count, error } = await supabase
+        .from('whatsapp_connections')
+        .select('id', { count: 'exact', head: true })
+        .eq('broker_id', user.id)
+        .eq('status', 'connected');
+      if (error) return 0;
+      return count ?? 0;
+    },
+    enabled: !!user?.id,
+    staleTime: 30_000,
+  });
   const [isCreating, setIsCreating] = useState(false);
   const [qrExpired, setQrExpired] = useState(false);
 
@@ -230,7 +250,7 @@ export default function WhatsAppSettings() {
           </div>
 
           <div className="max-w-3xl space-y-6">
-            <WhatsAppUsageStatus onBuyCredits={() => setShowBuyCredits(true)} />
+            <WhatsAppUsageStatus activeConnections={activeConnectionsCount} instancesLimit={instancesLimit} onBuyExtra={() => setShowBuyCredits(true)} />
 
             {connection && (
               <Card>
