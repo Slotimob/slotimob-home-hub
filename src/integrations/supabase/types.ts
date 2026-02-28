@@ -1156,6 +1156,56 @@ export type Database = {
           },
         ]
       }
+      email_notifications: {
+        Row: {
+          broker_id: string
+          created_at: string
+          email_type: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          resend_id: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          resend_id?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          resend_id?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_notifications_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_categories: {
         Row: {
           broker_id: string
