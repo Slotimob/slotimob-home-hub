@@ -11,30 +11,47 @@ export function GlowInitializer() {
     document.documentElement.classList.remove('glow-disabled');
   }, []);
 
-  // Sync theme from profile to localStorage on auth
+  // Sync theme from profile to localStorage on auth (non-blocking)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user?.id) {
-          try {
-            const { data } = await supabase
-              .from('profiles')
-              .select('theme_preference')
-              .eq('id', session.user.id)
-              .maybeSingle();
+    let cancelled = false;
 
-            if (data?.theme_preference) {
-              localStorage.setItem('slotimob-theme', data.theme_preference);
-              document.documentElement.setAttribute('data-theme', data.theme_preference);
-            }
-          } catch {
-            // fail silently
-          }
+    const syncThemeFromProfile = async (userId: string) => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('theme_preference')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (!cancelled && data?.theme_preference) {
+          localStorage.setItem('slotimob-theme', data.theme_preference);
+          document.documentElement.setAttribute('data-theme', data.theme_preference);
+        }
+      } catch {
+        // fail silently
+      }
+    };
+
+    // Initial sync from restored session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) {
+        void syncThemeFromProfile(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user?.id) {
+          // IMPORTANT: fire-and-forget to avoid auth callback deadlocks
+          void syncThemeFromProfile(session.user.id);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return null;
