@@ -11,12 +11,13 @@ import {
   ArrowDownRight,
   Send,
   Inbox,
+  Users,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { format, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, eachDayOfInterval, isSameDay, differenceInMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,6 +39,11 @@ interface WhatsAppMetrics {
     contactName: string;
     dealStage: string | null;
     messageCount: number;
+  }[];
+  agentPerformance: {
+    agentName: string;
+    activeConversations: number;
+    avgResponseMinutes: number | null;
   }[];
   loading: boolean;
 }
@@ -104,6 +110,7 @@ export const ReportsWhatsAppSection = ({ dateRange, userName, selectedUnitId }: 
     dailyVolume: [],
     leadOrigins: [],
     topConversations: [],
+    agentPerformance: [],
     loading: true,
   });
 
@@ -224,6 +231,75 @@ export const ReportsWhatsAppSection = ({ dateRange, userName, selectedUnitId }: 
         });
       }
 
+      // 8. Agent performance — messages per agent
+      let agentPerformance: WhatsAppMetrics['agentPerformance'] = [];
+      try {
+        const { data: convAssignments } = await supabase
+          .from('whatsapp_conversations')
+          .select('id, assigned_user_id')
+          .not('assigned_user_id', 'is', null)
+          .eq('is_archived', false);
+
+        if (convAssignments && convAssignments.length > 0) {
+          const agentIds = [...new Set(convAssignments.map(c => c.assigned_user_id).filter(Boolean))] as string[];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', agentIds);
+
+          const profileMap: Record<string, string> = {};
+          (profiles || []).forEach(p => { profileMap[p.id] = p.full_name || 'Sem nome'; });
+
+          // Count active convs per agent and compute avg response time from messages
+          const agentConvIds: Record<string, string[]> = {};
+          convAssignments.forEach(c => {
+            const aid = c.assigned_user_id!;
+            if (!agentConvIds[aid]) agentConvIds[aid] = [];
+            agentConvIds[aid].push(c.id);
+          });
+
+          // Simple avg response: for each conv, time between first incoming and first outgoing
+          const allConvIds = convAssignments.map(c => c.id);
+          const { data: responseMsgs } = await supabase
+            .from('whatsapp_messages')
+            .select('conversation_id, direction, sent_at')
+            .in('conversation_id', allConvIds.slice(0, 200))
+            .in('direction', ['incoming', 'outgoing'])
+            .order('sent_at', { ascending: true });
+
+          const convFirstResponse: Record<string, number> = {};
+          if (responseMsgs) {
+            const byConv: Record<string, { firstIn?: Date; firstOut?: Date }> = {};
+            responseMsgs.forEach(m => {
+              if (!byConv[m.conversation_id]) byConv[m.conversation_id] = {};
+              const entry = byConv[m.conversation_id];
+              if (m.direction === 'incoming' && !entry.firstIn) entry.firstIn = new Date(m.sent_at);
+              if (m.direction === 'outgoing' && entry.firstIn && !entry.firstOut) entry.firstOut = new Date(m.sent_at);
+            });
+            Object.entries(byConv).forEach(([cid, e]) => {
+              if (e.firstIn && e.firstOut) {
+                convFirstResponse[cid] = differenceInMinutes(e.firstOut, e.firstIn);
+              }
+            });
+          }
+
+          agentPerformance = agentIds.map(aid => {
+            const convs = agentConvIds[aid] || [];
+            const responseTimes = convs.map(c => convFirstResponse[c]).filter(t => t !== undefined);
+            const avg = responseTimes.length > 0
+              ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+              : null;
+            return {
+              agentName: profileMap[aid] || 'Agente',
+              activeConversations: convs.length,
+              avgResponseMinutes: avg,
+            };
+          }).sort((a, b) => b.activeConversations - a.activeConversations);
+        }
+      } catch (agentErr) {
+        console.error('Agent performance fetch error:', agentErr);
+      }
+
       setMetrics({
         totalMessages,
         newLeadsViaWa,
@@ -232,6 +308,7 @@ export const ReportsWhatsAppSection = ({ dateRange, userName, selectedUnitId }: 
         dailyVolume,
         leadOrigins,
         topConversations,
+        agentPerformance,
         loading: false,
       });
     } catch (err) {
@@ -464,6 +541,44 @@ export const ReportsWhatsAppSection = ({ dateRange, userName, selectedUnitId }: 
           )}
         </CardContent>
       </Card>
+
+      {/* Agent Performance Table */}
+      {metrics.agentPerformance.length > 0 && (
+        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              Mensagens por Agente
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Agente</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Conversas Ativas</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Tempo Médio de Resposta</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {metrics.agentPerformance.map((agent, idx) => (
+                    <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-2.5 font-medium text-foreground">{agent.agentName}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <Badge variant="secondary" className="text-[10px]">{agent.activeConversations}</Badge>
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-muted-foreground">
+                        {agent.avgResponseMinutes !== null ? `${agent.avgResponseMinutes} min` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

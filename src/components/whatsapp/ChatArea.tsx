@@ -1,17 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   MessageSquare, Send, Paperclip, FileText, Phone, MoreVertical,
   Check, CheckCheck, ArrowLeft, ChevronRight, Loader2, WifiOff,
-  Image as ImageIcon, Mic, Film, File,
+  Image as ImageIcon, Mic, Film, File, UserCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import { QUICK_REPLIES } from './mockData';
+import { supabase } from '@/integrations/supabase/client';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
@@ -26,6 +29,11 @@ interface ChatAreaProps {
   loadingMessages?: boolean;
   sending?: boolean;
   isConnected?: boolean;
+  assignedUserId?: string | null;
+  teamMembers?: { id: string; name: string }[];
+  isOwner?: boolean;
+  onReassign?: (conversationId: string, newUserId: string) => void;
+  conversationId?: string | null;
 }
 
 function formatTime(dateStr: string): string {
@@ -108,7 +116,6 @@ function MediaContent({ msg }: { msg: WhatsAppMessage }) {
     );
   }
 
-  // Type label for unsupported media without URL
   if (['image', 'audio', 'video', 'sticker'].includes(msg.message_type) && !mediaUrl) {
     const icons: Record<string, any> = { image: ImageIcon, audio: Mic, video: Film, sticker: ImageIcon };
     const Icon = icons[msg.message_type] || ImageIcon;
@@ -124,6 +131,23 @@ function MediaContent({ msg }: { msg: WhatsAppMessage }) {
   return null;
 }
 
+// Small hook to resolve agent name from ID
+function useAgentName(userId: string | null, teamMembers: { id: string; name: string }[]) {
+  const [name, setName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) { setName(null); return; }
+    const found = teamMembers.find(m => m.id === userId);
+    if (found) { setName(found.name); return; }
+
+    // Fallback: fetch from profiles
+    supabase.from('profiles').select('full_name').eq('id', userId).maybeSingle()
+      .then(({ data }) => setName(data?.full_name || 'Agente'));
+  }, [userId, teamMembers]);
+
+  return name;
+}
+
 export function ChatArea({
   conversation,
   messages,
@@ -134,11 +158,17 @@ export function ChatArea({
   loadingMessages,
   sending,
   isConnected = true,
+  assignedUserId,
+  teamMembers = [],
+  isOwner = false,
+  onReassign,
+  conversationId,
 }: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const agentName = useAgentName(assignedUserId || null, teamMembers);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -216,11 +246,45 @@ export function ChatArea({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Phone className="h-3 w-3" />
-            {conversation.contact_phone}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Phone className="h-3 w-3" />
+              {conversation.contact_phone}
+            </p>
+          </div>
         </div>
+
+        {/* Agent Badge + Reassignment */}
+        {assignedUserId && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {isOwner && teamMembers.length > 0 && onReassign && conversationId ? (
+              <Select
+                value={assignedUserId}
+                onValueChange={(val) => onReassign(conversationId, val)}
+              >
+                <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs border-border/50 bg-muted/50">
+                  <div className="flex items-center gap-1.5">
+                    <UserCheck className="h-3 w-3 text-primary" />
+                    <SelectValue placeholder="Responsável" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {teamMembers.map(m => (
+                    <SelectItem key={m.id} value={m.id} className="text-xs">
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Badge variant="secondary" className="text-[10px] gap-1">
+                <UserCheck className="h-3 w-3" />
+                {agentName || 'Agente'}
+              </Badge>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center gap-1 flex-shrink-0">
           {showCrmToggle && (
             <Button variant="ghost" size="icon" onClick={onToggleCrm} className="hidden lg:flex">
