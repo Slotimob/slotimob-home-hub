@@ -374,10 +374,12 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     content = messageContent.videoMessage.caption || '';
     mediaMimeType = messageContent.videoMessage.mimetype || null;
     mediaUrl = messageContent.videoMessage.url || msgData.media?.url || null;
-  } else if (messageContent.audioMessage) {
+  } else if (messageContent.audioMessage || messageContent.pttMessage) {
+    // v2.3.7: PTT (Push-to-Talk) voice notes arrive as pttMessage
+    const audioData = messageContent.audioMessage || messageContent.pttMessage;
     messageType = 'audio';
-    mediaMimeType = messageContent.audioMessage.mimetype || null;
-    mediaUrl = messageContent.audioMessage.url || msgData.media?.url || null;
+    mediaMimeType = audioData.mimetype || 'audio/ogg; codecs=opus';
+    mediaUrl = audioData.url || msgData.media?.url || null;
   } else if (messageContent.documentMessage) {
     messageType = 'document';
     mediaFilename = messageContent.documentMessage.fileName || 'document';
@@ -451,9 +453,16 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     ? new Date(parseInt(msgData.messageTimestamp) * 1000).toISOString()
     : new Date().toISOString();
 
-  const lastMsgPreview = direction === 'outgoing' 
-    ? `Você: ${content || `[${messageType}]`}`
-    : (content || `[${messageType}]`);
+  // Emoji-rich media preview for sidebar when content is empty
+  const mediaLabels: Record<string, string> = {
+    image: '📷 Foto', audio: '🎵 Áudio', video: '🎬 Vídeo',
+    document: '📎 Documento', sticker: '😀 Sticker',
+    location: '📍 Localização', contact: '👤 Contato',
+  };
+  const contentOrLabel = content || mediaLabels[messageType] || `[${messageType}]`;
+  const lastMsgPreview = direction === 'outgoing'
+    ? `Você: ${contentOrLabel}`
+    : contentOrLabel;
 
   if (convError || !conversation) {
     const { data: newConv, error: createError } = await supabaseAdmin

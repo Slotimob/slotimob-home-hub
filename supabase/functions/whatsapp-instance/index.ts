@@ -426,7 +426,7 @@ serve(async (req) => {
               synced++;
             }
 
-            // Try to link contact and update avatar
+            // Try to link contact and update avatar — or CREATE if not found
             const { data: existingContacts } = await supabaseAdmin
               .from('contacts')
               .select('id, avatar_url')
@@ -434,13 +434,10 @@ serve(async (req) => {
               .or(`phone.eq.${phone},whatsapp.eq.${phone},phone.eq.+${phone},whatsapp.eq.+${phone}`)
               .limit(1);
 
+            let contactId: string | null = null;
+
             if (existingContacts && existingContacts.length > 0) {
-              const contactId = existingContacts[0].id;
-              await supabaseAdmin
-                .from('whatsapp_conversations')
-                .update({ contact_id: contactId, lead_id: contactId })
-                .eq('connection_id', conn.id)
-                .eq('remote_jid', remoteJid);
+              contactId = existingContacts[0].id;
 
               // Update contact avatar if we have a profile pic and contact doesn't have one
               if (profilePicUrl && !existingContacts[0].avatar_url) {
@@ -449,6 +446,34 @@ serve(async (req) => {
                   .update({ avatar_url: profilePicUrl })
                   .eq('id', contactId);
               }
+            } else if (name && name !== phone) {
+              // Auto-create contact with pushName from Evolution API
+              const { data: newContact, error: newContactErr } = await supabaseAdmin
+                .from('contacts')
+                .insert({
+                  broker_id: userId,
+                  name: name,
+                  phone: phone,
+                  whatsapp: phone,
+                  avatar_url: profilePicUrl,
+                  categories: ['lead'],
+                  metadata: { origin: 'whatsapp_sync' },
+                })
+                .select('id')
+                .single();
+
+              if (!newContactErr && newContact) {
+                contactId = newContact.id;
+                console.log(`sync_history: auto-created contact ${contactId} for ${name} (${phone})`);
+              }
+            }
+
+            if (contactId) {
+              await supabaseAdmin
+                .from('whatsapp_conversations')
+                .update({ contact_id: contactId, lead_id: contactId })
+                .eq('connection_id', conn.id)
+                .eq('remote_jid', remoteJid);
             }
           } catch (chatErr) {
             console.error('sync_history chat error:', chatErr);
