@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
@@ -24,6 +24,7 @@ const ITEMS_PER_PAGE = 12;
 const ContactsUnified = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   
   const [contacts, setContacts] = useState<UnifiedContact[]>([]);
@@ -55,6 +56,19 @@ const ContactsUnified = () => {
     contact: UnifiedContact;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Pre-select category based on URL slug (smart shortcuts)
+  useEffect(() => {
+    const slug = location.pathname.split('/').pop();
+    const categoryMap: Record<string, ContactCategory> = {
+      owners: 'Proprietário',
+      leads: 'Lead',
+      companies: 'Empresa',
+    };
+    if (slug && categoryMap[slug]) {
+      setSelectedCategory(categoryMap[slug]);
+    }
+  }, []); // only on mount
 
   useEffect(() => {
     if (!loading && !user) {
