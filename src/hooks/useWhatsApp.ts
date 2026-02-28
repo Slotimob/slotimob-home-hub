@@ -158,6 +158,16 @@ export function useWhatsAppSettingsConnection() {
             if (updated.qr_code_base64 || updated.connection_status === 'open') {
               setWaitingForQr(false);
             }
+            // Auto-trigger sync_history when status becomes connected
+            if (updated.status === 'connected' && updated.connection_status === 'open') {
+              console.log('Connection established — triggering sync_history...');
+              supabase.functions.invoke('whatsapp-instance', {
+                body: { action: 'sync_history' },
+              }).then(({ data, error }) => {
+                if (error) console.error('Auto sync_history error:', error);
+                else console.log('Auto sync_history result:', data);
+              });
+            }
           }
         }
       )
@@ -176,7 +186,6 @@ export function useWhatsAppSettingsConnection() {
       });
       if (error) throw error;
       console.log('checkInstanceStatus result:', data);
-      // Se a API diz conectado, o status action já sincroniza o DB — basta refetch
       if (data?.state === 'open' || data?.state === 'connected') {
         await fetchConnection();
         return { connected: true };

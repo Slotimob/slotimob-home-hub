@@ -49,7 +49,6 @@ serve(async (req) => {
     
     const body = JSON.parse(rawBody);
 
-    // Evolution v2.3.7 pode enviar event no top-level ou em data
     const rawEvent = body.event;
     const instanceName = body.instance || body.data?.instance;
     const event = rawEvent ? normalizeEventName(rawEvent) : null;
@@ -84,7 +83,6 @@ serve(async (req) => {
 });
 
 async function processEvent(supabaseAdmin: any, event: string, instanceName: string, data: any) {
-  // Detect QR in any event
   const anyQr = extractQrBase64(data);
   if (anyQr) {
     console.log(`QR DETECTADO event=${event} instance=${instanceName}`);
@@ -103,6 +101,9 @@ async function processEvent(supabaseAdmin: any, event: string, instanceName: str
     case 'messages.update':
       await handleMessagesUpdate(supabaseAdmin, instanceName, data);
       break;
+    case 'messages.set':
+      await handleMessagesSet(supabaseAdmin, instanceName, data);
+      break;
     case 'send.message':
       console.log('send.message event received (outgoing message confirmation)');
       await handleSendMessage(supabaseAdmin, instanceName, data);
@@ -118,7 +119,6 @@ async function processEvent(supabaseAdmin: any, event: string, instanceName: str
 
 // ─── CONNECTION UPDATE ───
 async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, data: any) {
-  // Extração à prova de balas — Evolution v2.3.7 envia em formatos variados
   const state = data?.state || data?.instance?.state || data?.status || data?.data?.state;
   if (!state) {
     console.log('handleConnectionUpdate: sem state no payload, keys:', JSON.stringify(Object.keys(data || {})));
@@ -127,7 +127,6 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
 
   console.log(`Connection update: instance=${instanceName} state=${state}`);
 
-  // Check for QR data in non-open states
   if (state !== 'open') {
     const qrBase64 = extractQrBase64(data);
     if (qrBase64) {
@@ -230,8 +229,6 @@ async function handleMessagesUpdate(supabaseAdmin: any, instanceName: string, da
       
       if (!keyId) continue;
       
-      // Map Evolution API status codes to our status
-      // 3 = DELIVERED, 4 = READ, 5 = PLAYED (for audio/video)
       const statusNum = typeof status === 'number' ? status : parseInt(status);
       let newStatus: string | null = null;
       
@@ -256,6 +253,62 @@ async function handleMessagesUpdate(supabaseAdmin: any, instanceName: string, da
   }
 }
 
+// ─── MESSAGES SET (initial history from v2.3.7) ───
+async function handleMessagesSet(supabaseAdmin: any, instanceName: string, data: any) {
+  const { data: connection, error: connError } = await supabaseAdmin
+    .from('whatsapp_connections')
+    .select('*')
+    .eq('instance_name', instanceName)
+    .single();
+
+  if (connError || !connection) {
+    console.error('messages.set: Connection not found for instance:', instanceName);
+    return;
+  }
+
+  // v2.3.7 sends messages.set with an array of messages grouped or flat
+  const messages = Array.isArray(data) ? data : (data?.messages || []);
+  console.log(`messages.set: received ${messages.length} messages for ${instanceName}`);
+
+  // Group messages by remoteJid to process per-conversation
+  const byJid: Record<string, any[]> = {};
+  for (const msgData of messages) {
+    const key = msgData?.key;
+    if (!key?.remoteJid) continue;
+    const jid = key.remoteJid;
+    if (jid.endsWith('@g.us') || jid === 'status@broadcast') continue;
+    if (!byJid[jid]) byJid[jid] = [];
+    byJid[jid].push(msgData);
+  }
+
+  // Process only last 15 messages per conversation to avoid overloading
+  const jids = Object.keys(byJid);
+  console.log(`messages.set: ${jids.length} individual conversations to process`);
+
+  let totalProcessed = 0;
+
+  for (const jid of jids.slice(0, 30)) {
+    const jidMessages = byJid[jid]
+      .sort((a: any, b: any) => {
+        const tsA = parseInt(a.messageTimestamp || '0');
+        const tsB = parseInt(b.messageTimestamp || '0');
+        return tsA - tsB;
+      })
+      .slice(-15); // Last 15 messages
+
+    for (const msgData of jidMessages) {
+      try {
+        await processIncomingMessage(supabaseAdmin, connection, msgData);
+        totalProcessed++;
+      } catch (e) {
+        console.error('messages.set process error:', e);
+      }
+    }
+  }
+
+  console.log(`messages.set: processed ${totalProcessed} messages across ${Math.min(jids.length, 30)} conversations`);
+}
+
 // ─── MESSAGES UPSERT ───
 async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, data: any) {
   const { data: connection, error: connError } = await supabaseAdmin
@@ -269,7 +322,6 @@ async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, da
     return;
   }
 
-  // v2.3.7 pode enviar array ou objeto
   const messages = Array.isArray(data) ? data : (data?.messages ? data.messages : [data]);
 
   for (const msgData of messages) {
@@ -285,7 +337,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   const key = msgData.key;
   if (!key) return;
 
-  // Determine direction — NEVER skip fromMe messages
   const direction = key.fromMe ? 'outgoing' : 'incoming';
   const msgStatus = key.fromMe ? 'sent' : 'delivered';
 
@@ -355,7 +406,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   if (existingContacts && existingContacts.length > 0) {
     contactId = existingContacts[0].id;
   } else if (direction === 'incoming') {
-    // Only auto-create contacts for incoming messages
     const { data: newContact, error: contactError } = await supabaseAdmin
       .from('contacts')
       .insert({
@@ -413,7 +463,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     }
     conversation = newConv;
   } else {
-    // Auto-link contact_id and lead_id if missing
     const resolvedContactId = contactId || conversation.contact_id;
     const updatePayload: Record<string, any> = {
       contact_id: resolvedContactId,
@@ -421,7 +470,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
       last_message: lastMsgPreview,
       last_message_at: messageTimestamp,
     };
-    // Only increment unread for incoming messages
     if (direction === 'incoming') {
       updatePayload.unread_count = (conversation.unread_count || 0) + 1;
     }
