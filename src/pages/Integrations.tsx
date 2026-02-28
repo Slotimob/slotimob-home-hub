@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle, XCircle, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
+import { WhatsAppDisclaimerDialog } from '@/components/whatsapp/WhatsAppDisclaimerDialog';
 
 const COMPATIBLE_PORTALS = [
   { name: 'Zap Imóveis', logo: '🏠' },
@@ -40,6 +41,21 @@ const Integrations = () => {
   const [progress, setProgress] = useState(0);
   const [qrTimer, setQrTimer] = useState<number | null>(null);
   const [qrExpired, setQrExpired] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
+
+  // Check if user already accepted WhatsApp terms
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('whatsapp_terms_acceptances')
+      .select('id')
+      .eq('broker_id', user.id)
+      .limit(1)
+      .then(({ data }) => {
+        setHasAcceptedTerms(data && data.length > 0);
+      });
+  }, [user]);
 
   // Derived states
   const isConnected = connection?.status === 'connected' || connection?.connection_status === 'open';
@@ -377,7 +393,13 @@ const Integrations = () => {
                   </Button>
                 </div>
               ) : !isPreparing && !hasQrCode && !timedOut ? (
-                <Button className="w-full" onClick={handleConnectWhatsApp} disabled={isConnecting}>
+                <Button className="w-full" onClick={() => {
+                  if (hasAcceptedTerms) {
+                    handleConnectWhatsApp();
+                  } else {
+                    setShowDisclaimer(true);
+                  }
+                }} disabled={isConnecting || hasAcceptedTerms === null}>
                   {isConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
                   Conectar WhatsApp
                 </Button>
@@ -461,6 +483,18 @@ const Integrations = () => {
           </CardContent>
         </Card>
       </div>
+
+      <WhatsAppDisclaimerDialog
+        open={showDisclaimer}
+        onOpenChange={setShowDisclaimer}
+        onAccept={async () => {
+          await supabase.from('whatsapp_terms_acceptances').insert({
+            broker_id: user!.id,
+          });
+          setHasAcceptedTerms(true);
+          await handleConnectWhatsApp();
+        }}
+      />
     </AppLayout>
   );
 };
