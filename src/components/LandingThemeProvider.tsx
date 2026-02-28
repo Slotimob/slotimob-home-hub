@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 
 /**
- * Forces dark-green theme on the landing page, regardless of user preference.
+ * Forces a clean light theme on the landing page for enterprise SaaS aesthetics.
  * Restores the previous theme on unmount (when navigating to dashboard, etc.).
  */
-const LANDING_THEME = 'dark-green';
+const LANDING_THEME = 'light-green';
 
 export function LandingThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -12,7 +12,6 @@ export function LandingThemeProvider({ children }: { children: React.ReactNode }
     document.documentElement.setAttribute('data-theme', LANDING_THEME);
 
     return () => {
-      // Restore whatever was saved — or the profile theme from localStorage
       const savedTheme = localStorage.getItem('slotimob-theme');
       if (savedTheme) {
         document.documentElement.setAttribute('data-theme', savedTheme);

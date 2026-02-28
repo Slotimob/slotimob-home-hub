@@ -5,7 +5,7 @@ import { MessageSquare, Brain, Building2, BarChart3 } from 'lucide-react';
 const tabs = [
   {
     id: 'whatsapp',
-    label: 'WhatsApp Integrado',
+    label: 'WhatsApp + IA',
     icon: MessageSquare,
     title: 'Converse e venda sem sair do sistema',
     description:
@@ -19,7 +19,7 @@ const tabs = [
           </div>
         </div>
         <div className="flex gap-3 items-end justify-end">
-          <div className="bg-secondary/20 rounded-xl rounded-br-none px-4 py-2 max-w-[70%]">
+          <div className="bg-primary/10 rounded-xl rounded-br-none px-4 py-2 max-w-[70%]">
             <p className="text-sm text-foreground">Sim! Posso agendar uma visita para amanhã às 15h?</p>
             <span className="text-[10px] text-muted-foreground">14:33</span>
           </div>
@@ -31,9 +31,9 @@ const tabs = [
           </div>
         </div>
         <div className="border-t border-border pt-3 mt-4">
-          <div className="flex items-center gap-2 bg-muted rounded-lg p-3">
-            <Brain className="h-4 w-4 text-foreground shrink-0" />
-            <p className="text-xs text-muted-foreground"><strong className="text-foreground">IA:</strong> Lead quente, interesse em 2 quartos, orçamento ~R$350k. Agendar visita confirmada.</p>
+          <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 rounded-lg p-3">
+            <Brain className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-muted-foreground"><strong className="text-foreground">IA:</strong> Lead quente, interesse em 2 quartos, orçamento ~R$350k. Visita agendada.</p>
           </div>
         </div>
       </div>
@@ -48,9 +48,9 @@ const tabs = [
       'A IA analisa o histórico e gera um resumo executivo: perfil, interesses, orçamento e próximo passo recomendado.',
     mockContent: (
       <div className="p-4 space-y-4">
-        <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
+        <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
           <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-            <Brain className="h-4 w-4 text-accent" />
+            <Brain className="h-4 w-4 text-primary" />
             Resumo do Lead
           </h4>
           <div className="space-y-2 text-sm text-muted-foreground">
@@ -74,15 +74,13 @@ const tabs = [
     mockContent: (
       <div className="p-4 space-y-3">
         {[
-          { name: 'Apto 301 — Ed. Solar', status: 'Em dia', color: 'bg-green-500' },
-          { name: 'Sala 12 — Empresarial', status: 'Reajuste em 5 dias', color: 'bg-amber-500' },
-          { name: 'Casa 7 — Cond. Flores', status: 'Inadimplente', color: 'bg-red-500' },
+          { name: 'Apto 301 — Ed. Solar', status: 'Em dia', color: 'bg-success' },
+          { name: 'Sala 12 — Empresarial', status: 'Reajuste em 5 dias', color: 'bg-warning' },
+          { name: 'Casa 7 — Cond. Flores', status: 'Inadimplente', color: 'bg-destructive' },
         ].map((item) => (
           <div key={item.name} className="flex items-center justify-between p-3 rounded-lg border border-border">
-            <div>
-              <p className="text-sm font-medium text-foreground">{item.name}</p>
-            </div>
-            <span className={`text-xs font-medium px-2 py-1 rounded-full text-white ${item.color}`}>
+            <p className="text-sm font-medium text-foreground">{item.name}</p>
+            <span className={cn('text-xs font-medium px-2.5 py-1 rounded-full text-white', item.color)}>
               {item.status}
             </span>
           </div>
@@ -109,7 +107,7 @@ const tabs = [
             <div key={m.label} className="bg-muted/50 rounded-lg p-3">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{m.label}</p>
               <p className="text-lg font-bold text-foreground">{m.value}</p>
-              <span className="text-xs text-secondary font-medium">{m.change}</span>
+              <span className="text-xs text-primary font-medium">{m.change}</span>
             </div>
           ))}
         </div>
@@ -126,11 +124,14 @@ export function DemoSection() {
     <section id="demo" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
+          <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+            Demonstração
+          </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Veja o sistema em ação
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explore os módulos que mais geram resultado para corretores.
+            Explore os módulos que mais geram resultado para corretores e imobiliárias.
           </p>
         </div>
 
@@ -160,7 +161,7 @@ export function DemoSection() {
               <h3 className="text-2xl font-bold text-foreground mb-3">{activeTab.title}</h3>
               <p className="text-muted-foreground leading-relaxed">{activeTab.description}</p>
             </div>
-            <div className="rounded-xl border border-border bg-card shadow-lg overflow-hidden min-h-[300px]">
+            <div className="rounded-xl border border-border/50 bg-card shadow-lg overflow-hidden min-h-[300px]">
               {activeTab.mockContent}
             </div>
           </div>

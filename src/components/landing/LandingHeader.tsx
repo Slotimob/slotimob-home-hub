@@ -20,50 +20,56 @@ import {
   Bot,
   FileText,
   Calculator,
-  Briefcase,
+  Shield,
   Home as HomeIcon,
   UserCheck,
+  BookOpen,
+  HelpCircle,
+  Briefcase,
+  Award,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /* ── Mega-menu data ─────────────────────────────────────────── */
 
-const megaMenuColumns = [
+const solucoesColumns = [
   {
-    title: 'Gestão de Leads',
+    title: 'CRM & Vendas',
     items: [
-      { icon: Users, label: 'CRM Imobiliário', desc: 'Pipeline visual de negociações', href: '#features' },
-      { icon: Shuffle, label: 'Roleta de Leads', desc: 'Distribuição automática para equipe', href: '#features' },
-      { icon: Filter, label: 'Funil de Vendas', desc: 'Acompanhe cada etapa do deal', href: '#features' },
-    ],
-  },
-  {
-    title: 'Comunicação',
-    items: [
-      { icon: MessageSquare, label: 'WhatsApp Integrado', desc: 'Chat unificado com IA', href: '#features' },
-      { icon: Phone, label: 'Chat Multicanal', desc: 'Atenda de qualquer lugar', href: '#features' },
-      { icon: Bot, label: 'Automação com IA', desc: 'Respostas inteligentes 24/7', href: '#features' },
+      { icon: Users, label: 'CRM Imobiliário', desc: 'Pipeline visual com Kanban drag & drop', href: '#modulo-crm' },
+      { icon: Shuffle, label: 'Roleta de Leads', desc: 'Distribuição Round Robin automática', href: '#modulo-crm' },
+      { icon: Filter, label: 'Funil Personalizável', desc: 'Crie etapas sob medida para seu processo', href: '#modulo-crm' },
     ],
   },
   {
     title: 'Financeiro & Contratos',
     items: [
-      { icon: Wallet, label: 'Gestão de Aluguéis', desc: 'Controle total de recebíveis', href: '#features' },
-      { icon: FileText, label: 'Contratos Digitais', desc: 'Geração e assinatura online', href: '#features' },
-      { icon: BarChart3, label: 'Relatórios & DRE', desc: 'Visão financeira completa', href: '#features' },
+      { icon: Wallet, label: 'Hub Financeiro', desc: 'Fluxo de caixa, DRE e conciliação bancária', href: '#modulo-financeiro' },
+      { icon: FileText, label: 'Contratos Digitais', desc: 'Templates inteligentes com preenchimento automático', href: '#modulo-financeiro' },
+      { icon: BarChart3, label: 'Relatórios & DRE', desc: 'Visão financeira completa por unidade', href: '#modulo-financeiro' },
+    ],
+  },
+  {
+    title: 'Gestão de Ativos',
+    items: [
+      { icon: Building2, label: 'Propriedades & Unidades', desc: 'Inventário organizado com galeria e docs', href: '#modulo-unidades' },
+      { icon: Shield, label: 'Saúde do Portfólio', desc: 'Alertas de vencimento e inadimplência', href: '#modulo-unidades' },
     ],
   },
 ];
 
-const audienceLinks = [
-  { label: 'Corretores', desc: 'Venda mais com CRM conversacional', href: '/lp/corretores', icon: UserCheck },
-  { label: 'Proprietários', desc: 'Patrimônio gerido com inteligência', href: '/lp/proprietarios', icon: HomeIcon },
-  { label: 'Imobiliárias', desc: 'Escale com ordem e supervisão', href: '/lp/imobiliarias', icon: Building2 },
+const recursosItems = [
+  { icon: MessageSquare, label: 'WhatsApp Integrado', desc: 'Chat unificado com IA e histórico', href: '#modulo-whatsapp' },
+  { icon: Bot, label: 'Automação com IA', desc: 'Resumos inteligentes e respostas 24/7', href: '#modulo-whatsapp' },
+  { icon: Calculator, label: 'Simuladores', desc: 'Financiamento e cálculos fiscais', href: '#modulo-calculadoras' },
+  { icon: Phone, label: 'Multicanal', desc: 'Facebook Leads, portais e mais', href: '#features' },
 ];
 
-const simpleLinks = [
-  { label: 'Preços', href: '#pricing' },
-  { label: 'Blog', href: '/blog', external: true },
+const empresaItems = [
+  { icon: BookOpen, label: 'Blog', desc: 'Conteúdo para o mercado imobiliário', href: '/blog', isExternal: true },
+  { icon: HelpCircle, label: 'Central de Ajuda', desc: 'Tutoriais e treinamentos', href: '#features' },
+  { icon: Award, label: 'Para Corretores', desc: 'CRM conversacional de elite', href: '/lp/corretores', isExternal: true },
+  { icon: Briefcase, label: 'Para Imobiliárias', desc: 'Escale com ordem e supervisão', href: '/lp/imobiliarias', isExternal: true },
 ];
 
 /* ── Component ──────────────────────────────────────────────── */
@@ -72,14 +78,11 @@ export function LandingHeader() {
   const { user, loading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
-  const [audienceOpen, setAudienceOpen] = useState(false);
-  const megaTimeout = useRef<ReturnType<typeof setTimeout>>();
-  const audienceTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const dropdownTimeout = useRef<ReturnType<typeof setTimeout>>();
 
-  // Mobile accordion states
-  const [mobileMegaOpen, setMobileMegaOpen] = useState(false);
-  const [mobileAudienceOpen, setMobileAudienceOpen] = useState(false);
+  // Mobile accordion
+  const [mobileAccordion, setMobileAccordion] = useState<string | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -87,7 +90,6 @@ export function LandingHeader() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Close mobile menu on resize
   useEffect(() => {
     const onResize = () => { if (window.innerWidth >= 768) setMobileOpen(false); };
     window.addEventListener('resize', onResize);
@@ -98,120 +100,89 @@ export function LandingHeader() {
     if (!href.startsWith('#')) return;
     e.preventDefault();
     setMobileOpen(false);
-    setMegaOpen(false);
-    setAudienceOpen(false);
+    setActiveDropdown(null);
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const textColor = scrolled ? 'text-foreground' : 'text-primary-foreground';
-  const textMuted = scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-primary-foreground/80 hover:text-primary-foreground';
+  const openDropdown = (id: string) => { clearTimeout(dropdownTimeout.current); setActiveDropdown(id); };
+  const closeDropdown = () => { dropdownTimeout.current = setTimeout(() => setActiveDropdown(null), 200); };
 
-  /* ── Hover handlers with delay ── */
-  const openMega = () => { clearTimeout(megaTimeout.current); setMegaOpen(true); };
-  const closeMega = () => { megaTimeout.current = setTimeout(() => setMegaOpen(false), 200); };
-  const openAudience = () => { clearTimeout(audienceTimeout.current); setAudienceOpen(true); };
-  const closeAudience = () => { audienceTimeout.current = setTimeout(() => setAudienceOpen(false), 200); };
+  const toggleMobileAccordion = (id: string) => {
+    setMobileAccordion(prev => prev === id ? null : id);
+  };
 
   return (
     <header
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
         scrolled
-          ? 'bg-background/95 backdrop-blur-md shadow-lg border-b border-border'
-          : 'bg-transparent'
+          ? 'bg-background/95 backdrop-blur-md shadow-sm border-b border-border'
+          : 'bg-background/80 backdrop-blur-sm'
       )}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center shrink-0">
             <SlotiLogo className="h-8 w-auto" />
           </Link>
 
           {/* ── Desktop nav ── */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
-            {/* Funcionalidades — Mega Menu */}
-            <div
-              className="relative"
-              onMouseEnter={openMega}
-              onMouseLeave={closeMega}
+          <nav className="hidden md:flex items-center gap-1">
+            {/* Soluções — Wide Mega Menu */}
+            <DropdownTrigger
+              label="Soluções"
+              id="solucoes"
+              activeDropdown={activeDropdown}
+              onOpen={openDropdown}
+              onClose={closeDropdown}
             >
-              <button
-                className={cn(
-                  'flex items-center gap-1 text-sm font-medium px-3 py-2 rounded-md transition-colors',
-                  textMuted
-                )}
-              >
-                Funcionalidades
-                <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', megaOpen && 'rotate-180')} />
-              </button>
-
-              {/* Mega dropdown */}
-              <div
-                className={cn(
-                  'absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200',
-                  megaOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2 pointer-events-none'
-                )}
-              >
-                <div className="w-[700px] bg-popover border border-border rounded-xl shadow-2xl p-6 grid grid-cols-3 gap-6">
-                  {megaMenuColumns.map((col) => (
-                    <div key={col.title}>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                        {col.title}
-                      </p>
-                      <div className="space-y-1">
-                        {col.items.map((item) => (
-                          <a
-                            key={item.label}
-                            href={item.href}
-                            onClick={(e) => handleAnchor(e, item.href)}
-                            className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent/10 transition-colors group"
-                          >
-                            <div className="mt-0.5 p-1.5 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
-                              <item.icon className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{item.label}</p>
-                              <p className="text-xs text-muted-foreground">{item.desc}</p>
-                            </div>
-                          </a>
-                        ))}
-                      </div>
+              <div className="w-[720px] bg-popover border border-border rounded-xl shadow-2xl p-6 grid grid-cols-3 gap-6">
+                {solucoesColumns.map((col) => (
+                  <div key={col.title}>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                      {col.title}
+                    </p>
+                    <div className="space-y-1">
+                      {col.items.map((item) => (
+                        <DropdownLink key={item.label} item={item} onAnchor={handleAnchor} />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            </DropdownTrigger>
 
-            {/* Para quem é? */}
-            <div
-              className="relative"
-              onMouseEnter={openAudience}
-              onMouseLeave={closeAudience}
+            {/* Recursos */}
+            <DropdownTrigger
+              label="Recursos"
+              id="recursos"
+              activeDropdown={activeDropdown}
+              onOpen={openDropdown}
+              onClose={closeDropdown}
             >
-              <button
-                className={cn(
-                  'flex items-center gap-1 text-sm font-medium px-3 py-2 rounded-md transition-colors',
-                  textMuted
-                )}
-              >
-                Para quem é?
-                <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', audienceOpen && 'rotate-180')} />
-              </button>
+              <div className="w-[340px] bg-popover border border-border rounded-xl shadow-2xl p-3 space-y-1">
+                {recursosItems.map((item) => (
+                  <DropdownLink key={item.label} item={item} onAnchor={handleAnchor} />
+                ))}
+              </div>
+            </DropdownTrigger>
 
-              <div
-                className={cn(
-                  'absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200',
-                  audienceOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2 pointer-events-none'
-                )}
-              >
-                <div className="w-[320px] bg-popover border border-border rounded-xl shadow-2xl p-3 space-y-1">
-                  {audienceLinks.map((item) => (
+            {/* Empresa */}
+            <DropdownTrigger
+              label="Empresa"
+              id="empresa"
+              activeDropdown={activeDropdown}
+              onOpen={openDropdown}
+              onClose={closeDropdown}
+            >
+              <div className="w-[340px] bg-popover border border-border rounded-xl shadow-2xl p-3 space-y-1">
+                {empresaItems.map((item) => (
+                  item.isExternal ? (
                     <Link
                       key={item.label}
                       to={item.href}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/10 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors group"
                     >
                       <div className="p-1.5 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
                         <item.icon className="h-4 w-4" />
@@ -221,32 +192,21 @@ export function LandingHeader() {
                         <p className="text-xs text-muted-foreground">{item.desc}</p>
                       </div>
                     </Link>
-                  ))}
-                </div>
+                  ) : (
+                    <DropdownLink key={item.label} item={item} onAnchor={handleAnchor} />
+                  )
+                ))}
               </div>
-            </div>
+            </DropdownTrigger>
 
-            {/* Simple links */}
-            {simpleLinks.map((link) =>
-              link.external ? (
-                <Link
-                  key={link.label}
-                  to={link.href}
-                  className={cn('text-sm font-medium px-3 py-2 rounded-md transition-colors', textMuted)}
-                >
-                  {link.label}
-                </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={(e) => handleAnchor(e, link.href)}
-                  className={cn('text-sm font-medium px-3 py-2 rounded-md transition-colors', textMuted)}
-                >
-                  {link.label}
-                </a>
-              )
-            )}
+            {/* Preços */}
+            <a
+              href="#pricing"
+              onClick={(e) => handleAnchor(e, '#pricing')}
+              className="text-sm font-medium px-3 py-2 rounded-md transition-colors text-muted-foreground hover:text-foreground"
+            >
+              Preços
+            </a>
           </nav>
 
           {/* ── Desktop CTAs ── */}
@@ -265,18 +225,14 @@ export function LandingHeader() {
                     asChild
                     variant="ghost"
                     size="sm"
-                    className={cn(
-                      scrolled
-                        ? 'text-foreground hover:bg-muted'
-                        : 'text-primary-foreground hover:bg-white/10'
-                    )}
+                    className="text-foreground hover:bg-muted"
                   >
                     <Link to="/auth">
                       <LogIn className="h-4 w-4 mr-2" />
                       Entrar
                     </Link>
                   </Button>
-                  <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-semibold shadow-lg">
+                  <Button asChild size="sm" className="bg-primary hover:bg-primary/90 font-semibold shadow-md">
                     <Link to="/auth">Experimentar Grátis</Link>
                   </Button>
                 </>
@@ -291,9 +247,9 @@ export function LandingHeader() {
             aria-label="Menu"
           >
             {mobileOpen ? (
-              <X className={cn('h-6 w-6', textColor)} />
+              <X className="h-6 w-6 text-foreground" />
             ) : (
-              <Menu className={cn('h-6 w-6', textColor)} />
+              <Menu className="h-6 w-6 text-foreground" />
             )}
           </button>
         </div>
@@ -301,58 +257,72 @@ export function LandingHeader() {
 
       {/* ── Mobile Drawer ── */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 top-16 z-40 bg-background/98 backdrop-blur-md overflow-y-auto">
+        <div className="md:hidden fixed inset-0 top-16 z-40 bg-background overflow-y-auto">
           <nav className="container mx-auto px-4 py-6 flex flex-col gap-2">
-            {/* Funcionalidades accordion */}
-            <button
-              onClick={() => setMobileMegaOpen(!mobileMegaOpen)}
-              className="flex items-center justify-between w-full py-3 text-foreground font-semibold text-base border-b border-border"
+            <MobileAccordion
+              id="solucoes"
+              label="Soluções"
+              active={mobileAccordion}
+              onToggle={toggleMobileAccordion}
             >
-              Funcionalidades
-              <ChevronDown className={cn('h-4 w-4 transition-transform', mobileMegaOpen && 'rotate-180')} />
-            </button>
-            {mobileMegaOpen && (
-              <div className="space-y-4 pb-3 pl-2">
-                {megaMenuColumns.map((col) => (
-                  <div key={col.title}>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-3">
-                      {col.title}
-                    </p>
-                    {col.items.map((item) => (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        onClick={(e) => handleAnchor(e, item.href)}
-                        className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-accent/10"
-                      >
-                        <item.icon className="h-4 w-4 text-primary shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{item.label}</p>
-                          <p className="text-xs text-muted-foreground">{item.desc}</p>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
+              {solucoesColumns.map((col) => (
+                <div key={col.title}>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-3">
+                    {col.title}
+                  </p>
+                  {col.items.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      onClick={(e) => handleAnchor(e, item.href)}
+                      className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted"
+                    >
+                      <item.icon className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              ))}
+            </MobileAccordion>
 
-            {/* Para quem é? accordion */}
-            <button
-              onClick={() => setMobileAudienceOpen(!mobileAudienceOpen)}
-              className="flex items-center justify-between w-full py-3 text-foreground font-semibold text-base border-b border-border"
+            <MobileAccordion
+              id="recursos"
+              label="Recursos"
+              active={mobileAccordion}
+              onToggle={toggleMobileAccordion}
             >
-              Para quem é?
-              <ChevronDown className={cn('h-4 w-4 transition-transform', mobileAudienceOpen && 'rotate-180')} />
-            </button>
-            {mobileAudienceOpen && (
-              <div className="space-y-1 pb-3 pl-2">
-                {audienceLinks.map((item) => (
+              {recursosItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={(e) => handleAnchor(e, item.href)}
+                  className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted"
+                >
+                  <item.icon className="h-4 w-4 text-primary shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </a>
+              ))}
+            </MobileAccordion>
+
+            <MobileAccordion
+              id="empresa"
+              label="Empresa"
+              active={mobileAccordion}
+              onToggle={toggleMobileAccordion}
+            >
+              {empresaItems.map((item) => (
+                item.isExternal ? (
                   <Link
                     key={item.label}
                     to={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-accent/10"
+                    className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted"
                   >
                     <item.icon className="h-4 w-4 text-primary shrink-0" />
                     <div>
@@ -360,32 +330,30 @@ export function LandingHeader() {
                       <p className="text-xs text-muted-foreground">{item.desc}</p>
                     </div>
                   </Link>
-                ))}
-              </div>
-            )}
+                ) : (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    onClick={(e) => handleAnchor(e, item.href)}
+                    className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted"
+                  >
+                    <item.icon className="h-4 w-4 text-primary shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </a>
+                )
+              ))}
+            </MobileAccordion>
 
-            {/* Simple links */}
-            {simpleLinks.map((link) =>
-              link.external ? (
-                <Link
-                  key={link.label}
-                  to={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="py-3 text-foreground font-semibold text-base border-b border-border"
-                >
-                  {link.label}
-                </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={(e) => { handleAnchor(e, link.href); }}
-                  className="py-3 text-foreground font-semibold text-base border-b border-border"
-                >
-                  {link.label}
-                </a>
-              )
-            )}
+            <a
+              href="#pricing"
+              onClick={(e) => handleAnchor(e, '#pricing')}
+              className="py-3 text-foreground font-semibold text-base border-b border-border"
+            >
+              Preços
+            </a>
 
             {/* Mobile CTAs */}
             <div className="flex flex-col gap-3 pt-4 mt-2">
@@ -417,5 +385,96 @@ export function LandingHeader() {
         </div>
       )}
     </header>
+  );
+}
+
+/* ── Sub-components ── */
+
+function DropdownTrigger({
+  label,
+  id,
+  activeDropdown,
+  onOpen,
+  onClose,
+  children,
+}: {
+  label: string;
+  id: string;
+  activeDropdown: string | null;
+  onOpen: (id: string) => void;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const isOpen = activeDropdown === id;
+  return (
+    <div className="relative" onMouseEnter={() => onOpen(id)} onMouseLeave={onClose}>
+      <button
+        className="flex items-center gap-1 text-sm font-medium px-3 py-2 rounded-md transition-colors text-muted-foreground hover:text-foreground"
+      >
+        {label}
+        <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', isOpen && 'rotate-180')} />
+      </button>
+      <div
+        className={cn(
+          'absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200',
+          isOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2 pointer-events-none'
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DropdownLink({
+  item,
+  onAnchor,
+}: {
+  item: { icon: React.ComponentType<{ className?: string }>; label: string; desc: string; href: string };
+  onAnchor: (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <a
+      href={item.href}
+      onClick={(e) => onAnchor(e, item.href)}
+      className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted transition-colors group"
+    >
+      <div className="mt-0.5 p-1.5 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-foreground">{item.label}</p>
+        <p className="text-xs text-muted-foreground">{item.desc}</p>
+      </div>
+    </a>
+  );
+}
+
+function MobileAccordion({
+  id,
+  label,
+  active,
+  onToggle,
+  children,
+}: {
+  id: string;
+  label: string;
+  active: string | null;
+  onToggle: (id: string) => void;
+  children: React.ReactNode;
+}) {
+  const isOpen = active === id;
+  return (
+    <>
+      <button
+        onClick={() => onToggle(id)}
+        className="flex items-center justify-between w-full py-3 text-foreground font-semibold text-base border-b border-border"
+      >
+        {label}
+        <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />
+      </button>
+      {isOpen && <div className="space-y-1 pb-3 pl-2">{children}</div>}
+    </>
   );
 }
