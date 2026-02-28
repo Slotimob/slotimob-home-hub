@@ -96,8 +96,8 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [injected, setInjected] = useState(false);
 
-  // Fetch marketing settings from DB (public read for category 'marketing')
-  const { data: dbSettings } = useQuery({
+  // Fetch marketing settings from DB with error fallback
+  const { data: dbSettings, isError, isFetched } = useQuery({
     queryKey: ['marketing-settings'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -112,24 +112,26 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
       return map;
     },
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
-  // Inject scripts once DB settings are resolved (DB > env fallback)
+  // Inject scripts once DB settings are resolved OR on error (env fallback)
   useEffect(() => {
     if (injected) return;
-    // Wait for query to settle (data or empty)
-    if (dbSettings === undefined) return;
+    // Wait until query has settled (success or error)
+    if (!isFetched) return;
 
-    const gtmId = dbSettings?.gtm_id || ENV_GTM_ID || '';
-    const pixelId = dbSettings?.pixel_id || ENV_PIXEL_ID || '';
-    const gaId = dbSettings?.ga_id || '';
+    const settings = isError ? {} : (dbSettings || {});
+    const gtmId = settings.gtm_id || ENV_GTM_ID || '';
+    const pixelId = settings.pixel_id || ENV_PIXEL_ID || '';
+    const gaId = settings.ga_id || '';
 
     if (gtmId) injectGTM(gtmId);
     if (pixelId) injectPixel(pixelId);
     if (gaId) injectGA(gaId);
 
     setInjected(true);
-  }, [dbSettings, injected]);
+  }, [dbSettings, isError, isFetched, injected]);
 
   // Track page views on route change
   useEffect(() => {
