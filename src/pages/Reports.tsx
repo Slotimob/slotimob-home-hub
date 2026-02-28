@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startOfMonth, subMonths } from 'date-fns';
-import { Building2, FileText, ShieldAlert, Users, Wallet } from 'lucide-react';
+import { Building2, FileText, MessageSquare, ShieldAlert, Users, Wallet } from 'lucide-react';
 
 import { AppLayout } from '@/components/AppLayout';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ import { ReportsCrmSection } from '@/components/reports/ReportsCrmSection';
 import { ReportsDateFilter } from '@/components/reports/ReportsDateFilter';
 import { ReportsFinanceSection } from '@/components/reports/ReportsFinanceSection';
 import { ReportsFiscalSection } from '@/components/reports/ReportsFiscalSection';
+import { ReportsWhatsAppSection } from '@/components/reports/ReportsWhatsAppSection';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -135,6 +136,13 @@ const Reports = () => {
                 <span className="hidden xs:inline">Fiscal/</span>
                 DIMOB
               </TabsTrigger>
+              <TabsTrigger
+                value="whatsapp"
+                className="flex items-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <MessageSquare className="h-4 w-4 shrink-0" />
+                <span>WhatsApp</span>
+              </TabsTrigger>
           </ScrollableTabsList>
 
           {/* Tab content */}
@@ -156,6 +164,10 @@ const Reports = () => {
 
           <TabsContent value="fiscal" className="mt-0">
             <ReportsFiscalSection dateRange={dateRange} userName={userName} selectedUnitId={unitIdForChildren} />
+          </TabsContent>
+
+          <TabsContent value="whatsapp" className="mt-0">
+            <ReportsWhatsAppSection dateRange={dateRange} userName={userName} selectedUnitId={unitIdForChildren} />
           </TabsContent>
         </Tabs>
       </div>
