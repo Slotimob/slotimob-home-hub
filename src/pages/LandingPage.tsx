@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { SEOHead } from '@/components/SEOHead';
+import { LandingThemeProvider } from '@/components/LandingThemeProvider';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
@@ -15,7 +16,7 @@ export default function LandingPage() {
   const segment = getSegment(segmentSlug);
 
   return (
-    <>
+    <LandingThemeProvider>
       <SEOHead
         title={segment.seo.title}
         description={segment.seo.description}
@@ -31,6 +32,6 @@ export default function LandingPage() {
         <CTASection utmSource={segment.utmSource} />
         <FooterSection />
       </main>
-    </>
+    </LandingThemeProvider>
   );
 }

@@ -34,10 +34,13 @@
 
   <body>
     <script>
-      // Apply saved theme immediately to prevent flash
+      // Apply saved theme only for returning authenticated users.
+      // Landing page overrides this with its own fixed dark theme.
       (function() {
         var t = localStorage.getItem('slotimob-theme');
-        if (t) document.documentElement.setAttribute('data-theme', t);
+        // Only apply if we're NOT on the landing (/ or /lp/*)
+        var isLanding = window.location.pathname === '/' || window.location.pathname.startsWith('/lp/');
+        if (t && !isLanding) document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
     <div id="root"></div>
