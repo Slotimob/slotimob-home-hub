@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { CockpitOverviewTab } from '@/components/cockpit/CockpitOverviewTab';
 import { CockpitSupportTab } from '@/components/cockpit/CockpitSupportTab';
 import { CockpitBlogTab } from '@/components/cockpit/CockpitBlogTab';
+import { CockpitSettingsTab } from '@/components/cockpit/CockpitSettingsTab';
 
 interface Organization {
   user_id: string;
@@ -280,6 +281,11 @@ const AdminCockpit = () => {
                 <FileText className="h-4 w-4" /> Blog
               </TabsTrigger>
             )}
+            {isSuperAdmin && (
+              <TabsTrigger value="settings" className="gap-2 min-h-[44px]">
+                <Settings2 className="h-4 w-4" /> Configurações
+              </TabsTrigger>
+            )}
           </ScrollableTabsList>
 
           {/* Overview Tab */}
@@ -485,6 +491,13 @@ const AdminCockpit = () => {
           {isSuperAdmin && (
             <TabsContent value="blog">
               <CockpitBlogTab />
+            </TabsContent>
+          )}
+
+          {/* Settings Tab - super_admin only */}
+          {isSuperAdmin && (
+            <TabsContent value="settings">
+              <CockpitSettingsTab />
             </TabsContent>
           )}
         </Tabs>

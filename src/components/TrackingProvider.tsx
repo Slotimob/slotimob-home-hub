@@ -1,8 +1,10 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-const GTM_ID = import.meta.env.VITE_GTM_ID;
-const PIXEL_ID = import.meta.env.VITE_PIXEL_ID;
+const ENV_GTM_ID = import.meta.env.VITE_GTM_ID;
+const ENV_PIXEL_ID = import.meta.env.VITE_PIXEL_ID;
 
 // Extend window for tracking globals
 declare global {
@@ -16,7 +18,6 @@ declare global {
 function injectGTM(id: string) {
   if (!id || document.getElementById('gtm-script')) return;
 
-  // GTM script
   const script = document.createElement('script');
   script.id = 'gtm-script';
   script.innerHTML = `
@@ -28,7 +29,6 @@ function injectGTM(id: string) {
   `;
   document.head.appendChild(script);
 
-  // GTM noscript
   const noscript = document.createElement('noscript');
   noscript.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${id}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
   document.body.insertBefore(noscript, document.body.firstChild);
@@ -55,13 +55,30 @@ function injectPixel(id: string) {
   document.body.appendChild(noscript);
 }
 
+function injectGA(id: string) {
+  if (!id || document.getElementById('ga-script')) return;
+
+  const script = document.createElement('script');
+  script.id = 'ga-script';
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+  document.head.appendChild(script);
+
+  const inline = document.createElement('script');
+  inline.innerHTML = `
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '${id}');
+  `;
+  document.head.appendChild(inline);
+}
+
 /** Fire a custom tracking event to both GTM dataLayer and Facebook Pixel */
 export function trackEvent(eventName: string, params?: Record<string, any>) {
-  // GTM
   if (typeof window !== 'undefined' && window.dataLayer) {
     window.dataLayer.push({ event: eventName, ...params });
   }
-  // Facebook Pixel
   if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('trackCustom', eventName, params);
   }
@@ -77,23 +94,51 @@ export function trackLeadSignup(source?: string) {
 
 export function TrackingProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const [injected, setInjected] = useState(false);
 
-  // Inject scripts once
+  // Fetch marketing settings from DB (public read for category 'marketing')
+  const { data: dbSettings } = useQuery({
+    queryKey: ['marketing-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('key, value')
+        .eq('category', 'marketing');
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((row: any) => {
+        if (row.value) map[row.key] = row.value;
+      });
+      return map;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Inject scripts once DB settings are resolved (DB > env fallback)
   useEffect(() => {
-    if (GTM_ID) injectGTM(GTM_ID);
-    if (PIXEL_ID) injectPixel(PIXEL_ID);
-  }, []);
+    if (injected) return;
+    // Wait for query to settle (data or empty)
+    if (dbSettings === undefined) return;
+
+    const gtmId = dbSettings?.gtm_id || ENV_GTM_ID || '';
+    const pixelId = dbSettings?.pixel_id || ENV_PIXEL_ID || '';
+    const gaId = dbSettings?.ga_id || '';
+
+    if (gtmId) injectGTM(gtmId);
+    if (pixelId) injectPixel(pixelId);
+    if (gaId) injectGA(gaId);
+
+    setInjected(true);
+  }, [dbSettings, injected]);
 
   // Track page views on route change
   useEffect(() => {
-    // GTM virtual pageview
     if (window.dataLayer) {
       window.dataLayer.push({
         event: 'ViewPage',
         page_path: location.pathname + location.search,
       });
     }
-    // FB Pixel pageview
     if (window.fbq) {
       window.fbq('track', 'PageView');
     }
