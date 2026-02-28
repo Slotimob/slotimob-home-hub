@@ -3,11 +3,10 @@ import { SEOHead } from '@/components/SEOHead';
 import { LandingThemeProvider } from '@/components/LandingThemeProvider';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroSection } from '@/components/landing/HeroSection';
-import { CrmProductTour } from '@/components/landing/CrmProductTour';
-import { LeadJourneyInfographic } from '@/components/landing/LeadJourneyInfographic';
-import { DashboardMockupSection } from '@/components/landing/DashboardMockupSection';
-import { FeaturesSection } from '@/components/landing/FeaturesSection';
-import { DemoSection } from '@/components/landing/DemoSection';
+import { IntegrationsStrip } from '@/components/landing/IntegrationsStrip';
+import { FeatureTabsSection } from '@/components/landing/FeatureTabsSection';
+import { AudienceSegments } from '@/components/landing/AudienceSegments';
+import { InfrastructureBenefits } from '@/components/landing/InfrastructureBenefits';
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import { CTASection } from '@/components/landing/CTASection';
@@ -28,11 +27,10 @@ export default function LandingPage() {
       <LandingHeader />
       <main className="min-h-screen scroll-smooth bg-background">
         <HeroSection segment={segment} />
-        <CrmProductTour />
-        <LeadJourneyInfographic />
-        <DashboardMockupSection />
-        <FeaturesSection />
-        <DemoSection />
+        <IntegrationsStrip />
+        <FeatureTabsSection />
+        <AudienceSegments />
+        <InfrastructureBenefits />
         <TestimonialsSection />
         <PricingSection />
         <CTASection utmSource={segment.utmSource} />
