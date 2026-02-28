@@ -6,12 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, MessageSquarePlus, MessageCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Search, MessageSquarePlus, MessageCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 import { NewConversationDialog } from './NewConversationDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
@@ -50,6 +53,23 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [newConvOpen, setNewConvOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const { toast } = useToast();
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
+        body: { action: 'sync_recent' },
+      });
+      if (error) throw error;
+      toast({ title: 'Sincronização concluída', description: data?.message || 'Conversas atualizadas.' });
+    } catch (err: any) {
+      toast({ title: 'Erro ao sincronizar', description: err.message, variant: 'destructive' });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const filtered = conversations.filter((conv) => {
     const displayName = conv.contact_name || conv.contact_phone;
@@ -70,7 +90,25 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
       {/* Header */}
       <div className="p-4 border-b space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">Mensagens</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground">Mensagens</h2>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={handleSync}
+                    disabled={syncing}
+                  >
+                    <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Sincronizar conversas</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Button size="sm" variant="default" className="gap-1.5" onClick={() => setNewConvOpen(true)}>
             <MessageSquarePlus className="h-4 w-4" />
             <span className="hidden sm:inline">Nova Conversa</span>
