@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { SlotiLogo } from '@/components/SlotiLogo';
@@ -32,9 +33,63 @@ const step2Schema = z.object({
   phone: z.string().optional()
 });
 
+// CPF validation (Brazilian algorithm)
+const isValidCPF = (cpf: string): boolean => {
+  const digits = cpf.replace(/\D/g, '');
+  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
+  let remainder = (sum * 10) % 11;
+  if (remainder === 10) remainder = 0;
+  if (remainder !== parseInt(digits[9])) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
+  remainder = (sum * 10) % 11;
+  if (remainder === 10) remainder = 0;
+  return remainder === parseInt(digits[10]);
+};
+
+// CNPJ validation (Brazilian algorithm)
+const isValidCNPJ = (cnpj: string): boolean => {
+  const digits = cnpj.replace(/\D/g, '');
+  if (digits.length !== 14 || /^(\d)\1{13}$/.test(digits)) return false;
+  const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += parseInt(digits[i]) * weights1[i];
+  let remainder = sum % 11;
+  if (parseInt(digits[12]) !== (remainder < 2 ? 0 : 11 - remainder)) return false;
+  sum = 0;
+  for (let i = 0; i < 13; i++) sum += parseInt(digits[i]) * weights2[i];
+  remainder = sum % 11;
+  return parseInt(digits[13]) === (remainder < 2 ? 0 : 11 - remainder);
+};
+
 const step3Schema = z.object({
-  companyName: z.string().optional(),
+  personType: z.enum(['pf', 'pj']),
+  cpf: z.string().optional(),
+  cnpj: z.string().optional(),
+  businessName: z.string().optional(),
   creci: z.string().optional()
+}).superRefine((data, ctx) => {
+  if (data.personType === 'pf') {
+    const cpfDigits = (data.cpf || '').replace(/\D/g, '');
+    if (!cpfDigits || cpfDigits.length !== 11) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CPF deve ter 11 dígitos', path: ['cpf'] });
+    } else if (!isValidCPF(cpfDigits)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CPF inválido', path: ['cpf'] });
+    }
+  } else {
+    const cnpjDigits = (data.cnpj || '').replace(/\D/g, '');
+    if (!cnpjDigits || cnpjDigits.length !== 14) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CNPJ deve ter 14 dígitos', path: ['cnpj'] });
+    } else if (!isValidCNPJ(cnpjDigits)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CNPJ inválido', path: ['cnpj'] });
+    }
+    if (!data.businessName || data.businessName.trim().length < 2) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Razão Social é obrigatória para PJ', path: ['businessName'] });
+    }
+  }
 });
 
 const getAuthErrorMessage = (error: any): { title: string; description: string } => {
@@ -62,6 +117,25 @@ const formatPhone = (value: string) => {
   if (digits.length <= 2) return digits;
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+// CPF mask helper
+const formatCPF = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
+// CNPJ mask helper
+const formatCNPJ = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 14);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
 };
 
 const BENEFITS = [
@@ -93,7 +167,8 @@ const Auth = () => {
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({
-    email: '', password: '', fullName: '', phone: '', companyName: '', creci: ''
+    email: '', password: '', fullName: '', phone: '', companyName: '', creci: '',
+    personType: 'pf' as 'pf' | 'pj', cpf: '', cnpj: '', businessName: ''
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [honeypot, setHoneypot] = useState('');
@@ -234,7 +309,7 @@ const Auth = () => {
       } else if (step === 2) {
         step2Schema.parse({ fullName: signupForm.fullName, phone: signupForm.phone });
       } else if (step === 3) {
-        step3Schema.parse({ companyName: signupForm.companyName, creci: signupForm.creci });
+        step3Schema.parse({ personType: signupForm.personType, cpf: signupForm.cpf, cnpj: signupForm.cnpj, businessName: signupForm.businessName, creci: signupForm.creci });
         if (!acceptedTerms) {
           toast({ title: 'Termos não aceitos', description: 'Aceite os Termos de Uso para continuar.', variant: 'destructive' });
           return false;
@@ -284,8 +359,12 @@ const Auth = () => {
           data: {
             full_name: signupForm.fullName,
             phone: signupForm.phone,
-            company_name: signupForm.companyName,
+            company_name: signupForm.personType === 'pj' ? signupForm.businessName : signupForm.companyName,
             creci: signupForm.creci,
+            person_type: signupForm.personType,
+            cpf: signupForm.personType === 'pf' ? signupForm.cpf.replace(/\D/g, '') : null,
+            cnpj: signupForm.personType === 'pj' ? signupForm.cnpj.replace(/\D/g, '') : null,
+            business_name: signupForm.personType === 'pj' ? signupForm.businessName : null,
             terms_accepted_at: new Date().toISOString(),
             terms_version: '1.0'
           }
@@ -294,16 +373,24 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
-        await supabase.from('profiles').update({
+        const profileUpdate: Record<string, any> = {
           terms_accepted_at: new Date().toISOString(),
-          terms_version: '1.0'
-        }).eq('id', data.user.id);
+          terms_version: '1.0',
+          person_type: signupForm.personType,
+        };
+        if (signupForm.personType === 'pf') {
+          profileUpdate.cpf = signupForm.cpf.replace(/\D/g, '');
+        } else {
+          profileUpdate.cnpj = signupForm.cnpj.replace(/\D/g, '');
+          profileUpdate.business_name = signupForm.businessName;
+        }
+        await supabase.from('profiles').update(profileUpdate).eq('id', data.user.id);
       }
 
       if (data.user && !data.session) {
         setPendingVerificationEmail(signupForm.email);
         setShowVerificationMessage(true);
-        setSignupForm({ email: '', password: '', fullName: '', phone: '', companyName: '', creci: '' });
+        setSignupForm({ email: '', password: '', fullName: '', phone: '', companyName: '', creci: '', personType: 'pf', cpf: '', cnpj: '', businessName: '' });
         setAcceptedTerms(false);
         setSignupStep(1);
       } else {
@@ -349,7 +436,7 @@ const Auth = () => {
     </svg>
   );
 
-  const stepLabels = ['Credenciais', 'Identificação', 'Ambiente'];
+  const stepLabels = ['Credenciais', 'Perfil', 'Dados Fiscais'];
 
   // ─── Render helpers ───
 
@@ -447,19 +534,70 @@ const Auth = () => {
 
   const renderSignupStep3 = () => (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="signup-company">Nome da Imobiliária / Empresa</Label>
-        <Input
-          id="signup-company"
-          type="text"
-          placeholder='Ex: "Imob Premium" ou deixe vazio para uso individual'
-          value={signupForm.companyName}
-          onChange={e => setSignupForm({ ...signupForm, companyName: e.target.value })}
-        />
-        <p className="text-xs text-muted-foreground">Opcional. Deixe vazio para uso individual.</p>
+      {/* Person type toggle */}
+      <div className="rounded-lg border border-border p-4 space-y-3">
+        <Label className="text-sm font-medium">Tipo de pessoa</Label>
+        <div className="flex items-center justify-between">
+          <span className={`text-sm ${signupForm.personType === 'pf' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+            Pessoa Física (CPF)
+          </span>
+          <Switch
+            checked={signupForm.personType === 'pj'}
+            onCheckedChange={checked => setSignupForm({ ...signupForm, personType: checked ? 'pj' : 'pf' })}
+          />
+          <span className={`text-sm ${signupForm.personType === 'pj' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+            Pessoa Jurídica (CNPJ)
+          </span>
+        </div>
       </div>
+
+      {signupForm.personType === 'pf' ? (
+        <div className="space-y-2">
+          <Label htmlFor="signup-cpf">CPF</Label>
+          <Input
+            id="signup-cpf"
+            type="text"
+            placeholder="000.000.000-00"
+            value={signupForm.cpf}
+            onChange={e => setSignupForm({ ...signupForm, cpf: formatCPF(e.target.value) })}
+            className={fieldErrors.cpf ? 'border-destructive' : ''}
+            required
+          />
+          {fieldErrors.cpf && <p className="text-xs text-destructive">{fieldErrors.cpf}</p>}
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="signup-cnpj">CNPJ</Label>
+            <Input
+              id="signup-cnpj"
+              type="text"
+              placeholder="00.000.000/0000-00"
+              value={signupForm.cnpj}
+              onChange={e => setSignupForm({ ...signupForm, cnpj: formatCNPJ(e.target.value) })}
+              className={fieldErrors.cnpj ? 'border-destructive' : ''}
+              required
+            />
+            {fieldErrors.cnpj && <p className="text-xs text-destructive">{fieldErrors.cnpj}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="signup-business-name">Razão Social / Nome da Imobiliária</Label>
+            <Input
+              id="signup-business-name"
+              type="text"
+              placeholder="Ex: Imobiliária Premium LTDA"
+              value={signupForm.businessName}
+              onChange={e => setSignupForm({ ...signupForm, businessName: e.target.value })}
+              className={fieldErrors.businessName ? 'border-destructive' : ''}
+              required
+            />
+            {fieldErrors.businessName && <p className="text-xs text-destructive">{fieldErrors.businessName}</p>}
+          </div>
+        </>
+      )}
+
       <div className="space-y-2">
-        <Label htmlFor="signup-creci">CRECI</Label>
+        <Label htmlFor="signup-creci">CRECI <span className="text-muted-foreground font-normal">(opcional)</span></Label>
         <Input
           id="signup-creci"
           type="text"
@@ -468,6 +606,7 @@ const Auth = () => {
           onChange={e => setSignupForm({ ...signupForm, creci: e.target.value })}
         />
       </div>
+
       {/* Honeypot */}
       <div className="absolute -left-[9999px] opacity-0 pointer-events-none" aria-hidden="true">
         <Label htmlFor="signup-website">Website</Label>
@@ -487,7 +626,7 @@ const Auth = () => {
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
         </Button>
         <Button type="submit" className="flex-1" disabled={loading || !acceptedTerms}>
-          {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...</> : 'Criar conta'}
+          {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...</> : 'Criar minha conta'}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground text-center">
