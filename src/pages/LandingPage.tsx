@@ -23,7 +23,7 @@ export default function LandingPage() {
         path={segment.slug ? `/lp/${segment.slug}` : '/'}
       />
       <LandingHeader />
-      <main className="min-h-screen scroll-smooth">
+      <main className="min-h-screen scroll-smooth bg-background">
         <HeroSection segment={segment} />
         <FeaturesSection />
         <DemoSection />
