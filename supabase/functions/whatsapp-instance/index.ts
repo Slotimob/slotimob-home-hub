@@ -123,17 +123,18 @@ serve(async (req) => {
       console.log('Create response status:', createRes.status, 'keys:', Object.keys(createData));
       let finalQrCode = extractQrBase64(createData);
 
-      // Step 4: Registrar webhook via /webhook/set/{instanceName}
+      // Step 4: Registrar webhook via /webhook/set/{instanceName} (requisição SEPARADA)
       try {
         const webhookSetPayload = {
+          enabled: true,
           url: webhookUrl,
-          webhook_by_events: true,
-          webhook_base64: true,
+          byEvents: true,
+          base64: true,
+          webhookByEvents: true,
           events: [
+            'QRCODE_UPDATED',
             'CONNECTION_UPDATE',
             'MESSAGES_UPSERT',
-            'SEND_MESSAGE',
-            'QRCODE_UPDATED',
           ],
         };
 
@@ -252,7 +253,7 @@ serve(async (req) => {
     if (action === 'status') {
       const { data: conn } = await supabaseClient
         .from('whatsapp_connections')
-        .select('instance_name')
+        .select('instance_name, status, connection_status')
         .eq('broker_id', userId)
         .single();
 
@@ -267,8 +268,24 @@ serve(async (req) => {
         headers: { 'apikey': evolutionApiKey },
       });
       const statusData = await statusRes.json();
+      const apiState = statusData?.instance?.state || statusData?.state;
+      console.log(`Status check: apiState=${apiState} dbStatus=${conn.status}`);
 
-      return new Response(JSON.stringify({ success: true, state: statusData?.instance?.state }), {
+      // Se a API diz "open" mas o DB ainda não reflete, sincronizar agora
+      if ((apiState === 'open' || apiState === 'connected') && conn.status !== 'connected') {
+        console.log('Sincronizando DB: marcando como connected');
+        await supabaseAdmin
+          .from('whatsapp_connections')
+          .update({
+            status: 'connected',
+            connection_status: 'open',
+            qr_code_base64: null,
+            connected_at: new Date().toISOString(),
+          })
+          .eq('broker_id', userId);
+      }
+
+      return new Response(JSON.stringify({ success: true, state: apiState, dbStatus: conn.status }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

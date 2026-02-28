@@ -115,8 +115,12 @@ async function processEvent(supabaseAdmin: any, event: string, instanceName: str
 
 // ─── CONNECTION UPDATE ───
 async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, data: any) {
-  const state = data?.state;
-  if (!state) return;
+  // Extração à prova de balas — Evolution v2.3.7 envia em formatos variados
+  const state = data?.state || data?.instance?.state || data?.status || data?.data?.state;
+  if (!state) {
+    console.log('handleConnectionUpdate: sem state no payload, keys:', JSON.stringify(Object.keys(data || {})));
+    return;
+  }
 
   console.log(`Connection update: instance=${instanceName} state=${state}`);
 
@@ -138,7 +142,7 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
     }
   }
 
-  if (state === 'open') {
+  if (state === 'open' || state === 'connected') {
     const { error } = await supabaseAdmin
       .from('whatsapp_connections')
       .update({

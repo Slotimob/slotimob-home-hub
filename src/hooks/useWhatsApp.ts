@@ -168,6 +168,26 @@ export function useWhatsAppSettingsConnection() {
     };
   }, [user]);
 
+  // Verificação manual do status (fallback se Realtime falhar)
+  const checkInstanceStatus = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
+        body: { action: 'status' },
+      });
+      if (error) throw error;
+      console.log('checkInstanceStatus result:', data);
+      // Se a API diz conectado, o status action já sincroniza o DB — basta refetch
+      if (data?.state === 'open' || data?.state === 'connected') {
+        await fetchConnection();
+        return { connected: true };
+      }
+      return { connected: false, state: data?.state };
+    } catch (e) {
+      console.error('checkInstanceStatus error:', e);
+      return { connected: false };
+    }
+  }, [fetchConnection]);
+
   return {
     connection,
     loading,
@@ -177,6 +197,7 @@ export function useWhatsAppSettingsConnection() {
     timedOut,
     setTimedOut,
     cancelRequest,
+    checkInstanceStatus,
     refetch: fetchConnection,
   };
 }
