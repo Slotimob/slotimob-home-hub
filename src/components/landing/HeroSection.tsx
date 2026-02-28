@@ -38,19 +38,19 @@ export function HeroSection({ segment = SEGMENTS.default }: HeroSectionProps) {
           {/* Trust badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-8">
             <Shield className="h-4 w-4" />
-            Plataforma segura com criptografia e auditoria completa
+            Seus dados protegidos com segurança bancária
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight">
-            O sistema de gestão imobiliária
+            Tudo que sua imobiliária precisa,
             <span className="block bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mt-1">
-              definitivo.
+              em um só lugar.
             </span>
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-            Centralize CRM, financeiro, contratos e WhatsApp em uma única plataforma. 
-            Aumente sua produtividade em até 3x e nunca mais perca um lead.
+            Clientes, vendas, financeiro e WhatsApp conectados em uma plataforma simples. 
+            Menos planilhas, mais fechamentos.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
@@ -60,7 +60,7 @@ export function HeroSection({ segment = SEGMENTS.default }: HeroSectionProps) {
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               <Link to={authUrl}>
-                Começar Teste Grátis
+                Quero modernizar minha imobiliária
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -73,7 +73,7 @@ export function HeroSection({ segment = SEGMENTS.default }: HeroSectionProps) {
             >
               <a href="#demo" onClick={(e) => { e.preventDefault(); document.querySelector('#demo')?.scrollIntoView({ behavior: 'smooth' }); }}>
                 <Play className="mr-2 h-5 w-5" />
-                Ver Demonstração
+                Ver como funciona
               </a>
             </Button>
           </div>

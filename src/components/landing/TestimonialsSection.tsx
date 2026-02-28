@@ -18,8 +18,8 @@ const testimonials = [
   },
   {
     name: 'Roberto Ferreira',
-    role: 'Gerente Imobiliária',
-    content: 'Consegui acompanhar toda a equipe em tempo real com a roleta de leads. A produtividade aumentou 40% no primeiro mês.',
+    role: 'Dono de Imobiliária',
+    content: 'Consigo acompanhar toda a equipe em tempo real. A distribuição automática de clientes aumentou a produtividade em 40% no primeiro mês.',
     rating: 5,
     initials: 'RF',
   },
@@ -31,13 +31,13 @@ export function TestimonialsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-14">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-            Depoimentos
+            Quem Usa, Recomenda
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Quem usa, recomenda
+            Resultados reais de quem já modernizou
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Corretores e imobiliárias de todo o Brasil já transformaram sua rotina.
+            Corretores e imobiliárias de todo o Brasil já transformaram sua rotina com o SLOTIMOB.
           </p>
         </div>
 

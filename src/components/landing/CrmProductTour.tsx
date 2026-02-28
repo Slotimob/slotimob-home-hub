@@ -48,7 +48,6 @@ function FeatureDetail({
       viewport={{ once: true, margin: '-60px' }}
       className="group relative rounded-2xl border border-border/50 bg-card p-8 hover:shadow-xl hover:border-primary/20 transition-all duration-300"
     >
-      {/* Icon */}
       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
         <Icon className="h-6 w-6 text-primary group-hover:text-primary-foreground" />
       </div>
@@ -56,7 +55,6 @@ function FeatureDetail({
       <h3 className="text-xl font-bold text-foreground mb-3">{title}</h3>
       <p className="text-muted-foreground leading-relaxed mb-5">{description}</p>
 
-      {/* Highlight chips */}
       <ul className="space-y-2">
         {highlights.map((h) => (
           <li key={h} className="flex items-start gap-2 text-sm text-foreground/80">
@@ -72,9 +70,9 @@ function FeatureDetail({
 /* ── Kanban Visual Mockup ── */
 function KanbanMockup() {
   const columns = [
-    { label: 'Prospecção', count: 8, value: 'R$ 2.4M', color: 'bg-blue-500/20 text-blue-700' },
-    { label: 'Visita Agendada', count: 5, value: 'R$ 1.8M', color: 'bg-amber-500/20 text-amber-700' },
-    { label: 'Proposta', count: 3, value: 'R$ 950K', color: 'bg-purple-500/20 text-purple-700' },
+    { label: 'Novos Clientes', count: 8, value: 'R$ 2.4M', color: 'bg-blue-500/20 text-blue-700' },
+    { label: 'Visita Marcada', count: 5, value: 'R$ 1.8M', color: 'bg-amber-500/20 text-amber-700' },
+    { label: 'Proposta Enviada', count: 3, value: 'R$ 950K', color: 'bg-purple-500/20 text-purple-700' },
     { label: 'Fechamento', count: 2, value: 'R$ 620K', color: 'bg-accent/20 text-accent' },
   ];
 
@@ -86,7 +84,6 @@ function KanbanMockup() {
       transition={{ duration: 0.6 }}
       className="rounded-2xl border border-border/50 bg-card shadow-xl overflow-hidden"
     >
-      {/* Browser bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/30">
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-destructive/40" />
@@ -100,7 +97,6 @@ function KanbanMockup() {
         </div>
       </div>
 
-      {/* Kanban columns */}
       <div className="p-4 grid grid-cols-4 gap-3">
         {columns.map((col) => (
           <div key={col.label} className="space-y-2">
@@ -111,7 +107,6 @@ function KanbanMockup() {
               </span>
             </div>
             <div className="text-[11px] text-muted-foreground font-medium">{col.value}</div>
-            {/* Mock cards */}
             {Array.from({ length: Math.min(col.count, 3) }).map((_, i) => (
               <div
                 key={i}
@@ -132,13 +127,13 @@ function KanbanMockup() {
   );
 }
 
-/* ── UTM Flow Diagram ── */
-function UtmFlowDiagram() {
+/* ── Lead Flow Diagram (simplified, no jargon) ── */
+function LeadFlowDiagram() {
   const steps = [
-    { icon: Globe, label: 'Anúncio', detail: 'Instagram / Google / Portal' },
-    { icon: Target, label: 'UTM Capturado', detail: 'source, medium, campaign' },
-    { icon: Users, label: 'Lead Criado', detail: 'Origem rastreada no perfil' },
-    { icon: BarChart3, label: 'ROI por Canal', detail: 'Custo/lead calculado' },
+    { icon: Globe, label: 'Anúncio', detail: 'Instagram, Google ou Portal' },
+    { icon: Target, label: 'Cliente chega', detail: 'Origem identificada' },
+    { icon: Users, label: 'Corretor recebe', detail: 'Distribuição automática' },
+    { icon: BarChart3, label: 'Resultado medido', detail: 'Você sabe o que funciona' },
   ];
 
   return (
@@ -151,7 +146,7 @@ function UtmFlowDiagram() {
     >
       <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
         <Target className="h-4 w-4 text-primary" />
-        Rastreamento de Origem — Fluxo Automático
+        Como o sistema encontra seus melhores clientes
       </h4>
       <div className="flex items-center justify-between gap-2">
         {steps.map((step, i) => (
@@ -187,7 +182,7 @@ export function CrmProductTour() {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-5"
           >
             <Zap className="h-3.5 w-3.5" />
-            CRM Imobiliário & Motor de Growth
+            Módulo de Vendas
           </motion.span>
 
           <motion.h2
@@ -197,9 +192,9 @@ export function CrmProductTour() {
             transition={{ delay: 0.1 }}
             className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-5 leading-tight"
           >
-            Rastreamento total:
+            Do primeiro clique do cliente
             <span className="block bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-              do anúncio à comissão.
+              até a assinatura do contrato.
             </span>
           </motion.h2>
 
@@ -210,16 +205,16 @@ export function CrmProductTour() {
             transition={{ delay: 0.2 }}
             className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto"
           >
-            Pare de perder leads em planilhas. Centralize prospecção, distribuição e negociação 
-            em um CRM construído exclusivamente para o mercado imobiliário — com rastreio de 
-            origem nativo e funil 100% personalizável.
+            O sistema persegue cada oportunidade para você. Sabe quem é o cliente, 
+            o que ele quer, e já abre o WhatsApp com a mensagem pronta. 
+            Você só precisa fechar o negócio.
           </motion.p>
         </div>
 
-        {/* Kanban visual + UTM flow */}
+        {/* Kanban visual + Lead flow */}
         <div className="max-w-5xl mx-auto space-y-6 mb-16">
           <KanbanMockup />
-          <UtmFlowDiagram />
+          <LeadFlowDiagram />
         </div>
 
         {/* Feature detail cards */}
@@ -227,72 +222,72 @@ export function CrmProductTour() {
           <FeatureDetail
             index={0}
             icon={Shuffle}
-            title="Roleta de Leads Inteligente"
-            description='Distribuição automática "Fair Share" para corretores logados. Balanceamento de carga garante equidade na equipe.'
+            title="Distribuição Automática de Clientes"
+            description="Nenhum lead fica esperando. O sistema distribui automaticamente para o próximo corretor disponível, garantindo que todos recebam oportunidades iguais."
             highlights={[
-              'Round-robin com prioridade por disponibilidade',
+              'Cada corretor recebe na sua vez, sem favoritismo',
               'Regras por tipo de imóvel ou região',
-              'Relatório de leads distribuídos por corretor',
+              'Você acompanha quem recebeu e quem converteu',
             ]}
           />
 
           <FeatureDetail
             index={1}
             icon={Target}
-            title="Rastreio UTM Nativo"
-            description="Cada lead carrega a origem completa: utm_source, utm_medium, utm_campaign e gclid. Sem integrações extras."
+            title="Saiba de onde vem cada cliente"
+            description="O sistema identifica automaticamente se o cliente veio do Instagram, Google ou portal — sem configuração extra. Você descobre quais anúncios trazem resultado de verdade."
             highlights={[
-              'Captura automática na URL de entrada',
-              'Persistência em sessionStorage por 24h',
-              'Métricas de custo por lead por canal',
+              'Identificação automática do canal de origem',
+              'Descubra qual campanha trouxe mais vendas',
+              'Pare de gastar com o que não funciona',
             ]}
           />
 
           <FeatureDetail
             index={2}
             icon={Filter}
-            title="Kanban de Negociações"
-            description="Funil visual com etapas 100% personalizáveis. Arraste deals entre colunas e veja valor consolidado por estágio."
+            title="Seu funil do jeito que você trabalha"
+            description="Monte as etapas da negociação como quiser. Arraste os clientes entre colunas e veja o valor total em cada fase — tudo visual e intuitivo."
             highlights={[
-              'Etapas customizáveis com drag & drop',
-              'Gatilhos automáticos de mudança de estágio',
-              'Classificação de temperatura (Quente/Morno/Frio)',
+              'Crie etapas personalizadas para seu processo',
+              'Mova negociações com arrastar e soltar',
+              'Veja quais clientes estão quentes, mornos ou frios',
             ]}
           />
 
           <FeatureDetail
             index={3}
             icon={Eye}
-            title="Visibilidade 360° do Lead"
-            description="Timeline completa de interações: WhatsApp, visitas, propostas e documentos vinculados ao perfil do contato."
+            title="Histórico completo de cada cliente"
+            description="Conversas de WhatsApp, visitas, propostas e documentos — tudo reunido em um só lugar. Qualquer pessoa da equipe pode continuar o atendimento sem perder o contexto."
             highlights={[
-              'Histórico de atividades unificado',
-              'Notas e anexos por negociação',
-              'Score de engajamento automático',
+              'Linha do tempo de tudo que aconteceu',
+              'Notas e arquivos organizados por negociação',
+              'Saiba o nível de interesse de cada cliente',
             ]}
           />
 
           <FeatureDetail
             index={4}
             icon={TrendingUp}
-            title="Métricas de Conversão"
-            description="Dashboard com taxa de conversão por etapa, tempo médio no funil e forecast de receita mensal."
+            title="Números que ajudam a decidir"
+            description="Veja quantos clientes avançam em cada etapa, quanto tempo levam para fechar e qual a previsão de faturamento do mês."
             highlights={[
-              'Funil de conversão visual',
-              'Previsão de receita (forecast)',
-              'Comparativo mensal de performance',
+              'Funil de conversão visual e simples',
+              'Previsão de receita para o mês',
+              'Compare a performance mês a mês',
             ]}
           />
 
           <FeatureDetail
             index={5}
             icon={DollarSign}
-            title="Comissões & Fechamento"
-            description="Calcule comissões automaticamente ao fechar negócios. Registre motivos de perda para análise estratégica."
+            title="Comissões calculadas na hora"
+            description="Fechou o negócio? O sistema já calcula a comissão. Perdeu uma venda? Registre o motivo e aprenda com cada oportunidade."
             highlights={[
               'Cálculo automático de comissão',
-              'Registro de motivo de perda',
-              'Relatório de deals ganhos vs. perdidos',
+              'Registro de motivo de perda para análise',
+              'Relatório de negócios ganhos e perdidos',
             ]}
           />
         </div>
@@ -310,12 +305,12 @@ export function CrmProductTour() {
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
           >
             <Link to="/auth?utm_source=landing_crm_tour">
-              Testar CRM Gratuitamente
+              Testar grátis agora
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
           <p className="text-sm text-muted-foreground mt-3">
-            14 dias grátis · Sem cartão de crédito · Setup em 2 minutos
+            14 dias grátis · Sem cartão de crédito · Pronto em 2 minutos
           </p>
         </motion.div>
       </div>

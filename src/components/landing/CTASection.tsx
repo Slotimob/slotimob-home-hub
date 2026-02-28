@@ -16,10 +16,10 @@ export function CTASection({ utmSource = 'lp_geral' }: CTASectionProps) {
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-background mb-6">
-            Pronto para centralizar sua operação?
+            Pronto para modernizar sua imobiliária?
           </h2>
           <p className="text-lg text-background/70 mb-10">
-            Comece grátis, sem compromisso. Sinta o poder do sistema por 14 dias com acesso completo ao Plano Pro.
+            Comece grátis, sem compromisso. Teste todos os módulos por 14 dias com acesso completo ao Plano Pro.
           </p>
 
           <Button
@@ -28,7 +28,7 @@ export function CTASection({ utmSource = 'lp_geral' }: CTASectionProps) {
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-10 py-6 text-lg font-semibold shadow-lg"
           >
             <Link to={authUrl}>
-              Criar Conta Grátis
+              Quero modernizar minha imobiliária
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
