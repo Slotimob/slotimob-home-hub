@@ -20,7 +20,7 @@ const COMPATIBLE_PORTALS = [
   { name: '123i', logo: '🔢' },
 ];
 
-const QR_EXPIRY_SECONDS = 14;
+const QR_EXPIRY_SECONDS = 45;
 
 const Integrations = () => {
   const { user, loading } = useAuth();

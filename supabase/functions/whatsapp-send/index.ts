@@ -8,6 +8,27 @@ const corsHeaders = {
 
 const MAX_TEXT_LENGTH = 4096;
 
+/**
+ * Sanitiza número de telefone para formato DDI+DDD+Número.
+ * Remove parênteses, traços, espaços e +. Ex: "(55) 11 99999-9999" → "5511999999999"
+ */
+function sanitizePhoneNumber(phone: string): string {
+  // Remove tudo que não é dígito
+  let cleaned = phone.replace(/\D/g, '');
+  
+  // Se começar com 0, remover (ex: 011...)
+  if (cleaned.startsWith('0')) {
+    cleaned = cleaned.substring(1);
+  }
+  
+  // Se não tem DDI (menos de 12 dígitos para BR), adicionar 55
+  if (cleaned.length <= 11) {
+    cleaned = '55' + cleaned;
+  }
+  
+  return cleaned;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -16,7 +37,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL');
+    const evolutionApiUrl = (Deno.env.get('EVOLUTION_API_URL') ?? '').replace(/\/$/, '');
     const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY');
 
     if (!evolutionApiUrl || !evolutionApiKey) {
@@ -92,20 +113,23 @@ serve(async (req) => {
       });
     }
 
-    const recipientPhone = conversation.contact_phone;
-    const sanitized = (content || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+    // Sanitizar número
+    const recipientPhone = sanitizePhoneNumber(conversation.contact_phone || '');
+    const sanitizedContent = (content || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
-    // Send via Evolution API
+    console.log(`Enviando para ${recipientPhone} via ${instanceName}`);
+
+    // Send via Evolution API v2.3.7
     const validatedType = messageType || 'text';
     let evoUrl = '';
     let evoBody: Record<string, unknown> = {};
 
     if (validatedType === 'text') {
       evoUrl = `${evolutionApiUrl}/message/sendText/${instanceName}`;
-      evoBody = { number: recipientPhone, text: sanitized };
+      evoBody = { number: recipientPhone, text: sanitizedContent };
     } else if (validatedType === 'image') {
       evoUrl = `${evolutionApiUrl}/message/sendMedia/${instanceName}`;
-      evoBody = { number: recipientPhone, mediatype: 'image', media: body.mediaUrl, caption: sanitized || undefined };
+      evoBody = { number: recipientPhone, mediatype: 'image', media: body.mediaUrl, caption: sanitizedContent || undefined };
     } else if (validatedType === 'document') {
       evoUrl = `${evolutionApiUrl}/message/sendMedia/${instanceName}`;
       evoBody = { number: recipientPhone, mediatype: 'document', media: body.mediaUrl, fileName: body.mediaFilename || 'document' };
@@ -114,10 +138,10 @@ serve(async (req) => {
       evoBody = { number: recipientPhone, audio: body.mediaUrl };
     } else {
       evoUrl = `${evolutionApiUrl}/message/sendText/${instanceName}`;
-      evoBody = { number: recipientPhone, text: sanitized };
+      evoBody = { number: recipientPhone, text: sanitizedContent };
     }
 
-    console.log(`Sending via Evolution: ${evoUrl}`);
+    console.log(`Evolution API: POST ${evoUrl}`);
 
     const evoRes = await fetch(evoUrl, {
       method: 'POST',
@@ -139,7 +163,7 @@ serve(async (req) => {
         message_id: waMessageId,
         direction: 'outgoing',
         message_type: validatedType,
-        content: sanitized,
+        content: sanitizedContent,
         media_url: body.mediaUrl || null,
         media_mime_type: body.mediaMimeType || null,
         media_filename: body.mediaFilename || null,
@@ -156,7 +180,7 @@ serve(async (req) => {
     await supabaseClient
       .from('whatsapp_conversations')
       .update({
-        last_message: sanitized || `[${validatedType}]`,
+        last_message: sanitizedContent || `[${validatedType}]`,
         last_message_at: new Date().toISOString(),
       })
       .eq('id', conversationId);

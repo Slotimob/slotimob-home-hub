@@ -15,6 +15,9 @@ function extractQrBase64(data: any): string | null {
     data?.base64,
     data?.qrcode?.base64,
     typeof data?.qrcode === 'string' ? data.qrcode : null,
+    data?.data?.base64,
+    data?.data?.qrcode?.base64,
+    typeof data?.data?.qrcode === 'string' ? data.data.qrcode : null,
   ];
   for (const c of candidates) {
     if (c && typeof c === 'string' && c.length > 100) return c;
@@ -35,9 +38,6 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  // Verificação de variáveis críticas
-  console.log('Service Role presente:', !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
-
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -45,13 +45,17 @@ serve(async (req) => {
 
   try {
     const rawBody = await req.text();
-    console.log('Webhook raw body (first 500 chars):', rawBody.substring(0, 500));
+    console.log('Webhook raw (500ch):', rawBody.substring(0, 500));
     
     const body = JSON.parse(rawBody);
+
+    // Evolution v2.3.7 pode enviar event no top-level ou em data
     const rawEvent = body.event;
-    const instanceName = body.instance;
+    const instanceName = body.instance || body.data?.instance;
     const event = rawEvent ? normalizeEventName(rawEvent) : null;
-    console.log(`Evolution webhook: rawEvent=${rawEvent} normalized=${event} instance=${instanceName} keys=${Object.keys(body).join(',')}`);
+    const eventData = body.data || body;
+
+    console.log(`Webhook: rawEvent=${rawEvent} normalized=${event} instance=${instanceName}`);
 
     if (!event || !instanceName) {
       console.log('Missing event or instance, ignoring');
@@ -61,7 +65,8 @@ serve(async (req) => {
       });
     }
 
-    processEvent(supabaseAdmin, event, instanceName, body.data).catch((err) => {
+    // Process in background to respond quickly to Evolution
+    processEvent(supabaseAdmin, event, instanceName, eventData).catch((err) => {
       console.error('Background processing error:', err);
     });
 
@@ -79,10 +84,10 @@ serve(async (req) => {
 });
 
 async function processEvent(supabaseAdmin: any, event: string, instanceName: string, data: any) {
-  // Debug: detect QR image in any event
+  // Detect QR in any event
   const anyQr = extractQrBase64(data);
   if (anyQr) {
-    console.log(`IMAGEM QR DETECTADA NO WEBHOOK event=${event} instance=${instanceName}`);
+    console.log(`QR DETECTADO event=${event} instance=${instanceName}`);
   }
 
   switch (event) {
@@ -95,8 +100,12 @@ async function processEvent(supabaseAdmin: any, event: string, instanceName: str
     case 'messages.upsert':
       await handleMessagesUpsert(supabaseAdmin, instanceName, data);
       break;
+    case 'send.message':
+      console.log('send.message event received (outgoing message confirmation)');
+      await handleSendMessage(supabaseAdmin, instanceName, data);
+      break;
     case 'instance.created':
-      console.log('instance.created event received, checking for QR...');
+      console.log('instance.created event, checking for QR...');
       await handleQrCodeUpdate(supabaseAdmin, instanceName, data);
       break;
     default:
@@ -109,30 +118,28 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
   const state = data?.state;
   if (!state) return;
 
-  console.log(`Connection update: instance=${instanceName} state=${state} keys=${JSON.stringify(Object.keys(data || {}))}`);
+  console.log(`Connection update: instance=${instanceName} state=${state}`);
 
-  // UNIVERSAL QR CAPTURE: For ANY state that is NOT 'open', check for QR data
+  // Check for QR data in non-open states
   if (state !== 'open') {
     const qrBase64 = extractQrBase64(data);
     if (qrBase64) {
-      console.log(`IMAGEM QR DETECTADA NO WEBHOOK (connection.update state=${state})`);
-      const { data: updateResult, error } = await supabaseAdmin
+      console.log(`QR capturado via connection.update state=${state}`);
+      const { error } = await supabaseAdmin
         .from('whatsapp_connections')
         .update({
           qr_code_base64: qrBase64,
           connection_status: 'qrcode',
           status: 'pending',
         })
-        .eq('instance_name', instanceName)
-        .select();
-      if (error) console.error('Error updating QR from connection.update:', error);
-      else console.log(`QR code stored for ${instanceName} via connection.update. Rows affected:`, updateResult?.length ?? 0);
+        .eq('instance_name', instanceName);
+      if (error) console.error('Erro update QR:', error);
       return;
     }
   }
 
   if (state === 'open') {
-    const { data: updateResult, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('whatsapp_connections')
       .update({
         status: 'connected',
@@ -140,22 +147,20 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
         qr_code_base64: null,
         connected_at: new Date().toISOString(),
       })
-      .eq('instance_name', instanceName)
-      .select();
-    if (error) console.error('Error updating open state:', error);
-    else console.log(`Instance ${instanceName} marked as connected, QR cleared. Rows:`, updateResult?.length ?? 0);
+      .eq('instance_name', instanceName);
+    if (error) console.error('Erro update open:', error);
+    else console.log(`✅ ${instanceName} → connected`);
   } else if (state === 'close') {
-    const { data: updateResult, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('whatsapp_connections')
       .update({
         status: 'disconnected',
         connection_status: 'close',
         qr_code_base64: null,
       })
-      .eq('instance_name', instanceName)
-      .select();
-    if (error) console.error('Error updating close state:', error);
-    else console.log(`Instance ${instanceName} marked as disconnected. Rows:`, updateResult?.length ?? 0);
+      .eq('instance_name', instanceName);
+    if (error) console.error('Erro update close:', error);
+    else console.log(`${instanceName} → disconnected`);
   } else if (state === 'connecting') {
     await supabaseAdmin
       .from('whatsapp_connections')
@@ -166,32 +171,45 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
 
 // ─── QR CODE UPDATE ───
 async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data: any) {
-  console.log('Dados do evento:', JSON.stringify(data));
-  
   const qrBase64 = extractQrBase64(data);
   
   if (!qrBase64) {
-    console.log('No valid QR base64 string in payload');
+    console.log('No valid QR base64 in payload');
     return;
   }
 
-  console.log('IMAGEM QR DETECTADA NO WEBHOOK (via qrcode.updated/instance.created)');
-  console.log(`QR code received for instance=${instanceName}`);
+  console.log(`QR code recebido para ${instanceName}`);
 
-  const { data: updateResult, error } = await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('whatsapp_connections')
     .update({
       qr_code_base64: qrBase64,
       connection_status: 'qrcode',
       status: 'pending',
     })
-    .eq('instance_name', instanceName)
-    .select();
+    .eq('instance_name', instanceName);
 
-  if (error) {
-    console.error('Error updating QR code:', error);
-  } else {
-    console.log(`QR code stored for ${instanceName}. Rows affected:`, updateResult?.length ?? 0);
+  if (error) console.error('Erro update QR:', error);
+  else console.log(`QR armazenado para ${instanceName}`);
+}
+
+// ─── SEND MESSAGE (outgoing confirmation) ───
+async function handleSendMessage(supabaseAdmin: any, instanceName: string, data: any) {
+  try {
+    const key = data?.key;
+    const waMessageId = key?.id;
+    if (!waMessageId) return;
+
+    // Update message status to 'delivered' if we have a record
+    const { error } = await supabaseAdmin
+      .from('whatsapp_messages')
+      .update({ status: 'delivered' })
+      .eq('message_id', waMessageId);
+
+    if (error) console.error('Erro update send status:', error);
+    else console.log(`Mensagem ${waMessageId} confirmada como enviada`);
+  } catch (e) {
+    console.error('handleSendMessage error:', e);
   }
 }
 
@@ -208,10 +226,15 @@ async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, da
     return;
   }
 
-  const messages = Array.isArray(data) ? data : [data];
+  // v2.3.7 pode enviar array ou objeto
+  const messages = Array.isArray(data) ? data : (data?.messages ? data.messages : [data]);
 
   for (const msgData of messages) {
-    await processIncomingMessage(supabaseAdmin, connection, msgData);
+    try {
+      await processIncomingMessage(supabaseAdmin, connection, msgData);
+    } catch (e) {
+      console.error('Erro ao processar mensagem:', e);
+    }
   }
 }
 
@@ -272,6 +295,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     content = JSON.stringify(messageContent);
   }
 
+  // Find or create contact
   let contactId: string | null = null;
   const cleanPhone = senderPhone.replace(/\D/g, '');
 
@@ -300,10 +324,11 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
 
     if (!contactError && newContact) {
       contactId = newContact.id;
-      console.log(`Created new contact ${contactId} for ${cleanPhone}`);
+      console.log(`Novo contato ${contactId} para ${cleanPhone}`);
     }
   }
 
+  // Find or create conversation
   let { data: conversation, error: convError } = await supabaseAdmin
     .from('whatsapp_conversations')
     .select('*')
@@ -333,7 +358,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
       .single();
 
     if (createError) {
-      console.error('Error creating conversation:', createError);
+      console.error('Erro criar conversa:', createError);
       return;
     }
     conversation = newConv;
@@ -350,6 +375,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
       .eq('id', conversation.id);
   }
 
+  // Upsert message (dedup by conversation_id + message_id)
   const { error: msgError } = await supabaseAdmin
     .from('whatsapp_messages')
     .upsert(
@@ -369,8 +395,8 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     );
 
   if (msgError) {
-    console.error('Error inserting message:', msgError);
+    console.error('Erro upsert mensagem:', msgError);
   } else {
-    console.log(`Message ${waMessageId} saved for conversation ${conversation.id}`);
+    console.log(`Mensagem ${waMessageId} salva (conversa ${conversation.id})`);
   }
 }
