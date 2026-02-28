@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GlowInitializer } from "@/components/GlowInitializer";
+import { TrackingProvider } from "@/components/TrackingProvider";
 import { UtmCaptureProvider } from "@/components/UtmCaptureProvider";
 import { SEOProvider } from "@/components/SEOHead";
 import { JsonLdSchema } from "@/components/JsonLdSchema";
@@ -11,6 +12,7 @@ import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
 import Index from "./pages/Index";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -66,11 +68,13 @@ const App = () => (
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
+            <TrackingProvider>
             <GlowInitializer />
             <UtmCaptureProvider />
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
+              <Route path="/lp/:segment" element={<LandingPage />} />
               <Route path="/demo" element={<ProductDemo />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
@@ -124,6 +128,7 @@ const App = () => (
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </TrackingProvider>
           </AuthProvider>
         </BrowserRouter>
         <Toaster />

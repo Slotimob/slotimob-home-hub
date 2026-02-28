@@ -1,3 +1,4 @@
+import { useParams } from 'react-router-dom';
 import { SEOHead } from '@/components/SEOHead';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroSection } from '@/components/landing/HeroSection';
@@ -7,23 +8,27 @@ import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import { CTASection } from '@/components/landing/CTASection';
 import { FooterSection } from '@/components/landing/FooterSection';
+import { getSegment } from '@/config/landingSegments';
 
 export default function LandingPage() {
+  const { segment: segmentSlug } = useParams<{ segment?: string }>();
+  const segment = getSegment(segmentSlug);
+
   return (
     <>
-      <SEOHead 
-        title="SLOTIMOB - A inteligência que sua imobiliária precisava"
-        description="CRM, ERP e WhatsApp com IA integrados. Organize leads, imóveis e documentos. Comece grátis com 2 unidades e 14 dias de Pro."
-        path="/"
+      <SEOHead
+        title={segment.seo.title}
+        description={segment.seo.description}
+        path={segment.slug ? `/lp/${segment.slug}` : '/'}
       />
       <LandingHeader />
       <main className="min-h-screen scroll-smooth">
-        <HeroSection />
+        <HeroSection segment={segment} />
         <FeaturesSection />
         <DemoSection />
         <TestimonialsSection />
         <PricingSection />
-        <CTASection />
+        <CTASection utmSource={segment.utmSource} />
         <FooterSection />
       </main>
     </>
