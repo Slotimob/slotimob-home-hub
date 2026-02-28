@@ -187,6 +187,15 @@ export function useWhatsAppSettingsConnection() {
       if (error) throw error;
       console.log('checkInstanceStatus result:', data);
       if (data?.state === 'open' || data?.state === 'connected') {
+        // Force local state update immediately (avoid F5 if Realtime is slow)
+        setConnection((prev) => prev ? {
+          ...prev,
+          status: 'connected',
+          connection_status: 'open',
+          qr_code_base64: null,
+          connected_at: prev.connected_at || new Date().toISOString(),
+        } : prev);
+        setWaitingForQr(false);
         await fetchConnection();
         return { connected: true };
       }

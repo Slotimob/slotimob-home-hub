@@ -9,24 +9,38 @@ const corsHeaders = {
 const MAX_TEXT_LENGTH = 4096;
 
 /**
- * Sanitiza número de telefone para formato DDI+DDD+Número.
- * Remove parênteses, traços, espaços e +. Ex: "(55) 11 99999-9999" → "5511999999999"
+ * Sanitiza número de telefone para formato DDI+DDD+Número exigido pela Evolution API.
+ * Regras BR: remove '0' inicial do DDD, garante prefixo '55'.
+ * Celulares BR: 55 + DDD(2) + 9 + XXXXXXXX = 13 dígitos
+ * Fixos BR:    55 + DDD(2) + XXXXXXXX     = 12 dígitos
  */
 function sanitizePhoneNumber(phone: string): string {
-  // Remove tudo que não é dígito
   let cleaned = phone.replace(/\D/g, '');
-  
-  // Se começar com 0, remover (ex: 011...)
+
+  // Remove '0' inicial do DDD (ex: 041... → 41...)
   if (cleaned.startsWith('0')) {
     cleaned = cleaned.substring(1);
   }
-  
-  // Se não tem DDI (menos de 12 dígitos para BR), adicionar 55
+
+  // Se já tem DDI (13+ dígitos começando com 55), aceitar como está
+  if (cleaned.startsWith('55') && cleaned.length >= 12) {
+    return cleaned;
+  }
+
+  // Se não tem DDI, adicionar 55
   if (cleaned.length <= 11) {
     cleaned = '55' + cleaned;
   }
-  
+
   return cleaned;
+}
+
+/**
+ * Formata número sanitizado como JID do WhatsApp.
+ */
+function toWhatsAppJid(phone: string): string {
+  const sanitized = sanitizePhoneNumber(phone);
+  return sanitized.includes('@') ? sanitized : `${sanitized}@s.whatsapp.net`;
 }
 
 serve(async (req) => {
