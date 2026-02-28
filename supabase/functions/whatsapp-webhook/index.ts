@@ -356,6 +356,9 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   let content = '';
   let mediaMimeType: string | null = null;
   let mediaFilename: string | null = null;
+  // Media URL from Evolution API v2.3.7 — stored directly for now.
+  // TODO: Future integration with Supabase Storage for permanent media persistence.
+  let mediaUrl: string | null = null;
 
   if (messageContent.conversation) {
     content = messageContent.conversation;
@@ -365,19 +368,24 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     messageType = 'image';
     content = messageContent.imageMessage.caption || '';
     mediaMimeType = messageContent.imageMessage.mimetype || null;
+    mediaUrl = messageContent.imageMessage.url || msgData.media?.url || null;
   } else if (messageContent.videoMessage) {
     messageType = 'video';
     content = messageContent.videoMessage.caption || '';
     mediaMimeType = messageContent.videoMessage.mimetype || null;
+    mediaUrl = messageContent.videoMessage.url || msgData.media?.url || null;
   } else if (messageContent.audioMessage) {
     messageType = 'audio';
     mediaMimeType = messageContent.audioMessage.mimetype || null;
+    mediaUrl = messageContent.audioMessage.url || msgData.media?.url || null;
   } else if (messageContent.documentMessage) {
     messageType = 'document';
     mediaFilename = messageContent.documentMessage.fileName || 'document';
     mediaMimeType = messageContent.documentMessage.mimetype || null;
+    mediaUrl = messageContent.documentMessage.url || msgData.media?.url || null;
   } else if (messageContent.stickerMessage) {
     messageType = 'sticker';
+    mediaUrl = messageContent.stickerMessage.url || msgData.media?.url || null;
   } else if (messageContent.locationMessage) {
     messageType = 'location';
     content = JSON.stringify({
@@ -390,6 +398,12 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   } else {
     messageType = 'unknown';
     content = JSON.stringify(messageContent);
+  }
+
+  // Also check for base64 media from Evolution API (convert to data URI)
+  if (!mediaUrl && msgData.media?.base64) {
+    const mime = mediaMimeType || 'application/octet-stream';
+    mediaUrl = `data:${mime};base64,${msgData.media.base64}`;
   }
 
   // Find or create contact
@@ -437,7 +451,9 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     ? new Date(parseInt(msgData.messageTimestamp) * 1000).toISOString()
     : new Date().toISOString();
 
-  const lastMsgPreview = content || `[${messageType}]`;
+  const lastMsgPreview = direction === 'outgoing' 
+    ? `Você: ${content || `[${messageType}]`}`
+    : (content || `[${messageType}]`);
 
   if (convError || !conversation) {
     const { data: newConv, error: createError } = await supabaseAdmin
@@ -492,7 +508,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
         direction: direction,
         message_type: messageType,
         content: content,
-        media_url: null,
+        media_url: mediaUrl,
         media_mime_type: mediaMimeType,
         media_filename: mediaFilename,
         status: msgStatus,

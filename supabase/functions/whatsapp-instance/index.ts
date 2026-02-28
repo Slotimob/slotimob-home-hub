@@ -387,6 +387,21 @@ serve(async (req) => {
             const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
             const name = chat.name || chat.pushName || chat.contact || phone;
 
+            // Try to get profile picture URL
+            let profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
+            if (!profilePicUrl) {
+              try {
+                const picRes = await fetch(
+                  `${evolutionApiUrl}/chat/fetchProfilePictureUrl/${conn.instance_name}?number=${phone}`,
+                  { method: 'GET', headers: { 'apikey': evolutionApiKey } }
+                );
+                if (picRes.ok) {
+                  const picData = await picRes.json();
+                  profilePicUrl = picData?.profilePictureUrl || picData?.url || null;
+                }
+              } catch (_e) { /* non-blocking */ }
+            }
+
             // Upsert conversation
             const { error: upsertErr } = await supabaseAdmin
               .from('whatsapp_conversations')
@@ -396,7 +411,7 @@ serve(async (req) => {
                   remote_jid: remoteJid,
                   contact_name: name,
                   contact_phone: phone,
-                  contact_profile_pic: chat.profilePictureUrl || null,
+                  contact_profile_pic: profilePicUrl,
                   last_message: chat.lastMessage?.content || chat.lastMessage?.message?.conversation || null,
                   last_message_at: chat.updatedAt ? new Date(chat.updatedAt).toISOString() : new Date().toISOString(),
                   unread_count: chat.unreadCount || 0,
@@ -411,20 +426,29 @@ serve(async (req) => {
               synced++;
             }
 
-            // Try to link contact
+            // Try to link contact and update avatar
             const { data: existingContacts } = await supabaseAdmin
               .from('contacts')
-              .select('id')
+              .select('id, avatar_url')
               .eq('broker_id', userId)
               .or(`phone.eq.${phone},whatsapp.eq.${phone},phone.eq.+${phone},whatsapp.eq.+${phone}`)
               .limit(1);
 
             if (existingContacts && existingContacts.length > 0) {
+              const contactId = existingContacts[0].id;
               await supabaseAdmin
                 .from('whatsapp_conversations')
-                .update({ contact_id: existingContacts[0].id, lead_id: existingContacts[0].id })
+                .update({ contact_id: contactId, lead_id: contactId })
                 .eq('connection_id', conn.id)
                 .eq('remote_jid', remoteJid);
+
+              // Update contact avatar if we have a profile pic and contact doesn't have one
+              if (profilePicUrl && !existingContacts[0].avatar_url) {
+                await supabaseAdmin
+                  .from('contacts')
+                  .update({ avatar_url: profilePicUrl })
+                  .eq('id', contactId);
+              }
             }
           } catch (chatErr) {
             console.error('sync_history chat error:', chatErr);

@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
   MessageSquare, Send, Paperclip, FileText, Phone, MoreVertical,
   Check, CheckCheck, ArrowLeft, ChevronRight, Loader2, WifiOff,
+  Image as ImageIcon, Mic, Film, File,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
@@ -31,7 +32,8 @@ function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function StatusIcon({ status }: { status: string }) {
+function StatusIcon({ status, isOutgoing }: { status: string; isOutgoing: boolean }) {
+  if (!isOutgoing) return null;
   switch (status) {
     case 'pending':
       return <Loader2 className="h-3 w-3 text-white/60 animate-spin" />;
@@ -46,6 +48,80 @@ function StatusIcon({ status }: { status: string }) {
     default:
       return null;
   }
+}
+
+function MediaContent({ msg }: { msg: WhatsAppMessage }) {
+  const mediaUrl = msg.media_url;
+  
+  if (msg.message_type === 'image' && mediaUrl) {
+    return (
+      <div className="mb-1">
+        <img
+          src={mediaUrl}
+          alt={msg.content || 'Imagem'}
+          className="rounded-md max-w-full max-h-64 object-contain cursor-pointer"
+          loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (msg.message_type === 'audio' && mediaUrl) {
+    return (
+      <div className="mb-1 min-w-[200px]">
+        <audio controls preload="none" className="w-full h-8">
+          <source src={mediaUrl} type={msg.media_mime_type || 'audio/ogg'} />
+        </audio>
+      </div>
+    );
+  }
+
+  if (msg.message_type === 'video' && mediaUrl) {
+    return (
+      <div className="mb-1">
+        <video
+          controls
+          preload="none"
+          className="rounded-md max-w-full max-h-64"
+          poster=""
+        >
+          <source src={mediaUrl} type={msg.media_mime_type || 'video/mp4'} />
+        </video>
+      </div>
+    );
+  }
+
+  if (msg.message_type === 'document' && mediaUrl) {
+    return (
+      <a
+        href={mediaUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 p-2 rounded bg-black/10 dark:bg-white/10 mb-1 hover:opacity-80 transition-opacity"
+      >
+        <File className="h-5 w-5 flex-shrink-0" />
+        <span className="text-xs truncate">{msg.media_filename || 'Documento'}</span>
+      </a>
+    );
+  }
+
+  // Type label for unsupported media without URL
+  if (['image', 'audio', 'video', 'sticker'].includes(msg.message_type) && !mediaUrl) {
+    const icons: Record<string, any> = { image: ImageIcon, audio: Mic, video: Film, sticker: ImageIcon };
+    const Icon = icons[msg.message_type] || ImageIcon;
+    const labels: Record<string, string> = { image: 'Imagem', audio: 'Áudio', video: 'Vídeo', sticker: 'Sticker' };
+    return (
+      <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1">
+        <Icon className="h-3.5 w-3.5" />
+        <span>{labels[msg.message_type] || msg.message_type}</span>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export function ChatArea({
@@ -178,6 +254,7 @@ export function ChatArea({
               {messages.map((msg) => {
                 const isOutgoing = msg.direction === 'outgoing';
                 const isNote = msg.is_internal_note;
+                const hasMedia = msg.media_url && ['image', 'audio', 'video', 'document'].includes(msg.message_type);
                 return (
                   <div key={msg.id} className={cn('flex', isOutgoing ? 'justify-end' : 'justify-start')}>
                     <div
@@ -187,7 +264,8 @@ export function ChatArea({
                           ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-800 rounded-br-sm'
                           : isOutgoing
                             ? 'bg-[hsl(142,70%,40%)] text-white rounded-br-sm'
-                            : 'bg-card text-foreground border border-border/50 rounded-bl-sm'
+                            : 'bg-card text-foreground border border-border/50 rounded-bl-sm',
+                        hasMedia && 'p-1.5'
                       )}
                     >
                       {isNote && (
@@ -195,13 +273,17 @@ export function ChatArea({
                           Nota interna
                         </span>
                       )}
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                      <MediaContent msg={msg} />
+                      {msg.content && (
+                        <p className={cn("text-sm whitespace-pre-wrap break-words", hasMedia && "px-1.5")}>{msg.content}</p>
+                      )}
                       <div className={cn(
                         'flex items-center justify-end gap-1 mt-1 -mb-0.5',
-                        isNote ? 'text-amber-700 dark:text-amber-300' : isOutgoing ? 'text-white/70' : 'text-muted-foreground'
+                        isNote ? 'text-amber-700 dark:text-amber-300' : isOutgoing ? 'text-white/70' : 'text-muted-foreground',
+                        hasMedia && 'px-1.5'
                       )}>
                         <span className="text-[10px]">{formatTime(msg.sent_at)}</span>
-                        {isOutgoing && !isNote && <StatusIcon status={msg.status} />}
+                        <StatusIcon status={msg.status} isOutgoing={isOutgoing && !isNote} />
                       </div>
                     </div>
                   </div>

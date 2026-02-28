@@ -228,7 +228,9 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
                         'text-xs truncate pr-2',
                         conv.unread_count > 0 ? 'text-foreground/80' : 'text-muted-foreground'
                       )}>
-                        {conv.last_message || 'Sem mensagens'}
+                        {conv.last_message 
+                          ? (conv.last_message.startsWith('Você:') ? conv.last_message : conv.last_message)
+                          : 'Sem mensagens'}
                       </span>
                       {conv.unread_count > 0 && (
                         <Badge className="h-5 min-w-5 px-1.5 text-[10px] rounded-full bg-green-500 hover:bg-green-500 text-white flex-shrink-0">
