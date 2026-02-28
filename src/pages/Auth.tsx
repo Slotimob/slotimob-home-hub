@@ -238,7 +238,10 @@ const Auth = () => {
         navigate('/dashboard');
         return;
       }
-      if (data?.url) window.open(data.url, '_blank');
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
       navigate('/dashboard');
     } catch {
       navigate('/dashboard');

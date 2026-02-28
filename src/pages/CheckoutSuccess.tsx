@@ -3,21 +3,39 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    // Simulate a small delay to let the webhook process
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+    const refreshSubscription = async () => {
+      // Wait for webhook to process
+      await new Promise((r) => setTimeout(r, 3000));
 
-    return () => clearTimeout(timer);
-  }, [sessionId]);
+      // Invalidate all subscription-related caches
+      queryClient.invalidateQueries({ queryKey: ['trial-status'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription-limits'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription-details'] });
+      queryClient.invalidateQueries({ queryKey: ['user-plan-features'] });
+
+      setIsLoading(false);
+    };
+
+    refreshSubscription();
+  }, [sessionId, queryClient]);
+
+  const handleGoToDashboard = () => {
+    // Force-clear any stale checkout state
+    queryClient.invalidateQueries({ queryKey: ['trial-status'] });
+    queryClient.invalidateQueries({ queryKey: ['subscription-limits'] });
+    navigate('/dashboard', { replace: true });
+  };
 
   if (isLoading) {
     return (
@@ -64,7 +82,7 @@ export default function CheckoutSuccess() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <Button onClick={() => navigate('/dashboard')} className="w-full">
+            <Button onClick={handleGoToDashboard} className="w-full">
               Ir para o Dashboard
             </Button>
             <Button 

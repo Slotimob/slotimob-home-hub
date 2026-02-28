@@ -122,6 +122,8 @@ export function PricingSection() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [isAnnual, setIsAnnual] = useState(true);
 
+  const [checkoutOverlay, setCheckoutOverlay] = useState(false);
+
   const handleCheckout = async (planId: PlanId) => {
     setLoadingPlan(planId);
     try {
@@ -131,6 +133,8 @@ export function PricingSection() {
         return;
       }
 
+      setCheckoutOverlay(true);
+
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: { plan_id: planId, billing_cycle: isAnnual ? 'annual' : 'monthly' }
       });
@@ -138,23 +142,37 @@ export function PricingSection() {
       if (error) {
         console.error('Checkout error:', error);
         toast.error('Erro ao iniciar checkout. Tente novamente.');
+        setCheckoutOverlay(false);
         return;
       }
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
       } else {
         toast.error('Erro ao obter URL de checkout.');
+        setCheckoutOverlay(false);
       }
     } catch (err) {
       console.error('Checkout error:', err);
       toast.error('Erro inesperado. Tente novamente.');
+      setCheckoutOverlay(false);
     } finally {
       setLoadingPlan(null);
     }
   };
 
   return (
+    <>
+    {/* Checkout redirect overlay */}
+    {checkoutOverlay && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4 text-center p-8">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-lg font-semibold text-foreground">Redirecionando para o ambiente seguro de pagamento...</p>
+          <p className="text-sm text-muted-foreground">Aguarde, você será redirecionado ao Stripe.</p>
+        </div>
+      </div>
+    )}
     <section id="pricing" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
@@ -318,5 +336,6 @@ export function PricingSection() {
         </div>
       </div>
     </section>
+    </>
   );
 }

@@ -281,6 +281,33 @@ serve(async (req) => {
             .update({ status: "active", updated_at: new Date().toISOString() })
             .eq("stripe_subscription_id", invoice.subscription as string);
           logStep("Subscription confirmed active after payment");
+
+          // Log successful payment to audit_logs for cockpit visibility
+          const { data: subData } = await supabase
+            .from("subscriptions")
+            .select("user_id, plan_id")
+            .eq("stripe_subscription_id", invoice.subscription as string)
+            .maybeSingle();
+
+          if (subData) {
+            await supabase.from("audit_logs").insert({
+              broker_id: subData.user_id,
+              action: "stripe_payment_succeeded",
+              table_name: "subscriptions",
+              record_id: subData.user_id,
+              new_data: {
+                plan_id: subData.plan_id,
+                amount: invoice.amount_paid,
+                currency: invoice.currency,
+                invoice_id: invoice.id,
+              },
+              metadata: {
+                stripe_subscription_id: invoice.subscription,
+                billing_reason: invoice.billing_reason,
+              },
+            });
+            logStep("Payment logged to audit_logs", { userId: subData.user_id, amount: invoice.amount_paid });
+          }
         }
         break;
       }
