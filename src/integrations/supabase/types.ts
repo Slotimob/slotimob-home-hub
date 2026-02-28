@@ -576,6 +576,47 @@ export type Database = {
           },
         ]
       }
+      consent_logs: {
+        Row: {
+          accepted_at: string
+          consent_type: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          terms_version: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          consent_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          terms_version?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          consent_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          terms_version?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           address: string | null
@@ -2183,6 +2224,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accepted_terms: boolean | null
           agency_id: string | null
           author_role: string | null
           avatar_url: string | null
@@ -2214,6 +2256,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_terms?: boolean | null
           agency_id?: string | null
           author_role?: string | null
           avatar_url?: string | null
@@ -2245,6 +2288,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_terms?: boolean | null
           agency_id?: string | null
           author_role?: string | null
           avatar_url?: string | null

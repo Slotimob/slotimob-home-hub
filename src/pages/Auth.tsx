@@ -388,8 +388,10 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
+        const now = new Date().toISOString();
         const profileUpdate: Record<string, any> = {
-          terms_accepted_at: new Date().toISOString(),
+          accepted_terms: true,
+          terms_accepted_at: now,
           terms_version: '1.0',
           person_type: signupForm.personType,
         };
@@ -400,6 +402,15 @@ const Auth = () => {
           profileUpdate.business_name = signupForm.businessName;
         }
         await supabase.from('profiles').update(profileUpdate).eq('id', data.user.id);
+
+        // Log consent for LGPD compliance
+        await supabase.from('consent_logs').insert({
+          user_id: data.user.id,
+          consent_type: 'terms_and_privacy',
+          terms_version: '1.0',
+          user_agent: navigator.userAgent,
+          accepted_at: now,
+        });
       }
 
       if (data.user && !data.session) {
@@ -682,9 +693,10 @@ const Auth = () => {
         <Checkbox id="accept-terms" checked={acceptedTerms} onCheckedChange={checked => setAcceptedTerms(checked as boolean)} className="mt-0.5" />
         <Label htmlFor="accept-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
           Li e aceito os{' '}
-          <Link to="/legal" className="text-primary hover:underline font-medium" target="_blank">Termos de Uso</Link>{' '}
+          <Link to="/legal?tab=terms" className="text-primary hover:underline font-medium" target="_blank">Termos de Uso</Link>{' '}
           e a{' '}
-          <Link to="/legal" className="text-primary hover:underline font-medium" target="_blank">Política de Privacidade</Link>
+          <Link to="/legal?tab=privacy" className="text-primary hover:underline font-medium" target="_blank">Política de Privacidade</Link>
+          {' '}da SlotiMob, incluindo o uso de automação de mensagens via WhatsApp.
         </Label>
       </div>
       <div className="flex gap-3">
@@ -962,9 +974,12 @@ const Auth = () => {
                   </form>
                 )}
 
-                <div className="text-center pt-2">
-                  <Link to="/legal" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                    Política de Privacidade e Termos de Uso
+                <div className="text-center pt-2 space-x-3">
+                  <Link to="/legal?tab=privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                    Política de Privacidade
+                  </Link>
+                  <Link to="/legal?tab=terms" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                    Termos de Uso
                   </Link>
                 </div>
               </>
