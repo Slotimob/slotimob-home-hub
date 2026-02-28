@@ -4,6 +4,8 @@ import { LandingThemeProvider } from '@/components/LandingThemeProvider';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { CrmProductTour } from '@/components/landing/CrmProductTour';
+import { LeadJourneyInfographic } from '@/components/landing/LeadJourneyInfographic';
+import { DashboardMockupSection } from '@/components/landing/DashboardMockupSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { DemoSection } from '@/components/landing/DemoSection';
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
@@ -27,6 +29,8 @@ export default function LandingPage() {
       <main className="min-h-screen scroll-smooth bg-background">
         <HeroSection segment={segment} />
         <CrmProductTour />
+        <LeadJourneyInfographic />
+        <DashboardMockupSection />
         <FeaturesSection />
         <DemoSection />
         <TestimonialsSection />
