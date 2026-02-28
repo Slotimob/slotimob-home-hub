@@ -33,9 +33,10 @@ const Integrations = () => {
   const [copied, setCopied] = useState(false);
 
   // WhatsApp — centralized hook
-  const { connection, loading: whatsappLoading, waitingForQr, setWaitingForQr, countdown, timedOut, setTimedOut, cancelRequest, refetch } = useWhatsAppSettingsConnection();
+  const { connection, loading: whatsappLoading, waitingForQr, setWaitingForQr, countdown, timedOut, setTimedOut, cancelRequest, checkInstanceStatus, refetch } = useWhatsAppSettingsConnection();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [progress, setProgress] = useState(0);
   const [qrTimer, setQrTimer] = useState<number | null>(null);
   const [qrExpired, setQrExpired] = useState(false);
@@ -287,6 +288,39 @@ const Integrations = () => {
                   <p className="text-xs text-muted-foreground text-center">
                     Abra o WhatsApp → Configurações → Dispositivos Conectados → Conectar Dispositivo
                   </p>
+                  <div className="flex gap-2 w-full mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/5"
+                      onClick={handleDisconnectWhatsApp}
+                      disabled={isDisconnecting}
+                    >
+                      {isDisconnecting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={async () => {
+                        setIsCheckingStatus(true);
+                        try {
+                          const result = await checkInstanceStatus();
+                          if (result.connected) {
+                            toast({ title: 'WhatsApp conectado!', description: 'Pareamento confirmado com sucesso.' });
+                          } else {
+                            toast({ title: 'Ainda não conectado', description: 'Escaneie o QR Code com seu WhatsApp e tente novamente.', variant: 'destructive' });
+                          }
+                        } finally {
+                          setIsCheckingStatus(false);
+                        }
+                      }}
+                      disabled={isCheckingStatus}
+                    >
+                      {isCheckingStatus ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                      Já escaneei (Verificar)
+                    </Button>
+                  </div>
                 </div>
               )}
 
