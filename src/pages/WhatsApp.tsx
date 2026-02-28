@@ -5,7 +5,7 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Settings, MessageSquare } from 'lucide-react';
+import { Settings, MessageSquare, WifiOff } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,17 +24,72 @@ import {
 import type { Database } from '@/integrations/supabase/types';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
+type WhatsAppConnection = Database['public']['Tables']['whatsapp_connections']['Row'];
+
+// Fetch ANY connection (connected or not) so we can show history even when disconnected
+function useWhatsAppAnyConnection() {
+  const { user } = useAuth();
+  const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetch = async () => {
+      const { data, error } = await supabase
+        .from('whatsapp_connections')
+        .select('*')
+        .eq('broker_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (error) console.error('Error fetching WhatsApp connection:', error);
+      setConnection(data);
+      setLoading(false);
+    };
+
+    fetch();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('whatsapp-connection-page')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'whatsapp_connections',
+          filter: `broker_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'DELETE') {
+            setConnection(null);
+          } else {
+            setConnection(payload.new as WhatsAppConnection);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  return { connection, loading };
+}
 
 export default function WhatsApp() {
   const { user, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
 
-  const { connection, loading: connectionLoading } = useWhatsAppConnection();
+  // Use "any connection" instead of "connected only"
+  const { connection, loading: connectionLoading } = useWhatsAppAnyConnection();
+  const isConnected = connection?.status === 'connected';
+  const hasConnection = !!connection;
+
   const { conversations, loading: conversationsLoading } = useConversations(connection?.id || null);
   const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null);
   const { sendMessage, sending } = useSendMessage();
-  // Use contact_id (which is now synced with lead_id in the webhook)
   const contactId = selectedConversation?.contact_id || selectedConversation?.lead_id || null;
   const { contact, loading: contactLoading } = useConversationContact(contactId);
 
@@ -80,8 +135,8 @@ export default function WhatsApp() {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  // "Not connected" state
-  if (!connection) {
+  // "Never connected" state — no connection record at all
+  if (!hasConnection) {
     return (
       <SidebarProvider>
         <div className="min-h-[100dvh] flex w-full bg-background">
@@ -113,6 +168,19 @@ export default function WhatsApp() {
         <AppSidebar />
 
         <div className="flex-1 flex flex-col min-w-0">
+          {/* Disconnected Banner */}
+          {!isConnected && (
+            <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <WifiOff className="h-4 w-4" />
+                <span>WhatsApp desconectado. Você pode ler o histórico, mas não enviar mensagens.</span>
+              </div>
+              <Button variant="outline" size="sm" asChild className="border-destructive/30 text-destructive hover:bg-destructive/10">
+                <Link to="/integrations">Reconectar</Link>
+              </Button>
+            </div>
+          )}
+
           {/* Top bar */}
           <header className="border-b bg-card flex-shrink-0 pt-[env(safe-area-inset-top)]">
             <div className="flex items-center gap-2 px-3 py-2">
@@ -143,6 +211,7 @@ export default function WhatsApp() {
                 onSelect={handleSelectConversation}
                 loading={conversationsLoading}
                 connectionId={connection?.id}
+                isConnected={isConnected}
               />
             </div>
 
@@ -162,6 +231,7 @@ export default function WhatsApp() {
                 showCrmToggle={!!selectedConversation && !isMobile}
                 loadingMessages={messagesLoading}
                 sending={sending}
+                isConnected={isConnected}
               />
             </div>
 

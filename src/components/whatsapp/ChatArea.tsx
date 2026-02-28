@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   MessageSquare, Send, Paperclip, FileText, Phone, MoreVertical,
-  Check, CheckCheck, ArrowLeft, ChevronRight, Loader2,
+  Check, CheckCheck, ArrowLeft, ChevronRight, Loader2, WifiOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
@@ -24,6 +24,7 @@ interface ChatAreaProps {
   showCrmToggle?: boolean;
   loadingMessages?: boolean;
   sending?: boolean;
+  isConnected?: boolean;
 }
 
 function formatTime(dateStr: string): string {
@@ -56,6 +57,7 @@ export function ChatArea({
   showCrmToggle,
   loadingMessages,
   sending,
+  isConnected = true,
 }: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [templatesOpen, setTemplatesOpen] = useState(false);
@@ -67,7 +69,7 @@ export function ChatArea({
   }, [messages]);
 
   const handleSend = () => {
-    if (!messageText.trim() || sending) return;
+    if (!messageText.trim() || sending || !isConnected) return;
     onSendMessage(messageText.trim());
     setMessageText('');
     if (textareaRef.current) {
@@ -213,60 +215,67 @@ export function ChatArea({
 
       {/* Input Area */}
       <div className="px-3 py-2.5 border-t bg-card flex-shrink-0">
-        <div className="flex items-end gap-2">
-          <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
-            <Paperclip className="h-5 w-5" />
-          </Button>
-
-          <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
-                <FileText className="h-5 w-5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="start" side="top">
-              <div className="p-3 border-b">
-                <h4 className="font-semibold text-sm">Respostas Rápidas</h4>
-              </div>
-              <ScrollArea className="max-h-60">
-                <div className="p-1">
-                  {QUICK_REPLIES.map((qr) => (
-                    <button
-                      key={qr.id}
-                      onClick={() => handleQuickReply(qr.content)}
-                      className="w-full text-left px-3 py-2.5 hover:bg-accent/50 rounded-md transition-colors"
-                    >
-                      <span className="text-sm font-medium text-foreground">{qr.title}</span>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{qr.content}</p>
-                    </button>
-                  ))}
-                </div>
-              </ScrollArea>
-            </PopoverContent>
-          </Popover>
-
-          <div className="flex-1 min-w-0 relative">
-            <textarea
-              ref={textareaRef}
-              placeholder="Digite uma mensagem..."
-              value={messageText}
-              onChange={handleTextareaInput}
-              onKeyDown={handleKeyDown}
-              rows={1}
-              className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              style={{ maxHeight: '120px' }}
-            />
+        {!isConnected ? (
+          <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+            <WifiOff className="h-4 w-4" />
+            <span>Conecte seu WhatsApp para enviar novas mensagens</span>
           </div>
+        ) : (
+          <div className="flex items-end gap-2">
+            <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
+              <Paperclip className="h-5 w-5" />
+            </Button>
 
-          <Button
-            onClick={handleSend}
-            disabled={!messageText.trim() || sending}
-            size="icon"
-            className="flex-shrink-0 h-9 w-9 rounded-full"
-          >
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
-        </div>
+            <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
+                  <FileText className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="start" side="top">
+                <div className="p-3 border-b">
+                  <h4 className="font-semibold text-sm">Respostas Rápidas</h4>
+                </div>
+                <ScrollArea className="max-h-60">
+                  <div className="p-1">
+                    {QUICK_REPLIES.map((qr) => (
+                      <button
+                        key={qr.id}
+                        onClick={() => handleQuickReply(qr.content)}
+                        className="w-full text-left px-3 py-2.5 hover:bg-accent/50 rounded-md transition-colors"
+                      >
+                        <span className="text-sm font-medium text-foreground">{qr.title}</span>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{qr.content}</p>
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
+
+            <div className="flex-1 min-w-0 relative">
+              <textarea
+                ref={textareaRef}
+                placeholder="Digite uma mensagem..."
+                value={messageText}
+                onChange={handleTextareaInput}
+                onKeyDown={handleKeyDown}
+                rows={1}
+                className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                style={{ maxHeight: '120px' }}
+              />
+            </div>
+
+            <Button
+              onClick={handleSend}
+              disabled={!messageText.trim() || sending}
+              size="icon"
+              className="flex-shrink-0 h-9 w-9 rounded-full"
+            >
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

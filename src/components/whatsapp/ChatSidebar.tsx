@@ -24,6 +24,7 @@ interface ChatSidebarProps {
   onSelect: (conversation: WhatsAppConversation) => void;
   loading?: boolean;
   connectionId?: string | null;
+  isConnected?: boolean;
 }
 
 function formatTimestamp(dateStr: string | null): string {
@@ -49,7 +50,7 @@ function getInitials(name: string | null, phone: string): string {
   return phone.slice(-2);
 }
 
-export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId }: ChatSidebarProps) {
+export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [newConvOpen, setNewConvOpen] = useState(false);
@@ -60,7 +61,7 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
-        body: { action: 'sync_recent' },
+        body: { action: 'sync_history' },
       });
       if (error) throw error;
       toast({ title: 'Sincronização concluída', description: data?.message || 'Conversas atualizadas.' });
@@ -92,27 +93,31 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-foreground">Mensagens</h2>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    onClick={handleSync}
-                    disabled={syncing}
-                  >
-                    <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sincronizar conversas</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {isConnected && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={handleSync}
+                      disabled={syncing}
+                    >
+                      <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Sincronizar conversas</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
-          <Button size="sm" variant="default" className="gap-1.5" onClick={() => setNewConvOpen(true)}>
-            <MessageSquarePlus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nova Conversa</span>
-          </Button>
+          {isConnected && (
+            <Button size="sm" variant="default" className="gap-1.5" onClick={() => setNewConvOpen(true)}>
+              <MessageSquarePlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Nova Conversa</span>
+            </Button>
+          )}
         </div>
 
         <div className="relative">
@@ -158,13 +163,21 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
         ) : filtered.length === 0 && conversations.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground flex flex-col items-center gap-3">
             <MessageCircle className="h-12 w-12 opacity-30" />
-            <p className="font-medium text-foreground">Seu WhatsApp está conectado!</p>
-            <p className="text-sm">Aguardando novas mensagens...</p>
-            <p className="text-xs opacity-70 max-w-[220px]">Sincronizamos as mensagens a partir do momento da conexão. Envie uma nova mensagem para iniciar.</p>
-            <Button size="sm" variant="outline" className="mt-2 gap-1.5" onClick={() => setNewConvOpen(true)}>
-              <MessageSquarePlus className="h-4 w-4" />
-              Nova Conversa
-            </Button>
+            <p className="font-medium text-foreground">
+              {isConnected ? 'Seu WhatsApp está conectado!' : 'Nenhuma conversa ainda'}
+            </p>
+            <p className="text-sm">
+              {isConnected ? 'Aguardando novas mensagens...' : 'Conecte seu WhatsApp para começar.'}
+            </p>
+            <p className="text-xs opacity-70 max-w-[220px]">
+              Sincronizamos as mensagens a partir do momento da conexão. Envie uma nova mensagem para iniciar.
+            </p>
+            {isConnected && (
+              <Button size="sm" variant="outline" className="mt-2 gap-1.5" onClick={() => setNewConvOpen(true)}>
+                <MessageSquarePlus className="h-4 w-4" />
+                Nova Conversa
+              </Button>
+            )}
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">

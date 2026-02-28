@@ -136,6 +136,7 @@ serve(async (req) => {
             'CONNECTION_UPDATE',
             'MESSAGES_UPSERT',
             'MESSAGES_UPDATE',
+            'MESSAGES_SET',
           ],
         };
 
@@ -351,7 +352,101 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid action. Use: create, refresh_qr, status, disconnect, sync_recent' }), {
+    // ─── SYNC HISTORY ───
+    if (action === 'sync_history') {
+      const { data: conn } = await supabaseAdmin
+        .from('whatsapp_connections')
+        .select('*')
+        .eq('broker_id', userId)
+        .single();
+
+      if (!conn?.instance_name) {
+        return new Response(JSON.stringify({ error: 'No instance found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      try {
+        // Fetch recent chats from Evolution API
+        const chatsRes = await fetch(`${evolutionApiUrl}/chat/findChats/${conn.instance_name}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+          body: JSON.stringify({ where: { id: { not: null } } }),
+        });
+        const chats = await chatsRes.json();
+        const chatList = Array.isArray(chats) ? chats.slice(0, 30) : [];
+        console.log(`sync_history: processing ${chatList.length} chats`);
+
+        let synced = 0;
+
+        for (const chat of chatList) {
+          try {
+            const remoteJid = chat.id || chat.remoteJid;
+            if (!remoteJid || remoteJid.endsWith('@g.us') || remoteJid === 'status@broadcast') continue;
+
+            const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
+            const name = chat.name || chat.pushName || chat.contact || phone;
+
+            // Upsert conversation
+            const { error: upsertErr } = await supabaseAdmin
+              .from('whatsapp_conversations')
+              .upsert(
+                {
+                  connection_id: conn.id,
+                  remote_jid: remoteJid,
+                  contact_name: name,
+                  contact_phone: phone,
+                  contact_profile_pic: chat.profilePictureUrl || null,
+                  last_message: chat.lastMessage?.content || chat.lastMessage?.message?.conversation || null,
+                  last_message_at: chat.updatedAt ? new Date(chat.updatedAt).toISOString() : new Date().toISOString(),
+                  unread_count: chat.unreadCount || 0,
+                  status: 'active',
+                },
+                { onConflict: 'connection_id,remote_jid' }
+              );
+
+            if (upsertErr) {
+              console.error(`sync_history upsert error for ${remoteJid}:`, upsertErr.message);
+            } else {
+              synced++;
+            }
+
+            // Try to link contact
+            const { data: existingContacts } = await supabaseAdmin
+              .from('contacts')
+              .select('id')
+              .eq('broker_id', userId)
+              .or(`phone.eq.${phone},whatsapp.eq.${phone},phone.eq.+${phone},whatsapp.eq.+${phone}`)
+              .limit(1);
+
+            if (existingContacts && existingContacts.length > 0) {
+              await supabaseAdmin
+                .from('whatsapp_conversations')
+                .update({ contact_id: existingContacts[0].id, lead_id: existingContacts[0].id })
+                .eq('connection_id', conn.id)
+                .eq('remote_jid', remoteJid);
+            }
+          } catch (chatErr) {
+            console.error('sync_history chat error:', chatErr);
+          }
+        }
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          synced,
+          message: `${synced} conversas sincronizadas com sucesso.`,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        console.error('sync_history error:', e);
+        return new Response(JSON.stringify({ error: 'Sync failed' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    return new Response(JSON.stringify({ error: 'Invalid action. Use: create, refresh_qr, status, disconnect, sync_recent, sync_history' }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
