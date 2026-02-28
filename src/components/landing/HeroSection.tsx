@@ -69,9 +69,9 @@ export function HeroSection({ segment = SEGMENTS.default }: HeroSectionProps) {
               size="lg"
               className="w-full sm:w-auto border-border text-foreground hover:bg-muted px-8 py-6 text-lg"
             >
-              <a href="#pricing" onClick={(e) => { e.preventDefault(); document.querySelector('#pricing')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                Ver Planos
-              </a>
+              <Link to="/presentation">
+                Ver Demonstração
+              </Link>
             </Button>
           </div>
 

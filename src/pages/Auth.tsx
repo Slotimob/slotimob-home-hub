@@ -150,12 +150,12 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('token');
   const pendingPlan = searchParams.get('plan');
-  const completeProfile = searchParams.get('complete_profile') === 'true';
+  const redirectToCheckout = searchParams.get('redirect') === 'checkout';
   const { toast } = useToast();
 
   // UI states
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(searchParams.get('token') ? 'signup' : 'login');
-  const [signupStep, setSignupStep] = useState(completeProfile ? 3 : 1);
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(searchParams.get('token') ? 'signup' : (redirectToCheckout ? 'login' : 'login'));
+  const [signupStep, setSignupStep] = useState(searchParams.get('complete_profile') === 'true' ? 3 : 1);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -164,7 +164,7 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isCompleteProfileMode] = useState(completeProfile);
+  const [isCompleteProfileMode] = useState(searchParams.get('complete_profile') === 'true');
 
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -172,7 +172,7 @@ const Auth = () => {
     email: '', password: '', fullName: '', phone: '', companyName: '', creci: '',
     personType: 'pf' as 'pf' | 'pj', cpf: '', cnpj: '', businessName: ''
   });
-  const [acceptedTerms, setAcceptedTerms] = useState(completeProfile); // auto-accept for profile completion
+  const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('complete_profile') === 'true');
   const [honeypot, setHoneypot] = useState('');
   const [formLoadTime] = useState(() => Date.now());
 
@@ -209,9 +209,12 @@ const Auth = () => {
   useEffect(() => {
     if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
       const planNames: Record<string, string> = { essencial: 'Essencial', pro: 'Pro', business: 'Business' };
-      sonnerToast.info(`Faça login ou crie uma conta para assinar o plano ${planNames[pendingPlan] || pendingPlan}`);
+      const msg = redirectToCheckout
+        ? `Faça login ou crie uma conta para assinar o plano ${planNames[pendingPlan] || pendingPlan}`
+        : `Crie sua conta para testar o plano ${planNames[pendingPlan] || pendingPlan} grátis por 14 dias`;
+      sonnerToast.info(msg);
     }
-  }, [pendingPlan]);
+  }, [pendingPlan, redirectToCheckout]);
 
   const handleAcceptInvite = useCallback(async () => {
     if (!inviteToken) return false;
