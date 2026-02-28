@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
   Users, Wallet, Building2, MessageSquare,
-  Shuffle, Target, Filter, ArrowLeftRight, BarChart3, FileText,
-  Shield, ImageIcon, FolderOpen, Bot, Bell, Zap, Brain,
+  Shuffle, BarChart3, FileText,
+  Shield, CalendarClock, Brain, Bot, PenTool,
+  ArrowLeftRight, Zap,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,12 +29,12 @@ const tabs: TabData[] = [
     id: 'crm',
     label: 'CRM & Vendas',
     icon: Users,
-    headline: 'Do primeiro contato ao contrato assinado.',
-    subheadline: 'Persiga cada oportunidade automaticamente. Saiba quem é o cliente, o que ele quer, e feche mais rápido.',
+    headline: 'WhatsApp + Pipeline + Financeiro. Tudo conectado.',
+    subheadline: 'Ao abrir uma conversa, o corretor já vê o histórico do imóvel e do cliente na tela. O pipeline de vendas está integrado ao WhatsApp e ao financeiro. No plano Business, a roleta distribui os leads automaticamente.',
     features: [
-      { icon: Shuffle, title: 'Roleta de Clientes', desc: 'Distribuição automática e justa para cada corretor. Ninguém fica sem oportunidade.' },
-      { icon: Target, title: 'Rastreio de Anúncios', desc: 'Saiba se o cliente veio do Instagram, Google ou portal — sem configuração extra.' },
-      { icon: Filter, title: 'Funil Visual', desc: 'Arraste negociações entre colunas. Veja o valor total em cada etapa do processo.' },
+      { icon: MessageSquare, title: 'WhatsApp com Contexto Completo', desc: 'O corretor abre o WhatsApp e já vê: qual imóvel o cliente viu, histórico de conversas e próximo passo.' },
+      { icon: Shuffle, title: 'Roleta de Leads (Plano Business)', desc: 'Distribuição automática e justa. Cada corretor recebe na sua vez, sem favoritismo.' },
+      { icon: FileText, title: 'Gestão de Contratos', desc: 'Gere contratos prontos a partir dos dados do negócio. Sem redigitar, sem erros.' },
     ],
     mockContent: (
       <div className="p-4 space-y-3">
@@ -59,14 +60,14 @@ const tabs: TabData[] = [
   },
   {
     id: 'financeiro',
-    label: 'Gestão Financeira',
+    label: 'Hub Financeiro',
     icon: Wallet,
-    headline: 'Bata o caixa em 1 minuto, não em horas.',
-    subheadline: 'O sistema lê seu extrato bancário e diz o que foi pago. Você só confirma.',
+    headline: 'Bata o caixa em segundos, não em horas.',
+    subheadline: 'Importe o extrato do banco e o sistema mostra o que foi pago. Você só confirma. O DRE funcional analisa o lucro real — por imóvel ou do negócio inteiro.',
     features: [
-      { icon: ArrowLeftRight, title: 'Conciliação Bancária', desc: 'Importe o extrato e o sistema identifica pagamentos automaticamente. Sem digitação.' },
-      { icon: BarChart3, title: 'Relatório de Lucro Real', desc: 'Veja quanto cada imóvel rende: receitas, despesas e o lucro líquido. Tudo separado.' },
-      { icon: FileText, title: 'Controle de Aluguéis', desc: 'Cobranças automáticas todo mês. Controle parcelas, atrasos e baixas sem esforço.' },
+      { icon: ArrowLeftRight, title: 'Bater o Caixa em Segundos', desc: 'O sistema lê o extrato e identifica cada pagamento. Sem digitar, sem conferir linha por linha.' },
+      { icon: BarChart3, title: 'DRE Funcional — Lucro Real', desc: 'Quanto a empresa realmente ganhou? O relatório separa receitas, despesas e mostra o lucro líquido.' },
+      { icon: Zap, title: 'Cobranças Automáticas', desc: 'Gere boletos e envie lembretes de pagamento pelo WhatsApp. Controle parcelas e atrasos sem esforço.' },
     ],
     mockContent: (
       <div className="p-4 space-y-3">
@@ -89,21 +90,21 @@ const tabs: TabData[] = [
   },
   {
     id: 'ativos',
-    label: 'Gestão de Imóveis',
+    label: 'Gestão de Aluguéis',
     icon: Building2,
-    headline: 'Seus imóveis organizados e rendendo mais.',
-    subheadline: 'Fotos bonitas, documentos seguros e uma visão clara de quais imóveis precisam de atenção.',
+    headline: 'Reajustes, contratos e vencimentos no piloto automático.',
+    subheadline: 'O sistema avisa sobre vencimentos, calcula reajustes automaticamente e gera os documentos sozinho. Você só acompanha.',
     features: [
-      { icon: Shield, title: 'Saúde do Patrimônio', desc: 'Veja de relance: contratos vencendo, reajustes pendentes e inadimplência destacada.' },
-      { icon: FolderOpen, title: 'Cofre de Documentos', desc: 'Escrituras, laudos e contratos anexados ao imóvel. Busque e encontre na hora.' },
-      { icon: ImageIcon, title: 'Galeria de Fotos Inteligente', desc: 'Upload múltiplo com otimização automática. Defina a capa com um clique.' },
+      { icon: CalendarClock, title: 'Controle Automático de Reajustes', desc: 'O sistema calcula pelo índice correto (IGPM, IPCA) e avisa antes do vencimento. Sem planilha.' },
+      { icon: Shield, title: 'Gestão de Contratos Completa', desc: 'Cadastre contratos, acompanhe vigência, gere renovações e rescisões com um clique.' },
+      { icon: FileText, title: 'Documentos Gerados Automaticamente', desc: 'Recibos, demonstrativos e relatórios prontos para o proprietário. Sem redigitar nada.' },
     ],
     mockContent: (
       <div className="p-4 space-y-3">
         {[
           { name: 'Apto 301 — Ed. Solar', status: 'Em dia', color: 'bg-success' },
           { name: 'Sala 12 — Empresarial', status: 'Reajuste em 5 dias', color: 'bg-warning' },
-          { name: 'Casa 7 — Cond. Flores', status: 'Atenção', color: 'bg-destructive' },
+          { name: 'Casa 7 — Cond. Flores', status: 'Contrato vencendo', color: 'bg-destructive' },
         ].map((item) => (
           <div key={item.name} className="flex items-center justify-between p-3 rounded-lg border border-border bg-background">
             <p className="text-sm font-medium text-foreground">{item.name}</p>
@@ -116,15 +117,15 @@ const tabs: TabData[] = [
     ),
   },
   {
-    id: 'whatsapp',
-    label: 'WhatsApp & IA',
-    icon: MessageSquare,
-    headline: 'Histórico eterno e resumos automáticos.',
-    subheadline: 'Toda conversa fica salva. Qualquer pessoa da equipe pode continuar o atendimento de onde o colega parou.',
+    id: 'ia',
+    label: 'Inteligência Artificial',
+    icon: Brain,
+    headline: 'A IA que trabalha por você.',
+    subheadline: 'Resumos de conversas longas no WhatsApp. Análise instantânea da saúde do seu patrimônio. Textos de conversão para venda e aluguel de imóveis. Menos tempo digitando, mais tempo fechando.',
     features: [
-      { icon: Bot, title: 'Histórico Eterno de Conversas', desc: 'Tudo salvo junto com os dados do cliente. Sem procurar no celular.' },
-      { icon: Brain, title: 'Resumos por Inteligência Artificial', desc: 'O sistema analisa a conversa e mostra: o que o cliente quer, quanto pode pagar e o próximo passo.' },
-      { icon: Bell, title: 'Avisos Inteligentes', desc: 'Alertas quando um cliente responder, follow-up atrasado ou inatividade prolongada.' },
+      { icon: Bot, title: 'Resumos Automáticos de Conversas', desc: 'A IA lê conversas extensas e entrega: o que o cliente quer, quanto pode pagar e o próximo passo.' },
+      { icon: BarChart3, title: 'Análise de Patrimônio', desc: 'Visão instantânea da saúde financeira dos seus imóveis. Quais rendem bem, quais precisam de atenção.' },
+      { icon: PenTool, title: 'Textos de Conversão', desc: 'Descrições profissionais para anúncios de venda e aluguel, geradas em segundos pela IA.' },
     ],
     mockContent: (
       <div className="space-y-3 p-4">
@@ -143,7 +144,7 @@ const tabs: TabData[] = [
         <div className="border-t border-border pt-3 mt-4">
           <div className="flex items-center gap-2 bg-accent/5 border border-accent/10 rounded-lg p-3">
             <Brain className="h-4 w-4 text-accent shrink-0" />
-            <p className="text-xs text-muted-foreground"><strong className="text-foreground">Resumo IA:</strong> Cliente interessado em 2 quartos, orçamento ~R$350k. Visita agendada.</p>
+            <p className="text-xs text-muted-foreground"><strong className="text-foreground">Resumo IA:</strong> Cliente interessado em 2 quartos, orçamento ~R$350k. Visita sugerida para amanhã.</p>
           </div>
         </div>
       </div>
@@ -160,13 +161,13 @@ export function FeatureTabsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-            Tudo que você precisa
+            Menos esforço, mais controle, mais lucro
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Uma plataforma completa para sua operação
+            Cada módulo resolve um problema real
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explore cada módulo e veja como o SlotiMob simplifica o dia a dia do mercado imobiliário.
+            Explore os módulos e veja como o SlotiMob otimiza cada etapa da sua operação imobiliária.
           </p>
         </div>
 
