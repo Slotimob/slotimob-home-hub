@@ -65,18 +65,17 @@ function ctaButton(text: string, url: string): string {
 
 function welcomeEmail(userName: string, dashboardUrl: string): { subject: string; html: string } {
   return {
-    subject: `Bem-vindo à SlotiMob, ${userName}! 🎉`,
+    subject: "O futuro da sua gestão imobiliária começou! 🏠",
     html: emailLayout("Bem-vindo à SlotiMob", `
-      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Olá, ${userName}!</h1>
-      <p>Parabéns por dar o primeiro passo rumo ao <strong>futuro da gestão imobiliária</strong>. Sua conta está pronta e seu painel já está configurado.</p>
-      <p>Na SlotiMob, você tem tudo em um só lugar:</p>
-      <ul style="padding-left:20px;color:#555;">
-        <li>📊 Dashboard inteligente com métricas em tempo real</li>
-        <li>🤝 Pipeline de vendas e gestão de leads</li>
-        <li>💰 Controle financeiro completo</li>
-        <li>📱 WhatsApp integrado para atendimento ágil</li>
+      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Seja muito bem-vindo(a) à SlotiMob, ${userName}!</h1>
+      <p>Você não acabou de contratar um software — <strong>você ganhou um novo sócio tecnológico</strong>. Agora, seus leads do WhatsApp não ficam mais perdidos e sua gestão financeira está a um clique de distância.</p>
+      <p style="font-weight:600;color:${BRAND.foreground};margin:24px 0 12px;">Seus próximos passos:</p>
+      <ul style="padding-left:20px;color:#555;line-height:2;">
+        <li>📲 Conectar seu WhatsApp em <strong>Integrações</strong></li>
+        <li>🏠 Cadastrar seu primeiro imóvel</li>
+        <li>👥 Importar sua lista de contatos</li>
       </ul>
-      ${ctaButton("Acessar meu Dashboard", dashboardUrl)}
+      ${ctaButton("Começar agora", dashboardUrl)}
       <p style="color:${BRAND.mutedFg};font-size:14px;">Precisa de ajuda? Nossa equipe está pronta para te apoiar.</p>
     `),
   };
@@ -89,21 +88,21 @@ function leadAssignedEmail(
   chatUrl: string,
 ): { subject: string; html: string } {
   return {
-    subject: `🔔 Novo Lead atribuído: ${leadName}`,
-    html: emailLayout("Novo Lead no WhatsApp", `
-      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Você tem um novo Lead! 🚀</h1>
-      <p>Olá, <strong>${agentName}</strong>! Um novo lead foi atribuído a você via WhatsApp.</p>
+    subject: "⚡ URGENTE: Novo Lead para você!",
+    html: emailLayout("Novo Lead Atribuído", `
+      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Som de dinheiro! 💰 Um novo lead acaba de entrar.</h1>
+      <p>Olá, <strong>${agentName}</strong>! A roleta de leads da SlotiMob acabou de te atribuir um novo contato vindo do WhatsApp. O tempo médio de resposta é o <strong>fator principal para o fechamento</strong>.</p>
       <table role="presentation" width="100%" style="margin:20px 0;border:1px solid #e5e7eb;border-radius:${BRAND.radius};overflow:hidden;">
         <tr style="background:${BRAND.mutedBg};">
           <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};width:120px;">Nome</td>
           <td style="padding:12px 16px;">${leadName}</td>
         </tr>
         <tr>
-          <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};">Telefone</td>
-          <td style="padding:12px 16px;">${leadPhone || "Não informado"}</td>
+          <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};">Origem</td>
+          <td style="padding:12px 16px;">WhatsApp</td>
         </tr>
       </table>
-      ${ctaButton("Abrir Conversa no WhatsApp", chatUrl)}
+      ${ctaButton("Falar com o Lead agora", chatUrl)}
       <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:0 ${BRAND.radius} ${BRAND.radius} 0;margin-top:20px;">
         <p style="margin:0;font-size:14px;color:#92400e;">
           ⏱️ <strong>Dica:</strong> Responda em menos de 5 minutos para aumentar as chances de fechamento em até 80%!
