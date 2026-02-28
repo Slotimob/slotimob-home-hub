@@ -3,56 +3,39 @@ import { supabase } from '@/integrations/supabase/client';
 import { cleanupExpiredDrafts } from '@/hooks/useFormDraft';
 
 export function GlowInitializer() {
-  const [userId, setUserId] = useState<string | null>(null);
-
-  // Listen to auth state without useAuth (avoids useNavigate hook)
   useEffect(() => {
     cleanupExpiredDrafts();
 
+    // Fix glow intensity at 50% — no user-configurable setting
+    document.documentElement.style.setProperty('--glow-intensity', '0.5');
+    document.documentElement.classList.remove('glow-disabled');
+  }, []);
+
+  // Sync theme from profile to localStorage on auth
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUserId(session?.user?.id ?? null);
+      async (_event, session) => {
+        if (session?.user?.id) {
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('theme_preference')
+              .eq('id', session.user.id)
+              .maybeSingle();
+
+            if (data?.theme_preference) {
+              localStorage.setItem('slotimob-theme', data.theme_preference);
+              document.documentElement.setAttribute('data-theme', data.theme_preference);
+            }
+          } catch {
+            // fail silently
+          }
+        }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id ?? null);
-    });
-
     return () => subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (userId) {
-      loadGlowSettings(userId);
-    } else {
-      document.documentElement.style.setProperty('--glow-intensity', '0.5');
-    }
-  }, [userId]);
-
-  const loadGlowSettings = async (uid: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('glow_intensity')
-        .eq('id', uid)
-        .single();
-
-      if (error) throw error;
-      
-      const intensity = (data?.glow_intensity ?? 50) / 100;
-      document.documentElement.style.setProperty('--glow-intensity', intensity.toString());
-      
-      if (data?.glow_intensity === 0) {
-        document.documentElement.classList.add('glow-disabled');
-      } else {
-        document.documentElement.classList.remove('glow-disabled');
-      }
-    } catch (error) {
-      console.error('Error loading glow settings:', error);
-      document.documentElement.style.setProperty('--glow-intensity', '0.5');
-    }
-  };
 
   return null;
 }
