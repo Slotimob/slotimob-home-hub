@@ -1,23 +1,38 @@
-import { Zap, Clock, ArrowRight } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Zap, Clock, ArrowRight, PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { toast } from 'sonner';
 
 export function TrialBanner() {
   const { isTrialActive, trialDaysRemaining, isLoading: trialLoading } = useTrialStatus();
   const { plan, isLoading: planLoading } = useSubscriptionLimits();
+  const welcomeShown = useRef(false);
+
+  // Show welcome toast once for new trial users
+  useEffect(() => {
+    if (trialLoading || planLoading || welcomeShown.current) return;
+    if (isTrialActive && trialDaysRemaining >= 13) {
+      welcomeShown.current = true;
+      toast.success('Bem-vindo à SlotiMob! 🎉', {
+        description: `Você está no período de teste PRO (${trialDaysRemaining} dias restantes). Aproveite todos os recursos.`,
+        duration: 8000,
+      });
+    }
+  }, [isTrialActive, trialDaysRemaining, trialLoading, planLoading]);
 
   if (trialLoading || planLoading) return null;
 
-  // Only show for free users
-  if (plan !== 'free') return null;
+  // Only show for free/trialing users
+  if (plan !== 'free' && !isTrialActive) return null;
 
   if (isTrialActive) {
     return (
       <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-          <Zap className="h-5 w-5" />
+          <PartyPopper className="h-5 w-5" />
           <span className="font-semibold text-sm">Trial Pro Ativo</span>
         </div>
         <div className="flex-1 min-w-0">

@@ -40,7 +40,7 @@ const plans: PlanDef[] = [
     priceMonthly: 39.90,
     priceAnnual: 29.90,
     priceEarlyAdopter: 19.90,
-    description: 'Para começar a organizar seus imóveis',
+    description: 'Organize seus imóveis e comece a vender',
     units: 'Até 10 unidades',
     users: '1 usuário',
     features: [
@@ -69,23 +69,23 @@ const plans: PlanDef[] = [
     priceMonthly: 147,
     priceAnnual: 97,
     priceEarlyAdopter: 79,
-    description: 'Para corretores que querem crescer',
+    description: 'Gestão completa para crescer com controle',
     units: 'Até 50 unidades',
     users: '1 usuário',
     features: [
       'Tudo do Essencial',
       'Chat IA (250 Créditos/mês)',
-      'Documentos ilimitados',
-      'Relatórios completos',
-      'Gestão de ativos completa',
+      'Contratos ilimitados',
+      'Relatórios e DRE completos',
+      'Gestão de ativos e reajustes',
       'Pipeline personalizável',
-      'DRE e categorias editáveis',
       'Todas as integrações',
+      'Suporte prioritário',
     ],
     notIncluded: [
-      'Gestão de Equipe (RBAC)',
+      'Gestão de Equipe',
     ],
-    cta: 'Garantir Vaga',
+    cta: 'Escolha Recomendada',
     popular: true,
     bestValue: false,
     colorClass: 'text-blue-500',
@@ -98,17 +98,16 @@ const plans: PlanDef[] = [
     priceMonthly: 297,
     priceAnnual: 197,
     priceEarlyAdopter: 179,
-    description: 'Para imobiliárias e equipes',
+    description: 'Escale sua imobiliária com equipe e auditoria',
     units: 'Até 80 unidades',
     users: '3 usuários inclusos',
     features: [
-      'Chat IA (750 Créditos/mês)',
       'Tudo do Pro',
-      'Gestão de Equipe (RBAC)',
+      'Chat IA (750 Créditos/mês)',
+      'Gestão de equipe com permissões',
       'Roleta de leads automática',
       'Split de comissões',
-      '+50 unidades por R$ 29,90/mês',
-      '+1 usuário por R$ 19,90/mês',
+      'Expansão sob demanda',
     ],
     cta: 'Garantir Vaga',
     popular: false,
@@ -128,7 +127,7 @@ export function PricingSection() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate(`/auth?plan=${planId}`);
+        navigate(`/auth?redirect=checkout&plan=${planId}`);
         return;
       }
 
@@ -202,10 +201,10 @@ export function PricingSection() {
                 )}
               >
                 {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4">
-                    <Zap className="h-3 w-3 mr-1" />
-                    Mais Popular
-                  </Badge>
+                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4">
+                     <Zap className="h-3 w-3 mr-1" />
+                     Recomendado
+                   </Badge>
                 )}
                 {plan.bestValue && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-4">
