@@ -4,8 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
@@ -14,91 +12,75 @@ import { Separator } from '@/components/ui/separator';
 import { SEOHead } from '@/components/SEOHead';
 import { toast as sonnerToast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { UserPlus, ArrowLeft, ArrowRight, Check, BarChart3, MessageSquare, Wallet, Building2, Loader2 } from 'lucide-react';
 
 const SITE_URL = 'https://slotimob.com.br';
 
 const loginSchema = z.object({
-  email: z.string().email({
-    message: 'Email inválido'
-  }),
-  password: z.string().min(6, {
-    message: 'Senha deve ter no mínimo 6 caracteres'
-  })
+  email: z.string().email({ message: 'Email inválido' }),
+  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' })
 });
-const signupSchema = loginSchema.extend({
-  fullName: z.string().min(2, {
-    message: 'Nome deve ter no mínimo 2 caracteres'
-  }),
+
+const step1Schema = z.object({
+  email: z.string().email({ message: 'Email inválido' }),
+  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' })
+});
+
+const step2Schema = z.object({
+  fullName: z.string().min(2, { message: 'Nome deve ter no mínimo 2 caracteres' }),
   phone: z.string().optional()
 });
 
-// Mapeamento de erros Supabase para mensagens amigáveis
+const step3Schema = z.object({
+  companyName: z.string().optional(),
+  creci: z.string().optional()
+});
+
 const getAuthErrorMessage = (error: any): { title: string; description: string } => {
   const errorMessage = error?.message?.toLowerCase() || '';
   const errorCode = error?.code || '';
 
-  // Erros de credenciais inválidas (senha errada ou email não existe)
-  if (
-    errorMessage.includes('invalid login credentials') ||
-    errorMessage.includes('invalid credentials') ||
-    errorCode === 'invalid_credentials'
-  ) {
-    return {
-      title: 'Credenciais inválidas',
-      description: 'Email ou senha incorretos. Verifique e tente novamente.'
-    };
+  if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid credentials') || errorCode === 'invalid_credentials') {
+    return { title: 'Credenciais inválidas', description: 'Email ou senha incorretos. Verifique e tente novamente.' };
   }
-
-  // Email não confirmado
-  if (
-    errorMessage.includes('email not confirmed') ||
-    errorCode === 'email_not_confirmed'
-  ) {
-    return {
-      title: 'Email não verificado',
-      description: 'Verifique sua caixa de entrada e clique no link de confirmação.'
-    };
+  if (errorMessage.includes('email not confirmed') || errorCode === 'email_not_confirmed') {
+    return { title: 'Email não verificado', description: 'Verifique sua caixa de entrada e clique no link de confirmação.' };
   }
-
-  // Muitas tentativas
-  if (
-    errorMessage.includes('too many requests') ||
-    errorMessage.includes('rate limit') ||
-    errorCode === 'over_request_rate_limit'
-  ) {
-    return {
-      title: 'Muitas tentativas',
-      description: 'Aguarde alguns minutos antes de tentar novamente.'
-    };
+  if (errorMessage.includes('too many requests') || errorMessage.includes('rate limit') || errorCode === 'over_request_rate_limit') {
+    return { title: 'Muitas tentativas', description: 'Aguarde alguns minutos antes de tentar novamente.' };
   }
-
-  // Usuário não encontrado (alguns provedores retornam isso)
-  if (
-    errorMessage.includes('user not found') ||
-    errorCode === 'user_not_found'
-  ) {
-    return {
-      title: 'Email não cadastrado',
-      description: 'Este email não está registrado. Crie uma conta primeiro.'
-    };
+  if (errorMessage.includes('user not found') || errorCode === 'user_not_found') {
+    return { title: 'Email não cadastrado', description: 'Este email não está registrado. Crie uma conta primeiro.' };
   }
-
-  // Erro genérico
-  return {
-    title: 'Erro ao fazer login',
-    description: error?.message || 'Verifique suas credenciais e tente novamente.'
-  };
+  return { title: 'Erro ao fazer login', description: error?.message || 'Verifique suas credenciais e tente novamente.' };
 };
+
+// Phone mask helper
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+const BENEFITS = [
+  { icon: MessageSquare, label: 'CRM Conversacional com WhatsApp' },
+  { icon: BarChart3, label: 'Funil de Vendas Inteligente' },
+  { icon: Wallet, label: 'Gestão Financeira Completa' },
+  { icon: Building2, label: 'Controle de Ativos e Contratos' },
+];
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('token');
   const pendingPlan = searchParams.get('plan');
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
+  // UI states
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(searchParams.get('token') ? 'signup' : 'login');
+  const [signupStep, setSignupStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -106,28 +88,21 @@ const Auth = () => {
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
-  const [loginForm, setLoginForm] = useState({
-    email: '',
-    password: ''
-  });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Form states
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-    phone: ''
+    email: '', password: '', fullName: '', phone: '', companyName: '', creci: ''
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  
-  // Anti-spam: honeypot field (should remain empty)
   const [honeypot, setHoneypot] = useState('');
-  // Anti-spam: track when form was loaded
   const [formLoadTime] = useState(() => Date.now());
 
-  // Invitation data from token
+  // Invitation
   const [invitation, setInvitation] = useState<{ email: string; invited_by_name: string; organization_owner_id: string } | null>(null);
   const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
 
-  // Fetch invitation data if token present
   useEffect(() => {
     if (!inviteToken) return;
     const fetchInvitation = async () => {
@@ -138,12 +113,12 @@ const Auth = () => {
           .select('email, invited_by_name, organization_owner_id')
           .eq('token', inviteToken)
           .maybeSingle();
-        
         if (error || !data) {
           sonnerToast.error('Convite inválido, expirado ou já utilizado.');
         } else {
           setInvitation(data);
           setSignupForm(prev => ({ ...prev, email: data.email }));
+          setActiveTab('signup');
         }
       } catch {
         sonnerToast.error('Erro ao verificar convite.');
@@ -154,7 +129,6 @@ const Auth = () => {
     fetchInvitation();
   }, [inviteToken]);
 
-  // Show intent message if user came from pricing
   useEffect(() => {
     if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
       const planNames: Record<string, string> = { essencial: 'Essencial', pro: 'Pro', business: 'Business' };
@@ -162,13 +136,10 @@ const Auth = () => {
     }
   }, [pendingPlan]);
 
-  // Function to accept invite after auth
   const handleAcceptInvite = useCallback(async () => {
     if (!inviteToken) return false;
     try {
-      const { data, error } = await supabase.functions.invoke('accept-invite', {
-        body: { token: inviteToken },
-      });
+      const { data, error } = await supabase.functions.invoke('accept-invite', { body: { token: inviteToken } });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       sonnerToast.success(data?.message || 'Você foi adicionado à equipe!');
@@ -179,114 +150,64 @@ const Auth = () => {
     }
   }, [inviteToken]);
 
-  // Function to handle post-auth checkout redirect
   const handlePostAuthCheckout = async (planId: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { plan_id: planId }
-      });
-
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', { body: { plan_id: planId } });
       if (error) {
-        console.error('Checkout error:', error);
         sonnerToast.error('Erro ao iniciar checkout. Você pode tentar novamente na página de planos.');
         navigate('/dashboard');
         return;
       }
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        navigate('/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
-    } catch (err) {
-      console.error('Post-auth checkout error:', err);
+      if (data?.url) window.open(data.url, '_blank');
+      navigate('/dashboard');
+    } catch {
       navigate('/dashboard');
     }
   };
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail || !z.string().email().safeParse(resetEmail).success) {
-      toast({
-        title: 'Email inválido',
-        description: 'Por favor, insira um email válido.',
-        variant: 'destructive'
-      });
+      toast({ title: 'Email inválido', description: 'Por favor, insira um email válido.', variant: 'destructive' });
       return;
     }
     try {
       setResetLoading(true);
-      const {
-        error
-      } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${SITE_URL}/reset-password`
-      });
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: `${SITE_URL}/reset-password` });
       if (error) throw error;
-      toast({
-        title: 'Email enviado!',
-        description: 'Verifique sua caixa de entrada para redefinir sua senha.'
-      });
+      toast({ title: 'Email enviado!', description: 'Verifique sua caixa de entrada para redefinir sua senha.' });
       setShowForgotPassword(false);
       setResetEmail('');
     } catch (error: any) {
-      toast({
-        title: 'Erro ao enviar email',
-        description: error.message || 'Tente novamente',
-        variant: 'destructive'
-      });
+      toast({ title: 'Erro ao enviar email', description: error.message || 'Tente novamente', variant: 'destructive' });
     } finally {
       setResetLoading(false);
     }
   };
+
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
-      // Preserve plan intent in OAuth redirect
       const redirectUrl = pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)
-        ? `${SITE_URL}/?checkout_plan=${pendingPlan}`
-        : `${SITE_URL}/`;
-      const {
-        error
-      } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl
-        }
-      });
+        ? `${SITE_URL}/?checkout_plan=${pendingPlan}` : `${SITE_URL}/`;
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl } });
       if (error) throw error;
     } catch (error: any) {
-      toast({
-        title: 'Erro ao entrar com Google',
-        description: error.message || 'Tente novamente',
-        variant: 'destructive'
-      });
+      toast({ title: 'Erro ao entrar com Google', description: error.message || 'Tente novamente', variant: 'destructive' });
     } finally {
       setGoogleLoading(false);
     }
   };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       loginSchema.parse(loginForm);
       setLoading(true);
-      const {
-        error
-      } = await supabase.auth.signInWithPassword({
-        email: loginForm.email,
-        password: loginForm.password
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password });
       if (error) throw error;
-      toast({
-        title: 'Login realizado!',
-        description: 'Bem-vindo de volta.'
-      });
-      
-      // Accept invite if token present
-      if (inviteToken) {
-        await handleAcceptInvite();
-      }
-      
-      // Check if user had a pending plan purchase intent
+      toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
+      if (inviteToken) await handleAcceptInvite();
       if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
         await handlePostAuthCheckout(pendingPlan);
       } else {
@@ -294,69 +215,68 @@ const Auth = () => {
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        toast({
-          title: 'Erro de validação',
-          description: error.errors[0].message,
-          variant: 'destructive'
-        });
+        toast({ title: 'Erro de validação', description: error.errors[0].message, variant: 'destructive' });
       } else {
         const friendlyError = getAuthErrorMessage(error);
-        toast({
-          title: friendlyError.title,
-          description: friendlyError.description,
-          variant: 'destructive'
-        });
+        toast({ title: friendlyError.title, description: friendlyError.description, variant: 'destructive' });
       }
     } finally {
       setLoading(false);
     }
   };
+
+  // Multi-step signup validation
+  const validateStep = (step: number): boolean => {
+    setFieldErrors({});
+    try {
+      if (step === 1) {
+        step1Schema.parse({ email: signupForm.email, password: signupForm.password });
+      } else if (step === 2) {
+        step2Schema.parse({ fullName: signupForm.fullName, phone: signupForm.phone });
+      } else if (step === 3) {
+        step3Schema.parse({ companyName: signupForm.companyName, creci: signupForm.creci });
+        if (!acceptedTerms) {
+          toast({ title: 'Termos não aceitos', description: 'Aceite os Termos de Uso para continuar.', variant: 'destructive' });
+          return false;
+        }
+      }
+      return true;
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((e: any) => { errors[e.path[0]] = e.message; });
+        setFieldErrors(errors);
+      }
+      return false;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(signupStep)) {
+      setSignupStep(prev => Math.min(prev + 1, 3));
+    }
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!acceptedTerms) {
-      toast({
-        title: 'Termos não aceitos',
-        description: 'Você precisa aceitar os Termos de Uso e Política de Privacidade para criar uma conta.',
-        variant: 'destructive'
-      });
-      return;
-    }
+    if (!validateStep(3)) return;
+
     try {
-      signupSchema.parse(signupForm);
       setLoading(true);
-      
-      // Anti-spam validation via Edge Function
+      // Anti-spam
       try {
         const { data: validationResult, error: validationError } = await supabase.functions.invoke('validate-signup', {
-          body: {
-            email: signupForm.email,
-            honeypot,
-            formLoadTime
-          }
+          body: { email: signupForm.email, honeypot, formLoadTime }
         });
-
-        if (validationError) {
-          console.warn('Signup validation error:', validationError);
-          // Fail open - continue with signup if validation service fails
-        } else if (validationResult && !validationResult.allowed) {
-          toast({
-            title: 'Não foi possível criar conta',
-            description: validationResult.message || 'Tente novamente mais tarde.',
-            variant: 'destructive'
-          });
+        if (!validationError && validationResult && !validationResult.allowed) {
+          toast({ title: 'Não foi possível criar conta', description: validationResult.message || 'Tente novamente mais tarde.', variant: 'destructive' });
           setLoading(false);
           return;
         }
-      } catch (validationErr) {
-        console.warn('Signup validation request failed:', validationErr);
-        // Fail open - continue with signup
-      }
-      
+      } catch { /* fail open */ }
+
       const redirectUrl = invitation ? `${SITE_URL}/auth?token=${inviteToken}` : `${SITE_URL}/`;
-      const {
-        data,
-        error
-      } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
         password: signupForm.password,
         options: {
@@ -364,6 +284,8 @@ const Auth = () => {
           data: {
             full_name: signupForm.fullName,
             phone: signupForm.phone,
+            company_name: signupForm.companyName,
+            creci: signupForm.creci,
             terms_accepted_at: new Date().toISOString(),
             terms_version: '1.0'
           }
@@ -371,7 +293,6 @@ const Auth = () => {
       });
       if (error) throw error;
 
-      // If user was created, also update the profile with terms acceptance
       if (data.user) {
         await supabase.from('profiles').update({
           terms_accepted_at: new Date().toISOString(),
@@ -379,30 +300,15 @@ const Auth = () => {
         }).eq('id', data.user.id);
       }
 
-      // Check if email confirmation is required
       if (data.user && !data.session) {
-        // Email confirmation is required
         setPendingVerificationEmail(signupForm.email);
         setShowVerificationMessage(true);
-        setSignupForm({
-          email: '',
-          password: '',
-          fullName: '',
-          phone: ''
-        });
+        setSignupForm({ email: '', password: '', fullName: '', phone: '', companyName: '', creci: '' });
         setAcceptedTerms(false);
+        setSignupStep(1);
       } else {
-        // Accept invite if token present
-        if (inviteToken) {
-          await handleAcceptInvite();
-        }
-        
-        toast({
-          title: 'Conta criada!',
-          description: 'Sua conta foi criada com sucesso.'
-        });
-        
-        // Check if user had a pending plan purchase intent
+        if (inviteToken) await handleAcceptInvite();
+        toast({ title: 'Conta criada!', description: 'Sua conta foi criada com sucesso.' });
         if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
           await handlePostAuthCheckout(pendingPlan);
         } else {
@@ -411,150 +317,317 @@ const Auth = () => {
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        toast({
-          title: 'Erro de validação',
-          description: error.errors[0].message,
-          variant: 'destructive'
-        });
+        toast({ title: 'Erro de validação', description: error.errors[0].message, variant: 'destructive' });
       } else {
-        toast({
-          title: 'Erro ao criar conta',
-          description: error.message || 'Tente novamente',
-          variant: 'destructive'
-        });
+        toast({ title: 'Erro ao criar conta', description: error.message || 'Tente novamente', variant: 'destructive' });
       }
     } finally {
       setLoading(false);
     }
   };
+
   const handleResendVerification = async () => {
     if (!pendingVerificationEmail) return;
     try {
       setLoading(true);
-      const {
-        error
-      } = await supabase.auth.resend({
-        type: 'signup',
-        email: pendingVerificationEmail,
-        options: {
-          emailRedirectTo: `${SITE_URL}/`
-        }
-      });
+      const { error } = await supabase.auth.resend({ type: 'signup', email: pendingVerificationEmail, options: { emailRedirectTo: `${SITE_URL}/` } });
       if (error) throw error;
-      toast({
-        title: 'Email reenviado!',
-        description: 'Verifique sua caixa de entrada.'
-      });
+      toast({ title: 'Email reenviado!', description: 'Verifique sua caixa de entrada.' });
     } catch (error: any) {
-      toast({
-        title: 'Erro ao reenviar',
-        description: error.message || 'Tente novamente',
-        variant: 'destructive'
-      });
+      toast({ title: 'Erro ao reenviar', description: error.message || 'Tente novamente', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
-  const GoogleIcon = () => <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+
+  const GoogleIcon = () => (
+    <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-    </svg>;
+    </svg>
+  );
+
+  const stepLabels = ['Credenciais', 'Identificação', 'Ambiente'];
+
+  // ─── Render helpers ───
+
+  const renderStepIndicator = () => (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-2">
+        {stepLabels.map((label, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+              signupStep > i + 1 ? 'bg-primary text-primary-foreground' :
+              signupStep === i + 1 ? 'bg-primary text-primary-foreground' :
+              'bg-muted text-muted-foreground'
+            }`}>
+              {signupStep > i + 1 ? <Check className="h-3.5 w-3.5" /> : i + 1}
+            </div>
+            <span className={`text-xs hidden sm:inline ${signupStep === i + 1 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>{label}</span>
+          </div>
+        ))}
+      </div>
+      <Progress value={(signupStep / 3) * 100} className="h-1.5" />
+    </div>
+  );
+
+  const renderSignupStep1 = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="signup-email">Email</Label>
+        <Input
+          id="signup-email"
+          type="email"
+          placeholder="seu@email.com"
+          value={signupForm.email}
+          onChange={e => !invitation && setSignupForm({ ...signupForm, email: e.target.value })}
+          readOnly={!!invitation}
+          className={`${invitation ? 'bg-muted cursor-not-allowed' : ''} ${fieldErrors.email ? 'border-destructive' : ''}`}
+          required
+        />
+        {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
+        {invitation && <p className="text-xs text-muted-foreground">Email bloqueado — deve corresponder ao convite.</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="signup-password">Senha</Label>
+        <Input
+          id="signup-password"
+          type="password"
+          placeholder="Mínimo 6 caracteres"
+          value={signupForm.password}
+          onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
+          className={fieldErrors.password ? 'border-destructive' : ''}
+          required
+        />
+        {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+      </div>
+      <Button type="button" className="w-full" onClick={handleNextStep}>
+        Continuar <ArrowRight className="ml-2 h-4 w-4" />
+      </Button>
+    </div>
+  );
+
+  const renderSignupStep2 = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="signup-name">Nome Completo</Label>
+        <Input
+          id="signup-name"
+          type="text"
+          placeholder="Seu nome completo"
+          value={signupForm.fullName}
+          onChange={e => setSignupForm({ ...signupForm, fullName: e.target.value })}
+          className={fieldErrors.fullName ? 'border-destructive' : ''}
+          required
+        />
+        {fieldErrors.fullName && <p className="text-xs text-destructive">{fieldErrors.fullName}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="signup-phone">Telefone</Label>
+        <Input
+          id="signup-phone"
+          type="tel"
+          placeholder="(00) 00000-0000"
+          value={signupForm.phone}
+          onChange={e => setSignupForm({ ...signupForm, phone: formatPhone(e.target.value) })}
+        />
+      </div>
+      <div className="flex gap-3">
+        <Button type="button" variant="outline" className="flex-1" onClick={() => setSignupStep(1)}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+        </Button>
+        <Button type="button" className="flex-1" onClick={handleNextStep}>
+          Continuar <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderSignupStep3 = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="signup-company">Nome da Imobiliária / Empresa</Label>
+        <Input
+          id="signup-company"
+          type="text"
+          placeholder='Ex: "Imob Premium" ou deixe vazio para uso individual'
+          value={signupForm.companyName}
+          onChange={e => setSignupForm({ ...signupForm, companyName: e.target.value })}
+        />
+        <p className="text-xs text-muted-foreground">Opcional. Deixe vazio para uso individual.</p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="signup-creci">CRECI</Label>
+        <Input
+          id="signup-creci"
+          type="text"
+          placeholder="Opcional"
+          value={signupForm.creci}
+          onChange={e => setSignupForm({ ...signupForm, creci: e.target.value })}
+        />
+      </div>
+      {/* Honeypot */}
+      <div className="absolute -left-[9999px] opacity-0 pointer-events-none" aria-hidden="true">
+        <Label htmlFor="signup-website">Website</Label>
+        <Input id="signup-website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={e => setHoneypot(e.target.value)} />
+      </div>
+      <div className="flex items-start space-x-2">
+        <Checkbox id="accept-terms" checked={acceptedTerms} onCheckedChange={checked => setAcceptedTerms(checked as boolean)} className="mt-0.5" />
+        <Label htmlFor="accept-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+          Li e aceito os{' '}
+          <Link to="/legal" className="text-primary hover:underline font-medium" target="_blank">Termos de Uso</Link>{' '}
+          e a{' '}
+          <Link to="/legal" className="text-primary hover:underline font-medium" target="_blank">Política de Privacidade</Link>
+        </Label>
+      </div>
+      <div className="flex gap-3">
+        <Button type="button" variant="outline" className="flex-1" onClick={() => setSignupStep(2)}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+        </Button>
+        <Button type="submit" className="flex-1" disabled={loading || !acceptedTerms}>
+          {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...</> : 'Criar conta'}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground text-center">
+        Você receberá um email para verificar sua conta.
+      </p>
+    </div>
+  );
+
+  const renderVerificationMessage = () => (
+    <div className="space-y-4 text-center py-6">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+        <svg className="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold">Verifique seu email</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Enviamos um link de verificação para{' '}
+          <span className="font-medium text-foreground">{pendingVerificationEmail}</span>.
+        </p>
+      </div>
+      <div className="space-y-2">
+        <Button variant="outline" className="w-full" onClick={handleResendVerification} disabled={loading}>
+          {loading ? 'Reenviando...' : 'Reenviar email de verificação'}
+        </Button>
+        <Button variant="ghost" className="w-full" onClick={() => { setShowVerificationMessage(false); setPendingVerificationEmail(''); setActiveTab('login'); }}>
+          Voltar ao login
+        </Button>
+      </div>
+    </div>
+  );
+
+  // ─── Main render ───
+
   return (
     <>
-      <SEOHead 
-        title="Login e Cadastro"
-        description="Acesse sua conta SLOTIMOB ou crie uma nova conta para gerenciar seus imóveis e leads"
-        path="/auth"
-      />
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/10 p-4">
-        <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex items-center justify-center">
-            <SlotiLogo size="lg" />
+      <SEOHead title="Login e Cadastro" description="Acesse sua conta SLOTIMOB ou crie uma nova conta para gerenciar seus imóveis e leads" path="/auth" />
+
+      <div className="flex min-h-[100dvh]">
+        {/* Left column - informational (hidden on mobile) */}
+        <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] flex-col justify-between p-10 xl:p-16 text-primary-foreground relative overflow-hidden" style={{ background: 'var(--gradient-primary)' }}>
+          {/* Decorative circles */}
+          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/5" />
+          <div className="absolute bottom-16 -left-16 h-48 w-48 rounded-full bg-white/5" />
+          <div className="absolute top-1/2 right-1/4 h-32 w-32 rounded-full bg-white/[0.03]" />
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <SlotiLogo size="md" />
+              <span className="text-2xl font-bold tracking-tight">SLOTIMOB</span>
+            </div>
+            <p className="text-sm text-primary-foreground/70">Sistema de gestão imobiliária</p>
           </div>
-          <CardTitle className="text-2xl">SLOTIMOB</CardTitle>
-          <CardDescription>
-            Sistema de gestão de ativos imobiliários.                     
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {showVerificationMessage ? <div className="space-y-4 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <svg className="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">Verifique seu email</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Enviamos um link de verificação para{' '}
-                  <span className="font-medium text-foreground">{pendingVerificationEmail}</span>.
-                  Clique no link para ativar sua conta.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full" onClick={handleResendVerification} disabled={loading}>
-                  {loading ? 'Reenviando...' : 'Reenviar email de verificação'}
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={() => {
-              setShowVerificationMessage(false);
-              setPendingVerificationEmail('');
-            }}>
-                  Voltar ao login
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Após verificar seu email, você poderá fazer login e usar a recuperação de senha.
-              </p>
-            </div> : <>
-              <div className="mb-4">
-                <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={googleLoading || loading}>
-                  <GoogleIcon />
+
+          <div className="relative z-10 space-y-8">
+            <h1 className="text-3xl xl:text-4xl font-bold leading-tight">
+              Gerencie seus imóveis,<br />leads e finanças<br />em um só lugar.
+            </h1>
+            <div className="space-y-4">
+              {BENEFITS.map((b, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                    <b.icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-sm font-medium text-primary-foreground/90">{b.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="relative z-10 text-xs text-primary-foreground/50">
+            © {new Date().getFullYear()} SLOTIMOB. Todos os direitos reservados.
+          </p>
+        </div>
+
+        {/* Right column - form */}
+        <div className="flex w-full lg:w-1/2 xl:w-[45%] items-center justify-center p-6 sm:p-10 bg-background">
+          <div className="w-full max-w-md space-y-6">
+            {/* Mobile logo */}
+            <div className="flex flex-col items-center lg:hidden mb-2">
+              <SlotiLogo size="lg" />
+              <h2 className="text-xl font-bold mt-2">SLOTIMOB</h2>
+              <p className="text-xs text-muted-foreground">Sistema de gestão imobiliária</p>
+            </div>
+
+            {showVerificationMessage ? (
+              renderVerificationMessage()
+            ) : (
+              <>
+                {/* Google OAuth */}
+                <Button type="button" variant="outline" className="w-full h-12 text-sm font-medium" onClick={handleGoogleLogin} disabled={googleLoading || loading}>
+                  {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                   {googleLoading ? 'Conectando...' : 'Continuar com Google'}
                 </Button>
-              </div>
 
-              <div className="relative mb-4">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full" />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-3 text-muted-foreground">ou continue com email</span>
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
-                    ou continue com email
-                  </span>
+
+                {/* Tab switcher */}
+                <div className="flex rounded-lg bg-muted p-1">
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('login'); setSignupStep(1); setFieldErrors({}); }}
+                    className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${activeTab === 'login' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('signup'); setFieldErrors({}); }}
+                    className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${activeTab === 'signup' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Criar Conta
+                  </button>
                 </div>
-              </div>
 
-              <Tabs defaultValue={invitation ? "signup" : "login"} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup">Criar Conta</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="login">
-                  {showForgotPassword ? <form onSubmit={handleForgotPassword} className="space-y-4">
+                {/* ─── LOGIN ─── */}
+                {activeTab === 'login' && (
+                  showForgotPassword ? (
+                    <form onSubmit={handleForgotPassword} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="reset-email">Email</Label>
                         <Input id="reset-email" type="email" placeholder="seu@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Se sua conta estiver verificada, você receberá um link para redefinir sua senha.
-                      </p>
+                      <p className="text-xs text-muted-foreground">Você receberá um link para redefinir sua senha.</p>
                       <Button type="submit" className="w-full" disabled={resetLoading}>
-                        {resetLoading ? 'Enviando...' : 'Enviar link de recuperação'}
+                        {resetLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</> : 'Enviar link de recuperação'}
                       </Button>
-                      <Button type="button" variant="ghost" className="w-full" onClick={() => setShowForgotPassword(false)}>
-                        Voltar ao login
-                      </Button>
-                    </form> : <form onSubmit={handleLogin} className="space-y-4">
+                      <Button type="button" variant="ghost" className="w-full" onClick={() => setShowForgotPassword(false)}>Voltar ao login</Button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleLogin} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="login-email">Email</Label>
-                        <Input id="login-email" type="email" placeholder="seu@email.com" value={loginForm.email} onChange={e => setLoginForm({
-                    ...loginForm,
-                    email: e.target.value
-                  })} required />
+                        <Input id="login-email" type="email" placeholder="seu@email.com" value={loginForm.email} onChange={e => setLoginForm({ ...loginForm, email: e.target.value })} required />
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -563,126 +636,47 @@ const Auth = () => {
                             Esqueceu a senha?
                           </Button>
                         </div>
-                        <Input id="login-password" type="password" placeholder="••••••••" value={loginForm.password} onChange={e => setLoginForm({
-                    ...loginForm,
-                    password: e.target.value
-                  })} required />
+                        <Input id="login-password" type="password" placeholder="••••••••" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} required />
                       </div>
-                      <Button type="submit" className="w-full" disabled={loading || googleLoading}>
-                        {loading ? 'Entrando...' : 'Entrar'}
+                      <Button type="submit" className="w-full h-11" disabled={loading || googleLoading}>
+                        {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
                       </Button>
-                    </form>}
-                </TabsContent>
+                    </form>
+                  )
+                )}
 
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignup} className="space-y-4">
+                {/* ─── SIGNUP ─── */}
+                {activeTab === 'signup' && (
+                  <form onSubmit={handleSignup}>
                     {invitation && (
-                      <Alert className="border-primary/30 bg-primary/5">
+                      <Alert className="border-primary/30 bg-primary/5 mb-4">
                         <UserPlus className="h-4 w-4" />
                         <AlertDescription className="text-sm">
-                          <strong>{invitation.invited_by_name}</strong> convidou você para a equipe da SlotiMob.
-                          Crie sua conta para ingressar.
+                          <strong>{invitation.invited_by_name}</strong> convidou você para a equipe.
                         </AlertDescription>
                       </Alert>
                     )}
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">Nome Completo</Label>
-                      <Input id="signup-name" type="text" placeholder="Seu nome" value={signupForm.fullName} onChange={e => setSignupForm({
-                    ...signupForm,
-                    fullName: e.target.value
-                  })} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input 
-                        id="signup-email" 
-                        type="email" 
-                        placeholder="seu@email.com" 
-                        value={signupForm.email} 
-                        onChange={e => !invitation && setSignupForm({
-                          ...signupForm,
-                          email: e.target.value
-                        })} 
-                        readOnly={!!invitation}
-                        className={invitation ? 'bg-muted cursor-not-allowed' : ''}
-                        required 
-                      />
-                      {invitation && (
-                        <p className="text-xs text-muted-foreground">
-                          Email bloqueado — deve corresponder ao convite recebido.
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-phone">Telefone (opcional)</Label>
-                      <Input id="signup-phone" type="tel" placeholder="(00) 00000-0000" value={signupForm.phone} onChange={e => setSignupForm({
-                    ...signupForm,
-                    phone: e.target.value
-                  })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Senha</Label>
-                      <Input id="signup-password" type="password" placeholder="••••••••" value={signupForm.password} onChange={e => setSignupForm({
-                    ...signupForm,
-                    password: e.target.value
-                  })} required />
-                    </div>
-                    {/* Honeypot field - hidden from users, bots will fill it */}
-                    <div className="absolute -left-[9999px] opacity-0 pointer-events-none" aria-hidden="true">
-                      <Label htmlFor="signup-website">Website</Label>
-                      <Input 
-                        id="signup-website" 
-                        type="text" 
-                        tabIndex={-1} 
-                        autoComplete="off"
-                        value={honeypot} 
-                        onChange={e => setHoneypot(e.target.value)} 
-                      />
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <Checkbox id="accept-terms" checked={acceptedTerms} onCheckedChange={checked => setAcceptedTerms(checked as boolean)} className="mt-0.5" />
-                      <Label htmlFor="accept-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                        Li e aceito os{' '}
-                        <Link to="/legal" className="text-primary hover:underline font-medium" target="_blank">
-                          Termos de Uso
-                        </Link>{' '}
-                        e a{' '}
-                        <Link to="/legal" className="text-primary hover:underline font-medium" target="_blank">
-                          Política de Privacidade
-                        </Link>
-                      </Label>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Você receberá um email para verificar sua conta antes de poder fazer login.
-                    </p>
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={
-                        loading || 
-                        googleLoading || 
-                        !acceptedTerms || 
-                        !signupForm.fullName.trim() || 
-                        !signupForm.email.trim() || 
-                        !signupForm.password.trim() ||
-                        signupForm.password.length < 6
-                      }
-                    >
-                      {loading ? 'Criando conta...' : 'Criar conta'}
-                    </Button>
+
+                    {renderStepIndicator()}
+
+                    {signupStep === 1 && renderSignupStep1()}
+                    {signupStep === 2 && renderSignupStep2()}
+                    {signupStep === 3 && renderSignupStep3()}
                   </form>
-                </TabsContent>
-              </Tabs>
-            </>}
-        </CardContent>
-        <CardFooter className="justify-center border-t pt-4">
-          <Link to="/legal" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-            Política de Privacidade e Termos de Uso
-          </Link>
-        </CardFooter>
-      </Card>
-    </div>
+                )}
+
+                <div className="text-center pt-2">
+                  <Link to="/legal" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                    Política de Privacidade e Termos de Uso
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
     </>
   );
 };
+
 export default Auth;
