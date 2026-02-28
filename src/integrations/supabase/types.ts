@@ -2137,6 +2137,9 @@ export type Database = {
           author_role: string | null
           avatar_url: string | null
           bio_mini: string | null
+          business_name: string | null
+          cnpj: string | null
+          cpf: string | null
           created_at: string
           creci_document_url: string | null
           dark_mode_preference: boolean | null
@@ -2150,6 +2153,7 @@ export type Database = {
           linkedin_url: string | null
           notification_sound_enabled: boolean | null
           notification_vibration_enabled: boolean | null
+          person_type: string | null
           phone: string | null
           pipeline_stage_order: Json | null
           push_subscription: Json | null
@@ -2164,6 +2168,9 @@ export type Database = {
           author_role?: string | null
           avatar_url?: string | null
           bio_mini?: string | null
+          business_name?: string | null
+          cnpj?: string | null
+          cpf?: string | null
           created_at?: string
           creci_document_url?: string | null
           dark_mode_preference?: boolean | null
@@ -2177,6 +2184,7 @@ export type Database = {
           linkedin_url?: string | null
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
+          person_type?: string | null
           phone?: string | null
           pipeline_stage_order?: Json | null
           push_subscription?: Json | null
@@ -2191,6 +2199,9 @@ export type Database = {
           author_role?: string | null
           avatar_url?: string | null
           bio_mini?: string | null
+          business_name?: string | null
+          cnpj?: string | null
+          cpf?: string | null
           created_at?: string
           creci_document_url?: string | null
           dark_mode_preference?: boolean | null
@@ -2204,6 +2215,7 @@ export type Database = {
           linkedin_url?: string | null
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
+          person_type?: string | null
           phone?: string | null
           pipeline_stage_order?: Json | null
           push_subscription?: Json | null
