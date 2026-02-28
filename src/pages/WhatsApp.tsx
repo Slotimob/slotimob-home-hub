@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useAuth, useAuthContext } from '@/hooks/useAuth';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -15,7 +15,6 @@ import { ChatSidebar } from '@/components/whatsapp/ChatSidebar';
 import { ChatArea } from '@/components/whatsapp/ChatArea';
 import { CrmContextPanel } from '@/components/whatsapp/CrmContextPanel';
 import {
-  useWhatsAppConnection,
   useConversations,
   useMessages,
   useSendMessage,
@@ -50,7 +49,6 @@ function useWhatsAppAnyConnection() {
 
     fetch();
 
-    // Subscribe to realtime changes
     const channel = supabase
       .channel('whatsapp-connection-page')
       .on(
@@ -79,14 +77,22 @@ function useWhatsAppAnyConnection() {
 
 export default function WhatsApp() {
   const { user, loading: authLoading } = useAuth();
+  const { userRole } = useAuthContext();
   const isMobile = useIsMobile();
+  const isOwner = userRole === 'owner';
 
-  // Use "any connection" instead of "connected only"
   const { connection, loading: connectionLoading } = useWhatsAppAnyConnection();
   const isConnected = connection?.status === 'connected';
   const hasConnection = !!connection;
 
-  const { conversations, loading: conversationsLoading } = useConversations(connection?.id || null);
+  const { conversations: allConversations, loading: conversationsLoading } = useConversations(connection?.id || null);
+
+  // ─── Visibility Control: agents see only their assigned conversations ───
+  const conversations = useMemo(() => {
+    if (isOwner || !user) return allConversations;
+    return allConversations.filter(c => c.assigned_user_id === user.id);
+  }, [allConversations, isOwner, user]);
+
   const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null);
   const { sendMessage, sending } = useSendMessage();
@@ -96,11 +102,36 @@ export default function WhatsApp() {
   const [showCrmPanel, setShowCrmPanel] = useState(true);
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
+  // Fetch team members for reassignment (owner only)
+  const [teamMembers, setTeamMembers] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!isOwner || !user) return;
+    const fetchTeam = async () => {
+      const { data: members } = await supabase
+        .from('organization_members')
+        .select('user_id')
+        .eq('organization_owner_id', user.id)
+        .eq('is_active', true);
+
+      if (!members || members.length === 0) return;
+
+      const memberIds = [user.id, ...members.map(m => m.user_id)];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', memberIds);
+
+      setTeamMembers(
+        (profiles || []).map(p => ({ id: p.id, name: p.full_name || 'Sem nome' }))
+      );
+    };
+    fetchTeam();
+  }, [isOwner, user]);
+
   const handleSelectConversation = useCallback((conv: WhatsAppConversation) => {
     setSelectedConversation(conv);
     if (isMobile) setMobileView('chat');
 
-    // Mark as read — optimistic + DB update
     if (conv.unread_count > 0) {
       supabase
         .from('whatsapp_conversations')
@@ -122,6 +153,20 @@ export default function WhatsApp() {
     await sendMessage(selectedConversation.id, content);
   }, [selectedConversation, sendMessage]);
 
+  const handleReassign = useCallback(async (conversationId: string, newUserId: string) => {
+    const { error } = await supabase
+      .from('whatsapp_conversations')
+      .update({ assigned_user_id: newUserId, assigned_at: new Date().toISOString() })
+      .eq('id', conversationId);
+    if (error) console.error('Reassignment error:', error);
+    else {
+      // Update local state
+      setSelectedConversation(prev =>
+        prev?.id === conversationId ? { ...prev, assigned_user_id: newUserId } : prev
+      );
+    }
+  }, []);
+
   if (authLoading || connectionLoading) {
     return (
       <SidebarProvider>
@@ -135,7 +180,6 @@ export default function WhatsApp() {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  // "Never connected" state — no connection record at all
   if (!hasConnection) {
     return (
       <SidebarProvider>
@@ -168,7 +212,6 @@ export default function WhatsApp() {
         <AppSidebar />
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Disconnected Banner */}
           {!isConnected && (
             <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2 text-sm text-destructive">
@@ -181,11 +224,15 @@ export default function WhatsApp() {
             </div>
           )}
 
-          {/* Top bar */}
           <header className="border-b bg-card flex-shrink-0 pt-[env(safe-area-inset-top)]">
             <div className="flex items-center gap-2 px-3 py-2">
               <SidebarTrigger className="flex-shrink-0" />
               <h1 className="text-lg font-bold text-foreground">WhatsApp</h1>
+              {isOwner && (
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                  Supervisor
+                </span>
+              )}
               <div className="ml-auto">
                 <Button variant="ghost" size="icon" asChild>
                   <Link to="/whatsapp-settings"><Settings className="h-4 w-4" /></Link>
@@ -194,9 +241,7 @@ export default function WhatsApp() {
             </div>
           </header>
 
-          {/* 3-Panel Layout */}
           <div className="flex-1 flex overflow-hidden min-h-0">
-            {/* LEFT: Conversation List */}
             <div
               className={cn(
                 'border-r flex-shrink-0 overflow-hidden',
@@ -215,7 +260,6 @@ export default function WhatsApp() {
               />
             </div>
 
-            {/* CENTER: Chat Area */}
             <div
               className={cn(
                 'flex-1 flex min-w-0',
@@ -232,10 +276,14 @@ export default function WhatsApp() {
                 loadingMessages={messagesLoading}
                 sending={sending}
                 isConnected={isConnected}
+                assignedUserId={selectedConversation?.assigned_user_id || null}
+                teamMembers={isOwner ? teamMembers : []}
+                isOwner={isOwner}
+                onReassign={handleReassign}
+                conversationId={selectedConversation?.id || null}
               />
             </div>
 
-            {/* RIGHT: CRM Context Panel */}
             {!isMobile && showCrmPanel && selectedConversation && (
               <div className="w-72 xl:w-80 border-l flex-shrink-0 bg-card overflow-hidden">
                 <CrmContextPanel

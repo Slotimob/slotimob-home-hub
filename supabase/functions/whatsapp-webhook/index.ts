@@ -266,11 +266,9 @@ async function handleMessagesSet(supabaseAdmin: any, instanceName: string, data:
     return;
   }
 
-  // v2.3.7 sends messages.set with an array of messages grouped or flat
   const messages = Array.isArray(data) ? data : (data?.messages || []);
   console.log(`messages.set: received ${messages.length} messages for ${instanceName}`);
 
-  // Group messages by remoteJid to process per-conversation
   const byJid: Record<string, any[]> = {};
   for (const msgData of messages) {
     const key = msgData?.key;
@@ -281,7 +279,6 @@ async function handleMessagesSet(supabaseAdmin: any, instanceName: string, data:
     byJid[jid].push(msgData);
   }
 
-  // Process only last 15 messages per conversation to avoid overloading
   const jids = Object.keys(byJid);
   console.log(`messages.set: ${jids.length} individual conversations to process`);
 
@@ -294,7 +291,7 @@ async function handleMessagesSet(supabaseAdmin: any, instanceName: string, data:
         const tsB = parseInt(b.messageTimestamp || '0');
         return tsA - tsB;
       })
-      .slice(-15); // Last 15 messages
+      .slice(-15);
 
     for (const msgData of jidMessages) {
       try {
@@ -333,6 +330,57 @@ async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, da
   }
 }
 
+// ─── ROUND ROBIN: Get next agent to assign ───
+async function getNextAgentRoundRobin(supabaseAdmin: any, brokerId: string): Promise<string | null> {
+  try {
+    // Get active team members for this broker/owner
+    const { data: members, error } = await supabaseAdmin
+      .from('organization_members')
+      .select('user_id')
+      .eq('organization_owner_id', brokerId)
+      .eq('is_active', true);
+
+    if (error || !members || members.length === 0) {
+      // No team members — assign to owner
+      return null;
+    }
+
+    // Build candidate list: owner + all active members
+    const candidates = [brokerId, ...members.map((m: any) => m.user_id)];
+
+    // Count current assigned conversations per candidate
+    const { data: convCounts } = await supabaseAdmin
+      .from('whatsapp_conversations')
+      .select('assigned_user_id')
+      .in('assigned_user_id', candidates)
+      .eq('is_archived', false);
+
+    const countMap: Record<string, number> = {};
+    candidates.forEach(c => { countMap[c] = 0; });
+    (convCounts || []).forEach((c: any) => {
+      if (c.assigned_user_id && countMap[c.assigned_user_id] !== undefined) {
+        countMap[c.assigned_user_id]++;
+      }
+    });
+
+    // Pick the candidate with fewest active conversations
+    let minCount = Infinity;
+    let nextAgent = candidates[0];
+    for (const cid of candidates) {
+      if (countMap[cid] < minCount) {
+        minCount = countMap[cid];
+        nextAgent = cid;
+      }
+    }
+
+    console.log(`Round Robin: assigned to ${nextAgent} (${minCount} active convs)`);
+    return nextAgent;
+  } catch (err) {
+    console.error('Round Robin error:', err);
+    return null;
+  }
+}
+
 async function processIncomingMessage(supabaseAdmin: any, connection: any, msgData: any) {
   const key = msgData.key;
   if (!key) return;
@@ -356,8 +404,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   let content = '';
   let mediaMimeType: string | null = null;
   let mediaFilename: string | null = null;
-  // Media URL from Evolution API v2.3.7 — stored directly for now.
-  // TODO: Future integration with Supabase Storage for permanent media persistence.
   let mediaUrl: string | null = null;
 
   if (messageContent.conversation) {
@@ -375,7 +421,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     mediaMimeType = messageContent.videoMessage.mimetype || null;
     mediaUrl = messageContent.videoMessage.url || msgData.media?.url || null;
   } else if (messageContent.audioMessage || messageContent.pttMessage) {
-    // v2.3.7: PTT (Push-to-Talk) voice notes arrive as pttMessage
     const audioData = messageContent.audioMessage || messageContent.pttMessage;
     messageType = 'audio';
     mediaMimeType = audioData.mimetype || 'audio/ogg; codecs=opus';
@@ -402,7 +447,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     content = JSON.stringify(messageContent);
   }
 
-  // Also check for base64 media from Evolution API (convert to data URI)
   if (!mediaUrl && msgData.media?.base64) {
     const mime = mediaMimeType || 'application/octet-stream';
     mediaUrl = `data:${mime};base64,${msgData.media.base64}`;
@@ -420,9 +464,16 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     .limit(1);
 
   let isNewContact = false;
+  // Get the agent to assign (via round robin) - computed once per new contact
+  let assignedAgentId: string | null = null;
+
   if (existingContacts && existingContacts.length > 0) {
     contactId = existingContacts[0].id;
   } else if (direction === 'incoming') {
+    // Determine agent assignment BEFORE creating contact
+    assignedAgentId = await getNextAgentRoundRobin(supabaseAdmin, connection.broker_id);
+    const effectiveAssignee = assignedAgentId || connection.broker_id;
+
     const { data: newContact, error: contactError } = await supabaseAdmin
       .from('contacts')
       .insert({
@@ -432,6 +483,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
         whatsapp: cleanPhone,
         categories: ['lead'],
         metadata: { origin: 'whatsapp' },
+        assigned_user_id: effectiveAssignee,
       })
       .select('id')
       .single();
@@ -439,11 +491,10 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     if (!contactError && newContact) {
       contactId = newContact.id;
       isNewContact = true;
-      console.log(`Novo contato ${contactId} para ${cleanPhone}`);
+      console.log(`Novo contato ${contactId} para ${cleanPhone} (assigned: ${effectiveAssignee})`);
 
-      // ─── AUTO-LEAD: Create a lead + deal in the pipeline for new WhatsApp contacts ───
+      // ─── AUTO-LEAD: Create a lead + deal assigned to the agent ───
       try {
-        // 1. Create a lead record
         const { data: newLead, error: leadError } = await supabaseAdmin
           .from('leads')
           .insert({
@@ -457,7 +508,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
           .single();
 
         if (!leadError && newLead) {
-          // 2. Create a deal in the first pipeline stage
           const { data: newDeal, error: dealError } = await supabaseAdmin
             .from('deals')
             .insert({
@@ -466,14 +516,32 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
               contact_id: contactId,
               stage: 'new_lead',
               notes: `Lead automático via WhatsApp (${cleanPhone})`,
+              assigned_user_id: effectiveAssignee,
             })
             .select('id')
             .single();
 
           if (!dealError && newDeal) {
-            console.log(`✅ Auto-deal ${newDeal.id} criado para novo contato WhatsApp ${cleanPhone}`);
-            // Store deal_id to associate with conversation later
+            console.log(`✅ Auto-deal ${newDeal.id} criado → agente ${effectiveAssignee}`);
             (connection as any)._autoDealId = newDeal.id;
+
+            // ─── NOTIFICATION: Insert a notification record for the assigned agent ───
+            if (effectiveAssignee !== connection.broker_id) {
+              try {
+                await supabaseAdmin
+                  .from('notifications')
+                  .insert({
+                    user_id: effectiveAssignee,
+                    title: 'Novo Lead via WhatsApp',
+                    message: `Lead "${pushName}" (${cleanPhone}) foi atribuído a você.`,
+                    type: 'whatsapp_lead',
+                    metadata: { deal_id: newDeal.id, contact_id: contactId },
+                  });
+                console.log(`📢 Notificação enviada para agente ${effectiveAssignee}`);
+              } catch (notifErr) {
+                console.error('Notification insert error (non-critical):', notifErr);
+              }
+            }
           } else {
             console.error('Erro ao criar deal automático:', dealError);
           }
@@ -512,6 +580,9 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   const autoDealId = (connection as any)._autoDealId || null;
 
   if (convError || !conversation) {
+    // New conversation — assign agent
+    const effectiveAssignee = assignedAgentId || connection.broker_id;
+
     const { data: newConv, error: createError } = await supabaseAdmin
       .from('whatsapp_conversations')
       .insert({
@@ -525,6 +596,8 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
         last_message_at: messageTimestamp,
         unread_count: direction === 'incoming' ? 1 : 0,
         status: 'active',
+        assigned_user_id: effectiveAssignee,
+        assigned_at: new Date().toISOString(),
         ...(autoDealId ? { deal_id: autoDealId } : {}),
       })
       .select()
