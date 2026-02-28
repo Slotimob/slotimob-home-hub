@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle, XCircle, Timer } from 'lucide-react';
+import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle, XCircle, Timer, ArrowUpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { WhatsAppDisclaimerDialog } from '@/components/whatsapp/WhatsAppDisclaimerDialog';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useQuery } from '@tanstack/react-query';
 
 const COMPATIBLE_PORTALS = [
   { name: 'Zap Imóveis', logo: '🏠' },
@@ -27,6 +29,7 @@ const Integrations = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { features } = useSubscriptionLimits();
 
   // XML Feed state
   const [xmlToken, setXmlToken] = useState<string | null>(null);
@@ -43,6 +46,29 @@ const Integrations = () => {
   const [qrExpired, setQrExpired] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
+
+  // Instance limit
+  const instancesLimit = features?.whatsapp_instances_limit ?? 0;
+
+  // Count active connections for this broker (master)
+  const { data: activeConnectionsCount = 0 } = useQuery({
+    queryKey: ['whatsapp-active-connections', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      const { count, error } = await supabase
+        .from('whatsapp_connections')
+        .select('id', { count: 'exact', head: true })
+        .eq('broker_id', user.id)
+        .eq('status', 'connected');
+      if (error) return 0;
+      return count ?? 0;
+    },
+    enabled: !!user?.id,
+    staleTime: 30_000,
+  });
+
+  const isAtInstanceLimit = instancesLimit > 0 && activeConnectionsCount >= instancesLimit;
+  const canConnect = instancesLimit > 0 && !isAtInstanceLimit;
 
   // Check if user already accepted WhatsApp terms
   useEffect(() => {
@@ -82,7 +108,7 @@ const Integrations = () => {
     return () => clearInterval(interval);
   }, [isPreparing, hasQrCode]);
 
-  // QR Code expiry timer (14s)
+  // QR Code expiry timer
   useEffect(() => {
     if (!hasQrCode) {
       setQrTimer(null);
@@ -117,6 +143,10 @@ const Integrations = () => {
   };
 
   const handleConnectWhatsApp = async () => {
+    if (!canConnect) {
+      toast({ title: 'Limite atingido', description: 'Seu plano não permite mais conexões.', variant: 'destructive' });
+      return;
+    }
     setIsConnecting(true);
     try {
       const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
@@ -205,37 +235,75 @@ const Integrations = () => {
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
                   <MessageSquare className="h-6 w-6 text-green-500" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-xl">WhatsApp</CardTitle>
                   <CardDescription>Conexão via QR Code</CardDescription>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Status Badge */}
-              <div className="flex items-center gap-2">
-                {isConnected ? (
-                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                {/* Instance counter badge */}
+                {instancesLimit > 0 && (
+                  <Badge variant={isAtInstanceLimit ? 'destructive' : 'secondary'} className="text-xs">
                     <Wifi className="h-3 w-3 mr-1" />
-                    Conectado
-                  </Badge>
-                ) : isPreparing ? (
-                  <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    Preparando...
-                  </Badge>
-                ) : hasQrCode ? (
-                  <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
-                    <QrCode className="h-3 w-3 mr-1" />
-                    QR Code Disponível
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-muted text-muted-foreground">
-                    <WifiOff className="h-3 w-3 mr-1" />
-                    Não Conectado
+                    {activeConnectionsCount} / {instancesLimit} conexões
                   </Badge>
                 )}
               </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Instance limit alert */}
+              {instancesLimit === 0 && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-muted text-muted-foreground text-sm">
+                  <WifiOff className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">WhatsApp não disponível no seu plano</p>
+                    <p className="text-xs mt-1">Faça upgrade para o plano Pro para conectar seu WhatsApp.</p>
+                    <Button variant="link" size="sm" className="p-0 h-auto mt-1" onClick={() => navigate('/settings')}>
+                      <ArrowUpCircle className="h-3 w-3 mr-1" />
+                      Upgrade
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {isAtInstanceLimit && !isConnected && !isPreparing && !hasQrCode && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">Limite de conexões do seu plano atingido</p>
+                    <p className="text-xs mt-1">Desconecte uma instância existente ou faça upgrade para mais conexões.</p>
+                    <Button variant="link" size="sm" className="p-0 h-auto mt-1 text-destructive" onClick={() => navigate('/settings')}>
+                      <ArrowUpCircle className="h-3 w-3 mr-1" />
+                      Upgrade
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Status Badge */}
+              {instancesLimit > 0 && (
+                <div className="flex items-center gap-2">
+                  {isConnected ? (
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      <Wifi className="h-3 w-3 mr-1" />
+                      Conectado
+                    </Badge>
+                  ) : isPreparing ? (
+                    <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Preparando...
+                    </Badge>
+                  ) : hasQrCode ? (
+                    <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                      <QrCode className="h-3 w-3 mr-1" />
+                      QR Code Disponível
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-muted text-muted-foreground">
+                      <WifiOff className="h-3 w-3 mr-1" />
+                      Não Conectado
+                    </Badge>
+                  )}
+                </div>
+              )}
 
               {/* Preparing State: Progress bar */}
               {isPreparing && !hasQrCode && !timedOut && (
@@ -353,7 +421,7 @@ const Integrations = () => {
               )}
 
               {/* Description (only when not showing QR or progress) */}
-              {!isPreparing && !hasQrCode && (
+              {!isPreparing && !hasQrCode && instancesLimit > 0 && !isAtInstanceLimit && (
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Conecte seu WhatsApp pessoal ou comercial escaneando um QR Code.
                   Todas as mensagens serão sincronizadas com o CRM em tempo real.
@@ -371,15 +439,17 @@ const Integrations = () => {
               )}
 
               {/* Features list */}
-              <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-                <h4 className="font-medium text-sm">Recursos:</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Envio e recebimento em tempo real</li>
-                  <li>• Criação automática de contatos</li>
-                  <li>• Histórico vinculado ao CRM</li>
-                  <li>• Sem custos adicionais por mensagem</li>
-                </ul>
-              </div>
+              {instancesLimit > 0 && (
+                <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                  <h4 className="font-medium text-sm">Recursos:</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Envio e recebimento em tempo real</li>
+                    <li>• Criação automática de contatos</li>
+                    <li>• Histórico vinculado ao CRM</li>
+                    <li>• Sem custos adicionais por mensagem</li>
+                  </ul>
+                </div>
+              )}
 
               {/* Action Buttons */}
               {isConnected ? (
@@ -392,7 +462,7 @@ const Integrations = () => {
                     {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
                   </Button>
                 </div>
-              ) : !isPreparing && !hasQrCode && !timedOut ? (
+              ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
                 <Button className="w-full" onClick={() => {
                   if (hasAcceptedTerms) {
                     handleConnectWhatsApp();

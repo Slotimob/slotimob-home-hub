@@ -7,6 +7,7 @@ export interface PlanFeatures {
   users_limit: number;
   contacts_limit: number;
   asset_health_tracking_limit: number;
+  whatsapp_instances_limit: number;
   crm_basic: boolean;
   crm_full: boolean;
   finance_simple: boolean;
@@ -45,6 +46,7 @@ const defaultFeatures: PlanFeatures = {
   users_limit: 1,
   contacts_limit: -1,
   asset_health_tracking_limit: 0,
+  whatsapp_instances_limit: 0,
   crm_basic: true,
   crm_full: false,
   finance_simple: true,
@@ -72,6 +74,7 @@ const featureDescriptions: Record<string, { name: string; upgradeMessage: string
   contacts_limit: { name: 'Contatos', upgradeMessage: 'Faça upgrade para contatos ilimitados' },
   asset_health_tracking_limit: { name: 'Gestão de Ativos', upgradeMessage: 'Faça upgrade para o plano Pro para gestão completa de ativos' },
   asset_management: { name: 'Gestão de Ativos', upgradeMessage: 'Faça upgrade para o plano Pro para gestão completa de ativos' },
+  whatsapp_instances_limit: { name: 'Conexões WhatsApp', upgradeMessage: 'Faça upgrade para o plano Pro para conectar instâncias WhatsApp' },
   crm_full: { name: 'CRM Completo', upgradeMessage: 'Faça upgrade para o CRM completo com histórico de atividades' },
   finance_full: { name: 'Financeiro Completo', upgradeMessage: 'Faça upgrade para fluxo de caixa completo' },
   finance_dre: { name: 'DRE', upgradeMessage: 'Faça upgrade para o plano Pro para acessar o DRE' },
