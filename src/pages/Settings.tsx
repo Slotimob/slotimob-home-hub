@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Camera, FileText, Loader2, Scale, Shield, Linkedin, Instagram, PenLine } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { NotificationSettings } from '@/components/NotificationSettings';
-import { GlowSettings } from '@/components/GlowSettings';
+
 import { AppLayout } from '@/components/AppLayout';
 import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
 
@@ -97,6 +97,9 @@ const Settings = () => {
 
   const updateTheme = async (newTheme: string) => {
     setTheme(newTheme);
+    // Apply immediately to DOM and persist in localStorage
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('slotimob-theme', newTheme);
     try {
       const { error } = await supabase
         .from('profiles')
@@ -739,19 +742,16 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="theme-select">Tema</Label>
-              <p className="text-sm text-muted-foreground mb-3">
-                Escolha o tema visual da aplicação
-              </p>
               <Select value={theme} onValueChange={updateTheme}>
                 <SelectTrigger id="theme-select">
                   <SelectValue placeholder="Selecione um tema" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light-green">Branco e Verde</SelectItem>
-                  <SelectItem value="light-blue">Branco e Azul</SelectItem>
-                  <SelectItem value="light-purple">Branco e Roxo</SelectItem>
-                  <SelectItem value="dark-green">Modo Escuro com Verde</SelectItem>
-                  <SelectItem value="dark-purple">Modo Escuro com Roxo</SelectItem>
+                  <SelectItem value="light-green">Claro — Verde</SelectItem>
+                  <SelectItem value="light-blue">Claro — Azul</SelectItem>
+                  <SelectItem value="light-purple">Claro — Roxo</SelectItem>
+                  <SelectItem value="dark-green">Escuro — Verde</SelectItem>
+                  <SelectItem value="dark-purple">Escuro — Roxo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -760,9 +760,6 @@ const Settings = () => {
 
         {/* Notification Settings */}
         <NotificationSettings />
-
-        {/* Glow Settings */}
-        <GlowSettings />
 
         {/* Subscription Section - Owner only */}
         {!isAgent && <SubscriptionManagement />}
