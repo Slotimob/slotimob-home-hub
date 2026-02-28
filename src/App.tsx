@@ -32,7 +32,7 @@ import TermsAdmin from "./pages/TermsAdmin";
 import UsersAdmin from "./pages/UsersAdmin";
 import Presentation from "./pages/Presentation";
 import WhatsApp from "./pages/WhatsApp";
-import WhatsAppSettings from "./pages/WhatsAppSettings";
+
 import RealEstate from "./pages/RealEstate";
 import ContactsUnified from "./pages/ContactsUnified";
 import Portals from "./pages/Portals";
@@ -92,6 +92,9 @@ const App = () => (
               <Route path="/real-estate" element={guarded(<RealEstate />)} />
               <Route path="/pipeline" element={guarded(<Pipeline />)} />
               <Route path="/contacts" element={guarded(<ContactsUnified />)} />
+              <Route path="/contacts/owners" element={guarded(<ContactsUnified />)} />
+              <Route path="/contacts/leads" element={guarded(<ContactsUnified />)} />
+              <Route path="/contacts/companies" element={guarded(<ContactsUnified />)} />
               <Route path="/documents" element={guarded(<Documents />)} />
               <Route path="/documents/templates" element={guarded(<Documents />)} />
               <Route path="/documents/custom" element={guarded(<Documents />)} />
@@ -119,7 +122,7 @@ const App = () => (
               <Route path="/history" element={guarded(<ActivityHistory />)} />
               <Route path="/settings" element={guarded(<Settings />)} />
               <Route path="/whatsapp" element={guarded(<WhatsApp />)} />
-              <Route path="/whatsapp/settings" element={guarded(<WhatsAppSettings />)} />
+              
               <Route path="/admin/terms" element={guarded(<TermsAdmin />)} />
               <Route path="/admin/users" element={guarded(<UsersAdmin />)} />
               <Route path="/admin/cockpit" element={guarded(<AdminCockpit />)} />

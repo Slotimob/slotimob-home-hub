@@ -243,7 +243,7 @@ export default function WhatsApp() {
               )}
               <div className="ml-auto">
                 <Button variant="ghost" size="icon" asChild>
-                  <Link to="/whatsapp-settings"><Settings className="h-4 w-4" /></Link>
+                  <Link to="/integrations"><Settings className="h-4 w-4" /></Link>
                 </Button>
               </div>
             </div>

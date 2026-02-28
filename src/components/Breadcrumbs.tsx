@@ -35,7 +35,7 @@ const routeConfig: Record<string, { label: string; parent?: string }> = {
   '/integrations': { label: 'Integrações', parent: '/' },
   '/training': { label: 'Treinamento', parent: '/' },
   '/whatsapp': { label: 'WhatsApp', parent: '/' },
-  '/whatsapp/settings': { label: 'Configurações', parent: '/whatsapp' },
+  
   '/settings': { label: 'Configurações', parent: '/' },
   '/notification-history': { label: 'Notificações', parent: '/' },
   '/history': { label: 'Histórico de Atividades', parent: '/' },
