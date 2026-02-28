@@ -33,7 +33,7 @@ export default function Index() {
             });
 
             if (!error && data?.url) {
-              window.open(data.url, '_blank');
+              window.location.href = data.url;
             } else if (error) {
               console.error('Post-OAuth checkout error:', error);
               toast.error('Erro ao iniciar checkout. Tente novamente na página de planos.');
