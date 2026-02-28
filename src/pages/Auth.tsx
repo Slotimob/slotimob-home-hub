@@ -704,7 +704,11 @@ const Auth = () => {
         </div>
 
         {/* Right column - form */}
-        <div className="flex w-full lg:w-1/2 xl:w-[45%] items-center justify-center p-6 sm:p-10 bg-background">
+        <div className="relative flex w-full lg:w-1/2 xl:w-[45%] items-center justify-center p-6 sm:p-10 bg-background">
+          {/* Back to home */}
+          <Link to="/" className="absolute top-4 left-4 sm:top-6 sm:left-6 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao início
+          </Link>
           <div className="w-full max-w-md space-y-6">
             {/* Mobile logo */}
             <div className="flex flex-col items-center lg:hidden mb-2">
