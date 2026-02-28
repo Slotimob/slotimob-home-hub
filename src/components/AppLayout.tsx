@@ -1,9 +1,10 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { useWhatsAppGlobalListener } from '@/hooks/useWhatsAppGlobalListener';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -13,6 +14,47 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, title, headerActions }: AppLayoutProps) {
   useWhatsAppGlobalListener();
+
+  // Sync theme from user profile — only inside authenticated pages
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncTheme = async (userId: string) => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('theme_preference')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (!cancelled && data?.theme_preference) {
+          localStorage.setItem('slotimob-theme', data.theme_preference);
+          document.documentElement.setAttribute('data-theme', data.theme_preference);
+        }
+      } catch {
+        // fail silently
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) {
+        void syncTheme(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user?.id) {
+          void syncTheme(session.user.id);
+        }
+      }
+    );
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
   return (
     <SidebarProvider>
       <div className="min-h-[100dvh] flex w-full bg-gradient-to-br from-primary/5 via-background to-accent/10 pb-16 md:pb-0">
