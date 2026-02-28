@@ -6,11 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, MessageSquarePlus } from 'lucide-react';
+import { Search, MessageSquarePlus, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
+import { NewConversationDialog } from './NewConversationDialog';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
@@ -19,6 +20,7 @@ interface ChatSidebarProps {
   selectedId: string | null;
   onSelect: (conversation: WhatsAppConversation) => void;
   loading?: boolean;
+  connectionId?: string | null;
 }
 
 function formatTimestamp(dateStr: string | null): string {
@@ -44,9 +46,10 @@ function getInitials(name: string | null, phone: string): string {
   return phone.slice(-2);
 }
 
-export function ChatSidebar({ conversations, selectedId, onSelect, loading }: ChatSidebarProps) {
+export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [newConvOpen, setNewConvOpen] = useState(false);
 
   const filtered = conversations.filter((conv) => {
     const displayName = conv.contact_name || conv.contact_phone;
@@ -68,7 +71,7 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading }: Ch
       <div className="p-4 border-b space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-foreground">Mensagens</h2>
-          <Button size="sm" variant="default" className="gap-1.5">
+          <Button size="sm" variant="default" className="gap-1.5" onClick={() => setNewConvOpen(true)}>
             <MessageSquarePlus className="h-4 w-4" />
             <span className="hidden sm:inline">Nova Conversa</span>
           </Button>
@@ -113,6 +116,17 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading }: Ch
                 </div>
               </div>
             ))}
+          </div>
+        ) : filtered.length === 0 && conversations.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground flex flex-col items-center gap-3">
+            <MessageCircle className="h-12 w-12 opacity-30" />
+            <p className="font-medium text-foreground">Seu WhatsApp está conectado!</p>
+            <p className="text-sm">Aguardando novas mensagens...</p>
+            <p className="text-xs opacity-70 max-w-[220px]">Sincronizamos as mensagens a partir do momento da conexão. Envie uma nova mensagem para iniciar.</p>
+            <Button size="sm" variant="outline" className="mt-2 gap-1.5" onClick={() => setNewConvOpen(true)}>
+              <MessageSquarePlus className="h-4 w-4" />
+              Nova Conversa
+            </Button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
@@ -178,6 +192,12 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading }: Ch
           </div>
         )}
       </ScrollArea>
+
+      <NewConversationDialog
+        open={newConvOpen}
+        onOpenChange={setNewConvOpen}
+        connectionId={connectionId || null}
+      />
     </div>
   );
 }

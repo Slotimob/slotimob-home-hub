@@ -245,7 +245,10 @@ async function handleMessagesUpsert(supabaseAdmin: any, instanceName: string, da
 async function processIncomingMessage(supabaseAdmin: any, connection: any, msgData: any) {
   const key = msgData.key;
   if (!key) return;
-  if (key.fromMe) return;
+
+  // Determine direction — NEVER skip fromMe messages
+  const direction = key.fromMe ? 'outgoing' : 'incoming';
+  const msgStatus = key.fromMe ? 'sent' : 'delivered';
 
   const remoteJid = key.remoteJid;
   const waMessageId = key.id;
@@ -312,7 +315,8 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
 
   if (existingContacts && existingContacts.length > 0) {
     contactId = existingContacts[0].id;
-  } else {
+  } else if (direction === 'incoming') {
+    // Only auto-create contacts for incoming messages
     const { data: newContact, error: contactError } = await supabaseAdmin
       .from('contacts')
       .insert({
@@ -344,6 +348,8 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     ? new Date(parseInt(msgData.messageTimestamp) * 1000).toISOString()
     : new Date().toISOString();
 
+  const lastMsgPreview = content || `[${messageType}]`;
+
   if (convError || !conversation) {
     const { data: newConv, error: createError } = await supabaseAdmin
       .from('whatsapp_conversations')
@@ -353,9 +359,9 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
         remote_jid: remoteJid,
         contact_name: pushName,
         contact_phone: cleanPhone,
-        last_message: content || `[${messageType}]`,
+        last_message: lastMsgPreview,
         last_message_at: messageTimestamp,
-        unread_count: 1,
+        unread_count: direction === 'incoming' ? 1 : 0,
         status: 'active',
       })
       .select()
@@ -367,15 +373,21 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     }
     conversation = newConv;
   } else {
+    const updatePayload: Record<string, any> = {
+      contact_id: contactId || conversation.contact_id,
+      last_message: lastMsgPreview,
+      last_message_at: messageTimestamp,
+    };
+    // Only increment unread for incoming messages
+    if (direction === 'incoming') {
+      updatePayload.unread_count = (conversation.unread_count || 0) + 1;
+    }
+    if (direction === 'incoming') {
+      updatePayload.contact_name = pushName;
+    }
     await supabaseAdmin
       .from('whatsapp_conversations')
-      .update({
-        contact_name: pushName,
-        contact_id: contactId || conversation.contact_id,
-        last_message: content || `[${messageType}]`,
-        last_message_at: messageTimestamp,
-        unread_count: (conversation.unread_count || 0) + 1,
-      })
+      .update(updatePayload)
       .eq('id', conversation.id);
   }
 
@@ -386,13 +398,13 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
       {
         conversation_id: conversation.id,
         message_id: waMessageId,
-        direction: 'incoming',
+        direction: direction,
         message_type: messageType,
         content: content,
         media_url: null,
         media_mime_type: mediaMimeType,
         media_filename: mediaFilename,
-        status: 'delivered',
+        status: msgStatus,
         sent_at: messageTimestamp,
       },
       { onConflict: 'conversation_id,message_id' }
@@ -401,6 +413,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   if (msgError) {
     console.error('Erro upsert mensagem:', msgError);
   } else {
-    console.log(`Mensagem ${waMessageId} salva (conversa ${conversation.id})`);
+    console.log(`Mensagem ${waMessageId} [${direction}] salva (conversa ${conversation.id})`);
   }
 }
