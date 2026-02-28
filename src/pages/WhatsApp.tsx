@@ -80,6 +80,7 @@ export default function WhatsApp() {
   const { userRole } = useAuthContext();
   const isMobile = useIsMobile();
   const isOwner = userRole === 'owner';
+  const [agentFilter, setAgentFilter] = useState<string>('all');
 
   const { connection, loading: connectionLoading } = useWhatsAppAnyConnection();
   const isConnected = connection?.status === 'connected';
@@ -89,9 +90,16 @@ export default function WhatsApp() {
 
   // ─── Visibility Control: agents see only their assigned conversations ───
   const conversations = useMemo(() => {
-    if (isOwner || !user) return allConversations;
-    return allConversations.filter(c => c.assigned_user_id === user.id);
-  }, [allConversations, isOwner, user]);
+    let filtered = allConversations;
+    if (!isOwner && user) {
+      filtered = filtered.filter(c => c.assigned_user_id === user.id);
+    }
+    // Owner agent filter
+    if (isOwner && agentFilter !== 'all') {
+      filtered = filtered.filter(c => c.assigned_user_id === agentFilter);
+    }
+    return filtered;
+  }, [allConversations, isOwner, user, agentFilter]);
 
   const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null);
@@ -208,7 +216,7 @@ export default function WhatsApp() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-[100dvh] flex w-full bg-background pb-16 md:pb-0">
+      <div className="h-[100dvh] flex w-full bg-background pb-16 md:pb-0 overflow-hidden">
         <AppSidebar />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -257,6 +265,10 @@ export default function WhatsApp() {
                 loading={conversationsLoading}
                 connectionId={connection?.id}
                 isConnected={isConnected}
+                isOwner={isOwner}
+                teamMembers={teamMembers}
+                agentFilter={agentFilter}
+                onAgentFilterChange={setAgentFilter}
               />
             </div>
 

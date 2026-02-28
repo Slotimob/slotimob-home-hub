@@ -3630,6 +3630,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_access_whatsapp_connection: {
+        Args: { _broker_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_access_whatsapp_conversation: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
       check_member_permission: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
