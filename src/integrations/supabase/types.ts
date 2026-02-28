@@ -894,7 +894,7 @@ export type Database = {
           notes: string | null
           priority: string | null
           probability: number | null
-          property_id: string
+          property_id: string | null
           stage: Database["public"]["Enums"]["pipeline_stage"]
           temperature: string | null
           unit_id: string | null
@@ -917,7 +917,7 @@ export type Database = {
           notes?: string | null
           priority?: string | null
           probability?: number | null
-          property_id: string
+          property_id?: string | null
           stage?: Database["public"]["Enums"]["pipeline_stage"]
           temperature?: string | null
           unit_id?: string | null
@@ -940,7 +940,7 @@ export type Database = {
           notes?: string | null
           priority?: string | null
           probability?: number | null
-          property_id?: string
+          property_id?: string | null
           stage?: Database["public"]["Enums"]["pipeline_stage"]
           temperature?: string | null
           unit_id?: string | null
@@ -3295,6 +3295,7 @@ export type Database = {
           contact_phone: string
           contact_profile_pic: string | null
           created_at: string
+          deal_id: string | null
           id: string
           is_archived: boolean
           last_message: string | null
@@ -3314,6 +3315,7 @@ export type Database = {
           contact_phone: string
           contact_profile_pic?: string | null
           created_at?: string
+          deal_id?: string | null
           id?: string
           is_archived?: boolean
           last_message?: string | null
@@ -3333,6 +3335,7 @@ export type Database = {
           contact_phone?: string
           contact_profile_pic?: string | null
           created_at?: string
+          deal_id?: string | null
           id?: string
           is_archived?: boolean
           last_message?: string | null
@@ -3356,6 +3359,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
             referencedColumns: ["id"]
           },
           {
