@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Mail, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQueryClient } from '@tanstack/react-query';
@@ -11,10 +11,20 @@ export default function CheckoutSuccess() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     const refreshSubscription = async () => {
+      // Check auth state
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+
+      // Detect guest checkout from URL or lack of session
+      const guestParam = searchParams.get('guest');
+      setIsGuest(guestParam === 'true' || !session);
+
       // Wait for webhook to process
       await new Promise((r) => setTimeout(r, 3000));
 
@@ -28,13 +38,16 @@ export default function CheckoutSuccess() {
     };
 
     refreshSubscription();
-  }, [sessionId, queryClient]);
+  }, [sessionId, queryClient, searchParams]);
 
-  const handleGoToDashboard = () => {
-    // Force-clear any stale checkout state
-    queryClient.invalidateQueries({ queryKey: ['trial-status'] });
-    queryClient.invalidateQueries({ queryKey: ['subscription-limits'] });
-    navigate('/dashboard', { replace: true });
+  const handleAccess = () => {
+    if (isLoggedIn) {
+      queryClient.invalidateQueries({ queryKey: ['trial-status'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription-limits'] });
+      navigate('/dashboard', { replace: true });
+    } else {
+      navigate('/auth', { replace: true });
+    }
   };
 
   if (isLoading) {
@@ -68,12 +81,28 @@ export default function CheckoutSuccess() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Guest checkout notice */}
+          {isGuest && !isLoggedIn && (
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 p-4 border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 mb-2">
+                <Mail className="h-5 w-5" />
+                <span className="font-semibold">Verifique seu e-mail!</span>
+              </div>
+              <p className="text-sm text-amber-600 dark:text-amber-400/80">
+                Enviamos um link para você definir sua senha de acesso. Confira sua caixa de entrada e spam.
+              </p>
+            </div>
+          )}
+
           <div className="rounded-lg bg-primary/5 p-4 border border-primary/20">
             <div className="flex items-center gap-2 text-primary mb-2">
               <Sparkles className="h-5 w-5" />
               <span className="font-semibold">Próximos passos</span>
             </div>
             <ul className="text-sm text-muted-foreground space-y-2">
+              {isGuest && !isLoggedIn && (
+                <li>✓ Defina sua senha pelo link enviado no e-mail</li>
+              )}
               <li>✓ Configure seu perfil de corretor</li>
               <li>✓ Adicione seus primeiros imóveis</li>
               <li>✓ Importe seus contatos</li>
@@ -82,16 +111,25 @@ export default function CheckoutSuccess() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <Button onClick={handleGoToDashboard} className="w-full">
-              Ir para o Dashboard
+            <Button onClick={handleAccess} className="w-full">
+              {isLoggedIn ? (
+                <>Ir para o Dashboard</>
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Acessar Minha Conta
+                </>
+              )}
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/settings')}
-              className="w-full"
-            >
-              Configurar Perfil
-            </Button>
+            {isLoggedIn && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/settings')}
+                className="w-full"
+              >
+                Configurar Perfil
+              </Button>
+            )}
           </div>
 
           <p className="text-xs text-center text-muted-foreground">
