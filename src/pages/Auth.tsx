@@ -292,13 +292,71 @@ const Auth = () => {
     }
   };
 
+  const [popupBlocked, setPopupBlocked] = useState(false);
+
   const handleGoogleLogin = async () => {
+    setPopupBlocked(false);
     try {
       setGoogleLoading(true);
-      const redirectUrl = pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)
-        ? `${SITE_URL}/?checkout_plan=${pendingPlan}` : `${SITE_URL}/`;
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl } });
+
+      // Try popup flow first
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${SITE_URL}/`,
+          skipBrowserRedirect: true,
+        },
+      });
+
       if (error) throw error;
+      if (!data?.url) throw new Error('No auth URL returned');
+
+      // Open centered popup
+      const width = 500;
+      const height = 650;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      const popup = window.open(
+        data.url,
+        'google-auth',
+        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+      );
+
+      if (!popup || popup.closed) {
+        // Popup was blocked
+        setGoogleLoading(false);
+        setPopupBlocked(true);
+        return;
+      }
+
+      // Poll for popup close & listen for auth state change
+      const pollInterval = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollInterval);
+          // Give a small delay for the auth state to propagate
+          setTimeout(() => {
+            setGoogleLoading(false);
+          }, 1500);
+        }
+      }, 500);
+
+      // Listen for session change (successful login)
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          clearInterval(pollInterval);
+          subscription.unsubscribe();
+          if (!popup.closed) popup.close();
+
+          // Handle post-auth actions
+          if (inviteToken) {
+            handleAcceptInvite().then(() => navigate('/dashboard'));
+          } else if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
+            handlePostAuthCheckout(pendingPlan);
+          } else {
+            navigate('/dashboard');
+          }
+        }
+      });
     } catch (error: any) {
       const msg = error?.message?.toLowerCase() || '';
       let title = 'Erro ao entrar com Google';
@@ -314,7 +372,21 @@ const Auth = () => {
         description = 'O login com Google não está disponível no momento. Tente via email e senha.';
       }
       toast({ title, description, variant: 'destructive' });
-    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // Fallback: redirect-based Google login when popup is blocked
+  const handleGoogleLoginRedirect = async () => {
+    try {
+      setGoogleLoading(true);
+      setPopupBlocked(false);
+      const redirectUrl = pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)
+        ? `${SITE_URL}/?checkout_plan=${pendingPlan}` : `${SITE_URL}/`;
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl } });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({ title: 'Erro ao entrar com Google', description: error.message, variant: 'destructive' });
       setGoogleLoading(false);
     }
   };
@@ -923,6 +995,21 @@ const Auth = () => {
                   {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                   {googleLoading ? 'Conectando...' : 'Continuar com Google'}
                 </Button>
+
+                {popupBlocked && (
+                  <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                    <AlertDescription className="text-sm">
+                      Janela de autenticação bloqueada.{' '}
+                      <button
+                        type="button"
+                        className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80"
+                        onClick={handleGoogleLoginRedirect}
+                      >
+                        Clique aqui para prosseguir
+                      </button>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
