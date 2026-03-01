@@ -47,12 +47,6 @@ async function resolveUserId(
 
   logStep("Resolving guest user by email", { email: customerEmail });
 
-  // 2a. Check if user already exists in auth
-  const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1,
-  });
-
   // Search by email using the admin API
   const { data: userByEmail } = await supabase
     .from('profiles')
