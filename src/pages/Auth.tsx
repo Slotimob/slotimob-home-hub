@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { UserPlus, ArrowLeft, ArrowRight, Check, BarChart3, MessageSquare, Wallet, Building2, Loader2 } from 'lucide-react';
 
-const SITE_URL = 'https://slotimob.com.br';
+const SITE_URL = window.location.origin;
 
 const OAuthLoadingOverlay = () => (
   <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background/95 backdrop-blur-md animate-in fade-in duration-300">
