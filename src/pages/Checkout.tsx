@@ -128,9 +128,11 @@ export default function CheckoutPage() {
 
   const billingCycle = isAnnual ? 'annual' : 'monthly';
 
+  const checkoutMode = searchParams.get('mode') === 'immediate' ? 'immediate' : 'trial';
+
   const fetchClientSecret = useCallback(async () => {
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: { plan_id: selectedPlan, billing_cycle: billingCycle },
+      body: { plan_id: selectedPlan, billing_cycle: billingCycle, mode: checkoutMode },
     });
 
     if (error || !data) {
