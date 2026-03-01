@@ -130,7 +130,7 @@ export const SubscriptionManagement = () => {
               )}
               <Button
                 className="mt-2 gap-2"
-                onClick={() => navigate('/checkout?plan=pro&cycle=annual')}
+                onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')}
               >
                 <Crown className="h-4 w-4" />
                 Efetivar Assinatura PRO
@@ -155,7 +155,7 @@ export const SubscriptionManagement = () => {
                 </p>
               )}
             </div>
-            <Button onClick={() => navigate('/checkout?plan=pro&cycle=annual')} className="gap-2">
+            <Button onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')} className="gap-2">
               <Crown className="h-4 w-4" />
               Upgrade para PRO
             </Button>

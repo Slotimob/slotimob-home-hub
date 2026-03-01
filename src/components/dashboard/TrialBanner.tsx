@@ -42,7 +42,7 @@ export function TrialBanner() {
           </p>
         </div>
         <Button asChild size="sm" variant="outline" className="border-blue-500/50 text-blue-600 hover:bg-blue-500/10 shrink-0">
-          <Link to="/#pricing">
+          <Link to="/checkout?plan=pro&cycle=annual&mode=immediate">
             <ArrowRight className="h-4 w-4 mr-1" />
             Garantir Pro
           </Link>
