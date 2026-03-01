@@ -28,7 +28,7 @@ export function HeroSection({ segment = SEGMENTS.default }: HeroSectionProps) {
   const authUrl = `/auth?utm_source=${segment.utmSource}`;
 
   return (
-    <section id="hero" className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-background">
+    <section id="hero" className="relative pt-24 pb-20 md:pt-32 md:pb-28 overflow-hidden bg-background">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.03),transparent_70%)]" />
 
       <div className="container mx-auto px-4 relative z-10">
@@ -39,7 +39,7 @@ export function HeroSection({ segment = SEGMENTS.default }: HeroSectionProps) {
             Segurança de banco para seus dados
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight" style={{ textWrap: 'balance' }}>
             A gestão definitiva para quem vive
             <span className="block bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mt-1">
               do mercado imobiliário.

@@ -46,13 +46,13 @@ export function TestimonialsSection() {
   };
 
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-24 md:py-32 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-14">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
             Quem Usa, Recomenda
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" style={{ textWrap: 'balance' }}>
             Resultados reais de quem já modernizou
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -91,7 +91,7 @@ export function TestimonialsSection() {
 
 function TestimonialCard({ testimonial: t }: { testimonial: typeof testimonials[0] }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-card p-6 hover:shadow-md transition-shadow flex flex-col">
+    <div className="rounded-xl border border-border/50 bg-card p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col">
       <div className="flex gap-0.5 mb-3">
         {Array.from({ length: t.rating }).map((_, j) => (
           <Star key={j} className="h-4 w-4 fill-warning text-warning" />
