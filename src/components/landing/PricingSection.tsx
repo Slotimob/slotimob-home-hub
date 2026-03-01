@@ -151,8 +151,19 @@ export function PricingSection() {
     if (!p) return 0;
     if (planId === 'start') return 0;
     const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) return p.price_early_adopter;
+    if (isEA) {
+      return isAnnual ? p.price_annual_early_adopter : p.price_early_adopter;
+    }
     return isAnnual ? p.price_annual : p.price_original;
+  };
+
+  const getOriginalPrice = (planId: PlanId): number | null => {
+    const p = pricing?.[planId];
+    if (!p || planId === 'start') return null;
+    const isEA = getEarlyAdopterAvailable(planId);
+    if (isEA) return isAnnual ? p.price_original : p.price_original;
+    if (isAnnual && p.price_original > p.price_annual) return p.price_original;
+    return null;
   };
 
   const getAlternativePrice = (planId: PlanId): string | null => {
@@ -253,21 +264,27 @@ export function PricingSection() {
               </>
             ) : (
               <>
-                {altPrice && (
-                  <div className="text-xs text-muted-foreground mb-1">{altPrice}</div>
-                )}
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-foreground">
                     R$ {formatPrice(displayPrice)}
                   </span>
-                  <span className="text-muted-foreground ml-1">
-                    /mês{isEarlyAdopter ? ' para sempre' : ''}
-                  </span>
+                  <span className="text-muted-foreground ml-1">/mês</span>
                 </div>
-                {isEarlyAdopter && pricing?.[plan.id] && (
-                  <div className="text-xs text-muted-foreground mt-1 line-through">
-                    De R$ {formatPrice(pricing[plan.id].price_original)}/mês
-                  </div>
+                {isEarlyAdopter ? (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    {' · '}
+                    <span className="font-semibold text-accent">preço vitalício</span>
+                  </p>
+                ) : isAnnual ? (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    {' · cobrado anualmente'}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ou R$ {formatPrice(pricing?.[plan.id]?.price_annual || 0)}/mês no anual
+                  </p>
                 )}
               </>
             )}

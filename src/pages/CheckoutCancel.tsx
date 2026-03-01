@@ -28,7 +28,7 @@ export default function CheckoutCancel() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <Button onClick={() => navigate('/#pricing')} className="w-full">
+            <Button onClick={() => navigate('/checkout?plan=pro&cycle=annual')} className="w-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar para Planos
             </Button>
