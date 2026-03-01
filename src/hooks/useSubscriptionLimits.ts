@@ -160,7 +160,9 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
   
   // During trial, free users get Pro features (except assets_limit stays at 2)
   let features = data?.features || defaultFeatures;
-  if (plan === 'free' && isTrialActive && features) {
+  // During trial, users get full Pro features regardless of base plan
+  const effectiveTrialing = isTrialActive || (data?.plan === 'pro' && trialData?.is_trial_active);
+  if (effectiveTrialing && features) {
     features = {
       ...features,
       ai_chat: true,
@@ -176,8 +178,10 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
       asset_management: true,
       asset_health_tracking_limit: -1,
       finance_dre: true,
+      finance_full: true,
       finance_categories_edit: true,
-      // Keep assets_limit at 2 for free
+      whatsapp_instances_limit: 1,
+      // Keep assets_limit from the plan
     };
   }
 
