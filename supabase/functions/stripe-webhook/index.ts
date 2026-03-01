@@ -45,7 +45,7 @@ async function resolveUserId(
     return null;
   }
 
-  logStep("Resolving guest user by email", { email: customerEmail });
+  logStep("Webhook: Iniciando resolução de usuário para o e-mail", { email: customerEmail });
 
   // Search by email using the admin API
   const { data: userByEmail } = await supabase
@@ -183,12 +183,27 @@ async function handleCheckoutCompleted(
   const isEarlyAdopter = session.metadata?.is_early_adopter === "true";
   const isGuestCheckout = session.metadata?.guest_checkout === "true";
 
-  // Resolve user — creates account if guest
-  const userId = await resolveUserId(session, supabase);
+  // Validate plan_id matches known plans
+  const VALID_PLANS = ['essencial', 'pro', 'business'];
+  if (planId && !VALID_PLANS.includes(planId)) {
+    logStep("CRITICAL: plan_id from Stripe metadata does not match known plans", { planId, validPlans: VALID_PLANS });
+    throw new Error(`Invalid plan_id '${planId}' — expected one of: ${VALID_PLANS.join(', ')}`);
+  }
+
+  // Resolve user — creates account if guest (wrapped in try/catch for retry safety)
+  let userId: string | null = null;
+  try {
+    userId = await resolveUserId(session, supabase);
+  } catch (resolveErr) {
+    const msg = resolveErr instanceof Error ? resolveErr.message : String(resolveErr);
+    logStep("CRITICAL: Failed to resolve user — Stripe will retry this event", { error: msg });
+    throw resolveErr; // Re-throw so Stripe gets 500 and retries
+  }
 
   if (!userId || !planId) {
-    logStep("Could not resolve user or missing plan", { userId, planId, metadata: session.metadata });
-    return;
+    const errMsg = `Could not resolve user (${userId}) or missing plan (${planId})`;
+    logStep("CRITICAL: " + errMsg, { metadata: session.metadata });
+    throw new Error(errMsg); // 500 → Stripe retries
   }
 
   const subscriptionId = session.subscription as string;
@@ -222,8 +237,8 @@ async function handleCheckoutCompleted(
     }, { onConflict: 'user_id' });
 
   if (subError) {
-    logStep("Error upserting subscription", { error: subError.message });
-    throw subError;
+    logStep("CRITICAL: Error upserting subscription — Stripe will retry", { error: subError.message });
+    throw subError; // 500 → Stripe retries
   }
 
   logStep("Subscription created/updated", { userId, planId, isEarlyAdopter, isGuestCheckout });
@@ -233,7 +248,7 @@ async function handleCheckoutCompleted(
       .from("subscriptions")
       .select("id")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (subscriptionData) {
       const { error: claimError } = await supabase
@@ -246,7 +261,7 @@ async function handleCheckoutCompleted(
         });
 
       if (claimError && !claimError.message.includes("duplicate")) {
-        logStep("Error creating early adopter claim", { error: claimError.message });
+        logStep("Warning: Error creating early adopter claim (non-critical)", { error: claimError.message });
       } else {
         logStep("Early adopter claim registered", { userId, planId });
       }
