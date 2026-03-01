@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Link, useNavigate } from 'react-router-dom';
-import { EarlyAdopterCounter } from './EarlyAdopterCounter';
+import { useNavigate } from 'react-router-dom';
+import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
+import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,9 +18,6 @@ interface PlanDef {
   id: PlanId;
   name: string;
   icon: typeof Briefcase;
-  priceMonthly: number;
-  priceAnnual: number;
-  priceEarlyAdopter: number;
   description: string;
   features: string[];
   notIncluded?: string[];
@@ -37,9 +35,6 @@ const plans: PlanDef[] = [
     id: 'start',
     name: 'Start',
     icon: Briefcase,
-    priceMonthly: 0,
-    priceAnnual: 0,
-    priceEarlyAdopter: 0,
     description: 'Comece grátis e teste o PRO por 14 dias',
     units: 'Até 5 unidades',
     users: '1 usuário',
@@ -64,9 +59,6 @@ const plans: PlanDef[] = [
     id: 'essencial',
     name: 'Essencial',
     icon: Briefcase,
-    priceMonthly: 39.90,
-    priceAnnual: 29.90,
-    priceEarlyAdopter: 19.90,
     description: 'Organize seus imóveis e comece a vender',
     units: 'Até 10 unidades',
     users: '1 usuário',
@@ -93,9 +85,6 @@ const plans: PlanDef[] = [
     id: 'pro',
     name: 'Pro',
     icon: Rocket,
-    priceMonthly: 147,
-    priceAnnual: 97,
-    priceEarlyAdopter: 79,
     description: 'Gestão completa para crescer com controle',
     units: 'Até 50 unidades',
     users: '1 usuário',
@@ -122,9 +111,6 @@ const plans: PlanDef[] = [
     id: 'business',
     name: 'Business',
     icon: Building2,
-    priceMonthly: 297,
-    priceAnnual: 197,
-    priceEarlyAdopter: 179,
     description: 'Escale sua imobiliária com equipe e auditoria',
     units: 'Até 80 unidades',
     users: '3 usuários inclusos',
@@ -143,15 +129,53 @@ const plans: PlanDef[] = [
     bgClass: 'bg-purple-500',
   },
 ];
+
+const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
+
 export function PricingSection() {
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [isAnnual, setIsAnnual] = useState(true);
-
   const [checkoutOverlay, setCheckoutOverlay] = useState(false);
 
+  const { slots } = useEarlyAdopterCount();
+  const { data: pricing } = usePlanPricing();
+
+  const getEarlyAdopterAvailable = (planId: PlanId): boolean => {
+    if (planId === 'start') return false;
+    const slotData = slots[planId as 'essencial' | 'pro' | 'business'];
+    return !!slotData && slotData.remaining > 0;
+  };
+
+  const getRemainingSlots = (planId: PlanId): number | null => {
+    if (planId === 'start') return null;
+    const slotData = slots[planId as 'essencial' | 'pro' | 'business'];
+    return slotData ? slotData.remaining : null;
+  };
+
+  const getDisplayPrice = (planId: PlanId): number => {
+    const p = pricing?.[planId];
+    if (!p) return 0;
+    if (planId === 'start') return 0;
+
+    const isEA = getEarlyAdopterAvailable(planId);
+    if (isEA) return p.price_early_adopter;
+    return isAnnual ? p.price_annual : p.price_original;
+  };
+
+  const getAlternativePrice = (planId: PlanId): string | null => {
+    const p = pricing?.[planId];
+    if (!p || planId === 'start') return null;
+
+    const isEA = getEarlyAdopterAvailable(planId);
+    if (isEA) return null; // Early adopter price is fixed
+    if (!isAnnual && p.price_annual > 0) {
+      return `ou R$ ${formatPrice(p.price_annual)}/mês no anual`;
+    }
+    return null;
+  };
+
   const handleCheckout = async (planId: PlanId) => {
-    // Start plan goes directly to signup with trial
     if (planId === 'start') {
       navigate('/auth?trial=pro');
       return;
@@ -195,7 +219,6 @@ export function PricingSection() {
 
   return (
     <>
-    {/* Checkout redirect overlay */}
     {checkoutOverlay && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col items-center gap-4 text-center p-8">
@@ -215,7 +238,6 @@ export function PricingSection() {
             Comece pequeno e escale conforme seu negócio cresce. Todos com 14 dias grátis.
           </p>
 
-          {/* Monthly/Annual Toggle */}
           <div className="flex items-center justify-center gap-3">
             <Label htmlFor="billing-toggle" className={cn('text-sm transition-colors', !isAnnual ? 'text-foreground font-medium' : 'text-muted-foreground')}>
               Mensal
@@ -237,7 +259,10 @@ export function PricingSection() {
             const Icon = plan.icon;
             const isLoading = loadingPlan === plan.id;
             const isStart = plan.id === 'start';
-            const displayPrice = isAnnual ? plan.priceAnnual : plan.priceMonthly;
+            const isEarlyAdopter = getEarlyAdopterAvailable(plan.id);
+            const displayPrice = getDisplayPrice(plan.id);
+            const altPrice = getAlternativePrice(plan.id);
+            const remaining = getRemainingSlots(plan.id);
             
             return (
               <Card 
@@ -288,17 +313,22 @@ export function PricingSection() {
                       </>
                     ) : (
                       <>
-                        {plan.priceMonthly !== plan.priceAnnual && !isAnnual && (
-                          <div className="text-xs text-muted-foreground mb-1">
-                            ou R$ {plan.priceAnnual.toFixed(2).replace('.', ',')}/mês no anual
-                          </div>
+                        {altPrice && (
+                          <div className="text-xs text-muted-foreground mb-1">{altPrice}</div>
                         )}
                         <div className="flex items-baseline justify-center">
                           <span className="text-4xl font-bold text-foreground">
-                            R$ {displayPrice.toFixed(2).replace('.', ',')}
+                            R$ {formatPrice(displayPrice)}
                           </span>
-                          <span className="text-muted-foreground">/mês</span>
+                          <span className="text-muted-foreground">
+                            /mês{isEarlyAdopter ? ' para sempre' : ''}
+                          </span>
                         </div>
+                        {isEarlyAdopter && pricing?.[plan.id] && (
+                          <div className="text-xs text-muted-foreground mt-1 line-through">
+                            De R$ {formatPrice(pricing[plan.id].price_original)}/mês
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -309,7 +339,7 @@ export function PricingSection() {
                     <Badge variant="outline" className="text-xs">{plan.users}</Badge>
                   </div>
 
-                  {/* Start plan: trial highlight instead of Early Adopter */}
+                  {/* Start plan: trial highlight */}
                   {isStart && (
                     <div className="mb-6 rounded-lg p-4 border-2 border-dashed border-primary/50 bg-primary/5">
                       <div className="flex items-center justify-center gap-2 mb-2">
@@ -322,8 +352,8 @@ export function PricingSection() {
                     </div>
                   )}
 
-                  {/* Early Adopter Section — only for paid plans */}
-                  {!isStart && (
+                  {/* Early Adopter Section — only for paid plans with available slots */}
+                  {!isStart && isEarlyAdopter && (
                     <div className="mb-6">
                       <div className={cn(
                         'rounded-lg p-4 border-2 border-dashed',
@@ -337,13 +367,17 @@ export function PricingSection() {
                             EARLY ADOPTER
                           </span>
                         </div>
-                        <div className="text-center mb-3">
-                          <span className={cn('text-2xl font-bold', plan.colorClass)}>
-                            R$ {plan.priceEarlyAdopter.toFixed(2).replace('.', ',')}
-                          </span>
-                          <span className="text-muted-foreground text-sm">/mês para sempre</span>
-                        </div>
-                        <EarlyAdopterCounter planId={plan.id as 'essencial' | 'pro' | 'business'} />
+                        {remaining !== null && remaining > 0 && (
+                          <p className={cn(
+                            'text-xs text-center mb-2 font-medium',
+                            remaining <= 10 ? 'text-red-500' : remaining <= 25 ? 'text-amber-500' : 'text-muted-foreground'
+                          )}>
+                            {remaining <= 10
+                              ? `🔥 Últimas ${remaining} vagas com esta condição especial!`
+                              : `Apenas ${remaining} vagas restantes com esta condição especial`
+                            }
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
