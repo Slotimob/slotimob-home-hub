@@ -561,3 +561,9 @@ All colors MUST be HSL.
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Stripe Embedded Checkout polish */
+.stripe-embedded-checkout {
+  min-height: 600px;
+  color-scheme: light;
+}
