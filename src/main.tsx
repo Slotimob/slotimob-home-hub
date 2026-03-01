@@ -2,11 +2,16 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Clean up ALL stale SW caches on startup
+// Aggressively clean up ALL SW caches on startup
 if ('caches' in window) {
   caches.keys().then((names) => {
     names.forEach((name) => {
-      if (name === 'supabase-cache' || name.startsWith('workbox-precache')) {
+      // Keep only the current supabase-data-cache; purge everything else stale
+      if (
+        name === 'supabase-cache' ||
+        name.startsWith('workbox-precache') ||
+        name.startsWith('workbox-runtime')
+      ) {
         caches.delete(name);
       }
     });

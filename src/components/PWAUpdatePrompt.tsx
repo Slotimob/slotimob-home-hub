@@ -25,9 +25,9 @@ export function PWAUpdatePrompt() {
   useEffect(() => {
     if (needRefresh) {
       // Show toast immediately
-      toast('Nova versão disponível!', {
-        description: 'Atualizando automaticamente em 5 segundos…',
-        duration: 6000,
+      toast.error('Nova versão disponível!', {
+        description: 'Atualizando automaticamente em 3 segundos…',
+        duration: 4000,
         action: {
           label: 'Atualizar agora',
           onClick: () => {
@@ -37,10 +37,10 @@ export function PWAUpdatePrompt() {
         },
       });
 
-      // Force update after 5 seconds regardless
+      // Force update after 3 seconds regardless
       autoReloadTimer.current = setTimeout(() => {
         updateServiceWorker(true);
-      }, 5000);
+      }, 3000);
     }
 
     return () => {
