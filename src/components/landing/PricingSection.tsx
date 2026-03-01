@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-type PlanId = 'essencial' | 'pro' | 'business';
+type PlanId = 'start' | 'essencial' | 'pro' | 'business';
 
 interface PlanDef {
   id: PlanId;
@@ -33,6 +33,33 @@ interface PlanDef {
 }
 
 const plans: PlanDef[] = [
+  {
+    id: 'start',
+    name: 'Start',
+    icon: Briefcase,
+    priceMonthly: 0,
+    priceAnnual: 0,
+    priceEarlyAdopter: 0,
+    description: 'Comece grátis e teste o PRO por 14 dias',
+    units: 'Até 5 unidades',
+    users: '1 usuário',
+    features: [
+      'Gestão de Contatos Simples',
+      'Financeiro: Entradas e Saídas',
+      'Contatos ilimitados',
+    ],
+    notIncluded: [
+      'Automações de WhatsApp',
+      'Inteligência Artificial',
+      'Documentos e Relatórios',
+      'Gestão de Ativos',
+    ],
+    cta: 'Começar Grátis',
+    popular: false,
+    bestValue: false,
+    colorClass: 'text-muted-foreground',
+    bgClass: 'bg-muted',
+  },
   {
     id: 'essencial',
     name: 'Essencial',
@@ -116,7 +143,6 @@ const plans: PlanDef[] = [
     bgClass: 'bg-purple-500',
   },
 ];
-
 export function PricingSection() {
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -125,6 +151,12 @@ export function PricingSection() {
   const [checkoutOverlay, setCheckoutOverlay] = useState(false);
 
   const handleCheckout = async (planId: PlanId) => {
+    // Start plan goes directly to signup with trial
+    if (planId === 'start') {
+      navigate('/auth?trial=pro');
+      return;
+    }
+
     setLoadingPlan(planId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -200,10 +232,11 @@ export function PricingSection() {
           </div>
         </div>
         
-        <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto items-stretch">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto items-stretch">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const isLoading = loadingPlan === plan.id;
+            const isStart = plan.id === 'start';
             const displayPrice = isAnnual ? plan.priceAnnual : plan.priceMonthly;
             
             return (
@@ -218,6 +251,11 @@ export function PricingSection() {
                     : 'border-border/50'
                 )}
               >
+                {isStart && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4">
+                    🎁 TESTE O PRO POR 14 DIAS GRÁTIS
+                  </Badge>
+                )}
                 {plan.popular && (
                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4">
                      <Zap className="h-3 w-3 mr-1" />
@@ -241,17 +279,28 @@ export function PricingSection() {
                 <CardContent className="flex-1">
                   {/* Pricing */}
                   <div className="text-center mb-4">
-                    {plan.priceMonthly !== plan.priceAnnual && !isAnnual && (
-                      <div className="text-xs text-muted-foreground mb-1">
-                        ou R$ {plan.priceAnnual.toFixed(2).replace('.', ',')}/mês no anual
-                      </div>
+                    {isStart ? (
+                      <>
+                        <div className="flex items-baseline justify-center">
+                          <span className="text-4xl font-bold text-foreground">Grátis</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">para sempre · sem cartão de crédito</p>
+                      </>
+                    ) : (
+                      <>
+                        {plan.priceMonthly !== plan.priceAnnual && !isAnnual && (
+                          <div className="text-xs text-muted-foreground mb-1">
+                            ou R$ {plan.priceAnnual.toFixed(2).replace('.', ',')}/mês no anual
+                          </div>
+                        )}
+                        <div className="flex items-baseline justify-center">
+                          <span className="text-4xl font-bold text-foreground">
+                            R$ {displayPrice.toFixed(2).replace('.', ',')}
+                          </span>
+                          <span className="text-muted-foreground">/mês</span>
+                        </div>
+                      </>
                     )}
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-4xl font-bold text-foreground">
-                        R$ {displayPrice.toFixed(2).replace('.', ',')}
-                      </span>
-                      <span className="text-muted-foreground">/mês</span>
-                    </div>
                   </div>
 
                   {/* Limits */}
@@ -260,29 +309,44 @@ export function PricingSection() {
                     <Badge variant="outline" className="text-xs">{plan.users}</Badge>
                   </div>
 
-                  {/* Early Adopter Section */}
-                  <div className="mb-6">
-                    <div className={cn(
-                      'rounded-lg p-4 border-2 border-dashed',
-                      plan.id === 'essencial' ? 'border-emerald-500/50 bg-emerald-500/5' :
-                      plan.id === 'pro' ? 'border-blue-500/50 bg-blue-500/5' :
-                      'border-purple-500/50 bg-purple-500/5'
-                    )}>
+                  {/* Start plan: trial highlight instead of Early Adopter */}
+                  {isStart && (
+                    <div className="mb-6 rounded-lg p-4 border-2 border-dashed border-primary/50 bg-primary/5">
                       <div className="flex items-center justify-center gap-2 mb-2">
-                        <Zap className={cn('h-4 w-4', plan.colorClass)} />
-                        <span className={cn('text-sm font-semibold', plan.colorClass)}>
-                          EARLY ADOPTER
-                        </span>
+                        <Zap className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-semibold text-primary">14 DIAS DE PRO</span>
                       </div>
-                      <div className="text-center mb-3">
-                        <span className={cn('text-2xl font-bold', plan.colorClass)}>
-                          R$ {plan.priceEarlyAdopter.toFixed(2).replace('.', ',')}
-                        </span>
-                        <span className="text-muted-foreground text-sm">/mês para sempre</span>
-                      </div>
-                      <EarlyAdopterCounter planId={plan.id} />
+                      <p className="text-xs text-center text-muted-foreground">
+                        Experimente todo o poder do Plano PRO. Após o período, você decide: evolui ou continua no Start.
+                      </p>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Early Adopter Section — only for paid plans */}
+                  {!isStart && (
+                    <div className="mb-6">
+                      <div className={cn(
+                        'rounded-lg p-4 border-2 border-dashed',
+                        plan.id === 'essencial' ? 'border-emerald-500/50 bg-emerald-500/5' :
+                        plan.id === 'pro' ? 'border-blue-500/50 bg-blue-500/5' :
+                        'border-purple-500/50 bg-purple-500/5'
+                      )}>
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <Zap className={cn('h-4 w-4', plan.colorClass)} />
+                          <span className={cn('text-sm font-semibold', plan.colorClass)}>
+                            EARLY ADOPTER
+                          </span>
+                        </div>
+                        <div className="text-center mb-3">
+                          <span className={cn('text-2xl font-bold', plan.colorClass)}>
+                            R$ {plan.priceEarlyAdopter.toFixed(2).replace('.', ',')}
+                          </span>
+                          <span className="text-muted-foreground text-sm">/mês para sempre</span>
+                        </div>
+                        <EarlyAdopterCounter planId={plan.id as 'essencial' | 'pro' | 'business'} />
+                      </div>
+                    </div>
+                  )}
                   
                   <ul className="space-y-3">
                     {plan.features.map((feature, featureIndex) => (
@@ -305,6 +369,7 @@ export function PricingSection() {
                     variant={plan.popular ? 'default' : 'outline'}
                     className={cn(
                       'w-full',
+                      plan.id === 'start' && 'border-primary text-primary hover:bg-primary hover:text-primary-foreground',
                       plan.id === 'essencial' && 'border-emerald-500 text-emerald-600 hover:bg-emerald-500 hover:text-white',
                       plan.id === 'pro' && 'bg-blue-500 hover:bg-blue-600 text-white',
                       plan.id === 'business' && 'border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white'
