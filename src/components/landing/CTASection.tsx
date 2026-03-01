@@ -10,12 +10,12 @@ export function CTASection({ utmSource = 'lp_geral' }: CTASectionProps) {
   const authUrl = `/auth?utm_source=${utmSource}`;
 
   return (
-    <section className="py-20 bg-primary relative overflow-hidden">
+    <section className="py-24 md:py-32 bg-primary relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--accent)/0.15),transparent_70%)]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-6" style={{ textWrap: 'balance' }}>
             Pronto para profissionalizar sua gestão hoje?
           </h2>
           <p className="text-lg text-primary-foreground/80 mb-4 leading-relaxed">

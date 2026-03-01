@@ -25,13 +25,13 @@ const benefits = [
 
 export function InfrastructureBenefits() {
   return (
-    <section className="py-20 bg-background">
+    <section className="py-24 md:py-32 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-14">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
             Infraestrutura
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" style={{ textWrap: 'balance' }}>
             Tecnologia que você pode confiar
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -41,7 +41,7 @@ export function InfrastructureBenefits() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
           {benefits.map((b) => (
-            <div key={b.title} className="text-center p-6 rounded-xl border border-border/50 bg-card hover:shadow-md transition-shadow">
+            <div key={b.title} className="text-center p-6 rounded-xl border border-border/50 bg-card hover:shadow-md hover:-translate-y-1 transition-all duration-300">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <b.icon className="h-6 w-6 text-primary" />
               </div>

@@ -26,7 +26,7 @@ const integrations = [
 
 export function IntegrationsStrip() {
   return (
-    <section className="py-16 bg-muted/30 border-y border-border/50">
+    <section className="py-20 bg-muted/30 border-y border-border/50">
       <div className="container mx-auto px-4">
         <p className="text-center text-base font-semibold text-foreground mb-2">
           Tudo o que sua operação precisa, conectado em um só lugar.

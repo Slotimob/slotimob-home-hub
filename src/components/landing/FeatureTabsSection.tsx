@@ -157,13 +157,13 @@ export function FeatureTabsSection() {
   const activeTab = tabs.find((t) => t.id === active)!;
 
   return (
-    <section id="features" className="py-20 md:py-28 bg-background">
+    <section id="features" className="py-24 md:py-32 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
             Menos esforço, mais controle, mais lucro
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" style={{ textWrap: 'balance' }}>
             Cada módulo resolve um problema real
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -220,7 +220,7 @@ export function FeatureTabsSection() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-border/50 bg-card shadow-xl overflow-hidden">
+                <div className="rounded-2xl border border-border/50 bg-card shadow-lg overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/50 bg-muted/30">
                     <div className="flex gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-destructive/40" />

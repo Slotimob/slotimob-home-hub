@@ -28,13 +28,13 @@ const segments = [
 
 export function AudienceSegments() {
   return (
-    <section id="segmentos" className="py-20 md:py-28 bg-muted/30">
+    <section id="segmentos" className="py-24 md:py-32 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-14">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
             Feito Para Você
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" style={{ textWrap: 'balance' }}>
             Uma solução para cada perfil
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -46,7 +46,7 @@ export function AudienceSegments() {
           {segments.map((seg) => (
             <div
               key={seg.title}
-              className="rounded-2xl border border-border/50 bg-card p-8 hover:shadow-xl hover:border-primary/20 transition-all duration-300 flex flex-col"
+              className="rounded-2xl border border-border/50 bg-card p-8 hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300 flex flex-col"
             >
               <div className={`w-12 h-12 rounded-xl ${seg.color} flex items-center justify-center mb-5`}>
                 <seg.icon className="h-6 w-6" />
