@@ -50,6 +50,7 @@ import FinanceDRE from "./pages/FinanceDRE";
 import AssetHealth from "./pages/AssetHealth";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
+import Checkout from "./pages/Checkout";
 import Users from "./pages/Users";
 import AdminCockpit from "./pages/AdminCockpit";
 import Blog from "./pages/Blog";
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/apresentacao" element={<Presentation />} />
+              <Route path="/checkout" element={guarded(<Checkout />)} />
               <Route path="/checkout/success" element={<CheckoutSuccess />} />
               <Route path="/checkout/cancel" element={<CheckoutCancel />} />
 

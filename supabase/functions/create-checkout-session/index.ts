@@ -73,6 +73,7 @@ serve(async (req) => {
         });
         return new Response(JSON.stringify({ 
           url: portalSession.url,
+          type: 'portal',
           message: 'Você já possui este plano. Redirecionando para gerenciamento.' 
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -130,11 +131,13 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
     
+    // Create Embedded Checkout session (ui_mode: 'embedded')
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : userEmail,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
+      ui_mode: "embedded",
       subscription_data: {
         trial_period_days: 14,
         metadata: {
@@ -144,8 +147,7 @@ serve(async (req) => {
           is_early_adopter: String(isEarlyAdopter),
         },
       },
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout/cancel`,
+      return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         user_id: userId,
         plan_id: plan_id,
@@ -154,9 +156,12 @@ serve(async (req) => {
       },
     });
 
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    logStep("Embedded checkout session created", { sessionId: session.id });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      clientSecret: session.client_secret,
+      type: 'embedded',
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
