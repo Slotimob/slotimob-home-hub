@@ -8,13 +8,14 @@ import {
   CreditCard,
   ExternalLink,
   Loader2,
-  MessageSquare,
   Plus,
   Minus,
   Sparkles,
   Users,
   Building2,
   Zap,
+  Receipt,
+  ShieldCheck,
 } from 'lucide-react';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
@@ -177,9 +178,10 @@ export const SubscriptionManagement = () => {
             <div>
               <p className="font-semibold text-lg">{planLabels[plan] || plan}</p>
               <p className="text-sm text-muted-foreground">
-                {subscription?.is_early_adopter && (
-                  <Badge variant="outline" className="mr-2 text-xs border-amber-500 text-amber-600">
-                    Early Adopter
+              {subscription?.is_early_adopter && (
+                  <Badge variant="outline" className="mr-2 text-xs border-amber-500 text-amber-600 bg-amber-500/10">
+                    <ShieldCheck className="h-3 w-3 mr-1" />
+                    Preço Early Adopter Vitalício
                   </Badge>
                 )}
                 {subscription?.status === 'active'
@@ -208,19 +210,29 @@ export const SubscriptionManagement = () => {
           {hasStripe && (
             <>
               <Separator />
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={handlePortal}
-                disabled={loadingAction === 'portal'}
-              >
-                {loadingAction === 'portal' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ExternalLink className="h-4 w-4" />
-                )}
-                Gerir Assinatura no Stripe
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={handlePortal}
+                  disabled={loadingAction === 'portal'}
+                >
+                  {loadingAction === 'portal' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4" />
+                  )}
+                  Gerir Assinatura
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => window.open('https://billing.stripe.com/p/login/eVq7sK9915tj7YXcwV1sQ00', '_blank')}
+                >
+                  <Receipt className="h-4 w-4" />
+                  Gerenciar Pagamentos e Faturas
+                </Button>
+              </div>
             </>
           )}
         </CardContent>
@@ -371,37 +383,16 @@ export const SubscriptionManagement = () => {
         </Card>
       )}
 
-      {/* Credits Purchase */}
+      {/* Credits Purchase — AI only */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Zap className="h-4 w-4" />
             Créditos de Consumo
           </CardTitle>
-          <CardDescription>Compre créditos para WhatsApp e IA</CardDescription>
+          <CardDescription>Compre créditos adicionais para IA</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div className="flex items-center gap-3">
-              <MessageSquare className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="font-medium text-sm">Créditos WhatsApp</p>
-                <p className="text-xs text-muted-foreground">R$ 49,00 por pacote</p>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => handleBuyCredits('credits_whatsapp')}
-              disabled={loadingAction === 'buy-credits_whatsapp'}
-            >
-              {loadingAction === 'buy-credits_whatsapp' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Comprar'
-              )}
-            </Button>
-          </div>
-
           <div className="flex items-center justify-between p-3 border rounded-lg">
             <div className="flex items-center gap-3">
               <Sparkles className="h-5 w-5 text-purple-500" />
