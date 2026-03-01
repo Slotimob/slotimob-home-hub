@@ -167,7 +167,7 @@ serve(async (req) => {
         ...(skipTrial ? {} : { trial_period_days: 14 }),
         metadata: sessionMetadata,
       },
-      return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}${isGuest ? '&guest=true' : ''}`,
       metadata: sessionMetadata,
     });
 

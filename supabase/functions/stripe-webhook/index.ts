@@ -102,6 +102,32 @@ async function resolveUserId(
     logStep("Warning: could not generate recovery link", { error: resetError.message });
   }
 
+  // Send branded welcome email via send-email function
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userName = session.customer_details?.name || 'Usuário';
+    
+    const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
+        template: 'welcome',
+        to: customerEmail,
+        user_name: userName,
+        dashboard_url: 'https://slotimob.lovable.app/dashboard',
+        broker_id: newUser.user.id,
+      }),
+    });
+    
+    logStep("Welcome email sent to guest", { email: customerEmail, status: emailRes.status });
+  } catch (emailErr) {
+    logStep("Warning: could not send welcome email", { error: String(emailErr) });
+  }
+
   return newUser.user.id;
 }
 
