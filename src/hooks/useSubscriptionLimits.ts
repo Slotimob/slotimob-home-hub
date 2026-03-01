@@ -29,7 +29,7 @@ export interface PlanFeatures {
   asset_management: boolean;
 }
 
-export type PlanId = 'free' | 'essencial' | 'pro' | 'business' | 'ouro' | 'diamante';
+export type PlanId = 'free' | 'start' | 'essencial' | 'pro' | 'business' | 'ouro' | 'diamante';
 
 export interface SubscriptionLimits {
   plan: PlanId;
