@@ -18,6 +18,26 @@ import { UserPlus, ArrowLeft, ArrowRight, Check, BarChart3, MessageSquare, Walle
 
 const SITE_URL = 'https://slotimob.com.br';
 
+const OAuthLoadingOverlay = () => (
+  <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background/95 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="flex flex-col items-center gap-6 max-w-xs text-center">
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full bg-primary/20 blur-2xl animate-pulse" />
+        <SlotiLogo size="lg" className="relative z-10 h-20 w-20" />
+      </div>
+      <h2 className="text-2xl font-bold tracking-tight text-foreground">SLOTIMOB</h2>
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <span className="text-sm font-medium">Conectando ao seu ambiente seguro...</span>
+      </div>
+      <div className="h-1 w-48 rounded-full bg-muted overflow-hidden">
+        <div className="h-full w-1/2 rounded-full bg-primary animate-[shimmer_1.5s_ease-in-out_infinite]" 
+          style={{ animation: 'shimmer 1.5s ease-in-out infinite' }} />
+      </div>
+    </div>
+  </div>
+);
+
 const loginSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
   password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' })
@@ -752,6 +772,7 @@ const Auth = () => {
 
   return (
     <>
+      {googleLoading && <OAuthLoadingOverlay />}
       <SEOHead title="Login e Cadastro" description="Acesse sua conta SLOTIMOB ou crie uma nova conta para gerenciar seus imóveis e leads" path="/auth" />
 
       <div className="flex min-h-[100dvh]">
