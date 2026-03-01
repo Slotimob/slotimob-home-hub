@@ -52,7 +52,7 @@ export const FeatureGate = ({
             {getUpgradeReason(feature)}
           </p>
           <Button asChild className={targetPlan === 'business' ? 'bg-purple-600 hover:bg-purple-700' : targetPlan === 'pro' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}>
-            <Link to="/#pricing">
+            <Link to={`/checkout?plan=${targetPlan}&cycle=annual&mode=immediate`}>
               Upgrade para {planName}
             </Link>
           </Button>

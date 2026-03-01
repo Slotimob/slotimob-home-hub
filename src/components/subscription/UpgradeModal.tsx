@@ -147,7 +147,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', fea
               Agora não
             </Button>
             <Button asChild className={`flex-1 ${config.bgColor} hover:opacity-90`}>
-              <Link to="/#pricing" onClick={() => onOpenChange(false)}>
+              <Link to={`/checkout?plan=${targetPlan}&cycle=annual&mode=immediate`} onClick={() => onOpenChange(false)}>
                 <Zap className="h-4 w-4 mr-2" />
                 Fazer Upgrade
               </Link>
@@ -157,12 +157,12 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', fea
           {currentPlan === 'free' && targetPlan === 'essencial' && (
             <p className="text-xs text-center text-muted-foreground">
               O Essencial desbloqueia 10 unidades. Para gestão completa, veja o{' '}
-              <Link to="/#pricing" className="text-blue-500 hover:underline" onClick={() => onOpenChange(false)}>Plano Pro a partir de R$ 79/mês</Link>
+              <Link to="/checkout?plan=pro&cycle=annual&mode=immediate" className="text-blue-500 hover:underline" onClick={() => onOpenChange(false)}>Plano Pro a partir de R$ 79/mês</Link>
             </p>
           )}
           {currentPlan === 'essencial' && targetPlan === 'business' && (
             <p className="text-xs text-center text-muted-foreground">
-              Também disponível: <Link to="/#pricing" className="text-blue-500 hover:underline">Plano Pro a partir de R$ 79/mês</Link>
+              Também disponível: <Link to="/checkout?plan=pro&cycle=annual&mode=immediate" className="text-blue-500 hover:underline">Plano Pro a partir de R$ 79/mês</Link>
             </p>
           )}
         </div>

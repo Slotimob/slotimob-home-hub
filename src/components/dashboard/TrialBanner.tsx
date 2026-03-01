@@ -63,12 +63,12 @@ export function TrialBanner() {
           Seu trial expirou. Garanta o <strong className="text-foreground">Pro por R$ 79/mês</strong> e mantenha IA, Documentos, Relatórios e gestão completa desbloqueados.
         </p>
       </div>
-      <Button asChild size="sm" className="bg-amber-500 hover:bg-amber-600 text-white shrink-0">
-        <Link to="/#pricing">
-          <Zap className="h-4 w-4 mr-1" />
-          Ver Planos
-        </Link>
-      </Button>
+        <Button asChild size="sm" className="bg-amber-500 hover:bg-amber-600 text-white shrink-0">
+          <Link to="/checkout?plan=pro&cycle=annual&mode=immediate">
+            <Zap className="h-4 w-4 mr-1" />
+            Ver Planos
+          </Link>
+        </Button>
     </div>
   );
 }
