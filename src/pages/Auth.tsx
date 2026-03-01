@@ -254,20 +254,14 @@ const Auth = () => {
     }
   }, [inviteToken]);
 
-  const handlePostAuthCheckout = async (planId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', { body: { plan_id: planId } });
-      if (error) {
-        sonnerToast.error('Erro ao iniciar checkout. Você pode tentar novamente na página de planos.');
-        navigate('/dashboard');
-        return;
-      }
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-      navigate('/dashboard');
-    } catch {
+  const handlePostAuthRedirect = (planId?: string) => {
+    if (redirectToCheckout && planId && ['essencial', 'pro', 'business'].includes(planId)) {
+      const cycle = searchParams.get('cycle') || 'annual';
+      const mode = searchParams.get('mode') || 'immediate';
+      navigate(`/checkout?plan=${planId}&cycle=${cycle}&mode=${mode}`);
+    } else if (planId && ['essencial', 'pro', 'business'].includes(planId)) {
+      navigate(`/checkout?plan=${planId}&cycle=annual`);
+    } else {
       navigate('/dashboard');
     }
   };
@@ -351,7 +345,7 @@ const Auth = () => {
           if (inviteToken) {
             handleAcceptInvite().then(() => navigate('/dashboard'));
           } else if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
-            handlePostAuthCheckout(pendingPlan);
+            handlePostAuthRedirect(pendingPlan || undefined);
           } else {
             navigate('/dashboard');
           }
@@ -401,7 +395,7 @@ const Auth = () => {
       toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
       if (inviteToken) await handleAcceptInvite();
       if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
-        await handlePostAuthCheckout(pendingPlan);
+        handlePostAuthRedirect(pendingPlan);
       } else {
         navigate('/dashboard');
       }
@@ -525,7 +519,7 @@ const Auth = () => {
         if (inviteToken) await handleAcceptInvite();
         toast({ title: 'Conta criada!', description: 'Sua conta foi criada com sucesso.' });
         if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
-          await handlePostAuthCheckout(pendingPlan);
+          handlePostAuthRedirect(pendingPlan);
         } else {
           navigate('/dashboard');
         }
