@@ -27,58 +27,66 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    // --- Auth: optional (guest checkout allowed) ---
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    let userId: string | null = null;
+    let userEmail: string | null = null;
 
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    if (authHeader && authHeader !== `Bearer ${supabaseAnonKey}`) {
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+      if (!claimsError && claimsData?.claims) {
+        userId = claimsData.claims.sub as string;
+        userEmail = claimsData.claims.email as string;
+        logStep("User authenticated", { userId, email: userEmail });
+      }
+    }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) throw new Error("Unauthorized");
-
-    const userId = claimsData.claims.sub as string;
-    const userEmail = claimsData.claims.email as string;
-    logStep("User authenticated", { userId, email: userEmail });
+    const isGuest = !userId;
+    logStep("Auth status", { isGuest });
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { plan_id, billing_cycle = 'monthly', mode = 'trial' } = await req.json();
+    const { plan_id, billing_cycle = 'monthly', mode = 'trial', customer_email } = await req.json();
     if (!plan_id || !['essencial', 'pro', 'business'].includes(plan_id)) {
       throw new Error("Invalid plan_id. Must be 'essencial', 'pro', or 'business'");
     }
     if (!['monthly', 'annual'].includes(billing_cycle)) {
       throw new Error("Invalid billing_cycle. Must be 'monthly' or 'annual'");
     }
-    logStep("Plan selected", { plan_id, billing_cycle });
+    logStep("Plan selected", { plan_id, billing_cycle, mode });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Check existing subscription
-    const { data: existingSub } = await supabaseAdmin
-      .from('subscriptions')
-      .select('id, status, plan_id')
-      .eq('user_id', userId)
-      .in('status', ['active', 'trialing'])
-      .maybeSingle();
+    // --- For authenticated users: check existing subscription ---
+    if (!isGuest) {
+      const { data: existingSub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('id, status, plan_id')
+        .eq('user_id', userId!)
+        .in('status', ['active', 'trialing'])
+        .maybeSingle();
 
-    if (existingSub && existingSub.plan_id === plan_id) {
-      const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
-      if (customers.data.length > 0) {
-        const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
-        const portalSession = await stripe.billingPortal.sessions.create({
-          customer: customers.data[0].id,
-          return_url: `${origin}/settings`,
-        });
-        return new Response(JSON.stringify({ 
-          url: portalSession.url,
-          type: 'portal',
-          message: 'Você já possui este plano. Redirecionando para gerenciamento.' 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
+      if (existingSub && existingSub.plan_id === plan_id) {
+        const customers = await stripe.customers.list({ email: userEmail!, limit: 1 });
+        if (customers.data.length > 0) {
+          const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
+          const portalSession = await stripe.billingPortal.sessions.create({
+            customer: customers.data[0].id,
+            return_url: `${origin}/settings`,
+          });
+          return new Response(JSON.stringify({ 
+            url: portalSession.url,
+            type: 'portal',
+            message: 'Você já possui este plano. Redirecionando para gerenciamento.' 
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
       }
     }
 
@@ -105,7 +113,7 @@ serve(async (req) => {
 
     const isEarlyAdopter = remainingSlots && remainingSlots > 0;
 
-    // Select the correct Stripe price ID based on early adopter status and billing cycle
+    // Select the correct Stripe price ID
     let priceId: string | null = null;
     if (isEarlyAdopter) {
       priceId = planData.stripe_price_id_early_adopter;
@@ -119,45 +127,51 @@ serve(async (req) => {
       throw new Error(`No Stripe price configured for ${plan_id} ${billing_cycle} (early_adopter: ${isEarlyAdopter})`);
     }
 
-    const skipTrial = mode === 'immediate';
-    logStep("Price selected", { priceId, isEarlyAdopter, remainingSlots: remainingSlots || 0, billing_cycle, skipTrial });
+    // Guest checkout is always immediate (no trial for strangers)
+    const skipTrial = mode === 'immediate' || isGuest;
+    logStep("Price selected", { priceId, isEarlyAdopter, remainingSlots: remainingSlots || 0, billing_cycle, skipTrial, isGuest });
 
-    // Find or create Stripe customer
-    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    // Find existing Stripe customer by email
+    const emailForLookup = userEmail || customer_email;
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      logStep("Existing Stripe customer found", { customerId });
+    if (emailForLookup) {
+      const customers = await stripe.customers.list({ email: emailForLookup, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logStep("Existing Stripe customer found", { customerId });
+      }
     }
 
     const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
     
-    // Create Embedded Checkout session (ui_mode: 'embedded')
+    // Build metadata
+    const sessionMetadata: Record<string, string> = {
+      plan_id: plan_id,
+      billing_cycle: billing_cycle,
+      is_early_adopter: String(isEarlyAdopter),
+      checkout_mode: skipTrial ? 'immediate' : 'trial',
+    };
+    if (userId) sessionMetadata.user_id = userId;
+    if (isGuest) sessionMetadata.guest_checkout = 'true';
+
+    // Create Embedded Checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : userEmail,
+      // For guests without existing customer, let Stripe collect the email
+      customer_email: customerId ? undefined : (userEmail || undefined),
+      customer_creation: customerId ? undefined : 'always',
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       ui_mode: "embedded",
       subscription_data: {
         ...(skipTrial ? {} : { trial_period_days: 14 }),
-        metadata: {
-          user_id: userId,
-          plan_id: plan_id,
-          billing_cycle: billing_cycle,
-          is_early_adopter: String(isEarlyAdopter),
-        },
+        metadata: sessionMetadata,
       },
       return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      metadata: {
-        user_id: userId,
-        plan_id: plan_id,
-        billing_cycle: billing_cycle,
-        is_early_adopter: String(isEarlyAdopter),
-      },
+      metadata: sessionMetadata,
     });
 
-    logStep("Embedded checkout session created", { sessionId: session.id });
+    logStep("Embedded checkout session created", { sessionId: session.id, isGuest });
 
     return new Response(JSON.stringify({ 
       clientSecret: session.client_secret,
