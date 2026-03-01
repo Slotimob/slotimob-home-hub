@@ -44,7 +44,7 @@ serve(async (req) => {
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { plan_id, billing_cycle = 'monthly' } = await req.json();
+    const { plan_id, billing_cycle = 'monthly', mode = 'trial' } = await req.json();
     if (!plan_id || !['essencial', 'pro', 'business'].includes(plan_id)) {
       throw new Error("Invalid plan_id. Must be 'essencial', 'pro', or 'business'");
     }
@@ -119,7 +119,8 @@ serve(async (req) => {
       throw new Error(`No Stripe price configured for ${plan_id} ${billing_cycle} (early_adopter: ${isEarlyAdopter})`);
     }
 
-    logStep("Price selected", { priceId, isEarlyAdopter, remainingSlots: remainingSlots || 0, billing_cycle });
+    const skipTrial = mode === 'immediate';
+    logStep("Price selected", { priceId, isEarlyAdopter, remainingSlots: remainingSlots || 0, billing_cycle, skipTrial });
 
     // Find or create Stripe customer
     const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
@@ -139,7 +140,7 @@ serve(async (req) => {
       mode: "subscription",
       ui_mode: "embedded",
       subscription_data: {
-        trial_period_days: 14,
+        ...(skipTrial ? {} : { trial_period_days: 14 }),
         metadata: {
           user_id: userId,
           plan_id: plan_id,
