@@ -6,6 +6,7 @@ import {
   EmbeddedCheckout,
 } from '@stripe/react-stripe-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Loader2, ArrowLeft, Check, Zap, Rocket, Building2, Briefcase, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -69,6 +70,7 @@ const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
 export default function CheckoutPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
 
   const [selectedPlan, setSelectedPlan] = useState<PaidPlan>(
     (searchParams.get('plan') as PaidPlan) || 'pro'
@@ -109,7 +111,9 @@ export default function CheckoutPage() {
   // Sync URL params
   useEffect(() => {
     const cycle = isAnnual ? 'annual' : 'monthly';
-    setSearchParams({ plan: selectedPlan, cycle }, { replace: true });
+    const params: Record<string, string> = { plan: selectedPlan, cycle };
+    if (searchParams.get('mode')) params.mode = searchParams.get('mode')!;
+    setSearchParams(params, { replace: true });
   }, [selectedPlan, isAnnual, setSearchParams]);
 
   const handlePlanChange = (planId: PaidPlan) => {
@@ -127,15 +131,22 @@ export default function CheckoutPage() {
   };
 
   const billingCycle = isAnnual ? 'annual' : 'monthly';
-
   const checkoutMode = searchParams.get('mode') === 'immediate' ? 'immediate' : 'trial';
+  const isGuest = !authLoading && !user;
 
   const fetchClientSecret = useCallback(async () => {
-    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: { plan_id: selectedPlan, billing_cycle: billingCycle, mode: checkoutMode },
+    const body: Record<string, string> = {
+      plan_id: selectedPlan,
+      billing_cycle: billingCycle,
+      mode: isGuest ? 'immediate' : checkoutMode, // Guests always get immediate (no trial)
+    };
+
+    // For guests, don't send auth header — the edge function handles it
+    const { data, error: fnError } = await supabase.functions.invoke('create-checkout-session', {
+      body,
     });
 
-    if (error || !data) {
+    if (fnError || !data) {
       const msg = 'Erro ao iniciar checkout. Tente novamente.';
       setError(msg);
       toast.error(msg);
@@ -148,7 +159,15 @@ export default function CheckoutPage() {
     }
 
     return data.clientSecret as string;
-  }, [selectedPlan, billingCycle]);
+  }, [selectedPlan, billingCycle, checkoutMode, isGuest]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -158,7 +177,7 @@ export default function CheckoutPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(user ? -1 as any : '/')}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -288,12 +307,24 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* Trial note */}
+              {/* Trial / immediate note */}
               <div className="mt-5 pt-4 border-t border-border">
                 <p className="text-xs text-muted-foreground text-center">
-                  ✨ 14 dias grátis · Cancele quando quiser
+                  {isGuest || checkoutMode === 'immediate'
+                    ? '🔒 Assinatura ativada imediatamente após o pagamento'
+                    : '✨ 14 dias grátis · Cancele quando quiser'}
                 </p>
               </div>
+
+              {/* Guest info */}
+              {isGuest && (
+                <div className="mt-4 rounded-lg bg-primary/5 border border-primary/10 p-3">
+                  <p className="text-xs text-foreground font-medium mb-1">Não tem conta ainda?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Sua conta será criada automaticamente com o e-mail informado no pagamento. Você receberá as instruções de acesso por e-mail.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

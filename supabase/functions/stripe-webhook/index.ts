@@ -23,6 +23,88 @@ const CREDIT_PRODUCT_IDS: Record<string, { type: 'whatsapp' | 'ai'; credits: num
   'prod_TxLn14geNfUh5F': { type: 'ai', credits: 100 },
 };
 
+/**
+ * Find or create a Supabase user from a Stripe checkout session.
+ * Returns the user_id to associate the subscription with.
+ */
+async function resolveUserId(
+  session: Stripe.Checkout.Session,
+  supabase: ReturnType<typeof createClient>
+): Promise<string | null> {
+  // 1. If user_id is in metadata (authenticated checkout), use it directly
+  const metaUserId = session.metadata?.user_id;
+  if (metaUserId) {
+    logStep("User ID from metadata", { userId: metaUserId });
+    return metaUserId;
+  }
+
+  // 2. Guest checkout — resolve by email
+  const customerEmail = session.customer_details?.email || session.customer_email;
+  if (!customerEmail) {
+    logStep("No email found in session — cannot resolve user");
+    return null;
+  }
+
+  logStep("Resolving guest user by email", { email: customerEmail });
+
+  // 2a. Check if user already exists in auth
+  const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers({
+    page: 1,
+    perPage: 1,
+  });
+
+  // Search by email using the admin API
+  const { data: userByEmail } = await supabase
+    .from('profiles')
+    .select('id, email')
+    .eq('email', customerEmail)
+    .maybeSingle();
+
+  if (userByEmail) {
+    logStep("Existing user found by email", { userId: userByEmail.id, email: customerEmail });
+    return userByEmail.id;
+  }
+
+  // 2b. Create new user via admin API
+  logStep("Creating new user for guest checkout", { email: customerEmail });
+
+  const tempPassword = crypto.randomUUID(); // They'll use password reset to set their own
+
+  const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+    email: customerEmail,
+    password: tempPassword,
+    email_confirm: true, // Auto-confirm since they paid
+    user_metadata: {
+      full_name: session.customer_details?.name || 'Usuário',
+      created_via: 'guest_checkout',
+      terms_accepted_at: new Date().toISOString(),
+      terms_version: '2025-01',
+    },
+  });
+
+  if (createError || !newUser?.user) {
+    logStep("Error creating user", { error: createError?.message });
+    return null;
+  }
+
+  logStep("New user created via guest checkout", { userId: newUser.user.id, email: customerEmail });
+
+  // Send password reset email so the user can set their password
+  const { error: resetError } = await supabase.auth.admin.generateLink({
+    type: 'recovery',
+    email: customerEmail,
+    options: {
+      redirectTo: 'https://slotimob.com.br/reset-password',
+    },
+  });
+
+  if (resetError) {
+    logStep("Warning: could not generate recovery link", { error: resetError.message });
+  }
+
+  return newUser.user.id;
+}
+
 async function handleCheckoutCompleted(
   event: Stripe.Event,
   stripe: Stripe,
@@ -31,17 +113,15 @@ async function handleCheckoutCompleted(
   const session = event.data.object as Stripe.Checkout.Session;
   logStep("Processing checkout.session.completed", { sessionId: session.id, mode: session.mode });
 
-  const userId = session.metadata?.user_id;
-
   // Handle one-time credit purchases
   if (session.mode === 'payment') {
+    const userId = session.metadata?.user_id;
     const addonType = session.metadata?.addon_type;
     if (!userId || !addonType) {
       logStep("Missing metadata for credit purchase", { metadata: session.metadata });
       return;
     }
 
-    // Expand line items to get product info
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 5 });
     
     for (const item of lineItems.data) {
@@ -78,17 +158,29 @@ async function handleCheckoutCompleted(
     return;
   }
 
-  // Handle subscription checkout
+  // --- Handle subscription checkout ---
   const planId = session.metadata?.plan_id;
   const isEarlyAdopter = session.metadata?.is_early_adopter === "true";
+  const isGuestCheckout = session.metadata?.guest_checkout === "true";
+
+  // Resolve user — creates account if guest
+  const userId = await resolveUserId(session, supabase);
 
   if (!userId || !planId) {
-    logStep("Missing metadata in session", { metadata: session.metadata });
+    logStep("Could not resolve user or missing plan", { userId, planId, metadata: session.metadata });
     return;
   }
 
   const subscriptionId = session.subscription as string;
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+  // Update subscription metadata with resolved user_id (for future webhooks)
+  if (isGuestCheckout) {
+    await stripe.subscriptions.update(subscriptionId, {
+      metadata: { ...subscription.metadata, user_id: userId },
+    });
+    logStep("Updated Stripe subscription metadata with resolved user_id", { userId });
+  }
 
   const priceLocked = isEarlyAdopter
     ? subscription.items.data[0].price.unit_amount
@@ -114,7 +206,7 @@ async function handleCheckoutCompleted(
     throw subError;
   }
 
-  logStep("Subscription created/updated", { userId, planId, isEarlyAdopter });
+  logStep("Subscription created/updated", { userId, planId, isEarlyAdopter, isGuestCheckout });
 
   if (isEarlyAdopter) {
     const { data: subscriptionData } = await supabase
@@ -282,7 +374,6 @@ serve(async (req) => {
             .eq("stripe_subscription_id", invoice.subscription as string);
           logStep("Subscription confirmed active after payment");
 
-          // Log successful payment to audit_logs for cockpit visibility
           const { data: subData } = await supabase
             .from("subscriptions")
             .select("user_id, plan_id")
