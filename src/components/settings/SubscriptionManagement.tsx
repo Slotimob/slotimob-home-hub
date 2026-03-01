@@ -17,11 +17,16 @@ import {
   Zap,
 } from 'lucide-react';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
+import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useAICredits } from '@/hooks/useAICredits';
+import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { Rocket, Clock, Crown } from 'lucide-react';
 const planLabels: Record<string, string> = {
+  start: 'Start',
   free: 'Gratuito',
   essencial: 'Essencial',
   pro: 'Pro',
@@ -29,6 +34,7 @@ const planLabels: Record<string, string> = {
 };
 
 const planColors: Record<string, string> = {
+  start: 'secondary',
   free: 'secondary',
   essencial: 'secondary',
   pro: 'default',
@@ -38,8 +44,11 @@ const planColors: Record<string, string> = {
 export const SubscriptionManagement = () => {
   const { subscription, isLoading, refetch, openCustomerPortal, manageAddon, buyCredits } =
     useSubscriptionDetails();
+  const { isTrialActive, trialDaysRemaining } = useTrialStatus();
+  const { slots } = useEarlyAdopterCount();
   const { credits: aiCredits, isLoading: isLoadingCredits } = useAICredits();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -99,6 +108,61 @@ export const SubscriptionManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Trial Banner */}
+      {isTrialActive && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex items-start gap-4 py-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <Rocket className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <p className="font-semibold text-foreground">
+                Você está aproveitando 14 dias de Plano PRO Grátis
+              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>{trialDaysRemaining} {trialDaysRemaining === 1 ? 'dia restante' : 'dias restantes'}</span>
+              </div>
+              {slots.pro && slots.pro.remaining > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  🎉 Ainda há <strong>{slots.pro.remaining}</strong> vagas Early Adopter com desconto!
+                </p>
+              )}
+              <Button
+                className="mt-2 gap-2"
+                onClick={() => navigate('/checkout?plan=pro&cycle=annual')}
+              >
+                <Crown className="h-4 w-4" />
+                Efetivar Assinatura PRO
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Upgrade CTA for Start plan (non-trial) */}
+      {plan === 'start' && !isTrialActive && (
+        <Card className="border-primary/30">
+          <CardContent className="flex items-center justify-between py-5">
+            <div>
+              <p className="font-medium text-foreground">Desbloqueie todos os recursos</p>
+              <p className="text-sm text-muted-foreground">
+                Faça upgrade para o plano PRO e tenha acesso a IA, WhatsApp e mais.
+              </p>
+              {slots.pro && slots.pro.remaining > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  🎉 {slots.pro.remaining} vagas Early Adopter disponíveis!
+                </p>
+              )}
+            </div>
+            <Button onClick={() => navigate('/checkout?plan=pro&cycle=annual')} className="gap-2">
+              <Crown className="h-4 w-4" />
+              Upgrade para PRO
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Current Plan */}
       <Card>
         <CardHeader>
