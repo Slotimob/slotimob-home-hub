@@ -34,6 +34,7 @@ export type PlanId = 'free' | 'start' | 'essencial' | 'pro' | 'business' | 'ouro
 export interface SubscriptionLimits {
   plan: PlanId;
   isEarlyAdopter: boolean;
+  isTrialActive: boolean;
   features: PlanFeatures | null;
   isLoading: boolean;
   canUse: (feature: keyof PlanFeatures) => boolean;
@@ -216,5 +217,5 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
     return featureDescriptions[feature]?.upgradeMessage || 'Faça upgrade para desbloquear esta funcionalidade';
   };
 
-  return { plan, isEarlyAdopter, features, isLoading, canUse, checkLimit, getUpgradeReason };
+  return { plan, isEarlyAdopter, isTrialActive: !!effectiveTrialing, features, isLoading, canUse, checkLimit, getUpgradeReason };
 };

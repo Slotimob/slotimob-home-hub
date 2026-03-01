@@ -65,6 +65,7 @@ interface MenuItem {
   items?: SubMenuItem[];
   ownerOnly?: boolean;
   hiddenOnPlan?: string[];
+  trialVisible?: boolean;
 }
 
 export function AppSidebar() {
@@ -73,12 +74,12 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const collapsed = state === 'collapsed' && !isMobile;
   const { isAgent } = useUserRole();
-  const { plan } = useSubscriptionLimits();
+  const { plan, isTrialActive } = useSubscriptionLimits();
   const { hasCockpitAccess } = useCockpitAccess();
 
   // Build menu items with role/plan gating
   const menuItems: MenuItem[] = [
-    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'] },
+    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'], trialVisible: true },
     { title: 'Dashboard', url: '/dashboard', icon: Home },
     { 
       title: 'Ativos', 
@@ -130,7 +131,11 @@ export function AppSidebar() {
   // Filter menu items based on role and plan
   const filteredMenuItems = menuItems.filter(item => {
     if (item.ownerOnly && isAgent) return false;
-    if (item.hiddenOnPlan?.includes(plan)) return false;
+    if (item.hiddenOnPlan?.includes(plan)) {
+      // If trial is active and item is marked trialVisible, show it anyway
+      if (item.trialVisible && isTrialActive) return true;
+      return false;
+    }
     return true;
   });
 
@@ -216,7 +221,14 @@ export function AppSidebar() {
                           onClick={() => isMobile && setOpenMobile(false)}
                         >
                           <item.icon className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                          <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>{item.title}</span>
+                          <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
+                            {item.title}
+                            {item.trialVisible && isTrialActive && !collapsed && (
+                              <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/15 text-primary leading-none align-middle">
+                                PRO
+                              </span>
+                            )}
+                          </span>
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
