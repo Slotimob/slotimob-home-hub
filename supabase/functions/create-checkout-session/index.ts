@@ -117,14 +117,29 @@ serve(async (req) => {
     let priceId: string | null = null;
     if (isEarlyAdopter) {
       priceId = planData.stripe_price_id_early_adopter;
-    } else if (billing_cycle === 'annual') {
-      priceId = planData.stripe_price_id_yearly;
-    } else {
-      priceId = planData.stripe_price_id_monthly;
+      // If EA price not configured, fall back gracefully to standard pricing
+      if (!priceId) {
+        logStep("EA price not configured, falling back to standard pricing", { plan_id });
+      }
+    }
+    
+    // Fallback to standard pricing if not EA or EA price missing
+    if (!priceId) {
+      if (billing_cycle === 'annual') {
+        priceId = planData.stripe_price_id_yearly;
+      } else {
+        priceId = planData.stripe_price_id_monthly;
+      }
     }
 
     if (!priceId) {
-      throw new Error(`No Stripe price configured for ${plan_id} ${billing_cycle} (early_adopter: ${isEarlyAdopter})`);
+      throw new Error(`No Stripe price configured for ${plan_id} ${billing_cycle}`);
+    }
+
+    // If user explicitly requested EA but slots are gone, inform them
+    const requestedEA = remainingSlots !== null && remainingSlots <= 0;
+    if (requestedEA) {
+      logStep("Early Adopter slots exhausted — using standard pricing", { plan_id, remainingSlots });
     }
 
     // Guest checkout is always immediate (no trial for strangers)
@@ -176,6 +191,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       clientSecret: session.client_secret,
       type: 'embedded',
+      ...(requestedEA ? { ea_exhausted: true, message: 'As vagas Early Adopter para este plano se esgotaram. Você será cobrado no preço padrão.' } : {}),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
