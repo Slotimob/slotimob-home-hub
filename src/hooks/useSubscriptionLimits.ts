@@ -159,14 +159,26 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
   const isEarlyAdopter = data?.is_early_adopter || false;
   const isTrialActive = trialData?.is_trial_active || false;
   
-  // During trial, free users get Pro features (except assets_limit stays at 2)
+  // During trial, free users get START (Trial) powers
   let features = data?.features || defaultFeatures;
-  // During trial, users get full Pro features regardless of base plan
+  // During trial, users get START plan features regardless of base plan
   const effectiveTrialing = isTrialActive || (data?.plan === 'pro' && trialData?.is_trial_active);
   if (effectiveTrialing && features) {
     features = {
       ...features,
+      // START (Trial): 10 unidades, CRM Completo, Financeiro Completo
+      assets_limit: 10,
+      crm_full: true,
+      pipeline_create_stages: true,
+      finance_full: true,
+      finance_dre: true,
+      finance_categories_edit: true,
+      // IA 50 tokens
       ai_chat: true,
+      // WhatsApp 1 Instância
+      integrations: ['whatsapp'],
+      whatsapp_instances_limit: 1,
+      // Documentos e Relatórios liberados
       documents_my_docs: true,
       documents_templates_per_month: -1,
       documents_edit_layout: true,
@@ -174,17 +186,9 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
       reports_weekly: true,
       reports_monthly: true,
       reports_period_limit_months: -1,
-      crm_full: true,
-      pipeline_create_stages: true,
+      // Gestão de Ativos liberada
       asset_management: true,
       asset_health_tracking_limit: -1,
-      finance_dre: true,
-      finance_full: true,
-      finance_categories_edit: true,
-      // Trial unlocks WhatsApp with 1 instance
-      integrations: ['whatsapp'],
-      whatsapp_instances_limit: 1,
-      // Keep assets_limit from the plan
     };
   }
 
