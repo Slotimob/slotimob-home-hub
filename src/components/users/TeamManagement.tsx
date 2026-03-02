@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ interface MemberRow {
 export function TeamManagement() {
   const { user } = useAuth();
   const [showInvite, setShowInvite] = useState(false);
+  const { features, checkLimit } = useSubscriptionLimits();
 
   const { data: members, isLoading } = useQuery({
     queryKey: ['organization-members', user?.id],
@@ -55,6 +57,11 @@ export function TeamManagement() {
     enabled: !!user?.id,
   });
 
+  const activeCount = members?.filter((m: any) => m.is_active).length ?? 0;
+  const usersLimit = features?.users_limit ?? 1;
+  const limitInfo = checkLimit('users_limit', activeCount);
+  const isAtLimit = usersLimit !== -1 && !limitInfo.allowed;
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -78,10 +85,17 @@ export function TeamManagement() {
             </p>
           </div>
         </div>
-        <Button onClick={() => setShowInvite(true)} className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Convidar Membro
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button onClick={() => setShowInvite(true)} className="gap-2" disabled={isAtLimit}>
+            <UserPlus className="h-4 w-4" />
+            Convidar Membro
+          </Button>
+          {usersLimit !== -1 && (
+            <span className="text-sm text-muted-foreground">
+              {activeCount}/{usersLimit} membros
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Members list */}
