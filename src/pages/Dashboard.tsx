@@ -9,6 +9,7 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { TermsReacceptDialog } from '@/components/TermsReacceptDialog';
 import { useTermsAcceptance } from '@/hooks/useTermsAcceptance';
+import { WelcomeModal } from '@/components/WelcomeModal';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
@@ -115,6 +116,9 @@ const Dashboard = () => {
           onAccepted={markAccepted}
         />
       )}
+
+      {/* Onboarding Welcome Modal */}
+      <WelcomeModal />
 
       <div className="min-h-[100dvh] flex w-full bg-gradient-to-br from-primary/5 via-background to-accent/10 pb-20 md:pb-0">
         <AppSidebar />

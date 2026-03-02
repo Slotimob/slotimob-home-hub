@@ -138,7 +138,7 @@ export function AssetSelectorDialog({ open, onOpenChange, selected, onConfirm, m
           </div>
         )}
 
-        <ScrollArea className="flex-1 max-h-[340px] -mx-6 px-6">
+        <ScrollArea className="flex-1 max-h-[60vh] -mx-6 px-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
