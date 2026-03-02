@@ -11,6 +11,7 @@ import { JsonLdSchema } from "@/components/JsonLdSchema";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
+import { RequireFeature } from "@/components/subscription/RequireFeature";
 import Index from "./pages/Index";
 import LandingPage from "./pages/LandingPage";
 import { LandingThemeProvider } from "@/components/LandingThemeProvider";
@@ -121,7 +122,7 @@ const App = () => (
               <Route path="/schedule" element={guarded(<Schedule />)} />
               <Route path="/portals" element={guarded(<Portals />)} />
               <Route path="/reports" element={guarded(<Reports />)} />
-              <Route path="/integrations" element={guarded(<Integrations />)} />
+              <Route path="/integrations" element={guarded(<RequireFeature feature="integrations"><Integrations /></RequireFeature>)} />
               <Route path="/training" element={guarded(<Training />)} />
               <Route path="/users" element={guarded(<Users />)} />
               <Route path="/history" element={guarded(<ActivityHistory />)} />
@@ -131,7 +132,7 @@ const App = () => (
               <Route path="/admin/terms" element={guarded(<TermsAdmin />)} />
               <Route path="/admin/users" element={guarded(<UsersAdmin />)} />
               <Route path="/admin/cockpit" element={guarded(<AdminCockpit />)} />
-              <Route path="/ai-chat" element={guarded(<AIChat />)} />
+              <Route path="/ai-chat" element={guarded(<RequireFeature feature="ai_chat"><AIChat /></RequireFeature>)} />
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
