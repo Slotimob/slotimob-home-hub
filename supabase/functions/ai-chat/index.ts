@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { messages } = await req.json();
+    const { messages, selected_assets } = await req.json();
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(
         JSON.stringify({ error: "Mensagens inválidas." }),
@@ -172,54 +172,86 @@ Deno.serve(async (req) => {
         content: m.content.slice(0, 10000),
       }));
 
-    // RAG: Fetch user's units using authenticated client (RLS via JWT)
+    // RAG: Fetch only selected assets (if any)
     let unitsData: any[] = [];
-    try {
-      const { data, error: ragError } = await supabase
-        .from("units")
-        .select(`
-          id, price, bedrooms, bathrooms, area, city, neighborhood, unit_number, status,
-          properties ( name )
-        `)
-        .eq("broker_id", userId)
-        .eq("status", "available")
-        .order("created_at", { ascending: false })
-        .limit(20);
+    const assets = Array.isArray(selected_assets) ? selected_assets.slice(0, 5) : [];
 
-      console.log("RAG Units Found:", data?.length ?? 0);
-      if (ragError) console.error("RAG Error:", JSON.stringify(ragError));
+    if (assets.length > 0) {
+      try {
+        const propertyIds = assets.filter((a: any) => a.type === "property").map((a: any) => a.id);
+        const unitIds = assets.filter((a: any) => a.type === "unit" || a.type === "standalone").map((a: any) => a.id);
 
-      if (data && data.length > 0) {
-        unitsData = data.map((u: any) => ({
-          id: u.id,
-          numero: u.unit_number,
-          preco: u.price,
-          area_m2: u.area,
-          quartos: u.bedrooms,
-          banheiros: u.bathrooms,
-          cidade: u.city,
-          bairro: u.neighborhood,
-          empreendimento: u.properties?.name,
-        }));
+        if (propertyIds.length > 0) {
+          const { data: propData } = await serviceClient
+            .from("properties")
+            .select("id, name, city, state, address, total_units, status, amenities, description")
+            .in("id", propertyIds);
+
+          if (propData) {
+            unitsData.push(...propData.map((p: any) => ({
+              tipo: "empreendimento",
+              id: p.id,
+              nome: p.name,
+              cidade: p.city,
+              estado: p.state,
+              endereco: p.address,
+              total_unidades: p.total_units,
+              status: p.status,
+              amenidades: p.amenities,
+              descricao: p.description,
+            })));
+          }
+        }
+
+        if (unitIds.length > 0) {
+          const { data: unitData } = await serviceClient
+            .from("units")
+            .select(`
+              id, unit_number, price, bedrooms, bathrooms, area, city, neighborhood,
+              status, is_standalone, address, market_value, rent_price, description,
+              intent_type, property:properties(name)
+            `)
+            .in("id", unitIds);
+
+          if (unitData) {
+            unitsData.push(...unitData.map((u: any) => ({
+              tipo: u.is_standalone ? "imovel_avulso" : "unidade",
+              id: u.id,
+              numero: u.unit_number,
+              preco: u.price,
+              valor_mercado: u.market_value,
+              aluguel: u.rent_price,
+              area_m2: u.area,
+              quartos: u.bedrooms,
+              banheiros: u.bathrooms,
+              cidade: u.city,
+              bairro: u.neighborhood,
+              endereco: u.address,
+              status: u.status,
+              tipo_intencao: u.intent_type,
+              descricao: u.description,
+              empreendimento: u.property?.name,
+            })));
+          }
+        }
+
+        console.log("RAG Selected Assets:", unitsData.length);
+      } catch (err) {
+        console.error("RAG fetch exception:", err);
       }
-    } catch (err) {
-      console.error("RAG fetch exception:", err);
     }
 
     const portfolioJson = JSON.stringify(unitsData);
 
+    const hasContext = unitsData.length > 0;
+    const portfolioSection = hasContext
+      ? `\n\nAbaixo estão os dados dos imóveis que o corretor anexou para esta conversa:\n\n<carteira_imoveis>\n${portfolioJson}\n</carteira_imoveis>\n\n- NUNCA diga que você não tem acesso ao banco de dados. Os dados dentro da tag <carteira_imoveis> SÃO o seu acesso em tempo real.\n- Baseie suas respostas sobre valores, localizações e características EXCLUSIVAMENTE nos dados fornecidos na tag <carteira_imoveis>. Se a informação não estiver lá, diga que não tem esse dado específico.`
+      : `\n\nO corretor NÃO anexou nenhum imóvel a esta conversa. Se ele perguntar sobre imóveis específicos, oriente-o a usar o botão de clipe (📎) para anexar imóveis ao contexto da conversa.`;
+
     const systemPrompt = `Você é o assistente virtual especialista do sistema SlotiMob. Seu objetivo é ajudar o corretor imobiliário.
-
-Abaixo estão os dados dos imóveis ativos na carteira deste corretor no momento:
-
-<carteira_imoveis>
-${portfolioJson}
-</carteira_imoveis>
+${portfolioSection}
 
 REGRAS DE COMPORTAMENTO OBRIGATÓRIAS:
-- NUNCA diga que você não tem acesso ao banco de dados ou ao sistema. Os dados dentro da tag <carteira_imoveis> SÃO o seu acesso ao banco de dados em tempo real.
-- Se a tag <carteira_imoveis> estiver vazia (ex: [] ou nula) e o corretor perguntar sobre seus imóveis, responda educadamente: "Analisando sua carteira atual, não encontrei nenhum imóvel cadastrado que corresponda a essa busca (ou sua carteira está vazia no momento). Que tal cadastrarmos novos imóveis no sistema?"
-- Baseie suas respostas sobre valores, localizações e características EXCLUSIVAMENTE nos dados fornecidos na tag <carteira_imoveis>. Se a informação não estiver lá, diga que não tem esse dado específico daquele imóvel.
 - Responda sempre em português brasileiro. Use formatação Markdown (negrito, listas, títulos) para organizar suas respostas.
 - Seja conciso, profissional e útil.
 - Ajude também com: cálculos financeiros (aluguel, taxas, comissões), estratégias de vendas e negociação, redação de anúncios, dicas de atendimento ao cliente e análises de mercado imobiliário.`;
