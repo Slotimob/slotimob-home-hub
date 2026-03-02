@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Building2, Home, Layers, Search, Loader2, AlertTriangle } from 'lucide-react';
@@ -138,7 +138,7 @@ export function AssetSelectorDialog({ open, onOpenChange, selected, onConfirm, m
           </div>
         )}
 
-        <ScrollArea className="flex-1 max-h-[60vh] -mx-6 px-6">
+        <div className="max-h-[60vh] overflow-y-auto pr-2 flex flex-col gap-2">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -146,7 +146,7 @@ export function AssetSelectorDialog({ open, onOpenChange, selected, onConfirm, m
           ) : filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Nenhum imóvel encontrado.</p>
           ) : (
-            <div className="space-y-1">
+            <>
               {filtered.map(item => {
                 const config = TYPE_CONFIG[item.type];
                 const Icon = config.icon;
@@ -171,9 +171,9 @@ export function AssetSelectorDialog({ open, onOpenChange, selected, onConfirm, m
                   </button>
                 );
               })}
-            </div>
+            </>
           )}
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="flex-row justify-between sm:justify-between">
           <span className="text-xs text-muted-foreground self-center">
