@@ -172,9 +172,8 @@ serve(async (req) => {
     // Create Embedded Checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      // For guests without existing customer, let Stripe collect the email
+      // For guests without existing customer, Stripe auto-creates in subscription mode
       customer_email: customerId ? undefined : (userEmail || undefined),
-      customer_creation: customerId ? undefined : 'always',
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       ui_mode: "embedded",

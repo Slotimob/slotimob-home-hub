@@ -147,7 +147,16 @@ export default function CheckoutPage() {
     });
 
     if (fnError || !data) {
-      const msg = 'Erro ao iniciar checkout. Tente novamente.';
+      console.error('[Checkout] Edge Function error:', { fnError, data, params: body });
+      const msg = data?.error || fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
+      setError(msg);
+      toast.error(msg);
+      throw new Error(msg);
+    }
+
+    if (!data.clientSecret && data.type !== 'portal') {
+      console.error('[Checkout] Missing clientSecret in response:', data);
+      const msg = 'Resposta inesperada do servidor. Tente novamente.';
       setError(msg);
       toast.error(msg);
       throw new Error(msg);
