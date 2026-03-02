@@ -181,7 +181,9 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
       finance_dre: true,
       finance_full: true,
       finance_categories_edit: true,
-      whatsapp_instances_limit: 1,
+      // Trial does NOT unlock integrations or WhatsApp
+      integrations: [],
+      whatsapp_instances_limit: 0,
       // Keep assets_limit from the plan
     };
   }
