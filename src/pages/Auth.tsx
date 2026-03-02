@@ -297,7 +297,7 @@ const Auth = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${SITE_URL}/`,
+          redirectTo: `${SITE_URL}/auth/callback`,
           skipBrowserRedirect: true,
         },
       });

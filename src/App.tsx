@@ -16,6 +16,7 @@ import LandingPage from "./pages/LandingPage";
 import { LandingThemeProvider } from "@/components/LandingThemeProvider";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
 import Properties from "./pages/Properties";
 import Pipeline from "./pages/Pipeline";
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/lp/:segment" element={<LandingPage />} />
               <Route path="/demo" element={<ProductDemo />} />
               <Route path="/auth" element={<LandingThemeProvider><Auth /></LandingThemeProvider>} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/legal" element={<Legal />} />
               <Route path="/blog" element={<Blog />} />
