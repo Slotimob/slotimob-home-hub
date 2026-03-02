@@ -10,12 +10,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAICredits } from '@/hooks/useAICredits';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Bot, User, Trash2, Loader2, Sparkles, Zap } from 'lucide-react';
+import { Send, Bot, User, Trash2, Loader2, Sparkles, Zap, Paperclip, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
+import { AssetSelectorDialog, SelectedAsset } from '@/components/chat/AssetSelectorDialog';
+import { Badge } from '@/components/ui/badge';
 
 interface ChatMessage {
   id?: string;
@@ -37,6 +39,8 @@ export default function AIChat() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [selectedAssets, setSelectedAssets] = useState<SelectedAsset[]>([]);
+  const [assetDialogOpen, setAssetDialogOpen] = useState(false);
 
   // Load chat history
   useEffect(() => {
@@ -98,7 +102,10 @@ export default function AIChat() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
-        body: JSON.stringify({ messages: contextMessages }),
+        body: JSON.stringify({
+          messages: contextMessages,
+          selected_assets: selectedAssets.map(a => ({ id: a.id, type: a.type })),
+        }),
       });
 
       if (!resp.ok) {
@@ -347,27 +354,65 @@ export default function AIChat() {
 
       {/* Input */}
       <div className="border-t bg-card px-4 py-3">
-        <div className="flex gap-2 items-end max-w-3xl mx-auto">
-          <Textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem..."
-            className="min-h-[44px] max-h-32 resize-none"
-            rows={1}
-            disabled={isLoading}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            size="icon"
-            className="h-11 w-11 shrink-0"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+        <div className="max-w-3xl mx-auto space-y-2">
+          {selectedAssets.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {selectedAssets.map(asset => (
+                <Badge
+                  key={`${asset.type}-${asset.id}`}
+                  variant="secondary"
+                  className="gap-1 pr-1 text-xs"
+                >
+                  <span className="max-w-[120px] truncate">{asset.label}</span>
+                  <button
+                    onClick={() => setSelectedAssets(prev => prev.filter(a => !(a.id === asset.id && a.type === asset.type)))}
+                    className="ml-0.5 rounded-full hover:bg-muted p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2 items-end">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={() => setAssetDialogOpen(true)}
+              disabled={isLoading}
+              title="Anexar imóvel ao contexto"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Digite sua mensagem..."
+              className="min-h-[44px] max-h-32 resize-none"
+              rows={1}
+              disabled={isLoading}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              size="icon"
+              className="h-11 w-11 shrink-0"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
+
+      <AssetSelectorDialog
+        open={assetDialogOpen}
+        onOpenChange={setAssetDialogOpen}
+        selected={selectedAssets}
+        onConfirm={setSelectedAssets}
+      />
     </div>
   );
 
