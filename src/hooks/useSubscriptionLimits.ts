@@ -43,7 +43,7 @@ export interface SubscriptionLimits {
 }
 
 const defaultFeatures: PlanFeatures = {
-  assets_limit: 2,
+  assets_limit: 5,
   users_limit: 1,
   contacts_limit: -1,
   asset_health_tracking_limit: 0,
@@ -181,9 +181,9 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
       finance_dre: true,
       finance_full: true,
       finance_categories_edit: true,
-      // Trial does NOT unlock integrations or WhatsApp
-      integrations: [],
-      whatsapp_instances_limit: 0,
+      // Trial unlocks WhatsApp with 1 instance
+      integrations: ['whatsapp'],
+      whatsapp_instances_limit: 1,
       // Keep assets_limit from the plan
     };
   }
