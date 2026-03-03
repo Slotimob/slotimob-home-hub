@@ -63,6 +63,7 @@ export const SubscriptionManagement = () => {
 
   const plan = subscription?.plan_id || 'free';
   const hasStripe = !!subscription?.stripe_subscription_id;
+  const isPaid = ['essencial', 'pro', 'business'].includes(plan);
 
   const handlePortal = async () => {
     setLoadingAction('portal');
@@ -188,7 +189,7 @@ export const SubscriptionManagement = () => {
                   ? 'Ativa'
                   : subscription?.status === 'trialing'
                   ? 'Trial'
-                  : subscription?.status || 'Inativa'}
+                  : subscription?.status || 'Sem assinatura ativa'}
               </p>
               {subscription?.current_period_end && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -201,40 +202,54 @@ export const SubscriptionManagement = () => {
                   Cancelamento agendado
                 </Badge>
               )}
+              {plan === 'free' && !isTrialActive && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Você está no plano Free. Faça upgrade para desbloquear todos os recursos.
+                </p>
+              )}
             </div>
             <Badge variant={planColors[plan] as 'default' | 'secondary'}>
               {planLabels[plan] || plan}
             </Badge>
           </div>
 
-          {hasStripe && (
-            <>
-              <Separator />
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={handlePortal}
-                  disabled={loadingAction === 'portal'}
-                >
-                  {loadingAction === 'portal' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ExternalLink className="h-4 w-4" />
-                  )}
-                  Gerir Assinatura
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={() => window.open('https://billing.stripe.com/p/login/eVq7sK9915tj7YXcwV1sQ00', '_blank')}
-                >
-                  <Receipt className="h-4 w-4" />
-                  Gerenciar Pagamentos e Faturas
-                </Button>
-              </div>
-            </>
-          )}
+          <Separator />
+          <div className="flex flex-col sm:flex-row gap-2">
+            {isPaid && (
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={handlePortal}
+                disabled={loadingAction === 'portal'}
+              >
+                {loadingAction === 'portal' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-4 w-4" />
+                )}
+                {loadingAction === 'portal' ? 'Abrindo portal...' : 'Gerenciar Assinatura (Stripe)'}
+              </Button>
+            )}
+            {hasStripe && (
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={() => window.open('https://billing.stripe.com/p/login/eVq7sK9915tj7YXcwV1sQ00', '_blank')}
+              >
+                <Receipt className="h-4 w-4" />
+                Gerenciar Pagamentos e Faturas
+              </Button>
+            )}
+            {!isPaid && !isTrialActive && (
+              <Button
+                className="flex-1 gap-2"
+                onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')}
+              >
+                <Crown className="h-4 w-4" />
+                Fazer Upgrade
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
