@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { Rocket, Clock, Crown } from 'lucide-react';
+import { BuyAICreditsDialog } from './BuyAICreditsDialog';
 const planLabels: Record<string, string> = {
   start: 'Start',
   free: 'Gratuito',
@@ -49,6 +50,7 @@ export const SubscriptionManagement = () => {
   const { slots } = useEarlyAdopterCount();
   const { credits: aiCredits, isLoading: isLoadingCredits } = useAICredits();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [showCreditsDialog, setShowCreditsDialog] = useState(false);
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -298,14 +300,9 @@ export const SubscriptionManagement = () => {
                     variant="outline"
                     size="sm"
                     className="w-full gap-2"
-                    onClick={() => handleBuyCredits('credits_ai')}
-                    disabled={loadingAction === 'buy-credits_ai'}
+                    onClick={() => setShowCreditsDialog(true)}
                   >
-                    {loadingAction === 'buy-credits_ai' ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4" />
-                    )}
+                    <Sparkles className="h-4 w-4" />
                     Comprar mais Créditos
                   </Button>
                 </>
@@ -408,28 +405,80 @@ export const SubscriptionManagement = () => {
           <CardDescription>Compre créditos adicionais para IA</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between p-3 border rounded-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
             <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-purple-500" />
+              <Sparkles className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium text-sm">Créditos IA</p>
-                <p className="text-xs text-muted-foreground">R$ 39,00 por 1.000 Créditos (Não expiram)</p>
+                <p className="text-xs text-muted-foreground">A partir de R$ 19,90 — Não expiram</p>
               </div>
             </div>
             <Button
               size="sm"
-              onClick={() => handleBuyCredits('credits_ai')}
-              disabled={loadingAction === 'buy-credits_ai'}
+              onClick={() => setShowCreditsDialog(true)}
             >
-              {loadingAction === 'buy-credits_ai' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Comprar'
-              )}
+              <Sparkles className="h-4 w-4 mr-1" />
+              Ver Pacotes
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Add-ons for all paid users (even without stripe_subscription_id) */}
+      {isPaid && !hasStripe && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Adicionais (Add-ons)
+            </CardTitle>
+            <CardDescription>Expanda os limites do seu plano</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
+              <div className="flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">+50 Unidades Extras</p>
+                  <p className="text-xs text-muted-foreground">R$ 29,90/mês — Adicionado à sua assinatura</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePortal}
+                disabled={loadingAction === 'portal'}
+              >
+                {loadingAction === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+                Adicionar
+              </Button>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">+1 Usuário Adicional</p>
+                  <p className="text-xs text-muted-foreground">R$ 19,90/mês — Adicionado à sua assinatura</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePortal}
+                disabled={loadingAction === 'portal'}
+              >
+                {loadingAction === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+                Adicionar
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Add-ons são gerenciados pelo portal do Stripe. Ao clicar, você será redirecionado.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <BuyAICreditsDialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog} />
     </div>
   );
 };

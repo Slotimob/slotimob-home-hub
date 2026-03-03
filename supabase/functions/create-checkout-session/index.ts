@@ -12,6 +12,13 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
+// Known credit price IDs → metadata
+const CREDIT_PRICES: Record<string, { credits: number; label: string }> = {
+  'price_1T6gbTAUMiQcSICyei8sQCXE': { credits: 500, label: '500 Créditos IA' },
+  'price_1T6gbrAUMiQcSICylWWUd3H5': { credits: 1000, label: '1000 Créditos IA' },
+  'price_1T6gcBAUMiQcSICyBGJwdX3B': { credits: 2500, label: '2500 Créditos IA' },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -27,7 +34,7 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // --- Auth: optional (guest checkout allowed) ---
+    // --- Auth: optional (guest checkout allowed for plans) ---
     const authHeader = req.headers.get("Authorization");
     let userId: string | null = null;
     let userEmail: string | null = null;
@@ -49,8 +56,92 @@ serve(async (req) => {
     logStep("Auth status", { isGuest });
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    const { plan_id, billing_cycle = 'monthly', mode = 'trial', customer_email } = await req.json();
+    const body = await req.json();
+    const { type = 'plan', priceId: directPriceId, plan_id, billing_cycle = 'monthly', mode = 'trial', customer_email, quantity = 1 } = body;
+
+    const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
+
+    // ==========================================
+    // TYPE: CREDIT (one-time payment)
+    // ==========================================
+    if (type === 'credit') {
+      if (!directPriceId) throw new Error("priceId is required for credit purchases");
+      if (!userId) throw new Error("Authentication required for credit purchases");
+
+      const creditConfig = CREDIT_PRICES[directPriceId];
+      if (!creditConfig) throw new Error("Invalid credit priceId");
+
+      logStep("Credit purchase", { priceId: directPriceId, credits: creditConfig.credits });
+
+      // Find or create Stripe customer
+      let customerId: string | undefined;
+      if (userEmail) {
+        const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+        if (customers.data.length > 0) customerId = customers.data[0].id;
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_email: customerId ? undefined : (userEmail || undefined),
+        line_items: [{ price: directPriceId, quantity }],
+        mode: "payment",
+        success_url: `${origin}/settings?credit_success=true`,
+        cancel_url: `${origin}/settings`,
+        metadata: {
+          user_id: userId,
+          type: 'credit',
+          credit_price_id: directPriceId,
+          credits: String(creditConfig.credits),
+        },
+      });
+
+      logStep("Credit checkout session created", { sessionId: session.id });
+
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ==========================================
+    // TYPE: ADDON (modify existing subscription)
+    // ==========================================
+    if (type === 'addon') {
+      if (!directPriceId) throw new Error("priceId is required for addon purchases");
+      if (!userId) throw new Error("Authentication required for addon purchases");
+
+      logStep("Addon purchase", { priceId: directPriceId });
+
+      // Get existing subscription
+      const { data: sub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('stripe_subscription_id, stripe_customer_id')
+        .eq('user_id', userId)
+        .in('status', ['active', 'trialing'])
+        .maybeSingle();
+
+      if (!sub?.stripe_subscription_id) {
+        throw new Error("No active subscription found. Please subscribe to a plan first.");
+      }
+
+      // Add the addon item to the subscription
+      await stripe.subscriptionItems.create({
+        subscription: sub.stripe_subscription_id,
+        price: directPriceId,
+        quantity,
+      });
+
+      logStep("Addon added to subscription", { priceId: directPriceId, quantity });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ==========================================
+    // TYPE: PLAN (subscription checkout)
+    // ==========================================
     if (!plan_id || !['essencial', 'pro', 'business'].includes(plan_id)) {
       throw new Error("Invalid plan_id. Must be 'essencial', 'pro', or 'business'");
     }
@@ -58,8 +149,6 @@ serve(async (req) => {
       throw new Error("Invalid billing_cycle. Must be 'monthly' or 'annual'");
     }
     logStep("Plan selected", { plan_id, billing_cycle, mode });
-
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // --- For authenticated users: check existing subscription ---
     if (!isGuest) {
@@ -73,7 +162,6 @@ serve(async (req) => {
       if (existingSub && existingSub.plan_id === plan_id) {
         const customers = await stripe.customers.list({ email: userEmail!, limit: 1 });
         if (customers.data.length > 0) {
-          const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
           const portalSession = await stripe.billingPortal.sessions.create({
             customer: customers.data[0].id,
             return_url: `${origin}/settings`,
@@ -117,13 +205,11 @@ serve(async (req) => {
     let priceId: string | null = null;
     if (isEarlyAdopter) {
       priceId = planData.stripe_price_id_early_adopter;
-      // If EA price not configured, fall back gracefully to standard pricing
       if (!priceId) {
         logStep("EA price not configured, falling back to standard pricing", { plan_id });
       }
     }
     
-    // Fallback to standard pricing if not EA or EA price missing
     if (!priceId) {
       if (billing_cycle === 'annual') {
         priceId = planData.stripe_price_id_yearly;
@@ -136,13 +222,11 @@ serve(async (req) => {
       throw new Error(`No Stripe price configured for ${plan_id} ${billing_cycle}`);
     }
 
-    // If user explicitly requested EA but slots are gone, inform them
     const requestedEA = remainingSlots !== null && remainingSlots <= 0;
     if (requestedEA) {
       logStep("Early Adopter slots exhausted — using standard pricing", { plan_id, remainingSlots });
     }
 
-    // Guest checkout is always immediate (no trial for strangers)
     const skipTrial = mode === 'immediate' || isGuest;
     logStep("Price selected", { priceId, isEarlyAdopter, remainingSlots: remainingSlots || 0, billing_cycle, skipTrial, isGuest });
 
@@ -157,14 +241,13 @@ serve(async (req) => {
       }
     }
 
-    const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
-    
     // Build metadata
     const sessionMetadata: Record<string, string> = {
       plan_id: plan_id,
       billing_cycle: billing_cycle,
       is_early_adopter: String(isEarlyAdopter),
       checkout_mode: skipTrial ? 'immediate' : 'trial',
+      type: 'plan',
     };
     if (userId) sessionMetadata.user_id = userId;
     if (isGuest) sessionMetadata.guest_checkout = 'true';
@@ -172,7 +255,6 @@ serve(async (req) => {
     // Create Embedded Checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      // For guests without existing customer, Stripe auto-creates in subscription mode
       customer_email: customerId ? undefined : (userEmail || undefined),
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
@@ -198,7 +280,7 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
-    return new Response(JSON.stringify({ error: "Failed to create checkout session" }), {
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

@@ -23,6 +23,13 @@ const CREDIT_PRODUCT_IDS: Record<string, { type: 'whatsapp' | 'ai'; credits: num
   'prod_TxLn14geNfUh5F': { type: 'ai', credits: 100 },
 };
 
+// Known credit price IDs for direct matching
+const CREDIT_PRICE_IDS: Record<string, { type: 'ai'; credits: number }> = {
+  'price_1T6gbTAUMiQcSICyei8sQCXE': { type: 'ai', credits: 500 },
+  'price_1T6gbrAUMiQcSICylWWUd3H5': { type: 'ai', credits: 1000 },
+  'price_1T6gcBAUMiQcSICyBGJwdX3B': { type: 'ai', credits: 2500 },
+};
+
 /**
  * Find or create a Supabase user from a Stripe checkout session.
  * Returns the user_id to associate the subscription with.
@@ -136,18 +143,56 @@ async function handleCheckoutCompleted(
   // Handle one-time credit purchases
   if (session.mode === 'payment') {
     const userId = session.metadata?.user_id;
-    const addonType = session.metadata?.addon_type;
-    if (!userId || !addonType) {
-      logStep("Missing metadata for credit purchase", { metadata: session.metadata });
+    if (!userId) {
+      logStep("Missing user_id metadata for credit purchase", { metadata: session.metadata });
       return;
     }
 
+    // Check if this is a new-style credit purchase (with credit_price_id metadata)
+    const creditPriceId = session.metadata?.credit_price_id;
+    const metaCredits = session.metadata?.credits;
+
+    if (creditPriceId && metaCredits) {
+      const totalCredits = parseInt(metaCredits, 10);
+      logStep("New-style credit purchase detected", { creditPriceId, totalCredits });
+
+      const { error } = await supabase.from('ai_credits').insert({
+        broker_id: userId,
+        credits_purchased: totalCredits,
+        credits_remaining: totalCredits,
+        price_paid: (session.amount_total || 0) / 100,
+        stripe_payment_id: session.payment_intent as string,
+      });
+      if (error) logStep("Error inserting AI credits", { error: error.message });
+      else logStep("AI credits added", { userId, credits: totalCredits });
+      return;
+    }
+
+    // Legacy: fallback to line item product ID matching
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 5 });
     
     for (const item of lineItems.data) {
+      const priceId = item.price?.id || '';
       const productId = typeof item.price?.product === 'string' ? item.price.product : '';
-      const creditConfig = CREDIT_PRODUCT_IDS[productId];
       
+      // Try matching by price ID first
+      const creditByPrice = CREDIT_PRICE_IDS[priceId];
+      if (creditByPrice) {
+        const totalCredits = creditByPrice.credits * (item.quantity || 1);
+        const { error } = await supabase.from('ai_credits').insert({
+          broker_id: userId,
+          credits_purchased: totalCredits,
+          credits_remaining: totalCredits,
+          price_paid: (item.amount_total || 0) / 100,
+          stripe_payment_id: session.payment_intent as string,
+        });
+        if (error) logStep("Error inserting AI credits", { error: error.message });
+        else logStep("AI credits added (by price)", { userId, credits: totalCredits });
+        continue;
+      }
+
+      // Fallback to product ID matching
+      const creditConfig = CREDIT_PRODUCT_IDS[productId];
       if (creditConfig) {
         const totalCredits = creditConfig.credits * (item.quantity || 1);
         
