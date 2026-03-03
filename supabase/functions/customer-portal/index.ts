@@ -45,13 +45,16 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Find customer by email
+    // Find or create customer by email
     const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    let customerId: string;
     if (customers.data.length === 0) {
-      throw new Error("No Stripe customer found for this user. Please subscribe first.");
+      logStep("No Stripe customer found, creating one");
+      const newCustomer = await stripe.customers.create({ email: userEmail });
+      customerId = newCustomer.id;
+    } else {
+      customerId = customers.data[0].id;
     }
-
-    const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
     // Create portal session
