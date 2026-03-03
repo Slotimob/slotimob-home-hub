@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_credit_packs: {
+        Row: {
+          created_at: string
+          credits_amount: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          stripe_price_id: string
+          stripe_product_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          credits_amount: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          sort_order?: number
+          stripe_price_id: string
+          stripe_product_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          credits_amount?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          stripe_price_id?: string
+          stripe_product_id?: string | null
+        }
+        Relationships: []
+      }
       ai_credits: {
         Row: {
           broker_id: string

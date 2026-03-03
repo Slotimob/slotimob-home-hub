@@ -14,49 +14,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAICredits } from '@/hooks/useAICredits';
+import { useAICreditPacks } from '@/hooks/useAICreditPacks';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface BuyAICreditsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const CREDIT_PACKS = [
-  {
-    id: 'pack-500',
-    name: '500 Tokens',
-    credits: 500,
-    priceId: 'price_1T6gbTAUMiQcSICyei8sQCXE',
-    price: 19.90,
-  },
-  {
-    id: 'pack-1000',
-    name: '1.000 Tokens',
-    credits: 1000,
-    priceId: 'price_1T6gbrAUMiQcSICylWWUd3H5',
-    price: 39.00,
-    bestValue: false,
-  },
-  {
-    id: 'pack-2500',
-    name: '2.500 Tokens',
-    credits: 2500,
-    priceId: 'price_1T6gcBAUMiQcSICyBGJwdX3B',
-    price: 79.90,
-    bestValue: true,
-  },
-];
-
 export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogProps) => {
   const { credits } = useAICredits();
+  const { data: packs, isLoading: isLoadingPacks } = useAICreditPacks();
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
 
-  const handlePurchase = async (pack: typeof CREDIT_PACKS[0]) => {
+  const handlePurchase = async (pack: { stripe_price_id: string; id: string }) => {
     setLoadingPack(pack.id);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           type: 'credit',
-          priceId: pack.priceId,
+          priceId: pack.stripe_price_id,
           quantity: 1,
         },
       });
@@ -74,6 +51,9 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
       setLoadingPack(null);
     }
   };
+
+  // Determine best value (last pack)
+  const bestValueId = packs && packs.length > 0 ? packs[packs.length - 1].id : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,53 +78,62 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {CREDIT_PACKS.map((pack) => {
-            const isLoading = loadingPack === pack.id;
-            const pricePerCredit = (pack.price / pack.credits).toFixed(3);
+        {isLoadingPacks ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-40 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {packs?.map((pack) => {
+              const isLoading = loadingPack === pack.id;
+              const isBestValue = pack.id === bestValueId;
+              const pricePerCredit = (Number(pack.price) / pack.credits_amount).toFixed(3);
 
-            return (
-              <Card
-                key={pack.id}
-                className={cn(
-                  'relative cursor-pointer transition-all hover:border-primary/50 hover:shadow-md',
-                  pack.bestValue && 'border-primary/50 ring-1 ring-primary/20'
-                )}
-              >
-                {pack.bestValue && (
-                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs">
-                    Melhor Valor
-                  </Badge>
-                )}
-                <CardContent className="flex flex-col items-center text-center p-4 pt-5 gap-2">
-                  <Sparkles className="h-8 w-8 text-primary/70" />
-                  <span className="font-bold text-lg">{pack.name}</span>
-                  <p className="text-xs text-muted-foreground">
-                    R$ {pricePerCredit}/crédito
-                  </p>
-                  <span className="font-bold text-xl text-foreground">
-                    R$ {pack.price.toFixed(2).replace('.', ',')}
-                  </span>
-                  <Button
-                    className="w-full mt-1"
-                    size="sm"
-                    onClick={() => handlePurchase(pack)}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                        Processando...
-                      </>
-                    ) : (
-                      'Comprar'
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+              return (
+                <Card
+                  key={pack.id}
+                  className={cn(
+                    'relative cursor-pointer transition-all hover:border-primary/50 hover:shadow-md',
+                    isBestValue && 'border-primary/50 ring-1 ring-primary/20'
+                  )}
+                >
+                  {isBestValue && (
+                    <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs">
+                      Melhor Valor
+                    </Badge>
+                  )}
+                  <CardContent className="flex flex-col items-center text-center p-4 pt-5 gap-2">
+                    <Sparkles className="h-8 w-8 text-primary/70" />
+                    <span className="font-bold text-lg">{pack.name}</span>
+                    <p className="text-xs text-muted-foreground">
+                      R$ {pricePerCredit}/crédito
+                    </p>
+                    <span className="font-bold text-xl text-foreground">
+                      R$ {Number(pack.price).toFixed(2).replace('.', ',')}
+                    </span>
+                    <Button
+                      className="w-full mt-1"
+                      size="sm"
+                      onClick={() => handlePurchase(pack)}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                          Processando...
+                        </>
+                      ) : (
+                        'Comprar'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
         <p className="text-xs text-muted-foreground text-center">
           Pagamento único via Stripe. Créditos são adicionados imediatamente após a confirmação.

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,13 +45,15 @@ const planColors: Record<string, string> = {
 };
 
 export const SubscriptionManagement = () => {
-  const { subscription, isLoading, refetch, openCustomerPortal, manageAddon, buyCredits } =
+  const { subscription, isLoading, refetch, openCustomerPortal } =
     useSubscriptionDetails();
   const { isTrialActive, trialDaysRemaining } = useTrialStatus();
   const { slots } = useEarlyAdopterCount();
   const { credits: aiCredits, isLoading: isLoadingCredits } = useAICredits();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
+  const [addonUserQty, setAddonUserQty] = useState(1);
+  const [addonUnitQty, setAddonUnitQty] = useState(1);
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -78,15 +81,15 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  const handleAddon = async (
-    action: 'add' | 'update' | 'remove',
-    addon_type: string,
-    quantity?: number
-  ) => {
-    setLoadingAction(`${action}-${addon_type}`);
+  const handleManageAddon = async (priceId: string, quantity: number) => {
+    setLoadingAction(`addon-${priceId}`);
     try {
-      await manageAddon({ action, addon_type, quantity });
-      toast.success('Add-on atualizado com sucesso!');
+      const { data, error } = await supabase.functions.invoke('manage-addon', {
+        body: { priceId, quantity },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('Add-on adicionado à sua assinatura!');
       refetch();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro ao atualizar add-on.';
@@ -96,16 +99,6 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  const handleBuyCredits = async (type: 'credits_whatsapp' | 'credits_ai') => {
-    setLoadingAction(`buy-${type}`);
-    try {
-      await buyCredits(type);
-    } catch {
-      toast.error('Erro ao iniciar compra de créditos.');
-    } finally {
-      setLoadingAction(null);
-    }
-  };
 
   const extraUsers = subscription?.extra_users_count || 0;
   const extraUnits = subscription?.extra_unit_packs || 0;
@@ -317,15 +310,24 @@ export const SubscriptionManagement = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Add-ons</CardTitle>
-            <CardDescription>Expanda os limites do seu plano</CardDescription>
+            <CardDescription>Expanda os limites do seu plano. Itens serão adicionados à sua assinatura com cobrança prorata.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Current add-ons summary */}
+            {(extraUsers > 0 || extraUnits > 0) && (
+              <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
+                <p className="font-medium text-foreground">Ativos na assinatura:</p>
+                {extraUsers > 0 && <p className="text-muted-foreground">• {extraUsers} usuário(s) adicional(is)</p>}
+                {extraUnits > 0 && <p className="text-muted-foreground">• {extraUnits} pack(s) de unidades (+{extraUnits * 50} unidades)</p>}
+              </div>
+            )}
+
             {/* Extra Users */}
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="font-medium text-sm">Usuários Adicionais</p>
+                  <p className="font-medium text-sm">+1 Usuário Adicional</p>
                   <p className="text-xs text-muted-foreground">R$ 19,90/mês cada</p>
                 </div>
               </div>
@@ -334,30 +336,36 @@ export const SubscriptionManagement = () => {
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
-                  disabled={extraUsers === 0 || !!loadingAction}
-                  onClick={() =>
-                    extraUsers <= 1
-                      ? handleAddon('remove', 'extra_user')
-                      : handleAddon('update', 'extra_user', extraUsers - 1)
-                  }
+                  disabled={addonUserQty <= 1}
+                  onClick={() => setAddonUserQty(q => Math.max(1, q - 1))}
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
-                <span className="w-8 text-center font-semibold">{extraUsers}</span>
+                <span className="w-8 text-center font-semibold">{addonUserQty}</span>
                 <Button
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
-                  disabled={!!loadingAction}
-                  onClick={() => handleAddon(extraUsers === 0 ? 'add' : 'update', 'extra_user', extraUsers + 1)}
+                  onClick={() => setAddonUserQty(q => q + 1)}
                 >
                   <Plus className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!!loadingAction}
+                  onClick={() => handleManageAddon('price_1SzR2EAUMiQcSICyKo3DdaBd', addonUserQty)}
+                >
+                  {loadingAction === 'addon-price_1SzR2EAUMiQcSICyKo3DdaBd' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Adicionar'
+                  )}
                 </Button>
               </div>
             </div>
 
             {/* Extra Unit Packs */}
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
               <div className="flex items-center gap-3">
                 <Building2 className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -370,24 +378,30 @@ export const SubscriptionManagement = () => {
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
-                  disabled={extraUnits === 0 || !!loadingAction}
-                  onClick={() =>
-                    extraUnits <= 1
-                      ? handleAddon('remove', 'extra_units')
-                      : handleAddon('update', 'extra_units', extraUnits - 1)
-                  }
+                  disabled={addonUnitQty <= 1}
+                  onClick={() => setAddonUnitQty(q => Math.max(1, q - 1))}
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
-                <span className="w-8 text-center font-semibold">{extraUnits}</span>
+                <span className="w-8 text-center font-semibold">{addonUnitQty}</span>
                 <Button
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
-                  disabled={!!loadingAction}
-                  onClick={() => handleAddon(extraUnits === 0 ? 'add' : 'update', 'extra_units', extraUnits + 1)}
+                  onClick={() => setAddonUnitQty(q => q + 1)}
                 >
                   <Plus className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!!loadingAction}
+                  onClick={() => handleManageAddon('price_1SzR39AUMiQcSICy9kx3RbG9', addonUnitQty)}
+                >
+                  {loadingAction === 'addon-price_1SzR39AUMiQcSICy9kx3RbG9' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Adicionar'
+                  )}
                 </Button>
               </div>
             </div>
@@ -424,7 +438,7 @@ export const SubscriptionManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Add-ons for all paid users (even without stripe_subscription_id) */}
+      {/* Add-ons for paid users without stripe_subscription_id - redirect to checkout */}
       {isPaid && !hasStripe && (
         <Card>
           <CardHeader>
@@ -432,48 +446,16 @@ export const SubscriptionManagement = () => {
               <Building2 className="h-4 w-4" />
               Adicionais (Add-ons)
             </CardTitle>
-            <CardDescription>Expanda os limites do seu plano</CardDescription>
+            <CardDescription>Para adicionar itens à sua assinatura, efetive primeiro seu plano.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
-              <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">+50 Unidades Extras</p>
-                  <p className="text-xs text-muted-foreground">R$ 29,90/mês — Adicionado à sua assinatura</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePortal}
-                disabled={loadingAction === 'portal'}
-              >
-                {loadingAction === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
-                Adicionar
-              </Button>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">+1 Usuário Adicional</p>
-                  <p className="text-xs text-muted-foreground">R$ 19,90/mês — Adicionado à sua assinatura</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePortal}
-                disabled={loadingAction === 'portal'}
-              >
-                {loadingAction === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
-                Adicionar
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Add-ons são gerenciados pelo portal do Stripe. Ao clicar, você será redirecionado.
-            </p>
+          <CardContent>
+            <Button
+              className="w-full gap-2"
+              onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')}
+            >
+              <Crown className="h-4 w-4" />
+              Efetivar Assinatura
+            </Button>
           </CardContent>
         </Card>
       )}
