@@ -102,7 +102,7 @@ const plans: PlanDef[] = [
     name: 'Business',
     icon: Building2,
     description: 'Escale sua imobiliária com equipe e auditoria',
-    units: 'Até 80 unidades',
+    units: 'Até 150 unidades',
     users: '4 usuários (1 Master + 3)',
     features: [
       'Tudo do Pro',

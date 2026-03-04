@@ -1,0 +1,1 @@
+UPDATE public.subscription_plans SET features = jsonb_set(features, '{assets_limit}', '150') WHERE id = 'business';
