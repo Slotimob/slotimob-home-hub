@@ -31,6 +31,7 @@ import ActivityHistory from "./pages/ActivityHistory";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Legal from "./pages/Legal";
+import RefundPolicy from "./pages/RefundPolicy";
 import TermsAdmin from "./pages/TermsAdmin";
 import UsersAdmin from "./pages/UsersAdmin";
 import Presentation from "./pages/Presentation";
@@ -84,6 +85,7 @@ const App = () => (
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/legal" element={<Legal />} />
+              <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/apresentacao" element={<Presentation />} />

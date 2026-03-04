@@ -35,6 +35,7 @@ const footerColumns = [
     links: [
       { label: 'Termos de Uso', href: '/legal?tab=terms', isExternal: true },
       { label: 'Política de Privacidade', href: '/legal?tab=privacy', isExternal: true },
+      { label: 'Política de Reembolso', href: '/refund-policy', isExternal: true },
     ],
   },
 ];
