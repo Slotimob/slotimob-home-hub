@@ -266,18 +266,28 @@ async function handleCheckoutCompleted(
     ? subscription.items.data[0].price.unit_amount
     : null;
 
+  const safePeriodStart = subscription.current_period_start
+    ? new Date(subscription.current_period_start * 1000).toISOString()
+    : new Date().toISOString();
+  const safePeriodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000).toISOString()
+    : null;
+  const subStatus = subscription.status === "active" ? "active" : subscription.status;
+
   const { error: subError } = await supabase
     .from("subscriptions")
     .upsert({
       user_id: userId,
       plan_id: planId,
-      status: "active",
+      status: subStatus,
       is_early_adopter: isEarlyAdopter,
       price_locked: priceLocked,
       stripe_customer_id: session.customer as string,
       stripe_subscription_id: subscriptionId,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: safePeriodStart,
+      current_period_end: safePeriodEnd,
+      // Clear trial when subscription is active (paid)
+      trial_ends_at: subStatus === "active" ? null : undefined,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
 
@@ -345,17 +355,31 @@ async function handleSubscriptionUpdated(
     : subscription.status === "canceled" ? "cancelled"
     : subscription.status;
 
+  const safePeriodStart = subscription.current_period_start
+    ? new Date(subscription.current_period_start * 1000).toISOString()
+    : undefined;
+  const safePeriodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000).toISOString()
+    : undefined;
+
+  const updatePayload: Record<string, unknown> = {
+    status,
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    extra_users_count: extraUsers,
+    extra_unit_packs: extraUnitPacks,
+    updated_at: new Date().toISOString(),
+  };
+  if (safePeriodStart) updatePayload.current_period_start = safePeriodStart;
+  if (safePeriodEnd) updatePayload.current_period_end = safePeriodEnd;
+
+  // Clear trial when subscription becomes active (paid)
+  if (status === "active") {
+    updatePayload.trial_ends_at = null;
+  }
+
   const { error } = await supabase
     .from("subscriptions")
-    .update({
-      status,
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      extra_users_count: extraUsers,
-      extra_unit_packs: extraUnitPacks,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq("stripe_subscription_id", subscription.id);
 
   if (error) {
