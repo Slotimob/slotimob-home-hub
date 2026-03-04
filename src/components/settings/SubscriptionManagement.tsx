@@ -328,7 +328,7 @@ export const SubscriptionManagement = () => {
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium text-sm">+1 Usuário Adicional</p>
-                  <p className="text-xs text-muted-foreground">R$ 19,90/mês cada</p>
+                  <p className="text-xs text-muted-foreground">R$ 49,90/mês cada</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -353,9 +353,9 @@ export const SubscriptionManagement = () => {
                 <Button
                   size="sm"
                   disabled={!!loadingAction}
-                  onClick={() => handleManageAddon('price_1SzR2EAUMiQcSICyKo3DdaBd', addonUserQty)}
+                  onClick={() => handleManageAddon('price_1T7307AUMiQcSICyi27XGFK4', addonUserQty)}
                 >
-                  {loadingAction === 'addon-price_1SzR2EAUMiQcSICyKo3DdaBd' ? (
+                  {loadingAction === 'addon-price_1T7307AUMiQcSICyi27XGFK4' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     'Adicionar'
@@ -370,7 +370,7 @@ export const SubscriptionManagement = () => {
                 <Building2 className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium text-sm">Pack de Unidades (+50)</p>
-                  <p className="text-xs text-muted-foreground">R$ 29,90/mês cada</p>
+                  <p className="text-xs text-muted-foreground">R$ 39,90/mês cada</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -395,9 +395,9 @@ export const SubscriptionManagement = () => {
                 <Button
                   size="sm"
                   disabled={!!loadingAction}
-                  onClick={() => handleManageAddon('price_1SzR39AUMiQcSICy9kx3RbG9', addonUnitQty)}
+                  onClick={() => handleManageAddon('price_1T72z0AUMiQcSICyrkWUm7fI', addonUnitQty)}
                 >
-                  {loadingAction === 'addon-price_1SzR39AUMiQcSICy9kx3RbG9' ? (
+                  {loadingAction === 'addon-price_1T72z0AUMiQcSICyrkWUm7fI' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     'Adicionar'
@@ -424,7 +424,7 @@ export const SubscriptionManagement = () => {
               <Sparkles className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium text-sm">Créditos IA</p>
-                <p className="text-xs text-muted-foreground">A partir de R$ 19,90 — Não expiram</p>
+                <p className="text-xs text-muted-foreground">A partir de R$ 24,90 — Não expiram</p>
               </div>
             </div>
             <Button
