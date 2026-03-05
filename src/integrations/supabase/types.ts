@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_logs: {
+        Row: {
+          accepted_at: string
+          created_at: string
+          deletion_reason: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          plan_id: string | null
+          user_agent: string | null
+          user_email: string
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          created_at?: string
+          deletion_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          plan_id?: string | null
+          user_agent?: string | null
+          user_email: string
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          created_at?: string
+          deletion_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          plan_id?: string | null
+          user_agent?: string | null
+          user_email?: string
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       admin_actions_logs: {
         Row: {
           action: string
