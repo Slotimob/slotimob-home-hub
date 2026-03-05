@@ -20,6 +20,7 @@ import { NotificationSettings } from '@/components/NotificationSettings';
 
 import { AppLayout } from '@/components/AppLayout';
 import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
+import { DeleteAccountSection } from '@/components/settings/DeleteAccountSection';
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -859,6 +860,9 @@ const Settings = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete Account - Danger Zone */}
+        <DeleteAccountSection />
       </div>
     </AppLayout>
   );
