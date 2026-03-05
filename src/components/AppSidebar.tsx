@@ -16,6 +16,7 @@ import {
   UsersRound,
   Shield,
   Sparkles,
+  Lock,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -46,6 +47,7 @@ import { LucideIcon } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useCockpitAccess } from '@/hooks/useCockpitAccess';
+import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 
 interface NestedSubMenuItem {
   title: string;
@@ -74,8 +76,37 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const collapsed = state === 'collapsed' && !isMobile;
   const { isAgent } = useUserRole();
-  const { plan, isTrialActive } = useSubscriptionLimits();
+  const { plan, isTrialActive, canUse, features } = useSubscriptionLimits();
   const { hasCockpitAccess } = useCockpitAccess();
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
+  const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
+
+  // Determine which sub-items are locked
+  const isSubItemLocked = (url: string, title: string): boolean => {
+    if (url === '/finance/dre' || url === '/finance/reconciliation') return !canUse('finance_full');
+    if (url === '/whatsapp' || title === 'Mensagens') return !features || (features.whatsapp_instances_limit ?? 0) <= 0;
+    if (url === '/ai-chat') return !canUse('ai_chat');
+    return false;
+  };
+
+  const getTargetPlan = (url: string): 'essencial' | 'pro' | 'business' => {
+    if (url === '/whatsapp' || url === '/finance/dre' || url === '/finance/reconciliation') return 'pro';
+    if (url === '/ai-chat') return 'pro';
+    return 'pro';
+  };
+
+  const handleLockedClick = (url: string, title: string) => {
+    setUpgradeTarget(getTargetPlan(url));
+    setUpgradeFeature(title);
+    setUpgradeOpen(true);
+  };
+
+  // Check if a top-level item (without sub-items) is locked
+  const isTopItemLocked = (item: MenuItem): boolean => {
+    if (item.url === '/ai-chat') return !canUse('ai_chat');
+    return false;
+  };
 
   // Build menu items with role/plan gating
   const menuItems: MenuItem[] = [
@@ -134,6 +165,8 @@ export function AppSidebar() {
     if (item.hiddenOnPlan?.includes(plan)) {
       // If trial is active and item is marked trialVisible, show it anyway
       if (item.trialVisible && isTrialActive) return true;
+      // PLG: Show locked items instead of hiding (for Chat IA)
+      if (item.url === '/ai-chat') return true;
       return false;
     }
     return true;
@@ -210,26 +243,41 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredMenuItems.map((item) => {
+                const topLocked = isTopItemLocked(item);
+
                 if (!item.items) {
                   return (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={isActive(item.url!)} tooltip={item.title}>
-                        <NavLink 
-                          to={item.url!} 
-                          className="flex items-center gap-3 transition-all duration-200" 
-                          activeClassName="bg-primary/10 text-primary font-medium"
-                          onClick={() => isMobile && setOpenMobile(false)}
-                        >
-                          <item.icon className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                          <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
-                            {item.title}
-                            {item.trialVisible && isTrialActive && !collapsed && (
-                              <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/15 text-primary leading-none align-middle">
-                                PRO
-                              </span>
-                            )}
-                          </span>
-                        </NavLink>
+                      <SidebarMenuButton asChild={!topLocked} isActive={!topLocked && isActive(item.url!)} tooltip={item.title}>
+                        {topLocked ? (
+                          <button
+                            className="flex items-center gap-3 transition-all duration-200 w-full text-muted-foreground cursor-pointer"
+                            onClick={() => handleLockedClick(item.url!, item.title)}
+                          >
+                            <item.icon className="h-4 w-4 shrink-0" />
+                            <span className={`flex items-center gap-1.5 transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
+                              {item.title}
+                              <Lock className="h-3 w-3 text-muted-foreground" />
+                            </span>
+                          </button>
+                        ) : (
+                          <NavLink 
+                            to={item.url!} 
+                            className="flex items-center gap-3 transition-all duration-200" 
+                            activeClassName="bg-primary/10 text-primary font-medium"
+                            onClick={() => isMobile && setOpenMobile(false)}
+                          >
+                            <item.icon className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                            <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
+                              {item.title}
+                              {item.trialVisible && isTrialActive && !collapsed && (
+                                <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/15 text-primary leading-none align-middle">
+                                  PRO
+                                </span>
+                              )}
+                            </span>
+                          </NavLink>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -338,15 +386,25 @@ export function AppSidebar() {
 
                             return (
                               <SidebarMenuSubItem key={subItem.url}>
-                                <SidebarMenuSubButton asChild isActive={isActive(subItem.url)}>
-                                <NavLink 
-                                  to={subItem.url} 
-                                  className="transition-colors duration-200"
-                                  activeClassName="bg-primary/10 text-primary font-medium"
-                                  onClick={() => isMobile && setOpenMobile(false)}
-                                >
-                                  {subItem.title}
-                                </NavLink>
+                                <SidebarMenuSubButton asChild={!isSubItemLocked(subItem.url, subItem.title)} isActive={!isSubItemLocked(subItem.url, subItem.title) && isActive(subItem.url)}>
+                                {isSubItemLocked(subItem.url, subItem.title) ? (
+                                  <button
+                                    className="flex items-center gap-1.5 w-full text-muted-foreground cursor-pointer transition-colors duration-200"
+                                    onClick={() => handleLockedClick(subItem.url, subItem.title)}
+                                  >
+                                    {subItem.title}
+                                    <Lock className="h-3 w-3 text-muted-foreground" />
+                                  </button>
+                                ) : (
+                                  <NavLink 
+                                    to={subItem.url} 
+                                    className="transition-colors duration-200"
+                                    activeClassName="bg-primary/10 text-primary font-medium"
+                                    onClick={() => isMobile && setOpenMobile(false)}
+                                  >
+                                    {subItem.title}
+                                  </NavLink>
+                                )}
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
                             );
@@ -378,6 +436,13 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      <UpgradeModal
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        targetPlan={upgradeTarget}
+        feature={upgradeFeature}
+      />
     </Sidebar>
   );
 }
