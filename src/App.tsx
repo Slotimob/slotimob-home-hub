@@ -116,9 +116,9 @@ const App = () => (
               <Route path="/rentability/payback" element={guarded(<Rentability />)} />
               <Route path="/rentability/comparison" element={guarded(<Rentability />)} />
               <Route path="/finance" element={guarded(<Finance />)} />
-              <Route path="/finance/dre" element={guarded(<FinanceDRE />)} />
+              <Route path="/finance/dre" element={guarded(<RequireFeature feature="finance_full"><FinanceDRE /></RequireFeature>)} />
               <Route path="/finance/transactions" element={guarded(<FinanceTransactions />)} />
-              <Route path="/finance/reconciliation" element={guarded(<FinanceReconciliation />)} />
+              <Route path="/finance/reconciliation" element={guarded(<RequireFeature feature="finance_full"><FinanceReconciliation /></RequireFeature>)} />
               <Route path="/finance/categories" element={guarded(<FinanceCategories />)} />
               <Route path="/asset-health" element={guarded(<AssetHealth />)} />
               <Route path="/schedule" element={guarded(<Schedule />)} />
