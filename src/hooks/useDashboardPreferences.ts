@@ -54,7 +54,7 @@ const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
   { id: 'reports', label: 'Relatórios', icon: 'BarChart3', route: '/reports', enabled: false },
   { id: 'documents', label: 'Documentos', icon: 'FileText', route: '/documents', enabled: false },
   { id: 'simulator', label: 'Simulador', icon: 'Calculator', route: '/simulator/financing', enabled: false },
-  { id: 'asset-health', label: 'Gestão de Ativos', icon: 'HeartPulse', route: '/asset-health', enabled: false },
+  { id: 'asset-health', label: 'Gestão de Ativos', icon: 'HeartPulse', route: '/gestao/alugueis', enabled: false },
 ];
 
 // Estágios padrão do CRM (enum pipeline_stage)
