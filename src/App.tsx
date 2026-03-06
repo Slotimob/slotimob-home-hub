@@ -51,6 +51,10 @@ import FinanceReconciliation from "./pages/FinanceReconciliation";
 import FinanceCategories from "./pages/FinanceCategories";
 import FinanceDRE from "./pages/FinanceDRE";
 import AssetHealth from "./pages/AssetHealth";
+import AtivosEmGestao from "./pages/gestao/AtivosEmGestao";
+import ContratosEmGestao from "./pages/gestao/ContratosEmGestao";
+import AfazeresEmGestao from "./pages/gestao/AfazeresEmGestao";
+import GerencialGestao from "./pages/gestao/GerencialGestao";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
 import Checkout from "./pages/Checkout";
@@ -121,6 +125,10 @@ const App = () => (
               <Route path="/finance/reconciliation" element={guarded(<RequireFeature feature="finance_full"><FinanceReconciliation /></RequireFeature>)} />
               <Route path="/finance/categories" element={guarded(<FinanceCategories />)} />
               <Route path="/asset-health" element={guarded(<AssetHealth />)} />
+              <Route path="/gestao/alugueis" element={guarded(<AtivosEmGestao />)} />
+              <Route path="/gestao/contratos" element={guarded(<ContratosEmGestao />)} />
+              <Route path="/gestao/afazeres" element={guarded(<AfazeresEmGestao />)} />
+              <Route path="/gestao/gerencial" element={guarded(<GerencialGestao />)} />
               <Route path="/schedule" element={guarded(<Schedule />)} />
               <Route path="/portals" element={guarded(<Portals />)} />
               <Route path="/reports" element={guarded(<Reports />)} />

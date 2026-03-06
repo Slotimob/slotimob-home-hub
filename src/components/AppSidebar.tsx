@@ -17,6 +17,7 @@ import {
   Shield,
   Sparkles,
   Lock,
+  ClipboardList,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -113,10 +114,19 @@ export function AppSidebar() {
     { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'], trialVisible: true },
     { title: 'Dashboard', url: '/dashboard', icon: Home },
     { 
+      title: 'Gestão', 
+      icon: ClipboardList,
+      items: [
+        { title: 'Aluguéis', url: '/gestao/alugueis' },
+        { title: 'Contratos', url: '/gestao/contratos' },
+        { title: 'Gerencial', url: '/gestao/gerencial' },
+        { title: 'Afazeres', url: '/gestao/afazeres' },
+      ]
+    },
+    { 
       title: 'Ativos', 
       icon: Building2,
       items: [
-        { title: 'Gestão', url: '/asset-health' },
         { 
           title: 'Empreendimentos', 
           url: '/properties', 
