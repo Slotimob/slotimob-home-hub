@@ -49,7 +49,7 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-members'] });
-      toast.success('Convite enviado por email com sucesso!');
+      toast.success('Convite enviado com sucesso! O utilizador receberá um e-mail com o link de acesso.');
       onOpenChange(false);
       setEmail('');
       setPermissions({});
