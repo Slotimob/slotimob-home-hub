@@ -24,9 +24,10 @@ interface TeamMember {
 
 interface TeamMemberCardProps {
   member: TeamMember;
+  readOnly?: boolean;
 }
 
-export function TeamMemberCard({ member }: TeamMemberCardProps) {
+export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [permissions, setPermissions] = useState<Permissions>(member.permissions || {});
   const [roleLabel, setRoleLabel] = useState(member.role_label);
@@ -71,7 +72,7 @@ export function TeamMemberCard({ member }: TeamMemberCardProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-3 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+      <CardHeader className={`pb-3 ${readOnly ? '' : 'cursor-pointer'}`} onClick={() => !readOnly && setExpanded(!expanded)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
@@ -84,12 +85,16 @@ export function TeamMemberCard({ member }: TeamMemberCardProps) {
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary">{roleLabel}</Badge>
-            <Switch
-              checked={member.is_active}
-              onCheckedChange={(v) => toggleActive.mutate(v)}
-              onClick={(e) => e.stopPropagation()}
-            />
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {!readOnly && (
+              <>
+                <Switch
+                  checked={member.is_active}
+                  onCheckedChange={(v) => toggleActive.mutate(v)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </>
+            )}
           </div>
         </div>
       </CardHeader>
