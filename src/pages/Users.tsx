@@ -14,8 +14,9 @@ const Users = () => {
   const { isAgent } = useUserRole();
   const [showUpgrade, setShowUpgrade] = useState(false);
 
-  // Agents cannot access this page
-  if (isAgent) return <Navigate to="/dashboard" replace />;
+  // Agents on Business plan can see team page (read-only)
+  // Agents on non-business plans redirect to dashboard
+  if (isAgent && plan !== 'business') return <Navigate to="/dashboard" replace />;
 
   // Essencial plan: hidden from sidebar but redirect just in case
   if (plan === 'essencial') return <Navigate to="/dashboard" replace />;
