@@ -14,11 +14,6 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-
-    if (!resendApiKey) {
-      throw new Error("RESEND_API_KEY not configured");
-    }
 
     // Authenticate the calling user
     const authHeader = req.headers.get("Authorization");
@@ -37,6 +32,8 @@ Deno.serve(async (req) => {
     if (!email || !email.includes("@")) {
       throw new Error("Email inválido");
     }
+
+    const normalizedEmail = email.trim().toLowerCase();
 
     // --- Business rule: only the subscription owner (no role = subscriber) can invite ---
     const { data: roles } = await supabaseAdmin
@@ -60,7 +57,7 @@ Deno.serve(async (req) => {
       throw new Error("Convites de equipe estão disponíveis apenas no plano Business.");
     }
 
-    // --- Check users limit (base 3 + add-ons) ---
+    // --- Check users limit (base + add-ons) ---
     const { data: planData } = await supabaseAdmin
       .from("subscription_plans")
       .select("features")
@@ -78,35 +75,28 @@ Deno.serve(async (req) => {
       .eq("organization_owner_id", user.id)
       .eq("is_active", true);
 
-    // Count pending invitations
-    const { count: pendingInvites } = await supabaseAdmin
-      .from("organization_invitations")
-      .select("id", { count: "exact", head: true })
-      .eq("organization_owner_id", user.id)
-      .is("used_at", null)
-      .gt("expires_at", new Date().toISOString());
-
-    const currentTotal = (activeMembers ?? 0) + (pendingInvites ?? 0);
+    // Owner counts as 1 seat
+    const currentTotal = 1 + (activeMembers ?? 0);
 
     if (currentTotal >= totalLimit) {
       throw new Error(
-        `Limite de ${totalLimit} usuários atingido (${activeMembers ?? 0} ativos + ${pendingInvites ?? 0} convites pendentes). Adquira add-ons de usuários para expandir.`
+        `Limite de ${totalLimit} usuários atingido (${currentTotal} vagas ocupadas). Adquira add-ons de usuários para expandir.`
       );
     }
 
     // --- Check if user is already a member ---
-    const { data: existingProfile } = await supabaseAdmin
+    const { data: existingMemberByEmail } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .eq("email", email.trim().toLowerCase())
+      .eq("email", normalizedEmail)
       .maybeSingle();
 
-    if (existingProfile) {
+    if (existingMemberByEmail) {
       const { data: existingMember } = await supabaseAdmin
         .from("organization_members")
         .select("id")
         .eq("organization_owner_id", user.id)
-        .eq("user_id", existingProfile.id)
+        .eq("user_id", existingMemberByEmail.id)
         .eq("is_active", true)
         .maybeSingle();
 
@@ -115,94 +105,52 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- Check for existing pending invitation ---
-    const { data: existingInvite } = await supabaseAdmin
-      .from("organization_invitations")
-      .select("id")
-      .eq("organization_owner_id", user.id)
-      .eq("email", email.trim().toLowerCase())
-      .is("used_at", null)
-      .gt("expires_at", new Date().toISOString())
-      .maybeSingle();
+    // --- Invite user via Supabase Auth native method ---
+    const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      normalizedEmail,
+      {
+        data: {
+          invited_by: user.id,
+          role_label: role_label || "Agente",
+        },
+        redirectTo: "https://slotimob.com.br/reset-password",
+      }
+    );
 
-    if (existingInvite) {
-      throw new Error("Já existe um convite pendente para este email.");
+    if (inviteError) {
+      // If user already exists in auth, it means they already have an account
+      if (inviteError.message?.includes("already been registered") || inviteError.message?.includes("already exists")) {
+        throw new Error("Este email já possui uma conta. O usuário pode fazer login e ser adicionado manualmente.");
+      }
+      throw new Error(inviteError.message || "Erro ao enviar convite");
     }
 
-    // --- Get inviter name ---
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
+    if (!authData?.user?.id) {
+      throw new Error("Erro inesperado: usuário não criado pelo convite.");
+    }
 
-    const inviterName = profile?.full_name || "Um assinante";
-
-    // --- Create invitation ---
-    const { data: invitation, error: insertError } = await supabaseAdmin
-      .from("organization_invitations")
+    // --- Add to organization_members directly ---
+    const { error: memberError } = await supabaseAdmin
+      .from("organization_members")
       .insert({
-        email: email.trim().toLowerCase(),
         organization_owner_id: user.id,
+        user_id: authData.user.id,
         role_label: role_label || "Agente",
         permissions: permissions || {},
-        invited_by_name: inviterName,
-      })
-      .select("token")
-      .single();
+        is_active: true,
+        accepted_at: null, // Will be set when user actually logs in
+      });
 
-    if (insertError) throw insertError;
-
-    // --- Send email via Resend ---
-    const inviteUrl = `https://slotimob.com.br/auth?token=${invitation.token}`;
-
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "SlotiMob <noreply@slotimob.com.br>",
-        to: [email.trim().toLowerCase()],
-        subject: `${inviterName} convidou você para a equipe da SlotiMob`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <div style="text-align: center; margin-bottom: 32px;">
-              <h1 style="color: #1a1a2e; font-size: 24px; margin: 0;">SlotiMob</h1>
-              <p style="color: #666; font-size: 14px; margin-top: 4px;">Sistema de Gestão de Ativos Imobiliários</p>
-            </div>
-            <div style="background: #f8f9fa; border-radius: 12px; padding: 32px; text-align: center;">
-              <h2 style="color: #1a1a2e; font-size: 20px; margin-top: 0;">Você foi convidado!</h2>
-              <p style="color: #444; font-size: 16px; line-height: 1.6;">
-                Olá! <strong>${inviterName}</strong> convidou você para a equipe da SlotiMob.
-                Clique no botão abaixo para configurar a sua conta.
-              </p>
-              <a href="${inviteUrl}" 
-                 style="display: inline-block; background: #6366f1; color: white; padding: 14px 32px; 
-                        border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; margin-top: 16px;">
-                Aceitar Convite
-              </a>
-              <p style="color: #888; font-size: 12px; margin-top: 24px;">
-                Este link expira em 48 horas. Se você não reconhece este convite, ignore este email.
-              </p>
-            </div>
-            <p style="color: #aaa; font-size: 11px; text-align: center; margin-top: 24px;">
-              © ${new Date().getFullYear()} SlotiMob — slotimob.com.br
-            </p>
-          </div>
-        `,
-      }),
-    });
-
-    if (!emailResponse.ok) {
-      const errorBody = await emailResponse.text();
-      console.error("Resend error:", errorBody);
-      // Still return success since invitation was created
+    if (memberError) {
+      if (memberError.code === "23505") {
+        throw new Error("Este usuário já faz parte da sua equipe.");
+      }
+      console.error("Error inserting member:", memberError);
+      throw new Error("Erro ao vincular membro à organização.");
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Convite enviado com sucesso" }),
+      JSON.stringify({ success: true, message: "Convite enviado com sucesso! O usuário receberá um e-mail com o link de acesso." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

@@ -159,6 +159,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
+        // Handle invited user flow: PASSWORD_RECOVERY means user clicked invite link
+        if (event === 'PASSWORD_RECOVERY') {
+          updateAuthState(currentSession);
+          navigateRef.current?.('/reset-password');
+          return;
+        }
+
         updateAuthState(currentSession);
       }
     );
