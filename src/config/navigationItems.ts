@@ -24,6 +24,10 @@ import {
   UsersRound,
   Shield,
   LucideIcon,
+  ClipboardList,
+  FileSignature,
+  CheckSquare,
+  Briefcase,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -47,7 +51,7 @@ export interface NavGroup {
  */
 export const PRIMARY_TABS: NavItem[] = [
   { title: 'Home', url: '/dashboard', icon: Home },
-  { title: 'Ativos', url: '/asset-health', icon: Building2 },
+  { title: 'Gestão', url: '/gestao/alugueis', icon: ClipboardList },
   { title: 'Financeiro', url: '/finance', icon: Wallet },
   { title: 'Pipeline', url: '/pipeline', icon: Filter, badgeKey: 'pipeline' },
   { title: 'Contatos', url: '/contacts', icon: Users, badgeKey: 'leads' },
@@ -64,10 +68,19 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: 'Gestão',
+    icon: ClipboardList,
+    items: [
+      { title: 'Aluguéis', url: '/gestao/alugueis', icon: HeartPulse },
+      { title: 'Contratos', url: '/gestao/contratos', icon: FileSignature },
+      { title: 'Gerencial', url: '/gestao/gerencial', icon: Briefcase },
+      { title: 'Afazeres', url: '/gestao/afazeres', icon: CheckSquare },
+    ],
+  },
+  {
     title: 'Ativos',
     icon: Building2,
     items: [
-      { title: 'Gestão', url: '/asset-health', icon: HeartPulse },
       { title: 'Empreendimentos', url: '/properties', icon: Building2 },
       { title: 'Imóveis', url: '/real-estate', icon: HomeIcon },
       { title: 'Unidades', url: '/units', icon: LayoutGrid },
@@ -148,10 +161,19 @@ export const NAV_GROUPS: NavGroup[] = [
 export const SIDEBAR_ITEMS = [
   { title: 'Dashboard', url: '/dashboard', icon: Home },
   {
+    title: 'Gestão',
+    icon: ClipboardList,
+    items: [
+      { title: 'Aluguéis', url: '/gestao/alugueis' },
+      { title: 'Contratos', url: '/gestao/contratos' },
+      { title: 'Gerencial', url: '/gestao/gerencial' },
+      { title: 'Afazeres', url: '/gestao/afazeres' },
+    ],
+  },
+  {
     title: 'Ativos',
     icon: Building2,
     items: [
-      { title: 'Gestão', url: '/asset-health' },
       {
         title: 'Empreendimentos',
         url: '/properties',

@@ -231,8 +231,8 @@ export function AssetDetailDialog({
     enabled: !!asset,
   });
 
-  // Fetch available transactions to link
-  const { data: availableTransactions = [] } = useQuery({
+  // Fetch available transactions to link (financial)
+  const { data: availableFinancialTransactions = [] } = useQuery({
     queryKey: ["unlinked-transactions", asset?.unitId],
     queryFn: async () => {
       if (!asset) return [];
@@ -252,10 +252,32 @@ export function AssetDetailDialog({
         .limit(20);
       
       if (error) throw error;
-      return data || [];
+      return (data || []).map(t => ({ ...t, source: "financial" as const }));
     },
     enabled: !!asset && !!linkingTransactionFor,
   });
+
+  // Fetch available managerial transactions to link
+  const { data: availableManagerialTransactions = [] } = useQuery({
+    queryKey: ["unlinked-managerial-transactions", asset?.unitId],
+    queryFn: async () => {
+      if (!asset) return [];
+      const { data, error } = await supabase
+        .from("managerial_transactions")
+        .select("id, amount, status, due_date, description")
+        .eq("unit_id", asset.unitId)
+        .is("obligation_type", null)
+        .order("due_date", { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      return (data || []).map(t => ({ ...t, transaction_date: t.due_date || "", source: "managerial" as const }));
+    },
+    enabled: !!asset && !!linkingTransactionFor,
+  });
+
+  // Combine both sources
+  const availableTransactions = [...availableFinancialTransactions, ...availableManagerialTransactions];
 
   // Mutation for updating CIB inline
   const updateCibMutation = useMutation({
@@ -376,20 +398,31 @@ export function AssetDetailDialog({
     setTransactionDialogOpen(true);
   };
 
-  const handleLinkTransaction = async (transactionId: string, obligationType: ObligationType) => {
+  const handleLinkTransaction = async (transactionId: string, obligationType: ObligationType, source: "financial" | "managerial" = "financial") => {
     try {
-      const { error } = await supabase
-        .from("financial_transactions")
-        .update({
-          obligation_type: obligationType,
-          competency_period: competencyPeriod,
-        })
-        .eq("id", transactionId);
-
-      if (error) throw error;
+      if (source === "managerial") {
+        const { error } = await supabase
+          .from("managerial_transactions")
+          .update({
+            obligation_type: obligationType,
+            competency_period: competencyPeriod,
+          })
+          .eq("id", transactionId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("financial_transactions")
+          .update({
+            obligation_type: obligationType,
+            competency_period: competencyPeriod,
+          })
+          .eq("id", transactionId);
+        if (error) throw error;
+      }
 
       queryClient.invalidateQueries({ queryKey: ["unit-month-transactions", asset?.unitId] });
       queryClient.invalidateQueries({ queryKey: ["unlinked-transactions", asset?.unitId] });
+      queryClient.invalidateQueries({ queryKey: ["unlinked-managerial-transactions", asset?.unitId] });
       queryClient.invalidateQueries({ queryKey: ["asset-health"] });
       
       setLinkingTransactionFor(null);
@@ -691,21 +724,26 @@ export function AssetDetailDialog({
                                   {availableTransactions.length === 0 ? (
                                     <p className="text-xs text-muted-foreground">Nenhum lançamento disponível</p>
                                   ) : (
-                                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                                      {availableTransactions.map((tx) => (
+                                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                                      {availableTransactions.map((tx: any) => (
                                         <button
-                                          key={tx.id}
+                                          key={`${tx.source}-${tx.id}`}
                                           className="w-full text-left p-2 text-xs rounded hover:bg-muted transition-colors"
-                                          onClick={() => handleLinkTransaction(tx.id, obligation.type)}
+                                          onClick={() => handleLinkTransaction(tx.id, obligation.type, tx.source)}
                                         >
-                                          <div className="flex justify-between">
-                                            <span className="truncate">{tx.description}</span>
+                                          <div className="flex justify-between items-center">
+                                            <span className="truncate flex items-center gap-1">
+                                              {tx.description}
+                                              {tx.source === "managerial" && (
+                                                <span className="text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-medium">Gerencial</span>
+                                              )}
+                                            </span>
                                             <span className="font-medium">
                                               R$ {tx.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                                             </span>
                                           </div>
                                           <span className="text-muted-foreground">
-                                            {format(parseISO(tx.transaction_date), "dd/MM/yyyy")}
+                                            {tx.transaction_date ? format(parseISO(tx.transaction_date), "dd/MM/yyyy") : "—"}
                                           </span>
                                         </button>
                                       ))}

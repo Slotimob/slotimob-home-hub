@@ -1983,6 +1983,59 @@ export type Database = {
           },
         ]
       }
+      managerial_transactions: {
+        Row: {
+          amount: number
+          broker_id: string
+          competency_period: string | null
+          created_at: string
+          description: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          obligation_type: string | null
+          status: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          broker_id: string
+          competency_period?: string | null
+          created_at?: string
+          description: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          obligation_type?: string | null
+          status?: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          broker_id?: string
+          competency_period?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          obligation_type?: string | null
+          status?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "managerial_transactions_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_logs: {
         Row: {
           broker_id: string
