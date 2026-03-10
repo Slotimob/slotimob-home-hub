@@ -158,8 +158,7 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
           unit:units(unit_number, address, city, state, postal_code, property:properties(name, address, city, state, postal_code)),
           tenant:contacts!leases_tenant_contact_id_fkey(name, document_number, address, city, state, postal_code),
           owner:contacts!leases_owner_contact_id_fkey(name, document_number)
-        `)
-        .eq('broker_id', user.id);
+        `);
 
       if (selectedUnitId) {
         leasesQuery = leasesQuery.eq('unit_id', selectedUnitId);
