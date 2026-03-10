@@ -36,6 +36,7 @@ export const CreateCommissionDialog = ({
   onSuccess,
 }: CreateCommissionDialogProps) => {
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [isCreating, setIsCreating] = useState(false);
   const [saleValue, setSaleValue] = useState<number>(deal?.estimated_value || 0);
   const [commissionRate, setCommissionRate] = useState<number>(5);
