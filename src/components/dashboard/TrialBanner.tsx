@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { toast } from 'sonner';
 
 export function TrialBanner() {
   const { isTrialActive, trialDaysRemaining, isLoading: trialLoading } = useTrialStatus();
   const { plan, isLoading: planLoading } = useSubscriptionLimits();
+  const { isMember } = useWorkspace();
   const welcomeShown = useRef(false);
 
   // Show welcome toast once for new trial users
