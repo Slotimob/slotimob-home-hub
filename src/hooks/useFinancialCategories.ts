@@ -27,6 +27,7 @@ interface CategoryWithMeta {
 export function useFinancialCategories(type?: 'income' | 'expense') {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { effectiveBrokerId } = useWorkspace();
 
   const { data: categories = [], isLoading, refetch } = useQuery({
     queryKey: ["financial-categories", type],
