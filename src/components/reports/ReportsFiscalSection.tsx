@@ -77,7 +77,6 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
           tenant:contacts!leases_tenant_contact_id_fkey(name, document_number),
           owner:contacts!leases_owner_contact_id_fkey(name, document_number)
         `)
-        .eq('broker_id', user.id)
         .gte('start_date', dateRange.from.toISOString().split('T')[0])
         .or(`end_date.is.null,end_date.gte.${dateRange.from.toISOString().split('T')[0]}`);
 
