@@ -307,7 +307,7 @@ export function ImportStatementDialog({
       const { data: importRecord, error: importError } = await supabase
         .from("bank_statement_imports")
         .insert({
-          broker_id: user.id,
+          broker_id: brokerId,
           bank_account_id: selectedBankAccountId,
           file_name: file.name,
           file_type: fileExtension,
