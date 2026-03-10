@@ -16,6 +16,7 @@
  import { useUpdateLease } from "@/hooks/useLeases";
  import { useUpdateFutureProjections } from "@/hooks/useLeaseFinancialProjection";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
  import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
