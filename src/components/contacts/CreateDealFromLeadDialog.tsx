@@ -52,6 +52,7 @@ export const CreateDealFromLeadDialog = ({
 }: CreateDealFromLeadDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [properties, setProperties] = useState<{ id: string; name: string; city?: string | null }[]>([]);
   const [units, setUnits] = useState<{ id: string; unit_number: string }[]>([]);
