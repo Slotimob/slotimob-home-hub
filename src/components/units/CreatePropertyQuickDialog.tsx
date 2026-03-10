@@ -27,6 +27,7 @@ export function CreatePropertyQuickDialog({
 }: CreatePropertyQuickDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
