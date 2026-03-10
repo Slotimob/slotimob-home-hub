@@ -23,6 +23,7 @@ const COLORS = [
 export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: CreateBankAccountDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { effectiveBrokerId } = useWorkspace();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
