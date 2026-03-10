@@ -121,7 +121,6 @@ const GerencialGestao = () => {
       const { data, error } = await supabase
         .from("managerial_transactions")
         .select("*")
-        .eq("broker_id", user.id)
         .eq("competency_period", competencyPeriod)
         .order("due_date", { ascending: true });
       if (error) throw error;
