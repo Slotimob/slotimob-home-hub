@@ -73,9 +73,8 @@
        const today = new Date().toISOString().split("T")[0];
        const { data: updatedTx, error: txError } = await supabase
          .from("financial_transactions")
-         .update({ amount: previousValue })
-         .eq("broker_id", user.id)
-         .eq("reference", `lease:${leaseId}`)
+          .update({ amount: previousValue })
+          .eq("reference", `lease:${leaseId}`)
          .eq("status", "pending")
          .gte("due_date", today)
          .select("id");

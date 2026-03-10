@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_FINANCIAL_CATEGORIES, CATEGORY_COLORS, CATEGORIES_WITH_TOOLTIPS } from "@/utils/financialConstants";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface CreateCategoryData {
   name: string;

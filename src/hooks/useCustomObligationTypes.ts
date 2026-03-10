@@ -62,7 +62,7 @@ export function useCreateCustomObligationType() {
       const { data: result, error } = await supabase
         .from("custom_obligation_types")
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           name: data.name,
           icon: data.icon || "Circle",
           default_due_day: data.default_due_day || 10,
