@@ -725,7 +725,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
       // Save import history for empreendimento imports
       if (importType === 'empreendimento' && effectivePropertyId) {
         await supabase.from('import_history').insert({
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           property_id: effectivePropertyId,
           file_name: selectedFile.name,
           file_type: selectedFile.name.split('.').pop() || 'unknown',

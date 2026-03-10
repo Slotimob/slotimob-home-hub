@@ -55,7 +55,7 @@ export const CreateCommissionDialog = ({
 
       // Create income transaction for commission
       const { error } = await supabase.from('financial_transactions').insert({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         type: 'income',
         description: `Comissão - ${deal.lead.name} - ${deal.property.name}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`,
         amount: commissionValue,

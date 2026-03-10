@@ -142,7 +142,7 @@ export const DealClosingDialog = ({
       // 2. Create financial transaction if requested
       if (shouldCreateTransaction && saleValue > 0) {
         const { error: transactionError } = await supabase.from('financial_transactions').insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           type: 'income',
           description: `Comissão - ${deal.lead.name} - ${deal.property.name}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`,
           amount: commissionValue,
