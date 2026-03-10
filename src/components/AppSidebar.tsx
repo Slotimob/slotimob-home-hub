@@ -80,6 +80,7 @@ export function AppSidebar() {
   const { isAgent } = useUserRole();
   const { plan, isTrialActive, canUse, features } = useSubscriptionLimits();
   const { hasCockpitAccess } = useCockpitAccess();
+  const { isMember } = useWorkspace();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
