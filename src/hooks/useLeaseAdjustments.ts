@@ -56,9 +56,8 @@
        // Step 1: Delete the adjustment record
        const { error: deleteError } = await supabase
          .from("lease_adjustments")
-         .delete()
-         .eq("id", adjustmentId)
-         .eq("broker_id", user.id);
+          .delete()
+          .eq("id", adjustmentId);
  
        if (deleteError) throw deleteError;
  
