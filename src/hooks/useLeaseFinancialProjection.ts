@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { addMonths, setDate, format, differenceInMonths, lastDayOfMonth, getDate } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
