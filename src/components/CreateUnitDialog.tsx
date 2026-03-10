@@ -57,6 +57,7 @@ export const CreateUnitDialog = ({
   standalone = false 
 }: CreateUnitDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState<UnitFormData>(() => {
