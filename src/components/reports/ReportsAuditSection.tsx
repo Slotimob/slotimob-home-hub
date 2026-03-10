@@ -37,7 +37,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
           unit:units(unit_number),
           category:financial_categories(name)
         `)
-        .eq('broker_id', user.id)
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
 
