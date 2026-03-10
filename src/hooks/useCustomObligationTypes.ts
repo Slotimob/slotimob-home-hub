@@ -52,6 +52,7 @@ export function useCustomObligationTypes() {
 
 export function useCreateCustomObligationType() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
 
   return useMutation({
