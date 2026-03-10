@@ -18,6 +18,7 @@ import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
 import { AssetSelectorDialog, SelectedAsset } from '@/components/chat/AssetSelectorDialog';
 import { Badge } from '@/components/ui/badge';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface ChatMessage {
   id?: string;
