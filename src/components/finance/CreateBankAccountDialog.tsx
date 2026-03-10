@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface CreateBankAccountDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ const COLORS = [
 export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: CreateBankAccountDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { effectiveBrokerId } = useWorkspace();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -38,13 +40,12 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: Creat
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
+      if (!effectiveBrokerId) throw new Error("Usuário não autenticado");
 
       const initialBalance = formData.initialBalance ? parseFloat(formData.initialBalance) : 0;
 
       const { error } = await supabase.from("bank_accounts").insert({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId,
         name: formData.name,
         bank_name: formData.bankName || null,
         account_number: formData.accountNumber || null,

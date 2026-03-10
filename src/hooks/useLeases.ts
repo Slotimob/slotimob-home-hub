@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import type { Json } from "@/integrations/supabase/types";
 import { useLeaseFinancialProjection, useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
 import { format } from "date-fns";
@@ -151,6 +152,7 @@ export interface UpdateLeaseData extends Partial<CreateLeaseData> {
 
 export function useLeases() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
 
   return useQuery({
     queryKey: ["leases", user?.id],
@@ -165,7 +167,6 @@ export function useLeases() {
           owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone, document_number, address, city, state, neighborhood, postal_code),
           unit:units(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name))
         `)
-        .eq("broker_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -206,7 +207,6 @@ export function useLeaseByUnitId(unitId: string | null) {
           owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone, document_number, address, city, state, neighborhood, postal_code),
           unit:units(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name))
         `)
-        .eq("broker_id", user.id)
         .eq("unit_id", unitId)
         .in("status", ["active", "pending"])
         .order("created_at", { ascending: false })
@@ -239,6 +239,7 @@ export function useLeaseByUnitId(unitId: string | null) {
 
 export function useCreateLease() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
   const { generateProjections } = useLeaseFinancialProjection();
 
@@ -250,7 +251,7 @@ export function useCreateLease() {
       const { data: lease, error } = await supabase
         .from("leases")
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           unit_id: data.unit_id,
           tenant_contact_id: data.tenant_contact_id,
           owner_contact_id: data.owner_contact_id || null,
@@ -397,7 +398,6 @@ export function useTerminateLease() {
         .from("leases")
         .select("unit_id, broker_id")
         .eq("id", leaseId)
-        .eq("broker_id", user.id)
         .single();
 
       if (fetchError) {
@@ -414,7 +414,7 @@ export function useTerminateLease() {
           const { data: deleted, error: deleteError } = await supabase
             .from("financial_transactions")
             .delete()
-            .eq("broker_id", user.id)
+            .eq("broker_id", lease.broker_id)
             .eq("reference", `lease:${leaseId}`)
             .eq("status", "pending")
             .gte("due_date", terminationDate)
@@ -443,8 +443,7 @@ export function useTerminateLease() {
           termination_date: terminationDate,
           termination_reason: terminationReason || null,
         })
-        .eq("id", leaseId)
-        .eq("broker_id", user.id);
+        .eq("id", leaseId);
 
       // If error is null, consider success - no need for .select() verification
       if (updateError) {
@@ -462,8 +461,7 @@ export function useTerminateLease() {
             is_occupied: false,
             tenant_contact_id: null,
           })
-          .eq("id", lease.unit_id)
-          .eq("broker_id", user.id);
+          .eq("id", lease.unit_id);
 
         if (unitError) {
           console.error("Error updating unit:", unitError);

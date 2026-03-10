@@ -6,6 +6,7 @@ import { Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lu
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import Papa from 'papaparse';
 import { createWorkbook, addJsonSheet, addAoaSheet, downloadWorkbook, readExcelFile } from '@/utils/excelUtils';
 
@@ -52,6 +53,7 @@ export const ContactsImportExportDialog = ({
 }: ContactsImportExportDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: number; errors: number } | null>(null);
@@ -196,7 +198,7 @@ export const ContactsImportExportDialog = ({
       let errorCount = 0;
 
       for (const row of parsedData) {
-        const record: Record<string, any> = { broker_id: user.id };
+        const record: Record<string, any> = { broker_id: effectiveBrokerId };
         
         for (const [key, value] of Object.entries(row)) {
           const fieldName = headerMap[key.toLowerCase()];

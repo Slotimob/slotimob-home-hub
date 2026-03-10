@@ -138,7 +138,6 @@ export function AdjustmentCalculatorDialog({
       const { data: updatedTransactions, error: cascadeError } = await supabase
         .from("financial_transactions")
         .update({ amount: newValue })
-        .eq("broker_id", user.id)
         .eq("reference", `lease:${lease.id}`)
         .eq("status", "pending")
         .gte("due_date", adjustmentEffectiveDate)

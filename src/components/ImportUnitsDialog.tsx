@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -109,6 +110,7 @@ const CONDITIONS = ['construcao', 'na_planta', 'novo', 'usado'];
 export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, standalone = false }: ImportUnitsDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [importing, setImporting] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
@@ -514,7 +516,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
     const { data: newOwner, error } = await supabase
       .from('owners')
       .insert({
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         name: normalizedEmail.split('@')[0], // Use email prefix as name
         email: normalizedEmail,
       })
@@ -554,7 +556,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
     const { data: newProperty, error } = await supabase
       .from('properties')
       .insert({
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         name: normalizedName,
         builder_name: row.construtora?.trim() || null,
         construction_stage: row.estagio_obra?.trim() || null,
@@ -682,7 +684,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
 
         units.push({
           property_id: unitPropertyId,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           unit_number: row.numero_unidade.trim(),
           status: STATUS_MAP[row.status.toLowerCase().trim()],
           property_type: row.tipo_imovel ? row.tipo_imovel.toLowerCase().trim() : null,
@@ -723,7 +725,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
       // Save import history for empreendimento imports
       if (importType === 'empreendimento' && effectivePropertyId) {
         await supabase.from('import_history').insert({
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           property_id: effectivePropertyId,
           file_name: selectedFile.name,
           file_type: selectedFile.name.split('.').pop() || 'unknown',

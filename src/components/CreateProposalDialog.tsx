@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -31,6 +32,7 @@ interface CreateProposalDialogProps {
 export const CreateProposalDialog = ({ open, onOpenChange, onSuccess }: CreateProposalDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [leads, setLeads] = useState<{ id: string; name: string }[]>([]);
   const [units, setUnits] = useState<{ id: string; unit_number: string; property: { name: string }; price: number | null }[]>([]);
@@ -126,7 +128,7 @@ Assinatura do Corretor
 
       const { error: dbError } = await supabase.from('documents').insert([
         {
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           lead_id: formData.lead_id,
           unit_id: formData.unit_id,
           document_type: 'proposal',

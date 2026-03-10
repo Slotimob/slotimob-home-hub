@@ -19,6 +19,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import type { Deal } from '@/pages/Pipeline';
 
 interface CreateCommissionDialogProps {
@@ -35,6 +36,7 @@ export const CreateCommissionDialog = ({
   onSuccess,
 }: CreateCommissionDialogProps) => {
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [isCreating, setIsCreating] = useState(false);
   const [saleValue, setSaleValue] = useState<number>(deal?.estimated_value || 0);
   const [commissionRate, setCommissionRate] = useState<number>(5);
@@ -53,7 +55,7 @@ export const CreateCommissionDialog = ({
 
       // Create income transaction for commission
       const { error } = await supabase.from('financial_transactions').insert({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         type: 'income',
         description: `Comissão - ${deal.lead.name} - ${deal.property.name}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`,
         amount: commissionValue,

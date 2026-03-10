@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -51,6 +52,7 @@ export const CreateDealFromLeadDialog = ({
 }: CreateDealFromLeadDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [properties, setProperties] = useState<{ id: string; name: string; city?: string | null }[]>([]);
   const [units, setUnits] = useState<{ id: string; unit_number: string }[]>([]);
@@ -133,7 +135,7 @@ export const CreateDealFromLeadDialog = ({
         estimated_value: formData.estimated_value ? parseFloat(formData.estimated_value) : null,
         estimated_commission: formData.estimated_commission ? parseFloat(formData.estimated_commission) : null,
         notes: formData.notes || null,
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         stage: 'new_lead',
       }]);
 

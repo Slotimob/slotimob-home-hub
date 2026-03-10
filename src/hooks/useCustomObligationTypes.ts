@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import type { ObligationType } from "./useAssetHealth";
 
 export interface CustomObligationType {
@@ -51,6 +52,7 @@ export function useCustomObligationTypes() {
 
 export function useCreateCustomObligationType() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -60,7 +62,7 @@ export function useCreateCustomObligationType() {
       const { data: result, error } = await supabase
         .from("custom_obligation_types")
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           name: data.name,
           icon: data.icon || "Circle",
           default_due_day: data.default_due_day || 10,

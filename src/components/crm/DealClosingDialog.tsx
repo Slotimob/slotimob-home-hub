@@ -30,6 +30,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import confetti from 'canvas-confetti';
 import type { Deal } from '@/pages/Pipeline';
 import { useLeaseConversionContext } from '@/hooks/useLeaseConversionContext';
@@ -48,6 +49,7 @@ export const DealClosingDialog = ({
   onSuccess,
 }: DealClosingDialogProps) => {
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const { createContextFromDeal, navigateToCreateLease } = useLeaseConversionContext();
   const [isProcessing, setIsProcessing] = useState(false);
   const [saleValue, setSaleValue] = useState<number>(0);
@@ -140,7 +142,7 @@ export const DealClosingDialog = ({
       // 2. Create financial transaction if requested
       if (shouldCreateTransaction && saleValue > 0) {
         const { error: transactionError } = await supabase.from('financial_transactions').insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           type: 'income',
           description: `Comissão - ${deal.lead.name} - ${deal.property.name}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`,
           amount: commissionValue,

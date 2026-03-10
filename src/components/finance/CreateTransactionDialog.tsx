@@ -22,6 +22,7 @@ import { addMonths, format } from "date-fns";
 
 import { ObligationType } from "@/hooks/useAssetHealth";
 import { ObligationSelector } from "@/components/finance/ObligationSelector";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export interface TransactionPrefill {
   description?: string;
@@ -55,6 +56,7 @@ export function CreateTransactionDialog({
 }: CreateTransactionDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { effectiveBrokerId } = useWorkspace();
   
   // Determine initial mode - check if it's a transfer edit
   const isTransferEdit = editTransaction?.obligation_type === "transfer";
@@ -172,6 +174,7 @@ export function CreateTransactionDialog({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
+      const brokerId = effectiveBrokerId || user.id;
 
       // Handle Transfer Mode
       if (mode === "transfer") {
@@ -193,7 +196,7 @@ export function CreateTransactionDialog({
         // Create two transactions: one expense (source) and one income (destination)
         const transferTransactions = [
           {
-            broker_id: user.id,
+            broker_id: brokerId,
             assigned_user_id: user.id,
             type: "expense",
             description: `Transferência para ${destAccount?.name || "outra conta"}`,
@@ -208,7 +211,7 @@ export function CreateTransactionDialog({
             group_id: transferGroupId,
           },
           {
-            broker_id: user.id,
+            broker_id: brokerId,
             assigned_user_id: user.id,
             type: "income",
             description: `Transferência de ${sourceAccount?.name || "outra conta"}`,
@@ -237,7 +240,7 @@ export function CreateTransactionDialog({
 
       // Normal transaction flow
       const baseTransactionData = {
-        broker_id: user.id,
+        broker_id: brokerId,
         assigned_user_id: user.id,
         type,
         description: formData.description,

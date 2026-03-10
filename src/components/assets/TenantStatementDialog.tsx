@@ -74,7 +74,6 @@ export function TenantStatementDialog({
       const { data, error } = await supabase
         .from("financial_transactions")
         .select("*")
-        .eq("broker_id", user.id)
         .eq("unit_id", lease.unit_id)
         .eq("type", "income")
         .gte("due_date", format(periodDates.start, "yyyy-MM-dd"))

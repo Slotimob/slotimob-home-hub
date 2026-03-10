@@ -1,6 +1,7 @@
  import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
  import { supabase } from "@/integrations/supabase/client";
  import { useAuth } from "./useAuth";
+ import { useWorkspace } from "./useWorkspace";
  import { toast } from "sonner";
  
  export interface LeaseAdjustment {
@@ -26,9 +27,8 @@
        const { data, error } = await supabase
          .from("lease_adjustments")
          .select("*")
-         .eq("lease_id", leaseId)
-         .eq("broker_id", user.id)
-         .order("adjustment_date", { ascending: false });
+          .eq("lease_id", leaseId)
+          .order("adjustment_date", { ascending: false });
  
        if (error) throw error;
        return data as LeaseAdjustment[];
@@ -56,18 +56,16 @@
        // Step 1: Delete the adjustment record
        const { error: deleteError } = await supabase
          .from("lease_adjustments")
-         .delete()
-         .eq("id", adjustmentId)
-         .eq("broker_id", user.id);
+          .delete()
+          .eq("id", adjustmentId);
  
        if (deleteError) throw deleteError;
  
        // Step 2: Revert lease rent_amount to previous value
        const { error: updateError } = await supabase
          .from("leases")
-         .update({ rent_amount: previousValue })
-         .eq("id", leaseId)
-         .eq("broker_id", user.id);
+          .update({ rent_amount: previousValue })
+          .eq("id", leaseId);
  
        if (updateError) throw updateError;
  
@@ -75,9 +73,8 @@
        const today = new Date().toISOString().split("T")[0];
        const { data: updatedTx, error: txError } = await supabase
          .from("financial_transactions")
-         .update({ amount: previousValue })
-         .eq("broker_id", user.id)
-         .eq("reference", `lease:${leaseId}`)
+          .update({ amount: previousValue })
+          .eq("reference", `lease:${leaseId}`)
          .eq("status", "pending")
          .gte("due_date", today)
          .select("id");

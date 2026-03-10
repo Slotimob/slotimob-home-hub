@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { AppLayout } from "@/components/AppLayout";
 import { SEOHead } from "@/components/SEOHead";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -120,7 +121,6 @@ const GerencialGestao = () => {
       const { data, error } = await supabase
         .from("managerial_transactions")
         .select("*")
-        .eq("broker_id", user.id)
         .eq("competency_period", competencyPeriod)
         .order("due_date", { ascending: true });
       if (error) throw error;
@@ -150,7 +150,7 @@ const GerencialGestao = () => {
     mutationFn: async (isEdit: boolean) => {
       if (!user) throw new Error("Not authenticated");
       const payload = {
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         unit_id: formUnitId,
         description: formDescription,
         amount: parseFloat(formAmount) || 0,

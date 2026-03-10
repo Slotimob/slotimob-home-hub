@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { format, addYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -334,7 +335,7 @@ export function CreateLeaseWizard({
           } else {
             // Create new contact with "Fiador" category
             await supabase.from("contacts").insert({
-              broker_id: user.id,
+              broker_id: effectiveBrokerId || user.id,
               name: guarantorData.nome,
               document_type: "CPF",
               document_number: guarantorData.cpf,

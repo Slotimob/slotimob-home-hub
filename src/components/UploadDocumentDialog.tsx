@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -41,6 +42,7 @@ interface UploadDocumentDialogProps {
 export const UploadDocumentDialog = ({ open, onOpenChange, onSuccess }: UploadDocumentDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [leads, setLeads] = useState<{ id: string; name: string }[]>([]);
@@ -130,7 +132,7 @@ export const UploadDocumentDialog = ({ open, onOpenChange, onSuccess }: UploadDo
       const { error: dbError } = await supabase.from('documents').insert([
         {
           ...payload,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           file_path: filePath,
           file_size: file.size,
           mime_type: file.type,

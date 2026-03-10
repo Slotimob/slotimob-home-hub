@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ interface CreatePropertyDialogProps {
 export const CreatePropertyDialog = ({ open, onOpenChange, onSuccess }: CreatePropertyDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (payload: PropertyPayload) => {
@@ -29,7 +31,7 @@ export const CreatePropertyDialog = ({ open, onOpenChange, onSuccess }: CreatePr
 
       const { error } = await supabase.from('properties').insert([
         {
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           ...payload,
         },
       ]);

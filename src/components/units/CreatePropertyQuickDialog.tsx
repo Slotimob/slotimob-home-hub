@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +27,7 @@ export function CreatePropertyQuickDialog({
 }: CreatePropertyQuickDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
@@ -50,7 +52,7 @@ export function CreatePropertyQuickDialog({
           {
             name: name.trim(),
             city: city.trim() || null,
-            broker_id: user?.id,
+            broker_id: effectiveBrokerId,
           },
         ])
         .select('id, name')

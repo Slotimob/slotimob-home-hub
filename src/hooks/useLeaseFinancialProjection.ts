@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { addMonths, setDate, format, differenceInMonths, lastDayOfMonth, getDate } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -47,6 +48,7 @@ function calculateDueDate(baseDate: Date, dueDay: number): Date {
  */
 export function useLeaseFinancialProjection() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
 
   const generateProjections = useMutation({
@@ -68,7 +70,6 @@ export function useLeaseFinancialProjection() {
       const { data: existingTransactions, error: checkError } = await supabase
         .from("financial_transactions")
         .select("id")
-        .eq("broker_id", user.id)
         .eq("reference", `lease:${leaseId}`)
         .limit(1);
 
@@ -83,7 +84,6 @@ export function useLeaseFinancialProjection() {
       const { data: rentCategory, error: catError } = await supabase
         .from("financial_categories")
         .select("id")
-        .eq("broker_id", user.id)
         .eq("name", "Receita de Aluguel")
         .eq("type", "income")
         .maybeSingle();
@@ -124,7 +124,7 @@ export function useLeaseFinancialProjection() {
         const capitalizedMonthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
         transactions.push({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           unit_id: unitId,
           contact_id: tenantContactId,
           type: "income",
@@ -184,7 +184,6 @@ export function useDeleteLeaseProjections() {
       const { data, error } = await supabase
         .from("financial_transactions")
         .delete()
-        .eq("broker_id", user.id)
         .eq("reference", `lease:${leaseId}`)
         .eq("status", "pending")
         .select("id");
@@ -225,7 +224,6 @@ export function useUpdateFutureProjections() {
       const { data, error } = await supabase
         .from("financial_transactions")
         .update({ amount: newAmount })
-        .eq("broker_id", user.id)
         .eq("reference", `lease:${leaseId}`)
         .eq("status", "pending")
         .gte("due_date", effectiveDateStr)
@@ -256,7 +254,6 @@ export function useCountFutureProjections() {
     const { count, error } = await supabase
       .from("financial_transactions")
       .select("id", { count: "exact", head: true })
-      .eq("broker_id", user.id)
       .eq("reference", `lease:${leaseId}`)
       .eq("status", "pending")
       .gte("due_date", fromDate);

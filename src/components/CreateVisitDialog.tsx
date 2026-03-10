@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,7 @@ export function CreateVisitDialog({
 }: CreateVisitDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [time, setTime] = useState("10:00");
@@ -152,7 +154,7 @@ export function CreateVisitDialog({
 
       // Determine which IDs to use based on asset type
       const visitData = {
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         lead_id: leadId,
         property_id: assetType === "property" ? propertyId : null,
         unit_id: assetType === "property" ? (unitId || null) : standaloneUnitId,

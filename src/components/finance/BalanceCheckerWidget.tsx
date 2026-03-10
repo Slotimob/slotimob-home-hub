@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
 
@@ -39,6 +40,7 @@ export function BalanceCheckerWidget({
 }: BalanceCheckerWidgetProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
   
   // Initialize with current month
@@ -209,7 +211,7 @@ export function BalanceCheckerWidget({
       const isMatched = Math.abs(difference) < 0.01;
 
       const auditData = {
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         bank_account_id: bankAccountId,
         audit_date: format(effectiveEndDate, "yyyy-MM-dd"),
         bank_balance: bankBalanceNum,

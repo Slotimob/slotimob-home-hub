@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, Save, Copy, FileText, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { toast } from 'sonner';
 import { generateDocumentPDF } from '@/utils/pdfGenerator';
 import { DocumentTemplate, TemplateField } from '@/utils/documentTemplates';
@@ -42,6 +43,7 @@ export const CustomTemplateEditorDialog = ({
   template,
 }: CustomTemplateEditorDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -100,7 +102,7 @@ export const CustomTemplateEditorDialog = ({
       const { error } = await supabase
         .from('contract_templates')
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId,
           name: `${name} (Cópia)`,
           description,
           content,

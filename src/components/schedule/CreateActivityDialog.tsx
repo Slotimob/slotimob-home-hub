@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { ACTIVITY_TYPES } from './ActivityPalette';
@@ -31,6 +32,7 @@ export function CreateActivityDialog({
 }: CreateActivityDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [isLoading, setIsLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -68,7 +70,7 @@ export function CreateActivityDialog({
       scheduledAt.setHours(scheduledHour, 0, 0, 0);
 
       const { error } = await supabase.from('schedule_activities').insert({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId,
         activity_type: activityType,
         title,
         description: description || null,

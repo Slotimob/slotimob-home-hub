@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface AddTaskDialogProps {
   dealId: string;
@@ -30,6 +31,7 @@ const hourOptions = Array.from({ length: 14 }, (_, i) => i + 7).map(h => ({
 export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTaskDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -55,7 +57,7 @@ export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTask
 
       const { error } = await supabase.from('deal_tasks').insert({
         deal_id: dealId,
-        broker_id: user.id,
+        broker_id: effectiveBrokerId,
         title: formData.title,
         description: formData.description || null,
         priority: formData.priority,

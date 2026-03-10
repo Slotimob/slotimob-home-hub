@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -70,6 +71,7 @@ interface CreateUnitWithPropertyDialogProps {
 export const CreateUnitWithPropertyDialog = ({ open, onOpenChange, onSuccess }: CreateUnitWithPropertyDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(false);
@@ -162,7 +164,7 @@ export const CreateUnitWithPropertyDialog = ({ open, onOpenChange, onSuccess }: 
       const { error } = await supabase.from('units').insert([
         {
           ...payload,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           lead_id: formData.lead_id || null,
         },
       ]);

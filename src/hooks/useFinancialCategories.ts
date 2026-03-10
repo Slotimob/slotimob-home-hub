@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_FINANCIAL_CATEGORIES, CATEGORY_COLORS, CATEGORIES_WITH_TOOLTIPS } from "@/utils/financialConstants";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface CreateCategoryData {
   name: string;
@@ -26,6 +27,7 @@ interface CategoryWithMeta {
 export function useFinancialCategories(type?: 'income' | 'expense') {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { effectiveBrokerId } = useWorkspace();
 
   const { data: categories = [], isLoading, refetch } = useQuery({
     queryKey: ["financial-categories", type],
@@ -79,7 +81,7 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
 
       // Insert default categories with enforced colors
       const categoriesToInsert = DEFAULT_FINANCIAL_CATEGORIES.map(cat => ({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         name: cat.name,
         type: cat.type,
         category_group: cat.group,
@@ -125,7 +127,7 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
 
       // Insert default categories with enforced colors
       const categoriesToInsert = DEFAULT_FINANCIAL_CATEGORIES.map(cat => ({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         name: cat.name,
         type: cat.type,
         category_group: cat.group,
@@ -164,7 +166,7 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
       const { data: category, error } = await supabase
         .from("financial_categories")
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           name: data.name,
           type: data.type,
           category_group: data.category_group,
