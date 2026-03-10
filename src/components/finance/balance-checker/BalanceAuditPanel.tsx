@@ -25,6 +25,7 @@ export function BalanceAuditPanel({
   initialBalance = 0,
 }: BalanceAuditPanelProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
