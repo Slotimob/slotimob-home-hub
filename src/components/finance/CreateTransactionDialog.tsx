@@ -56,6 +56,7 @@ export function CreateTransactionDialog({
 }: CreateTransactionDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { effectiveBrokerId } = useWorkspace();
   
   // Determine initial mode - check if it's a transfer edit
   const isTransferEdit = editTransaction?.obligation_type === "transfer";
