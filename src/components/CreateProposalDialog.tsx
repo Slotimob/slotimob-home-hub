@@ -32,6 +32,7 @@ interface CreateProposalDialogProps {
 export const CreateProposalDialog = ({ open, onOpenChange, onSuccess }: CreateProposalDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [leads, setLeads] = useState<{ id: string; name: string }[]>([]);
   const [units, setUnits] = useState<{ id: string; unit_number: string; property: { name: string }; price: number | null }[]>([]);
