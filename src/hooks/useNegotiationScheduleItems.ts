@@ -60,7 +60,6 @@ export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegot
             properties!inner (name)
           )
         `)
-        .eq('broker_id', user.id)
         .not('scheduled_at', 'is', null)
         .gte('scheduled_at', startDate.toISOString())
         .lte('scheduled_at', endDate.toISOString())

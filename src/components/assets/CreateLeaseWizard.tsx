@@ -335,7 +335,7 @@ export function CreateLeaseWizard({
           } else {
             // Create new contact with "Fiador" category
             await supabase.from("contacts").insert({
-              broker_id: user.id,
+              broker_id: effectiveBrokerId || user.id,
               name: guarantorData.nome,
               document_type: "CPF",
               document_number: guarantorData.cpf,

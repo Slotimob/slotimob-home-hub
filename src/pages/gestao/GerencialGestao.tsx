@@ -150,7 +150,7 @@ const GerencialGestao = () => {
     mutationFn: async (isEdit: boolean) => {
       if (!user) throw new Error("Not authenticated");
       const payload = {
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         unit_id: formUnitId,
         description: formDescription,
         amount: parseFloat(formAmount) || 0,

@@ -211,7 +211,7 @@ export function BalanceCheckerWidget({
       const isMatched = Math.abs(difference) < 0.01;
 
       const auditData = {
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         bank_account_id: bankAccountId,
         audit_date: format(effectiveEndDate, "yyyy-MM-dd"),
         bank_balance: bankBalanceNum,
