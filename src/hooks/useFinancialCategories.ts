@@ -166,7 +166,7 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
       const { data: category, error } = await supabase
         .from("financial_categories")
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           name: data.name,
           type: data.type,
           category_group: data.category_group,

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { AppLayout } from "@/components/AppLayout";
 import { SEOHead } from "@/components/SEOHead";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
