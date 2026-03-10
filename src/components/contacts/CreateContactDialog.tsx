@@ -70,6 +70,7 @@ export const CreateContactDialog = ({
   defaultCategory,
 }: CreateContactDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const { searchCepData, isLoadingCep } = useCepSearch();
   
