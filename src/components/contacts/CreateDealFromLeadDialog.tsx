@@ -135,7 +135,7 @@ export const CreateDealFromLeadDialog = ({
         estimated_value: formData.estimated_value ? parseFloat(formData.estimated_value) : null,
         estimated_commission: formData.estimated_commission ? parseFloat(formData.estimated_commission) : null,
         notes: formData.notes || null,
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         stage: 'new_lead',
       }]);
 

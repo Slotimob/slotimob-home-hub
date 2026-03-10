@@ -197,7 +197,7 @@ export const ContactsImportExportDialog = ({
       let errorCount = 0;
 
       for (const row of parsedData) {
-        const record: Record<string, any> = { broker_id: user.id };
+        const record: Record<string, any> = { broker_id: effectiveBrokerId };
         
         for (const [key, value] of Object.entries(row)) {
           const fieldName = headerMap[key.toLowerCase()];

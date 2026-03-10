@@ -164,7 +164,7 @@ export const CreateUnitWithPropertyDialog = ({ open, onOpenChange, onSuccess }: 
       const { error } = await supabase.from('units').insert([
         {
           ...payload,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           lead_id: formData.lead_id || null,
         },
       ]);

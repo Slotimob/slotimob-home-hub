@@ -43,6 +43,7 @@ export const UploadDocumentDialog = ({ open, onOpenChange, onSuccess }: UploadDo
   const { user } = useAuth();
   const { toast } = useToast();
   const { effectiveBrokerId } = useWorkspace();
+  const [saving, setSaving] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [leads, setLeads] = useState<{ id: string; name: string }[]>([]);
   const [deals, setDeals] = useState<{ id: string; lead: { name: string } }[]>([]);

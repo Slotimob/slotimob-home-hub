@@ -102,7 +102,7 @@ export const CustomTemplateEditorDialog = ({
       const { error } = await supabase
         .from('contract_templates')
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId,
           name: `${name} (Cópia)`,
           description,
           content,

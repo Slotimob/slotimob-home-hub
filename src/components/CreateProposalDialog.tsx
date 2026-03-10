@@ -128,7 +128,7 @@ Assinatura do Corretor
 
       const { error: dbError } = await supabase.from('documents').insert([
         {
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           lead_id: formData.lead_id,
           unit_id: formData.unit_id,
           document_type: 'proposal',

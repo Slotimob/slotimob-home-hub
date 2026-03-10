@@ -23,6 +23,7 @@ export const CreatePropertyDialog = ({ open, onOpenChange, onSuccess }: CreatePr
   const { user } = useAuth();
   const { toast } = useToast();
   const { effectiveBrokerId } = useWorkspace();
+  const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (payload: PropertyPayload) => {
     try {
