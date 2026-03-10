@@ -154,7 +154,7 @@ export function CreateVisitDialog({
 
       // Determine which IDs to use based on asset type
       const visitData = {
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         lead_id: leadId,
         property_id: assetType === "property" ? propertyId : null,
         unit_id: assetType === "property" ? (unitId || null) : standaloneUnitId,

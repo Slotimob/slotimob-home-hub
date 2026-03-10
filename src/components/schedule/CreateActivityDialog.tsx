@@ -70,7 +70,7 @@ export function CreateActivityDialog({
       scheduledAt.setHours(scheduledHour, 0, 0, 0);
 
       const { error } = await supabase.from('schedule_activities').insert({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId,
         activity_type: activityType,
         title,
         description: description || null,

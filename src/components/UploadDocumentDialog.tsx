@@ -131,7 +131,7 @@ export const UploadDocumentDialog = ({ open, onOpenChange, onSuccess }: UploadDo
       const { error: dbError } = await supabase.from('documents').insert([
         {
           ...payload,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           file_path: filePath,
           file_size: file.size,
           mime_type: file.type,

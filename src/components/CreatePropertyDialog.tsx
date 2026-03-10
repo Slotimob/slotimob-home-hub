@@ -30,7 +30,7 @@ export const CreatePropertyDialog = ({ open, onOpenChange, onSuccess }: CreatePr
 
       const { error } = await supabase.from('properties').insert([
         {
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           ...payload,
         },
       ]);

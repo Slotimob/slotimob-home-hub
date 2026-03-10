@@ -71,6 +71,7 @@ interface CreateUnitWithPropertyDialogProps {
 export const CreateUnitWithPropertyDialog = ({ open, onOpenChange, onSuccess }: CreateUnitWithPropertyDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(false);

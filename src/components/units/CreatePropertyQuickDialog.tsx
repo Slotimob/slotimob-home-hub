@@ -52,7 +52,7 @@ export function CreatePropertyQuickDialog({
           {
             name: name.trim(),
             city: city.trim() || null,
-            broker_id: user?.id,
+            broker_id: effectiveBrokerId,
           },
         ])
         .select('id, name')
