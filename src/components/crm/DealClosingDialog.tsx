@@ -49,6 +49,7 @@ export const DealClosingDialog = ({
   onSuccess,
 }: DealClosingDialogProps) => {
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const { createContextFromDeal, navigateToCreateLease } = useLeaseConversionContext();
   const [isProcessing, setIsProcessing] = useState(false);
   const [saleValue, setSaleValue] = useState<number>(0);
