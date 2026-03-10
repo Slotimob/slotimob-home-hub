@@ -12,6 +12,7 @@ import { Download, RotateCcw, Send, Save, FileText, Edit3 } from 'lucide-react';
 import { DocumentTemplate, TemplateField } from '@/utils/documentTemplates';
 import { generateDocumentPDF, fillTemplateContent } from '@/utils/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SendDocumentDialog } from './SendDocumentDialog';
@@ -52,6 +53,7 @@ export const DocumentEditorDialog = ({
   const [mobileTab, setMobileTab] = useState<'preencher' | 'visualizar'>('preencher');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(existingDraftId || null);
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   
   // Debounce timer for preview updates
@@ -148,7 +150,7 @@ export const DocumentEditorDialog = ({
         const { data, error } = await supabase
           .from('generated_documents')
           .insert({
-            broker_id: user.id,
+            broker_id: effectiveBrokerId || user.id,
             template_id: template.id,
             template_name: template.name,
             filled_fields: filledFields,
@@ -211,7 +213,7 @@ export const DocumentEditorDialog = ({
       const { error } = await supabase
         .from('contract_templates')
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           name: `${template.name} (Personalizado)`,
           description: template.description,
           content: finalContent,

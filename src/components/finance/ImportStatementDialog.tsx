@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload, FileText, AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -37,6 +39,8 @@ export function ImportStatementDialog({
   onSuccess,
 }: ImportStatementDialogProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -278,8 +282,8 @@ export function ImportStatementDialog({
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
+      const brokerId = effectiveBrokerId || user.id;
 
       // Parse full file
       let entries: ParsedEntry[] = [];
@@ -303,7 +307,7 @@ export function ImportStatementDialog({
       const { data: importRecord, error: importError } = await supabase
         .from("bank_statement_imports")
         .insert({
-          broker_id: user.id,
+          broker_id: brokerId,
           bank_account_id: selectedBankAccountId,
           file_name: file.name,
           file_type: fileExtension,
@@ -316,7 +320,7 @@ export function ImportStatementDialog({
 
       // Insert entries linked to the import
       const insertData = entries.map((entry) => ({
-        broker_id: user.id,
+        broker_id: brokerId,
         bank_account_id: selectedBankAccountId,
         description: entry.description,
         amount: entry.amount,

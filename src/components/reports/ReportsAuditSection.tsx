@@ -37,7 +37,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
           unit:units(unit_number),
           category:financial_categories(name)
         `)
-        .eq('broker_id', user.id)
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
 
@@ -101,7 +100,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       let query = supabase
         .from('financial_transactions')
         .select(`*, bank_account:bank_accounts(name), unit:units(unit_number), category:financial_categories(name)`)
-        .eq('broker_id', user.id)
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
 
@@ -146,7 +144,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
           *,
           bank_account:bank_accounts(name)
         `)
-        .eq('broker_id', user.id)
         .eq('status', 'paid')
         .eq('is_reconciled', false)
         .gte('paid_date', dateRange.from.toISOString().split('T')[0])
@@ -203,7 +200,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       let query = supabase
         .from('financial_transactions')
         .select(`*, bank_account:bank_accounts(name)`)
-        .eq('broker_id', user.id)
         .eq('status', 'paid')
         .eq('is_reconciled', false)
         .gte('paid_date', dateRange.from.toISOString().split('T')[0])
@@ -246,7 +242,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
           *,
           bank_account:bank_accounts(name)
         `)
-        .eq('broker_id', user.id)
         .not('group_id', 'is', null)
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0])
@@ -310,7 +305,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       const { data: transactions } = await supabase
         .from('financial_transactions')
         .select(`*, bank_account:bank_accounts(name)`)
-        .eq('broker_id', user.id)
         .not('group_id', 'is', null)
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
@@ -365,7 +359,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
           unit:units(unit_number, id),
           tenant:contacts!leases_tenant_contact_id_fkey(name)
         `)
-        .eq('broker_id', user.id)
         .eq('status', 'active');
 
       if (selectedUnitId) {
@@ -381,7 +374,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       const { data: futureTransactions } = await supabase
         .from('financial_transactions')
         .select('unit_id')
-        .eq('broker_id', user.id)
         .eq('type', 'income')
         .gte('due_date', today.toISOString().split('T')[0])
         .lte('due_date', futureDate.toISOString().split('T')[0]);
@@ -399,7 +391,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
         ? await supabase
             .from('financial_transactions')
             .select('unit_id, due_date')
-            .eq('broker_id', user.id)
             .eq('type', 'income')
             .in('unit_id', unitIds)
             .order('due_date', { ascending: false })
@@ -454,7 +445,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       let leasesQuery = supabase
         .from('leases')
         .select(`*, unit:units(unit_number, id), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
-        .eq('broker_id', user.id)
         .eq('status', 'active');
 
       if (selectedUnitId) {

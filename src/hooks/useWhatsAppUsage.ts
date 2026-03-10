@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useWorkspace } from './useWorkspace';
 
 export interface WhatsAppUsage {
   service_conversations: number;
@@ -17,14 +18,15 @@ export interface WhatsAppUsage {
 
 export const useWhatsAppUsage = () => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['whatsapp-usage', user?.id],
+    queryKey: ['whatsapp-usage', effectiveBrokerId || user?.id],
     queryFn: async (): Promise<WhatsAppUsage | null> => {
       if (!user?.id) return null;
 
       const { data, error } = await supabase.rpc('get_whatsapp_monthly_usage', {
-        p_broker_id: user.id,
+        p_broker_id: effectiveBrokerId || user.id,
       });
 
       if (error) {

@@ -27,8 +27,7 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
 
     const { data: leads } = await supabase
       .from('leads')
-      .select('id, name, cpf_cnpj')
-      .eq('broker_id', user.id);
+      .select('id, name, cpf_cnpj');
 
     const leadsWithoutCpf = (leads || []).filter(l => !l.cpf_cnpj);
     if (leadsWithoutCpf.length > 0) {
@@ -41,7 +40,6 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
         id,
         tenant:contacts!leases_tenant_contact_id_fkey(name, document_number)
       `)
-      .eq('broker_id', user.id)
       .eq('status', 'active');
 
     if (selectedUnitId) {
@@ -79,7 +77,6 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
           tenant:contacts!leases_tenant_contact_id_fkey(name, document_number),
           owner:contacts!leases_owner_contact_id_fkey(name, document_number)
         `)
-        .eq('broker_id', user.id)
         .gte('start_date', dateRange.from.toISOString().split('T')[0])
         .or(`end_date.is.null,end_date.gte.${dateRange.from.toISOString().split('T')[0]}`);
 
@@ -92,7 +89,6 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
       let paymentsQuery = supabase
         .from('financial_transactions')
         .select('*')
-        .eq('broker_id', user.id)
         .eq('type', 'income')
         .eq('obligation_type', 'rent')
         .eq('status', 'paid')
@@ -162,8 +158,7 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
           unit:units(unit_number, address, city, state, postal_code, property:properties(name, address, city, state, postal_code)),
           tenant:contacts!leases_tenant_contact_id_fkey(name, document_number, address, city, state, postal_code),
           owner:contacts!leases_owner_contact_id_fkey(name, document_number)
-        `)
-        .eq('broker_id', user.id);
+        `);
 
       if (selectedUnitId) {
         leasesQuery = leasesQuery.eq('unit_id', selectedUnitId);
@@ -174,7 +169,6 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
       let paymentsQuery = supabase
         .from('financial_transactions')
         .select('*')
-        .eq('broker_id', user.id)
         .eq('type', 'income')
         .eq('obligation_type', 'rent')
         .eq('status', 'paid')

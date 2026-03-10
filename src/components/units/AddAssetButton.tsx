@@ -7,6 +7,7 @@ import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 
 interface AddAssetButtonProps {
@@ -33,6 +34,7 @@ export function AddAssetButton({
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { plan, features } = useSubscriptionLimits();
 
   // Count current units
@@ -43,7 +45,7 @@ export function AddAssetButton({
       const { count, error } = await supabase
         .from('units')
         .select('*', { count: 'exact', head: true })
-        .eq('broker_id', user.id);
+        .eq('broker_id', effectiveBrokerId || user.id);
       if (error) return 0;
       return count || 0;
     },

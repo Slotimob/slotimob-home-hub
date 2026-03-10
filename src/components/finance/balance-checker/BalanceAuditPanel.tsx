@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { BalanceComparisonGrid } from "./BalanceComparisonGrid";
 
@@ -24,6 +25,7 @@ export function BalanceAuditPanel({
   initialBalance = 0,
 }: BalanceAuditPanelProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -234,7 +236,7 @@ export function BalanceAuditPanel({
       const matched = Math.abs(diff) < 0.01;
 
       const auditData = {
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         bank_account_id: bankAccountId,
         audit_date: format(referenceDate, "yyyy-MM-dd"),
         bank_balance: bankBalanceNum,

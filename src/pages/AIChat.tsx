@@ -18,6 +18,7 @@ import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
 import { AssetSelectorDialog, SelectedAsset } from '@/components/chat/AssetSelectorDialog';
 import { Badge } from '@/components/ui/badge';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface ChatMessage {
   id?: string;
@@ -31,6 +32,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 export default function AIChat() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { isOwner } = usePermissions();
   const { credits, isLoading: isLoadingCredits, refetch: refetchCredits } = useAICredits();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -71,7 +73,7 @@ export default function AIChat() {
   const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string) => {
     if (!user?.id) return;
     await supabase.from('chat_messages').insert({
-      broker_id: user.id,
+      broker_id: effectiveBrokerId || user.id,
       role,
       content,
     });

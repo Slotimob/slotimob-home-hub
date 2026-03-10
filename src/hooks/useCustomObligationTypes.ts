@@ -40,7 +40,7 @@ export function useCustomObligationTypes() {
       const { data, error } = await supabase
         .from("custom_obligation_types")
         .select("*")
-        .eq("broker_id", user.id)
+        // RLS handles workspace filtering
         .order("name");
 
       if (error) throw error;

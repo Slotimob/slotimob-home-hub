@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, addYears } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -67,6 +68,7 @@ export function AdjustmentCalculatorDialog({
   isUrgent = false,
 }: AdjustmentCalculatorDialogProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -109,7 +111,7 @@ export function AdjustmentCalculatorDialog({
       const { error: historyError } = await supabase
         .from("lease_adjustments")
         .insert({
-          broker_id: user.id,
+           broker_id: effectiveBrokerId || user.id,
           lease_id: lease.id,
           adjustment_date: format(new Date(), "yyyy-MM-dd"),
           previous_value: currentValue,
