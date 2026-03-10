@@ -119,6 +119,7 @@ export function CreateLeaseWizard({
   editLease,
 }: CreateLeaseWizardProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const createLease = useCreateLease();
   const updateLease = useUpdateLease();

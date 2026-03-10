@@ -92,6 +92,7 @@ const OBLIGATION_LABELS: Record<string, { label: string; icon: typeof HomeIcon }
 
 const GerencialGestao = () => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
