@@ -32,6 +32,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 export default function AIChat() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { isOwner } = usePermissions();
   const { credits, isLoading: isLoadingCredits, refetch: refetchCredits } = useAICredits();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
