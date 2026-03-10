@@ -127,7 +127,7 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
 
       // Insert default categories with enforced colors
       const categoriesToInsert = DEFAULT_FINANCIAL_CATEGORIES.map(cat => ({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         name: cat.name,
         type: cat.type,
         category_group: cat.group,
