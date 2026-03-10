@@ -152,6 +152,7 @@ export interface UpdateLeaseData extends Partial<CreateLeaseData> {
 
 export function useLeases() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
 
   return useQuery({
     queryKey: ["leases", user?.id],
