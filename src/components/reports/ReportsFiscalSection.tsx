@@ -40,7 +40,6 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
         id,
         tenant:contacts!leases_tenant_contact_id_fkey(name, document_number)
       `)
-      .eq('broker_id', user.id)
       .eq('status', 'active');
 
     if (selectedUnitId) {
