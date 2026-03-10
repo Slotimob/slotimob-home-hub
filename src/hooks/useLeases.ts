@@ -461,8 +461,7 @@ export function useTerminateLease() {
             is_occupied: false,
             tenant_contact_id: null,
           })
-          .eq("id", lease.unit_id)
-          .eq("broker_id", user.id);
+          .eq("id", lease.unit_id);
 
         if (unitError) {
           console.error("Error updating unit:", unitError);
