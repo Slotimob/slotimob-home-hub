@@ -94,6 +94,7 @@ const featureDescriptions: Record<string, { name: string; upgradeMessage: string
 
 export const useSubscriptionLimits = (): SubscriptionLimits => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
 
   const { data, isLoading } = useQuery({
     queryKey: ['user-plan-features', user?.id],
