@@ -39,6 +39,8 @@ export function ImportStatementDialog({
   onSuccess,
 }: ImportStatementDialogProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
