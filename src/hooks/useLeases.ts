@@ -251,7 +251,7 @@ export function useCreateLease() {
       const { data: lease, error } = await supabase
         .from("leases")
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           unit_id: data.unit_id,
           tenant_contact_id: data.tenant_contact_id,
           owner_contact_id: data.owner_contact_id || null,
