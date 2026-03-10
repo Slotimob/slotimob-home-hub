@@ -22,7 +22,7 @@ interface CreatePropertyDialogProps {
 export const CreatePropertyDialog = ({ open, onOpenChange, onSuccess }: CreatePropertyDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [saving, setSaving] = useState(false);
+  const { effectiveBrokerId } = useWorkspace();
 
   const handleSubmit = async (payload: PropertyPayload) => {
     try {
