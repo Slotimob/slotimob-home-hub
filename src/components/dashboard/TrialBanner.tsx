@@ -27,6 +27,9 @@ export function TrialBanner() {
 
   if (trialLoading || planLoading) return null;
 
+  // Members don't have their own trial - they use the Master's subscription
+  if (isMember) return null;
+
   // Only show for free/trialing users
   if (plan !== 'free' && !isTrialActive) return null;
 
