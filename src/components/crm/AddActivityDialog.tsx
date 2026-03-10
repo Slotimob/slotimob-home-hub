@@ -66,7 +66,7 @@ export const AddActivityDialog = ({ dealId, open, onOpenChange, onSuccess }: Add
 
       const { error } = await supabase.from('deal_activities').insert({
         deal_id: dealId,
-        broker_id: user.id,
+        broker_id: effectiveBrokerId,
         activity_type: formData.activity_type,
         title: formData.title,
         description: formData.description || null,

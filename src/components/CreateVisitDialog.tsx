@@ -44,6 +44,7 @@ export function CreateVisitDialog({
 }: CreateVisitDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [time, setTime] = useState("10:00");

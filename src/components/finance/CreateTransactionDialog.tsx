@@ -240,7 +240,7 @@ export function CreateTransactionDialog({
 
       // Normal transaction flow
       const baseTransactionData = {
-        broker_id: user.id,
+        broker_id: brokerId,
         assigned_user_id: user.id,
         type,
         description: formData.description,

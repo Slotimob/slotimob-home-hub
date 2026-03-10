@@ -57,7 +57,7 @@ export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTask
 
       const { error } = await supabase.from('deal_tasks').insert({
         deal_id: dealId,
-        broker_id: user.id,
+        broker_id: effectiveBrokerId,
         title: formData.title,
         description: formData.description || null,
         priority: formData.priority,
