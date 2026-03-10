@@ -83,18 +83,23 @@ export function AppSidebar() {
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
 
+  const isPlanProOrAbove = plan === 'pro' || plan === 'business';
+
   // Determine which sub-items are locked
   const isSubItemLocked = (url: string, title: string): boolean => {
     if (url === '/finance/dre' || url === '/finance/reconciliation') return !canUse('finance_full');
     if (url === '/whatsapp' || title === 'Mensagens') return !features || (features.whatsapp_instances_limit ?? 0) <= 0;
     if (url === '/ai-chat') return !canUse('ai_chat');
+    // Gestão sub-items locked for free/essencial (unless trialing)
+    if (url.startsWith('/gestao/')) return !isPlanProOrAbove && !isTrialActive;
     return false;
   };
 
   const getTargetPlan = (url: string): 'essencial' | 'pro' | 'business' => {
-    if (url === '/whatsapp' || url === '/finance/dre' || url === '/finance/reconciliation') return 'pro';
-    if (url === '/ai-chat') return 'pro';
-    return 'pro';
+    if (url === '/whatsapp' || url === '/finance/dre' || url === '/finance/reconciliation') return plan === 'pro' ? 'business' : 'pro';
+    if (url === '/ai-chat') return plan === 'pro' ? 'business' : 'pro';
+    if (url === '/reports' || url.startsWith('/gestao/')) return plan === 'pro' ? 'business' : 'pro';
+    return plan === 'pro' ? 'business' : 'pro';
   };
 
   const handleLockedClick = (url: string, title: string) => {
@@ -106,6 +111,7 @@ export function AppSidebar() {
   // Check if a top-level item (without sub-items) is locked
   const isTopItemLocked = (item: MenuItem): boolean => {
     if (item.url === '/ai-chat') return !canUse('ai_chat');
+    if (item.url === '/reports') return !isPlanProOrAbove && !isTrialActive;
     return false;
   };
 
@@ -309,11 +315,23 @@ export function AppSidebar() {
                           "flex items-center gap-3 w-full transition-all duration-200 cursor-pointer",
                           groupActive && "bg-primary/10 text-primary font-medium"
                         )}
-                        onClick={() => handleGroupClick(item)}
+                        onClick={() => {
+                          // If all sub-items are locked, treat the group click as locked
+                          const allLocked = item.items?.every(sub => isSubItemLocked(sub.url, sub.title));
+                          if (allLocked) {
+                            const firstUrl = item.items?.[0]?.url || '';
+                            handleLockedClick(firstUrl, item.title);
+                            return;
+                          }
+                          handleGroupClick(item);
+                        }}
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
                         <span className={`flex-1 text-left transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
                           {item.title}
+                          {item.items?.every(sub => isSubItemLocked(sub.url, sub.title)) && !collapsed && (
+                            <Lock className="inline h-3 w-3 ml-1.5 text-muted-foreground" />
+                          )}
                         </span>
                         <CollapsibleTrigger asChild onClick={(e) => toggleGroup(item.title, e)}>
                           <ChevronRight 

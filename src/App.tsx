@@ -125,13 +125,13 @@ const App = () => (
               <Route path="/finance/reconciliation" element={guarded(<RequireFeature feature="finance_full"><FinanceReconciliation /></RequireFeature>)} />
               <Route path="/finance/categories" element={guarded(<FinanceCategories />)} />
               
-              <Route path="/gestao/alugueis" element={guarded(<AtivosEmGestao />)} />
-              <Route path="/gestao/contratos" element={guarded(<ContratosEmGestao />)} />
-              <Route path="/gestao/afazeres" element={guarded(<AfazeresEmGestao />)} />
-              <Route path="/gestao/gerencial" element={guarded(<GerencialGestao />)} />
+              <Route path="/gestao/alugueis" element={guarded(<RequireFeature feature="asset_management"><AtivosEmGestao /></RequireFeature>)} />
+              <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosEmGestao /></RequireFeature>)} />
+              <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
+              <Route path="/gestao/gerencial" element={guarded(<RequireFeature feature="asset_management"><GerencialGestao /></RequireFeature>)} />
               <Route path="/schedule" element={guarded(<Schedule />)} />
               <Route path="/portals" element={guarded(<Portals />)} />
-              <Route path="/reports" element={guarded(<Reports />)} />
+              <Route path="/reports" element={guarded(<RequireFeature feature="reports_overview"><Reports /></RequireFeature>)} />
               <Route path="/integrations" element={guarded(<RequireFeature feature="integrations"><Integrations /></RequireFeature>)} />
               <Route path="/training" element={guarded(<Training />)} />
               <Route path="/users" element={guarded(<Users />)} />
