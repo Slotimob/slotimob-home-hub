@@ -320,7 +320,7 @@ export function ImportStatementDialog({
 
       // Insert entries linked to the import
       const insertData = entries.map((entry) => ({
-        broker_id: user.id,
+        broker_id: brokerId,
         bank_account_id: selectedBankAccountId,
         description: entry.description,
         amount: entry.amount,
