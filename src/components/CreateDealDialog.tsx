@@ -317,7 +317,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
         } else {
           const { data: newProp, error: propError } = await supabase
             .from('properties')
-            .insert([{ name: 'Imóveis Avulsos', broker_id: user?.id }])
+            .insert([{ name: 'Imóveis Avulsos', broker_id: effectiveBrokerId }])
             .select('id')
             .single();
           
