@@ -239,6 +239,7 @@ export function useLeaseByUnitId(unitId: string | null) {
 
 export function useCreateLease() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
   const { generateProjections } = useLeaseFinancialProjection();
 
