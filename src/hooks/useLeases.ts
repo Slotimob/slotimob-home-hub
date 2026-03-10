@@ -443,8 +443,7 @@ export function useTerminateLease() {
           termination_date: terminationDate,
           termination_reason: terminationReason || null,
         })
-        .eq("id", leaseId)
-        .eq("broker_id", user.id);
+        .eq("id", leaseId);
 
       // If error is null, consider success - no need for .select() verification
       if (updateError) {
