@@ -3899,6 +3899,10 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      can_write_as_broker: {
+        Args: { p_broker_id: string; p_user_id: string }
+        Returns: boolean
+      }
       check_member_permission: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
