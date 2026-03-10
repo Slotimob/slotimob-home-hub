@@ -113,6 +113,7 @@ const DEFAULT_STAGES: DisplayStage[] = [
 
 const Pipeline = () => {
   const { user, loading } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deals, setDeals] = useState<Deal[]>([]);
