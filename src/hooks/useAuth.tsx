@@ -122,7 +122,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         setIsSuperAdmin(!!superAdminResult.data);
         setIsAdmin(adminResult.data === true);
-        setUserRole(agentResult.data === true ? 'agent' : 'owner');
+        // User is an 'agent' if they have the role OR are an org member
+        setUserRole((agentResult.data === true || !!memberResult.data) ? 'agent' : 'owner');
       } catch (err) {
         console.error('Error loading roles:', err);
         // On error, default to safe values
