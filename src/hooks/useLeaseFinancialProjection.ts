@@ -124,7 +124,7 @@ export function useLeaseFinancialProjection() {
         const capitalizedMonthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
         transactions.push({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId || user.id,
           unit_id: unitId,
           contact_id: tenantContactId,
           type: "income",
