@@ -27,9 +27,8 @@
        const { data, error } = await supabase
          .from("lease_adjustments")
          .select("*")
-         .eq("lease_id", leaseId)
-         .eq("broker_id", user.id)
-         .order("adjustment_date", { ascending: false });
+          .eq("lease_id", leaseId)
+          .order("adjustment_date", { ascending: false });
  
        if (error) throw error;
        return data as LeaseAdjustment[];
