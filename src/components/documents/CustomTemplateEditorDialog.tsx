@@ -43,6 +43,7 @@ export const CustomTemplateEditorDialog = ({
   template,
 }: CustomTemplateEditorDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
