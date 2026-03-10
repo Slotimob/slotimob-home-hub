@@ -111,6 +111,7 @@ export function AppSidebar() {
   // Check if a top-level item (without sub-items) is locked
   const isTopItemLocked = (item: MenuItem): boolean => {
     if (item.url === '/ai-chat') return !canUse('ai_chat');
+    if (item.url === '/reports') return !isPlanProOrAbove && !isTrialActive;
     return false;
   };
 
