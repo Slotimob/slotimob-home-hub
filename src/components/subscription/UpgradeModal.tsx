@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Rocket, Building2, Zap, Clock } from 'lucide-react';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface UpgradeModalProps {
   open: boolean;
