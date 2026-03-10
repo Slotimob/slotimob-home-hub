@@ -556,7 +556,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
     const { data: newProperty, error } = await supabase
       .from('properties')
       .insert({
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         name: normalizedName,
         builder_name: row.construtora?.trim() || null,
         construction_stage: row.estagio_obra?.trim() || null,
