@@ -391,7 +391,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
         ? await supabase
             .from('financial_transactions')
             .select('unit_id, due_date')
-            .eq('broker_id', user.id)
             .eq('type', 'income')
             .in('unit_id', unitIds)
             .order('due_date', { ascending: false })
