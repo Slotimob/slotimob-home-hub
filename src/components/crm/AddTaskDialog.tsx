@@ -31,6 +31,7 @@ const hourOptions = Array.from({ length: 14 }, (_, i) => i + 7).map(h => ({
 export const AddTaskDialog = ({ dealId, open, onOpenChange, onSuccess }: AddTaskDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
