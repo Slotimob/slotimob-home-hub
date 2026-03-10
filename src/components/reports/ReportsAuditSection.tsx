@@ -374,7 +374,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       const { data: futureTransactions } = await supabase
         .from('financial_transactions')
         .select('unit_id')
-        .eq('broker_id', user.id)
         .eq('type', 'income')
         .gte('due_date', today.toISOString().split('T')[0])
         .lte('due_date', futureDate.toISOString().split('T')[0]);
