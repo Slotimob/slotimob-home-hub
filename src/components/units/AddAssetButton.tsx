@@ -34,6 +34,7 @@ export function AddAssetButton({
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { plan, features } = useSubscriptionLimits();
 
   // Count current units
