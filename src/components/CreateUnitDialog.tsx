@@ -143,7 +143,7 @@ export const CreateUnitDialog = ({
         {
           ...payload,
           property_id: effectivePropertyId,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           property_type: formData.property_type || null,
           condition: formData.condition || null,
           furnished: formData.furnished || null,

@@ -84,6 +84,7 @@ interface CreateDealDialogProps {
 
 export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [savingLead, setSavingLead] = useState(false);
