@@ -40,6 +40,7 @@ export function BalanceCheckerWidget({
 }: BalanceCheckerWidgetProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
   
   // Initialize with current month
