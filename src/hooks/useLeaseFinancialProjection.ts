@@ -84,7 +84,6 @@ export function useLeaseFinancialProjection() {
       const { data: rentCategory, error: catError } = await supabase
         .from("financial_categories")
         .select("id")
-        .eq("broker_id", user.id)
         .eq("name", "Receita de Aluguel")
         .eq("type", "income")
         .maybeSingle();
