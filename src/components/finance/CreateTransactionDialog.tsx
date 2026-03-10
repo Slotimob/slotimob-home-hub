@@ -196,7 +196,7 @@ export function CreateTransactionDialog({
         // Create two transactions: one expense (source) and one income (destination)
         const transferTransactions = [
           {
-            broker_id: user.id,
+            broker_id: brokerId,
             assigned_user_id: user.id,
             type: "expense",
             description: `Transferência para ${destAccount?.name || "outra conta"}`,
@@ -211,7 +211,7 @@ export function CreateTransactionDialog({
             group_id: transferGroupId,
           },
           {
-            broker_id: user.id,
+            broker_id: brokerId,
             assigned_user_id: user.id,
             type: "income",
             description: `Transferência de ${sourceAccount?.name || "outra conta"}`,
