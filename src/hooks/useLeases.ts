@@ -414,7 +414,7 @@ export function useTerminateLease() {
           const { data: deleted, error: deleteError } = await supabase
             .from("financial_transactions")
             .delete()
-            .eq("broker_id", user.id)
+            .eq("broker_id", lease.broker_id)
             .eq("reference", `lease:${leaseId}`)
             .eq("status", "pending")
             .gte("due_date", terminationDate)
