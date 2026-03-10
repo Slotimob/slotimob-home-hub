@@ -12,6 +12,7 @@ import { Download, RotateCcw, Send, Save, FileText, Edit3 } from 'lucide-react';
 import { DocumentTemplate, TemplateField } from '@/utils/documentTemplates';
 import { generateDocumentPDF, fillTemplateContent } from '@/utils/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SendDocumentDialog } from './SendDocumentDialog';
