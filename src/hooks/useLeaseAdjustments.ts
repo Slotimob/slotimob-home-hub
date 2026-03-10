@@ -64,9 +64,8 @@
        // Step 2: Revert lease rent_amount to previous value
        const { error: updateError } = await supabase
          .from("leases")
-         .update({ rent_amount: previousValue })
-         .eq("id", leaseId)
-         .eq("broker_id", user.id);
+          .update({ rent_amount: previousValue })
+          .eq("id", leaseId);
  
        if (updateError) throw updateError;
  

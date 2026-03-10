@@ -254,7 +254,6 @@ export function useCountFutureProjections() {
     const { count, error } = await supabase
       .from("financial_transactions")
       .select("id", { count: "exact", head: true })
-      .eq("broker_id", user.id)
       .eq("reference", `lease:${leaseId}`)
       .eq("status", "pending")
       .gte("due_date", fromDate);
