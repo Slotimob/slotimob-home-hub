@@ -230,7 +230,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
 
       const { data, error } = await supabase
         .from('leads')
-        .insert([{ ...payload, broker_id: user?.id }])
+        .insert([{ ...payload, broker_id: effectiveBrokerId }])
         .select('id, name, email, phone')
         .single();
 
