@@ -70,7 +70,6 @@ export function useLeaseFinancialProjection() {
       const { data: existingTransactions, error: checkError } = await supabase
         .from("financial_transactions")
         .select("id")
-        .eq("broker_id", user.id)
         .eq("reference", `lease:${leaseId}`)
         .limit(1);
 
