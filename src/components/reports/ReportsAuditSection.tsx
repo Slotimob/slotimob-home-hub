@@ -445,7 +445,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       let leasesQuery = supabase
         .from('leases')
         .select(`*, unit:units(unit_number, id), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
-        .eq('broker_id', user.id)
         .eq('status', 'active');
 
       if (selectedUnitId) {
