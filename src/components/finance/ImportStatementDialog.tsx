@@ -282,8 +282,8 @@ export function ImportStatementDialog({
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
+      const brokerId = effectiveBrokerId || user.id;
 
       // Parse full file
       let entries: ParsedEntry[] = [];
