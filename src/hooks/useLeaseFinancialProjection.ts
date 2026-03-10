@@ -48,6 +48,7 @@ function calculateDueDate(baseDate: Date, dueDay: number): Date {
  */
 export function useLeaseFinancialProjection() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
 
   const generateProjections = useMutation({
