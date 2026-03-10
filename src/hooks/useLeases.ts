@@ -398,7 +398,6 @@ export function useTerminateLease() {
         .from("leases")
         .select("unit_id, broker_id")
         .eq("id", leaseId)
-        .eq("broker_id", user.id)
         .single();
 
       if (fetchError) {
