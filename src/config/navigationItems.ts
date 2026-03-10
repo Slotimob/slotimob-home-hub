@@ -212,6 +212,6 @@ export const SIDEBAR_ITEMS = [
   { title: 'Simulador', url: '/simulator', icon: Calculator },
   { title: 'Integrações', url: '/integrations', icon: Plug },
   { title: 'Treinamentos', url: '/training', icon: GraduationCap },
-  { title: 'Usuários', url: '/users', icon: UsersRound, ownerOnly: true, hiddenOnPlan: ['essencial', 'free'] },
+  { title: 'Usuários', url: '/users', icon: UsersRound, hiddenOnPlan: ['essencial', 'free'] },
   { title: 'Histórico', url: '/history', icon: History },
 ] as const;

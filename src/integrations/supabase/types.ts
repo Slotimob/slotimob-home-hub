@@ -3899,6 +3899,10 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      can_write_as_broker: {
+        Args: { p_broker_id: string; p_user_id: string }
+        Returns: boolean
+      }
       check_member_permission: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
@@ -3919,6 +3923,7 @@ export type Database = {
         Args: { p_plan_id: string }
         Returns: number
       }
+      get_effective_broker_id: { Args: { p_user_id: string }; Returns: string }
       get_effective_limits: { Args: { p_user_id: string }; Returns: Json }
       get_user_audit_logs: {
         Args: { p_limit?: number; p_target_user_id: string }
@@ -3931,6 +3936,7 @@ export type Database = {
         Args: { p_broker_id: string }
         Returns: Json
       }
+      get_workspace_user_ids: { Args: { p_user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

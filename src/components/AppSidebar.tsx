@@ -48,6 +48,7 @@ import { LucideIcon } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useCockpitAccess } from '@/hooks/useCockpitAccess';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 
 interface NestedSubMenuItem {
@@ -79,6 +80,7 @@ export function AppSidebar() {
   const { isAgent } = useUserRole();
   const { plan, isTrialActive, canUse, features } = useSubscriptionLimits();
   const { hasCockpitAccess } = useCockpitAccess();
+  const { isMember } = useWorkspace();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
@@ -171,7 +173,7 @@ export function AppSidebar() {
     { title: 'Simulador', url: '/simulator', icon: Calculator },
     { title: 'Integrações', url: '/integrations', icon: Plug },
     { title: 'Treinamentos', url: '/training', icon: GraduationCap },
-    { title: 'Usuários', url: '/users', icon: UsersRound, ownerOnly: true, hiddenOnPlan: ['essencial', 'free'] },
+    { title: 'Usuários', url: '/users', icon: UsersRound, hiddenOnPlan: ['essencial', 'free'] },
     { title: 'Histórico', url: '/history', icon: History },
   ];
 

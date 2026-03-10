@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { CONTACT_CATEGORIES, ContactCategory, CATEGORY_ICONS } from './ContactCategoryFilter';
 import { Loader2 } from 'lucide-react';
@@ -69,6 +70,7 @@ export const CreateContactDialog = ({
   defaultCategory,
 }: CreateContactDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const { searchCepData, isLoadingCep } = useCepSearch();
   
@@ -217,7 +219,7 @@ export const CreateContactDialog = ({
       
       // Inject both broker_id (organization) and assigned_user_id (individual user)
       const { error } = await supabase.from('contacts').insert({
-        broker_id: user.id,
+        broker_id: effectiveBrokerId,
         assigned_user_id: user.id, // Auto-inject: user who created this contact
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase() || null,

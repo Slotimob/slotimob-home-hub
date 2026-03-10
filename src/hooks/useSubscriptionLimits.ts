@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useWorkspace } from './useWorkspace';
 
 export interface PlanFeatures {
   assets_limit: number;
@@ -93,6 +94,7 @@ const featureDescriptions: Record<string, { name: string; upgradeMessage: string
 
 export const useSubscriptionLimits = (): SubscriptionLimits => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
 
   const { data, isLoading } = useQuery({
     queryKey: ['user-plan-features', user?.id],
@@ -114,20 +116,20 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch add-on counts from subscriptions
+  // Fetch add-on counts from subscriptions (use effective broker for members)
   const { data: addonData } = useQuery({
-    queryKey: ['subscription-addons', user?.id],
+    queryKey: ['subscription-addons', effectiveBrokerId],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!effectiveBrokerId) return null;
       const { data, error } = await supabase
         .from('subscriptions')
         .select('extra_users_count, extra_unit_packs')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveBrokerId)
         .maybeSingle();
       if (error) return null;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
     staleTime: 5 * 60 * 1000,
   });
 

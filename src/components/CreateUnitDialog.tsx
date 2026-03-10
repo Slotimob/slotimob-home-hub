@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -56,6 +57,7 @@ export const CreateUnitDialog = ({
   standalone = false 
 }: CreateUnitDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState<UnitFormData>(() => {
@@ -141,7 +143,7 @@ export const CreateUnitDialog = ({
         {
           ...payload,
           property_id: effectivePropertyId,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           property_type: formData.property_type || null,
           condition: formData.condition || null,
           furnished: formData.furnished || null,

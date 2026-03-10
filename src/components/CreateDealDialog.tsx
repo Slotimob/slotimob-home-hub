@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -83,6 +84,7 @@ interface CreateDealDialogProps {
 
 export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [savingLead, setSavingLead] = useState(false);
@@ -228,7 +230,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
 
       const { data, error } = await supabase
         .from('leads')
-        .insert([{ ...payload, broker_id: user?.id }])
+        .insert([{ ...payload, broker_id: effectiveBrokerId }])
         .select('id, name, email, phone')
         .single();
 
@@ -307,7 +309,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
           .from('properties')
           .select('id')
           .eq('name', 'Imóveis Avulsos')
-          .eq('broker_id', user?.id)
+          .eq('broker_id', effectiveBrokerId)
           .maybeSingle();
 
         if (defaultProp) {
@@ -315,7 +317,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
         } else {
           const { data: newProp, error: propError } = await supabase
             .from('properties')
-            .insert([{ name: 'Imóveis Avulsos', broker_id: user?.id }])
+            .insert([{ name: 'Imóveis Avulsos', broker_id: effectiveBrokerId }])
             .select('id')
             .single();
           
@@ -335,7 +337,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
         business_type: formData.business_type,
         expected_close_date: formData.expected_close_date ? format(formData.expected_close_date, 'yyyy-MM-dd') : null,
         initial_task: formData.initial_task || null,
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         stage: 'new_lead' as const,
       };
 
@@ -347,7 +349,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
       if (formData.initial_task && newDeal) {
         await supabase.from('deal_tasks').insert([{
           deal_id: newDeal.id,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           title: formData.initial_task,
           priority: 'high',
         }]);

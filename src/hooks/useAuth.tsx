@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Fetch roles in parallel
-        const [superAdminResult, adminResult, agentResult] = await Promise.all([
+        const [superAdminResult, adminResult, agentResult, memberResult] = await Promise.all([
           supabase
             .from('user_roles')
             .select('role')
@@ -109,13 +109,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .rpc('has_role', { _user_id: user.id, _role: 'admin' }),
           supabase
             .rpc('has_role', { _user_id: user.id, _role: 'agent' as any }),
+          // Also check if user is an organization member (multi-tenant)
+          supabase
+            .from('organization_members')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .maybeSingle(),
         ]);
 
         if (cancelled) return;
 
         setIsSuperAdmin(!!superAdminResult.data);
         setIsAdmin(adminResult.data === true);
-        setUserRole(agentResult.data === true ? 'agent' : 'owner');
+        // User is an 'agent' if they have the role OR are an org member
+        setUserRole((agentResult.data === true || !!memberResult.data) ? 'agent' : 'owner');
       } catch (err) {
         console.error('Error loading roles:', err);
         // On error, default to safe values

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
@@ -112,6 +113,7 @@ const DEFAULT_STAGES: DisplayStage[] = [
 
 const Pipeline = () => {
   const { user, loading } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -556,7 +558,7 @@ const Pipeline = () => {
       const { error } = await supabase
         .from('pipeline_stages')
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId,
           name,
           color,
           display_order: newDisplayOrder,
@@ -834,7 +836,7 @@ const Pipeline = () => {
       if (user) {
         await supabase.from('deal_stage_history').insert({
           deal_id: dealId,
-          broker_id: user.id,
+          broker_id: effectiveBrokerId,
           from_stage: oldVisibleStageId,
           to_stage: newVisibleStageId,
           notes: lossNotes || null,
@@ -1025,7 +1027,7 @@ const Pipeline = () => {
           const deal = deals.find((d) => d.id === dealId);
           return {
             deal_id: dealId,
-            broker_id: user.id,
+            broker_id: effectiveBrokerId,
             from_stage: deal ? getDealVisibleStageId(deal) : 'new_lead',
             to_stage: targetStage,
             notes: 'Movimentação em massa',
