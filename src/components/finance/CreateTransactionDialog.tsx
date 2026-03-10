@@ -172,6 +172,7 @@ export function CreateTransactionDialog({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
+      const brokerId = effectiveBrokerId || user.id;
 
       // Handle Transfer Mode
       if (mode === "transfer") {

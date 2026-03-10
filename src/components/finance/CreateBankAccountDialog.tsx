@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface CreateBankAccountDialogProps {
   open: boolean;
