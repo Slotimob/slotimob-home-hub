@@ -149,7 +149,7 @@ export const DocumentEditorDialog = ({
         const { data, error } = await supabase
           .from('generated_documents')
           .insert({
-            broker_id: user.id,
+            broker_id: effectiveBrokerId || user.id,
             template_id: template.id,
             template_name: template.name,
             filled_fields: filledFields,
