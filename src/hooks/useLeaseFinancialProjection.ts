@@ -184,7 +184,6 @@ export function useDeleteLeaseProjections() {
       const { data, error } = await supabase
         .from("financial_transactions")
         .delete()
-        .eq("broker_id", user.id)
         .eq("reference", `lease:${leaseId}`)
         .eq("status", "pending")
         .select("id");
