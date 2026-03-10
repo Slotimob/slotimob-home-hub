@@ -309,7 +309,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
           .from('properties')
           .select('id')
           .eq('name', 'Imóveis Avulsos')
-          .eq('broker_id', user?.id)
+          .eq('broker_id', effectiveBrokerId)
           .maybeSingle();
 
         if (defaultProp) {
