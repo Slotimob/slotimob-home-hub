@@ -48,6 +48,7 @@ import { LucideIcon } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useCockpitAccess } from '@/hooks/useCockpitAccess';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 
 interface NestedSubMenuItem {
