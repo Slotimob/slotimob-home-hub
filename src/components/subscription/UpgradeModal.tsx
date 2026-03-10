@@ -54,6 +54,7 @@ const planDescriptions = {
 export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, feature }: UpgradeModalProps) => {
   const { plan: currentPlan } = useSubscriptionLimits();
   const { slots } = useEarlyAdopterCount();
+  const navigate = useNavigate();
 
   // Dynamic target: if user is PRO, suggest Business; otherwise suggest PRO
   const resolvedTarget = targetPlanProp 
