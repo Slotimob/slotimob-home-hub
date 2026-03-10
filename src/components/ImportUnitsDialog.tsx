@@ -516,7 +516,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
     const { data: newOwner, error } = await supabase
       .from('owners')
       .insert({
-        broker_id: user?.id,
+        broker_id: effectiveBrokerId,
         name: normalizedEmail.split('@')[0], // Use email prefix as name
         email: normalizedEmail,
       })
