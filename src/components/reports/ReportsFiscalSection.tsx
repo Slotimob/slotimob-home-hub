@@ -169,7 +169,6 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
       let paymentsQuery = supabase
         .from('financial_transactions')
         .select('*')
-        .eq('broker_id', user.id)
         .eq('type', 'income')
         .eq('obligation_type', 'rent')
         .eq('status', 'paid')
