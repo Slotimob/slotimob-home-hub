@@ -836,7 +836,7 @@ const Pipeline = () => {
       if (user) {
         await supabase.from('deal_stage_history').insert({
           deal_id: dealId,
-          broker_id: user.id,
+          broker_id: effectiveBrokerId,
           from_stage: oldVisibleStageId,
           to_stage: newVisibleStageId,
           notes: lossNotes || null,
