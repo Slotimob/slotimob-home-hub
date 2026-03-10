@@ -315,7 +315,16 @@ export function AppSidebar() {
                           "flex items-center gap-3 w-full transition-all duration-200 cursor-pointer",
                           groupActive && "bg-primary/10 text-primary font-medium"
                         )}
-                        onClick={() => handleGroupClick(item)}
+                        onClick={() => {
+                          // If all sub-items are locked, treat the group click as locked
+                          const allLocked = item.items?.every(sub => isSubItemLocked(sub.url, sub.title));
+                          if (allLocked) {
+                            const firstUrl = item.items?.[0]?.url || '';
+                            handleLockedClick(firstUrl, item.title);
+                            return;
+                          }
+                          handleGroupClick(item);
+                        }}
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
                         <span className={`flex-1 text-left transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
