@@ -83,18 +83,23 @@ export function AppSidebar() {
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
 
+  const isPlanProOrAbove = plan === 'pro' || plan === 'business';
+
   // Determine which sub-items are locked
   const isSubItemLocked = (url: string, title: string): boolean => {
     if (url === '/finance/dre' || url === '/finance/reconciliation') return !canUse('finance_full');
     if (url === '/whatsapp' || title === 'Mensagens') return !features || (features.whatsapp_instances_limit ?? 0) <= 0;
     if (url === '/ai-chat') return !canUse('ai_chat');
+    // Gestão sub-items locked for free/essencial (unless trialing)
+    if (url.startsWith('/gestao/')) return !isPlanProOrAbove && !isTrialActive;
     return false;
   };
 
   const getTargetPlan = (url: string): 'essencial' | 'pro' | 'business' => {
-    if (url === '/whatsapp' || url === '/finance/dre' || url === '/finance/reconciliation') return 'pro';
-    if (url === '/ai-chat') return 'pro';
-    return 'pro';
+    if (url === '/whatsapp' || url === '/finance/dre' || url === '/finance/reconciliation') return plan === 'pro' ? 'business' : 'pro';
+    if (url === '/ai-chat') return plan === 'pro' ? 'business' : 'pro';
+    if (url === '/reports' || url.startsWith('/gestao/')) return plan === 'pro' ? 'business' : 'pro';
+    return plan === 'pro' ? 'business' : 'pro';
   };
 
   const handleLockedClick = (url: string, title: string) => {
