@@ -83,7 +83,6 @@ export function OwnerReportDialog({
       const { data, error } = await supabase
         .from("financial_transactions")
         .select("*")
-        .eq("broker_id", user.id)
         .eq("unit_id", lease.unit_id)
         .eq("type", "income")
         .eq("status", "paid")
