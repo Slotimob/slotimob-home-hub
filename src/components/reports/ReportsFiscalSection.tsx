@@ -27,8 +27,7 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
 
     const { data: leads } = await supabase
       .from('leads')
-      .select('id, name, cpf_cnpj')
-      .eq('broker_id', user.id);
+      .select('id, name, cpf_cnpj');
 
     const leadsWithoutCpf = (leads || []).filter(l => !l.cpf_cnpj);
     if (leadsWithoutCpf.length > 0) {
