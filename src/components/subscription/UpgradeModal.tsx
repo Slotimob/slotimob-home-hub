@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Rocket, Building2, Zap, Clock } from 'lucide-react';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -54,6 +54,7 @@ const planDescriptions = {
 export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, feature }: UpgradeModalProps) => {
   const { plan: currentPlan } = useSubscriptionLimits();
   const { slots } = useEarlyAdopterCount();
+  const navigate = useNavigate();
 
   // Dynamic target: if user is PRO, suggest Business; otherwise suggest PRO
   const resolvedTarget = targetPlanProp 
@@ -164,18 +165,30 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
             <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Agora não
             </Button>
-            <Button asChild className={`flex-1 ${config.bgColor} hover:opacity-90`}>
-              <Link to={`/checkout?plan=${resolvedTarget}&cycle=annual&mode=immediate`} onClick={() => onOpenChange(false)}>
-                <Zap className="h-4 w-4 mr-2" />
-                Fazer Upgrade Agora
-              </Link>
+            <Button
+              className={`flex-1 ${config.bgColor} hover:opacity-90`}
+              onClick={() => {
+                onOpenChange(false);
+                navigate('/settings?tab=subscription');
+              }}
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Fazer Upgrade Agora
             </Button>
           </div>
 
           {currentPlan === 'free' && resolvedTarget === 'pro' && (
             <p className="text-xs text-center text-muted-foreground">
-              Para começar menor, veja o{' '}
-              <Link to="/checkout?plan=essencial&cycle=annual&mode=immediate" className="text-emerald-500 hover:underline" onClick={() => onOpenChange(false)}>Plano Essencial a partir de R$ 19,90/mês</Link>
+              Para começar menor,{' '}
+              <button
+                className="text-emerald-500 hover:underline"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate('/settings?tab=subscription');
+                }}
+              >
+                veja o Plano Essencial a partir de R$ 19,90/mês
+              </button>
             </p>
           )}
           {currentPlan === 'pro' && resolvedTarget === 'business' && (
