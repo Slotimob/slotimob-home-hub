@@ -329,6 +329,9 @@ export function AppSidebar() {
                         <item.icon className="h-4 w-4 shrink-0" />
                         <span className={`flex-1 text-left transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
                           {item.title}
+                          {item.items?.every(sub => isSubItemLocked(sub.url, sub.title)) && !collapsed && (
+                            <Lock className="inline h-3 w-3 ml-1.5 text-muted-foreground" />
+                          )}
                         </span>
                         <CollapsibleTrigger asChild onClick={(e) => toggleGroup(item.title, e)}>
                           <ChevronRight 

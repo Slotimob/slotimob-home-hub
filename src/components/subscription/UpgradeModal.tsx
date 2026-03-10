@@ -15,34 +15,52 @@ interface UpgradeModalProps {
 
 const planBenefits = {
   essencial: [
-    'Até 10 unidades',
+    'Até 15 unidades',
     'CRM básico com Pipeline',
     'Financeiro: Visão Geral e Lançamentos',
     'Contatos ilimitados',
   ],
   pro: [
+    'Gestão completa de Ativos e Contratos',
+    'Relatórios Avançados (Financeiro, CRM, Ativos)',
+    'Conciliação Bancária e DRE',
     'Até 50 unidades',
-    'CRM completo com histórico',
-    'Relatórios completos',
+    'Chat IA com 250 tokens',
     'Documentos ilimitados',
-    'Chat IA',
-    'Gestão de ativos completa',
     'Todas as integrações',
   ],
   business: [
     'Tudo do plano Pro',
-    'Até 80 unidades (+ add-ons)',
-    '3 usuários inclusos',
-    'Gestão de Equipe (RBAC)',
-    'Usuários adicionais disponíveis',
+    'Gestão de Equipe (Múltiplos Usuários)',
+    'Distribuição de Negociações',
+    'Limite estendido para 150 Unidades',
+    'WhatsApp liberado para múltiplos atendentes',
+    '3 usuários inclusos + add-ons',
   ],
 };
 
-export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', feature }: UpgradeModalProps) => {
+const planTitles = {
+  essencial: 'Comece a profissionalizar sua operação ⚡',
+  pro: 'Desbloqueie todo o seu potencial com o Plano PRO 🚀',
+  business: 'Evolua para o Plano Business! 🏢',
+};
+
+const planDescriptions = {
+  essencial: 'O Essencial é ideal para corretores individuais que querem organizar sua operação.',
+  pro: 'Gestão completa de Ativos e Contratos, Relatórios Avançados, Conciliação Bancária e muito mais Tokens de IA.',
+  business: 'Gestão de Equipe (Múltiplos Usuários), Distribuição de Negociações, Limite estendido para 150 Unidades e WhatsApp Liberado para múltiplos atendentes.',
+};
+
+export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, feature }: UpgradeModalProps) => {
   const { plan: currentPlan } = useSubscriptionLimits();
   const { slots } = useEarlyAdopterCount();
 
-  const earlyAdopterSlots = slots[targetPlan];
+  // Dynamic target: if user is PRO, suggest Business; otherwise suggest PRO
+  const resolvedTarget = targetPlanProp 
+    ? (currentPlan === 'pro' && targetPlanProp !== 'essencial' ? 'business' : targetPlanProp)
+    : (currentPlan === 'pro' ? 'business' : 'pro');
+
+  const earlyAdopterSlots = slots[resolvedTarget];
   const hasEarlyAdopterSlots = earlyAdopterSlots && earlyAdopterSlots.remaining > 0;
 
   const planConfig = {
@@ -78,7 +96,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', fea
     },
   };
 
-  const config = planConfig[targetPlan];
+  const config = planConfig[resolvedTarget];
   const Icon = config.icon;
 
   return (
@@ -87,13 +105,13 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', fea
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
             <Icon className={`h-6 w-6 ${config.color}`} />
-            <DialogTitle>Upgrade para {config.name}</DialogTitle>
+            <DialogTitle className="text-lg">{planTitles[resolvedTarget]}</DialogTitle>
           </div>
-          {feature && (
-            <DialogDescription>
-              Esta funcionalidade requer o plano {config.name}.
-            </DialogDescription>
-          )}
+          <DialogDescription>
+            {feature
+              ? `A funcionalidade "${feature}" requer o plano ${config.name}. ${planDescriptions[resolvedTarget]}`
+              : planDescriptions[resolvedTarget]}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -124,7 +142,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', fea
               <span className="line-through">R$ {config.priceOriginal}</span>
               <span>→</span>
               <span className="text-green-600">
-                Economize R$ {config.priceOriginal - (hasEarlyAdopterSlots ? config.priceEarlyAdopter : config.priceAnchor)}/mês
+                Economize R$ {(config.priceOriginal - (hasEarlyAdopterSlots ? config.priceEarlyAdopter : config.priceAnchor)).toFixed(2)}/mês
                 {hasEarlyAdopterSlots ? ' para sempre!' : ''}
               </span>
             </div>
@@ -133,7 +151,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', fea
           <div className="space-y-2">
             <h4 className="font-medium text-sm">O que você desbloqueia:</h4>
             <ul className="space-y-2">
-              {planBenefits[targetPlan].map((benefit, index) => (
+              {planBenefits[resolvedTarget].map((benefit, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
                   <Check className={`h-4 w-4 ${config.color} shrink-0 mt-0.5`} />
                   <span>{benefit}</span>
@@ -147,22 +165,22 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan = 'essencial', fea
               Agora não
             </Button>
             <Button asChild className={`flex-1 ${config.bgColor} hover:opacity-90`}>
-              <Link to={`/checkout?plan=${targetPlan}&cycle=annual&mode=immediate`} onClick={() => onOpenChange(false)}>
+              <Link to={`/checkout?plan=${resolvedTarget}&cycle=annual&mode=immediate`} onClick={() => onOpenChange(false)}>
                 <Zap className="h-4 w-4 mr-2" />
-                Fazer Upgrade
+                Fazer Upgrade Agora
               </Link>
             </Button>
           </div>
 
-          {currentPlan === 'free' && targetPlan === 'essencial' && (
+          {currentPlan === 'free' && resolvedTarget === 'pro' && (
             <p className="text-xs text-center text-muted-foreground">
-              O Essencial desbloqueia 10 unidades. Para gestão completa, veja o{' '}
-              <Link to="/checkout?plan=pro&cycle=annual&mode=immediate" className="text-blue-500 hover:underline" onClick={() => onOpenChange(false)}>Plano Pro a partir de R$ 79/mês</Link>
+              Para começar menor, veja o{' '}
+              <Link to="/checkout?plan=essencial&cycle=annual&mode=immediate" className="text-emerald-500 hover:underline" onClick={() => onOpenChange(false)}>Plano Essencial a partir de R$ 19,90/mês</Link>
             </p>
           )}
-          {currentPlan === 'essencial' && targetPlan === 'business' && (
+          {currentPlan === 'pro' && resolvedTarget === 'business' && (
             <p className="text-xs text-center text-muted-foreground">
-              Também disponível: <Link to="/checkout?plan=pro&cycle=annual&mode=immediate" className="text-blue-500 hover:underline">Plano Pro a partir de R$ 79/mês</Link>
+              O Business é ideal para imobiliárias e equipes que precisam de gestão colaborativa.
             </p>
           )}
         </div>
