@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, Save, Copy, FileText, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { toast } from 'sonner';
 import { generateDocumentPDF } from '@/utils/pdfGenerator';
 import { DocumentTemplate, TemplateField } from '@/utils/documentTemplates';

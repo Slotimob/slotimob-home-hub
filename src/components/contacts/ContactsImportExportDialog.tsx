@@ -6,6 +6,7 @@ import { Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lu
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import Papa from 'papaparse';
 import { createWorkbook, addJsonSheet, addAoaSheet, downloadWorkbook, readExcelFile } from '@/utils/excelUtils';
 
