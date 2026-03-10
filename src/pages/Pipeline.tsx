@@ -1027,7 +1027,7 @@ const Pipeline = () => {
           const deal = deals.find((d) => d.id === dealId);
           return {
             deal_id: dealId,
-            broker_id: user.id,
+            broker_id: effectiveBrokerId,
             from_stage: deal ? getDealVisibleStageId(deal) : 'new_lead',
             to_stage: targetStage,
             notes: 'Movimentação em massa',
