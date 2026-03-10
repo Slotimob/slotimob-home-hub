@@ -110,6 +110,7 @@ const CONDITIONS = ['construcao', 'na_planta', 'novo', 'usado'];
 export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, standalone = false }: ImportUnitsDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
   const [importing, setImporting] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
