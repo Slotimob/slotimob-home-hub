@@ -684,7 +684,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
 
         units.push({
           property_id: unitPropertyId,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           unit_number: row.numero_unidade.trim(),
           status: STATUS_MAP[row.status.toLowerCase().trim()],
           property_type: row.tipo_imovel ? row.tipo_imovel.toLowerCase().trim() : null,
