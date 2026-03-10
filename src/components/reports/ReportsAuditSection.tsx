@@ -144,7 +144,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
           *,
           bank_account:bank_accounts(name)
         `)
-        .eq('broker_id', user.id)
         .eq('status', 'paid')
         .eq('is_reconciled', false)
         .gte('paid_date', dateRange.from.toISOString().split('T')[0])
