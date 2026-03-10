@@ -68,6 +68,7 @@ export function AdjustmentCalculatorDialog({
   isUrgent = false,
 }: AdjustmentCalculatorDialogProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

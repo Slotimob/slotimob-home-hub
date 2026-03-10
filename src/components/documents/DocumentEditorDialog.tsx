@@ -53,6 +53,7 @@ export const DocumentEditorDialog = ({
   const [mobileTab, setMobileTab] = useState<'preencher' | 'visualizar'>('preencher');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(existingDraftId || null);
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   
   // Debounce timer for preview updates

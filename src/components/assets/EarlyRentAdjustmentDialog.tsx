@@ -46,6 +46,7 @@ import { useQueryClient } from "@tanstack/react-query";
    const updateLease = useUpdateLease();
    const updateProjections = useUpdateFutureProjections();
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
  
    const [newRentAmount, setNewRentAmount] = useState("");
