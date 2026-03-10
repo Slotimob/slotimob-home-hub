@@ -42,7 +42,7 @@ interface UploadDocumentDialogProps {
 export const UploadDocumentDialog = ({ open, onOpenChange, onSuccess }: UploadDocumentDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [saving, setSaving] = useState(false);
+  const { effectiveBrokerId } = useWorkspace();
   const [file, setFile] = useState<File | null>(null);
   const [leads, setLeads] = useState<{ id: string; name: string }[]>([]);
   const [deals, setDeals] = useState<{ id: string; lead: { name: string } }[]>([]);
