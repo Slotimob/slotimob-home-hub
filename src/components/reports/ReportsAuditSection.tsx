@@ -100,7 +100,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       let query = supabase
         .from('financial_transactions')
         .select(`*, bank_account:bank_accounts(name), unit:units(unit_number), category:financial_categories(name)`)
-        .eq('broker_id', user.id)
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
 
