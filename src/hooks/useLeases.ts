@@ -167,7 +167,6 @@ export function useLeases() {
           owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone, document_number, address, city, state, neighborhood, postal_code),
           unit:units(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name))
         `)
-        .eq("broker_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
