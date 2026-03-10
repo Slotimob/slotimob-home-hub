@@ -242,7 +242,6 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
           *,
           bank_account:bank_accounts(name)
         `)
-        .eq('broker_id', user.id)
         .not('group_id', 'is', null)
         .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
         .lte('transaction_date', dateRange.to.toISOString().split('T')[0])
