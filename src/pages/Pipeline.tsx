@@ -558,7 +558,7 @@ const Pipeline = () => {
       const { error } = await supabase
         .from('pipeline_stages')
         .insert({
-          broker_id: user.id,
+          broker_id: effectiveBrokerId,
           name,
           color,
           display_order: newDisplayOrder,
