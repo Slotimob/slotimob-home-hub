@@ -91,7 +91,7 @@ import { useQueryClient } from "@tanstack/react-query";
       const { error: historyError } = await supabase
         .from("lease_adjustments")
         .insert({
-          broker_id: user.id,
+         broker_id: effectiveBrokerId || user.id,
           lease_id: lease.id,
           adjustment_date: new Date().toISOString().split("T")[0],
           previous_value: lease.rent_amount,

@@ -1295,7 +1295,7 @@ export function ContractsTab() {
         asset={getAssetFromLease(selectedLeaseForSheet)}
         leaseData={selectedLeaseForSheet ? {
           id: selectedLeaseForSheet.id,
-          broker_id: user?.id || "",
+          broker_id: effectiveBrokerId || user?.id || "",
           unit_id: selectedLeaseForSheet.unit_id,
           tenant_contact_id: selectedLeaseForSheet.tenant_contact_id,
           owner_contact_id: selectedLeaseForSheet.owner_contact_id || null,

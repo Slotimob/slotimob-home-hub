@@ -236,7 +236,7 @@ export function BalanceAuditPanel({
       const matched = Math.abs(diff) < 0.01;
 
       const auditData = {
-        broker_id: user.id,
+        broker_id: effectiveBrokerId || user.id,
         bank_account_id: bankAccountId,
         audit_date: format(referenceDate, "yyyy-MM-dd"),
         bank_balance: bankBalanceNum,

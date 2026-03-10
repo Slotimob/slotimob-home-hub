@@ -73,7 +73,7 @@ export default function AIChat() {
   const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string) => {
     if (!user?.id) return;
     await supabase.from('chat_messages').insert({
-      broker_id: user.id,
+      broker_id: effectiveBrokerId || user.id,
       role,
       content,
     });

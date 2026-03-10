@@ -45,7 +45,7 @@ export function AddAssetButton({
       const { count, error } = await supabase
         .from('units')
         .select('*', { count: 'exact', head: true })
-        .eq('broker_id', user.id);
+        .eq('broker_id', effectiveBrokerId || user.id);
       if (error) return 0;
       return count || 0;
     },
