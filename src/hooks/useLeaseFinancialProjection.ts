@@ -224,7 +224,6 @@ export function useUpdateFutureProjections() {
       const { data, error } = await supabase
         .from("financial_transactions")
         .update({ amount: newAmount })
-        .eq("broker_id", user.id)
         .eq("reference", `lease:${leaseId}`)
         .eq("status", "pending")
         .gte("due_date", effectiveDateStr)
