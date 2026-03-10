@@ -349,7 +349,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
       if (formData.initial_task && newDeal) {
         await supabase.from('deal_tasks').insert([{
           deal_id: newDeal.id,
-          broker_id: user?.id,
+          broker_id: effectiveBrokerId,
           title: formData.initial_task,
           priority: 'high',
         }]);
