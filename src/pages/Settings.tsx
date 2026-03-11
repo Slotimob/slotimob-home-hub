@@ -33,6 +33,7 @@ const Settings = () => {
   const { isMember, ownerId } = useWorkspace();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [profile, setProfile] = useState<any>(null);
   const [theme, setTheme] = useState('light-purple');
