@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, UserPlus, UsersRound, ShieldCheck, Building2 } from 'lucide-react';
+import { Loader2, UserPlus, UsersRound, ShieldCheck, Building2, Crown } from 'lucide-react';
 import { TeamMemberCard } from './TeamMemberCard';
 import { InviteMemberDialog } from './InviteMemberDialog';
 import type { Permissions } from '@/hooks/usePermissions';
@@ -15,6 +16,7 @@ import type { Permissions } from '@/hooks/usePermissions';
 export function TeamManagement() {
   const { user } = useAuth();
   const { isOwner } = useUserRole();
+  const { isMember } = useWorkspace();
   const [showInvite, setShowInvite] = useState(false);
   const { features, checkLimit } = useSubscriptionLimits();
 
