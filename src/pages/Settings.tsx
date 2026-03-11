@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useSuperAdminAccess } from '@/hooks/useSuperAdminAccess';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
