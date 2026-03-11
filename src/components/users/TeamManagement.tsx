@@ -60,8 +60,6 @@ export function TeamManagement() {
     enabled: !!user?.id && isOwner,
   });
 
-  // Fetch org owner profile using effectiveBrokerId from useWorkspace
-  const { effectiveBrokerId } = useWorkspace();
   const { data: ownerProfile } = useQuery({
     queryKey: ['organization-owner-profile', effectiveBrokerId],
     queryFn: async () => {
@@ -73,7 +71,7 @@ export function TeamManagement() {
         .maybeSingle();
       return profile;
     },
-    enabled: !!effectiveBrokerId && isMember,
+    enabled: !!effectiveBrokerId && !isOwner,
   });
 
   // Seat math: owner counts as 1 + active/pending members
@@ -91,59 +89,46 @@ export function TeamManagement() {
     );
   }
 
-  // Members see a simplified read-only view
-  if (isMember) {
+  if (!isOwner) {
+    const ownerName = ownerProfile?.full_name?.trim() || ownerProfile?.email?.trim() || 'Proprietário do Workspace';
+    const ownerEmail = ownerProfile?.email?.trim() || 'Email não disponível';
+    const ownerInitials = ownerName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((chunk) => chunk.charAt(0))
+      .join('')
+      .toUpperCase();
+
     return (
       <div className="space-y-6">
-        {/* Owner card */}
-        {ownerProfile && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Crown className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Proprietário do Workspace</CardTitle>
-                  <CardDescription>A conta principal que gere esta organização</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="p-3 bg-primary/10 rounded-full">
-                  <Building2 className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">{ownerProfile.full_name || 'Gestor'}</p>
-                  {ownerProfile.email && (
-                    <p className="text-sm text-muted-foreground">{ownerProfile.email}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Gestão de Equipe</h2>
+            <p className="text-sm text-muted-foreground">Visualização do proprietário do workspace</p>
+          </div>
+        </div>
 
-        {/* Simple team list (read-only, no actions) */}
-        {members && members.length > 0 && (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
-                <UsersRound className="h-5 w-5 text-muted-foreground" />
-              </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Proprietário do Workspace</CardTitle>
+            <CardDescription>A conta principal que gere esta organização</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+              <Avatar className="h-11 w-11">
+                <AvatarFallback>{ownerInitials || 'PW'}</AvatarFallback>
+              </Avatar>
               <div>
-                <h2 className="text-lg font-semibold">Membros da Equipa</h2>
-                <p className="text-sm text-muted-foreground">{members.length} membro(s)</p>
+                <p className="font-semibold text-foreground">{ownerName}</p>
+                <p className="text-sm text-muted-foreground">{ownerEmail}</p>
               </div>
             </div>
-            <div className="space-y-3">
-              {members.map((member: any) => (
-                <TeamMemberCard key={member.id} member={member} readOnly />
-              ))}
-            </div>
-          </>
-        )}
+          </CardContent>
+        </Card>
       </div>
     );
   }
