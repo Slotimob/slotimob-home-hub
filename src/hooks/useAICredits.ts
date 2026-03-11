@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface AICreditsData {
   plan_id: string;
@@ -13,20 +14,23 @@ interface AICreditsData {
 
 export function useAICredits() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
+
+  const targetId = effectiveBrokerId || user?.id;
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['ai-credits', user?.id],
+    queryKey: ['ai-credits', targetId],
     queryFn: async (): Promise<AICreditsData> => {
       const { data, error } = await supabase.rpc('get_ai_credits_balance', {
-        p_user_id: user!.id,
+        p_user_id: targetId!,
       });
 
       if (error) throw error;
 
       return data as unknown as AICreditsData;
     },
-    enabled: !!user?.id,
-    staleTime: 30_000, // 30s
+    enabled: !!targetId,
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
 

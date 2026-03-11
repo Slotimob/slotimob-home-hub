@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, UserPlus, UsersRound, ShieldCheck, Building2 } from 'lucide-react';
+import { Loader2, UserPlus, UsersRound, ShieldCheck, Building2, Crown } from 'lucide-react';
 import { TeamMemberCard } from './TeamMemberCard';
 import { InviteMemberDialog } from './InviteMemberDialog';
 import type { Permissions } from '@/hooks/usePermissions';
@@ -15,6 +16,7 @@ import type { Permissions } from '@/hooks/usePermissions';
 export function TeamManagement() {
   const { user } = useAuth();
   const { isOwner } = useUserRole();
+  const { isMember } = useWorkspace();
   const [showInvite, setShowInvite] = useState(false);
   const { features, checkLimit } = useSubscriptionLimits();
 
@@ -101,19 +103,65 @@ export function TeamManagement() {
     );
   }
 
+  // Members see a simplified read-only view
+  if (isMember) {
+    return (
+      <div className="space-y-6">
+        {/* Owner card */}
+        {ownerProfile && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Crown className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Proprietário do Workspace</CardTitle>
+                  <CardDescription>A conta principal que gere esta organização</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Building2 className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">{ownerProfile.full_name || 'Gestor'}</p>
+                  {ownerProfile.email && (
+                    <p className="text-sm text-muted-foreground">{ownerProfile.email}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Simple team list (read-only, no actions) */}
+        {members && members.length > 0 && (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-muted rounded-lg">
+                <UsersRound className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Membros da Equipa</h2>
+                <p className="text-sm text-muted-foreground">{members.length} membro(s)</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {members.map((member: any) => (
+                <TeamMemberCard key={member.id} member={member} readOnly />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Banner for agents */}
-      {!isOwner && ownerProfile && (
-        <Alert className="border-primary/20 bg-primary/5">
-          <Building2 className="h-5 w-5 text-primary" />
-          <AlertTitle className="text-base">A sua Organização</AlertTitle>
-          <AlertDescription>
-            Faz parte da equipa gerida por <strong>{ownerProfile.full_name || ownerProfile.email || 'Gestor'}</strong>.
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -123,25 +171,21 @@ export function TeamManagement() {
           <div>
             <h2 className="text-lg font-semibold">Gestão de Equipe</h2>
             <p className="text-sm text-muted-foreground">
-              {isOwner
-                ? 'Configure permissões granulares para cada membro da sua equipe'
-                : 'Visualize os membros da sua equipe'}
+              Configure permissões granulares para cada membro da sua equipe
             </p>
           </div>
         </div>
-        {isOwner && (
-          <div className="flex items-center gap-3">
-            <Button onClick={() => setShowInvite(true)} className="gap-2" disabled={isAtLimit}>
-              <UserPlus className="h-4 w-4" />
-              Convidar Membro
-            </Button>
-            {usersLimit !== -1 && (
-              <span className="text-sm text-muted-foreground">
-                {occupiedSeats}/{usersLimit} vagas
-              </span>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <Button onClick={() => setShowInvite(true)} className="gap-2" disabled={isAtLimit}>
+            <UserPlus className="h-4 w-4" />
+            Convidar Membro
+          </Button>
+          {usersLimit !== -1 && (
+            <span className="text-sm text-muted-foreground">
+              {occupiedSeats}/{usersLimit} vagas
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Members list */}
@@ -151,19 +195,19 @@ export function TeamManagement() {
             <UsersRound className="h-12 w-12 text-muted-foreground/40 mb-4" />
             <CardTitle className="text-lg mb-1">Nenhum membro na equipe</CardTitle>
             <CardDescription>
-              {isOwner ? 'Convide membros e defina permissões personalizadas por módulo.' : 'Ainda não há outros membros na equipe.'}
+              Convide membros e defina permissões personalizadas por módulo.
             </CardDescription>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {members.map((member: any) => (
-            <TeamMemberCard key={member.id} member={member} readOnly={!isOwner} />
+            <TeamMemberCard key={member.id} member={member} readOnly={false} />
           ))}
         </div>
       )}
 
-      {isOwner && <InviteMemberDialog open={showInvite} onOpenChange={setShowInvite} />}
+      <InviteMemberDialog open={showInvite} onOpenChange={setShowInvite} />
     </div>
   );
 }

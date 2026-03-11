@@ -95,7 +95,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check subscription
+    // Resolve effective broker (Master) for members
+    const { data: effectiveId } = await serviceClient.rpc("get_effective_broker_id", {
+      p_user_id: userId,
+    });
+    const billingUserId = (effectiveId as string) || userId;
+
+    // Check subscription using the effective (Master) user
     const { data: planData } = await serviceClient.rpc("get_user_plan_features", {
       p_user_id: userId,
     });
@@ -136,9 +142,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check AI credits
+    // Check AI credits against the Master (billing user)
     const { data: creditsData } = await serviceClient.rpc("get_ai_credits_balance", {
-      p_user_id: userId,
+      p_user_id: billingUserId,
     });
 
     const totalAvailable = (creditsData as any)?.total_available ?? 0;
@@ -354,7 +360,7 @@ REGRAS DE COMPORTAMENTO OBRIGATÓRIAS:
         const consumedCredits = Math.ceil(consumedTokens / 1000);
 
         if (consumedCredits > 0) {
-          deductCredits(serviceClient, userId, consumedCredits, creditsData as any);
+          deductCredits(serviceClient, billingUserId, consumedCredits, creditsData as any);
         }
       },
     });
