@@ -146,6 +146,10 @@ const Settings = () => {
 
       if (error) throw error;
 
+      // Invalidate all profile-related queries for instant UI sync
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-owner-profile'] });
+
       toast({
         title: 'Nome atualizado!',
         description: 'Seu nome foi salvo com sucesso.',
