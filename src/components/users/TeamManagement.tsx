@@ -23,47 +23,41 @@ export function TeamManagement() {
   const { data: members, isLoading } = useQuery({
     queryKey: ['organization-members', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
-
-      // If owner, fetch members of their org
-      // If agent, fetch members of the org they belong to
-      let ownerFilter = user.id;
-
-      if (!isOwner) {
-        // Agent: find the org they belong to
-        const { data: membership } = await supabase
-          .from('organization_members')
-          .select('organization_owner_id')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .maybeSingle();
-        if (membership) ownerFilter = membership.organization_owner_id;
-      }
+      if (!user?.id || !isOwner) return [];
 
       const { data, error } = await supabase
         .from('organization_members')
         .select('*')
-        .eq('organization_owner_id', ownerFilter)
+        .eq('organization_owner_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
 
       const userIds = (data || []).map((m: any) => m.user_id);
       if (userIds.length === 0) return [];
 
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .in('id', userIds);
+      if (profilesError) throw profilesError;
 
       const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
-      return (data || []).map((m: any) => ({
-        ...m,
-        permissions: (m.permissions || {}) as Permissions,
-        profile: profileMap.get(m.user_id) || null,
-      }));
+      return (data || []).map((m: any) => {
+        const profile = profileMap.get(m.user_id);
+        const resolvedName = profile?.full_name?.trim() || profile?.email?.trim() || 'Membro sem nome definido';
+
+        return {
+          ...m,
+          permissions: (m.permissions || {}) as Permissions,
+          profile: {
+            full_name: resolvedName,
+            email: profile?.email ?? null,
+          },
+        };
+      });
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isOwner,
   });
 
   // Fetch org owner profile using effectiveBrokerId from useWorkspace
