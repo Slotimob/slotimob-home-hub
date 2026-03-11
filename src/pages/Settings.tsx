@@ -29,6 +29,7 @@ const Settings = () => {
   const { isAdmin } = useAdminAccess();
   const { isSuperAdmin } = useSuperAdminAccess();
   const { isAgent } = useUserRole();
+  const { isMember, ownerId } = useWorkspace();
   const navigate = useNavigate();
   const { toast } = useToast();
 
