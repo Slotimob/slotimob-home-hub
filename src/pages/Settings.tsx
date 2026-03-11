@@ -475,6 +475,16 @@ const Settings = () => {
   return (
     <AppLayout title="Configurações">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Workspace banner for members */}
+        {isMember && (
+          <Alert className="border-primary/20 bg-primary/5">
+            <Building2 className="h-5 w-5 text-primary" />
+            <AlertTitle className="text-base">Workspace</AlertTitle>
+            <AlertDescription>
+              Estás no Workspace gerido pelo proprietário da conta. As tuas configurações pessoais (nome, foto, senha) podem ser alteradas, mas ações administrativas são restritas.
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Profile Section */}
         <Card>
           <CardHeader>
