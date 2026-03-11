@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Camera, FileText, Loader2, Scale, Shield, Linkedin, Instagram, PenLine, Building2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';

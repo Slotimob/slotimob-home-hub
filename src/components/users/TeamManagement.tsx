@@ -66,26 +66,20 @@ export function TeamManagement() {
     enabled: !!user?.id,
   });
 
-  // Fetch org owner name for agent banner
+  // Fetch org owner profile using effectiveBrokerId from useWorkspace
+  const { effectiveBrokerId } = useWorkspace();
   const { data: ownerProfile } = useQuery({
-    queryKey: ['organization-owner-profile', user?.id],
+    queryKey: ['organization-owner-profile', effectiveBrokerId],
     queryFn: async () => {
-      if (!user?.id) return null;
-      const { data: membership } = await supabase
-        .from('organization_members')
-        .select('organization_owner_id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-      if (!membership) return null;
+      if (!effectiveBrokerId) return null;
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, email')
-        .eq('id', membership.organization_owner_id)
+        .eq('id', effectiveBrokerId)
         .maybeSingle();
       return profile;
     },
-    enabled: !!user?.id && !isOwner,
+    enabled: !!effectiveBrokerId && isMember,
   });
 
   // Seat math: owner counts as 1 + active/pending members
