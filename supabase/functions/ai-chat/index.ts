@@ -360,7 +360,7 @@ REGRAS DE COMPORTAMENTO OBRIGATÓRIAS:
         const consumedCredits = Math.ceil(consumedTokens / 1000);
 
         if (consumedCredits > 0) {
-          deductCredits(serviceClient, userId, consumedCredits, creditsData as any);
+          deductCredits(serviceClient, billingUserId, consumedCredits, creditsData as any);
         }
       },
     });

@@ -874,8 +874,8 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Delete Account - Danger Zone */}
-        <DeleteAccountSection />
+        {/* Delete Account - Danger Zone (hidden for members) */}
+        {!isMember && <DeleteAccountSection />}
       </div>
     </AppLayout>
   );
