@@ -90,9 +90,9 @@ export function TeamManagement() {
     );
   }
 
-  if (!isOwner) {
-    const ownerName = ownerProfile?.full_name?.trim() || ownerProfile?.email?.trim() || 'Proprietário do Workspace';
-    const ownerEmail = ownerProfile?.email?.trim() || 'Email não disponível';
+  if (isMember) {
+    const ownerName = ownerProfile?.full_name?.trim() || ownerProfile?.email?.trim() || (isOwnerProfileLoading ? 'A carregar...' : 'Proprietário do Workspace');
+    const ownerEmail = ownerProfile?.email?.trim() || (isOwnerProfileLoading ? 'A carregar...' : 'Email não disponível');
     const ownerInitials = ownerName
       .split(' ')
       .filter(Boolean)

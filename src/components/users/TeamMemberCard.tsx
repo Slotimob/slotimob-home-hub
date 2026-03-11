@@ -67,8 +67,8 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
     setRoleLabel(label);
   };
 
-  const name = member.profile?.full_name || 'Sem nome';
-  const email = member.profile?.email || '';
+  const name = member.profile?.full_name?.trim() || 'Membro sem nome definido';
+  const email = member.profile?.email?.trim() || 'Email não disponível';
 
   return (
     <Card>
@@ -79,7 +79,7 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
               <User className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-sm">{name}</CardTitle>
+              <CardTitle className="text-sm font-semibold">{name}</CardTitle>
               <p className="text-xs text-muted-foreground">{email}</p>
             </div>
           </div>
