@@ -16,7 +16,7 @@ import type { Permissions } from '@/hooks/usePermissions';
 export function TeamManagement() {
   const { user } = useAuth();
   const { isOwner } = useUserRole();
-  const { isMember, effectiveBrokerId } = useWorkspace();
+  const { effectiveBrokerId } = useWorkspace();
   const [showInvite, setShowInvite] = useState(false);
   const { features, checkLimit } = useSubscriptionLimits();
 
