@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
     if (authError || !user) throw new Error("Not authenticated");
 
-    const { email, role_label, permissions } = await req.json();
+    const { email, role_label, permissions, member_name } = await req.json();
 
     if (!email || !email.includes("@")) {
       throw new Error("Email inválido");
