@@ -142,9 +142,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check AI credits
+    // Check AI credits against the Master (billing user)
     const { data: creditsData } = await serviceClient.rpc("get_ai_credits_balance", {
-      p_user_id: userId,
+      p_user_id: billingUserId,
     });
 
     const totalAvailable = (creditsData as any)?.total_available ?? 0;
