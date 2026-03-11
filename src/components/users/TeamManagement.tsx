@@ -16,7 +16,7 @@ import type { Permissions } from '@/hooks/usePermissions';
 export function TeamManagement() {
   const { user } = useAuth();
   const { isOwner } = useUserRole();
-  const { effectiveBrokerId } = useWorkspace();
+  const { effectiveBrokerId, isMember } = useWorkspace();
   const [showInvite, setShowInvite] = useState(false);
   const { features, checkLimit } = useSubscriptionLimits();
 
@@ -45,14 +45,15 @@ export function TeamManagement() {
 
       return (data || []).map((m: any) => {
         const profile = profileMap.get(m.user_id);
-        const resolvedName = profile?.full_name?.trim() || profile?.email?.trim() || 'Membro sem nome definido';
+        const resolvedEmail = profile?.email?.trim() || null;
+        const resolvedName = profile?.full_name?.trim() || resolvedEmail || 'Membro sem nome definido';
 
         return {
           ...m,
           permissions: (m.permissions || {}) as Permissions,
           profile: {
             full_name: resolvedName,
-            email: profile?.email ?? null,
+            email: resolvedEmail,
           },
         };
       });
@@ -60,10 +61,10 @@ export function TeamManagement() {
     enabled: !!user?.id && isOwner,
   });
 
-  const { data: ownerProfile } = useQuery({
+  const { data: ownerProfile, isLoading: isOwnerProfileLoading } = useQuery({
     queryKey: ['organization-owner-profile', effectiveBrokerId],
     queryFn: async () => {
-      if (!effectiveBrokerId) return null;
+      if (!effectiveBrokerId || !isMember) return null;
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, email')
@@ -71,7 +72,7 @@ export function TeamManagement() {
         .maybeSingle();
       return profile;
     },
-    enabled: !!effectiveBrokerId && !isOwner,
+    enabled: !!effectiveBrokerId && isMember,
   });
 
   // Seat math: owner counts as 1 + active/pending members
@@ -89,9 +90,9 @@ export function TeamManagement() {
     );
   }
 
-  if (!isOwner) {
-    const ownerName = ownerProfile?.full_name?.trim() || ownerProfile?.email?.trim() || 'Proprietário do Workspace';
-    const ownerEmail = ownerProfile?.email?.trim() || 'Email não disponível';
+  if (isMember) {
+    const ownerName = ownerProfile?.full_name?.trim() || ownerProfile?.email?.trim() || (isOwnerProfileLoading ? 'A carregar...' : 'Proprietário do Workspace');
+    const ownerEmail = ownerProfile?.email?.trim() || (isOwnerProfileLoading ? 'A carregar...' : 'Email não disponível');
     const ownerInitials = ownerName
       .split(' ')
       .filter(Boolean)
