@@ -110,6 +110,7 @@ Deno.serve(async (req) => {
       normalizedEmail,
       {
         data: {
+          full_name: member_name || role_label || "Agente",
           invited_by: user.id,
           role_label: role_label || "Agente",
         },
