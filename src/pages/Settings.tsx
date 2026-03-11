@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Camera, FileText, Loader2, Scale, Shield, Linkedin, Instagram, PenLine, Building2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,6 +33,7 @@ const Settings = () => {
   const { isMember, ownerId } = useWorkspace();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [profile, setProfile] = useState<any>(null);
   const [theme, setTheme] = useState('light-purple');
@@ -143,6 +145,10 @@ const Settings = () => {
         .eq('id', user?.id);
 
       if (error) throw error;
+
+      // Invalidate all profile-related queries for instant UI sync
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-owner-profile'] });
 
       toast({
         title: 'Nome atualizado!',
