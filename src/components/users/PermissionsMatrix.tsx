@@ -156,7 +156,19 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
             return (
               <TableRow key={mod.key}>
                 <TableCell className={`font-medium text-sm ${mod.indent ? 'pl-6' : ''}`}>
-                  {mod.label}
+                  <span className="inline-flex items-center gap-1">
+                    {mod.label}
+                    {MODULE_TOOLTIPS[mod.key] && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>{MODULE_TOOLTIPS[mod.key]}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </span>
                 </TableCell>
                 {ACTION_COLUMNS.map((col) => {
                   const hasAction = mod.actions.includes(col.key);
