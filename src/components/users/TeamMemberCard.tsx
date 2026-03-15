@@ -167,7 +167,7 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
                 <AlertDialogHeader>
                   <AlertDialogTitle>Remover membro da equipa?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Tem a certeza? O utilizador perderá o acesso ao seu Workspace imediatamente. Os imóveis e clientes que ele adicionou continuarão a pertencer-lhe.
+                    Tem a certeza? O utilizador perderá o acesso ao seu Workspace imediatamente. Todos os imóveis, contactos e negócios que ele adicionou serão transferidos definitivamente para a sua conta (Dono da Imobiliária).
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

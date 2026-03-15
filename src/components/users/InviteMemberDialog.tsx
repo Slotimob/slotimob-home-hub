@@ -86,7 +86,15 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
             </p>
           </div>
 
-          <RoleTemplateSelector onApply={handleApplyTemplate} />
+          <div className="space-y-2">
+            <Label htmlFor="invite-role">Cargo / Função</Label>
+            <Input
+              id="invite-role"
+              value={roleLabel}
+              onChange={(e) => setRoleLabel(e.target.value)}
+              placeholder="Ex: Corretor Sênior, Assistente..."
+            />
+          </div>
 
           <PermissionsMatrix permissions={permissions} onChange={setPermissions} />
 
