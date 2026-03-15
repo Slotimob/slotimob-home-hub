@@ -306,6 +306,7 @@ export function LeaseManagementSheet({
             </Button>
             
             {/* Delete Lease */}
+            {onDeleteLease && (
             <Button
               variant="outline"
               size="sm"
