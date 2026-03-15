@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import { UNIT_STATUS_STYLES, ALL_UNIT_STATUSES } from '@/utils/uiConstants';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type UnitStatus = Database['public']['Enums']['unit_status'];
 
@@ -353,7 +354,10 @@ export const RealEstateKanbanView = ({
   onSuccess,
 }: RealEstateKanbanViewProps) => {
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const canEdit = isOwner || hasPermission('assets_standalone', 'edit');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -390,6 +394,15 @@ export const RealEstateKanbanView = ({
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
+
+    if (!canEdit) {
+      toast({
+        title: 'Sem permissão',
+        description: 'Não tem permissão para alterar o status do imóvel.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     if (!over) return;
 
