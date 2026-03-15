@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/collapsible';
 import { Calendar, Trash2, Building2, ExternalLink, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import type { Unit } from '@/pages/Units';
 import type { Database } from '@/integrations/supabase/types';
@@ -72,6 +73,10 @@ interface PropertyDetails {
 
 export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSuccess }: UnitDetailsDialogProps) => {
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const moduleKey = unit.is_standalone ? 'real_estate' : 'units';
+  const canEdit = isOwner || hasPermission(moduleKey, 'edit');
+  const canDelete = isOwner || hasPermission(moduleKey, 'delete');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [propertyDetails, setPropertyDetails] = useState<PropertyDetails | null>(null);
@@ -254,15 +259,17 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
             )}
 
             <div className="flex justify-between">
-              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir Unidade
-              </Button>
-              <div className="flex gap-2">
+              {canDelete && (
+                <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir Unidade
+                </Button>
+              )}
+              <div className={`flex gap-2 ${!canDelete ? 'ml-auto' : ''}`}>
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Fechar
                 </Button>
-                <Button onClick={() => setShowEditDialog(true)}>Editar</Button>
+                {canEdit && <Button onClick={() => setShowEditDialog(true)}>Editar</Button>}
               </div>
             </div>
           </div>

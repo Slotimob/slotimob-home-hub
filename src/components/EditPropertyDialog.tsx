@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   Dialog,
   DialogContent,
@@ -93,6 +94,9 @@ const propertyToFormData = (prop: Property): PropertyFormData => ({
 
 export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: EditPropertyDialogProps) => {
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('properties', 'edit');
+  const canDelete = isOwner || hasPermission('properties', 'delete');
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [freshProperty, setFreshProperty] = useState<Property | null>(null);
@@ -280,9 +284,9 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
               key={`${property.id}-${freshProperty?.gallery_images?.length || 0}`}
               initialData={formData}
               isEditing={true}
-              onSubmit={handleSubmit}
+              onSubmit={canEdit ? handleSubmit : undefined as any}
               onCancel={handleCancel}
-              onDelete={() => setShowDeleteDialog(true)}
+              onDelete={canDelete ? () => setShowDeleteDialog(true) : undefined}
               isSubmitting={saving}
               propertyId={property.id}
               onRefreshProperty={handleRefreshProperty}
