@@ -83,6 +83,7 @@ export default function WhatsApp() {
   const { isOwner, hasPermission } = usePermissions();
   const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [agentFilter, setAgentFilter] = useState<string>('all');
 
   // Permission checks for crm_whatsapp
