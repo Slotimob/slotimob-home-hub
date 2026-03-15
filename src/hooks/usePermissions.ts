@@ -24,21 +24,27 @@ export const FULL_MODULE_PERMISSION: ModulePermission = {
 };
 
 export interface Permissions {
-  crm?: Partial<ModulePermission>;
-  properties?: Partial<ModulePermission>;
+  chat?: Partial<ModulePermission>;
+  dashboard?: Partial<ModulePermission>;
   management?: Partial<ModulePermission>;
-  finance?: Partial<ModulePermission>;
+  assets?: Partial<ModulePermission>;
+  financial?: Partial<ModulePermission>;
+  crm?: Partial<ModulePermission>;
   reports?: Partial<ModulePermission>;
+  documents?: Partial<ModulePermission>;
   integrations?: Partial<ModulePermission>;
   [module: string]: Partial<ModulePermission> | undefined;
 }
 
 export const PERMISSION_MODULES_KEYS = [
-  'crm',
-  'properties',
+  'chat',
+  'dashboard',
   'management',
-  'finance',
+  'assets',
+  'financial',
+  'crm',
   'reports',
+  'documents',
   'integrations',
 ] as const;
 
