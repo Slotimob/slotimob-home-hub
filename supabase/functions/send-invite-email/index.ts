@@ -35,13 +35,16 @@ Deno.serve(async (req) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // --- Business rule: only the subscription owner (no role = subscriber) can invite ---
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
+    // --- Business rule: only the subscription owner can invite ---
+    // Check if user is a member of someone else's organization (members can't invite)
+    const { data: membership } = await supabaseAdmin
+      .from("organization_members")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
 
-    if (roles && roles.length > 0) {
+    if (membership) {
       throw new Error("Apenas o assinante (owner) pode convidar membros.");
     }
 
