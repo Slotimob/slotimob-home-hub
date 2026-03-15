@@ -1369,12 +1369,12 @@ export function ContractsTab() {
             setLeaseSheetOpen(false);
           }
         }}
-        onDeleteLease={() => {
+        onDeleteLease={(isOwner || hasPermission('management_contracts', 'delete')) ? () => {
           if (selectedLeaseForSheet) {
             handleDeleteLease(selectedLeaseForSheet);
             setLeaseSheetOpen(false);
           }
-        }}
+        } : undefined}
         onTerminateLease={() => {
           // The Sheet already calls onOpenChange(false) before this callback
           // Just capture the lease and open the dialog
