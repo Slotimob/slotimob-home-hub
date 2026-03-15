@@ -345,11 +345,22 @@ export function useMessages(conversationId: string | null) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
+          const newMsg = payload.new as WhatsAppMessage;
           setMessages((prev) => {
-            const newMsg = payload.new as WhatsAppMessage;
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
+
+          // Auto-read: if an incoming message arrives while chat is open, reset unread
+          if (newMsg.direction === 'incoming') {
+            supabase
+              .from('whatsapp_conversations')
+              .update({ unread_count: 0 })
+              .eq('id', conversationId)
+              .then(({ error }) => {
+                if (error) console.error('Auto-read error:', error);
+              });
+          }
         }
       )
       .on(
