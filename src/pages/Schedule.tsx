@@ -50,6 +50,16 @@ export default function Schedule() {
     hour: number;
   }>({ open: false, activityType: '', date: new Date(), hour: 9 });
 
+  // Activity detail dialog state
+  const [activityDetailDialog, setActivityDetailDialog] = useState<{
+    open: boolean;
+    activity: any | null;
+  }>({ open: false, activity: null });
+
+  const handleActivityClick = (activity: any) => {
+    setActivityDetailDialog({ open: true, activity });
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
