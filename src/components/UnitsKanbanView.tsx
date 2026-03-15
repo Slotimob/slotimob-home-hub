@@ -340,8 +340,12 @@ export const UnitsKanbanView = ({
   const {
     toast
   } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
+
+  const canEdit = isOwner || hasPermission('assets_units', 'edit');
+
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: {
       distance: 8
