@@ -457,28 +457,43 @@ const Integrations = () => {
               )}
 
               {/* Action Buttons */}
-              {isConnected ? (
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => navigate('/whatsapp')}>
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Abrir Chat
+              {canManageWhatsApp ? (
+                isConnected ? (
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => navigate('/whatsapp')}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Abrir Chat
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp} disabled={isDisconnecting}>
+                      {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
+                    </Button>
+                  </div>
+                ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
+                  <Button className="w-full" onClick={() => {
+                    if (hasAcceptedTerms) {
+                      handleConnectWhatsApp();
+                    } else {
+                      setShowDisclaimer(true);
+                    }
+                  }} disabled={isConnecting || hasAcceptedTerms === null}>
+                    {isConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
+                    Conectar WhatsApp
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp} disabled={isDisconnecting}>
-                    {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
-                  </Button>
+                ) : null
+              ) : (
+                /* Agent: read-only view */
+                <div className="rounded-lg bg-muted/50 p-3 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {isConnected ? 'WhatsApp da Imobiliária conectado' : 'Aguardando conexão do Gestor'}
+                  </p>
+                  {isConnected && (
+                    <Button variant="outline" size="sm" className="mt-2" onClick={() => navigate('/whatsapp')}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Abrir Chat
+                    </Button>
+                  )}
                 </div>
-              ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
-                <Button className="w-full" onClick={() => {
-                  if (hasAcceptedTerms) {
-                    handleConnectWhatsApp();
-                  } else {
-                    setShowDisclaimer(true);
-                  }
-                }} disabled={isConnecting || hasAcceptedTerms === null}>
-                  {isConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
-                  Conectar WhatsApp
-                </Button>
-              ) : null}
+              )}
             </CardContent>
           </Card>
 
