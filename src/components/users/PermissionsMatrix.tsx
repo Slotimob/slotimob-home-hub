@@ -1,61 +1,34 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import type { Permissions } from '@/hooks/usePermissions';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import type { Permissions, ModulePermission } from '@/hooks/usePermissions';
+import { EMPTY_MODULE_PERMISSION } from '@/hooks/usePermissions';
 
-export interface PermissionModule {
+export interface PermissionModuleDef {
   key: string;
   label: string;
-  actions: { key: string; label: string }[];
 }
 
-export const PERMISSION_MODULES: PermissionModule[] = [
-  {
-    key: 'assets',
-    label: 'Ativos',
-    actions: [
-      { key: 'read', label: 'Ver' },
-      { key: 'create', label: 'Cadastrar' },
-      { key: 'edit', label: 'Editar' },
-      { key: 'delete', label: 'Excluir' },
-      { key: 'manage', label: 'Gerenciar' },
-    ],
-  },
-  {
-    key: 'crm',
-    label: 'CRM',
-    actions: [
-      { key: 'read', label: 'Ver leads' },
-      { key: 'read_all', label: 'Ver todos os leads' },
-      { key: 'move_pipeline', label: 'Mover funil' },
-      { key: 'delete', label: 'Excluir contatos' },
-    ],
-  },
-  {
-    key: 'financial',
-    label: 'Financeiro',
-    actions: [
-      { key: 'read', label: 'Ver visão geral' },
-      { key: 'create', label: 'Lançar despesas' },
-      { key: 'dre', label: 'Ver DRE' },
-      { key: 'reconciliation', label: 'Conciliação bancária' },
-    ],
-  },
-  {
-    key: 'documents',
-    label: 'Documentos',
-    actions: [
-      { key: 'generate', label: 'Gerar contratos' },
-      { key: 'read', label: 'Ver histórico' },
-      { key: 'delete', label: 'Excluir modelos' },
-    ],
-  },
-  {
-    key: 'chat',
-    label: 'Chat IA',
-    actions: [
-      { key: 'use', label: 'Usar chat IA' },
-    ],
-  },
+export const PERMISSION_MODULES: PermissionModuleDef[] = [
+  { key: 'crm', label: 'CRM' },
+  { key: 'properties', label: 'Imóveis / Ativos' },
+  { key: 'management', label: 'Gestão' },
+  { key: 'finance', label: 'Financeiro' },
+  { key: 'reports', label: 'Relatórios' },
+  { key: 'integrations', label: 'Integrações' },
+];
+
+const ACTION_COLUMNS: { key: keyof ModulePermission; label: string }[] = [
+  { key: 'view', label: 'Visualizar' },
+  { key: 'create', label: 'Criar' },
+  { key: 'edit', label: 'Editar' },
+  { key: 'delete', label: 'Excluir' },
 ];
 
 interface PermissionsMatrixProps {
@@ -65,39 +38,75 @@ interface PermissionsMatrixProps {
 }
 
 export function PermissionsMatrix({ permissions, onChange, disabled }: PermissionsMatrixProps) {
-  const toggle = (module: string, action: string, checked: boolean) => {
-    const updated = { ...permissions };
-    if (!updated[module]) updated[module] = {};
-    updated[module] = { ...updated[module]!, [action]: checked };
-    onChange(updated);
+  const getModulePerms = (moduleKey: string): ModulePermission => {
+    const raw = permissions[moduleKey];
+    if (!raw) return { ...EMPTY_MODULE_PERMISSION };
+    return {
+      view: raw.view === true,
+      create: raw.create === true,
+      edit: raw.edit === true,
+      delete: raw.delete === true,
+    };
+  };
+
+  const toggle = (moduleKey: string, action: keyof ModulePermission, checked: boolean) => {
+    const current = getModulePerms(moduleKey);
+
+    if (action === 'view' && !checked) {
+      // Unchecking view disables all other actions
+      onChange({
+        ...permissions,
+        [moduleKey]: { view: false, create: false, edit: false, delete: false },
+      });
+    } else {
+      onChange({
+        ...permissions,
+        [moduleKey]: { ...current, [action]: checked },
+      });
+    }
   };
 
   return (
-    <div className="space-y-5">
-      {PERMISSION_MODULES.map((mod) => (
-        <div key={mod.key}>
-          <h4 className="text-sm font-semibold mb-2 text-foreground">{mod.label}</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
-            {mod.actions.map((action) => {
-              const checked = permissions[mod.key]?.[action.key] === true;
-              const id = `${mod.key}-${action.key}`;
-              return (
-                <div key={id} className="flex items-center gap-2">
-                  <Checkbox
-                    id={id}
-                    checked={checked}
-                    onCheckedChange={(v) => toggle(mod.key, action.key, v === true)}
-                    disabled={disabled}
-                  />
-                  <Label htmlFor={id} className="text-sm font-normal cursor-pointer">
-                    {action.label}
-                  </Label>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[140px]">Módulo</TableHead>
+            {ACTION_COLUMNS.map((col) => (
+              <TableHead key={col.key} className="text-center w-[90px]">
+                {col.label}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {PERMISSION_MODULES.map((mod) => {
+            const perms = getModulePerms(mod.key);
+            const viewEnabled = perms.view;
+
+            return (
+              <TableRow key={mod.key}>
+                <TableCell className="font-medium text-sm">{mod.label}</TableCell>
+                {ACTION_COLUMNS.map((col) => {
+                  const isView = col.key === 'view';
+                  const isDisabled = disabled || (!isView && !viewEnabled);
+                  const checked = perms[col.key];
+
+                  return (
+                    <TableCell key={col.key} className="text-center">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => toggle(mod.key, col.key, v === true)}
+                        disabled={isDisabled}
+                      />
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
