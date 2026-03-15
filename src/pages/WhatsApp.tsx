@@ -359,9 +359,7 @@ export default function WhatsApp() {
                   conversation={selectedConversation}
                   contact={contact}
                   contactLoading={contactLoading}
-                  onCreateDeal={() => {
-                    console.log('Create deal for contact', contact?.id);
-                  }}
+                  onCreateDeal={canCreateDeal ? handleCreateDeal : undefined}
                 />
               </div>
             )}
