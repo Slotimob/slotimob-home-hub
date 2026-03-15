@@ -68,7 +68,7 @@ const Integrations = () => {
       if (error) return 0;
       return count ?? 0;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
     staleTime: 30_000,
   });
 
