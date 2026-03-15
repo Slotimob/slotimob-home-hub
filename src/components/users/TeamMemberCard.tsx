@@ -45,6 +45,7 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
   const [permissions, setPermissions] = useState<Permissions>(member.permissions || {});
   const [roleLabel, setRoleLabel] = useState(member.role_label);
   const queryClient = useQueryClient();
+  const { effectiveBrokerId } = useWorkspace();
 
   const updateMember = useMutation({
     mutationFn: async () => {
