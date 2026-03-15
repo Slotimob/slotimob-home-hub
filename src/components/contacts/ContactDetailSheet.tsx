@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Phone, Mail, MapPin, FileText, Pencil, MessageSquare } from 'lucide-react';
+import { Phone, Mail, MapPin, FileText, Pencil, MessageSquare, Trash2 } from 'lucide-react';
 import { ContactCategoryBadges } from './ContactCategoryFilter';
 import { UnifiedContact } from './ContactCard';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
