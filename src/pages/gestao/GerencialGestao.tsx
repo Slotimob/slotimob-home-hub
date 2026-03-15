@@ -340,10 +340,12 @@ const GerencialGestao = () => {
                   <p className="text-sm text-muted-foreground max-w-sm mt-1">
                     Registre pagamentos de contas (água, luz, etc.) que são de responsabilidade de terceiros e não afetam o caixa da imobiliária.
                   </p>
+                  {canCreate && (
                   <Button className="mt-4" onClick={() => { resetForm(); setCreateDialogOpen(true); }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Criar Lançamento
                   </Button>
+                  )}
                 </div>
               ) : (
                 <Table>
