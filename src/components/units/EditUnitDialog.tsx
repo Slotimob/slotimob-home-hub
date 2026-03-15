@@ -201,7 +201,23 @@ export const EditUnitDialog = ({
     setGalleryImages(unit.gallery_images || []);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from('units').delete().eq('id', unit.id);
+      if (error) throw error;
+      toast({ title: 'Imóvel excluído com sucesso' });
+      clearDraft();
+      onOpenChange(false);
+      onSuccess();
+    } catch (error: any) {
+      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
     e.preventDefault();
 
     // Validate financial fields based on intent_type
