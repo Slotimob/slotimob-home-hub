@@ -33,6 +33,7 @@ const FinanceTransactions = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
