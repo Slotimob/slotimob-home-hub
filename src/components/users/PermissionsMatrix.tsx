@@ -7,6 +7,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { HelpCircle } from 'lucide-react';
 import type { Permissions, ModulePermission } from '@/hooks/usePermissions';
 import { EMPTY_MODULE_PERMISSION } from '@/hooks/usePermissions';
 
