@@ -30,6 +30,7 @@ interface ChatSidebarProps {
   teamMembers?: { id: string; name: string }[];
   agentFilter?: string;
   onAgentFilterChange?: (value: string) => void;
+  showTriageTabs?: boolean;
 }
 
 function formatTimestamp(dateStr: string | null): string {
