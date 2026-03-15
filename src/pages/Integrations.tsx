@@ -404,8 +404,8 @@ const Integrations = () => {
                 </div>
               )}
 
-              {/* Features list */}
-              {instancesLimit > 0 && (
+              {/* Features list — only for managers */}
+              {canManageWhatsApp && instancesLimit > 0 && (
                 <div className="rounded-lg bg-muted/50 p-4 space-y-2">
                   <h4 className="font-medium text-sm">Recursos:</h4>
                   <ul className="text-sm text-muted-foreground space-y-1">
