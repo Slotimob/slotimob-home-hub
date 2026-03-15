@@ -140,6 +140,8 @@ interface UnitFormFieldsProps {
   /** When true, shows address fields; when false (unit mode), hides them */
   isStandalone?: boolean;
   onPropertiesChange?: (properties: Property[]) => void;
+  /** When true, all inputs are disabled (read-only mode) */
+  disabled?: boolean;
 }
 
 export const UnitFormFields = ({
