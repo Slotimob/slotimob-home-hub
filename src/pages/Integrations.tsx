@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle, XCircle, Timer, ArrowUpCircle } from 'lucide-react';
+import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle, XCircle, Timer, ArrowUpCircle, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { WhatsAppDisclaimerDialog } from '@/components/whatsapp/WhatsAppDisclaimerDialog';
@@ -52,28 +52,9 @@ const Integrations = () => {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
 
-  // Instance limit
+  // Instance limit — 1 connection per workspace
   const instancesLimit = features?.whatsapp_instances_limit ?? 0;
-
-  // Count active connections for this broker (master)
-  const { data: activeConnectionsCount = 0 } = useQuery({
-    queryKey: ['whatsapp-active-connections', user?.id],
-    queryFn: async () => {
-      if (!effectiveBrokerId) return 0;
-      const { count, error } = await supabase
-        .from('whatsapp_connections')
-        .select('id', { count: 'exact', head: true })
-        .eq('broker_id', effectiveBrokerId)
-        .eq('status', 'connected');
-      if (error) return 0;
-      return count ?? 0;
-    },
-    enabled: !!effectiveBrokerId,
-    staleTime: 30_000,
-  });
-
-  const isAtInstanceLimit = instancesLimit > 0 && activeConnectionsCount >= instancesLimit;
-  const canConnect = instancesLimit > 0 && !isAtInstanceLimit;
+  const canConnect = instancesLimit > 0;
 
   // Check if user already accepted WhatsApp terms
   useEffect(() => {
@@ -244,13 +225,6 @@ const Integrations = () => {
                   <CardTitle className="text-xl">WhatsApp</CardTitle>
                   <CardDescription>Conexão via QR Code</CardDescription>
                 </div>
-                {/* Instance counter badge */}
-                {instancesLimit > 0 && (
-                  <Badge variant={isAtInstanceLimit ? 'destructive' : 'secondary'} className="text-xs">
-                    <Wifi className="h-3 w-3 mr-1" />
-                    {activeConnectionsCount} / {instancesLimit} conexões
-                  </Badge>
-                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -269,22 +243,9 @@ const Integrations = () => {
                 </div>
               )}
 
-              {isAtInstanceLimit && !isConnected && !isPreparing && !hasQrCode && (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium">Limite de conexões do seu plano atingido</p>
-                    <p className="text-xs mt-1">Desconecte uma instância existente ou faça upgrade para mais conexões.</p>
-                    <Button variant="link" size="sm" className="p-0 h-auto mt-1 text-destructive" onClick={() => navigate('/settings')}>
-                      <ArrowUpCircle className="h-3 w-3 mr-1" />
-                      Upgrade
-                    </Button>
-                  </div>
-                </div>
-              )}
 
               {/* Status Badge */}
-              {instancesLimit > 0 && (
+              {canManageWhatsApp && instancesLimit > 0 && (
                 <div className="flex items-center gap-2">
                   {isConnected ? (
                     <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
@@ -426,7 +387,7 @@ const Integrations = () => {
               )}
 
               {/* Description (only when not showing QR or progress) */}
-              {!isPreparing && !hasQrCode && instancesLimit > 0 && !isAtInstanceLimit && (
+              {canManageWhatsApp && !isPreparing && !hasQrCode && instancesLimit > 0 && !isConnected && (
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Conecte seu WhatsApp pessoal ou comercial escaneando um QR Code.
                   Todas as mensagens serão sincronizadas com o CRM em tempo real.
@@ -443,8 +404,8 @@ const Integrations = () => {
                 </div>
               )}
 
-              {/* Features list */}
-              {instancesLimit > 0 && (
+              {/* Features list — only for managers */}
+              {canManageWhatsApp && instancesLimit > 0 && (
                 <div className="rounded-lg bg-muted/50 p-4 space-y-2">
                   <h4 className="font-medium text-sm">Recursos:</h4>
                   <ul className="text-sm text-muted-foreground space-y-1">
@@ -481,18 +442,24 @@ const Integrations = () => {
                   </Button>
                 ) : null
               ) : (
-                /* Agent: read-only view */
-                <div className="rounded-lg bg-muted/50 p-3 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {isConnected ? 'WhatsApp da Imobiliária conectado' : 'Aguardando conexão do Gestor'}
-                  </p>
-                  {isConnected && (
-                    <Button variant="outline" size="sm" className="mt-2" onClick={() => navigate('/whatsapp')}>
+                /* Agent: clean read-only view */
+                isConnected ? (
+                  <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-green-600" />
+                      <p className="text-sm font-medium text-foreground">WhatsApp da Imobiliária ativo e sincronizado</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/whatsapp')}>
                       <MessageSquare className="h-4 w-4 mr-2" />
                       Abrir Chat
                     </Button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg bg-muted/50 p-4 text-center space-y-1">
+                    <WifiOff className="h-5 w-5 text-muted-foreground mx-auto" />
+                    <p className="text-sm text-muted-foreground">Aguardando conexão do Gestor</p>
+                  </div>
+                )
               )}
             </CardContent>
           </Card>

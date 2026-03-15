@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import { QUICK_REPLIES } from './mockData';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
@@ -181,6 +182,7 @@ export function ChatArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const agentName = useAgentName(assignedUserId || null, teamMembers);
+  const { toast } = useToast();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -405,7 +407,12 @@ export function ChatArea({
           </div>
         ) : (
           <div className="flex items-end gap-2">
-            <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9"
+              onClick={() => toast({ title: 'Em breve', description: 'Envio de anexos estará disponível em breve.' })}
+            >
               <Paperclip className="h-5 w-5" />
             </Button>
 
