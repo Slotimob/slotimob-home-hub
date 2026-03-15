@@ -200,6 +200,11 @@ export function AppSidebar() {
       });
   };
 
+  // Check if any sub-item in the group has view permission
+  const hasAnySubPermission = (items: SubMenuItem[]): boolean => {
+    return items.some(sub => !sub.moduleKey || hasPermission(sub.moduleKey, 'view'));
+  };
+
   // Filter menu items based on role, plan, and granular permissions
   const filteredMenuItems = menuItems
     .map(item => {
@@ -211,15 +216,22 @@ export function AppSidebar() {
       if (item.items && item.items.length === 0) return false;
       // ownerOnly blocks agents, but members with permission should pass through
       if (item.ownerOnly && isAgent && !isMember) return false;
-      if (item.ownerOnly && isMember && !isPermOwner && item.moduleKey && !hasPermission(item.moduleKey, 'view')) return false;
+      // For groups with sub-items and ownerOnly: check if member has any sub-item permission
+      if (item.ownerOnly && isMember && !isPermOwner) {
+        if (item.items) return hasAnySubPermission(item.items);
+        if (item.moduleKey && !hasPermission(item.moduleKey, 'view')) return false;
+      }
       if (item.hiddenOnPlan?.includes(plan)) {
         if (item.trialVisible && isTrialActive) return true;
         if (item.url === '/ai-chat') return true;
         return false;
       }
       // Granular permission enforcement for members (non-owners)
-      if (!isPermOwner && isMember && item.moduleKey) {
-        if (!hasPermission(item.moduleKey, 'view')) return false;
+      if (!isPermOwner && isMember) {
+        // For items with sub-items, the sub-item filtering already handles visibility
+        if (item.items) return true;
+        // For top-level items with moduleKey
+        if (item.moduleKey && !hasPermission(item.moduleKey, 'view')) return false;
       }
       return true;
     });
