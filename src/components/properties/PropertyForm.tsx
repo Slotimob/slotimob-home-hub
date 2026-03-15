@@ -395,6 +395,7 @@ export function PropertyForm({
                   variant={formData.intent_type === 'sale' ? 'default' : 'outline'}
                   className="w-full text-sm px-2"
                   onClick={() => setFormData({ ...formData, intent_type: 'sale' })}
+                  disabled={disabled}
                 >
                   Venda
                 </Button>
@@ -403,6 +404,7 @@ export function PropertyForm({
                   variant={formData.intent_type === 'rental' ? 'default' : 'outline'}
                   className="w-full text-sm px-2"
                   onClick={() => setFormData({ ...formData, intent_type: 'rental' })}
+                  disabled={disabled}
                 >
                   Locação
                 </Button>
@@ -411,6 +413,7 @@ export function PropertyForm({
                   variant={formData.intent_type === 'both' ? 'default' : 'outline'}
                   className="w-full text-sm px-2"
                   onClick={() => setFormData({ ...formData, intent_type: 'both' })}
+                  disabled={disabled}
                 >
                   Ambos
                 </Button>
