@@ -24,6 +24,7 @@ interface ChatAreaProps {
   conversation: WhatsAppConversation | null;
   messages: WhatsAppMessage[];
   onSendMessage: (content: string) => void;
+  onSendMedia?: (file: File) => void;
   onBack?: () => void;
   onToggleCrm?: () => void;
   showCrmToggle?: boolean;
