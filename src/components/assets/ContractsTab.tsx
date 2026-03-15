@@ -261,6 +261,7 @@ export function ContractsTab() {
         .from("units")
         .select("id, unit_number, address, city, is_occupied, owner_contact_id")
         .eq("broker_id", effectiveBrokerId || user.id)
+        .eq("is_managed", true)
         .order("unit_number", { ascending: true });
       if (error) throw error;
       return data || [];
