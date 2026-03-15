@@ -58,6 +58,10 @@ export function CreateTransactionDialog({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { effectiveBrokerId } = useWorkspace();
+  const { isOwner, hasPermission } = usePermissions();
+  
+  const canEdit = !editTransaction || isOwner || hasPermission('finance_transactions', 'edit');
+  const canReconcile = isOwner || hasPermission('finance_reconciliation', 'create') || hasPermission('finance_reconciliation', 'edit');
   
   // Determine initial mode - check if it's a transfer edit
   const isTransferEdit = editTransaction?.obligation_type === "transfer";
