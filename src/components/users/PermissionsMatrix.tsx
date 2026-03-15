@@ -189,5 +189,6 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
         </TableBody>
       </Table>
     </div>
+    </TooltipProvider>
   );
 }
