@@ -129,19 +129,23 @@ const Properties = () => {
       title="Empreendimentos"
       headerActions={
         <div className="flex items-center gap-1 sm:gap-1.5">
-          <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3" onClick={() => setIsDialogOpen(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden md:inline md:ml-2">Novo Empreendimento</span>
-          </Button>
-          <AddAssetButton 
-            variant="outline" 
-            showIcon={true}
-            onSuccess={loadProperties}
-          />
-          <Button variant="outline" size="sm" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3" onClick={() => setIsImportOpen(true)}>
-            <Upload className="h-4 w-4" />
-            <span className="hidden lg:inline lg:ml-2">Importar</span>
-          </Button>
+          {canCreate && (
+            <>
+              <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3" onClick={() => setIsDialogOpen(true)}>
+                <Plus className="h-4 w-4" />
+                <span className="hidden md:inline md:ml-2">Novo Empreendimento</span>
+              </Button>
+              <AddAssetButton 
+                variant="outline" 
+                showIcon={true}
+                onSuccess={loadProperties}
+              />
+              <Button variant="outline" size="sm" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3" onClick={() => setIsImportOpen(true)}>
+                <Upload className="h-4 w-4" />
+                <span className="hidden lg:inline lg:ml-2">Importar</span>
+              </Button>
+            </>
+          )}
         </div>
       }
     >

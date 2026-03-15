@@ -157,6 +157,7 @@ const FinanceReconciliation = () => {
 
               {/* Action Buttons - Compact */}
               <div className="flex gap-1.5">
+                {canCreate && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -167,6 +168,18 @@ const FinanceReconciliation = () => {
                   <Upload className="h-3.5 w-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">Importar</span>
                 </Button>
+                )}
+                {canCreate && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsCreateAccountOpen(true)}
+                  className="h-8 text-xs"
+                >
+                  <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Nova Conta</span>
+                </Button>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm" 
