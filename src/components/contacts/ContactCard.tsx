@@ -49,6 +49,8 @@ export const ContactCard = ({
   onEdit,
   onDelete,
   onCreateDeal,
+  canEdit = true,
+  canDelete = true,
 }: ContactCardProps) => {
   const getInitials = (name: string) => {
     return name
