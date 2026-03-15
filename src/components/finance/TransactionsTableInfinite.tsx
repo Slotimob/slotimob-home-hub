@@ -709,13 +709,13 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
-                          {!transaction.is_reconciled && (
+                          {canReconcile && !transaction.is_reconciled && (
                             <>
                               <DropdownMenuItem onClick={() => handleOpenReconciliationMatcher(transaction)} className="text-xs">
                                 <Link2 className="h-3.5 w-3.5 mr-2 text-blue-500" />
                                 Conciliar com Extrato
                               </DropdownMenuItem>
-                              {transaction.status === "pending" && (
+                              {canEditTx && transaction.status === "pending" && (
                                 <DropdownMenuItem onClick={() => handleMarkAsPaid(transaction.id)} className="text-xs">
                                   <Check className="h-3.5 w-3.5 mr-2" />
                                   Marcar como Pago
@@ -724,7 +724,7 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
-                          {transaction.is_reconciled && (
+                          {canReconcile && transaction.is_reconciled && (
                             <>
                               <DropdownMenuItem onClick={() => handleQuickReconcile(transaction)} className="text-xs">
                                 <Circle className="h-3.5 w-3.5 mr-2" />
@@ -733,18 +733,24 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
-                          <DropdownMenuItem onClick={() => setEditTransaction(transaction)} className="text-xs">
-                            <Pencil className="h-3.5 w-3.5 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive text-xs"
-                            onClick={(e) => handleDeleteClick(transaction, e)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
+                          {canEditTx && (
+                            <DropdownMenuItem onClick={() => setEditTransaction(transaction)} className="text-xs">
+                              <Pencil className="h-3.5 w-3.5 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                          )}
+                          {canDeleteTx && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive text-xs"
+                                onClick={(e) => handleDeleteClick(transaction, e)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
