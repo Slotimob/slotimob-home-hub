@@ -75,6 +75,10 @@ export function TransactionsTableInfinite({
   const isMobile = useIsMobile();
   const { reconcileTransaction, isReconciling } = useProgressiveBalance();
   const { sendBillingReminder, isEligibleForBilling, isSending: isSendingBilling } = useWhatsAppBilling();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEditTx = isOwner || hasPermission('finance_transactions', 'edit');
+  const canDeleteTx = isOwner || hasPermission('finance_transactions', 'delete');
+  const canReconcile = isOwner || hasPermission('finance_reconciliation', 'edit') || hasPermission('finance_reconciliation', 'create');
   const [editTransaction, setEditTransaction] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
