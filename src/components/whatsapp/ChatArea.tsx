@@ -164,6 +164,7 @@ export function ChatArea({
   conversation,
   messages,
   onSendMessage,
+  onSendMedia,
   onBack,
   onToggleCrm,
   showCrmToggle,
