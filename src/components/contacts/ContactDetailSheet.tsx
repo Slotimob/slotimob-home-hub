@@ -14,7 +14,9 @@ interface ContactDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
+  onDelete?: () => void;
   canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export const ContactDetailSheet = ({
