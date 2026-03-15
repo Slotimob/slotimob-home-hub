@@ -356,9 +356,15 @@ export function CreateTransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editTransaction ? "Editar Lançamento" : "Novo Lançamento"}</DialogTitle>
+          <DialogTitle>
+            {editTransaction 
+              ? (canEdit ? "Editar Lançamento" : "Detalhes do Lançamento") 
+              : "Novo Lançamento"}
+          </DialogTitle>
           <DialogDescription>
-            {editTransaction ? "Atualize os dados do lançamento" : "Registre uma nova receita ou despesa"}
+            {editTransaction 
+              ? (canEdit ? "Atualize os dados do lançamento" : "Visualização do lançamento") 
+              : "Registre uma nova receita ou despesa"}
           </DialogDescription>
         </DialogHeader>
 
