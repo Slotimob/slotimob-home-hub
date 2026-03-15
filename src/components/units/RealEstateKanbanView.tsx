@@ -395,6 +395,15 @@ export const RealEstateKanbanView = ({
     const { active, over } = event;
     setActiveId(null);
 
+    if (!canEdit) {
+      toast({
+        title: 'Sem permissão',
+        description: 'Não tem permissão para alterar o status do imóvel.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!over) return;
 
     const draggedUnit = units.find((u) => u.id === active.id);
