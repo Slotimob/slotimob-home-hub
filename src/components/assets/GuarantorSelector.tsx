@@ -56,6 +56,7 @@ export function GuarantorSelector({
   disabled = false,
 }: GuarantorSelectorProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
