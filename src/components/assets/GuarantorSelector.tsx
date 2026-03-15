@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown, User, X, Plus, Loader2, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { GuarantorData } from "@/hooks/useLeases";
 
