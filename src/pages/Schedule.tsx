@@ -691,6 +691,16 @@ onActivityClick={handleActivityClick}
             }}
           />
 
+          <ScheduleActivityDetailDialog
+            activity={activityDetailDialog.activity}
+            open={activityDetailDialog.open}
+            onOpenChange={(open) => setActivityDetailDialog(prev => ({ ...prev, open }))}
+            onSuccess={() => {
+              refetchActivities();
+              queryClient.invalidateQueries({ queryKey: ["all-schedule-activities"] });
+            }}
+          />
+
           {/* Drag Overlay */}
           <DragOverlay>
             {draggedActivity && (
