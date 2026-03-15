@@ -23,6 +23,7 @@ import { addMonths, format } from "date-fns";
 import { ObligationType } from "@/hooks/useAssetHealth";
 import { ObligationSelector } from "@/components/finance/ObligationSelector";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export interface TransactionPrefill {
   description?: string;
