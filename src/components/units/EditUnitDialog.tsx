@@ -155,13 +155,17 @@ export const EditUnitDialog = ({
   onSuccess,
 }: EditUnitDialogProps) => {
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { isOwner: isPermOwner, hasPermission } = usePermissions();
   const [saving, setSaving] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   
   const isStandalone = unit.is_standalone ?? false;
+  const moduleKey = isStandalone ? 'real_estate' : 'units';
+  const canDelete = isPermOwner || hasPermission(moduleKey, 'delete');
   const showPropertySelector = !isStandalone;
 
   // Use form draft hook for persistence
