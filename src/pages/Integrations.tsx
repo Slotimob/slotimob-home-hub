@@ -225,13 +225,6 @@ const Integrations = () => {
                   <CardTitle className="text-xl">WhatsApp</CardTitle>
                   <CardDescription>Conexão via QR Code</CardDescription>
                 </div>
-                {/* Instance counter badge */}
-                {instancesLimit > 0 && (
-                  <Badge variant={isAtInstanceLimit ? 'destructive' : 'secondary'} className="text-xs">
-                    <Wifi className="h-3 w-3 mr-1" />
-                    {activeConnectionsCount} / {instancesLimit} conexões
-                  </Badge>
-                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
