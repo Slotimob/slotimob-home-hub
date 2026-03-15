@@ -343,7 +343,7 @@ export function ContractsTab() {
       const { data, error } = await supabase
         .from("units")
         .select("id, property_id, is_standalone")
-        .eq("broker_id", user.id);
+        .eq("broker_id", effectiveBrokerId || user.id);
       if (error) throw error;
       return data || [];
     },
