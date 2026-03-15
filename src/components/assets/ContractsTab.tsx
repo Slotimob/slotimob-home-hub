@@ -261,6 +261,7 @@ export function ContractsTab() {
         .from("units")
         .select("id, unit_number, address, city, is_occupied, owner_contact_id")
         .eq("broker_id", effectiveBrokerId || user.id)
+        .eq("is_managed", true)
         .order("unit_number", { ascending: true });
       if (error) throw error;
       return data || [];
@@ -842,7 +843,7 @@ export function ContractsTab() {
                   onQuickTransactionClick={handleQuickTransaction}
                   onGenerateContractClick={handleGenerateContract}
                   onViewFinancialsClick={handleViewFinancials}
-                  onTerminateClick={handleTerminateContract}
+                  onTerminateClick={(isOwner || hasPermission('management_contracts', 'edit')) ? handleTerminateContract : undefined}
                   onUploadContractClick={handleUploadContract}
                   onToggleSignatureClick={handleToggleSignature}
                   onEditAdjustmentDateClick={handleEditAdjustmentDate}
@@ -1368,20 +1369,18 @@ export function ContractsTab() {
             setLeaseSheetOpen(false);
           }
         }}
-        onDeleteLease={() => {
+        onDeleteLease={(isOwner || hasPermission('management_contracts', 'delete')) ? () => {
           if (selectedLeaseForSheet) {
             handleDeleteLease(selectedLeaseForSheet);
             setLeaseSheetOpen(false);
           }
-        }}
-        onTerminateLease={() => {
-          // The Sheet already calls onOpenChange(false) before this callback
-          // Just capture the lease and open the dialog
+        } : undefined}
+        onTerminateLease={(isOwner || hasPermission('management_contracts', 'edit')) ? () => {
           if (selectedLeaseForSheet) {
             setTerminatingLease(selectedLeaseForSheet);
             setTerminateDialogOpen(true);
           }
-        }}
+        } : undefined}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -286,6 +286,7 @@ export function LeaseManagementSheet({
             </Button>
             
             {/* Terminate Lease */}
+            {onTerminateLease && (
             <Button
               variant="outline"
               size="sm"
@@ -293,19 +294,20 @@ export function LeaseManagementSheet({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (lease && onTerminateLease) {
-                  // CRITICAL: Delegate to parent to handle termination dialog
+                if (lease) {
                   onOpenChange(false);
                   onTerminateLease();
                 }
               }}
-              disabled={!lease || lease.status === "terminated" || !onTerminateLease}
+              disabled={!lease || lease.status === "terminated"}
             >
               <XCircle className="h-4 w-4" />
               <span className="truncate">Encerrar Locação</span>
             </Button>
+            )}
             
             {/* Delete Lease */}
+            {onDeleteLease && (
             <Button
               variant="outline"
               size="sm"
@@ -320,6 +322,7 @@ export function LeaseManagementSheet({
               <Trash2 className="h-4 w-4" />
               <span className="truncate">Excluir Contrato do Sistema</span>
             </Button>
+            )}
           </div>
           
           {/* Secondary Actions */}
