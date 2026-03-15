@@ -101,7 +101,7 @@ export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegot
             properties!inner (name)
           )
         `)
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .not('due_date', 'is', null)
         .gte('due_date', startDate.toISOString().split('T')[0])
         .lte('due_date', endDate.toISOString().split('T')[0])
