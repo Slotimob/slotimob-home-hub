@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown, User, X, Plus, Loader2, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { GuarantorData } from "@/hooks/useLeases";
 
@@ -55,6 +56,7 @@ export function GuarantorSelector({
   disabled = false,
 }: GuarantorSelectorProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -75,7 +77,7 @@ export function GuarantorSelector({
       const { data, error } = await supabase
         .from("contacts")
         .select("id, name, email, phone, document_number, address, city, state, postal_code, metadata, categories")
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .contains("categories", ["Fiador"])
         .order("name");
 

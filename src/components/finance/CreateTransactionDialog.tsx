@@ -23,6 +23,7 @@ import { addMonths, format } from "date-fns";
 import { ObligationType } from "@/hooks/useAssetHealth";
 import { ObligationSelector } from "@/components/finance/ObligationSelector";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export interface TransactionPrefill {
   description?: string;
@@ -57,6 +58,10 @@ export function CreateTransactionDialog({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { effectiveBrokerId } = useWorkspace();
+  const { isOwner, hasPermission } = usePermissions();
+  
+  const canEdit = !editTransaction || isOwner || hasPermission('finance_transactions', 'edit');
+  const canReconcile = isOwner || hasPermission('finance_reconciliation', 'create') || hasPermission('finance_reconciliation', 'edit');
   
   // Determine initial mode - check if it's a transfer edit
   const isTransferEdit = editTransaction?.obligation_type === "transfer";
@@ -351,9 +356,15 @@ export function CreateTransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editTransaction ? "Editar Lançamento" : "Novo Lançamento"}</DialogTitle>
+          <DialogTitle>
+            {editTransaction 
+              ? (canEdit ? "Editar Lançamento" : "Detalhes do Lançamento") 
+              : "Novo Lançamento"}
+          </DialogTitle>
           <DialogDescription>
-            {editTransaction ? "Atualize os dados do lançamento" : "Registre uma nova receita ou despesa"}
+            {editTransaction 
+              ? (canEdit ? "Atualize os dados do lançamento" : "Visualização do lançamento") 
+              : "Registre uma nova receita ou despesa"}
           </DialogDescription>
         </DialogHeader>
 
@@ -368,6 +379,7 @@ export function CreateTransactionDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <fieldset disabled={!canEdit || isReconciled}>
           {/* Type Selector - 3 tabs */}
           <Tabs value={mode} onValueChange={(v) => setMode(v as "income" | "expense" | "transfer")}>
             <TabsList className="grid w-full grid-cols-3">
@@ -703,22 +715,25 @@ export function CreateTransactionDialog({
           </>
           )}
 
+          </fieldset>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {canEdit ? "Cancelar" : "Fechar"}
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading 
-                ? "Salvando..." 
-                : editTransaction 
-                  ? "Atualizar" 
-                  : mode === "transfer"
-                    ? "Criar Transferência"
-                    : isRecurring 
-                      ? `Criar ${recurrenceCount} Lançamentos` 
-                      : "Criar Lançamento"
-              }
-            </Button>
+            {canEdit && (
+              <Button type="submit" disabled={isLoading}>
+                {isLoading 
+                  ? "Salvando..." 
+                  : editTransaction 
+                    ? "Atualizar" 
+                    : mode === "transfer"
+                      ? "Criar Transferência"
+                      : isRecurring 
+                        ? `Criar ${recurrenceCount} Lançamentos` 
+                        : "Criar Lançamento"
+                }
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

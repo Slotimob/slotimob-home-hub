@@ -260,7 +260,7 @@ export function ContractsTab() {
       const { data, error } = await supabase
         .from("units")
         .select("id, unit_number, address, city, is_occupied, owner_contact_id")
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .order("unit_number", { ascending: true });
       if (error) throw error;
       return data || [];
@@ -326,7 +326,7 @@ export function ContractsTab() {
           tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
           unit:units!leases_unit_id_fkey(id, unit_number, address)
         `)
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -343,7 +343,7 @@ export function ContractsTab() {
       const { data, error } = await supabase
         .from("units")
         .select("id, property_id, is_standalone")
-        .eq("broker_id", user.id);
+        .eq("broker_id", effectiveBrokerId || user.id);
       if (error) throw error;
       return data || [];
     },
@@ -563,7 +563,7 @@ export function ContractsTab() {
       const { error: transactionsError } = await supabase
         .from("financial_transactions")
         .delete()
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .eq("reference", `lease:${deletingLease.id}`);
       
       if (transactionsError) {
@@ -588,7 +588,7 @@ export function ContractsTab() {
         .from("leases")
         .delete()
         .eq("id", deletingLease.id)
-        .eq("broker_id", user.id);
+        .eq("broker_id", effectiveBrokerId || user.id);
       
       if (error) throw error;
 
