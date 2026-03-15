@@ -30,6 +30,7 @@ import { toast } from "sonner";
 
 export default function Schedule() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
