@@ -401,13 +401,28 @@ export const EditUnitDialog = ({
                 onPropertiesChange={setProperties}
               />
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Salvando...' : 'Salvar Alterações'}
-                </Button>
+              <div className="flex justify-between gap-2 pt-4 border-t">
+                <div>
+                  {canDelete && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Excluir
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={handleCancel}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={saving}>
+                    {saving ? 'Salvando...' : 'Salvar Alterações'}
+                  </Button>
+                </div>
               </div>
             </form>
           </TabsContent>
