@@ -326,7 +326,7 @@ export function ContractsTab() {
           tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
           unit:units!leases_unit_id_fkey(id, unit_number, address)
         `)
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
