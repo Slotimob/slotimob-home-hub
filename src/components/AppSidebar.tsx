@@ -49,7 +49,20 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useCockpitAccess } from '@/hooks/useCockpitAccess';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { usePermissions } from '@/hooks/usePermissions';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
+
+/** Maps sidebar menu titles to permission module keys */
+const MENU_PERMISSION_MAP: Record<string, string> = {
+  'CRM': 'crm',
+  'Ativos': 'properties',
+  'Gestão': 'management',
+  'Financeiro': 'finance',
+  'Relatórios': 'reports',
+  'Integrações': 'integrations',
+  'Documentos': 'properties',
+  'Simulador': 'properties',
+};
 
 interface NestedSubMenuItem {
   title: string;
@@ -81,6 +94,7 @@ export function AppSidebar() {
   const { plan, isTrialActive, canUse, features } = useSubscriptionLimits();
   const { hasCockpitAccess } = useCockpitAccess();
   const { isMember } = useWorkspace();
+  const { isOwner: isPermOwner, hasPermission } = usePermissions();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
@@ -177,15 +191,18 @@ export function AppSidebar() {
     { title: 'Histórico', url: '/history', icon: History },
   ];
 
-  // Filter menu items based on role and plan
+  // Filter menu items based on role, plan, and granular permissions
   const filteredMenuItems = menuItems.filter(item => {
     if (item.ownerOnly && isAgent) return false;
     if (item.hiddenOnPlan?.includes(plan)) {
-      // If trial is active and item is marked trialVisible, show it anyway
       if (item.trialVisible && isTrialActive) return true;
-      // PLG: Show locked items instead of hiding (for Chat IA)
       if (item.url === '/ai-chat') return true;
       return false;
+    }
+    // Granular permission enforcement for members (non-owners)
+    if (!isPermOwner && isMember) {
+      const permKey = MENU_PERMISSION_MAP[item.title];
+      if (permKey && !hasPermission(permKey, 'view')) return false;
     }
     return true;
   });

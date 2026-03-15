@@ -2,16 +2,61 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export interface ModulePermissions {
-  [action: string]: boolean;
+export interface ModulePermission {
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
 }
 
+export const EMPTY_MODULE_PERMISSION: ModulePermission = {
+  view: false,
+  create: false,
+  edit: false,
+  delete: false,
+};
+
+export const FULL_MODULE_PERMISSION: ModulePermission = {
+  view: true,
+  create: true,
+  edit: true,
+  delete: true,
+};
+
 export interface Permissions {
-  assets?: ModulePermissions;
-  crm?: ModulePermissions;
-  financial?: ModulePermissions;
-  documents?: ModulePermissions;
-  [module: string]: ModulePermissions | undefined;
+  crm?: Partial<ModulePermission>;
+  properties?: Partial<ModulePermission>;
+  management?: Partial<ModulePermission>;
+  finance?: Partial<ModulePermission>;
+  reports?: Partial<ModulePermission>;
+  integrations?: Partial<ModulePermission>;
+  [module: string]: Partial<ModulePermission> | undefined;
+}
+
+export const PERMISSION_MODULES_KEYS = [
+  'crm',
+  'properties',
+  'management',
+  'finance',
+  'reports',
+  'integrations',
+] as const;
+
+export type PermissionModuleKey = (typeof PERMISSION_MODULES_KEYS)[number];
+
+/** Safely resolve a module permission, defaulting missing fields to false */
+export function resolveModulePermission(
+  permissions: Permissions | null | undefined,
+  module: string
+): ModulePermission {
+  const raw = permissions?.[module];
+  if (!raw) return { ...EMPTY_MODULE_PERMISSION };
+  return {
+    view: raw.view === true,
+    create: raw.create === true,
+    edit: raw.edit === true,
+    delete: raw.delete === true,
+  };
 }
 
 export interface PermissionsResult {
@@ -36,7 +81,6 @@ export const usePermissions = (): PermissionsResult => {
     queryFn: async () => {
       if (!user?.id) return null;
 
-      // Check if user is a member of any organization
       const { data: membership, error } = await supabase
         .from('organization_members')
         .select('permissions, role_label, organization_owner_id')
@@ -49,7 +93,6 @@ export const usePermissions = (): PermissionsResult => {
         return null;
       }
 
-      // If no membership found, user is an owner (full access)
       if (!membership) {
         return { isOwner: true, permissions: null, roleLabel: null };
       }
@@ -69,13 +112,11 @@ export const usePermissions = (): PermissionsResult => {
   const roleLabel = data?.roleLabel ?? null;
 
   const hasPermission = (module: string, action: string): boolean => {
-    // Owners always have full access
     if (isOwner) return true;
-    if (!permissions) return false;
-    return permissions[module]?.[action] === true;
+    const resolved = resolveModulePermission(permissions, module);
+    return (resolved as any)[action] === true;
   };
 
-  // Alias
   const can = hasPermission;
 
   return { permissions, roleLabel, isOwner, isLoading, hasPermission, can };

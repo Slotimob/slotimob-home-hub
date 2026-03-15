@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
 
 interface PermissionGateProps {
-  /** Permission string in "module.action" format, e.g. "assets.delete" */
+  /** Permission string in "module.action" format, e.g. "finance.view" or "crm.create" */
   permission: string;
   children: ReactNode;
   /** Optional fallback to render when denied (default: nothing) */
@@ -13,7 +13,7 @@ interface PermissionGateProps {
  * Conditionally renders children based on the user's granular permissions.
  * Owners always pass. Members need the specific permission set to true.
  * 
- * Usage: <PermissionGate permission="financial.create">...</PermissionGate>
+ * Usage: <PermissionGate permission="finance.create">...</PermissionGate>
  */
 export function PermissionGate({ permission, children, fallback = null }: PermissionGateProps) {
   const { hasPermission, isLoading } = usePermissions();
