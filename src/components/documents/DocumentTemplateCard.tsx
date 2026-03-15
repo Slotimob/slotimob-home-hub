@@ -30,7 +30,7 @@ export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardP
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={canEdit ? onEdit : undefined}>
+    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={canUse ? onEdit : undefined}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
