@@ -12,6 +12,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInfiniteTransactions, SortField, SortOrder, SortConfig } from "@/hooks/useInfiniteTransactions";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export interface TransactionFilters {
   type: string; // "all" | "income" | "expense" | "transfer"
