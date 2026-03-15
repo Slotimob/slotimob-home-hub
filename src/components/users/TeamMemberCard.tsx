@@ -5,9 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { ChevronDown, ChevronUp, Save, User, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ChevronDown, ChevronUp, Save, User, Loader2, Trash2 } from 'lucide-react';
 import { PermissionsMatrix } from './PermissionsMatrix';
-import { RoleTemplateSelector } from './RoleTemplateSelector';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import type { Permissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 
@@ -48,6 +60,21 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
     onError: () => toast.error('Erro ao atualizar permissões'),
   });
 
+  const removeMember = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('organization_members')
+        .delete()
+        .eq('id', member.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-members'] });
+      toast.success('Membro removido com sucesso');
+    },
+    onError: () => toast.error('Erro ao remover membro'),
+  });
+
   const toggleActive = useMutation({
     mutationFn: async (active: boolean) => {
       const { error } = await supabase
@@ -61,11 +88,6 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
       toast.success('Status atualizado');
     },
   });
-
-  const handleApplyTemplate = (tplPermissions: Permissions, label: string) => {
-    setPermissions(tplPermissions);
-    setRoleLabel(label);
-  };
 
   const name = member.profile?.full_name?.trim() || 'Membro sem nome definido';
   const email = member.profile?.email?.trim() || 'Email não disponível';
@@ -100,11 +122,45 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
       </CardHeader>
       {expanded && (
         <CardContent className="space-y-4 pt-0">
-          <RoleTemplateSelector onApply={handleApplyTemplate} />
+          <div className="space-y-1.5">
+            <Label htmlFor={`role-${member.id}`}>Cargo / Função</Label>
+            <Input
+              id={`role-${member.id}`}
+              value={roleLabel}
+              onChange={(e) => setRoleLabel(e.target.value)}
+              placeholder="Ex: Corretor Sênior, Assistente..."
+            />
+          </div>
 
           <PermissionsMatrix permissions={permissions} onChange={setPermissions} />
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Remover Membro
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Remover membro da equipa?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem a certeza? O utilizador perderá o acesso ao seu Workspace imediatamente. Os imóveis e clientes que ele adicionou continuarão a pertencer-lhe.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => removeMember.mutate()}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {removeMember.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sim, remover'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
             <Button
               size="sm"
               onClick={() => updateMember.mutate()}
