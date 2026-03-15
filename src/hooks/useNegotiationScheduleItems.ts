@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 
 export interface NegotiationScheduleItem {
