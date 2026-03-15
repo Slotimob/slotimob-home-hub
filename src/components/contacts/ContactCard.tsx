@@ -39,6 +39,8 @@ interface ContactCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onCreateDeal?: () => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export const ContactCard = ({
