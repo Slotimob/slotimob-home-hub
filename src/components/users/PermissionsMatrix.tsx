@@ -74,6 +74,13 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   { key: 'integrations', label: 'Integrações', actions: ['view'] },
 ];
 
+/** Alert tooltips for specific modules to warn the Master about data exposure */
+const MODULE_TOOLTIPS: Record<string, string> = {
+  dashboard: 'Ao liberar a visualização, o utilizador poderá ver movimentos financeiros e métricas de CRM globais.',
+  reports: 'Ao liberar a visualização, o utilizador poderá exportar todos os relatórios da imobiliária, incluindo dados financeiros.',
+  integrations: 'Ao liberar, o utilizador terá a opção de conectar o seu próprio WhatsApp no módulo CRM.',
+};
+
 const ACTION_COLUMNS: { key: ActionKey; label: string }[] = [
   { key: 'view', label: 'Visualizar' },
   { key: 'create', label: 'Criar' },
