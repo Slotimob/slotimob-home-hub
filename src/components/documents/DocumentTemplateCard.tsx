@@ -66,7 +66,7 @@ export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardP
             <Download className="mr-1 h-3 w-3" />
             Original
           </Button>
-          {canEdit && (
+          {canUse && (
             <Button
               size="sm"
               className="flex-1 text-xs"
@@ -76,7 +76,7 @@ export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardP
               }}
             >
               <Edit className="mr-1 h-3 w-3" />
-              Editar
+              {canEditDoc ? 'Editar' : 'Usar'}
             </Button>
           )}
         </div>
