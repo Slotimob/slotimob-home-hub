@@ -15,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { DealActivities } from './DealActivities';
 import { DealTasks } from './DealTasks';
 import { DealStageHistory } from './DealStageHistory';
@@ -52,6 +53,8 @@ interface DealDetailsSheetProps {
 
 export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDetailsSheetProps) => {
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
   const [isSaving, setIsSaving] = useState(false);
   const [linkedContact, setLinkedContact] = useState<LinkedContact | null>(null);
   const [editedDeal, setEditedDeal] = useState<{
@@ -275,6 +278,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                       editedDeal.temperature === 'hot' && "bg-emerald-600 hover:bg-emerald-700"
                     )}
                     onClick={() => setEditedDeal({ ...editedDeal, temperature: 'hot' })}
+                    disabled={!canEdit}
                   >
                     <Flame className="h-4 w-4" />
                     Quente
@@ -288,6 +292,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                       editedDeal.temperature === 'warm' && "bg-amber-500 hover:bg-amber-600"
                     )}
                     onClick={() => setEditedDeal({ ...editedDeal, temperature: 'warm' })}
+                    disabled={!canEdit}
                   >
                     <Thermometer className="h-4 w-4" />
                     Morno
@@ -301,6 +306,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                       editedDeal.temperature === 'cold' && "bg-blue-500 hover:bg-blue-600"
                     )}
                     onClick={() => setEditedDeal({ ...editedDeal, temperature: 'cold' })}
+                    disabled={!canEdit}
                   >
                     <Snowflake className="h-4 w-4" />
                     Frio
@@ -315,6 +321,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                   <Select
                     value={editedDeal.priority}
                     onValueChange={(value) => setEditedDeal({ ...editedDeal, priority: value })}
+                    disabled={!canEdit}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -332,6 +339,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                   <Select
                     value={editedDeal.probability}
                     onValueChange={(value) => setEditedDeal({ ...editedDeal, probability: value })}
+                    disabled={!canEdit}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -359,6 +367,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                         'w-full justify-start text-left font-normal',
                         !editedDeal.expected_close_date && 'text-muted-foreground'
                       )}
+                      disabled={!canEdit}
                     >
                       <CalendarDays className="mr-2 h-4 w-4" />
                       {editedDeal.expected_close_date
@@ -372,6 +381,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                       selected={editedDeal.expected_close_date ?? undefined}
                       onSelect={(date) => setEditedDeal({ ...editedDeal, expected_close_date: date ?? null })}
                       locale={ptBR}
+                      disabled={!canEdit}
                     />
                   </PopoverContent>
                 </Popover>
@@ -389,6 +399,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                     value={editedDeal.estimated_value ?? ''}
                     onChange={(e) => setEditedDeal({ ...editedDeal, estimated_value: e.target.value ? parseFloat(e.target.value) : null })}
                     placeholder="0,00"
+                    disabled={!canEdit}
                   />
                 </div>
 
@@ -405,6 +416,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                     value={editedDeal.commission_rate}
                     onChange={(e) => setEditedDeal({ ...editedDeal, commission_rate: parseFloat(e.target.value) || 0 })}
                     placeholder="5"
+                    disabled={!canEdit}
                   />
                 </div>
               </div>
@@ -429,14 +441,17 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                   onChange={(e) => setEditedDeal({ ...editedDeal, notes: e.target.value || null })}
                   placeholder="Adicione observações sobre este deal..."
                   rows={3}
+                  disabled={!canEdit}
                 />
               </div>
 
-              {/* Save Button */}
-              <Button onClick={handleSave} disabled={isSaving} className="w-full">
-                <Save className="h-4 w-4 mr-2" />
-                {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
+              {/* Save Button - only shown when user can edit */}
+              {canEdit && (
+                <Button onClick={handleSave} disabled={isSaving} className="w-full">
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+              )}
             </TabsContent>
 
             <TabsContent value="activities" className="pt-4">

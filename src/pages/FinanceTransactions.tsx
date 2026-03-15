@@ -12,6 +12,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInfiniteTransactions, SortField, SortOrder, SortConfig } from "@/hooks/useInfiniteTransactions";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export interface TransactionFilters {
   type: string; // "all" | "income" | "expense" | "transfer"
@@ -32,6 +33,7 @@ const FinanceTransactions = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -182,10 +184,12 @@ const FinanceTransactions = () => {
                 Novo Lançamento
               </Button>
             </PermissionGate>
+            {(isOwner || hasPermission('finance_transactions', 'create')) && (
             <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Importar</span>
             </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Exportar</span>
