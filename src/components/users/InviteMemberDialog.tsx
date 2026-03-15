@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Loader2, UserPlus, Mail } from 'lucide-react';
 import { PermissionsMatrix } from './PermissionsMatrix';
-import { RoleTemplateSelector } from './RoleTemplateSelector';
 import type { Permissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 
