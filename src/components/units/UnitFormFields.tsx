@@ -153,6 +153,7 @@ export const UnitFormFields = ({
   propertyRequired = false,
   isStandalone = false,
   onPropertiesChange,
+  disabled = false,
 }: UnitFormFieldsProps) => {
   const [isCreatePropertyDialogOpen, setIsCreatePropertyDialogOpen] = useState(false);
   const [propertySearchOpen, setPropertySearchOpen] = useState(false);

@@ -186,6 +186,7 @@ export function PropertyForm({
   propertyId,
   onRefreshProperty,
   onFormChange,
+  disabled = false,
 }: PropertyFormProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('info');
