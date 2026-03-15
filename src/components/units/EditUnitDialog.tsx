@@ -9,10 +9,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { z } from 'zod';
-import { Info, Image, FileText, AlertCircle } from 'lucide-react';
+import { Info, Image, FileText, AlertCircle, Trash2 } from 'lucide-react';
 import { UnitFormFields, UnitFormData, getInitialFormData } from '@/components/units/UnitFormFields';
 import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
 import { UnitDocuments } from '@/components/units/UnitDocuments';
