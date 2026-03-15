@@ -398,10 +398,10 @@ export function TransactionsTableInfinite({
               transaction={transaction}
               isSelected={selectedIds.has(transaction.id)}
               onSelect={(checked) => handleSelectOne(transaction.id, checked)}
-              onEdit={setEditTransaction}
-              onDelete={() => handleDeleteClick(transaction)}
-              onMarkAsPaid={handleMarkAsPaid}
-              onReconcile={handleQuickReconcile}
+              onEdit={canEditTx ? setEditTransaction : undefined}
+              onDelete={canDeleteTx ? () => handleDeleteClick(transaction) : undefined}
+              onMarkAsPaid={canEditTx ? handleMarkAsPaid : undefined}
+              onReconcile={canReconcile ? handleQuickReconcile : undefined}
               onSendBillingReminder={handleSendBillingReminder}
               isReconciling={reconcilingId === transaction.id}
               isSendingBilling={billingTransactionId === transaction.id && isSendingBilling}
