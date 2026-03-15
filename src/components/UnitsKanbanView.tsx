@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import { UNIT_STATUS_STYLES, ALL_UNIT_STATUSES } from '@/utils/uiConstants';
 import { generatePropertyPDF, buildPDFDataFromUnit } from '@/utils/propertyPdfGenerator';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type UnitStatus = Database['public']['Enums']['unit_status'];
 
@@ -339,8 +340,12 @@ export const UnitsKanbanView = ({
   const {
     toast
   } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
+
+  const canEdit = isOwner || hasPermission('assets_units', 'edit');
+
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: {
       distance: 8
@@ -436,6 +441,16 @@ export const UnitsKanbanView = ({
       over
     } = event;
     setActiveId(null);
+
+    if (!canEdit) {
+      toast({
+        title: 'Sem permissão',
+        description: 'Não tem permissão para alterar o status da unidade.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!over) return;
     const activeUnit = filteredUnits.find(u => u.id === active.id);
     if (!activeUnit) return;
