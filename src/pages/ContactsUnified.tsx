@@ -320,10 +320,12 @@ const ContactsUnified = () => {
           )}
           
           {/* Add button */}
-          <Button size="sm" onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Novo Contato</span>
-          </Button>
+          <PermissionGate permission="crm_contacts.create">
+            <Button size="sm" onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Novo Contato</span>
+            </Button>
+          </PermissionGate>
         </div>
         
         {/* Results count, sort and view toggle */}

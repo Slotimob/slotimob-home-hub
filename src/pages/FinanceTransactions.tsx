@@ -176,7 +176,7 @@ const FinanceTransactions = () => {
             <p className="text-muted-foreground">Gerencie suas receitas e despesas</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <PermissionGate permission="financial.create">
+            <PermissionGate permission="finance_transactions.create">
               <Button onClick={() => setIsCreateOpen(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Lançamento
