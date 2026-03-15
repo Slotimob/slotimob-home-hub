@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, X, Users, LayoutGrid, LayoutList } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { ContactCategoryFilter, ContactCategory, CONTACT_CATEGORIES } from '@/components/contacts/ContactCategoryFilter';
 import { ContactCard, UnifiedContact } from '@/components/contacts/ContactCard';
