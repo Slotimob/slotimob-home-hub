@@ -50,18 +50,21 @@ export function useWhatsAppConnection() {
 
 export function useWhatsAppSettingsConnection() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [waitingForQr, setWaitingForQr] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [timedOut, setTimedOut] = useState(false);
 
+  const brokerId = effectiveBrokerId || user?.id;
+
   const fetchConnection = useCallback(async () => {
-    if (!user) return;
+    if (!brokerId) return;
     const { data, error } = await supabase
       .from('whatsapp_connections')
       .select('*')
-      .eq('broker_id', user.id)
+      .eq('broker_id', brokerId)
       .limit(1)
       .maybeSingle();
 
