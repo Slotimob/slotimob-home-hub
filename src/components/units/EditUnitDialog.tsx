@@ -155,6 +155,7 @@ export const EditUnitDialog = ({
   onSuccess,
 }: EditUnitDialogProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { isOwner: isPermOwner, hasPermission } = usePermissions();
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
