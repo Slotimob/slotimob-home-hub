@@ -416,6 +416,14 @@ export default function WhatsApp() {
       </div>
 
       <BottomNavigation />
+
+      {selectedConversation && (
+        <CreateDealFromChatDialog
+          open={showDealDialog}
+          onOpenChange={setShowDealDialog}
+          conversation={selectedConversation}
+        />
+      )}
     </SidebarProvider>
   );
 }
