@@ -124,6 +124,7 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
   };
 
   return (
+    <TooltipProvider>
     <div className="rounded-md border">
       <Table>
         <TableHeader>
