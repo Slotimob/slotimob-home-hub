@@ -384,6 +384,7 @@ export default function WhatsApp() {
                 conversation={selectedConversation}
                 messages={messages}
                 onSendMessage={handleSendMessage}
+                onSendMedia={isConnected ? handleSendMedia : undefined}
                 onBack={isMobile ? handleBack : undefined}
                 onToggleCrm={() => setShowCrmPanel((p) => !p)}
                 showCrmToggle={!!selectedConversation && !isMobile}
