@@ -52,7 +52,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 
-/* intentionally empty — moduleKey is now on each MenuItem */
+
 
 interface NestedSubMenuItem {
   title: string;
