@@ -158,6 +158,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Customize Button */}
+                {(isOwner || hasPermission('dashboard', 'edit')) && (
                 <DashboardCustomizeSheet
                   widgets={preferences.widgets}
                   shortcuts={preferences.shortcuts}
