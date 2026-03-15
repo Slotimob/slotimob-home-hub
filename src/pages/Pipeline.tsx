@@ -774,6 +774,8 @@ const Pipeline = () => {
   }, [deals, filters]);
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (!canEdit) return; // Block drag for users without edit permission
+    
     const activeId = event.active.id as string;
     
     // Check if dragging a stage (stage IDs start with "stage_")
