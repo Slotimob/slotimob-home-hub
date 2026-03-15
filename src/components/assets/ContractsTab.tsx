@@ -843,7 +843,7 @@ export function ContractsTab() {
                   onQuickTransactionClick={handleQuickTransaction}
                   onGenerateContractClick={handleGenerateContract}
                   onViewFinancialsClick={handleViewFinancials}
-                  onTerminateClick={handleTerminateContract}
+                  onTerminateClick={(isOwner || hasPermission('management_contracts', 'edit')) ? handleTerminateContract : undefined}
                   onUploadContractClick={handleUploadContract}
                   onToggleSignatureClick={handleToggleSignature}
                   onEditAdjustmentDateClick={handleEditAdjustmentDate}
