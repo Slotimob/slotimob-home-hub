@@ -215,10 +215,56 @@ export default function WhatsApp() {
   }, [selectedConversation, toast]);
 
   const canCreateDeal = isOwner || hasPermission('crm_pipeline', 'create');
+  const [showDealDialog, setShowDealDialog] = useState(false);
 
   const handleCreateDeal = useCallback(() => {
-    toast({ title: 'Em desenvolvimento', description: 'O atalho para criar negociação a partir do chat estará disponível em breve.' });
-  }, [toast]);
+    setShowDealDialog(true);
+  }, []);
+
+  const handleSendMedia = useCallback(async (file: File) => {
+    if (!selectedConversation || !user) return;
+
+    const ext = file.name.split('.').pop() || 'bin';
+    const filePath = `${user.id}/${selectedConversation.id}/${Date.now()}.${ext}`;
+
+    toast({ title: 'Enviando arquivo...', description: file.name });
+
+    // 1. Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('whatsapp-media')
+      .upload(filePath, file, { contentType: file.type });
+
+    if (uploadError) {
+      toast({ title: 'Erro ao enviar arquivo', description: uploadError.message, variant: 'destructive' });
+      return;
+    }
+
+    // 2. Get public URL
+    const { data: urlData } = supabase.storage.from('whatsapp-media').getPublicUrl(filePath);
+    const publicUrl = urlData.publicUrl;
+
+    // 3. Determine message type
+    let msgType: 'image' | 'document' = 'document';
+    if (file.type.startsWith('image/')) msgType = 'image';
+
+    // 4. Send via Edge Function
+    const { error: sendError } = await supabase.functions.invoke('whatsapp-send', {
+      body: {
+        conversationId: selectedConversation.id,
+        messageType: msgType,
+        content: msgType === 'image' ? '' : file.name,
+        mediaUrl: publicUrl,
+        mediaMimeType: file.type,
+        mediaFilename: file.name,
+      },
+    });
+
+    if (sendError) {
+      toast({ title: 'Erro ao enviar', description: sendError.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Arquivo enviado!' });
+    }
+  }, [selectedConversation, user, toast]);
 
   if (authLoading || connectionLoading) {
     return (
