@@ -125,11 +125,12 @@ export function AppSidebar() {
 
   // Build menu items with role/plan gating
   const menuItems: MenuItem[] = [
-    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'], trialVisible: true },
-    { title: 'Dashboard', url: '/dashboard', icon: Home },
+    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'], trialVisible: true, moduleKey: 'chat' },
+    { title: 'Dashboard', url: '/dashboard', icon: Home, moduleKey: 'dashboard' },
     { 
       title: 'Gestão', 
       icon: ClipboardList,
+      moduleKey: 'management',
       items: [
         { title: 'Aluguéis', url: '/gestao/alugueis' },
         { title: 'Contratos', url: '/gestao/contratos' },
@@ -140,6 +141,7 @@ export function AppSidebar() {
     { 
       title: 'Ativos', 
       icon: Building2,
+      moduleKey: 'assets',
       items: [
         { 
           title: 'Empreendimentos', 
@@ -156,6 +158,7 @@ export function AppSidebar() {
       title: 'Financeiro', 
       icon: Wallet,
       ownerOnly: true,
+      moduleKey: 'financial',
       items: [
         { title: 'Visão Geral', url: '/finance' },
         { title: 'DRE', url: '/finance/dre' },
@@ -167,6 +170,7 @@ export function AppSidebar() {
     { 
       title: 'CRM', 
       icon: Users,
+      moduleKey: 'crm',
       items: [
         { title: 'Mensagens', url: '/whatsapp' },
         { title: 'Pipeline', url: '/pipeline' },
@@ -174,10 +178,10 @@ export function AppSidebar() {
         { title: 'Agenda', url: '/schedule' },
       ]
     },
-    { title: 'Relatórios', url: '/reports', icon: BarChart3, ownerOnly: true },
-    { title: 'Documentos', url: '/documents', icon: FileText },
+    { title: 'Relatórios', url: '/reports', icon: BarChart3, ownerOnly: true, moduleKey: 'reports' },
+    { title: 'Documentos', url: '/documents', icon: FileText, moduleKey: 'documents' },
     { title: 'Simulador', url: '/simulator', icon: Calculator },
-    { title: 'Integrações', url: '/integrations', icon: Plug },
+    { title: 'Integrações', url: '/integrations', icon: Plug, moduleKey: 'integrations' },
     { title: 'Treinamentos', url: '/training', icon: GraduationCap },
     { title: 'Usuários', url: '/users', icon: UsersRound, hiddenOnPlan: ['essencial', 'free'] },
     { title: 'Histórico', url: '/history', icon: History },
