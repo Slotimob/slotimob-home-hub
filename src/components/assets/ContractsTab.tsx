@@ -192,6 +192,8 @@ type ContractStatusFilter = "all" | "active" | "pending_signature" | "terminated
 export function ContractsTab() {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('management_contracts', 'create');
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
