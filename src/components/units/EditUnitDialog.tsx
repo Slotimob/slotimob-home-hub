@@ -166,6 +166,7 @@ export const EditUnitDialog = ({
   
   const isStandalone = unit.is_standalone ?? false;
   const moduleKey = isStandalone ? 'assets_standalone' : 'assets_units';
+  const canEdit = isPermOwner || hasPermission(moduleKey, 'edit');
   const canDelete = isPermOwner || hasPermission(moduleKey, 'delete');
   const showPropertySelector = !isStandalone;
 
