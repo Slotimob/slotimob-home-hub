@@ -12,9 +12,9 @@ interface TransactionCardProps {
   transaction: any;
   isSelected?: boolean;
   onSelect?: (checked: boolean) => void;
-  onEdit: (transaction: any) => void;
-  onDelete: (id: string) => void;
-  onMarkAsPaid: (id: string) => void;
+  onEdit?: (transaction: any) => void;
+  onDelete?: (id: string) => void;
+  onMarkAsPaid?: (id: string) => void;
   onReconcile?: (transaction: any) => void;
   onSendBillingReminder?: (transaction: any) => void;
   isReconciling?: boolean;
