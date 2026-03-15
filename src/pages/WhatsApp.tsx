@@ -348,6 +348,8 @@ export default function WhatsApp() {
                 isOwner={canManage}
                 onReassign={handleReassign}
                 conversationId={selectedConversation?.id || null}
+                onCloseConversation={canArchive && selectedConversation ? handleCloseConversation : undefined}
+                onReturnToQueue={canManage && selectedConversation ? handleReturnToQueue : undefined}
               />
             </div>
 
