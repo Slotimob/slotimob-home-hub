@@ -199,6 +199,7 @@ export default function FinanceCategories() {
                                 <Badge variant="outline" className="text-xs">Padrão</Badge>
                               ) : (
                                 <>
+                                  {canEdit && (
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -206,6 +207,8 @@ export default function FinanceCategories() {
                                   >
                                     <Edit className="h-4 w-4" />
                                   </Button>
+                                  )}
+                                  {canDelete && (
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -213,6 +216,7 @@ export default function FinanceCategories() {
                                   >
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
+                                  )}
                                 </>
                               )}
                             </div>

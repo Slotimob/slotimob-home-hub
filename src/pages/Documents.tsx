@@ -275,14 +275,18 @@ const Documents = () => {
       title="Documentos"
       headerActions={
         <>
+          {canCreate && (
           <PermissionGate permission="documents.generate">
             <HeaderButton variant="outline" icon={<Plus className="h-4 w-4" />} onClick={() => setIsProposalDialogOpen(true)}>
               Nova Proposta
             </HeaderButton>
           </PermissionGate>
+          )}
+          {canCreate && (
           <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsUploadDialogOpen(true)}>
             Upload
           </HeaderButton>
+          )}
         </>
       }
     >

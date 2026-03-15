@@ -193,15 +193,6 @@ const FinanceReconciliation = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => setIsCreateAccountOpen(true)}
-                  className="h-8 text-xs"
-                >
-                  <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-                  <span className="hidden sm:inline">Nova Conta</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
                   onClick={handleRefreshAll}
                   disabled={isRefreshing}
                   className="h-8 text-xs"
