@@ -778,39 +778,35 @@ export function PropertyForm({
           </TabsContent>
         )}
 
-        {/* Footer - visible in all tabs except documents */}
-        {activeTab !== 'documents' && !disabled && (
-          <div className={`flex flex-col-reverse sm:flex-row ${isEditing && onDelete ? 'sm:justify-between' : 'sm:justify-end'} gap-3 pt-4 mt-4 border-t`}>
-            {isEditing && onDelete && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={onDelete}
-                className="w-full sm:w-auto"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir
-              </Button>
-            )}
-            <div className="flex flex-col-reverse sm:flex-row gap-2">
-              <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-                {isSubmitting ? (isEditing ? 'Salvando...' : 'Criando...') : (isEditing ? 'Salvar' : 'Criar Empreendimento')}
-              </Button>
-            </div>
-          </div>
-        )}
-        {activeTab !== 'documents' && disabled && (
-          <div className="flex justify-end pt-4 mt-4 border-t">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Fechar
-            </Button>
-          </div>
-        )}
         </fieldset>
       </form>
+
+      {/* Footer - outside fieldset so delete button is never disabled by fieldset */}
+      {activeTab !== 'documents' && (
+        <div className={`flex flex-col-reverse sm:flex-row ${isEditing && onDelete ? 'sm:justify-between' : 'sm:justify-end'} gap-3 pt-4 mt-4 border-t`}>
+          {isEditing && onDelete && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onDelete}
+              className="w-full sm:w-auto"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir
+            </Button>
+          )}
+          <div className="flex flex-col-reverse sm:flex-row gap-2">
+            <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
+              {disabled ? 'Fechar' : 'Cancelar'}
+            </Button>
+            {!disabled && (
+              <Button type="submit" form="property-form" disabled={isSubmitting} className="w-full sm:w-auto">
+                {isSubmitting ? (isEditing ? 'Salvando...' : 'Criando...') : (isEditing ? 'Salvar' : 'Criar Empreendimento')}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </Tabs>
   );
 }
