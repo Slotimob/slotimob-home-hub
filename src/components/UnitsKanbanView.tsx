@@ -441,6 +441,16 @@ export const UnitsKanbanView = ({
       over
     } = event;
     setActiveId(null);
+
+    if (!canEdit) {
+      toast({
+        title: 'Sem permissão',
+        description: 'Não tem permissão para alterar o status da unidade.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!over) return;
     const activeUnit = filteredUnits.find(u => u.id === active.id);
     if (!activeUnit) return;
