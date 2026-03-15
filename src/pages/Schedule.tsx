@@ -59,7 +59,7 @@ export default function Schedule() {
 
   // Fetch ALL visits for event counting (not filtered by date)
   const { data: allVisits } = useQuery({
-    queryKey: ["all-visits", user?.id],
+    queryKey: ["all-visits", effectiveBrokerId, currentMonth.toISOString()],
     queryFn: async () => {
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
@@ -75,7 +75,7 @@ export default function Schedule() {
           units!visits_unit_id_fkey (unit_number, price, area),
           properties!visits_property_id_fkey (name, address)
         `)
-        .eq("broker_id", user?.id)
+        .eq("broker_id", effectiveBrokerId!)
         .gte("scheduled_at", monthStart.toISOString())
         .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
@@ -83,7 +83,7 @@ export default function Schedule() {
       if (error) throw error;
       return data as any;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   // Fetch ALL activities for event counting
