@@ -442,18 +442,24 @@ const Integrations = () => {
                   </Button>
                 ) : null
               ) : (
-                /* Agent: read-only view */
-                <div className="rounded-lg bg-muted/50 p-3 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {isConnected ? 'WhatsApp da Imobiliária conectado' : 'Aguardando conexão do Gestor'}
-                  </p>
-                  {isConnected && (
-                    <Button variant="outline" size="sm" className="mt-2" onClick={() => navigate('/whatsapp')}>
+                /* Agent: clean read-only view */
+                isConnected ? (
+                  <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-green-600" />
+                      <p className="text-sm font-medium text-foreground">WhatsApp da Imobiliária ativo e sincronizado</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/whatsapp')}>
                       <MessageSquare className="h-4 w-4 mr-2" />
                       Abrir Chat
                     </Button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg bg-muted/50 p-4 text-center space-y-1">
+                    <WifiOff className="h-5 w-5 text-muted-foreground mx-auto" />
+                    <p className="text-sm text-muted-foreground">Aguardando conexão do Gestor</p>
+                  </div>
+                )
               )}
             </CardContent>
           </Card>
