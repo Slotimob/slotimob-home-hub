@@ -191,15 +191,18 @@ export function AppSidebar() {
     { title: 'Histórico', url: '/history', icon: History },
   ];
 
-  // Filter menu items based on role and plan
+  // Filter menu items based on role, plan, and granular permissions
   const filteredMenuItems = menuItems.filter(item => {
     if (item.ownerOnly && isAgent) return false;
     if (item.hiddenOnPlan?.includes(plan)) {
-      // If trial is active and item is marked trialVisible, show it anyway
       if (item.trialVisible && isTrialActive) return true;
-      // PLG: Show locked items instead of hiding (for Chat IA)
       if (item.url === '/ai-chat') return true;
       return false;
+    }
+    // Granular permission enforcement for members (non-owners)
+    if (!isPermOwner && isMember) {
+      const permKey = MENU_PERMISSION_MAP[item.title];
+      if (permKey && !hasPermission(permKey, 'view')) return false;
     }
     return true;
   });
