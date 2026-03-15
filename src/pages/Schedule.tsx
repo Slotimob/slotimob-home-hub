@@ -88,7 +88,7 @@ export default function Schedule() {
 
   // Fetch ALL activities for event counting
   const { data: allActivities } = useQuery({
-    queryKey: ["all-schedule-activities", user?.id, currentMonth.toISOString()],
+    queryKey: ["all-schedule-activities", effectiveBrokerId, currentMonth.toISOString()],
     queryFn: async () => {
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
@@ -103,7 +103,7 @@ export default function Schedule() {
           duration_minutes,
           leads:lead_id (name, phone)
         `)
-        .eq("broker_id", user?.id)
+        .eq("broker_id", effectiveBrokerId!)
         .gte("scheduled_at", monthStart.toISOString())
         .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
@@ -111,7 +111,7 @@ export default function Schedule() {
       if (error) throw error;
       return data as any;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   // Fetch ALL negotiation items for event counting (excluding expected_close_date)
