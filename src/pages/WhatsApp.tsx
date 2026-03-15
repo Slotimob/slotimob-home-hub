@@ -202,7 +202,7 @@ export default function WhatsApp() {
               <MessageSquare className="h-16 w-16 text-muted-foreground" />
               <h2 className="text-xl font-semibold">Conecte seu WhatsApp</h2>
               <p className="text-muted-foreground text-center max-w-md">
-                Integração via API Oficial da Meta para gestão de conversas e leads centralizada.
+                Integração inteligente para gestão de conversas e leads de forma centralizada.
               </p>
               <Button asChild>
                 <Link to="/integrations"><Settings className="h-4 w-4 mr-2" />Configurar WhatsApp</Link>

@@ -174,7 +174,7 @@ export function AppSidebar() {
       icon: Users,
       moduleKey: 'crm',
       items: [
-        { title: 'Mensagens', url: '/whatsapp' },
+        { title: 'Mensagens', url: '/whatsapp', moduleKey: 'integrations' },
         { title: 'Pipeline', url: '/pipeline' },
         { title: 'Contatos', url: '/contacts' },
         { title: 'Agenda', url: '/schedule' },
