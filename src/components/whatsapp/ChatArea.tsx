@@ -34,6 +34,8 @@ interface ChatAreaProps {
   isOwner?: boolean;
   onReassign?: (conversationId: string, newUserId: string) => void;
   conversationId?: string | null;
+  onCloseConversation?: () => void;
+  onReturnToQueue?: () => void;
 }
 
 function formatTime(dateStr: string): string {
