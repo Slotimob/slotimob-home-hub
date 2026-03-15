@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Loader2, UserPlus, Mail } from 'lucide-react';
 import { PermissionsMatrix } from './PermissionsMatrix';
-import { RoleTemplateSelector } from './RoleTemplateSelector';
 import type { Permissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 
@@ -58,11 +57,6 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const handleApplyTemplate = (tplPermissions: Permissions, label: string) => {
-    setPermissions(tplPermissions);
-    setRoleLabel(label);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto w-[calc(100%-2rem)] sm:w-full">
@@ -92,7 +86,15 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
             </p>
           </div>
 
-          <RoleTemplateSelector onApply={handleApplyTemplate} />
+          <div className="space-y-2">
+            <Label htmlFor="invite-role">Cargo / Função</Label>
+            <Input
+              id="invite-role"
+              value={roleLabel}
+              onChange={(e) => setRoleLabel(e.target.value)}
+              placeholder="Ex: Corretor Sênior, Assistente..."
+            />
+          </div>
 
           <PermissionsMatrix permissions={permissions} onChange={setPermissions} />
 
