@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -82,6 +83,7 @@ export default function WhatsApp() {
   const { isOwner, hasPermission } = usePermissions();
   const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [agentFilter, setAgentFilter] = useState<string>('all');
 
   // Permission checks for crm_whatsapp
@@ -182,6 +184,40 @@ export default function WhatsApp() {
       );
     }
   }, []);
+
+  const handleCloseConversation = useCallback(async () => {
+    if (!selectedConversation) return;
+    const { error } = await supabase
+      .from('whatsapp_conversations')
+      .update({ status: 'closed' })
+      .eq('id', selectedConversation.id);
+    if (error) {
+      toast({ title: 'Erro ao finalizar', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Atendimento finalizado' });
+      setSelectedConversation(prev => prev ? { ...prev, status: 'closed' } : prev);
+    }
+  }, [selectedConversation, toast]);
+
+  const handleReturnToQueue = useCallback(async () => {
+    if (!selectedConversation) return;
+    const { error } = await supabase
+      .from('whatsapp_conversations')
+      .update({ assigned_user_id: null, status: 'pending' })
+      .eq('id', selectedConversation.id);
+    if (error) {
+      toast({ title: 'Erro ao devolver', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Conversa devolvida para a fila de triagem' });
+      setSelectedConversation(prev => prev ? { ...prev, assigned_user_id: null, status: 'pending' } : prev);
+    }
+  }, [selectedConversation, toast]);
+
+  const canCreateDeal = isOwner || hasPermission('crm_pipeline', 'create');
+
+  const handleCreateDeal = useCallback(() => {
+    toast({ title: 'Em desenvolvimento', description: 'O atalho para criar negociação a partir do chat estará disponível em breve.' });
+  }, [toast]);
 
   if (authLoading || connectionLoading) {
     return (
@@ -312,6 +348,8 @@ export default function WhatsApp() {
                 isOwner={canManage}
                 onReassign={handleReassign}
                 conversationId={selectedConversation?.id || null}
+                onCloseConversation={canArchive && selectedConversation ? handleCloseConversation : undefined}
+                onReturnToQueue={canManage && selectedConversation ? handleReturnToQueue : undefined}
               />
             </div>
 
@@ -321,9 +359,7 @@ export default function WhatsApp() {
                   conversation={selectedConversation}
                   contact={contact}
                   contactLoading={contactLoading}
-                  onCreateDeal={() => {
-                    console.log('Create deal for contact', contact?.id);
-                  }}
+                  onCreateDeal={canCreateDeal ? handleCreateDeal : undefined}
                 />
               </div>
             )}

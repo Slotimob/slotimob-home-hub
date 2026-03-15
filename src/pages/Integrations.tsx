@@ -14,6 +14,8 @@ import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { WhatsAppDisclaimerDialog } from '@/components/whatsapp/WhatsAppDisclaimerDialog';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useQuery } from '@tanstack/react-query';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 const COMPATIBLE_PORTALS = [
   { name: 'Zap Imóveis', logo: '🏠' },
@@ -30,6 +32,9 @@ const Integrations = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { features } = useSubscriptionLimits();
+  const { isOwner, hasPermission } = usePermissions();
+  const { effectiveBrokerId } = useWorkspace();
+  const canManageWhatsApp = isOwner || hasPermission('crm_whatsapp', 'edit');
 
   // XML Feed state
   const [xmlToken, setXmlToken] = useState<string | null>(null);
@@ -54,16 +59,16 @@ const Integrations = () => {
   const { data: activeConnectionsCount = 0 } = useQuery({
     queryKey: ['whatsapp-active-connections', user?.id],
     queryFn: async () => {
-      if (!user?.id) return 0;
+      if (!effectiveBrokerId) return 0;
       const { count, error } = await supabase
         .from('whatsapp_connections')
         .select('id', { count: 'exact', head: true })
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .eq('status', 'connected');
       if (error) return 0;
       return count ?? 0;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
     staleTime: 30_000,
   });
 
@@ -452,28 +457,43 @@ const Integrations = () => {
               )}
 
               {/* Action Buttons */}
-              {isConnected ? (
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => navigate('/whatsapp')}>
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Abrir Chat
+              {canManageWhatsApp ? (
+                isConnected ? (
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => navigate('/whatsapp')}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Abrir Chat
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp} disabled={isDisconnecting}>
+                      {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
+                    </Button>
+                  </div>
+                ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
+                  <Button className="w-full" onClick={() => {
+                    if (hasAcceptedTerms) {
+                      handleConnectWhatsApp();
+                    } else {
+                      setShowDisclaimer(true);
+                    }
+                  }} disabled={isConnecting || hasAcceptedTerms === null}>
+                    {isConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
+                    Conectar WhatsApp
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp} disabled={isDisconnecting}>
-                    {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
-                  </Button>
+                ) : null
+              ) : (
+                /* Agent: read-only view */
+                <div className="rounded-lg bg-muted/50 p-3 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {isConnected ? 'WhatsApp da Imobiliária conectado' : 'Aguardando conexão do Gestor'}
+                  </p>
+                  {isConnected && (
+                    <Button variant="outline" size="sm" className="mt-2" onClick={() => navigate('/whatsapp')}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Abrir Chat
+                    </Button>
+                  )}
                 </div>
-              ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
-                <Button className="w-full" onClick={() => {
-                  if (hasAcceptedTerms) {
-                    handleConnectWhatsApp();
-                  } else {
-                    setShowDisclaimer(true);
-                  }
-                }} disabled={isConnecting || hasAcceptedTerms === null}>
-                  {isConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
-                  Conectar WhatsApp
-                </Button>
-              ) : null}
+              )}
             </CardContent>
           </Card>
 
