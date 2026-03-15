@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { usePermissions } from "@/hooks/usePermissions";
 import { AppLayout } from "@/components/AppLayout";
 import { SEOHead } from "@/components/SEOHead";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -93,6 +94,10 @@ const OBLIGATION_LABELS: Record<string, { label: string; icon: typeof HomeIcon }
 const GerencialGestao = () => {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('management_reports', 'create');
+  const canEdit = isOwner || hasPermission('management_reports', 'edit');
+  const canDelete = isOwner || hasPermission('management_reports', 'delete');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
@@ -313,10 +318,12 @@ const GerencialGestao = () => {
               </SelectContent>
             </Select>
             <MonthYearPicker value={selectedMonth} onChange={setSelectedMonth} />
+            {canCreate && (
             <Button onClick={() => { resetForm(); setCreateDialogOpen(true); }} className="gap-1.5">
               <Plus className="h-4 w-4" />
               Novo Lançamento
             </Button>
+            )}
           </div>
 
           {/* Table */}
@@ -333,10 +340,12 @@ const GerencialGestao = () => {
                   <p className="text-sm text-muted-foreground max-w-sm mt-1">
                     Registre pagamentos de contas (água, luz, etc.) que são de responsabilidade de terceiros e não afetam o caixa da imobiliária.
                   </p>
+                  {canCreate && (
                   <Button className="mt-4" onClick={() => { resetForm(); setCreateDialogOpen(true); }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Criar Lançamento
                   </Button>
+                  )}
                 </div>
               ) : (
                 <Table>
@@ -384,12 +393,16 @@ const GerencialGestao = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
+                              {canEdit && (
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)}>
                                 <Edit3 className="h-3.5 w-3.5" />
                               </Button>
+                              )}
+                              {canDelete && (
                               <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(tx.id)}>
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

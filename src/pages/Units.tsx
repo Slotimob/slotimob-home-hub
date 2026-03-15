@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Home, Upload, X, ChevronLeft, ChevronRight, CheckSquare, Square, Plus, Share2 } from 'lucide-react';
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
@@ -99,6 +100,8 @@ const Units = () => {
   const [searchParams] = useSearchParams();
   const propertyId = searchParams.get('propertyId');
   const { user, loading } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('assets_units', 'create');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [property, setProperty] = useState<Property | null>(null);
@@ -411,12 +414,14 @@ const Units = () => {
       headerActions={
         <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Primary: Nova Unidade */}
+          {canCreate && (
           <AddAssetButton
             propertyId={propertyId || undefined}
             variant="default"
             size="sm"
             onSuccess={reloadUnits}
           />
+          )}
           {/* Secondary: Compartilhar */}
           <HeaderButton 
             variant="outline" 

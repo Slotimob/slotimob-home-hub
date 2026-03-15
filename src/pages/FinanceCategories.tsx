@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,10 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function FinanceCategories() {
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('finance_categories', 'create');
+  const canEdit = isOwner || hasPermission('finance_categories', 'edit');
+  const canDelete = isOwner || hasPermission('finance_categories', 'delete');
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<any>(null);
@@ -87,7 +92,7 @@ export default function FinanceCategories() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {hasCategories && (
+            {hasCategories && canDelete && (
               <Button
                 variant="outline"
                 onClick={() => setResetDialogOpen(true)}
@@ -98,7 +103,7 @@ export default function FinanceCategories() {
                 Restaurar Padrão
               </Button>
             )}
-            {!hasCategories && (
+            {!hasCategories && canCreate && (
               <Button
                 variant="outline"
                 onClick={() => seedDefaultCategories.mutate()}
@@ -108,10 +113,12 @@ export default function FinanceCategories() {
                 {seedDefaultCategories.isPending ? "Criando..." : "Criar Padrões"}
               </Button>
             )}
+            {canCreate && (
             <Button onClick={() => { setEditCategory(null); setDialogOpen(true); }}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Categoria
             </Button>
+            )}
           </div>
         </div>
 
@@ -192,6 +199,7 @@ export default function FinanceCategories() {
                                 <Badge variant="outline" className="text-xs">Padrão</Badge>
                               ) : (
                                 <>
+                                  {canEdit && (
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -199,6 +207,8 @@ export default function FinanceCategories() {
                                   >
                                     <Edit className="h-4 w-4" />
                                   </Button>
+                                  )}
+                                  {canDelete && (
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -206,6 +216,7 @@ export default function FinanceCategories() {
                                   >
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
+                                  )}
                                 </>
                               )}
                             </div>

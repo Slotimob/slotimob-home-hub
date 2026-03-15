@@ -400,7 +400,7 @@ const RealEstate = () => {
         headerActions={
           <div className="flex items-center gap-1 sm:gap-1.5">
             {/* Primary: Novo Imóvel Avulso */}
-            <PermissionGate permission="assets.create">
+            <PermissionGate permission="assets_standalone.create">
               <AddAssetButton
                 standalone={true}
                 variant="default"

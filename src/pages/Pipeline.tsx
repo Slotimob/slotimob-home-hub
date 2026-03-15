@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
@@ -114,6 +115,8 @@ const DEFAULT_STAGES: DisplayStage[] = [
 const Pipeline = () => {
   const { user, loading } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -771,6 +774,8 @@ const Pipeline = () => {
   }, [deals, filters]);
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (!canEdit) return; // Block drag for users without edit permission
+    
     const activeId = event.active.id as string;
     
     // Check if dragging a stage (stage IDs start with "stage_")

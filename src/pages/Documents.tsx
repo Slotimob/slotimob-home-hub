@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -93,6 +94,9 @@ const getTabFromPath = (pathname: string): string => {
 
 const Documents = () => {
   const { user, loading } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('documents', 'create');
+  const canDelete = isOwner || hasPermission('documents', 'delete');
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -271,14 +275,18 @@ const Documents = () => {
       title="Documentos"
       headerActions={
         <>
+          {canCreate && (
           <PermissionGate permission="documents.generate">
             <HeaderButton variant="outline" icon={<Plus className="h-4 w-4" />} onClick={() => setIsProposalDialogOpen(true)}>
               Nova Proposta
             </HeaderButton>
           </PermissionGate>
+          )}
+          {canCreate && (
           <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsUploadDialogOpen(true)}>
             Upload
           </HeaderButton>
+          )}
         </>
       }
     >

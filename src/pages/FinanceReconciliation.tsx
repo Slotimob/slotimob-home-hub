@@ -11,12 +11,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Upload, Building2, History, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const FinanceReconciliation = () => {
   const { user, loading } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('finance_reconciliation', 'create');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
@@ -154,6 +157,7 @@ const FinanceReconciliation = () => {
 
               {/* Action Buttons - Compact */}
               <div className="flex gap-1.5">
+                {canCreate && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -164,6 +168,18 @@ const FinanceReconciliation = () => {
                   <Upload className="h-3.5 w-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">Importar</span>
                 </Button>
+                )}
+                {canCreate && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsCreateAccountOpen(true)}
+                  className="h-8 text-xs"
+                >
+                  <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Nova Conta</span>
+                </Button>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -173,15 +189,6 @@ const FinanceReconciliation = () => {
                 >
                   <History className="h-3.5 w-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">Histórico</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setIsCreateAccountOpen(true)}
-                  className="h-8 text-xs"
-                >
-                  <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-                  <span className="hidden sm:inline">Nova Conta</span>
                 </Button>
                 <Button 
                   variant="ghost" 

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { subDays } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -28,6 +29,7 @@ import { TrialBanner } from '@/components/dashboard/TrialBanner';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
   const navigate = useNavigate();
   const { needsReaccept, markAccepted, currentVersion } = useTermsAcceptance(user?.id);
   const { 
@@ -156,6 +158,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Customize Button */}
+                {(isOwner || hasPermission('dashboard', 'edit')) && (
                 <DashboardCustomizeSheet
                   widgets={preferences.widgets}
                   shortcuts={preferences.shortcuts}
@@ -167,6 +170,7 @@ const Dashboard = () => {
                   enabledStagesCount={getEnabledStagesCount()}
                   maxStages={maxPipelineStages}
                 />
+                )}
               </div>
             </div>
 

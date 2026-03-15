@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,8 @@ type ContractStatusFilter = "all" | "active" | "pending_signature" | "terminated
 export function ContractsTab() {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('management_contracts', 'create');
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -796,11 +799,13 @@ export function ContractsTab() {
         </Button>
         
         {/* Create Contract Button */}
+        {canCreate && (
         <Button onClick={handleCreateContract} className="shrink-0 gap-1.5">
           <Plus className="h-4 w-4 mr-2" />
           <span className="hidden sm:inline">Novo Contrato</span>
           <span className="sm:hidden">Novo</span>
         </Button>
+        )}
       </div>
 
       {/* Contracts - Mobile Card View or Desktop Table */}
