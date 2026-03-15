@@ -1375,14 +1375,12 @@ export function ContractsTab() {
             setLeaseSheetOpen(false);
           }
         } : undefined}
-        onTerminateLease={() => {
-          // The Sheet already calls onOpenChange(false) before this callback
-          // Just capture the lease and open the dialog
+        onTerminateLease={(isOwner || hasPermission('management_contracts', 'edit')) ? () => {
           if (selectedLeaseForSheet) {
             setTerminatingLease(selectedLeaseForSheet);
             setTerminateDialogOpen(true);
           }
-        }}
+        } : undefined}
       />
 
       {/* Delete Confirmation Dialog */}
