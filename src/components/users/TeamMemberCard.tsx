@@ -64,6 +64,25 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
 
   const removeMember = useMutation({
     mutationFn: async () => {
+      if (!effectiveBrokerId) throw new Error('Workspace não identificado');
+
+      // 1. Transfer all assets from member to Master
+      const tablesToTransfer = ['properties', 'contacts', 'leads', 'deals', 'units', 'financial_transactions'] as const;
+      for (const table of tablesToTransfer) {
+        const { error } = await supabase
+          .from(table)
+          .update({ broker_id: effectiveBrokerId } as any)
+          .eq('broker_id', member.user_id);
+        if (error) console.warn(`Transfer warning (${table}):`, error.message);
+      }
+
+      // 2. Downgrade member to free plan without trial
+      await supabase
+        .from('subscriptions')
+        .update({ plan_id: 'free', status: 'active', trial_ends_at: null })
+        .eq('user_id', member.user_id);
+
+      // 3. Finally remove the membership link
       const { error } = await supabase
         .from('organization_members')
         .delete()
@@ -72,9 +91,9 @@ export function TeamMemberCard({ member, readOnly = false }: TeamMemberCardProps
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-members'] });
-      toast.success('Membro removido com sucesso');
+      toast.success('Membro removido e dados transferidos com sucesso');
     },
-    onError: () => toast.error('Erro ao remover membro'),
+    onError: (err: Error) => toast.error(err.message || 'Erro ao remover membro'),
   });
 
   const toggleActive = useMutation({
