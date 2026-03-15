@@ -132,12 +132,12 @@ export function AppSidebar() {
     { 
       title: 'Gestão', 
       icon: ClipboardList,
-      moduleKey: 'management',
+      moduleKey: 'management_rentals', // group-level: visible if any management_* is granted
       items: [
-        { title: 'Aluguéis', url: '/gestao/alugueis' },
-        { title: 'Contratos', url: '/gestao/contratos' },
-        { title: 'Gerencial', url: '/gestao/gerencial' },
-        { title: 'Afazeres', url: '/gestao/afazeres' },
+        { title: 'Aluguéis', url: '/gestao/alugueis', moduleKey: 'management_rentals' },
+        { title: 'Contratos', url: '/gestao/contratos', moduleKey: 'management_contracts' },
+        { title: 'Gerencial', url: '/gestao/gerencial', moduleKey: 'management_reports' },
+        { title: 'Afazeres', url: '/gestao/afazeres', moduleKey: 'management_tasks' },
       ]
     },
     { 
@@ -147,37 +147,36 @@ export function AppSidebar() {
         { 
           title: 'Empreendimentos', 
           url: '/properties', 
-          moduleKey: 'properties',
+          moduleKey: 'assets_properties',
           nestedItems: [
             { title: 'Lista Geral', url: '/properties' },
-            { title: 'Unidades', url: '/units', moduleKey: 'units' },
+            { title: 'Unidades', url: '/units', moduleKey: 'assets_units' },
           ]
         },
-        { title: 'Imóveis Avulsos', url: '/real-estate', moduleKey: 'real_estate' },
+        { title: 'Imóveis Avulsos', url: '/real-estate', moduleKey: 'assets_standalone' },
       ]
     },
     { 
       title: 'Financeiro', 
       icon: Wallet,
       ownerOnly: true,
-      moduleKey: 'financial',
+      moduleKey: 'finance_overview', // group-level: visible if any finance_* is granted
       items: [
-        { title: 'Visão Geral', url: '/finance' },
-        { title: 'DRE', url: '/finance/dre' },
-        { title: 'Lançamentos', url: '/finance/transactions' },
-        { title: 'Conciliação', url: '/finance/reconciliation' },
-        { title: 'Categorias', url: '/finance/categories' },
+        { title: 'Visão Geral', url: '/finance', moduleKey: 'finance_overview' },
+        { title: 'DRE', url: '/finance/dre', moduleKey: 'finance_dre' },
+        { title: 'Lançamentos', url: '/finance/transactions', moduleKey: 'finance_transactions' },
+        { title: 'Conciliação', url: '/finance/reconciliation', moduleKey: 'finance_reconciliation' },
+        { title: 'Categorias', url: '/finance/categories', moduleKey: 'finance_categories' },
       ]
     },
     { 
       title: 'CRM', 
       icon: Users,
-      moduleKey: 'crm',
       items: [
         { title: 'Mensagens', url: '/whatsapp', moduleKey: 'integrations' },
-        { title: 'Pipeline', url: '/pipeline' },
-        { title: 'Contatos', url: '/contacts' },
-        { title: 'Agenda', url: '/schedule' },
+        { title: 'Pipeline', url: '/pipeline', moduleKey: 'crm_pipeline' },
+        { title: 'Contatos', url: '/contacts', moduleKey: 'crm_contacts' },
+        { title: 'Agenda', url: '/schedule', moduleKey: 'crm_schedule' },
       ]
     },
     { title: 'Relatórios', url: '/reports', icon: BarChart3, ownerOnly: true, moduleKey: 'reports' },
