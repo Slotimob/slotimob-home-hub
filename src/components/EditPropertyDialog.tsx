@@ -251,9 +251,9 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Gerenciar Empreendimento</DialogTitle>
+            <DialogTitle>{canEdit ? 'Gerenciar Empreendimento' : 'Visualizar Empreendimento'}</DialogTitle>
             <DialogDescription>
-              Edite informações, infraestrutura, galeria e documentos
+              {canEdit ? 'Edite informações, infraestrutura, galeria e documentos' : 'Visualização somente leitura'}
             </DialogDescription>
           </DialogHeader>
 

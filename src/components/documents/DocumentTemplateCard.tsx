@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Download, Edit, FileText, ClipboardList, Receipt, ClipboardCheck, Key } from 'lucide-react';
 import { DocumentTemplate, CATEGORY_LABELS, CATEGORY_COLORS } from '@/utils/documentTemplates';
 import { generateBlankTemplatePDF } from '@/utils/pdfGenerator';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface DocumentTemplateCardProps {
   template: DocumentTemplate;
@@ -19,12 +20,15 @@ const categoryIcons: Record<string, React.ReactNode> = {
 };
 
 export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardProps) => {
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('documents', 'edit') || hasPermission('documents', 'create');
+
   const handleDownloadBlank = () => {
     generateBlankTemplatePDF(template);
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={onEdit}>
+    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={canEdit ? onEdit : undefined}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -60,17 +64,19 @@ export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardP
             <Download className="mr-1 h-3 w-3" />
             Original
           </Button>
-          <Button
-            size="sm"
-            className="flex-1 text-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Edit className="mr-1 h-3 w-3" />
-            Editar
-          </Button>
+          {canEdit && (
+            <Button
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Edit className="mr-1 h-3 w-3" />
+              Editar
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

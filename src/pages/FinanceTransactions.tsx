@@ -182,10 +182,12 @@ const FinanceTransactions = () => {
                 Novo Lançamento
               </Button>
             </PermissionGate>
+            {(isOwner || hasPermission('finance_transactions', 'create')) && (
             <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Importar</span>
             </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Exportar</span>

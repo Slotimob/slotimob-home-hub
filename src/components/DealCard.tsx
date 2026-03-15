@@ -102,7 +102,7 @@ export const DealCard = ({
 }: DealCardProps) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: deal.id,
-    disabled: selectionMode || disableDrag,
+    disabled: selectionMode,
   });
 
   const style = transform
