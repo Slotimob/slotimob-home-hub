@@ -15,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { DealActivities } from './DealActivities';
 import { DealTasks } from './DealTasks';
 import { DealStageHistory } from './DealStageHistory';
@@ -52,6 +53,8 @@ interface DealDetailsSheetProps {
 
 export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDetailsSheetProps) => {
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
   const [isSaving, setIsSaving] = useState(false);
   const [linkedContact, setLinkedContact] = useState<LinkedContact | null>(null);
   const [editedDeal, setEditedDeal] = useState<{
