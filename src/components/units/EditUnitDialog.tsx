@@ -218,6 +218,7 @@ export const EditUnitDialog = ({
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate financial fields based on intent_type
