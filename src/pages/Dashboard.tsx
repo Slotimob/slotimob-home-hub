@@ -29,6 +29,7 @@ import { TrialBanner } from '@/components/dashboard/TrialBanner';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
   const navigate = useNavigate();
   const { needsReaccept, markAccepted, currentVersion } = useTermsAcceptance(user?.id);
   const { 
