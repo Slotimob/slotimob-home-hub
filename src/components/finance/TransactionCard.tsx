@@ -70,7 +70,7 @@ export function TransactionCard({
   };
 
   const handleCardClick = () => {
-    onEdit(transaction);
+    onEdit?.(transaction);
   };
 
   const handleReconcileClick = (e: React.MouseEvent) => {
