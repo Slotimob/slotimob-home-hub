@@ -312,7 +312,7 @@ export function CreateLeaseWizard({
           const { data: existingContact } = await supabase
             .from("contacts")
             .select("id, categories")
-            .eq("broker_id", user.id)
+            .eq("broker_id", effectiveBrokerId || user.id)
             .eq("document_number", guarantorData.cpf)
             .maybeSingle();
 

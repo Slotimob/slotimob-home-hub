@@ -75,7 +75,7 @@ export function GuarantorSelector({
       const { data, error } = await supabase
         .from("contacts")
         .select("id, name, email, phone, document_number, address, city, state, postal_code, metadata, categories")
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .contains("categories", ["Fiador"])
         .order("name");
 

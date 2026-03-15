@@ -588,7 +588,7 @@ export function ContractsTab() {
         .from("leases")
         .delete()
         .eq("id", deletingLease.id)
-        .eq("broker_id", user.id);
+        .eq("broker_id", effectiveBrokerId || user.id);
       
       if (error) throw error;
 
