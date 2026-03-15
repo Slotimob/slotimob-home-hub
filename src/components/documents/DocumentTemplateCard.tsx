@@ -21,7 +21,9 @@ const categoryIcons: Record<string, React.ReactNode> = {
 
 export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardProps) => {
   const { isOwner, hasPermission } = usePermissions();
-  const canEdit = isOwner || hasPermission('documents', 'edit') || hasPermission('documents', 'create');
+  const canCreate = isOwner || hasPermission('documents', 'create');
+  const canEditDoc = isOwner || hasPermission('documents', 'edit');
+  const canUse = canCreate || canEditDoc;
 
   const handleDownloadBlank = () => {
     generateBlankTemplatePDF(template);
