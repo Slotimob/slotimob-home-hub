@@ -56,9 +56,10 @@ function getInitials(name: string | null, phone: string): string {
   return phone.slice(-2);
 }
 
-export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange }: ChatSidebarProps) {
+export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange, showTriageTabs = false }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [newConvOpen, setNewConvOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
