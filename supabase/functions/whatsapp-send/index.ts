@@ -138,7 +138,6 @@ serve(async (req) => {
       });
     }
 
-    // Sanitizar número
     const recipientPhone = sanitizePhoneNumber(conversation.contact_phone || '');
     const sanitizedContent = (content || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
