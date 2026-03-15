@@ -183,6 +183,7 @@ export function ChatArea({
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const agentName = useAgentName(assignedUserId || null, teamMembers);
   const { toast } = useToast();
 
