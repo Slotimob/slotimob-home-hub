@@ -243,19 +243,6 @@ const Integrations = () => {
                 </div>
               )}
 
-              {isAtInstanceLimit && !isConnected && !isPreparing && !hasQrCode && (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium">Limite de conexões do seu plano atingido</p>
-                    <p className="text-xs mt-1">Desconecte uma instância existente ou faça upgrade para mais conexões.</p>
-                    <Button variant="link" size="sm" className="p-0 h-auto mt-1 text-destructive" onClick={() => navigate('/settings')}>
-                      <ArrowUpCircle className="h-3 w-3 mr-1" />
-                      Upgrade
-                    </Button>
-                  </div>
-                </div>
-              )}
 
               {/* Status Badge */}
               {instancesLimit > 0 && (
