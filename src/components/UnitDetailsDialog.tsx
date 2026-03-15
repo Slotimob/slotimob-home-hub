@@ -74,7 +74,7 @@ interface PropertyDetails {
 export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSuccess }: UnitDetailsDialogProps) => {
   const { toast } = useToast();
   const { isOwner, hasPermission } = usePermissions();
-  const moduleKey = unit.is_standalone ? 'real_estate' : 'units';
+  const moduleKey = unit.is_standalone ? 'assets_standalone' : 'assets_units';
   const canEdit = isOwner || hasPermission(moduleKey, 'edit');
   const canDelete = isOwner || hasPermission(moduleKey, 'delete');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

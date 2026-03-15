@@ -353,9 +353,11 @@ export default function Schedule() {
       headerActions={
         <>
           <CalendarSyncDialog />
-          <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
-            Agendar Visita
-          </HeaderButton>
+          <PermissionGate permission="crm_schedule.create">
+            <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
+              Agendar Visita
+            </HeaderButton>
+          </PermissionGate>
         </>
       }
     >
