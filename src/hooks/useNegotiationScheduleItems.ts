@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 
 export interface NegotiationScheduleItem {
@@ -24,11 +25,12 @@ interface UseNegotiationScheduleItemsOptions {
 
 export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegotiationScheduleItemsOptions) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
 
   return useQuery({
-    queryKey: ['negotiation-schedule-items', user?.id, selectedDate.toISOString(), viewMode],
+    queryKey: ['negotiation-schedule-items', effectiveBrokerId, selectedDate.toISOString(), viewMode],
     queryFn: async (): Promise<NegotiationScheduleItem[]> => {
-      if (!user) return [];
+      if (!effectiveBrokerId) return [];
 
       let startDate: Date;
       let endDate: Date;
@@ -99,7 +101,7 @@ export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegot
             properties!inner (name)
           )
         `)
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .not('due_date', 'is', null)
         .gte('due_date', startDate.toISOString().split('T')[0])
         .lte('due_date', endDate.toISOString().split('T')[0])
@@ -129,6 +131,6 @@ export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegot
 
       return items.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 }

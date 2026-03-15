@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -71,6 +72,10 @@ const activityColors: Record<string, string> = {
 export const DealActivities = ({ dealId }: DealActivitiesProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
+  const canDelete = isOwner || hasPermission('crm_pipeline', 'delete');
+  const canCreate = isOwner || hasPermission('crm_pipeline', 'create');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -145,10 +150,12 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-sm">Histórico de Atividades</h3>
+        {canCreate && (
         <Button size="sm" onClick={() => setIsDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-1" />
           Nova Atividade
         </Button>
+        )}
       </div>
 
       <div className="flex items-start gap-2 p-2 rounded-md bg-muted/50 text-xs text-muted-foreground">
@@ -197,6 +204,7 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                       {format(new Date(activity.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
+                  {(canEdit || canDelete) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -204,10 +212,13 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {canEdit && (
                       <DropdownMenuItem onClick={() => setEditingActivity(activity)}>
                         <Pencil className="h-4 w-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
+                      )}
+                      {canDelete && (
                       <DropdownMenuItem 
                         onClick={() => setDeletingActivityId(activity.id)}
                         className="text-destructive"
@@ -215,8 +226,10 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                         <Trash2 className="h-4 w-4 mr-2" />
                         Excluir
                       </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  )}
                 </div>
               </Card>
             );

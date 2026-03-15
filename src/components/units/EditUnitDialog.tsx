@@ -409,7 +409,7 @@ export const EditUnitDialog = ({
 
               <div className="flex justify-between gap-2 pt-4 border-t">
                 <div>
-                  {canDelete && canEdit && (
+                  {canDelete && (
                     <Button
                       type="button"
                       variant="destructive"

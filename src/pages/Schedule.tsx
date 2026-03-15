@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ import { toast } from "sonner";
 
 export default function Schedule() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -57,7 +59,7 @@ export default function Schedule() {
 
   // Fetch ALL visits for event counting (not filtered by date)
   const { data: allVisits } = useQuery({
-    queryKey: ["all-visits", user?.id],
+    queryKey: ["all-visits", effectiveBrokerId, currentMonth.toISOString()],
     queryFn: async () => {
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
@@ -73,7 +75,7 @@ export default function Schedule() {
           units!visits_unit_id_fkey (unit_number, price, area),
           properties!visits_property_id_fkey (name, address)
         `)
-        .eq("broker_id", user?.id)
+        .eq("broker_id", effectiveBrokerId!)
         .gte("scheduled_at", monthStart.toISOString())
         .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
@@ -81,12 +83,12 @@ export default function Schedule() {
       if (error) throw error;
       return data as any;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   // Fetch ALL activities for event counting
   const { data: allActivities } = useQuery({
-    queryKey: ["all-schedule-activities", user?.id, currentMonth.toISOString()],
+    queryKey: ["all-schedule-activities", effectiveBrokerId, currentMonth.toISOString()],
     queryFn: async () => {
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
@@ -101,7 +103,7 @@ export default function Schedule() {
           duration_minutes,
           leads:lead_id (name, phone)
         `)
-        .eq("broker_id", user?.id)
+        .eq("broker_id", effectiveBrokerId!)
         .gte("scheduled_at", monthStart.toISOString())
         .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
@@ -109,14 +111,14 @@ export default function Schedule() {
       if (error) throw error;
       return data as any;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   // Fetch ALL negotiation items for event counting (excluding expected_close_date)
   const { data: allNegotiationItems } = useQuery({
-    queryKey: ["all-negotiation-items", user?.id, currentMonth.toISOString()],
+    queryKey: ["all-negotiation-items", effectiveBrokerId, currentMonth.toISOString()],
     queryFn: async () => {
-      if (!user) return [];
+      if (!effectiveBrokerId) return [];
 
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
@@ -126,7 +128,7 @@ export default function Schedule() {
       const { data: activities } = await supabase
         .from('deal_activities')
         .select('id, scheduled_at')
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .not('scheduled_at', 'is', null)
         .gte('scheduled_at', monthStart.toISOString())
         .lte('scheduled_at', monthEnd.toISOString());
@@ -139,7 +141,7 @@ export default function Schedule() {
       const { data: tasks } = await supabase
         .from('deal_tasks')
         .select('id, due_date')
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .not('due_date', 'is', null)
         .gte('due_date', monthStart.toISOString().split('T')[0])
         .lte('due_date', monthEnd.toISOString().split('T')[0]);
@@ -157,7 +159,7 @@ export default function Schedule() {
 
       return items;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   // Calculate event counts for calendar display
@@ -179,7 +181,7 @@ export default function Schedule() {
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
 
   const { data: activities, refetch: refetchActivities } = useQuery({
-    queryKey: ["schedule-activities", user?.id, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode],
+    queryKey: ["schedule-activities", effectiveBrokerId, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode],
     queryFn: async () => {
       let startDate: Date;
       let endDate: Date;
@@ -202,7 +204,7 @@ export default function Schedule() {
           *,
           leads:lead_id (name, phone)
         `)
-        .eq("broker_id", user?.id)
+        .eq("broker_id", effectiveBrokerId!)
         .gte("scheduled_at", startDate.toISOString())
         .lte("scheduled_at", endDate.toISOString())
         .order("scheduled_at", { ascending: true });
@@ -210,7 +212,7 @@ export default function Schedule() {
       if (error) throw error;
       return data as any;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   // Mutation for updating activity duration
