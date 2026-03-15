@@ -875,6 +875,16 @@ const Pipeline = () => {
 
     if (!over || active.id === over.id) return;
 
+    // Block deal moves for users without edit permission (stage reorder still allowed)
+    const activeId_check = active.id as string;
+    const overId_check = over.id as string;
+    if (!activeId_check.startsWith('stage_') && !overId_check.startsWith('stage_')) {
+      if (!canEdit) {
+        toast({ title: 'Sem permissão', description: 'Você não tem permissão para mover negócios.', variant: 'destructive' });
+        return;
+      }
+    }
+
     const activeId = active.id as string;
     const overId = over.id as string;
 
