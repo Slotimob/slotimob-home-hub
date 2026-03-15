@@ -85,6 +85,12 @@ export const ContactDetailSheet = ({
                     WhatsApp
                   </Button>
                 )}
+                {canDelete && onDelete && (
+                  <Button variant="outline" size="sm" onClick={onDelete} className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
+                  </Button>
+                )}
               </div>
             </SheetHeader>
 

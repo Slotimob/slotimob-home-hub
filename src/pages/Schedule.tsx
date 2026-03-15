@@ -434,7 +434,7 @@ export default function Schedule() {
                 date={selectedDate} 
                 activities={activities || []}
                 negotiationItems={negotiationItems || []}
-                onActivityClick={(activity) => console.log('Activity clicked:', activity)}
+onActivityClick={handleActivityClick}
                 onActivityResize={handleActivityResize}
                 onNegotiationItemClick={() => navigate('/pipeline')}
               />
@@ -475,7 +475,7 @@ export default function Schedule() {
                 selectedDate={selectedDate}
                 activities={activities || []}
                 negotiationItems={negotiationItems || []}
-                onActivityClick={(activity) => console.log('Activity clicked:', activity)}
+                onActivityClick={handleActivityClick}
                 onActivityResize={handleActivityResize}
                 onDateChange={setSelectedDate}
                 onNegotiationItemClick={() => navigate('/pipeline')}
