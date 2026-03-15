@@ -22,7 +22,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isOwner, hasPermission } = usePermissions();
-  const canReconcile = isOwner || hasPermission('finance_reconciliation', 'edit') || hasPermission('finance_reconciliation', 'create');
+  const hasReconcilePermission = isOwner || hasPermission('finance_reconciliation', 'edit') || hasPermission('finance_reconciliation', 'create');
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
