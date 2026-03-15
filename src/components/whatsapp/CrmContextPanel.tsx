@@ -228,7 +228,13 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
             <Button
               variant="outline"
               className="w-full border-dashed border-primary/40 text-primary hover:bg-primary/5 gap-2"
-              onClick={onCreateDeal}
+              onClick={() => {
+                if (onCreateDeal) {
+                  onCreateDeal();
+                } else {
+                  toast({ title: 'Em desenvolvimento', description: 'Atalho para criar negociação estará disponível em breve.' });
+                }
+              }}
             >
               <Plus className="h-4 w-4" />
               Criar Negociação

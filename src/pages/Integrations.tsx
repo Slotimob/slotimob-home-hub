@@ -245,7 +245,7 @@ const Integrations = () => {
 
 
               {/* Status Badge */}
-              {instancesLimit > 0 && (
+              {canManageWhatsApp && instancesLimit > 0 && (
                 <div className="flex items-center gap-2">
                   {isConnected ? (
                     <Badge className="bg-green-500/10 text-green-600 border-green-500/20">

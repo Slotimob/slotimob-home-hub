@@ -407,7 +407,12 @@ export function ChatArea({
           </div>
         ) : (
           <div className="flex items-end gap-2">
-            <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9"
+              onClick={() => toast({ title: 'Em breve', description: 'Envio de anexos estará disponível em breve.' })}
+            >
               <Paperclip className="h-5 w-5" />
             </Button>
 

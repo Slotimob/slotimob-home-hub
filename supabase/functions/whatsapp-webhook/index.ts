@@ -555,14 +555,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     }
   }
 
-  // Find or create conversation
-  let { data: conversation, error: convError } = await supabaseAdmin
-    .from('whatsapp_conversations')
-    .select('*')
-    .eq('connection_id', connection.id)
-    .eq('remote_jid', remoteJid)
-    .single();
-
+  // Find or create conversation — MUST exist before message insert
   const messageTimestamp = msgData.messageTimestamp
     ? new Date(parseInt(msgData.messageTimestamp) * 1000).toISOString()
     : new Date().toISOString();
@@ -580,9 +573,52 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
 
   const autoDealId = (connection as any)._autoDealId || null;
 
-  if (convError || !conversation) {
-    // New conversation — assign agent
-    const effectiveAssignee = assignedAgentId || connection.broker_id;
+  let conversation: any = null;
+
+  // Step 1: Try to find existing conversation
+  const { data: existingConv, error: convError } = await supabaseAdmin
+    .from('whatsapp_conversations')
+    .select('*')
+    .eq('connection_id', connection.id)
+    .eq('remote_jid', remoteJid)
+    .maybeSingle();
+
+  if (convError) {
+    console.error('Erro buscar conversa:', convError);
+  }
+
+  if (existingConv) {
+    conversation = existingConv;
+    // Update existing conversation metadata
+    const resolvedContactId = contactId || conversation.contact_id;
+    const updatePayload: Record<string, any> = {
+      contact_id: resolvedContactId,
+      lead_id: resolvedContactId || conversation.lead_id,
+      last_message: lastMsgPreview,
+      last_message_at: messageTimestamp,
+    };
+    if (direction === 'incoming') {
+      updatePayload.unread_count = (conversation.unread_count || 0) + 1;
+      updatePayload.contact_name = pushName;
+      // Re-open closed conversations when customer sends a new message
+      if (conversation.status === 'closed') {
+        updatePayload.status = 'pending';
+        updatePayload.assigned_user_id = null;
+        updatePayload.assigned_at = null;
+        console.log(`Conversa ${conversation.id} reaberta (era closed, agora pending)`);
+      }
+    }
+    await supabaseAdmin
+      .from('whatsapp_conversations')
+      .update(updatePayload)
+      .eq('id', conversation.id);
+  } else {
+    // Step 2: Auto-create conversation — set to 'pending' so it enters triage queue
+    const isNewContactAssignment = isNewContact && assignedAgentId;
+    const convStatus = isNewContactAssignment ? 'active' : 'pending';
+    const effectiveAssignee = isNewContactAssignment ? assignedAgentId : null;
+
+    console.log(`Auto-criando conversa para ${remoteJid} status=${convStatus} assignee=${effectiveAssignee}`);
 
     const { data: newConv, error: createError } = await supabaseAdmin
       .from('whatsapp_conversations')
@@ -596,9 +632,9 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
         last_message: lastMsgPreview,
         last_message_at: messageTimestamp,
         unread_count: direction === 'incoming' ? 1 : 0,
-        status: 'active',
+        status: convStatus,
         assigned_user_id: effectiveAssignee,
-        assigned_at: new Date().toISOString(),
+        assigned_at: effectiveAssignee ? new Date().toISOString() : null,
         ...(autoDealId ? { deal_id: autoDealId } : {}),
       })
       .select()
@@ -609,24 +645,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
       return;
     }
     conversation = newConv;
-  } else {
-    const resolvedContactId = contactId || conversation.contact_id;
-    const updatePayload: Record<string, any> = {
-      contact_id: resolvedContactId,
-      lead_id: resolvedContactId || conversation.lead_id,
-      last_message: lastMsgPreview,
-      last_message_at: messageTimestamp,
-    };
-    if (direction === 'incoming') {
-      updatePayload.unread_count = (conversation.unread_count || 0) + 1;
-    }
-    if (direction === 'incoming') {
-      updatePayload.contact_name = pushName;
-    }
-    await supabaseAdmin
-      .from('whatsapp_conversations')
-      .update(updatePayload)
-      .eq('id', conversation.id);
+    console.log(`✅ Conversa ${conversation.id} auto-criada para ${cleanPhone}`);
   }
 
   // Upsert message (dedup by conversation_id + message_id)
