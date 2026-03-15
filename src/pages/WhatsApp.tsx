@@ -18,6 +18,7 @@ import { ChatSidebar } from '@/components/whatsapp/ChatSidebar';
 import { ChatArea } from '@/components/whatsapp/ChatArea';
 import { CrmContextPanel } from '@/components/whatsapp/CrmContextPanel';
 import { AssignAgentSelect } from '@/components/whatsapp/AssignAgentSelect';
+import { CreateDealFromChatDialog } from '@/components/whatsapp/CreateDealFromChatDialog';
 import {
   useConversations,
   useMessages,
