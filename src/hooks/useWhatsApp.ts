@@ -80,7 +80,7 @@ export function useWhatsAppSettingsConnection() {
     } else {
       setWaitingForQr(false);
     }
-  }, [user]);
+  }, [brokerId]);
 
   useEffect(() => {
     fetchConnection();
