@@ -96,13 +96,16 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
 
+  // Use effectiveBrokerId so members inherit the owner's plan features
+  const resolvedUserId = effectiveBrokerId || user?.id;
+
   const { data, isLoading } = useQuery({
-    queryKey: ['user-plan-features', user?.id],
+    queryKey: ['user-plan-features', resolvedUserId],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!resolvedUserId) return null;
       
       const { data, error } = await supabase.rpc('get_user_plan_features', {
-        p_user_id: user.id
+        p_user_id: resolvedUserId
       });
       
       if (error) {
@@ -112,7 +115,7 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
       
       return data as unknown as { plan: string; is_early_adopter: boolean; features: PlanFeatures };
     },
-    enabled: !!user?.id,
+    enabled: !!resolvedUserId,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -135,11 +138,11 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
 
   // Fetch trial status for free users
   const { data: trialData } = useQuery({
-    queryKey: ['trial-status-limits', user?.id],
+    queryKey: ['trial-status-limits', resolvedUserId],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!resolvedUserId) return null;
       const { data, error } = await supabase.rpc('get_user_trial_status', {
-        p_user_id: user.id,
+        p_user_id: resolvedUserId,
       });
       if (error) return null;
       return data as unknown as {
@@ -149,7 +152,7 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
         trial_days_remaining: number;
       };
     },
-    enabled: !!user?.id,
+    enabled: !!resolvedUserId,
     staleTime: 5 * 60 * 1000,
   });
 

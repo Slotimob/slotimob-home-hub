@@ -165,7 +165,7 @@ export const EditUnitDialog = ({
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   
   const isStandalone = unit.is_standalone ?? false;
-  const moduleKey = isStandalone ? 'real_estate' : 'units';
+  const moduleKey = isStandalone ? 'assets_standalone' : 'assets_units';
   const canDelete = isPermOwner || hasPermission(moduleKey, 'delete');
   const showPropertySelector = !isStandalone;
 

@@ -1077,7 +1077,7 @@ const Pipeline = () => {
       title="Pipeline Vendas"
       headerActions={
         <>
-          <PermissionGate permission="crm.move_pipeline">
+          <PermissionGate permission="crm_pipeline.create">
             <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
               Nova Negociação
             </HeaderButton>

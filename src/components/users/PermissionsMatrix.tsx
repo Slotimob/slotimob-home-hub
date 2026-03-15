@@ -17,17 +17,51 @@ export interface PermissionModuleDef {
   label: string;
   /** Which actions are available for this module. Missing actions render as "—" */
   actions: ActionKey[];
+  /** If true, renders as a group header row */
+  isGroupHeader?: boolean;
+  /** Indentation level for sub-items */
+  indent?: boolean;
 }
 
+/**
+ * Grouped permission modules for the enterprise RBAC matrix.
+ * Group headers are non-interactive label rows.
+ */
 export const PERMISSION_MODULES: PermissionModuleDef[] = [
-  { key: 'chat', label: 'Chat IA', actions: ['view'] },
+  // Dashboard
   { key: 'dashboard', label: 'Dashboard', actions: ['view', 'edit'] },
-  { key: 'management', label: 'Gestão', actions: ['view', 'create', 'edit', 'delete'] },
-  { key: 'properties', label: 'Empreendimentos', actions: ['view', 'create', 'edit', 'delete'] },
-  { key: 'units', label: 'Unidades', actions: ['view', 'create', 'edit', 'delete'] },
-  { key: 'real_estate', label: 'Imóveis Avulsos', actions: ['view', 'create', 'edit', 'delete'] },
-  { key: 'financial', label: 'Financeiro', actions: ['view', 'create', 'edit', 'delete'] },
-  { key: 'crm', label: 'CRM', actions: ['view', 'create', 'edit', 'delete'] },
+
+  // Chat IA
+  { key: 'chat', label: 'Chat IA', actions: ['view'] },
+
+  // Gestão group
+  { key: '_group_management', label: 'Gestão', actions: [], isGroupHeader: true },
+  { key: 'management_rentals', label: 'Aluguéis', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'management_contracts', label: 'Contratos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'management_reports', label: 'Gerencial', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'management_tasks', label: 'Afazeres', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+
+  // Ativos group
+  { key: '_group_assets', label: 'Ativos', actions: [], isGroupHeader: true },
+  { key: 'assets_properties', label: 'Empreendimentos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'assets_units', label: 'Unidades', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'assets_standalone', label: 'Imóveis Avulsos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+
+  // Financeiro group
+  { key: '_group_finance', label: 'Financeiro', actions: [], isGroupHeader: true },
+  { key: 'finance_overview', label: 'Visão Geral', actions: ['view'], indent: true },
+  { key: 'finance_transactions', label: 'Lançamentos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'finance_dre', label: 'DRE', actions: ['view'], indent: true },
+  { key: 'finance_reconciliation', label: 'Conciliação', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'finance_categories', label: 'Categorias', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+
+  // CRM group
+  { key: '_group_crm', label: 'CRM', actions: [], isGroupHeader: true },
+  { key: 'crm_pipeline', label: 'Pipeline', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'crm_contacts', label: 'Contatos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'crm_schedule', label: 'Agenda', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+
+  // Others
   { key: 'reports', label: 'Relatórios', actions: ['view'] },
   { key: 'documents', label: 'Documentos', actions: ['view', 'create', 'edit', 'delete'] },
   { key: 'integrations', label: 'Integrações', actions: ['view'] },
@@ -80,7 +114,7 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[140px]">Módulo</TableHead>
+            <TableHead className="w-[160px]">Módulo</TableHead>
             {ACTION_COLUMNS.map((col) => (
               <TableHead key={col.key} className="text-center w-[90px]">
                 {col.label}
@@ -90,12 +124,25 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
         </TableHeader>
         <TableBody>
           {PERMISSION_MODULES.map((mod) => {
+            // Group header row
+            if (mod.isGroupHeader) {
+              return (
+                <TableRow key={mod.key} className="bg-muted/50">
+                  <TableCell colSpan={5} className="font-semibold text-sm py-2">
+                    {mod.label}
+                  </TableCell>
+                </TableRow>
+              );
+            }
+
             const perms = getModulePerms(mod.key);
             const viewEnabled = perms.view;
 
             return (
               <TableRow key={mod.key}>
-                <TableCell className="font-medium text-sm">{mod.label}</TableCell>
+                <TableCell className={`font-medium text-sm ${mod.indent ? 'pl-6' : ''}`}>
+                  {mod.label}
+                </TableCell>
                 {ACTION_COLUMNS.map((col) => {
                   const hasAction = mod.actions.includes(col.key);
 
