@@ -90,10 +90,19 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
     if (!matchesSearch) return false;
     if (activeTab === 'unread') return conv.unread_count > 0;
     if (activeTab === 'waiting') return conv.status === 'waiting';
+
+    // Triage status filter (manager view)
+    if (showTriageTabs && statusFilter !== 'all') {
+      if (statusFilter === 'pending') return conv.status === 'pending' || !conv.assigned_user_id;
+      if (statusFilter === 'active') return conv.status === 'active' || (conv.assigned_user_id && conv.status !== 'closed');
+      if (statusFilter === 'closed') return conv.status === 'closed';
+    }
+
     return true;
   });
 
   const unreadTotal = conversations.filter(c => c.unread_count > 0).length;
+  const pendingCount = showTriageTabs ? conversations.filter(c => c.status === 'pending' || !c.assigned_user_id).length : 0;
 
   return (
     <div className="flex flex-col h-full bg-card">
