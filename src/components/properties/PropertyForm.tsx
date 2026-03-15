@@ -809,6 +809,7 @@ export function PropertyForm({
             </Button>
           </div>
         )}
+        </fieldset>
       </form>
     </Tabs>
   );

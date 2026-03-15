@@ -392,21 +392,24 @@ export const EditUnitDialog = ({
 
           {/* Info Tab */}
           <TabsContent value="info" className="mt-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <UnitFormFields
-                formData={formData}
-                setFormData={setFormData}
-                properties={properties}
-                showImageUpload={true}
-                showPropertySelector={showPropertySelector}
-                propertyRequired={!isStandalone}
-                isStandalone={isStandalone}
-                onPropertiesChange={setProperties}
-              />
+            <form onSubmit={canEdit ? handleSubmit : (e) => e.preventDefault()} className="space-y-4">
+              <fieldset disabled={!canEdit}>
+                <UnitFormFields
+                  formData={formData}
+                  setFormData={setFormData}
+                  properties={properties}
+                  showImageUpload={true}
+                  showPropertySelector={showPropertySelector}
+                  propertyRequired={!isStandalone}
+                  isStandalone={isStandalone}
+                  onPropertiesChange={setProperties}
+                  disabled={!canEdit}
+                />
+              </fieldset>
 
               <div className="flex justify-between gap-2 pt-4 border-t">
                 <div>
-                  {canDelete && (
+                  {canDelete && canEdit && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -420,11 +423,13 @@ export const EditUnitDialog = ({
                 </div>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" onClick={handleCancel}>
-                    Cancelar
+                    {canEdit ? 'Cancelar' : 'Fechar'}
                   </Button>
-                  <Button type="submit" disabled={saving}>
-                    {saving ? 'Salvando...' : 'Salvar Alterações'}
-                  </Button>
+                  {canEdit && (
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'Salvando...' : 'Salvar Alterações'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </form>
