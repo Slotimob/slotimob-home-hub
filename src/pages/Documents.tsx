@@ -94,6 +94,9 @@ const getTabFromPath = (pathname: string): string => {
 
 const Documents = () => {
   const { user, loading } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('documents', 'create');
+  const canDelete = isOwner || hasPermission('documents', 'delete');
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();

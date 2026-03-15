@@ -23,6 +23,10 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function FinanceCategories() {
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('finance_categories', 'create');
+  const canEdit = isOwner || hasPermission('finance_categories', 'edit');
+  const canDelete = isOwner || hasPermission('finance_categories', 'delete');
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<any>(null);

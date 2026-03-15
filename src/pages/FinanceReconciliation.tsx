@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const FinanceReconciliation = () => {
   const { user, loading } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('finance_reconciliation', 'create');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");

@@ -100,6 +100,8 @@ const Units = () => {
   const [searchParams] = useSearchParams();
   const propertyId = searchParams.get('propertyId');
   const { user, loading } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('assets_units', 'create');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [property, setProperty] = useState<Property | null>(null);

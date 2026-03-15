@@ -39,6 +39,8 @@ const SORT_OPTIONS = [
 
 const Properties = () => {
   const { user, loading } = useAuth();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('assets_properties', 'create');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);

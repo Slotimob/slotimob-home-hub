@@ -94,6 +94,10 @@ const OBLIGATION_LABELS: Record<string, { label: string; icon: typeof HomeIcon }
 const GerencialGestao = () => {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
+  const { isOwner, hasPermission } = usePermissions();
+  const canCreate = isOwner || hasPermission('management_reports', 'create');
+  const canEdit = isOwner || hasPermission('management_reports', 'edit');
+  const canDelete = isOwner || hasPermission('management_reports', 'delete');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
