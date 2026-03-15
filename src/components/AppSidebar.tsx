@@ -196,9 +196,8 @@ export function AppSidebar() {
       return false;
     }
     // Granular permission enforcement for members (non-owners)
-    if (!isPermOwner && isMember) {
-      const permKey = MENU_PERMISSION_MAP[item.title];
-      if (permKey && !hasPermission(permKey, 'view')) return false;
+    if (!isPermOwner && isMember && item.moduleKey) {
+      if (!hasPermission(item.moduleKey, 'view')) return false;
     }
     return true;
   });
