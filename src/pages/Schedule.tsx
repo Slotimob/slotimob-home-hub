@@ -116,9 +116,9 @@ export default function Schedule() {
 
   // Fetch ALL negotiation items for event counting (excluding expected_close_date)
   const { data: allNegotiationItems } = useQuery({
-    queryKey: ["all-negotiation-items", user?.id, currentMonth.toISOString()],
+    queryKey: ["all-negotiation-items", effectiveBrokerId, currentMonth.toISOString()],
     queryFn: async () => {
-      if (!user) return [];
+      if (!effectiveBrokerId) return [];
 
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
@@ -128,7 +128,7 @@ export default function Schedule() {
       const { data: activities } = await supabase
         .from('deal_activities')
         .select('id, scheduled_at')
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .not('scheduled_at', 'is', null)
         .gte('scheduled_at', monthStart.toISOString())
         .lte('scheduled_at', monthEnd.toISOString());
@@ -141,7 +141,7 @@ export default function Schedule() {
       const { data: tasks } = await supabase
         .from('deal_tasks')
         .select('id, due_date')
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .not('due_date', 'is', null)
         .gte('due_date', monthStart.toISOString().split('T')[0])
         .lte('due_date', monthEnd.toISOString().split('T')[0]);
@@ -159,7 +159,7 @@ export default function Schedule() {
 
       return items;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   // Calculate event counts for calendar display
