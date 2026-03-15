@@ -114,6 +114,8 @@ const DEFAULT_STAGES: DisplayStage[] = [
 const Pipeline = () => {
   const { user, loading } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deals, setDeals] = useState<Deal[]>([]);
