@@ -189,7 +189,9 @@ export function AppSidebar() {
 
   // Filter menu items based on role, plan, and granular permissions
   const filteredMenuItems = menuItems.filter(item => {
-    if (item.ownerOnly && isAgent) return false;
+    // ownerOnly blocks agents, but members with permission should pass through
+    if (item.ownerOnly && isAgent && !isMember) return false;
+    if (item.ownerOnly && isMember && !isPermOwner && item.moduleKey && !hasPermission(item.moduleKey, 'view')) return false;
     if (item.hiddenOnPlan?.includes(plan)) {
       if (item.trialVisible && isTrialActive) return true;
       if (item.url === '/ai-chat') return true;
