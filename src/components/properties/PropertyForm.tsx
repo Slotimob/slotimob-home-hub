@@ -435,6 +435,7 @@ export function PropertyForm({
               </div>
               <Switch
                 id="is_under_management"
+                disabled={disabled}
                 checked={formData.is_under_management}
                 onCheckedChange={(checked) => setFormData({ ...formData, is_under_management: checked })}
                 className="flex-shrink-0"
