@@ -20,6 +20,7 @@ import { ActivityPalette, ACTIVITY_TYPES } from "@/components/schedule/ActivityP
 import { DayScheduleGrid } from "@/components/schedule/DayScheduleGrid";
 import { WeekScheduleGrid } from "@/components/schedule/WeekScheduleGrid";
 import { CreateActivityDialog } from "@/components/schedule/CreateActivityDialog";
+import { ScheduleActivityDetailDialog } from "@/components/schedule/ScheduleActivityDetailDialog";
 import { CalendarSyncDialog } from "@/components/schedule/CalendarSyncDialog";
 import { NegotiationScheduleCard } from "@/components/schedule/NegotiationScheduleCard";
 import { ScheduleCalendar } from "@/components/schedule/ScheduleCalendar";
@@ -48,6 +49,16 @@ export default function Schedule() {
     date: Date;
     hour: number;
   }>({ open: false, activityType: '', date: new Date(), hour: 9 });
+
+  // Activity detail dialog state
+  const [activityDetailDialog, setActivityDetailDialog] = useState<{
+    open: boolean;
+    activity: any | null;
+  }>({ open: false, activity: null });
+
+  const handleActivityClick = (activity: any) => {
+    setActivityDetailDialog({ open: true, activity });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -433,7 +444,7 @@ export default function Schedule() {
                 date={selectedDate} 
                 activities={activities || []}
                 negotiationItems={negotiationItems || []}
-                onActivityClick={(activity) => console.log('Activity clicked:', activity)}
+onActivityClick={handleActivityClick}
                 onActivityResize={handleActivityResize}
                 onNegotiationItemClick={() => navigate('/pipeline')}
               />
@@ -474,7 +485,7 @@ export default function Schedule() {
                 selectedDate={selectedDate}
                 activities={activities || []}
                 negotiationItems={negotiationItems || []}
-                onActivityClick={(activity) => console.log('Activity clicked:', activity)}
+                onActivityClick={handleActivityClick}
                 onActivityResize={handleActivityResize}
                 onDateChange={setSelectedDate}
                 onNegotiationItemClick={() => navigate('/pipeline')}
@@ -674,6 +685,16 @@ export default function Schedule() {
             activityType={createActivityDialog.activityType}
             scheduledDate={createActivityDialog.date}
             scheduledHour={createActivityDialog.hour}
+            onSuccess={() => {
+              refetchActivities();
+              queryClient.invalidateQueries({ queryKey: ["all-schedule-activities"] });
+            }}
+          />
+
+          <ScheduleActivityDetailDialog
+            activity={activityDetailDialog.activity}
+            open={activityDetailDialog.open}
+            onOpenChange={(open) => setActivityDetailDialog(prev => ({ ...prev, open }))}
             onSuccess={() => {
               refetchActivities();
               queryClient.invalidateQueries({ queryKey: ["all-schedule-activities"] });

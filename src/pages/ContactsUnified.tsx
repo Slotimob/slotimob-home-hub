@@ -468,7 +468,14 @@ const ContactsUnified = () => {
         open={isSheetOpen}
         onOpenChange={handleCloseSheet}
         onEdit={handleEditFromSheet}
+        onDelete={() => {
+          if (sheetContact) {
+            setDeleteDialog({ open: true, contact: sheetContact });
+            setIsSheetOpen(false);
+          }
+        }}
         canEdit={canEditContact}
+        canDelete={canDeleteContact}
       />
 
       {/* Delete Dialog */}

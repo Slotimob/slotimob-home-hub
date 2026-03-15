@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Phone, Mail, MapPin, FileText, Pencil, MessageSquare } from 'lucide-react';
+import { Phone, Mail, MapPin, FileText, Pencil, MessageSquare, Trash2 } from 'lucide-react';
 import { ContactCategoryBadges } from './ContactCategoryFilter';
 import { UnifiedContact } from './ContactCard';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
@@ -14,7 +14,9 @@ interface ContactDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
+  onDelete?: () => void;
   canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export const ContactDetailSheet = ({
@@ -22,7 +24,9 @@ export const ContactDetailSheet = ({
   open,
   onOpenChange,
   onEdit,
+  onDelete,
   canEdit = true,
+  canDelete = false,
 }: ContactDetailSheetProps) => {
   const getInitials = (name: string) => {
     return name
@@ -79,6 +83,12 @@ export const ContactDetailSheet = ({
                   <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="text-green-600">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     WhatsApp
+                  </Button>
+                )}
+                {canDelete && onDelete && (
+                  <Button variant="outline" size="sm" onClick={onDelete} className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
                   </Button>
                 )}
               </div>
