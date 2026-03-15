@@ -259,15 +259,17 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
             )}
 
             <div className="flex justify-between">
-              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir Unidade
-              </Button>
-              <div className="flex gap-2">
+              {canDelete && (
+                <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir Unidade
+                </Button>
+              )}
+              <div className={`flex gap-2 ${!canDelete ? 'ml-auto' : ''}`}>
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Fechar
                 </Button>
-                <Button onClick={() => setShowEditDialog(true)}>Editar</Button>
+                {canEdit && <Button onClick={() => setShowEditDialog(true)}>Editar</Button>}
               </div>
             </div>
           </div>

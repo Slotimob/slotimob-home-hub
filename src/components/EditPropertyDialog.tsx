@@ -284,9 +284,9 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
               key={`${property.id}-${freshProperty?.gallery_images?.length || 0}`}
               initialData={formData}
               isEditing={true}
-              onSubmit={handleSubmit}
+              onSubmit={canEdit ? handleSubmit : undefined as any}
               onCancel={handleCancel}
-              onDelete={() => setShowDeleteDialog(true)}
+              onDelete={canDelete ? () => setShowDeleteDialog(true) : undefined}
               isSubmitting={saving}
               propertyId={property.id}
               onRefreshProperty={handleRefreshProperty}
