@@ -9,10 +9,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { z } from 'zod';
-import { Info, Image, FileText, AlertCircle } from 'lucide-react';
+import { Info, Image, FileText, AlertCircle, Trash2 } from 'lucide-react';
 import { UnitFormFields, UnitFormData, getInitialFormData } from '@/components/units/UnitFormFields';
 import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
 import { UnitDocuments } from '@/components/units/UnitDocuments';
@@ -145,12 +156,17 @@ export const EditUnitDialog = ({
 }: EditUnitDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isOwner: isPermOwner, hasPermission } = usePermissions();
   const [saving, setSaving] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   
   const isStandalone = unit.is_standalone ?? false;
+  const moduleKey = isStandalone ? 'real_estate' : 'units';
+  const canDelete = isPermOwner || hasPermission(moduleKey, 'delete');
   const showPropertySelector = !isStandalone;
 
   // Use form draft hook for persistence
@@ -185,7 +201,23 @@ export const EditUnitDialog = ({
     setGalleryImages(unit.gallery_images || []);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from('units').delete().eq('id', unit.id);
+      if (error) throw error;
+      toast({ title: 'Imóvel excluído com sucesso' });
+      clearDraft();
+      onOpenChange(false);
+      onSuccess();
+    } catch (error: any) {
+      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
     e.preventDefault();
 
     // Validate financial fields based on intent_type
@@ -307,6 +339,7 @@ export const EditUnitDialog = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -369,13 +402,28 @@ export const EditUnitDialog = ({
                 onPropertiesChange={setProperties}
               />
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Salvando...' : 'Salvar Alterações'}
-                </Button>
+              <div className="flex justify-between gap-2 pt-4 border-t">
+                <div>
+                  {canDelete && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Excluir
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={handleCancel}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={saving}>
+                    {saving ? 'Salvando...' : 'Salvar Alterações'}
+                  </Button>
+                </div>
               </div>
             </form>
           </TabsContent>
@@ -405,5 +453,23 @@ export const EditUnitDialog = ({
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir imóvel</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tem certeza que deseja excluir "{unit.unit_number}"? Esta ação não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {deleting ? 'Excluindo...' : 'Excluir'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
