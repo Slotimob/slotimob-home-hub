@@ -318,10 +318,12 @@ const GerencialGestao = () => {
               </SelectContent>
             </Select>
             <MonthYearPicker value={selectedMonth} onChange={setSelectedMonth} />
+            {canCreate && (
             <Button onClick={() => { resetForm(); setCreateDialogOpen(true); }} className="gap-1.5">
               <Plus className="h-4 w-4" />
               Novo Lançamento
             </Button>
+            )}
           </div>
 
           {/* Table */}
