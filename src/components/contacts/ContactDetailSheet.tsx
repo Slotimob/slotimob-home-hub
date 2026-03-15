@@ -69,10 +69,12 @@ export const ContactDetailSheet = ({
               </div>
               
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" onClick={onEdit}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
+                {canEdit && (
+                  <Button variant="outline" size="sm" onClick={onEdit}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                )}
                 {(contact.whatsapp || contact.phone) && (
                   <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="text-green-600">
                     <MessageSquare className="h-4 w-4 mr-2" />
