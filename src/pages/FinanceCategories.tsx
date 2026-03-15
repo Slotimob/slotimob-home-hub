@@ -92,7 +92,7 @@ export default function FinanceCategories() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {hasCategories && (
+            {hasCategories && canDelete && (
               <Button
                 variant="outline"
                 onClick={() => setResetDialogOpen(true)}
@@ -103,7 +103,7 @@ export default function FinanceCategories() {
                 Restaurar Padrão
               </Button>
             )}
-            {!hasCategories && (
+            {!hasCategories && canCreate && (
               <Button
                 variant="outline"
                 onClick={() => seedDefaultCategories.mutate()}
@@ -113,10 +113,12 @@ export default function FinanceCategories() {
                 {seedDefaultCategories.isPending ? "Criando..." : "Criar Padrões"}
               </Button>
             )}
+            {canCreate && (
             <Button onClick={() => { setEditCategory(null); setDialogOpen(true); }}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Categoria
             </Button>
+            )}
           </div>
         </div>
 
