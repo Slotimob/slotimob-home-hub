@@ -67,6 +67,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   { key: 'crm_pipeline', label: 'Pipeline', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'crm_contacts', label: 'Contatos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'crm_schedule', label: 'Agenda', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'crm_whatsapp', label: 'WhatsApp', actions: ['view', 'create', 'edit', 'delete'], indent: true },
 
   // Others
   { key: 'reports', label: 'Relatórios', actions: ['view'] },

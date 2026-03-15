@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useAuth, useAuthContext } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -14,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChatSidebar } from '@/components/whatsapp/ChatSidebar';
 import { ChatArea } from '@/components/whatsapp/ChatArea';
 import { CrmContextPanel } from '@/components/whatsapp/CrmContextPanel';
+import { AssignAgentSelect } from '@/components/whatsapp/AssignAgentSelect';
 import {
   useConversations,
   useMessages,
@@ -25,20 +28,19 @@ import type { Database } from '@/integrations/supabase/types';
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppConnection = Database['public']['Tables']['whatsapp_connections']['Row'];
 
-// Fetch ANY connection (connected or not) so we can show history even when disconnected
 function useWhatsAppAnyConnection() {
-  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!effectiveBrokerId) return;
 
     const fetch = async () => {
       const { data, error } = await supabase
         .from('whatsapp_connections')
         .select('*')
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .limit(1)
         .maybeSingle();
 
@@ -57,7 +59,7 @@ function useWhatsAppAnyConnection() {
           event: '*',
           schema: 'public',
           table: 'whatsapp_connections',
-          filter: `broker_id=eq.${user.id}`,
+          filter: `broker_id=eq.${effectiveBrokerId}`,
         },
         (payload) => {
           if (payload.eventType === 'DELETE') {
@@ -70,17 +72,23 @@ function useWhatsAppAnyConnection() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [effectiveBrokerId]);
 
   return { connection, loading };
 }
 
 export default function WhatsApp() {
   const { user, loading: authLoading } = useAuth();
-  const { userRole } = useAuthContext();
+  const { isOwner, hasPermission } = usePermissions();
+  const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
-  const isOwner = userRole === 'owner';
   const [agentFilter, setAgentFilter] = useState<string>('all');
+
+  // Permission checks for crm_whatsapp
+  const canView = isOwner || hasPermission('crm_whatsapp', 'view');
+  const canManage = isOwner || hasPermission('crm_whatsapp', 'edit'); // Triage manager
+  const canCreate = isOwner || hasPermission('crm_whatsapp', 'create');
+  const canArchive = isOwner || hasPermission('crm_whatsapp', 'delete');
 
   const { connection, loading: connectionLoading } = useWhatsAppAnyConnection();
   const isConnected = connection?.status === 'connected';
@@ -88,18 +96,19 @@ export default function WhatsApp() {
 
   const { conversations: allConversations, loading: conversationsLoading } = useConversations(connection?.id || null);
 
-  // ─── Visibility Control: agents see only their assigned conversations ───
+  // Visibility: managers see all, agents see only assigned
   const conversations = useMemo(() => {
     let filtered = allConversations;
-    if (!isOwner && user) {
+    if (!canManage && user) {
+      // Agent: only assigned conversations
       filtered = filtered.filter(c => c.assigned_user_id === user.id);
     }
-    // Owner agent filter
-    if (isOwner && agentFilter !== 'all') {
+    // Owner/manager agent filter
+    if (canManage && agentFilter !== 'all') {
       filtered = filtered.filter(c => c.assigned_user_id === agentFilter);
     }
     return filtered;
-  }, [allConversations, isOwner, user, agentFilter]);
+  }, [allConversations, canManage, user, agentFilter]);
 
   const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null);
@@ -110,20 +119,20 @@ export default function WhatsApp() {
   const [showCrmPanel, setShowCrmPanel] = useState(true);
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
-  // Fetch team members for reassignment (owner only)
+  // Fetch team members (manager only)
   const [teamMembers, setTeamMembers] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
-    if (!isOwner || !user) return;
+    if (!canManage || !effectiveBrokerId) return;
     const fetchTeam = async () => {
       const { data: members } = await supabase
         .from('organization_members')
         .select('user_id')
-        .eq('organization_owner_id', user.id)
+        .eq('organization_owner_id', effectiveBrokerId)
         .eq('is_active', true);
 
       if (!members || members.length === 0) return;
 
-      const memberIds = [user.id, ...members.map(m => m.user_id)];
+      const memberIds = [effectiveBrokerId, ...members.map(m => m.user_id)];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, full_name')
@@ -134,7 +143,7 @@ export default function WhatsApp() {
       );
     };
     fetchTeam();
-  }, [isOwner, user]);
+  }, [canManage, effectiveBrokerId]);
 
   const handleSelectConversation = useCallback((conv: WhatsAppConversation) => {
     setSelectedConversation(conv);
@@ -164,13 +173,12 @@ export default function WhatsApp() {
   const handleReassign = useCallback(async (conversationId: string, newUserId: string) => {
     const { error } = await supabase
       .from('whatsapp_conversations')
-      .update({ assigned_user_id: newUserId, assigned_at: new Date().toISOString() })
+      .update({ assigned_user_id: newUserId, assigned_at: new Date().toISOString(), status: 'active' })
       .eq('id', conversationId);
     if (error) console.error('Reassignment error:', error);
     else {
-      // Update local state
       setSelectedConversation(prev =>
-        prev?.id === conversationId ? { ...prev, assigned_user_id: newUserId } : prev
+        prev?.id === conversationId ? { ...prev, assigned_user_id: newUserId, status: 'active' } : prev
       );
     }
   }, []);
@@ -236,7 +244,7 @@ export default function WhatsApp() {
             <div className="flex items-center gap-2 px-3 py-2">
               <SidebarTrigger className="flex-shrink-0" />
               <h1 className="text-lg font-bold text-foreground">WhatsApp</h1>
-              {isOwner && (
+              {canManage && (
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                   Supervisor
                 </span>
@@ -265,10 +273,11 @@ export default function WhatsApp() {
                 loading={conversationsLoading}
                 connectionId={connection?.id}
                 isConnected={isConnected}
-                isOwner={isOwner}
+                isOwner={canManage}
                 teamMembers={teamMembers}
                 agentFilter={agentFilter}
                 onAgentFilterChange={setAgentFilter}
+                showTriageTabs={canManage}
               />
             </div>
 
@@ -289,8 +298,8 @@ export default function WhatsApp() {
                 sending={sending}
                 isConnected={isConnected}
                 assignedUserId={selectedConversation?.assigned_user_id || null}
-                teamMembers={isOwner ? teamMembers : []}
-                isOwner={isOwner}
+                teamMembers={canManage ? teamMembers : []}
+                isOwner={canManage}
                 onReassign={handleReassign}
                 conversationId={selectedConversation?.id || null}
               />
