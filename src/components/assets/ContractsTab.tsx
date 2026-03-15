@@ -260,7 +260,7 @@ export function ContractsTab() {
       const { data, error } = await supabase
         .from("units")
         .select("id, unit_number, address, city, is_occupied, owner_contact_id")
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .order("unit_number", { ascending: true });
       if (error) throw error;
       return data || [];
