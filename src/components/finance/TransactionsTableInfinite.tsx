@@ -575,9 +575,9 @@ export function TransactionsTableInfinite({
                       {transaction.is_reconciled ? (
                         <ReconciliationDetailsPopover
                           transaction={transaction}
-                          onReconciliationChange={onTransactionUpdated}
+                          onReconciliationChange={canReconcile ? onTransactionUpdated : undefined}
                         />
-                      ) : (
+                      ) : canReconcile ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -601,6 +601,8 @@ export function TransactionsTableInfinite({
                             <p className="text-xs">Conciliar com extrato</p>
                           </TooltipContent>
                         </Tooltip>
+                      ) : (
+                        <span className="text-muted-foreground/30">—</span>
                       )}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">
