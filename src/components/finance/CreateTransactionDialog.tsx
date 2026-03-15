@@ -379,6 +379,7 @@ export function CreateTransactionDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <fieldset disabled={!canEdit || isReconciled}>
           {/* Type Selector - 3 tabs */}
           <Tabs value={mode} onValueChange={(v) => setMode(v as "income" | "expense" | "transfer")}>
             <TabsList className="grid w-full grid-cols-3">
