@@ -204,6 +204,7 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                       {format(new Date(activity.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
+                  {(canEdit || canDelete) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -211,10 +212,13 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {canEdit && (
                       <DropdownMenuItem onClick={() => setEditingActivity(activity)}>
                         <Pencil className="h-4 w-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
+                      )}
+                      {canDelete && (
                       <DropdownMenuItem 
                         onClick={() => setDeletingActivityId(activity.id)}
                         className="text-destructive"
@@ -222,8 +226,10 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                         <Trash2 className="h-4 w-4 mr-2" />
                         Excluir
                       </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  )}
                 </div>
               </Card>
             );

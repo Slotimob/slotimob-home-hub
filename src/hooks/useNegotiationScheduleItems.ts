@@ -131,6 +131,6 @@ export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegot
 
       return items.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 }
