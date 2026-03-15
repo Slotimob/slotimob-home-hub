@@ -189,22 +189,41 @@ export function AppSidebar() {
     { title: 'Histórico', url: '/history', icon: History },
   ];
 
+  // Filter sub-items by moduleKey permission for members
+  const filterSubItems = (items: SubMenuItem[]): SubMenuItem[] => {
+    if (isPermOwner || !isMember) return items;
+    return items
+      .filter(sub => !sub.moduleKey || hasPermission(sub.moduleKey, 'view'))
+      .map(sub => {
+        if (!sub.nestedItems) return sub;
+        const filteredNested = sub.nestedItems.filter(n => !n.moduleKey || hasPermission(n.moduleKey, 'view'));
+        return { ...sub, nestedItems: filteredNested };
+      });
+  };
+
   // Filter menu items based on role, plan, and granular permissions
-  const filteredMenuItems = menuItems.filter(item => {
-    // ownerOnly blocks agents, but members with permission should pass through
-    if (item.ownerOnly && isAgent && !isMember) return false;
-    if (item.ownerOnly && isMember && !isPermOwner && item.moduleKey && !hasPermission(item.moduleKey, 'view')) return false;
-    if (item.hiddenOnPlan?.includes(plan)) {
-      if (item.trialVisible && isTrialActive) return true;
-      if (item.url === '/ai-chat') return true;
-      return false;
-    }
-    // Granular permission enforcement for members (non-owners)
-    if (!isPermOwner && isMember && item.moduleKey) {
-      if (!hasPermission(item.moduleKey, 'view')) return false;
-    }
-    return true;
-  });
+  const filteredMenuItems = menuItems
+    .map(item => {
+      if (!item.items) return item;
+      return { ...item, items: filterSubItems(item.items) };
+    })
+    .filter(item => {
+      // Remove groups with no remaining sub-items
+      if (item.items && item.items.length === 0) return false;
+      // ownerOnly blocks agents, but members with permission should pass through
+      if (item.ownerOnly && isAgent && !isMember) return false;
+      if (item.ownerOnly && isMember && !isPermOwner && item.moduleKey && !hasPermission(item.moduleKey, 'view')) return false;
+      if (item.hiddenOnPlan?.includes(plan)) {
+        if (item.trialVisible && isTrialActive) return true;
+        if (item.url === '/ai-chat') return true;
+        return false;
+      }
+      // Granular permission enforcement for members (non-owners)
+      if (!isPermOwner && isMember && item.moduleKey) {
+        if (!hasPermission(item.moduleKey, 'view')) return false;
+      }
+      return true;
+    });
 
   // Add Cockpit for staff roles (super_admin, admin, support)
   if (hasCockpitAccess) {
