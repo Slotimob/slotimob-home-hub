@@ -25,11 +25,12 @@ interface UseNegotiationScheduleItemsOptions {
 
 export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegotiationScheduleItemsOptions) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
 
   return useQuery({
-    queryKey: ['negotiation-schedule-items', user?.id, selectedDate.toISOString(), viewMode],
+    queryKey: ['negotiation-schedule-items', effectiveBrokerId, selectedDate.toISOString(), viewMode],
     queryFn: async (): Promise<NegotiationScheduleItem[]> => {
-      if (!user) return [];
+      if (!effectiveBrokerId) return [];
 
       let startDate: Date;
       let endDate: Date;
