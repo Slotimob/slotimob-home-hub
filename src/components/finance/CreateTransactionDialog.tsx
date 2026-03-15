@@ -715,22 +715,25 @@ export function CreateTransactionDialog({
           </>
           )}
 
+          </fieldset>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {canEdit ? "Cancelar" : "Fechar"}
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading 
-                ? "Salvando..." 
-                : editTransaction 
-                  ? "Atualizar" 
-                  : mode === "transfer"
-                    ? "Criar Transferência"
-                    : isRecurring 
-                      ? `Criar ${recurrenceCount} Lançamentos` 
-                      : "Criar Lançamento"
-              }
-            </Button>
+            {canEdit && (
+              <Button type="submit" disabled={isLoading}>
+                {isLoading 
+                  ? "Salvando..." 
+                  : editTransaction 
+                    ? "Atualizar" 
+                    : mode === "transfer"
+                      ? "Criar Transferência"
+                      : isRecurring 
+                        ? `Criar ${recurrenceCount} Lançamentos` 
+                        : "Criar Lançamento"
+                }
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>
