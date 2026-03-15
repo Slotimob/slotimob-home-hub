@@ -23,12 +23,14 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   { key: 'chat', label: 'Chat IA', actions: ['view'] },
   { key: 'dashboard', label: 'Dashboard', actions: ['view', 'edit'] },
   { key: 'management', label: 'Gestão', actions: ['view', 'create', 'edit', 'delete'] },
-  { key: 'assets', label: 'Ativos', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'properties', label: 'Empreendimentos', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'units', label: 'Unidades', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'real_estate', label: 'Imóveis Avulsos', actions: ['view', 'create', 'edit', 'delete'] },
   { key: 'financial', label: 'Financeiro', actions: ['view', 'create', 'edit', 'delete'] },
   { key: 'crm', label: 'CRM', actions: ['view', 'create', 'edit', 'delete'] },
   { key: 'reports', label: 'Relatórios', actions: ['view'] },
   { key: 'documents', label: 'Documentos', actions: ['view', 'create', 'edit', 'delete'] },
-  { key: 'integrations', label: 'Integrações', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'integrations', label: 'Integrações', actions: ['view'] },
 ];
 
 const ACTION_COLUMNS: { key: ActionKey; label: string }[] = [

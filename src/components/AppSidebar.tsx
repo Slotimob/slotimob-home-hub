@@ -141,17 +141,17 @@ export function AppSidebar() {
     { 
       title: 'Ativos', 
       icon: Building2,
-      moduleKey: 'assets',
       items: [
         { 
           title: 'Empreendimentos', 
           url: '/properties', 
+          moduleKey: 'properties',
           nestedItems: [
             { title: 'Lista Geral', url: '/properties' },
-            { title: 'Unidades', url: '/units' },
+            { title: 'Unidades', url: '/units', moduleKey: 'units' },
           ]
         },
-        { title: 'Imóveis Avulsos', url: '/real-estate' },
+        { title: 'Imóveis Avulsos', url: '/real-estate', moduleKey: 'real_estate' },
       ]
     },
     { 

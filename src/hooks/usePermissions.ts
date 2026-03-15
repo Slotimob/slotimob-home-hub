@@ -27,7 +27,9 @@ export interface Permissions {
   chat?: Partial<ModulePermission>;
   dashboard?: Partial<ModulePermission>;
   management?: Partial<ModulePermission>;
-  assets?: Partial<ModulePermission>;
+  properties?: Partial<ModulePermission>;
+  units?: Partial<ModulePermission>;
+  real_estate?: Partial<ModulePermission>;
   financial?: Partial<ModulePermission>;
   crm?: Partial<ModulePermission>;
   reports?: Partial<ModulePermission>;
@@ -40,7 +42,9 @@ export const PERMISSION_MODULES_KEYS = [
   'chat',
   'dashboard',
   'management',
-  'assets',
+  'properties',
+  'units',
+  'real_estate',
   'financial',
   'crm',
   'reports',
