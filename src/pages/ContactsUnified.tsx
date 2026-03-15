@@ -27,6 +27,9 @@ const ContactsUnified = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEditContact = isOwner || hasPermission('crm_contacts', 'edit');
+  const canDeleteContact = isOwner || hasPermission('crm_contacts', 'delete');
   
   const [contacts, setContacts] = useState<UnifiedContact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
