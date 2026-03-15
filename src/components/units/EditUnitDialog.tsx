@@ -345,11 +345,11 @@ export const EditUnitDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isStandalone ? 'Editar Imóvel Avulso' : 'Editar Unidade'}</DialogTitle>
+          <DialogTitle>{canEdit ? (isStandalone ? 'Editar Imóvel Avulso' : 'Editar Unidade') : (isStandalone ? 'Visualizar Imóvel Avulso' : 'Visualizar Unidade')}</DialogTitle>
           <DialogDescription>
-            {isStandalone 
-              ? 'Edite todas as informações do imóvel'
-              : 'Edite todas as informações da unidade'
+            {canEdit
+              ? (isStandalone ? 'Edite todas as informações do imóvel' : 'Edite todas as informações da unidade')
+              : 'Visualização somente leitura'
             }
           </DialogDescription>
         </DialogHeader>
