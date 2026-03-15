@@ -172,6 +172,8 @@ interface PropertyFormProps {
   onRefreshProperty?: () => Promise<void>;
   /** Callback when form data changes (for draft persistence) */
   onFormChange?: (data: PropertyFormData) => void;
+  /** When true, all inputs are disabled and submit is hidden (read-only mode) */
+  disabled?: boolean;
 }
 
 export function PropertyForm({
@@ -184,6 +186,7 @@ export function PropertyForm({
   propertyId,
   onRefreshProperty,
   onFormChange,
+  disabled = false,
 }: PropertyFormProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('info');
@@ -373,7 +376,8 @@ export function PropertyForm({
         )}
       </TabsList>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={disabled ? (e) => e.preventDefault() : handleSubmit}>
+        <fieldset disabled={disabled} className="space-y-0">
         {/* Info Tab */}
         <TabsContent value="info" className="mt-4 space-y-6">
           {/* ===== SECTION 1: OBJECTIVE & MANAGEMENT ===== */}
@@ -392,6 +396,7 @@ export function PropertyForm({
                   variant={formData.intent_type === 'sale' ? 'default' : 'outline'}
                   className="w-full text-sm px-2"
                   onClick={() => setFormData({ ...formData, intent_type: 'sale' })}
+                  disabled={disabled}
                 >
                   Venda
                 </Button>
@@ -400,6 +405,7 @@ export function PropertyForm({
                   variant={formData.intent_type === 'rental' ? 'default' : 'outline'}
                   className="w-full text-sm px-2"
                   onClick={() => setFormData({ ...formData, intent_type: 'rental' })}
+                  disabled={disabled}
                 >
                   Locação
                 </Button>
@@ -408,6 +414,7 @@ export function PropertyForm({
                   variant={formData.intent_type === 'both' ? 'default' : 'outline'}
                   className="w-full text-sm px-2"
                   onClick={() => setFormData({ ...formData, intent_type: 'both' })}
+                  disabled={disabled}
                 >
                   Ambos
                 </Button>
@@ -429,6 +436,7 @@ export function PropertyForm({
               </div>
               <Switch
                 id="is_under_management"
+                disabled={disabled}
                 checked={formData.is_under_management}
                 onCheckedChange={(checked) => setFormData({ ...formData, is_under_management: checked })}
                 className="flex-shrink-0"
@@ -771,7 +779,7 @@ export function PropertyForm({
         )}
 
         {/* Footer - visible in all tabs except documents */}
-        {activeTab !== 'documents' && (
+        {activeTab !== 'documents' && !disabled && (
           <div className={`flex flex-col-reverse sm:flex-row ${isEditing && onDelete ? 'sm:justify-between' : 'sm:justify-end'} gap-3 pt-4 mt-4 border-t`}>
             {isEditing && onDelete && (
               <Button
@@ -794,6 +802,14 @@ export function PropertyForm({
             </div>
           </div>
         )}
+        {activeTab !== 'documents' && disabled && (
+          <div className="flex justify-end pt-4 mt-4 border-t">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Fechar
+            </Button>
+          </div>
+        )}
+        </fieldset>
       </form>
     </Tabs>
   );

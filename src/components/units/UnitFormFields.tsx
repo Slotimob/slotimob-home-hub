@@ -140,6 +140,8 @@ interface UnitFormFieldsProps {
   /** When true, shows address fields; when false (unit mode), hides them */
   isStandalone?: boolean;
   onPropertiesChange?: (properties: Property[]) => void;
+  /** When true, all inputs are disabled (read-only mode) */
+  disabled?: boolean;
 }
 
 export const UnitFormFields = ({
@@ -151,6 +153,7 @@ export const UnitFormFields = ({
   propertyRequired = false,
   isStandalone = false,
   onPropertiesChange,
+  disabled = false,
 }: UnitFormFieldsProps) => {
   const [isCreatePropertyDialogOpen, setIsCreatePropertyDialogOpen] = useState(false);
   const [propertySearchOpen, setPropertySearchOpen] = useState(false);

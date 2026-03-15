@@ -7,6 +7,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { HelpCircle } from 'lucide-react';
 import type { Permissions, ModulePermission } from '@/hooks/usePermissions';
 import { EMPTY_MODULE_PERMISSION } from '@/hooks/usePermissions';
 
@@ -67,6 +74,13 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   { key: 'integrations', label: 'Integrações', actions: ['view'] },
 ];
 
+/** Alert tooltips for specific modules to warn the Master about data exposure */
+const MODULE_TOOLTIPS: Record<string, string> = {
+  dashboard: 'Ao liberar a visualização, o utilizador poderá ver movimentos financeiros e métricas de CRM globais.',
+  reports: 'Ao liberar a visualização, o utilizador poderá exportar todos os relatórios da imobiliária, incluindo dados financeiros.',
+  integrations: 'Ao liberar, o utilizador terá a opção de conectar o seu próprio WhatsApp no módulo CRM.',
+};
+
 const ACTION_COLUMNS: { key: ActionKey; label: string }[] = [
   { key: 'view', label: 'Visualizar' },
   { key: 'create', label: 'Criar' },
@@ -110,6 +124,7 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
   };
 
   return (
+    <TooltipProvider>
     <div className="rounded-md border">
       <Table>
         <TableHeader>
@@ -141,7 +156,19 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
             return (
               <TableRow key={mod.key}>
                 <TableCell className={`font-medium text-sm ${mod.indent ? 'pl-6' : ''}`}>
-                  {mod.label}
+                  <span className="inline-flex items-center gap-1">
+                    {mod.label}
+                    {MODULE_TOOLTIPS[mod.key] && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>{MODULE_TOOLTIPS[mod.key]}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </span>
                 </TableCell>
                 {ACTION_COLUMNS.map((col) => {
                   const hasAction = mod.actions.includes(col.key);
@@ -174,5 +201,6 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
         </TableBody>
       </Table>
     </div>
+    </TooltipProvider>
   );
 }

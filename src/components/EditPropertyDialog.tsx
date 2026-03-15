@@ -291,6 +291,7 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
               propertyId={property.id}
               onRefreshProperty={handleRefreshProperty}
               onFormChange={setFormData}
+              disabled={!canEdit}
             />
           )}
         </DialogContent>

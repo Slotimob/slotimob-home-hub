@@ -166,6 +166,7 @@ export const EditUnitDialog = ({
   
   const isStandalone = unit.is_standalone ?? false;
   const moduleKey = isStandalone ? 'assets_standalone' : 'assets_units';
+  const canEdit = isPermOwner || hasPermission(moduleKey, 'edit');
   const canDelete = isPermOwner || hasPermission(moduleKey, 'delete');
   const showPropertySelector = !isStandalone;
 
@@ -344,11 +345,11 @@ export const EditUnitDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isStandalone ? 'Editar Imóvel Avulso' : 'Editar Unidade'}</DialogTitle>
+          <DialogTitle>{canEdit ? (isStandalone ? 'Editar Imóvel Avulso' : 'Editar Unidade') : (isStandalone ? 'Visualizar Imóvel Avulso' : 'Visualizar Unidade')}</DialogTitle>
           <DialogDescription>
-            {isStandalone 
-              ? 'Edite todas as informações do imóvel'
-              : 'Edite todas as informações da unidade'
+            {canEdit
+              ? (isStandalone ? 'Edite todas as informações do imóvel' : 'Edite todas as informações da unidade')
+              : 'Visualização somente leitura'
             }
           </DialogDescription>
         </DialogHeader>
@@ -391,21 +392,24 @@ export const EditUnitDialog = ({
 
           {/* Info Tab */}
           <TabsContent value="info" className="mt-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <UnitFormFields
-                formData={formData}
-                setFormData={setFormData}
-                properties={properties}
-                showImageUpload={true}
-                showPropertySelector={showPropertySelector}
-                propertyRequired={!isStandalone}
-                isStandalone={isStandalone}
-                onPropertiesChange={setProperties}
-              />
+            <form onSubmit={canEdit ? handleSubmit : (e) => e.preventDefault()} className="space-y-4">
+              <fieldset disabled={!canEdit}>
+                <UnitFormFields
+                  formData={formData}
+                  setFormData={setFormData}
+                  properties={properties}
+                  showImageUpload={true}
+                  showPropertySelector={showPropertySelector}
+                  propertyRequired={!isStandalone}
+                  isStandalone={isStandalone}
+                  onPropertiesChange={setProperties}
+                  disabled={!canEdit}
+                />
+              </fieldset>
 
               <div className="flex justify-between gap-2 pt-4 border-t">
                 <div>
-                  {canDelete && (
+                  {canDelete && canEdit && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -419,11 +423,13 @@ export const EditUnitDialog = ({
                 </div>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" onClick={handleCancel}>
-                    Cancelar
+                    {canEdit ? 'Cancelar' : 'Fechar'}
                   </Button>
-                  <Button type="submit" disabled={saving}>
-                    {saving ? 'Salvando...' : 'Salvar Alterações'}
-                  </Button>
+                  {canEdit && (
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'Salvando...' : 'Salvar Alterações'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </form>
