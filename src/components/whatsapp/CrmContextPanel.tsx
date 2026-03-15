@@ -293,6 +293,14 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           )}
         </div>
       </div>
+
+      {conversation && (
+        <CreateDealFromChatDialog
+          open={isDealDialogOpen}
+          onOpenChange={setIsDealDialogOpen}
+          conversation={conversation}
+        />
+      )}
     </ScrollArea>
   );
 }
