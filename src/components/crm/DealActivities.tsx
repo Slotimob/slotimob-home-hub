@@ -72,6 +72,10 @@ const activityColors: Record<string, string> = {
 export const DealActivities = ({ dealId }: DealActivitiesProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
+  const canDelete = isOwner || hasPermission('crm_pipeline', 'delete');
+  const canCreate = isOwner || hasPermission('crm_pipeline', 'create');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
