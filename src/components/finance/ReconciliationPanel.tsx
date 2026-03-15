@@ -251,7 +251,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
         </TabsList>
 
         <TabsContent value="pending" className="space-y-3 mt-3">
-          {canReconcile && (
+          {hasReconcilePermission && (
             <div className="flex flex-wrap gap-2 justify-end">
               <Button
                 variant="outline"
