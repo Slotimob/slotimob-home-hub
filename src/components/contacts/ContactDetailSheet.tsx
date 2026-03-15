@@ -24,7 +24,9 @@ export const ContactDetailSheet = ({
   open,
   onOpenChange,
   onEdit,
+  onDelete,
   canEdit = true,
+  canDelete = false,
 }: ContactDetailSheetProps) => {
   const getInitials = (name: string) => {
     return name
