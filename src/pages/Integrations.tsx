@@ -52,28 +52,9 @@ const Integrations = () => {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
 
-  // Instance limit
+  // Instance limit — 1 connection per workspace
   const instancesLimit = features?.whatsapp_instances_limit ?? 0;
-
-  // Count active connections for this broker (master)
-  const { data: activeConnectionsCount = 0 } = useQuery({
-    queryKey: ['whatsapp-active-connections', user?.id],
-    queryFn: async () => {
-      if (!effectiveBrokerId) return 0;
-      const { count, error } = await supabase
-        .from('whatsapp_connections')
-        .select('id', { count: 'exact', head: true })
-        .eq('broker_id', effectiveBrokerId)
-        .eq('status', 'connected');
-      if (error) return 0;
-      return count ?? 0;
-    },
-    enabled: !!effectiveBrokerId,
-    staleTime: 30_000,
-  });
-
-  const isAtInstanceLimit = instancesLimit > 0 && activeConnectionsCount >= instancesLimit;
-  const canConnect = instancesLimit > 0 && !isAtInstanceLimit;
+  const canConnect = instancesLimit > 0;
 
   // Check if user already accepted WhatsApp terms
   useEffect(() => {
