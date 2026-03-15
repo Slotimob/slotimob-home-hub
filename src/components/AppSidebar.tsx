@@ -57,12 +57,14 @@ import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 interface NestedSubMenuItem {
   title: string;
   url: string;
+  moduleKey?: string;
 }
 
 interface SubMenuItem {
   title: string;
   url: string;
   nestedItems?: NestedSubMenuItem[];
+  moduleKey?: string;
 }
 
 interface MenuItem {
