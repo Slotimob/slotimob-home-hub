@@ -32,6 +32,9 @@ const Integrations = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { features } = useSubscriptionLimits();
+  const { isOwner, hasPermission } = usePermissions();
+  const { effectiveBrokerId } = useWorkspace();
+  const canManageWhatsApp = isOwner || hasPermission('crm_whatsapp', 'edit');
 
   // XML Feed state
   const [xmlToken, setXmlToken] = useState<string | null>(null);
