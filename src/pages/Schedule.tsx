@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, CheckCircle2, Briefcase, RefreshCw } from "lucide-react";
+import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { HeaderButton } from "@/components/ui/header-button";
 import { format, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
