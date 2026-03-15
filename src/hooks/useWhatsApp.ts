@@ -179,7 +179,7 @@ export function useWhatsAppSettingsConnection() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [brokerId]);
 
   // Verificação manual do status (fallback se Realtime falhar)
   const checkInstanceStatus = useCallback(async () => {
