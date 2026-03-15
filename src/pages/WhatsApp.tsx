@@ -185,6 +185,40 @@ export default function WhatsApp() {
     }
   }, []);
 
+  const handleCloseConversation = useCallback(async () => {
+    if (!selectedConversation) return;
+    const { error } = await supabase
+      .from('whatsapp_conversations')
+      .update({ status: 'closed' })
+      .eq('id', selectedConversation.id);
+    if (error) {
+      toast({ title: 'Erro ao finalizar', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Atendimento finalizado' });
+      setSelectedConversation(prev => prev ? { ...prev, status: 'closed' } : prev);
+    }
+  }, [selectedConversation, toast]);
+
+  const handleReturnToQueue = useCallback(async () => {
+    if (!selectedConversation) return;
+    const { error } = await supabase
+      .from('whatsapp_conversations')
+      .update({ assigned_user_id: null, status: 'pending' })
+      .eq('id', selectedConversation.id);
+    if (error) {
+      toast({ title: 'Erro ao devolver', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Conversa devolvida para a fila de triagem' });
+      setSelectedConversation(prev => prev ? { ...prev, assigned_user_id: null, status: 'pending' } : prev);
+    }
+  }, [selectedConversation, toast]);
+
+  const canCreateDeal = isOwner || hasPermission('crm_pipeline', 'create');
+
+  const handleCreateDeal = useCallback(() => {
+    toast({ title: 'Em desenvolvimento', description: 'O atalho para criar negociação a partir do chat estará disponível em breve.' });
+  }, [toast]);
+
   if (authLoading || connectionLoading) {
     return (
       <SidebarProvider>
