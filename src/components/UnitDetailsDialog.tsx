@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/collapsible';
 import { Calendar, Trash2, Building2, ExternalLink, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import type { Unit } from '@/pages/Units';
 import type { Database } from '@/integrations/supabase/types';
