@@ -387,7 +387,7 @@ const Integrations = () => {
               )}
 
               {/* Description (only when not showing QR or progress) */}
-              {!isPreparing && !hasQrCode && instancesLimit > 0 && !isAtInstanceLimit && (
+              {canManageWhatsApp && !isPreparing && !hasQrCode && instancesLimit > 0 && !isConnected && (
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Conecte seu WhatsApp pessoal ou comercial escaneando um QR Code.
                   Todas as mensagens serão sincronizadas com o CRM em tempo real.
