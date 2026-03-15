@@ -84,74 +84,83 @@ Deno.serve(async (req) => {
       );
     }
 
-    // --- Check if user is already a member ---
-    const { data: existingMemberByEmail } = await supabaseAdmin
+    // --- Check if user already exists in profiles ---
+    const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
       .select("id")
       .eq("email", normalizedEmail)
       .maybeSingle();
 
-    if (existingMemberByEmail) {
+    let targetUserId: string;
+    let isExistingUser = false;
+
+    if (existingProfile) {
+      // User already exists — check if already active in this org
       const { data: existingMember } = await supabaseAdmin
         .from("organization_members")
         .select("id")
         .eq("organization_owner_id", user.id)
-        .eq("user_id", existingMemberByEmail.id)
+        .eq("user_id", existingProfile.id)
         .eq("is_active", true)
         .maybeSingle();
 
       if (existingMember) {
-        throw new Error("Este usuário já faz parte da sua equipe.");
+        throw new Error("Este utilizador já faz parte da sua equipa.");
       }
+
+      targetUserId = existingProfile.id;
+      isExistingUser = true;
+    } else {
+      // New user — invite via Supabase Auth
+      const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        normalizedEmail,
+        {
+          data: {
+            full_name: member_name || role_label || "Agente",
+            invited_by: user.id,
+            role_label: role_label || "Agente",
+          },
+          redirectTo: "https://slotimob.com.br/reset-password",
+        }
+      );
+
+      if (inviteError) {
+        throw new Error(inviteError.message || "Erro ao enviar convite");
+      }
+
+      if (!authData?.user?.id) {
+        throw new Error("Erro inesperado: utilizador não criado pelo convite.");
+      }
+
+      targetUserId = authData.user.id;
     }
 
-    // --- Invite user via Supabase Auth native method ---
-    const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      normalizedEmail,
-      {
-        data: {
-          full_name: member_name || role_label || "Agente",
-          invited_by: user.id,
-          role_label: role_label || "Agente",
-        },
-        redirectTo: "https://slotimob.com.br/reset-password",
-      }
-    );
-
-    if (inviteError) {
-      // If user already exists in auth, it means they already have an account
-      if (inviteError.message?.includes("already been registered") || inviteError.message?.includes("already exists")) {
-        throw new Error("Este email já possui uma conta. O usuário pode fazer login e ser adicionado manualmente.");
-      }
-      throw new Error(inviteError.message || "Erro ao enviar convite");
-    }
-
-    if (!authData?.user?.id) {
-      throw new Error("Erro inesperado: usuário não criado pelo convite.");
-    }
-
-    // --- Add to organization_members directly ---
+    // --- Add to organization_members ---
     const { error: memberError } = await supabaseAdmin
       .from("organization_members")
       .insert({
         organization_owner_id: user.id,
-        user_id: authData.user.id,
+        user_id: targetUserId,
         role_label: role_label || "Agente",
         permissions: permissions || {},
         is_active: true,
-        accepted_at: null, // Will be set when user actually logs in
+        accepted_at: isExistingUser ? new Date().toISOString() : null,
       });
 
     if (memberError) {
       if (memberError.code === "23505") {
-        throw new Error("Este usuário já faz parte da sua equipe.");
+        throw new Error("Este utilizador já faz parte da sua equipa.");
       }
       console.error("Error inserting member:", memberError);
       throw new Error("Erro ao vincular membro à organização.");
     }
 
+    const message = isExistingUser
+      ? "Utilizador adicionado à equipa com sucesso! Ele já pode aceder ao seu Workspace."
+      : "Convite enviado com sucesso! O utilizador receberá um e-mail com o link de acesso.";
+
     return new Response(
-      JSON.stringify({ success: true, message: "Convite enviado com sucesso! O usuário receberá um e-mail com o link de acesso." }),
+      JSON.stringify({ success: true, message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
