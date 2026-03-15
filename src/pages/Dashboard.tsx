@@ -170,6 +170,7 @@ const Dashboard = () => {
                   enabledStagesCount={getEnabledStagesCount()}
                   maxStages={maxPipelineStages}
                 />
+                )}
               </div>
             </div>
 

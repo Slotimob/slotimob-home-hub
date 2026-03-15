@@ -796,11 +796,13 @@ export function ContractsTab() {
         </Button>
         
         {/* Create Contract Button */}
+        {canCreate && (
         <Button onClick={handleCreateContract} className="shrink-0 gap-1.5">
           <Plus className="h-4 w-4 mr-2" />
           <span className="hidden sm:inline">Novo Contrato</span>
           <span className="sm:hidden">Novo</span>
         </Button>
+        )}
       </div>
 
       {/* Contracts - Mobile Card View or Desktop Table */}
