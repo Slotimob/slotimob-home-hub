@@ -53,6 +53,8 @@ export const PERMISSION_MODULES_KEYS = [
   'crm_pipeline',
   'crm_contacts',
   'crm_schedule',
+  // WhatsApp
+  'crm_whatsapp',
   // Others
   'reports',
   'documents',
