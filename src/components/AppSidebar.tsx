@@ -73,6 +73,8 @@ interface MenuItem {
   ownerOnly?: boolean;
   hiddenOnPlan?: string[];
   trialVisible?: boolean;
+  /** Permission module key for granular RBAC filtering */
+  moduleKey?: string;
 }
 
 export function AppSidebar() {
