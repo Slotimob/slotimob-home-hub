@@ -234,7 +234,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 if (onCreateDeal) {
                   onCreateDeal();
                 } else {
-                  toast({ title: 'Em desenvolvimento', description: 'Atalho para criar negociação estará disponível em breve.' });
+                  setIsDealDialogOpen(true);
                 }
               }}
             >
