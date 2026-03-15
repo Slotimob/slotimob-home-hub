@@ -20,6 +20,7 @@ import { ActivityPalette, ACTIVITY_TYPES } from "@/components/schedule/ActivityP
 import { DayScheduleGrid } from "@/components/schedule/DayScheduleGrid";
 import { WeekScheduleGrid } from "@/components/schedule/WeekScheduleGrid";
 import { CreateActivityDialog } from "@/components/schedule/CreateActivityDialog";
+import { ScheduleActivityDetailDialog } from "@/components/schedule/ScheduleActivityDetailDialog";
 import { CalendarSyncDialog } from "@/components/schedule/CalendarSyncDialog";
 import { NegotiationScheduleCard } from "@/components/schedule/NegotiationScheduleCard";
 import { ScheduleCalendar } from "@/components/schedule/ScheduleCalendar";
