@@ -57,11 +57,6 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const handleApplyTemplate = (tplPermissions: Permissions, label: string) => {
-    setPermissions(tplPermissions);
-    setRoleLabel(label);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto w-[calc(100%-2rem)] sm:w-full">
