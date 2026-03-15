@@ -563,7 +563,7 @@ export function ContractsTab() {
       const { error: transactionsError } = await supabase
         .from("financial_transactions")
         .delete()
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .eq("reference", `lease:${deletingLease.id}`);
       
       if (transactionsError) {
