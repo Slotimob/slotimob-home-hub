@@ -172,6 +172,8 @@ interface PropertyFormProps {
   onRefreshProperty?: () => Promise<void>;
   /** Callback when form data changes (for draft persistence) */
   onFormChange?: (data: PropertyFormData) => void;
+  /** When true, all inputs are disabled and submit is hidden (read-only mode) */
+  disabled?: boolean;
 }
 
 export function PropertyForm({
