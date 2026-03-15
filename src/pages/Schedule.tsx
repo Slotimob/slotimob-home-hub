@@ -181,7 +181,7 @@ export default function Schedule() {
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
 
   const { data: activities, refetch: refetchActivities } = useQuery({
-    queryKey: ["schedule-activities", user?.id, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode],
+    queryKey: ["schedule-activities", effectiveBrokerId, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode],
     queryFn: async () => {
       let startDate: Date;
       let endDate: Date;
@@ -204,7 +204,7 @@ export default function Schedule() {
           *,
           leads:lead_id (name, phone)
         `)
-        .eq("broker_id", user?.id)
+        .eq("broker_id", effectiveBrokerId!)
         .gte("scheduled_at", startDate.toISOString())
         .lte("scheduled_at", endDate.toISOString())
         .order("scheduled_at", { ascending: true });
@@ -212,7 +212,7 @@ export default function Schedule() {
       if (error) throw error;
       return data as any;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   // Mutation for updating activity duration
