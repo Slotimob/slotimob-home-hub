@@ -150,10 +150,12 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-sm">Histórico de Atividades</h3>
+        {canCreate && (
         <Button size="sm" onClick={() => setIsDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-1" />
           Nova Atividade
         </Button>
+        )}
       </div>
 
       <div className="flex items-start gap-2 p-2 rounded-md bg-muted/50 text-xs text-muted-foreground">
