@@ -206,16 +206,26 @@ export default function WhatsApp() {
               <SidebarTrigger />
               <h1 className="text-2xl font-bold">WhatsApp</h1>
             </div>
-            <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-              <MessageSquare className="h-16 w-16 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Conecte seu WhatsApp</h2>
-              <p className="text-muted-foreground text-center max-w-md">
-                Integração inteligente para gestão de conversas e leads de forma centralizada.
-              </p>
-              <Button asChild>
-                <Link to="/integrations"><Settings className="h-4 w-4 mr-2" />Configurar WhatsApp</Link>
-              </Button>
-            </div>
+            {canManage ? (
+              <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+                <MessageSquare className="h-16 w-16 text-muted-foreground" />
+                <h2 className="text-xl font-semibold">Conecte seu WhatsApp</h2>
+                <p className="text-muted-foreground text-center max-w-md">
+                  Integração inteligente para gestão de conversas e leads de forma centralizada.
+                </p>
+                <Button asChild>
+                  <Link to="/integrations"><Settings className="h-4 w-4 mr-2" />Configurar WhatsApp</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+                <WifiOff className="h-16 w-16 text-muted-foreground" />
+                <h2 className="text-xl font-semibold">WhatsApp não conectado</h2>
+                <p className="text-muted-foreground text-center max-w-md">
+                  O WhatsApp da imobiliária ainda não foi conectado. Solicite ao administrador que realize a conexão.
+                </p>
+              </div>
+            )}
           </main>
         </div>
       </SidebarProvider>
