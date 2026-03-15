@@ -22,6 +22,8 @@ export const ContactListItem = ({
   onEdit,
   onDelete,
   onCreateDeal,
+  canEdit = true,
+  canDelete = true,
 }: ContactListItemProps) => {
   const getInitials = (name: string) => {
     return name
