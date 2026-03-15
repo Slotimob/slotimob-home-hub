@@ -59,11 +59,11 @@ const Integrations = () => {
   const { data: activeConnectionsCount = 0 } = useQuery({
     queryKey: ['whatsapp-active-connections', user?.id],
     queryFn: async () => {
-      if (!user?.id) return 0;
+      if (!effectiveBrokerId) return 0;
       const { count, error } = await supabase
         .from('whatsapp_connections')
         .select('id', { count: 'exact', head: true })
-        .eq('broker_id', user.id)
+        .eq('broker_id', effectiveBrokerId)
         .eq('status', 'connected');
       if (error) return 0;
       return count ?? 0;
