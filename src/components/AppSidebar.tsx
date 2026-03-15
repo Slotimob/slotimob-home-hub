@@ -49,7 +49,20 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useCockpitAccess } from '@/hooks/useCockpitAccess';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { usePermissions } from '@/hooks/usePermissions';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
+
+/** Maps sidebar menu titles to permission module keys */
+const MENU_PERMISSION_MAP: Record<string, string> = {
+  'CRM': 'crm',
+  'Ativos': 'properties',
+  'Gestão': 'management',
+  'Financeiro': 'finance',
+  'Relatórios': 'reports',
+  'Integrações': 'integrations',
+  'Documentos': 'properties',
+  'Simulador': 'properties',
+};
 
 interface NestedSubMenuItem {
   title: string;
