@@ -14,6 +14,8 @@ import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { WhatsAppDisclaimerDialog } from '@/components/whatsapp/WhatsAppDisclaimerDialog';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useQuery } from '@tanstack/react-query';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 const COMPATIBLE_PORTALS = [
   { name: 'Zap Imóveis', logo: '🏠' },
