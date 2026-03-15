@@ -421,11 +421,7 @@ const Units = () => {
             size="sm"
             onSuccess={reloadUnits}
           />
-          )}
-            variant="default"
-            size="sm"
-            onSuccess={reloadUnits}
-          />
+          )
           {/* Secondary: Compartilhar */}
           <HeaderButton 
             variant="outline" 
