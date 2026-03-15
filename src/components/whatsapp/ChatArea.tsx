@@ -24,6 +24,7 @@ interface ChatAreaProps {
   conversation: WhatsAppConversation | null;
   messages: WhatsAppMessage[];
   onSendMessage: (content: string) => void;
+  onSendMedia?: (file: File) => void;
   onBack?: () => void;
   onToggleCrm?: () => void;
   showCrmToggle?: boolean;
@@ -163,6 +164,7 @@ export function ChatArea({
   conversation,
   messages,
   onSendMessage,
+  onSendMedia,
   onBack,
   onToggleCrm,
   showCrmToggle,
@@ -181,6 +183,7 @@ export function ChatArea({
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const agentName = useAgentName(assignedUserId || null, teamMembers);
   const { toast } = useToast();
 
@@ -407,11 +410,25 @@ export function ChatArea({
           </div>
         ) : (
           <div className="flex items-end gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onSendMedia) {
+                  onSendMedia(file);
+                }
+                e.target.value = '';
+              }}
+            />
             <Button
               variant="ghost"
               size="icon"
               className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9"
-              onClick={() => toast({ title: 'Em breve', description: 'Envio de anexos estará disponível em breve.' })}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!onSendMedia}
             >
               <Paperclip className="h-5 w-5" />
             </Button>

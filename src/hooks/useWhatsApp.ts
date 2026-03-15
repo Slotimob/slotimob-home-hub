@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { toast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -50,18 +51,21 @@ export function useWhatsAppConnection() {
 
 export function useWhatsAppSettingsConnection() {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [waitingForQr, setWaitingForQr] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [timedOut, setTimedOut] = useState(false);
 
+  const brokerId = effectiveBrokerId || user?.id;
+
   const fetchConnection = useCallback(async () => {
-    if (!user) return;
+    if (!brokerId) return;
     const { data, error } = await supabase
       .from('whatsapp_connections')
       .select('*')
-      .eq('broker_id', user.id)
+      .eq('broker_id', brokerId)
       .limit(1)
       .maybeSingle();
 
@@ -76,7 +80,7 @@ export function useWhatsAppSettingsConnection() {
     } else {
       setWaitingForQr(false);
     }
-  }, [user]);
+  }, [brokerId]);
 
   useEffect(() => {
     fetchConnection();
@@ -176,7 +180,7 @@ export function useWhatsAppSettingsConnection() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [brokerId]);
 
   // Verificação manual do status (fallback se Realtime falhar)
   const checkInstanceStatus = useCallback(async () => {

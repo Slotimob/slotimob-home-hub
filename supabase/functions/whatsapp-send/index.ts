@@ -67,6 +67,10 @@ serve(async (req) => {
       });
     }
 
+    const supabaseAdmin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', {
+      auth: { persistSession: false },
+    });
+
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
@@ -89,20 +93,20 @@ serve(async (req) => {
 
     const { conversationId, content, messageType } = body;
 
-    if (!conversationId || !content) {
-      return new Response(JSON.stringify({ error: 'conversationId and content are required' }), {
+    if (!conversationId || (!content && !body.mediaUrl)) {
+      return new Response(JSON.stringify({ error: 'conversationId and content/mediaUrl are required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    if (content.length > MAX_TEXT_LENGTH) {
+    if (content && content.length > MAX_TEXT_LENGTH) {
       return new Response(JSON.stringify({ error: 'Message too long' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Get conversation + connection
-    const { data: conversation, error: convError } = await supabaseClient
+    // Get conversation + connection using admin client (RLS-free)
+    const { data: conversation, error: convError } = await supabaseAdmin
       .from('whatsapp_conversations')
       .select('*, connection:whatsapp_connections(*)')
       .eq('id', conversationId)
@@ -114,7 +118,14 @@ serve(async (req) => {
       });
     }
 
-    if (conversation.connection.broker_id !== userId) {
+    // Auth check: user must be owner or active org member
+    const brokerId = conversation.connection.broker_id;
+    const { data: canWrite } = await supabaseAdmin.rpc('can_write_as_broker', {
+      p_user_id: userId,
+      p_broker_id: brokerId,
+    });
+
+    if (!canWrite) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -127,7 +138,6 @@ serve(async (req) => {
       });
     }
 
-    // Sanitizar número
     const recipientPhone = sanitizePhoneNumber(conversation.contact_phone || '');
     const sanitizedContent = (content || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
