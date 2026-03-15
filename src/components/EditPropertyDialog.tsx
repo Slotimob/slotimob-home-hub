@@ -94,6 +94,9 @@ const propertyToFormData = (prop: Property): PropertyFormData => ({
 
 export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: EditPropertyDialogProps) => {
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEdit = isOwner || hasPermission('properties', 'edit');
+  const canDelete = isOwner || hasPermission('properties', 'delete');
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [freshProperty, setFreshProperty] = useState<Property | null>(null);
