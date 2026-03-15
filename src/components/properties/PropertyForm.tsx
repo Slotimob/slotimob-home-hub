@@ -778,7 +778,7 @@ export function PropertyForm({
         )}
 
         {/* Footer - visible in all tabs except documents */}
-        {activeTab !== 'documents' && (
+        {activeTab !== 'documents' && !disabled && (
           <div className={`flex flex-col-reverse sm:flex-row ${isEditing && onDelete ? 'sm:justify-between' : 'sm:justify-end'} gap-3 pt-4 mt-4 border-t`}>
             {isEditing && onDelete && (
               <Button
@@ -799,6 +799,13 @@ export function PropertyForm({
                 {isSubmitting ? (isEditing ? 'Salvando...' : 'Criando...') : (isEditing ? 'Salvar' : 'Criar Empreendimento')}
               </Button>
             </div>
+          </div>
+        )}
+        {activeTab !== 'documents' && disabled && (
+          <div className="flex justify-end pt-4 mt-4 border-t">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Fechar
+            </Button>
           </div>
         )}
       </form>
