@@ -354,7 +354,10 @@ export const RealEstateKanbanView = ({
   onSuccess,
 }: RealEstateKanbanViewProps) => {
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const canEdit = isOwner || hasPermission('assets_standalone', 'edit');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
