@@ -6,6 +6,7 @@ import { Clock, CheckCircle2, Link2, Wand2, Loader2, Calculator } from "lucide-r
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 import { ReconciliationPendingListGrouped } from "./ReconciliationPendingListGrouped";
 import { ReconciliationHistoryTable } from "./ReconciliationHistoryTable";
 import { ReconciliationMismatchDialog } from "./ReconciliationMismatchDialog";
@@ -20,6 +21,8 @@ interface ReconciliationPanelProps {
 export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBalance = 0 }: ReconciliationPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isOwner, hasPermission } = usePermissions();
+  const hasReconcilePermission = isOwner || hasPermission('finance_reconciliation', 'edit') || hasPermission('finance_reconciliation', 'create');
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
@@ -213,7 +216,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
   };
 
   const isLoading = entriesLoading || transactionsLoading;
-  const canReconcile = selectedEntry && selectedTransaction;
+  const canReconcileSelection = selectedEntry && selectedTransaction;
   const hasData = entries.length > 0 && transactions.length > 0;
 
   return (
@@ -248,37 +251,39 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
         </TabsList>
 
         <TabsContent value="pending" className="space-y-3 mt-3">
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAutoReconcile}
-              disabled={!hasData || isReconciling}
-              className="h-8 text-xs"
-            >
-              {isReconciling ? (
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <Wand2 className="h-3.5 w-3.5 mr-1.5" />
-              )}
-              <span className="hidden sm:inline">Conciliar Auto</span>
-              <span className="sm:hidden">Auto</span>
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleReconcileClick}
-              disabled={!canReconcile || isReconciling}
-              className="h-8 text-xs"
-            >
-              {isReconciling ? (
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <Link2 className="h-3.5 w-3.5 mr-1.5" />
-              )}
-              <span className="hidden sm:inline">Vincular Selecionados</span>
-              <span className="sm:hidden">Vincular</span>
-            </Button>
-          </div>
+          {hasReconcilePermission && (
+            <div className="flex flex-wrap gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAutoReconcile}
+                disabled={!hasData || isReconciling}
+                className="h-8 text-xs"
+              >
+                {isReconciling ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                <span className="hidden sm:inline">Conciliar Auto</span>
+                <span className="sm:hidden">Auto</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleReconcileClick}
+                disabled={!canReconcileSelection || isReconciling}
+                className="h-8 text-xs"
+              >
+                {isReconciling ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Link2 className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                <span className="hidden sm:inline">Vincular Selecionados</span>
+                <span className="sm:hidden">Vincular</span>
+              </Button>
+            </div>
+          )}
 
           <ReconciliationPendingListGrouped
             entries={entries}

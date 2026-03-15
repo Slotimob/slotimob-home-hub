@@ -12,9 +12,9 @@ interface TransactionCardProps {
   transaction: any;
   isSelected?: boolean;
   onSelect?: (checked: boolean) => void;
-  onEdit: (transaction: any) => void;
-  onDelete: (id: string) => void;
-  onMarkAsPaid: (id: string) => void;
+  onEdit?: (transaction: any) => void;
+  onDelete?: (id: string) => void;
+  onMarkAsPaid?: (id: string) => void;
   onReconcile?: (transaction: any) => void;
   onSendBillingReminder?: (transaction: any) => void;
   isReconciling?: boolean;
@@ -70,7 +70,7 @@ export function TransactionCard({
   };
 
   const handleCardClick = () => {
-    onEdit(transaction);
+    onEdit?.(transaction);
   };
 
   const handleReconcileClick = (e: React.MouseEvent) => {
@@ -181,24 +181,30 @@ export function TransactionCard({
                   <DropdownMenuSeparator />
                 </>
               )}
-              {transaction.status === "pending" && !transaction.is_reconciled && (
+              {onMarkAsPaid && transaction.status === "pending" && !transaction.is_reconciled && (
                 <DropdownMenuItem onClick={() => onMarkAsPaid(transaction.id)} className="text-xs">
                   <Check className="h-3.5 w-3.5 mr-2" />
                   Marcar como Pago
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => onEdit(transaction)} className="text-xs">
-                <Pencil className="h-3.5 w-3.5 mr-2" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive text-xs"
-                onClick={() => onDelete(transaction.id)}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-2" />
-                Excluir
-              </DropdownMenuItem>
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(transaction)} className="text-xs">
+                  <Pencil className="h-3.5 w-3.5 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive text-xs"
+                    onClick={() => onDelete(transaction.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                    Excluir
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

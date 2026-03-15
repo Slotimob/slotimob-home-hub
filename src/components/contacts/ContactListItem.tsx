@@ -12,6 +12,8 @@ interface ContactListItemProps {
   onEdit: () => void;
   onDelete: () => void;
   onCreateDeal?: () => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export const ContactListItem = ({
@@ -20,6 +22,8 @@ export const ContactListItem = ({
   onEdit,
   onDelete,
   onCreateDeal,
+  canEdit = true,
+  canDelete = true,
 }: ContactListItemProps) => {
   const getInitials = (name: string) => {
     return name
@@ -125,17 +129,21 @@ export const ContactListItem = ({
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-            <Pencil className="h-4 w-4 mr-2" />
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="text-destructive"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Excluir
-          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <DropdownMenuItem 
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

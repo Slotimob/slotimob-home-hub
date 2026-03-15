@@ -244,7 +244,7 @@ export function CreateLeaseWizard({
       let query = supabase
         .from("contacts")
         .select("id, name, email, phone, whatsapp")
-        .eq("broker_id", user.id)
+        .eq("broker_id", effectiveBrokerId || user.id)
         .contains("categories", ["Inquilino"])
         .order("name");
 

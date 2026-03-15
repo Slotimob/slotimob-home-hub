@@ -20,6 +20,7 @@ import { WhatsAppBillingButton } from "./WhatsAppBillingButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProgressiveBalance } from "@/hooks/useProgressiveBalance";
 import { useWhatsAppBilling } from "@/hooks/useWhatsAppBilling";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import { SortConfig, SortField } from "@/hooks/useInfiniteTransactions";
 import {
@@ -74,6 +75,10 @@ export function TransactionsTableInfinite({
   const isMobile = useIsMobile();
   const { reconcileTransaction, isReconciling } = useProgressiveBalance();
   const { sendBillingReminder, isEligibleForBilling, isSending: isSendingBilling } = useWhatsAppBilling();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEditTx = isOwner || hasPermission('finance_transactions', 'edit');
+  const canDeleteTx = isOwner || hasPermission('finance_transactions', 'delete');
+  const canReconcile = isOwner || hasPermission('finance_reconciliation', 'edit') || hasPermission('finance_reconciliation', 'create');
   const [editTransaction, setEditTransaction] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
@@ -393,10 +398,10 @@ export function TransactionsTableInfinite({
               transaction={transaction}
               isSelected={selectedIds.has(transaction.id)}
               onSelect={(checked) => handleSelectOne(transaction.id, checked)}
-              onEdit={setEditTransaction}
-              onDelete={() => handleDeleteClick(transaction)}
-              onMarkAsPaid={handleMarkAsPaid}
-              onReconcile={handleQuickReconcile}
+              onEdit={canEditTx ? setEditTransaction : undefined}
+              onDelete={canDeleteTx ? () => handleDeleteClick(transaction) : undefined}
+              onMarkAsPaid={canEditTx ? handleMarkAsPaid : undefined}
+              onReconcile={canReconcile ? handleQuickReconcile : undefined}
               onSendBillingReminder={handleSendBillingReminder}
               isReconciling={reconcilingId === transaction.id}
               isSendingBilling={billingTransactionId === transaction.id && isSendingBilling}
@@ -570,9 +575,9 @@ export function TransactionsTableInfinite({
                       {transaction.is_reconciled ? (
                         <ReconciliationDetailsPopover
                           transaction={transaction}
-                          onReconciliationChange={onTransactionUpdated}
+                          onReconciliationChange={canReconcile ? onTransactionUpdated : undefined}
                         />
-                      ) : (
+                      ) : canReconcile ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -596,6 +601,8 @@ export function TransactionsTableInfinite({
                             <p className="text-xs">Conciliar com extrato</p>
                           </TooltipContent>
                         </Tooltip>
+                      ) : (
+                        <span className="text-muted-foreground/30">—</span>
                       )}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">
@@ -702,13 +709,13 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
-                          {!transaction.is_reconciled && (
+                          {canReconcile && !transaction.is_reconciled && (
                             <>
                               <DropdownMenuItem onClick={() => handleOpenReconciliationMatcher(transaction)} className="text-xs">
                                 <Link2 className="h-3.5 w-3.5 mr-2 text-blue-500" />
                                 Conciliar com Extrato
                               </DropdownMenuItem>
-                              {transaction.status === "pending" && (
+                              {canEditTx && transaction.status === "pending" && (
                                 <DropdownMenuItem onClick={() => handleMarkAsPaid(transaction.id)} className="text-xs">
                                   <Check className="h-3.5 w-3.5 mr-2" />
                                   Marcar como Pago
@@ -717,7 +724,7 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
-                          {transaction.is_reconciled && (
+                          {canReconcile && transaction.is_reconciled && (
                             <>
                               <DropdownMenuItem onClick={() => handleQuickReconcile(transaction)} className="text-xs">
                                 <Circle className="h-3.5 w-3.5 mr-2" />
@@ -726,18 +733,24 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
-                          <DropdownMenuItem onClick={() => setEditTransaction(transaction)} className="text-xs">
-                            <Pencil className="h-3.5 w-3.5 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive text-xs"
-                            onClick={(e) => handleDeleteClick(transaction, e)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
+                          {canEditTx && (
+                            <DropdownMenuItem onClick={() => setEditTransaction(transaction)} className="text-xs">
+                              <Pencil className="h-3.5 w-3.5 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                          )}
+                          {canDeleteTx && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive text-xs"
+                                onClick={(e) => handleDeleteClick(transaction, e)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

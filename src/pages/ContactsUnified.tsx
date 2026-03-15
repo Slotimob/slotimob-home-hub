@@ -27,6 +27,9 @@ const ContactsUnified = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { isOwner, hasPermission } = usePermissions();
+  const canEditContact = isOwner || hasPermission('crm_contacts', 'edit');
+  const canDeleteContact = isOwner || hasPermission('crm_contacts', 'delete');
   
   const [contacts, setContacts] = useState<UnifiedContact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -389,6 +392,8 @@ const ContactsUnified = () => {
                     onCreateDeal={() => {
                       toast({ title: 'Em breve', description: 'Funcionalidade em desenvolvimento' });
                     }}
+                    canEdit={canEditContact}
+                    canDelete={canDeleteContact}
                   />
                 ))}
               </div>
@@ -404,6 +409,8 @@ const ContactsUnified = () => {
                     onCreateDeal={() => {
                       toast({ title: 'Em breve', description: 'Funcionalidade em desenvolvimento' });
                     }}
+                    canEdit={canEditContact}
+                    canDelete={canDeleteContact}
                   />
                 ))}
               </div>
@@ -461,6 +468,7 @@ const ContactsUnified = () => {
         open={isSheetOpen}
         onOpenChange={handleCloseSheet}
         onEdit={handleEditFromSheet}
+        canEdit={canEditContact}
       />
 
       {/* Delete Dialog */}

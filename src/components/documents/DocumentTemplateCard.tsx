@@ -21,14 +21,16 @@ const categoryIcons: Record<string, React.ReactNode> = {
 
 export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardProps) => {
   const { isOwner, hasPermission } = usePermissions();
-  const canEdit = isOwner || hasPermission('documents', 'edit') || hasPermission('documents', 'create');
+  const canCreate = isOwner || hasPermission('documents', 'create');
+  const canEditDoc = isOwner || hasPermission('documents', 'edit');
+  const canUse = canCreate || canEditDoc;
 
   const handleDownloadBlank = () => {
     generateBlankTemplatePDF(template);
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={canEdit ? onEdit : undefined}>
+    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={canUse ? onEdit : undefined}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -64,7 +66,7 @@ export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardP
             <Download className="mr-1 h-3 w-3" />
             Original
           </Button>
-          {canEdit && (
+          {canUse && (
             <Button
               size="sm"
               className="flex-1 text-xs"
@@ -74,7 +76,7 @@ export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardP
               }}
             >
               <Edit className="mr-1 h-3 w-3" />
-              Editar
+              {canEditDoc ? 'Editar' : 'Usar'}
             </Button>
           )}
         </div>
