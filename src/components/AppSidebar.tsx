@@ -52,17 +52,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 
-/** Maps sidebar menu titles to permission module keys */
-const MENU_PERMISSION_MAP: Record<string, string> = {
-  'CRM': 'crm',
-  'Ativos': 'properties',
-  'Gestão': 'management',
-  'Financeiro': 'finance',
-  'Relatórios': 'reports',
-  'Integrações': 'integrations',
-  'Documentos': 'properties',
-  'Simulador': 'properties',
-};
+
 
 interface NestedSubMenuItem {
   title: string;
@@ -83,6 +73,8 @@ interface MenuItem {
   ownerOnly?: boolean;
   hiddenOnPlan?: string[];
   trialVisible?: boolean;
+  /** Permission module key for granular RBAC filtering */
+  moduleKey?: string;
 }
 
 export function AppSidebar() {
@@ -133,11 +125,12 @@ export function AppSidebar() {
 
   // Build menu items with role/plan gating
   const menuItems: MenuItem[] = [
-    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'], trialVisible: true },
-    { title: 'Dashboard', url: '/dashboard', icon: Home },
+    { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, hiddenOnPlan: ['free', 'essencial'], trialVisible: true, moduleKey: 'chat' },
+    { title: 'Dashboard', url: '/dashboard', icon: Home, moduleKey: 'dashboard' },
     { 
       title: 'Gestão', 
       icon: ClipboardList,
+      moduleKey: 'management',
       items: [
         { title: 'Aluguéis', url: '/gestao/alugueis' },
         { title: 'Contratos', url: '/gestao/contratos' },
@@ -148,6 +141,7 @@ export function AppSidebar() {
     { 
       title: 'Ativos', 
       icon: Building2,
+      moduleKey: 'assets',
       items: [
         { 
           title: 'Empreendimentos', 
@@ -164,6 +158,7 @@ export function AppSidebar() {
       title: 'Financeiro', 
       icon: Wallet,
       ownerOnly: true,
+      moduleKey: 'financial',
       items: [
         { title: 'Visão Geral', url: '/finance' },
         { title: 'DRE', url: '/finance/dre' },
@@ -175,6 +170,7 @@ export function AppSidebar() {
     { 
       title: 'CRM', 
       icon: Users,
+      moduleKey: 'crm',
       items: [
         { title: 'Mensagens', url: '/whatsapp' },
         { title: 'Pipeline', url: '/pipeline' },
@@ -182,10 +178,10 @@ export function AppSidebar() {
         { title: 'Agenda', url: '/schedule' },
       ]
     },
-    { title: 'Relatórios', url: '/reports', icon: BarChart3, ownerOnly: true },
-    { title: 'Documentos', url: '/documents', icon: FileText },
+    { title: 'Relatórios', url: '/reports', icon: BarChart3, ownerOnly: true, moduleKey: 'reports' },
+    { title: 'Documentos', url: '/documents', icon: FileText, moduleKey: 'documents' },
     { title: 'Simulador', url: '/simulator', icon: Calculator },
-    { title: 'Integrações', url: '/integrations', icon: Plug },
+    { title: 'Integrações', url: '/integrations', icon: Plug, moduleKey: 'integrations' },
     { title: 'Treinamentos', url: '/training', icon: GraduationCap },
     { title: 'Usuários', url: '/users', icon: UsersRound, hiddenOnPlan: ['essencial', 'free'] },
     { title: 'Histórico', url: '/history', icon: History },
@@ -193,16 +189,17 @@ export function AppSidebar() {
 
   // Filter menu items based on role, plan, and granular permissions
   const filteredMenuItems = menuItems.filter(item => {
-    if (item.ownerOnly && isAgent) return false;
+    // ownerOnly blocks agents, but members with permission should pass through
+    if (item.ownerOnly && isAgent && !isMember) return false;
+    if (item.ownerOnly && isMember && !isPermOwner && item.moduleKey && !hasPermission(item.moduleKey, 'view')) return false;
     if (item.hiddenOnPlan?.includes(plan)) {
       if (item.trialVisible && isTrialActive) return true;
       if (item.url === '/ai-chat') return true;
       return false;
     }
     // Granular permission enforcement for members (non-owners)
-    if (!isPermOwner && isMember) {
-      const permKey = MENU_PERMISSION_MAP[item.title];
-      if (permKey && !hasPermission(permKey, 'view')) return false;
+    if (!isPermOwner && isMember && item.moduleKey) {
+      if (!hasPermission(item.moduleKey, 'view')) return false;
     }
     return true;
   });

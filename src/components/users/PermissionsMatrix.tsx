@@ -10,21 +10,28 @@ import {
 import type { Permissions, ModulePermission } from '@/hooks/usePermissions';
 import { EMPTY_MODULE_PERMISSION } from '@/hooks/usePermissions';
 
+type ActionKey = keyof ModulePermission;
+
 export interface PermissionModuleDef {
   key: string;
   label: string;
+  /** Which actions are available for this module. Missing actions render as "—" */
+  actions: ActionKey[];
 }
 
 export const PERMISSION_MODULES: PermissionModuleDef[] = [
-  { key: 'crm', label: 'CRM' },
-  { key: 'properties', label: 'Imóveis / Ativos' },
-  { key: 'management', label: 'Gestão' },
-  { key: 'finance', label: 'Financeiro' },
-  { key: 'reports', label: 'Relatórios' },
-  { key: 'integrations', label: 'Integrações' },
+  { key: 'chat', label: 'Chat IA', actions: ['view'] },
+  { key: 'dashboard', label: 'Dashboard', actions: ['view', 'edit'] },
+  { key: 'management', label: 'Gestão', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'assets', label: 'Ativos', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'financial', label: 'Financeiro', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'crm', label: 'CRM', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'reports', label: 'Relatórios', actions: ['view'] },
+  { key: 'documents', label: 'Documentos', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'integrations', label: 'Integrações', actions: ['view', 'create', 'edit', 'delete'] },
 ];
 
-const ACTION_COLUMNS: { key: keyof ModulePermission; label: string }[] = [
+const ACTION_COLUMNS: { key: ActionKey; label: string }[] = [
   { key: 'view', label: 'Visualizar' },
   { key: 'create', label: 'Criar' },
   { key: 'edit', label: 'Editar' },
@@ -49,7 +56,7 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
     };
   };
 
-  const toggle = (moduleKey: string, action: keyof ModulePermission, checked: boolean) => {
+  const toggle = (moduleKey: string, action: ActionKey, checked: boolean) => {
     const current = getModulePerms(moduleKey);
 
     if (action === 'view' && !checked) {
@@ -88,6 +95,16 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
               <TableRow key={mod.key}>
                 <TableCell className="font-medium text-sm">{mod.label}</TableCell>
                 {ACTION_COLUMNS.map((col) => {
+                  const hasAction = mod.actions.includes(col.key);
+
+                  if (!hasAction) {
+                    return (
+                      <TableCell key={col.key} className="text-center">
+                        <span className="text-muted-foreground text-xs">—</span>
+                      </TableCell>
+                    );
+                  }
+
                   const isView = col.key === 'view';
                   const isDisabled = disabled || (!isView && !viewEnabled);
                   const checked = perms[col.key];
