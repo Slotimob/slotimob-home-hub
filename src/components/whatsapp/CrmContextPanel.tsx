@@ -17,6 +17,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { useContactDeals, useContactActivities } from '@/hooks/useWhatsApp';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CreateDealFromChatDialog } from './CreateDealFromChatDialog';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
@@ -55,6 +56,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const { activities, loading: activitiesLoading } = useContactActivities(contactId);
   const { toast } = useToast();
   const [updatingStage, setUpdatingStage] = useState(false);
+  const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
 
   const activeDeal = deals.length > 0 ? deals[0] : null;
 
@@ -232,7 +234,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 if (onCreateDeal) {
                   onCreateDeal();
                 } else {
-                  toast({ title: 'Em desenvolvimento', description: 'Atalho para criar negociação estará disponível em breve.' });
+                  setIsDealDialogOpen(true);
                 }
               }}
             >
@@ -291,6 +293,14 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           )}
         </div>
       </div>
+
+      {conversation && (
+        <CreateDealFromChatDialog
+          open={isDealDialogOpen}
+          onOpenChange={setIsDealDialogOpen}
+          conversation={conversation}
+        />
+      )}
     </ScrollArea>
   );
 }

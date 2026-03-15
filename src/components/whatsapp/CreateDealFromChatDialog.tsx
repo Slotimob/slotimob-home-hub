@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,11 @@ interface Props {
   conversation: WhatsAppConversation;
 }
 
+interface PropertyOption {
+  id: string;
+  name: string;
+}
+
 export function CreateDealFromChatDialog({ open, onOpenChange, conversation }: Props) {
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
@@ -36,9 +41,27 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation }: P
   const [title, setTitle] = useState('');
   const [value, setValue] = useState('');
   const [stage, setStage] = useState('new_lead');
+  const [propertyId, setPropertyId] = useState<string>('');
+  const [properties, setProperties] = useState<PropertyOption[]>([]);
+  const [propertiesLoading, setPropertiesLoading] = useState(false);
 
   const contactName = conversation.contact_name || conversation.contact_phone;
   const contactPhone = conversation.contact_phone;
+
+  // Fetch properties when dialog opens
+  useEffect(() => {
+    if (!open || !effectiveBrokerId) return;
+    setPropertiesLoading(true);
+    supabase
+      .from('properties')
+      .select('id, name')
+      .eq('broker_id', effectiveBrokerId)
+      .order('name')
+      .then(({ data }) => {
+        setProperties(data || []);
+        setPropertiesLoading(false);
+      });
+  }, [open, effectiveBrokerId]);
 
   const handleSave = useCallback(async () => {
     if (!effectiveBrokerId) return;
@@ -91,16 +114,21 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation }: P
 
       // 4. Create deal
       const parsedValue = value ? parseFloat(value.replace(/\D/g, '')) / 100 : null;
+      const dealPayload: any = {
+        broker_id: effectiveBrokerId,
+        lead_id: newLead.id,
+        contact_id: contactId,
+        stage: stage as any,
+        estimated_value: parsedValue,
+        initial_task: title || `Negociação via WhatsApp - ${contactName}`,
+      };
+      if (propertyId) {
+        dealPayload.property_id = propertyId;
+      }
+
       const { data: newDeal, error: dealErr } = await supabase
         .from('deals')
-        .insert({
-          broker_id: effectiveBrokerId,
-          lead_id: newLead.id,
-          contact_id: contactId,
-          stage: stage as any,
-          estimated_value: parsedValue,
-          initial_task: title || `Negociação via WhatsApp - ${contactName}`,
-        })
+        .insert(dealPayload)
         .select('id')
         .single();
 
@@ -117,13 +145,14 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation }: P
       setTitle('');
       setValue('');
       setStage('new_lead');
+      setPropertyId('');
     } catch (err: any) {
       console.error('Create deal error:', err);
       toast({ title: 'Erro ao criar negociação', description: err.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
-  }, [effectiveBrokerId, contactName, contactPhone, title, value, stage, conversation.id, toast, onOpenChange]);
+  }, [effectiveBrokerId, contactName, contactPhone, title, value, stage, propertyId, conversation.id, toast, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -155,6 +184,29 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation }: P
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
+          </div>
+
+          {/* Property Selector */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5" />
+              Imóvel de Interesse
+            </Label>
+            <Select value={propertyId} onValueChange={setPropertyId}>
+              <SelectTrigger className="text-sm">
+                <SelectValue placeholder={propertiesLoading ? 'Carregando...' : 'Selecione um imóvel (opcional)'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none" className="text-sm text-muted-foreground">
+                  Nenhum
+                </SelectItem>
+                {properties.map((p) => (
+                  <SelectItem key={p.id} value={p.id} className="text-sm">
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
