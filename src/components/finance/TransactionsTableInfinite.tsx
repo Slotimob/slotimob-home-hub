@@ -20,6 +20,7 @@ import { WhatsAppBillingButton } from "./WhatsAppBillingButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProgressiveBalance } from "@/hooks/useProgressiveBalance";
 import { useWhatsAppBilling } from "@/hooks/useWhatsAppBilling";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import { SortConfig, SortField } from "@/hooks/useInfiniteTransactions";
 import {
