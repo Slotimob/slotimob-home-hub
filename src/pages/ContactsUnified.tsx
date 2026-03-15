@@ -409,6 +409,8 @@ const ContactsUnified = () => {
                     onCreateDeal={() => {
                       toast({ title: 'Em breve', description: 'Funcionalidade em desenvolvimento' });
                     }}
+                    canEdit={canEditContact}
+                    canDelete={canDeleteContact}
                   />
                 ))}
               </div>
