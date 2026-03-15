@@ -216,7 +216,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
   };
 
   const isLoading = entriesLoading || transactionsLoading;
-  const canReconcile = selectedEntry && selectedTransaction;
+  const canReconcileSelection = selectedEntry && selectedTransaction;
   const hasData = entries.length > 0 && transactions.length > 0;
 
   return (
