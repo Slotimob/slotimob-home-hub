@@ -376,7 +376,8 @@ export function PropertyForm({
         )}
       </TabsList>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={disabled ? (e) => e.preventDefault() : handleSubmit}>
+        <fieldset disabled={disabled} className="space-y-0">
         {/* Info Tab */}
         <TabsContent value="info" className="mt-4 space-y-6">
           {/* ===== SECTION 1: OBJECTIVE & MANAGEMENT ===== */}
