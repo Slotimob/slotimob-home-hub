@@ -24,32 +24,40 @@ export const FULL_MODULE_PERMISSION: ModulePermission = {
 };
 
 export interface Permissions {
-  chat?: Partial<ModulePermission>;
-  dashboard?: Partial<ModulePermission>;
-  management?: Partial<ModulePermission>;
-  properties?: Partial<ModulePermission>;
-  units?: Partial<ModulePermission>;
-  real_estate?: Partial<ModulePermission>;
-  financial?: Partial<ModulePermission>;
-  crm?: Partial<ModulePermission>;
-  reports?: Partial<ModulePermission>;
-  documents?: Partial<ModulePermission>;
-  integrations?: Partial<ModulePermission>;
   [module: string]: Partial<ModulePermission> | undefined;
 }
 
+/**
+ * Page-level permission module keys.
+ * Grouped logically for the PermissionsMatrix UI.
+ */
 export const PERMISSION_MODULES_KEYS = [
-  'chat',
+  // Standalone
   'dashboard',
-  'management',
-  'properties',
-  'units',
-  'real_estate',
-  'financial',
-  'crm',
+  // Gestão
+  'management_rentals',
+  'management_contracts',
+  'management_reports',
+  'management_tasks',
+  // Ativos
+  'assets_properties',
+  'assets_units',
+  'assets_standalone',
+  // Financeiro
+  'finance_overview',
+  'finance_transactions',
+  'finance_dre',
+  'finance_reconciliation',
+  'finance_categories',
+  // CRM
+  'crm_pipeline',
+  'crm_contacts',
+  'crm_schedule',
+  // Others
   'reports',
   'documents',
   'integrations',
+  'chat',
 ] as const;
 
 export type PermissionModuleKey = (typeof PERMISSION_MODULES_KEYS)[number];
