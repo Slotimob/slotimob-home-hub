@@ -301,6 +301,10 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           open={isDealDialogOpen}
           onOpenChange={setIsDealDialogOpen}
           conversation={conversation}
+          onSuccess={(dealId, cId) => {
+            setDealRefetchKey(k => k + 1);
+            onDealCreated?.(dealId, cId);
+          }}
         />
       )}
     </ScrollArea>
