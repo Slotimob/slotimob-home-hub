@@ -3783,6 +3783,47 @@ export type Database = {
           },
         ]
       }
+      whatsapp_sync_jobs: {
+        Row: {
+          broker_id: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          processed_chats: number
+          status: string
+          total_chats: number
+        }
+        Insert: {
+          broker_id: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processed_chats?: number
+          status?: string
+          total_chats?: number
+        }
+        Update: {
+          broker_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processed_chats?: number
+          status?: string
+          total_chats?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sync_jobs_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_terms_acceptances: {
         Row: {
           accepted_at: string
