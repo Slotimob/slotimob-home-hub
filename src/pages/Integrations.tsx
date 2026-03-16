@@ -484,29 +484,32 @@ const Integrations = () => {
                         {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
                       </Button>
                     </div>
+                    {/* Sync History — async background job */}
                     <Button
                       variant="outline"
                       className="w-full"
                       onClick={async () => {
-                        setIsSyncingHistory(true);
                         try {
                           const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
                             body: { action: 'sync_history' },
                           });
                           if (error) throw error;
                           if (data?.error) throw new Error(data.error);
-                          toast({ title: 'Histórico sincronizado!', description: data?.message || `${data?.synced || 0} conversas importadas.` });
+                          toast({ title: 'Sincronização iniciada!', description: 'Pode continuar a usar o sistema normalmente.' });
                         } catch (err: any) {
                           toast({ title: 'Erro ao sincronizar', description: err.message, variant: 'destructive' });
-                        } finally {
-                          setIsSyncingHistory(false);
                         }
                       }}
-                      disabled={isSyncingHistory}
+                      disabled={!!activeJob}
                     >
-                      {isSyncingHistory ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                      {isSyncingHistory ? 'Sincronizando conversas...' : 'Sincronizar Histórico'}
+                      {activeJob ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                      {activeJob 
+                        ? `Sincronizando... (${activeJob.processed_chats}/${activeJob.total_chats || '?'})`
+                        : 'Sincronizar Histórico'}
                     </Button>
+                    {activeJob && (
+                      <Progress value={activeJob.total_chats > 0 ? (activeJob.processed_chats / activeJob.total_chats) * 100 : 0} className="h-1.5" />
+                    )}
                   </div>
                 ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
                   <Button className="w-full" onClick={() => {
