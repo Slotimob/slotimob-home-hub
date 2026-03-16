@@ -456,11 +456,11 @@ serve(async (req) => {
 
           // PHASE 1: Bulk upsert conversations in batches
           const conversationRows: any[] = personalChats.map((chat: any) => {
-            const remoteJid = chat.id || chat.remoteJid;
+            const remoteJid = chat.remoteJid || chat.id;
             const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
-            const name = chat.name || chat.pushName || chat.contact || phone;
-            const unreadCount = chat.unreadCount || 0;
-            const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
+            const name = chat.pushName || chat.name || chat.contact?.name || chat.contact || phone;
+            const unreadCount = chat.unreadCount ?? chat.unread_count ?? chat.unreadMessages ?? 0;
+            const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || chat.profilePicture || null;
             return {
               connection_id: conn.id,
               remote_jid: remoteJid,
