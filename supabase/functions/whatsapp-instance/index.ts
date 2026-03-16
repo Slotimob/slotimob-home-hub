@@ -367,66 +367,82 @@ serve(async (req) => {
       }
 
       try {
-        // Fetch recent chats from Evolution API
+        // Fetch all chats from Evolution API
         const chatsRes = await fetch(`${evolutionApiUrl}/chat/findChats/${conn.instance_name}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
           body: JSON.stringify({ where: { id: { not: null } } }),
         });
         const chats = await chatsRes.json();
-        const chatList = Array.isArray(chats) ? chats.slice(0, 30) : [];
-        console.log(`sync_history: processing ${chatList.length} chats`);
+        const chatList = Array.isArray(chats) ? chats : [];
+        console.log(`sync_history: ${chatList.length} total chats from Evolution API`);
 
+        // Filter personal chats only (@s.whatsapp.net)
+        const personalChats = chatList.filter((chat: any) => {
+          const jid = chat.id || chat.remoteJid;
+          return jid && jid.endsWith('@s.whatsapp.net') && jid !== 'status@broadcast';
+        });
+        console.log(`sync_history: ${personalChats.length} personal chats to process`);
+
+        // PHASE 1: Bulk upsert conversations
+        const BATCH_SIZE = 50;
         let synced = 0;
+        const conversationRows: any[] = [];
 
-        for (const chat of chatList) {
+        for (const chat of personalChats) {
+          const remoteJid = chat.id || chat.remoteJid;
+          const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
+          const name = chat.name || chat.pushName || chat.contact || phone;
+          const unreadCount = chat.unreadCount || 0;
+          const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
+
+          conversationRows.push({
+            connection_id: conn.id,
+            remote_jid: remoteJid,
+            contact_name: name,
+            contact_phone: phone,
+            contact_profile_pic: profilePicUrl,
+            last_message: chat.lastMessage?.content || chat.lastMessage?.message?.conversation || null,
+            last_message_at: chat.updatedAt ? new Date(chat.updatedAt).toISOString() : new Date().toISOString(),
+            unread_count: unreadCount,
+            // CRITICAL: unread > 0 → pending (triage), unread === 0 → closed (history)
+            status: unreadCount > 0 ? 'pending' : 'closed',
+            assigned_user_id: unreadCount > 0 ? null : undefined,
+          });
+        }
+
+        // Bulk upsert in batches
+        for (let i = 0; i < conversationRows.length; i += BATCH_SIZE) {
+          const batch = conversationRows.slice(i, i + BATCH_SIZE);
+          // Remove undefined fields (assigned_user_id for closed chats)
+          const cleanBatch = batch.map((row: any) => {
+            const clean = { ...row };
+            Object.keys(clean).forEach(k => clean[k] === undefined && delete clean[k]);
+            return clean;
+          });
+
+          const { error: upsertErr, data: upsertData } = await supabaseAdmin
+            .from('whatsapp_conversations')
+            .upsert(cleanBatch, { onConflict: 'connection_id,remote_jid' })
+            .select('id');
+
+          if (upsertErr) {
+            console.error(`sync_history batch upsert error (offset ${i}):`, upsertErr.message);
+          } else {
+            synced += upsertData?.length || cleanBatch.length;
+          }
+        }
+
+        console.log(`sync_history: ${synced} conversations upserted`);
+
+        // PHASE 2: Link contacts (non-blocking, best effort)
+        for (const chat of personalChats) {
           try {
             const remoteJid = chat.id || chat.remoteJid;
-            if (!remoteJid || remoteJid.endsWith('@g.us') || remoteJid === 'status@broadcast') continue;
-
             const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
             const name = chat.name || chat.pushName || chat.contact || phone;
+            const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
 
-            // Try to get profile picture URL
-            let profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
-            if (!profilePicUrl) {
-              try {
-                const picRes = await fetch(
-                  `${evolutionApiUrl}/chat/fetchProfilePictureUrl/${conn.instance_name}?number=${phone}`,
-                  { method: 'GET', headers: { 'apikey': evolutionApiKey } }
-                );
-                if (picRes.ok) {
-                  const picData = await picRes.json();
-                  profilePicUrl = picData?.profilePictureUrl || picData?.url || null;
-                }
-              } catch (_e) { /* non-blocking */ }
-            }
-
-            // Upsert conversation
-            const { error: upsertErr } = await supabaseAdmin
-              .from('whatsapp_conversations')
-              .upsert(
-                {
-                  connection_id: conn.id,
-                  remote_jid: remoteJid,
-                  contact_name: name,
-                  contact_phone: phone,
-                  contact_profile_pic: profilePicUrl,
-                  last_message: chat.lastMessage?.content || chat.lastMessage?.message?.conversation || null,
-                  last_message_at: chat.updatedAt ? new Date(chat.updatedAt).toISOString() : new Date().toISOString(),
-                  unread_count: chat.unreadCount || 0,
-                  status: 'active',
-                },
-                { onConflict: 'connection_id,remote_jid' }
-              );
-
-            if (upsertErr) {
-              console.error(`sync_history upsert error for ${remoteJid}:`, upsertErr.message);
-            } else {
-              synced++;
-            }
-
-            // Try to link contact and update avatar — or CREATE if not found
             const { data: existingContacts } = await supabaseAdmin
               .from('contacts')
               .select('id, avatar_url')
@@ -438,8 +454,6 @@ serve(async (req) => {
 
             if (existingContacts && existingContacts.length > 0) {
               contactId = existingContacts[0].id;
-
-              // Update contact avatar if we have a profile pic and contact doesn't have one
               if (profilePicUrl && !existingContacts[0].avatar_url) {
                 await supabaseAdmin
                   .from('contacts')
@@ -447,7 +461,6 @@ serve(async (req) => {
                   .eq('id', contactId);
               }
             } else if (name && name !== phone) {
-              // Auto-create contact with pushName from Evolution API
               const { data: newContact, error: newContactErr } = await supabaseAdmin
                 .from('contacts')
                 .insert({
@@ -464,7 +477,6 @@ serve(async (req) => {
 
               if (!newContactErr && newContact) {
                 contactId = newContact.id;
-                console.log(`sync_history: auto-created contact ${contactId} for ${name} (${phone})`);
               }
             }
 
@@ -476,13 +488,14 @@ serve(async (req) => {
                 .eq('remote_jid', remoteJid);
             }
           } catch (chatErr) {
-            console.error('sync_history chat error:', chatErr);
+            console.error('sync_history contact link error:', chatErr);
           }
         }
 
         return new Response(JSON.stringify({ 
           success: true, 
           synced,
+          total: personalChats.length,
           message: `${synced} conversas sincronizadas com sucesso.`,
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
