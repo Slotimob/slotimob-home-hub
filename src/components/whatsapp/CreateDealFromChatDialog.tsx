@@ -147,6 +147,7 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
       setValue('');
       setStage('new_lead');
       setPropertyId('');
+      onSuccess?.(newDeal.id, contactId!);
     } catch (err: any) {
       console.error('Create deal error:', err);
       toast({ title: 'Erro ao criar negociação', description: err.message, variant: 'destructive' });
