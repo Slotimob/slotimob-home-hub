@@ -352,7 +352,7 @@ serve(async (req) => {
       }
     }
 
-    // ─── SYNC HISTORY ───
+    // ─── SYNC HISTORY (Async Background Job) ───
     if (action === 'sync_history') {
       const { data: conn } = await supabaseAdmin
         .from('whatsapp_connections')
@@ -366,146 +366,166 @@ serve(async (req) => {
         });
       }
 
-      try {
-        // Fetch all chats from Evolution API
-        const chatsRes = await fetch(`${evolutionApiUrl}/chat/findChats/${conn.instance_name}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-          body: JSON.stringify({ where: { id: { not: null } } }),
+      // Check if there's already a processing job
+      const { data: existingJob } = await supabaseAdmin
+        .from('whatsapp_sync_jobs')
+        .select('id')
+        .eq('broker_id', userId)
+        .eq('status', 'processing')
+        .maybeSingle();
+
+      if (existingJob) {
+        return new Response(JSON.stringify({ error: 'Já existe uma sincronização em andamento.', job_id: existingJob.id }), {
+          status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
-        const chats = await chatsRes.json();
-        const chatList = Array.isArray(chats) ? chats : [];
-        console.log(`sync_history: ${chatList.length} total chats from Evolution API`);
+      }
 
-        // Filter personal chats only (@s.whatsapp.net)
-        const personalChats = chatList.filter((chat: any) => {
-          const jid = chat.id || chat.remoteJid;
-          return jid && jid.endsWith('@s.whatsapp.net') && jid !== 'status@broadcast';
-        });
-        console.log(`sync_history: ${personalChats.length} personal chats to process`);
+      // Create the job record
+      const { data: job, error: jobErr } = await supabaseAdmin
+        .from('whatsapp_sync_jobs')
+        .insert({ broker_id: userId, status: 'processing' })
+        .select('id')
+        .single();
 
-        // PHASE 1: Bulk upsert conversations
-        const BATCH_SIZE = 50;
-        let synced = 0;
-        const conversationRows: any[] = [];
-
-        for (const chat of personalChats) {
-          const remoteJid = chat.id || chat.remoteJid;
-          const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
-          const name = chat.name || chat.pushName || chat.contact || phone;
-          const unreadCount = chat.unreadCount || 0;
-          const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
-
-          conversationRows.push({
-            connection_id: conn.id,
-            remote_jid: remoteJid,
-            contact_name: name,
-            contact_phone: phone,
-            contact_profile_pic: profilePicUrl,
-            last_message: chat.lastMessage?.content || chat.lastMessage?.message?.conversation || null,
-            last_message_at: chat.updatedAt ? new Date(chat.updatedAt).toISOString() : new Date().toISOString(),
-            unread_count: unreadCount,
-            // CRITICAL: unread > 0 → pending (triage), unread === 0 → closed (history)
-            status: unreadCount > 0 ? 'pending' : 'closed',
-            assigned_user_id: unreadCount > 0 ? null : undefined,
-          });
-        }
-
-        // Bulk upsert in batches
-        for (let i = 0; i < conversationRows.length; i += BATCH_SIZE) {
-          const batch = conversationRows.slice(i, i + BATCH_SIZE);
-          // Remove undefined fields (assigned_user_id for closed chats)
-          const cleanBatch = batch.map((row: any) => {
-            const clean = { ...row };
-            Object.keys(clean).forEach(k => clean[k] === undefined && delete clean[k]);
-            return clean;
-          });
-
-          const { error: upsertErr, data: upsertData } = await supabaseAdmin
-            .from('whatsapp_conversations')
-            .upsert(cleanBatch, { onConflict: 'connection_id,remote_jid' })
-            .select('id');
-
-          if (upsertErr) {
-            console.error(`sync_history batch upsert error (offset ${i}):`, upsertErr.message);
-          } else {
-            synced += upsertData?.length || cleanBatch.length;
-          }
-        }
-
-        console.log(`sync_history: ${synced} conversations upserted`);
-
-        // PHASE 2: Link contacts (non-blocking, best effort)
-        for (const chat of personalChats) {
-          try {
-            const remoteJid = chat.id || chat.remoteJid;
-            const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
-            const name = chat.name || chat.pushName || chat.contact || phone;
-            const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
-
-            const { data: existingContacts } = await supabaseAdmin
-              .from('contacts')
-              .select('id, avatar_url')
-              .eq('broker_id', userId)
-              .or(`phone.eq.${phone},whatsapp.eq.${phone},phone.eq.+${phone},whatsapp.eq.+${phone}`)
-              .limit(1);
-
-            let contactId: string | null = null;
-
-            if (existingContacts && existingContacts.length > 0) {
-              contactId = existingContacts[0].id;
-              if (profilePicUrl && !existingContacts[0].avatar_url) {
-                await supabaseAdmin
-                  .from('contacts')
-                  .update({ avatar_url: profilePicUrl })
-                  .eq('id', contactId);
-              }
-            } else if (name && name !== phone) {
-              const { data: newContact, error: newContactErr } = await supabaseAdmin
-                .from('contacts')
-                .insert({
-                  broker_id: userId,
-                  name: name,
-                  phone: phone,
-                  whatsapp: phone,
-                  avatar_url: profilePicUrl,
-                  categories: ['lead'],
-                  metadata: { origin: 'whatsapp_sync' },
-                })
-                .select('id')
-                .single();
-
-              if (!newContactErr && newContact) {
-                contactId = newContact.id;
-              }
-            }
-
-            if (contactId) {
-              await supabaseAdmin
-                .from('whatsapp_conversations')
-                .update({ contact_id: contactId, lead_id: contactId })
-                .eq('connection_id', conn.id)
-                .eq('remote_jid', remoteJid);
-            }
-          } catch (chatErr) {
-            console.error('sync_history contact link error:', chatErr);
-          }
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          synced,
-          total: personalChats.length,
-          message: `${synced} conversas sincronizadas com sucesso.`,
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } catch (e) {
-        console.error('sync_history error:', e);
-        return new Response(JSON.stringify({ error: 'Sync failed' }), {
+      if (jobErr || !job) {
+        return new Response(JSON.stringify({ error: 'Failed to create sync job' }), {
           status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+
+      const jobId = job.id;
+
+      // Background processing function
+      const processSync = async () => {
+        try {
+          const chatsRes = await fetch(`${evolutionApiUrl}/chat/findChats/${conn.instance_name}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+            body: JSON.stringify({ where: { id: { not: null } } }),
+          });
+          const chats = await chatsRes.json();
+          const chatList = Array.isArray(chats) ? chats : [];
+
+          const personalChats = chatList.filter((chat: any) => {
+            const jid = chat.id || chat.remoteJid;
+            return jid && jid.endsWith('@s.whatsapp.net') && jid !== 'status@broadcast';
+          });
+
+          // Update total count
+          await supabaseAdmin.from('whatsapp_sync_jobs').update({ total_chats: personalChats.length }).eq('id', jobId);
+
+          const BATCH_SIZE = 50;
+          let processed = 0;
+
+          // PHASE 1: Bulk upsert conversations in batches
+          const conversationRows: any[] = personalChats.map((chat: any) => {
+            const remoteJid = chat.id || chat.remoteJid;
+            const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
+            const name = chat.name || chat.pushName || chat.contact || phone;
+            const unreadCount = chat.unreadCount || 0;
+            const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
+            return {
+              connection_id: conn.id,
+              remote_jid: remoteJid,
+              contact_name: name,
+              contact_phone: phone,
+              contact_profile_pic: profilePicUrl,
+              last_message: chat.lastMessage?.content || chat.lastMessage?.message?.conversation || null,
+              last_message_at: chat.updatedAt ? new Date(chat.updatedAt).toISOString() : new Date().toISOString(),
+              unread_count: unreadCount,
+              status: unreadCount > 0 ? 'pending' : 'closed',
+            };
+          });
+
+          for (let i = 0; i < conversationRows.length; i += BATCH_SIZE) {
+            const batch = conversationRows.slice(i, i + BATCH_SIZE);
+            const { error: upsertErr } = await supabaseAdmin
+              .from('whatsapp_conversations')
+              .upsert(batch, { onConflict: 'connection_id,remote_jid' });
+
+            if (upsertErr) {
+              console.error(`sync_history batch error (offset ${i}):`, upsertErr.message);
+            }
+
+            processed = Math.min(i + BATCH_SIZE, conversationRows.length);
+            // Update progress — triggers Realtime event
+            await supabaseAdmin.from('whatsapp_sync_jobs').update({ processed_chats: processed }).eq('id', jobId);
+          }
+
+          // PHASE 2: Link contacts (best effort)
+          for (const chat of personalChats) {
+            try {
+              const remoteJid = chat.id || chat.remoteJid;
+              const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
+              const name = chat.name || chat.pushName || chat.contact || phone;
+              const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
+
+              const { data: existingContacts } = await supabaseAdmin
+                .from('contacts')
+                .select('id, avatar_url')
+                .eq('broker_id', userId)
+                .or(`phone.eq.${phone},whatsapp.eq.${phone},phone.eq.+${phone},whatsapp.eq.+${phone}`)
+                .limit(1);
+
+              let contactId: string | null = null;
+              if (existingContacts && existingContacts.length > 0) {
+                contactId = existingContacts[0].id;
+                if (profilePicUrl && !existingContacts[0].avatar_url) {
+                  await supabaseAdmin.from('contacts').update({ avatar_url: profilePicUrl }).eq('id', contactId);
+                }
+              } else if (name && name !== phone) {
+                const { data: newContact, error: newContactErr } = await supabaseAdmin
+                  .from('contacts')
+                  .insert({ broker_id: userId, name, phone, whatsapp: phone, avatar_url: profilePicUrl, categories: ['lead'], metadata: { origin: 'whatsapp_sync' } })
+                  .select('id')
+                  .single();
+                if (!newContactErr && newContact) contactId = newContact.id;
+              }
+
+              if (contactId) {
+                await supabaseAdmin.from('whatsapp_conversations').update({ contact_id: contactId, lead_id: contactId }).eq('connection_id', conn.id).eq('remote_jid', remoteJid);
+              }
+            } catch (chatErr) {
+              console.error('sync_history contact link error:', chatErr);
+            }
+          }
+
+          // Mark completed
+          await supabaseAdmin.from('whatsapp_sync_jobs').update({
+            status: 'completed',
+            processed_chats: personalChats.length,
+            completed_at: new Date().toISOString(),
+          }).eq('id', jobId);
+
+          console.log(`sync_history job ${jobId}: completed (${personalChats.length} chats)`);
+        } catch (e) {
+          console.error(`sync_history job ${jobId} failed:`, e);
+          await supabaseAdmin.from('whatsapp_sync_jobs').update({
+            status: 'failed',
+            error_message: e.message || 'Unknown error',
+            completed_at: new Date().toISOString(),
+          }).eq('id', jobId);
+        }
+      };
+
+      // Fire and forget — EdgeRuntime.waitUntil keeps the function alive
+      // @ts-ignore: Deno Deploy / Supabase Edge Runtime supports this
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+        EdgeRuntime.waitUntil(processSync());
+      } else {
+        // Fallback: run in background without awaiting (best effort)
+        processSync().catch(e => console.error('Background sync error:', e));
+      }
+
+      // Respond immediately with 202 Accepted
+      return new Response(JSON.stringify({ 
+        success: true, 
+        job_id: jobId,
+        message: 'Sincronização iniciada em segundo plano.',
+      }), {
+        status: 202,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({ error: 'Invalid action. Use: create, refresh_qr, status, disconnect, sync_recent, sync_history' }), {
