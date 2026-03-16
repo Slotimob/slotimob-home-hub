@@ -26,6 +26,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   conversation: WhatsAppConversation;
+  onSuccess?: (dealId: string, contactId: string) => void;
 }
 
 interface PropertyOption {
