@@ -221,6 +221,11 @@ export default function WhatsApp() {
     setShowDealDialog(true);
   }, []);
 
+  const handleDealCreated = useCallback((dealId: string, contactId: string) => {
+    // Update selectedConversation locally so CrmContextPanel re-renders with the new contact/deal
+    setSelectedConversation(prev => prev ? { ...prev, contact_id: contactId, deal_id: dealId } : prev);
+  }, []);
+
   const handleSendMedia = useCallback(async (file: File) => {
     if (!selectedConversation || !user) return;
 
