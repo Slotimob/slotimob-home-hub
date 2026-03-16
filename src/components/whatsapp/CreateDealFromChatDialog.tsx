@@ -34,7 +34,7 @@ interface PropertyOption {
   name: string;
 }
 
-export function CreateDealFromChatDialog({ open, onOpenChange, conversation }: Props) {
+export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onSuccess }: Props) {
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
