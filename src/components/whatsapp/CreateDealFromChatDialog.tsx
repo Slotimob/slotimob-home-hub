@@ -135,10 +135,10 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
 
       if (dealErr) throw dealErr;
 
-      // 5. Link conversation to contact + deal
+      // 5. Link conversation to contact + deal + update contact_name
       await supabase
         .from('whatsapp_conversations')
-        .update({ contact_id: contactId, deal_id: newDeal.id })
+        .update({ contact_id: contactId, deal_id: newDeal.id, contact_name: contactName })
         .eq('id', conversation.id);
 
       toast({ title: 'Negociação e Contato criados com sucesso!' });

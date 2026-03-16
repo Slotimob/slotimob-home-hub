@@ -271,10 +271,10 @@ export function ChatArea({
           </div>
         </div>
 
-        {/* Agent Badge + Reassignment */}
-        {assignedUserId && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {isOwner && teamMembers.length > 0 && onReassign && conversationId ? (
+        {/* Agent Badge + Reassignment / Initial Assignment */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {assignedUserId ? (
+            isOwner && teamMembers.length > 0 && onReassign && conversationId ? (
               <Select
                 value={assignedUserId}
                 onValueChange={(val) => onReassign(conversationId, val)}
@@ -298,9 +298,28 @@ export function ChatArea({
                 <UserCheck className="h-3 w-3" />
                 {agentName || 'Agente'}
               </Badge>
-            )}
-          </div>
-        )}
+            )
+          ) : isOwner && teamMembers.length > 0 && onReassign && conversationId ? (
+            <Select
+              value=""
+              onValueChange={(val) => onReassign(conversationId, val)}
+            >
+              <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs border-primary/30 bg-primary/5">
+                <div className="flex items-center gap-1.5">
+                  <UserCheck className="h-3 w-3 text-primary" />
+                  <SelectValue placeholder="Atribuir agente" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {teamMembers.map(m => (
+                  <SelectItem key={m.id} value={m.id} className="text-xs">
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
           {showCrmToggle && (
