@@ -492,10 +492,10 @@ serve(async (req) => {
           // PHASE 2: Link contacts (best effort)
           for (const chat of personalChats) {
             try {
-              const remoteJid = chat.id || chat.remoteJid;
+              const remoteJid = chat.remoteJid || chat.id;
               const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '');
-              const name = chat.name || chat.pushName || chat.contact || phone;
-              const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || null;
+              const name = chat.pushName || chat.name || chat.contact?.name || chat.contact || phone;
+              const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || chat.profilePicture || null;
 
               const { data: existingContacts } = await supabaseAdmin
                 .from('contacts')
