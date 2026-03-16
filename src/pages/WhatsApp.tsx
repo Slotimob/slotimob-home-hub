@@ -427,6 +427,7 @@ export default function WhatsApp() {
           open={showDealDialog}
           onOpenChange={setShowDealDialog}
           conversation={selectedConversation}
+          onSuccess={handleDealCreated}
         />
       )}
     </SidebarProvider>
