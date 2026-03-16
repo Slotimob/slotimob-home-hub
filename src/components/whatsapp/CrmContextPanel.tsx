@@ -51,9 +51,10 @@ function getActivityIcon(type: string) {
   }
 }
 
-export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal }: CrmContextPanelProps) {
-  const contactId = contact?.id || null;
-  const { deals, loading: dealsLoading } = useContactDeals(contactId);
+export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated }: CrmContextPanelProps) {
+  const contactId = contact?.id || conversation?.contact_id || null;
+  const [dealRefetchKey, setDealRefetchKey] = useState(0);
+  const { deals, loading: dealsLoading } = useContactDeals(contactId, dealRefetchKey);
   const { activities, loading: activitiesLoading } = useContactActivities(contactId);
   const { toast } = useToast();
   const [updatingStage, setUpdatingStage] = useState(false);
