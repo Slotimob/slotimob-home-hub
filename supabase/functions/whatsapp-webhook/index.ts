@@ -591,6 +591,19 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     conversation = existingConv;
     // Update existing conversation metadata
     const resolvedContactId = contactId || conversation.contact_id;
+    // Resolve contact name from DB if available
+    let resolvedContactName = conversation.contact_name;
+    if (resolvedContactId && resolvedContactId !== conversation.contact_id) {
+      const { data: linkedContact } = await supabaseAdmin
+        .from('contacts')
+        .select('name')
+        .eq('id', resolvedContactId)
+        .maybeSingle();
+      if (linkedContact?.name) {
+        resolvedContactName = linkedContact.name;
+      }
+    }
+
     const updatePayload: Record<string, any> = {
       contact_id: resolvedContactId,
       lead_id: resolvedContactId || conversation.lead_id,
@@ -599,7 +612,8 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     };
     if (direction === 'incoming') {
       updatePayload.unread_count = (conversation.unread_count || 0) + 1;
-      updatePayload.contact_name = pushName || senderPhone || conversation.contact_name || 'Desconhecido';
+      // Prefer linked contact name > pushName > existing name > phone fallback
+      updatePayload.contact_name = resolvedContactName || pushName || conversation.contact_name || senderPhone || 'Desconhecido';
       // Re-open closed conversations when customer sends a new message
       if (conversation.status === 'closed') {
         updatePayload.status = 'pending';
