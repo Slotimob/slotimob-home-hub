@@ -46,6 +46,7 @@ const Integrations = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [isSyncingHistory, setIsSyncingHistory] = useState(false);
   const [progress, setProgress] = useState(0);
   const [qrTimer, setQrTimer] = useState<number | null>(null);
   const [qrExpired, setQrExpired] = useState(false);
