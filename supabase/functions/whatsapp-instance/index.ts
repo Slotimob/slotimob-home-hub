@@ -443,9 +443,10 @@ serve(async (req) => {
           }
 
           const personalChats = chatList.filter((chat: any) => {
-            const jid = chat.id || chat.remoteJid;
-            return jid && jid.endsWith('@s.whatsapp.net') && jid !== 'status@broadcast';
+            const jid = chat.remoteJid || chat.id || '';
+            return jid.endsWith('@s.whatsapp.net') && jid !== 'status@broadcast';
           });
+          console.log(`sync_history: ${chatList.length} total chats -> ${personalChats.length} personal chats after filter`);
 
           // Update total count
           await supabaseAdmin.from('whatsapp_sync_jobs').update({ total_chats: personalChats.length }).eq('id', jobId);
