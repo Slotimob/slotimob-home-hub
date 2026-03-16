@@ -221,10 +221,22 @@ export default function WhatsApp() {
     setShowDealDialog(true);
   }, []);
 
-  const handleDealCreated = useCallback((dealId: string, contactId: string) => {
-    // Update selectedConversation locally so CrmContextPanel re-renders with the new contact/deal
-    setSelectedConversation(prev => prev ? { ...prev, contact_id: contactId, deal_id: dealId } : prev);
-  }, []);
+  const handleDealCreated = useCallback(async (dealId: string, contactId: string) => {
+    // Refetch the full conversation with joins to get fresh contacts/deals data
+    if (!selectedConversation) return;
+    const { data: fresh, error } = await supabase
+      .from('whatsapp_conversations')
+      .select('*')
+      .eq('id', selectedConversation.id)
+      .single();
+
+    if (!error && fresh) {
+      setSelectedConversation(fresh);
+    } else {
+      // Fallback: at least update IDs locally
+      setSelectedConversation(prev => prev ? { ...prev, contact_id: contactId, deal_id: dealId } : prev);
+    }
+  }, [selectedConversation]);
 
   const handleSendMedia = useCallback(async (file: File) => {
     if (!selectedConversation || !user) return;

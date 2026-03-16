@@ -45,7 +45,7 @@ serve(async (req) => {
 
   try {
     const rawBody = await req.text();
-    console.log('Webhook raw (500ch):', rawBody.substring(0, 500));
+    console.log('WEBHOOK RECEIVED (500ch):', rawBody.substring(0, 500));
     
     const body = JSON.parse(rawBody);
 
