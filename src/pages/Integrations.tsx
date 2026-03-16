@@ -27,6 +27,57 @@ const COMPATIBLE_PORTALS = [
 
 const QR_EXPIRY_SECONDS = 45;
 
+/** Hook to listen for sync job progress via Realtime */
+function useSyncJobListener(effectiveBrokerId: string | null) {
+  const [activeJob, setActiveJob] = useState<{ id: string; status: string; total_chats: number; processed_chats: number } | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!effectiveBrokerId) return;
+
+    // Check for existing processing job on mount
+    supabase
+      .from('whatsapp_sync_jobs')
+      .select('id, status, total_chats, processed_chats')
+      .eq('broker_id', effectiveBrokerId)
+      .eq('status', 'processing')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setActiveJob(data[0] as any);
+        }
+      });
+
+    const channel = supabase
+      .channel('sync-jobs-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'whatsapp_sync_jobs',
+        filter: `broker_id=eq.${effectiveBrokerId}`,
+      }, (payload) => {
+        const job = payload.new as any;
+        if (!job) return;
+
+        if (job.status === 'processing') {
+          setActiveJob({ id: job.id, status: job.status, total_chats: job.total_chats, processed_chats: job.processed_chats });
+        } else if (job.status === 'completed') {
+          setActiveJob(null);
+          toast({ title: 'Histórico sincronizado!', description: `${job.processed_chats || 0} conversas importadas com sucesso.` });
+        } else if (job.status === 'failed') {
+          setActiveJob(null);
+          toast({ title: 'Erro na sincronização', description: job.error_message || 'Falha desconhecida.', variant: 'destructive' });
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [effectiveBrokerId, toast]);
+
+  return activeJob;
+}
+
 const Integrations = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -46,12 +97,14 @@ const Integrations = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [isSyncingHistory, setIsSyncingHistory] = useState(false);
   const [progress, setProgress] = useState(0);
   const [qrTimer, setQrTimer] = useState<number | null>(null);
   const [qrExpired, setQrExpired] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
+
+  // Realtime sync job listener
+  const activeJob = useSyncJobListener(effectiveBrokerId);
 
   // Instance limit — 1 connection per workspace
   const instancesLimit = features?.whatsapp_instances_limit ?? 0;
@@ -431,29 +484,32 @@ const Integrations = () => {
                         {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
                       </Button>
                     </div>
+                    {/* Sync History — async background job */}
                     <Button
                       variant="outline"
                       className="w-full"
                       onClick={async () => {
-                        setIsSyncingHistory(true);
                         try {
                           const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
                             body: { action: 'sync_history' },
                           });
                           if (error) throw error;
                           if (data?.error) throw new Error(data.error);
-                          toast({ title: 'Histórico sincronizado!', description: data?.message || `${data?.synced || 0} conversas importadas.` });
+                          toast({ title: 'Sincronização iniciada!', description: 'Pode continuar a usar o sistema normalmente.' });
                         } catch (err: any) {
                           toast({ title: 'Erro ao sincronizar', description: err.message, variant: 'destructive' });
-                        } finally {
-                          setIsSyncingHistory(false);
                         }
                       }}
-                      disabled={isSyncingHistory}
+                      disabled={!!activeJob}
                     >
-                      {isSyncingHistory ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                      {isSyncingHistory ? 'Sincronizando conversas...' : 'Sincronizar Histórico'}
+                      {activeJob ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                      {activeJob 
+                        ? `Sincronizando... (${activeJob.processed_chats}/${activeJob.total_chats || '?'})`
+                        : 'Sincronizar Histórico'}
                     </Button>
+                    {activeJob && (
+                      <Progress value={activeJob.total_chats > 0 ? (activeJob.processed_chats / activeJob.total_chats) * 100 : 0} className="h-1.5" />
+                    )}
                   </div>
                 ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
                   <Button className="w-full" onClick={() => {
