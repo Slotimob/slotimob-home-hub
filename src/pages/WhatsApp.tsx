@@ -222,13 +222,13 @@ export default function WhatsApp() {
   }, []);
 
   const handleDealCreated = useCallback(async (dealId: string, contactId: string) => {
-    // Refetch the full conversation with joins to get fresh contacts/deals data
     if (!selectedConversation) return;
+    // Deep refetch to get all updated fields (contact_name, contact_id, deal_id)
     const { data: fresh, error } = await supabase
       .from('whatsapp_conversations')
       .select('*')
       .eq('id', selectedConversation.id)
-      .single();
+      .maybeSingle();
 
     if (!error && fresh) {
       setSelectedConversation(fresh);
