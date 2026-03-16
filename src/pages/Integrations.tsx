@@ -46,6 +46,7 @@ const Integrations = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [isSyncingHistory, setIsSyncingHistory] = useState(false);
   const [progress, setProgress] = useState(0);
   const [qrTimer, setQrTimer] = useState<number | null>(null);
   const [qrExpired, setQrExpired] = useState(false);
@@ -420,13 +421,38 @@ const Integrations = () => {
               {/* Action Buttons */}
               {canManageWhatsApp ? (
                 isConnected ? (
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => navigate('/whatsapp')}>
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Abrir Chat
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp} disabled={isDisconnecting}>
-                      {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1" onClick={() => navigate('/whatsapp')}>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Abrir Chat
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleDisconnectWhatsApp} disabled={isDisconnecting}>
+                        {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Desconectar'}
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={async () => {
+                        setIsSyncingHistory(true);
+                        try {
+                          const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
+                            body: { action: 'sync_history' },
+                          });
+                          if (error) throw error;
+                          if (data?.error) throw new Error(data.error);
+                          toast({ title: 'Histórico sincronizado!', description: data?.message || `${data?.synced || 0} conversas importadas.` });
+                        } catch (err: any) {
+                          toast({ title: 'Erro ao sincronizar', description: err.message, variant: 'destructive' });
+                        } finally {
+                          setIsSyncingHistory(false);
+                        }
+                      }}
+                      disabled={isSyncingHistory}
+                    >
+                      {isSyncingHistory ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                      {isSyncingHistory ? 'Sincronizando conversas...' : 'Sincronizar Histórico'}
                     </Button>
                   </div>
                 ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
