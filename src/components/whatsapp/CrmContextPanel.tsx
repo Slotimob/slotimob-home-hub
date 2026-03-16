@@ -26,6 +26,7 @@ interface CrmContextPanelProps {
   contact: any | null;
   contactLoading?: boolean;
   onCreateDeal?: () => void;
+  onDealCreated?: (dealId: string, contactId: string) => void;
 }
 
 const STAGE_LABELS: Record<string, string> = {
