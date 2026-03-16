@@ -413,6 +413,7 @@ export default function WhatsApp() {
                   contact={contact}
                   contactLoading={contactLoading}
                   onCreateDeal={canCreateDeal ? handleCreateDeal : undefined}
+                  onDealCreated={handleDealCreated}
                 />
               </div>
             )}
