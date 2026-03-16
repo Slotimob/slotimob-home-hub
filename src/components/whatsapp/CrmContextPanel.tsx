@@ -26,6 +26,7 @@ interface CrmContextPanelProps {
   contact: any | null;
   contactLoading?: boolean;
   onCreateDeal?: () => void;
+  onDealCreated?: (dealId: string, contactId: string) => void;
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -50,9 +51,10 @@ function getActivityIcon(type: string) {
   }
 }
 
-export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal }: CrmContextPanelProps) {
-  const contactId = contact?.id || null;
-  const { deals, loading: dealsLoading } = useContactDeals(contactId);
+export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated }: CrmContextPanelProps) {
+  const contactId = contact?.id || conversation?.contact_id || null;
+  const [dealRefetchKey, setDealRefetchKey] = useState(0);
+  const { deals, loading: dealsLoading } = useContactDeals(contactId, dealRefetchKey);
   const { activities, loading: activitiesLoading } = useContactActivities(contactId);
   const { toast } = useToast();
   const [updatingStage, setUpdatingStage] = useState(false);
@@ -299,6 +301,10 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           open={isDealDialogOpen}
           onOpenChange={setIsDealDialogOpen}
           conversation={conversation}
+          onSuccess={(dealId, cId) => {
+            setDealRefetchKey(k => k + 1);
+            onDealCreated?.(dealId, cId);
+          }}
         />
       )}
     </ScrollArea>

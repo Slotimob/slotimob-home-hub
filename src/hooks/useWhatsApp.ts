@@ -429,7 +429,7 @@ export function useSendMessage() {
 
 // ─── useContactDeals ────────────────────────────────────────────────
 
-export function useContactDeals(contactId: string | null) {
+export function useContactDeals(contactId: string | null, refetchKey: number = 0) {
   const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -463,7 +463,7 @@ export function useContactDeals(contactId: string | null) {
     };
 
     fetch();
-  }, [contactId]);
+  }, [contactId, refetchKey]);
 
   return { deals, loading };
 }

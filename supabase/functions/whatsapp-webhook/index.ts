@@ -599,7 +599,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     };
     if (direction === 'incoming') {
       updatePayload.unread_count = (conversation.unread_count || 0) + 1;
-      updatePayload.contact_name = pushName;
+      updatePayload.contact_name = pushName || senderPhone || conversation.contact_name || 'Desconhecido';
       // Re-open closed conversations when customer sends a new message
       if (conversation.status === 'closed') {
         updatePayload.status = 'pending';
@@ -618,34 +618,42 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     const convStatus = isNewContactAssignment ? 'active' : 'pending';
     const effectiveAssignee = isNewContactAssignment ? assignedAgentId : null;
 
-    console.log(`Auto-criando conversa para ${remoteJid} status=${convStatus} assignee=${effectiveAssignee}`);
+    // Ensure contact_name is never null — use pushName with phone fallback
+    const safeContactName = pushName || senderPhone || remoteJid.split('@')[0] || 'Desconhecido';
 
-    const { data: newConv, error: createError } = await supabaseAdmin
-      .from('whatsapp_conversations')
-      .insert({
-        connection_id: connection.id,
-        contact_id: contactId,
-        lead_id: contactId,
-        remote_jid: remoteJid,
-        contact_name: pushName,
-        contact_phone: cleanPhone,
-        last_message: lastMsgPreview,
-        last_message_at: messageTimestamp,
-        unread_count: direction === 'incoming' ? 1 : 0,
-        status: convStatus,
-        assigned_user_id: effectiveAssignee,
-        assigned_at: effectiveAssignee ? new Date().toISOString() : null,
-        ...(autoDealId ? { deal_id: autoDealId } : {}),
-      })
-      .select()
-      .single();
+    console.log(`Auto-criando conversa para ${remoteJid} status=${convStatus} assignee=${effectiveAssignee} name=${safeContactName}`);
 
-    if (createError) {
-      console.error('Erro criar conversa:', createError);
+    try {
+      const { data: newConv, error: createError } = await supabaseAdmin
+        .from('whatsapp_conversations')
+        .insert({
+          connection_id: connection.id,
+          contact_id: contactId,
+          lead_id: contactId,
+          remote_jid: remoteJid,
+          contact_name: safeContactName,
+          contact_phone: cleanPhone,
+          last_message: lastMsgPreview,
+          last_message_at: messageTimestamp,
+          unread_count: direction === 'incoming' ? 1 : 0,
+          status: convStatus,
+          assigned_user_id: effectiveAssignee,
+          assigned_at: effectiveAssignee ? new Date().toISOString() : null,
+          ...(autoDealId ? { deal_id: autoDealId } : {}),
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Erro criar conversa:', createError, JSON.stringify({ remoteJid, safeContactName, cleanPhone, connectionId: connection.id }));
+        return;
+      }
+      conversation = newConv;
+      console.log(`✅ Conversa ${conversation.id} auto-criada para ${cleanPhone}`);
+    } catch (convCreateErr) {
+      console.error('Exception ao criar conversa:', convCreateErr);
       return;
     }
-    conversation = newConv;
-    console.log(`✅ Conversa ${conversation.id} auto-criada para ${cleanPhone}`);
   }
 
   // Upsert message (dedup by conversation_id + message_id)

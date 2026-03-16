@@ -26,6 +26,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   conversation: WhatsAppConversation;
+  onSuccess?: (dealId: string, contactId: string) => void;
 }
 
 interface PropertyOption {
@@ -33,7 +34,7 @@ interface PropertyOption {
   name: string;
 }
 
-export function CreateDealFromChatDialog({ open, onOpenChange, conversation }: Props) {
+export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onSuccess }: Props) {
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -146,6 +147,7 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation }: P
       setValue('');
       setStage('new_lead');
       setPropertyId('');
+      onSuccess?.(newDeal.id, contactId!);
     } catch (err: any) {
       console.error('Create deal error:', err);
       toast({ title: 'Erro ao criar negociação', description: err.message, variant: 'destructive' });
