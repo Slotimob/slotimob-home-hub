@@ -599,7 +599,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     };
     if (direction === 'incoming') {
       updatePayload.unread_count = (conversation.unread_count || 0) + 1;
-      updatePayload.contact_name = pushName;
+      updatePayload.contact_name = pushName || senderPhone || conversation.contact_name || 'Desconhecido';
       // Re-open closed conversations when customer sends a new message
       if (conversation.status === 'closed') {
         updatePayload.status = 'pending';
