@@ -271,13 +271,30 @@ export function useConversations(connectionId: string | null) {
           table: 'whatsapp_conversations',
           filter: `connection_id=eq.${connectionId}`,
         },
-        (payload) => {
+        async (payload) => {
           if (payload.eventType === 'INSERT') {
-            setConversations((prev) => [payload.new as WhatsAppConversation, ...prev]);
+            // Deep fetch to get joins
+            const { data: fresh } = await supabase
+              .from('whatsapp_conversations')
+              .select('*')
+              .eq('id', (payload.new as any).id)
+              .maybeSingle();
+            if (fresh) {
+              setConversations((prev) => [fresh as WhatsAppConversation, ...prev]);
+            } else {
+              setConversations((prev) => [payload.new as WhatsAppConversation, ...prev]);
+            }
           } else if (payload.eventType === 'UPDATE') {
+            // Deep fetch instead of shallow merge to preserve contact_name, deal_id etc.
+            const { data: fresh } = await supabase
+              .from('whatsapp_conversations')
+              .select('*')
+              .eq('id', (payload.new as any).id)
+              .maybeSingle();
+            const updated = (fresh as WhatsAppConversation) || (payload.new as WhatsAppConversation);
             setConversations((prev) =>
               prev
-                .map((c) => (c.id === (payload.new as WhatsAppConversation).id ? (payload.new as WhatsAppConversation) : c))
+                .map((c) => (c.id === updated.id ? updated : c))
                 .sort((a, b) => {
                   const aTime = a.last_message_at || a.created_at;
                   const bTime = b.last_message_at || b.created_at;

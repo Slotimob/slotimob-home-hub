@@ -399,6 +399,32 @@ serve(async (req) => {
       // Background processing function
       const processSync = async () => {
         try {
+          // PHASE 0: Force webhook registration for legacy instances
+          const webhookUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/whatsapp-webhook`;
+          try {
+            const webhookSetPayload = {
+              enabled: true,
+              url: webhookUrl,
+              byEvents: true,
+              base64: true,
+              webhookByEvents: true,
+              events: [
+                'MESSAGES_UPSERT',
+                'MESSAGES_UPDATE',
+                'SEND_MESSAGE',
+              ],
+            };
+            console.log(`sync_history: Force-registering webhook for ${conn.instance_name}`);
+            const wRes = await fetch(`${evolutionApiUrl}/webhook/set/${conn.instance_name}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+              body: JSON.stringify(webhookSetPayload),
+            });
+            console.log(`sync_history: Webhook registration status=${wRes.status}`);
+          } catch (wErr) {
+            console.error('sync_history: Webhook registration failed (non-blocking):', wErr.message);
+          }
+
           // Try multiple Evolution API endpoints/methods to fetch chats
           const fetchUrl = `${evolutionApiUrl}/chat/findChats/${conn.instance_name}`;
           console.log(`sync_history: Fetching chats from: ${fetchUrl}`);
