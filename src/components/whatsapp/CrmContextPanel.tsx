@@ -53,14 +53,30 @@ function getActivityIcon(type: string) {
 
 export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated }: CrmContextPanelProps) {
   const contactId = contact?.id || conversation?.contact_id || null;
+  const dealId = (conversation as any)?.deal_id || null;
   const [dealRefetchKey, setDealRefetchKey] = useState(0);
   const { deals, loading: dealsLoading } = useContactDeals(contactId, dealRefetchKey);
   const { activities, loading: activitiesLoading } = useContactActivities(contactId);
   const { toast } = useToast();
   const [updatingStage, setUpdatingStage] = useState(false);
   const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
+  const [directDeal, setDirectDeal] = useState<any>(null);
 
-  const activeDeal = deals.length > 0 ? deals[0] : null;
+  // If no deals found via contact but conversation has deal_id, fetch directly
+  useEffect(() => {
+    if (deals.length > 0 || !dealId) {
+      setDirectDeal(null);
+      return;
+    }
+    supabase
+      .from('deals')
+      .select('*, custom_stage:pipeline_stages(name, color), property:properties(name), unit:units(title)')
+      .eq('id', dealId)
+      .maybeSingle()
+      .then(({ data }) => setDirectDeal(data));
+  }, [dealId, deals.length, dealRefetchKey]);
+
+  const activeDeal = deals.length > 0 ? deals[0] : directDeal;
 
   const handleStageChange = useCallback(async (newStage: string) => {
     if (!activeDeal) return;
