@@ -398,13 +398,49 @@ serve(async (req) => {
       // Background processing function
       const processSync = async () => {
         try {
-          const chatsRes = await fetch(`${evolutionApiUrl}/chat/findChats/${conn.instance_name}`, {
+          // Try multiple Evolution API endpoints/methods to fetch chats
+          const fetchUrl = `${evolutionApiUrl}/chat/findChats/${conn.instance_name}`;
+          console.log(`sync_history: Fetching chats from: ${fetchUrl}`);
+
+          let chatsRes = await fetch(fetchUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-            body: JSON.stringify({ where: { id: { not: null } } }),
+            body: JSON.stringify({}),
           });
-          const chats = await chatsRes.json();
-          const chatList = Array.isArray(chats) ? chats : [];
+
+          // If POST with empty body fails, try GET
+          if (!chatsRes.ok) {
+            const errText = await chatsRes.text();
+            console.log(`sync_history: POST returned ${chatsRes.status}: ${errText.slice(0, 300)}. Trying GET...`);
+            chatsRes = await fetch(fetchUrl, {
+              method: 'GET',
+              headers: { 'apikey': evolutionApiKey },
+            });
+          }
+
+          if (!chatsRes.ok) {
+            const errText = await chatsRes.text();
+            console.error(`sync_history: Evolution API error ${chatsRes.status}: ${errText.slice(0, 500)}`);
+            throw new Error(`Evolution API returned ${chatsRes.status}`);
+          }
+
+          const rawData = await chatsRes.json();
+          
+          // Robust extraction: handle array, .data, .chats, or wrapped formats
+          const chatList = Array.isArray(rawData) 
+            ? rawData 
+            : Array.isArray(rawData?.data) 
+              ? rawData.data 
+              : Array.isArray(rawData?.chats) 
+                ? rawData.chats 
+                : [];
+
+          console.log(`sync_history: Raw response type=${typeof rawData}, isArray=${Array.isArray(rawData)}, keys=${rawData && typeof rawData === 'object' ? Object.keys(rawData).slice(0, 10).join(',') : 'N/A'}, extracted=${chatList.length} items`);
+          if (chatList.length > 0) {
+            console.log(`sync_history: First chat sample: ${JSON.stringify(chatList[0]).slice(0, 500)}`);
+          } else {
+            console.log(`sync_history: Raw data sample: ${JSON.stringify(rawData).slice(0, 500)}`);
+          }
 
           const personalChats = chatList.filter((chat: any) => {
             const jid = chat.id || chat.remoteJid;
