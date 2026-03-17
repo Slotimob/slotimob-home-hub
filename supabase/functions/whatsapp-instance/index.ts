@@ -127,29 +127,33 @@ serve(async (req) => {
       // Step 4: Registrar webhook via /webhook/set/{instanceName} (requisição SEPARADA)
       try {
         const webhookSetPayload = {
-          enabled: true,
-          url: webhookUrl,
-          byEvents: true,
-          base64: true,
-          webhookByEvents: true,
-          events: [
-            'QRCODE_UPDATED',
-            'CONNECTION_UPDATE',
-            'MESSAGES_UPSERT',
-            'MESSAGES_UPDATE',
-            'MESSAGES_SET',
-            'SEND_MESSAGE',
-          ],
+          webhook: {
+            enabled: true,
+            url: webhookUrl,
+            byEvents: false,
+            base64: true,
+            events: [
+              'QRCODE_UPDATED',
+              'CONNECTION_UPDATE',
+              'MESSAGES_UPSERT',
+              'MESSAGES_UPDATE',
+              'MESSAGES_SET',
+              'SEND_MESSAGE',
+            ],
+          },
         };
 
-        console.log(`Registrando webhook em ${evolutionApiUrl}/webhook/set/${instanceName}`);
+        console.log(`Registrando webhook em ${evolutionApiUrl}/webhook/set/${instanceName}`, JSON.stringify(webhookSetPayload));
         const webhookRes = await fetch(`${evolutionApiUrl}/webhook/set/${instanceName}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
           body: JSON.stringify(webhookSetPayload),
         });
-        const webhookData = await webhookRes.json();
-        console.log('Webhook set response:', webhookRes.status, JSON.stringify(webhookData).slice(0, 300));
+        const webhookText = await webhookRes.text();
+        console.log('Webhook set response:', webhookRes.status, webhookText.slice(0, 500));
+        if (!webhookRes.ok) {
+          console.error(`❌ Webhook set FAILED (${webhookRes.status}): ${webhookText}`);
+        }
       } catch (e) {
         console.error('Erro ao registrar webhook (não-bloqueante):', e.message);
       }
