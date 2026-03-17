@@ -51,19 +51,40 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
   const contactName = conversation.contact_name || conversation.contact_phone;
   const contactPhone = conversation.contact_phone;
 
-  // Fetch properties when dialog opens
+  // Fetch properties + units when dialog opens
   useEffect(() => {
     if (!open || !effectiveBrokerId) return;
     setPropertiesLoading(true);
-    supabase
-      .from('properties')
-      .select('id, name')
-      .eq('broker_id', effectiveBrokerId)
-      .order('name')
-      .then(({ data }) => {
-        setProperties(data || []);
-        setPropertiesLoading(false);
+
+    Promise.all([
+      supabase
+        .from('properties')
+        .select('id, name')
+        .eq('broker_id', effectiveBrokerId)
+        .order('name'),
+      supabase
+        .from('units')
+        .select('id, title, property_id, properties:property_id(name)')
+        .eq('broker_id', effectiveBrokerId)
+        .order('title'),
+    ]).then(([propRes, unitRes]) => {
+      const assets: AssetOption[] = [];
+
+      // Properties (empreendimentos)
+      (propRes.data || []).forEach(p => {
+        assets.push({ id: p.id, name: `🏢 ${p.name}`, type: 'property' });
       });
+
+      // Units (unidades individuais)
+      (unitRes.data || []).forEach(u => {
+        const propName = (u as any).properties?.name;
+        const label = propName ? `🏠 ${u.title} (${propName})` : `🏠 ${u.title}`;
+        assets.push({ id: u.id, name: label, type: 'unit' });
+      });
+
+      setProperties(assets);
+      setPropertiesLoading(false);
+    });
   }, [open, effectiveBrokerId]);
 
   const handleSave = useCallback(async () => {
