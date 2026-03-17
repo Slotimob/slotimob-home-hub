@@ -408,24 +408,29 @@ serve(async (req) => {
           const webhookUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/whatsapp-webhook`;
           try {
             const webhookSetPayload = {
-              enabled: true,
-              url: webhookUrl,
-              byEvents: true,
-              base64: true,
-              webhookByEvents: true,
-              events: [
-                'MESSAGES_UPSERT',
-                'MESSAGES_UPDATE',
-                'SEND_MESSAGE',
-              ],
+              webhook: {
+                enabled: true,
+                url: webhookUrl,
+                byEvents: false,
+                base64: true,
+                events: [
+                  'MESSAGES_UPSERT',
+                  'MESSAGES_UPDATE',
+                  'SEND_MESSAGE',
+                ],
+              },
             };
-            console.log(`sync_history: Force-registering webhook for ${conn.instance_name}`);
+            console.log(`sync_history: Force-registering webhook for ${conn.instance_name}`, JSON.stringify(webhookSetPayload));
             const wRes = await fetch(`${evolutionApiUrl}/webhook/set/${conn.instance_name}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
               body: JSON.stringify(webhookSetPayload),
             });
-            console.log(`sync_history: Webhook registration status=${wRes.status}`);
+            const wText = await wRes.text();
+            console.log(`sync_history: Webhook registration status=${wRes.status} body=${wText.slice(0, 500)}`);
+            if (!wRes.ok) {
+              console.error(`sync_history: ❌ Webhook set FAILED: ${wText}`);
+            }
           } catch (wErr) {
             console.error('sync_history: Webhook registration failed (non-blocking):', wErr.message);
           }
