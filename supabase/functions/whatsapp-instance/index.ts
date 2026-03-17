@@ -593,14 +593,140 @@ serve(async (req) => {
       });
     }
 
-    // ─── FETCH MESSAGES (Lazy Load) ───
+    // ─── FETCH MESSAGES (Lazy Load for legacy conversations) ───
     if (action === 'fetch_messages') {
-      const { remoteJid, conversationId } = await req.json().catch(() => ({})) || {};
-      // Re-parse: action was already parsed, need body params
-      // Actually body was already parsed above for action. Let's get from the original parse.
+      const { remoteJid, conversationId } = body;
+
+      if (!remoteJid || !conversationId) {
+        return new Response(JSON.stringify({ error: 'remoteJid and conversationId are required' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: conn } = await supabaseAdmin
+        .from('whatsapp_connections')
+        .select('*')
+        .eq('broker_id', userId)
+        .single();
+
+      if (!conn?.instance_name) {
+        return new Response(JSON.stringify({ error: 'No instance found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      try {
+        // Fetch messages from Evolution API
+        const messagesUrl = `${evolutionApiUrl}/chat/findMessages/${conn.instance_name}`;
+        console.log(`fetch_messages: Fetching from ${messagesUrl} for ${remoteJid}`);
+
+        const msgRes = await fetch(messagesUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+          body: JSON.stringify({
+            where: { key: { remoteJid } },
+            limit: 30,
+          }),
+        });
+
+        if (!msgRes.ok) {
+          const errText = await msgRes.text();
+          console.error(`fetch_messages: Evolution API error ${msgRes.status}: ${errText.slice(0, 500)}`);
+          throw new Error(`Evolution API returned ${msgRes.status}`);
+        }
+
+        const rawMessages = await msgRes.json();
+        const msgList = Array.isArray(rawMessages) ? rawMessages
+          : Array.isArray(rawMessages?.data) ? rawMessages.data
+          : Array.isArray(rawMessages?.messages) ? rawMessages.messages
+          : [];
+
+        console.log(`fetch_messages: Got ${msgList.length} messages from Evolution API`);
+
+        if (msgList.length === 0) {
+          return new Response(JSON.stringify({ success: true, count: 0 }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Map to whatsapp_messages rows
+        const rows = msgList.map((msg: any) => {
+          const key = msg.key || {};
+          const messageId = key.id || msg.id || msg.messageId || `evo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          const fromMe = key.fromMe ?? msg.fromMe ?? false;
+          const messageContent = msg.message || {};
+          const text = messageContent.conversation
+            || messageContent.extendedTextMessage?.text
+            || msg.body || msg.content || msg.text || '';
+
+          let messageType = 'text';
+          let mediaUrl = null;
+          let mediaMimeType = null;
+          let mediaFilename = null;
+
+          if (messageContent.imageMessage) {
+            messageType = 'image';
+            mediaUrl = messageContent.imageMessage.url || null;
+            mediaMimeType = messageContent.imageMessage.mimetype || null;
+          } else if (messageContent.audioMessage) {
+            messageType = 'audio';
+            mediaUrl = messageContent.audioMessage.url || null;
+            mediaMimeType = messageContent.audioMessage.mimetype || null;
+          } else if (messageContent.videoMessage) {
+            messageType = 'video';
+            mediaUrl = messageContent.videoMessage.url || null;
+            mediaMimeType = messageContent.videoMessage.mimetype || null;
+          } else if (messageContent.documentMessage) {
+            messageType = 'document';
+            mediaUrl = messageContent.documentMessage.url || null;
+            mediaMimeType = messageContent.documentMessage.mimetype || null;
+            mediaFilename = messageContent.documentMessage.fileName || null;
+          } else if (messageContent.stickerMessage) {
+            messageType = 'sticker';
+          }
+
+          const timestamp = msg.messageTimestamp || msg.timestamp;
+          const sentAt = timestamp
+            ? new Date(typeof timestamp === 'number'
+              ? (timestamp > 1e12 ? timestamp : timestamp * 1000)
+              : Date.parse(timestamp)
+            ).toISOString()
+            : new Date().toISOString();
+
+          return {
+            conversation_id: conversationId,
+            message_id: messageId,
+            direction: fromMe ? 'outgoing' : 'incoming',
+            message_type: messageType,
+            content: text || null,
+            media_url: mediaUrl,
+            media_mime_type: mediaMimeType,
+            media_filename: mediaFilename,
+            status: fromMe ? 'sent' : 'received',
+            sent_at: sentAt,
+          };
+        });
+
+        // Bulk upsert (ignore conflicts on message_id)
+        const { error: insertErr } = await supabaseAdmin
+          .from('whatsapp_messages')
+          .upsert(rows, { onConflict: 'message_id', ignoreDuplicates: true });
+
+        if (insertErr) {
+          console.error('fetch_messages: Insert error:', insertErr.message);
+        }
+
+        return new Response(JSON.stringify({ success: true, count: rows.length }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        console.error('fetch_messages error:', e);
+        return new Response(JSON.stringify({ error: e.message || 'Failed to fetch messages' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
-    // We need to handle fetch_messages before the action parse. Let me restructure:
     return new Response(JSON.stringify({ error: 'Invalid action. Use: create, refresh_qr, status, disconnect, sync_recent, sync_history, fetch_messages' }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
