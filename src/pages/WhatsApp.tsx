@@ -114,7 +114,7 @@ export default function WhatsApp() {
   }, [allConversations, canManage, user, agentFilter]);
 
   const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
-  const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null);
+  const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null, selectedConversation?.remote_jid || null);
   const { sendMessage, sending } = useSendMessage();
   const contactId = selectedConversation?.contact_id || selectedConversation?.lead_id || null;
   const { contact, loading: contactLoading } = useConversationContact(contactId);
