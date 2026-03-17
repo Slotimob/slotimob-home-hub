@@ -44,8 +44,9 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
   const [value, setValue] = useState('');
   const [stage, setStage] = useState('new_lead');
   const [propertyId, setPropertyId] = useState<string>('');
-  const [properties, setProperties] = useState<PropertyOption[]>([]);
+  const [properties, setProperties] = useState<AssetOption[]>([]);
   const [propertiesLoading, setPropertiesLoading] = useState(false);
+  const [selectedAssetType, setSelectedAssetType] = useState<'property' | 'unit' | null>(null);
 
   const contactName = conversation.contact_name || conversation.contact_phone;
   const contactPhone = conversation.contact_phone;
