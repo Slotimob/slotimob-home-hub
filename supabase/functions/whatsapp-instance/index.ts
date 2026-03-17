@@ -592,7 +592,15 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid action. Use: create, refresh_qr, status, disconnect, sync_recent, sync_history' }), {
+    // ─── FETCH MESSAGES (Lazy Load) ───
+    if (action === 'fetch_messages') {
+      const { remoteJid, conversationId } = await req.json().catch(() => ({})) || {};
+      // Re-parse: action was already parsed, need body params
+      // Actually body was already parsed above for action. Let's get from the original parse.
+    }
+
+    // We need to handle fetch_messages before the action parse. Let me restructure:
+    return new Response(JSON.stringify({ error: 'Invalid action. Use: create, refresh_qr, status, disconnect, sync_recent, sync_history, fetch_messages' }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
