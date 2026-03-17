@@ -82,7 +82,8 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    const { action } = await req.json();
+    const body = await req.json();
+    const { action } = body;
     console.log(`whatsapp-instance action=${action} user=${userId}`);
 
     // ─── CREATE INSTANCE ───
