@@ -64,21 +64,23 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         .order('name'),
       supabase
         .from('units')
-        .select('id, title, property_id, properties:property_id(name)')
+        .select('id, unit_number, property_id')
         .eq('broker_id', effectiveBrokerId)
-        .order('title'),
+        .order('unit_number'),
     ]).then(([propRes, unitRes]) => {
       const assets: AssetOption[] = [];
 
       // Properties (empreendimentos)
+      const propsMap = new Map<string, string>();
       (propRes.data || []).forEach(p => {
         assets.push({ id: p.id, name: `🏢 ${p.name}`, type: 'property' });
+        propsMap.set(p.id, p.name);
       });
 
       // Units (unidades individuais)
-      (unitRes.data || []).forEach(u => {
-        const propName = (u as any).properties?.name;
-        const label = propName ? `🏠 ${u.title} (${propName})` : `🏠 ${u.title}`;
+      (unitRes.data || []).forEach((u: any) => {
+        const propName = u.property_id ? propsMap.get(u.property_id) : null;
+        const label = propName ? `🏠 ${u.unit_number} (${propName})` : `🏠 ${u.unit_number}`;
         assets.push({ id: u.id, name: label, type: 'unit' });
       });
 
