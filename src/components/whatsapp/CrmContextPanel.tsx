@@ -62,9 +62,9 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
   const [directDeal, setDirectDeal] = useState<any>(null);
 
-  // If no deals found via contact but conversation has deal_id, fetch directly
+  // If conversation has deal_id, always fetch it directly as backup
   useEffect(() => {
-    if (deals.length > 0 || !dealId) {
+    if (!dealId) {
       setDirectDeal(null);
       return;
     }
@@ -74,7 +74,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
       .eq('id', dealId)
       .maybeSingle()
       .then(({ data }) => setDirectDeal(data));
-  }, [dealId, deals.length, dealRefetchKey]);
+  }, [dealId, dealRefetchKey]);
 
   const activeDeal = deals.length > 0 ? deals[0] : directDeal;
 
