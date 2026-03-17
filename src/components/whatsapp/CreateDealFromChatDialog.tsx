@@ -148,8 +148,13 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         estimated_value: parsedValue,
         initial_task: title || `Negociação via WhatsApp - ${contactName}`,
       };
-      if (propertyId) {
-        dealPayload.property_id = propertyId;
+      if (propertyId && propertyId !== 'none') {
+        const selected = properties.find(p => p.id === propertyId);
+        if (selected?.type === 'unit') {
+          dealPayload.unit_id = propertyId;
+        } else {
+          dealPayload.property_id = propertyId;
+        }
       }
 
       const { data: newDeal, error: dealErr } = await supabase
