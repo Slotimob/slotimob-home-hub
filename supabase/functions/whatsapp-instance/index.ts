@@ -616,29 +616,58 @@ serve(async (req) => {
       }
 
       try {
-        // Fetch messages from Evolution API
+        // Fetch messages from Evolution API (POST with JSON body for v2.x)
         const messagesUrl = `${evolutionApiUrl}/chat/findMessages/${conn.instance_name}`;
-        console.log(`fetch_messages: Fetching from ${messagesUrl} for ${remoteJid}`);
+        const fetchBody = { where: { key: { remoteJid } }, limit: 30 };
+        console.log(`fetch_messages: POST ${messagesUrl}`, JSON.stringify(fetchBody));
 
-        const msgRes = await fetch(messagesUrl, {
+        let msgRes = await fetch(messagesUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
-          body: JSON.stringify({
-            where: { key: { remoteJid } },
-            limit: 30,
-          }),
+          body: JSON.stringify(fetchBody),
         });
+
+        // Fallback: try alternative payload format if first attempt fails
+        if (!msgRes.ok) {
+          const errText1 = await msgRes.text();
+          console.log(`fetch_messages: First attempt failed (${msgRes.status}): ${errText1.slice(0, 300)}`);
+          
+          // Try flat remoteJid format
+          const altBody = { remoteJid, limit: 30 };
+          console.log(`fetch_messages: Trying alternative payload:`, JSON.stringify(altBody));
+          msgRes = await fetch(messagesUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+            body: JSON.stringify(altBody),
+          });
+        }
+
+        // Final fallback: try with query param approach via POST with empty body
+        if (!msgRes.ok) {
+          const errText2 = await msgRes.text();
+          console.log(`fetch_messages: Second attempt failed (${msgRes.status}): ${errText2.slice(0, 300)}`);
+          
+          const qpUrl = `${messagesUrl}?remoteJid=${encodeURIComponent(remoteJid)}&limit=30`;
+          console.log(`fetch_messages: Trying query param URL: ${qpUrl}`);
+          msgRes = await fetch(qpUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+            body: JSON.stringify({}),
+          });
+        }
 
         if (!msgRes.ok) {
           const errText = await msgRes.text();
-          console.error(`fetch_messages: Evolution API error ${msgRes.status}: ${errText.slice(0, 500)}`);
+          console.error(`fetch_messages: All attempts failed. Last: ${msgRes.status}: ${errText.slice(0, 500)}`);
           throw new Error(`Evolution API returned ${msgRes.status}`);
         }
 
         const rawMessages = await msgRes.json();
+        console.log(`fetch_messages: Raw response type=${typeof rawMessages}, isArray=${Array.isArray(rawMessages)}, keys=${typeof rawMessages === 'object' && rawMessages ? Object.keys(rawMessages).join(',') : 'N/A'}`);
         const msgList = Array.isArray(rawMessages) ? rawMessages
           : Array.isArray(rawMessages?.data) ? rawMessages.data
           : Array.isArray(rawMessages?.messages) ? rawMessages.messages
+          : Array.isArray(rawMessages?.records) ? rawMessages.records
           : [];
 
         console.log(`fetch_messages: Got ${msgList.length} messages from Evolution API`);

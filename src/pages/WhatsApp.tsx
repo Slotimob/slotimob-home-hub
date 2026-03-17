@@ -223,11 +223,13 @@ export default function WhatsApp() {
 
   const handleDealCreated = useCallback(async (dealId: string, contactId: string) => {
     if (!selectedConversation) return;
-    // Immediately merge the new deal_id + contact_id into state (no waiting for Realtime)
+    
+    // Immediate optimistic update so UI reacts instantly
     setSelectedConversation(prev =>
       prev ? { ...prev, contact_id: contactId, deal_id: dealId } : prev
     );
-    // Also deep refetch for any other fields
+    
+    // Deep refetch the full conversation row to get all updated fields
     const { data: fresh, error } = await supabase
       .from('whatsapp_conversations')
       .select('*')
