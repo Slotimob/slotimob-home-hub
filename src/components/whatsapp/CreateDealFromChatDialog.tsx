@@ -29,9 +29,10 @@ interface Props {
   onSuccess?: (dealId: string, contactId: string) => void;
 }
 
-interface PropertyOption {
+interface AssetOption {
   id: string;
   name: string;
+  type: 'property' | 'unit';
 }
 
 export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onSuccess }: Props) {
@@ -43,25 +44,49 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
   const [value, setValue] = useState('');
   const [stage, setStage] = useState('new_lead');
   const [propertyId, setPropertyId] = useState<string>('');
-  const [properties, setProperties] = useState<PropertyOption[]>([]);
+  const [properties, setProperties] = useState<AssetOption[]>([]);
   const [propertiesLoading, setPropertiesLoading] = useState(false);
+  const [selectedAssetType, setSelectedAssetType] = useState<'property' | 'unit' | null>(null);
 
   const contactName = conversation.contact_name || conversation.contact_phone;
   const contactPhone = conversation.contact_phone;
 
-  // Fetch properties when dialog opens
+  // Fetch properties + units when dialog opens
   useEffect(() => {
     if (!open || !effectiveBrokerId) return;
     setPropertiesLoading(true);
-    supabase
-      .from('properties')
-      .select('id, name')
-      .eq('broker_id', effectiveBrokerId)
-      .order('name')
-      .then(({ data }) => {
-        setProperties(data || []);
-        setPropertiesLoading(false);
+
+    Promise.all([
+      supabase
+        .from('properties')
+        .select('id, name')
+        .eq('broker_id', effectiveBrokerId)
+        .order('name'),
+      supabase
+        .from('units')
+        .select('id, unit_number, property_id')
+        .eq('broker_id', effectiveBrokerId)
+        .order('unit_number'),
+    ]).then(([propRes, unitRes]) => {
+      const assets: AssetOption[] = [];
+
+      // Properties (empreendimentos)
+      const propsMap = new Map<string, string>();
+      (propRes.data || []).forEach(p => {
+        assets.push({ id: p.id, name: `🏢 ${p.name}`, type: 'property' });
+        propsMap.set(p.id, p.name);
       });
+
+      // Units (unidades individuais)
+      (unitRes.data || []).forEach((u: any) => {
+        const propName = u.property_id ? propsMap.get(u.property_id) : null;
+        const label = propName ? `🏠 ${u.unit_number} (${propName})` : `🏠 ${u.unit_number}`;
+        assets.push({ id: u.id, name: label, type: 'unit' });
+      });
+
+      setProperties(assets);
+      setPropertiesLoading(false);
+    });
   }, [open, effectiveBrokerId]);
 
   const handleSave = useCallback(async () => {
@@ -123,8 +148,13 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         estimated_value: parsedValue,
         initial_task: title || `Negociação via WhatsApp - ${contactName}`,
       };
-      if (propertyId) {
-        dealPayload.property_id = propertyId;
+      if (propertyId && propertyId !== 'none') {
+        const selected = properties.find(p => p.id === propertyId);
+        if (selected?.type === 'unit') {
+          dealPayload.unit_id = propertyId;
+        } else {
+          dealPayload.property_id = propertyId;
+        }
       }
 
       const { data: newDeal, error: dealErr } = await supabase

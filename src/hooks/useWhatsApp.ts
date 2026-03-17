@@ -318,9 +318,11 @@ export function useConversations(connectionId: string | null) {
 
 // ─── useMessages ────────────────────────────────────────────────────
 
-export function useMessages(conversationId: string | null) {
+export function useMessages(conversationId: string | null, remoteJid?: string | null) {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lazyLoading, setLazyLoading] = useState(false);
+  const [lazyLoadAttempted, setLazyLoadAttempted] = useState<string | null>(null);
 
   const fetchMessages = useCallback(async () => {
     if (!conversationId) {
@@ -338,15 +340,46 @@ export function useMessages(conversationId: string | null) {
     if (error) {
       console.error('Error fetching messages:', error);
       toast({ title: 'Erro ao carregar mensagens', description: error.message, variant: 'destructive' });
+      setMessages([]);
     } else {
       setMessages(data || []);
+      
+      // Lazy load: if 0 messages in DB and we haven't tried yet for this conversation, fetch from Evolution
+      if ((!data || data.length === 0) && remoteJid && lazyLoadAttempted !== conversationId) {
+        setLazyLoadAttempted(conversationId);
+        setLazyLoading(true);
+        try {
+          const { data: result, error: fetchErr } = await supabase.functions.invoke('whatsapp-instance', {
+            body: { action: 'fetch_messages', remoteJid, conversationId },
+          });
+          
+          if (!fetchErr && result?.count > 0) {
+            // Re-fetch messages from DB after lazy load
+            const { data: freshMessages } = await supabase
+              .from('whatsapp_messages')
+              .select('*')
+              .eq('conversation_id', conversationId)
+              .order('sent_at', { ascending: true });
+            setMessages(freshMessages || []);
+          }
+        } catch (e) {
+          console.error('Lazy load messages error:', e);
+        } finally {
+          setLazyLoading(false);
+        }
+      }
     }
     setLoading(false);
-  }, [conversationId]);
+  }, [conversationId, remoteJid, lazyLoadAttempted]);
 
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
+
+  // Reset lazy load attempt when conversation changes
+  useEffect(() => {
+    if (!conversationId) setLazyLoadAttempted(null);
+  }, [conversationId]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -401,7 +434,7 @@ export function useMessages(conversationId: string | null) {
     };
   }, [conversationId]);
 
-  return { messages, loading, refetch: fetchMessages };
+  return { messages, loading: loading || lazyLoading, refetch: fetchMessages };
 }
 
 // ─── useSendMessage ─────────────────────────────────────────────────
