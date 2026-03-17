@@ -29,9 +29,10 @@ interface Props {
   onSuccess?: (dealId: string, contactId: string) => void;
 }
 
-interface PropertyOption {
+interface AssetOption {
   id: string;
   name: string;
+  type: 'property' | 'unit';
 }
 
 export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onSuccess }: Props) {
