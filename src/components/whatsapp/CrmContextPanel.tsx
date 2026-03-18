@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Mail, Phone, Tag, Plus, Calendar, StickyNote,
   PhoneCall, FileText, MessageCircle, TrendingUp, Loader2,
@@ -51,6 +52,11 @@ function getActivityIcon(type: string) {
   }
 }
 
+/** Check if a string looks like a raw phone number (digits only, possibly with +) */
+function isPhoneNumber(str: string): boolean {
+  return /^[\d+\s()-]+$/.test(str.trim());
+}
+
 export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated }: CrmContextPanelProps) {
   const contactId = contact?.id || conversation?.contact_id || null;
   const dealId = (conversation as any)?.deal_id || null;
@@ -78,6 +84,10 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
   const activeDeal = deals.length > 0 ? deals[0] : directDeal;
 
+  // Identity gate: contact must have a real name (not just phone digits)
+  const contactName = (contact?.name || (conversation as any)?.contacts?.name || conversation?.contact_name || '').trim();
+  const hasValidName = !!contactName && !isPhoneNumber(contactName);
+
   const handleStageChange = useCallback(async (newStage: string) => {
     if (!activeDeal) return;
     setUpdatingStage(true);
@@ -88,7 +98,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
         .eq('id', activeDeal.id);
       if (error) throw error;
 
-      // Insert internal audit message in the conversation
       if (conversation?.id) {
         const stageLabel = STAGE_LABELS[newStage] || newStage;
         await supabase
@@ -180,16 +189,51 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
         <Separator />
 
-        {/* Deal Section */}
+        {/* Create Deal Button - ALWAYS visible */}
         <div>
-          <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-            <TrendingUp className="h-4 w-4" />
-            Negociação Atual
-          </h4>
+          {hasValidName ? (
+            <Button
+              variant={activeDeal ? 'outline' : 'default'}
+              className={`w-full gap-2 ${activeDeal ? 'border-dashed border-primary/40 text-primary hover:bg-primary/5' : ''}`}
+              onClick={() => {
+                if (onCreateDeal) {
+                  onCreateDeal();
+                } else {
+                  setIsDealDialogOpen(true);
+                }
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              {activeDeal ? 'Nova Negociação' : 'Criar Negociação'}
+            </Button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-dashed opacity-60 cursor-not-allowed"
+                  disabled
+                >
+                  <Plus className="h-4 w-4" />
+                  Criar Negociação
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Cadastre o nome do contato antes de criar uma negociação.</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
 
-          {dealsLoading ? (
-            <Skeleton className="h-24 w-full rounded-lg" />
-          ) : activeDeal ? (
+        {/* Active Deal Section */}
+        {dealsLoading ? (
+          <Skeleton className="h-24 w-full rounded-lg" />
+        ) : activeDeal ? (
+          <div>
+            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+              <TrendingUp className="h-4 w-4" />
+              Negociação Atual
+            </h4>
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-3 space-y-2">
                 <p className="font-medium text-sm text-foreground">
@@ -244,23 +288,8 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 </div>
               </CardContent>
             </Card>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full border-dashed border-primary/40 text-primary hover:bg-primary/5 gap-2"
-              onClick={() => {
-                if (onCreateDeal) {
-                  onCreateDeal();
-                } else {
-                  setIsDealDialogOpen(true);
-                }
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              Criar Negociação
-            </Button>
-          )}
-        </div>
+          </div>
+        ) : null}
 
         <Separator />
 

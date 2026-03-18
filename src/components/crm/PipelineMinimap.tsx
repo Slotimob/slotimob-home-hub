@@ -72,13 +72,7 @@ export const PipelineMinimap = ({ stages, scrollRef, columnWidth }: PipelineMini
   };
 
   const formatValue = (value: number) => {
-    if (value >= 1000000) {
-      return `R$ ${(value / 1000000).toFixed(1)}M`;
-    }
-    if (value >= 1000) {
-      return `R$ ${(value / 1000).toFixed(0)}K`;
-    }
-    return `R$ ${value.toLocaleString('pt-BR')}`;
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', compactDisplay: 'short' } as any);
   };
 
   return (
