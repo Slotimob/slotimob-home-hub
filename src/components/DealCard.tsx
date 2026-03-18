@@ -4,11 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   Building2, 
   Phone, 
   Mail, 
-  DollarSign, 
   GripVertical, 
   AlertTriangle, 
   CheckSquare, 
@@ -263,10 +262,9 @@ export const DealCard = ({
         {/* Value - Prominent display with larger font */}
         {deal.estimated_value && (
           <div 
-            className="flex items-center gap-2 py-2.5 px-3 rounded-lg bg-primary/10 border border-primary/20 cursor-pointer"
+            className="py-2.5 px-3 rounded-lg bg-primary/10 border border-primary/20 cursor-pointer"
             onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
           >
-            <DollarSign className="h-5 w-5 text-primary flex-shrink-0" />
             <span className="text-lg font-bold text-foreground">
               {deal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
