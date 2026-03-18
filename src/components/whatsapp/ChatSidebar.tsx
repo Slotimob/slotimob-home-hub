@@ -255,7 +255,8 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
         ) : (
           <div>
             {filtered.map((conv) => {
-              const displayName = conv.contact_name || conv.contact_phone;
+              const displayName = getDisplayName(conv);
+              const initials = getInitials(displayName);
               return (
                 <button
                   key={conv.id}
@@ -271,7 +272,7 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
                         <AvatarImage src={conv.contact_profile_pic} alt={displayName} />
                       )}
                       <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                        {getInitials(conv.contact_name, conv.contact_phone)}
+                        {initials || <User className="h-5 w-5" />}
                       </AvatarFallback>
                     </Avatar>
                   </div>

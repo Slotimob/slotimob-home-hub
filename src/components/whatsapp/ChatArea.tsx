@@ -256,7 +256,7 @@ export function ChatArea({
               <AvatarImage src={conversation.contact_profile_pic} alt={displayName} />
             )}
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              {initials}
+              {initials || <User className="h-5 w-5" />}
             </AvatarFallback>
           </Avatar>
         </div>
