@@ -401,8 +401,11 @@ export default function Schedule() {
         onDragEnd={handleDragEnd}
       >
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">Gerencie suas atividades e visitas</p>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <p className="text-muted-foreground">Gerencie suas atividades e visitas</p>
+              <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
+            </div>
             <div className="flex items-center gap-2">
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'calendar' | 'day' | 'week')}>
                 <TabsList>
