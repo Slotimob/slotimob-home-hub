@@ -82,27 +82,33 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
     }
   };
 
-  const filtered = conversations.filter((conv) => {
-    const displayName = conv.contact_name || conv.contact_phone;
-    const search = searchTerm.toLowerCase();
-    const matchesSearch =
-      displayName.toLowerCase().includes(search) ||
-      conv.contact_phone.includes(searchTerm) ||
-      (conv.last_message || '').toLowerCase().includes(search);
+  const filtered = [...conversations]
+    .sort((a, b) => {
+      const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+      const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+      return dateB - dateA;
+    })
+    .filter((conv) => {
+      const displayName = conv.contact_name || conv.contact_phone;
+      const search = searchTerm.toLowerCase();
+      const matchesSearch =
+        displayName.toLowerCase().includes(search) ||
+        conv.contact_phone.includes(searchTerm) ||
+        (conv.last_message || '').toLowerCase().includes(search);
 
-    if (!matchesSearch) return false;
-    if (activeTab === 'unread') return conv.unread_count > 0;
-    if (activeTab === 'waiting') return conv.status === 'waiting';
+      if (!matchesSearch) return false;
+      if (activeTab === 'unread') return conv.unread_count > 0;
+      if (activeTab === 'waiting') return conv.status === 'waiting';
 
-    // Triage status filter (manager view)
-    if (showTriageTabs && statusFilter !== 'all') {
-      if (statusFilter === 'pending') return conv.status === 'pending' || !conv.assigned_user_id;
-      if (statusFilter === 'active') return conv.status === 'active' || (conv.assigned_user_id && conv.status !== 'closed');
-      if (statusFilter === 'closed') return conv.status === 'closed';
-    }
+      // Triage status filter (manager view)
+      if (showTriageTabs && statusFilter !== 'all') {
+        if (statusFilter === 'pending') return conv.status === 'pending' || !conv.assigned_user_id;
+        if (statusFilter === 'active') return conv.status === 'active' || (conv.assigned_user_id && conv.status !== 'closed');
+        if (statusFilter === 'closed') return conv.status === 'closed';
+      }
 
-    return true;
-  });
+      return true;
+    });
 
   const unreadTotal = conversations.filter(c => c.unread_count > 0).length;
   const pendingCount = showTriageTabs ? conversations.filter(c => c.status === 'pending' || !c.assigned_user_id).length : 0;
