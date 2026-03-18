@@ -70,14 +70,24 @@ export default function Schedule() {
     })
   );
 
+  // Helper to apply team filter to a query
+  const applyTeamFilter = (query: any, userIdCol = 'assigned_user_id') => {
+    if (teamFilter === 'mine') {
+      return query.eq(userIdCol, user?.id);
+    } else if (teamFilter !== 'all') {
+      return query.eq(userIdCol, teamFilter);
+    }
+    return query;
+  };
+
   // Fetch ALL visits for event counting (not filtered by date)
   const { data: allVisits } = useQuery({
-    queryKey: ["all-visits", effectiveBrokerId, currentMonth.toISOString()],
+    queryKey: ["all-visits", effectiveBrokerId, currentMonth.toISOString(), teamFilter],
     queryFn: async () => {
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
       
-      const { data, error } = await supabase
+      let query = supabase
         .from("visits")
         .select(`
           id,
@@ -93,6 +103,9 @@ export default function Schedule() {
         .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
 
+      query = applyTeamFilter(query);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any;
     },
