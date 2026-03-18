@@ -114,12 +114,12 @@ export default function Schedule() {
 
   // Fetch ALL activities for event counting
   const { data: allActivities } = useQuery({
-    queryKey: ["all-schedule-activities", effectiveBrokerId, currentMonth.toISOString()],
+    queryKey: ["all-schedule-activities", effectiveBrokerId, currentMonth.toISOString(), teamFilter],
     queryFn: async () => {
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("schedule_activities")
         .select(`
           id,
@@ -134,6 +134,9 @@ export default function Schedule() {
         .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
 
+      query = applyTeamFilter(query);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any;
     },
