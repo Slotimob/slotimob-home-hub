@@ -164,6 +164,7 @@ export function CreateVisitDialog({
         duration_minutes: parseInt(duration),
         notes,
         status: "scheduled" as const,
+        assigned_user_id: assignedUserId || user?.id || null,
       };
 
       const { error } = await supabase.from("visits").insert(visitData);
