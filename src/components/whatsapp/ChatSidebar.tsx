@@ -49,11 +49,14 @@ function formatTimestamp(dateStr: string | null): string {
   return formatDistanceToNow(date, { addSuffix: true, locale: ptBR });
 }
 
-function getInitials(name: string | null, phone: string): string {
-  if (name) {
-    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  }
-  return phone.slice(-2);
+function getDisplayName(conv: any): string {
+  return conv.contacts?.name || conv.contact_name || conv.contact_phone;
+}
+
+function getInitials(displayName: string): string {
+  // If displayName looks like a phone number (starts with digits), return empty for icon fallback
+  if (/^\d/.test(displayName)) return '';
+  return displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
 export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange, showTriageTabs = false }: ChatSidebarProps) {

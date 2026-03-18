@@ -296,7 +296,7 @@ export function useConversations(connectionId: string | null) {
             .maybeSingle();
 
           if (!fresh) return;
-          const fullConv = fresh as WhatsAppConversationWithRelations;
+          const fullConv = fresh as any as WhatsAppConversationWithRelations;
 
           if (payload.eventType === 'INSERT') {
             setConversations((prev) => {
