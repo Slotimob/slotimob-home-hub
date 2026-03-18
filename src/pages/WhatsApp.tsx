@@ -113,7 +113,16 @@ export default function WhatsApp() {
     return filtered;
   }, [allConversations, canManage, user, agentFilter]);
 
-  const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+
+  // Keep selectedConversation in sync with conversations list (deep-fetched data)
+  useEffect(() => {
+    if (!selectedConversation) return;
+    const updated = allConversations.find(c => c.id === selectedConversation.id);
+    if (updated && updated !== selectedConversation) {
+      setSelectedConversation(updated);
+    }
+  }, [allConversations, selectedConversation]);
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null, selectedConversation?.remote_jid || null);
   const { sendMessage, sending } = useSendMessage();
   const contactId = selectedConversation?.contact_id || selectedConversation?.lead_id || null;
