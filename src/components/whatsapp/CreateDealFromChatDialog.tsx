@@ -152,6 +152,7 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         contact_id: contactId,
         stage: stage as any,
         estimated_value: parsedValue,
+        assigned_user_id: assignedUserId || user?.id || null,
         initial_task: title || `Negociação via WhatsApp - ${contactName}`,
       };
       if (propertyId && propertyId !== 'none') {
