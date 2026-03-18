@@ -233,8 +233,10 @@ export function useWhatsAppSettingsConnection() {
 // ─── useConversations ───────────────────────────────────────────────
 
 export function useConversations(connectionId: string | null) {
-  const [conversations, setConversations] = useState<WhatsAppConversation[]>([]);
+  const [conversations, setConversations] = useState<WhatsAppConversationWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const CONV_SELECT = '*, contacts(*), deals(*)';
 
   const fetchConversations = useCallback(async () => {
     if (!connectionId) {
@@ -246,7 +248,7 @@ export function useConversations(connectionId: string | null) {
     setLoading(true);
     const { data, error } = await supabase
       .from('whatsapp_conversations')
-      .select('*')
+      .select(CONV_SELECT)
       .eq('connection_id', connectionId)
       .eq('is_archived', false)
       .order('last_message_at', { ascending: false, nullsFirst: false });
@@ -255,7 +257,7 @@ export function useConversations(connectionId: string | null) {
       console.error('Error fetching conversations:', error);
       toast({ title: 'Erro ao carregar conversas', description: error.message, variant: 'destructive' });
     } else {
-      setConversations(data || []);
+      setConversations((data as WhatsAppConversationWithRelations[]) || []);
     }
     setLoading(false);
   }, [connectionId]);
@@ -278,37 +280,39 @@ export function useConversations(connectionId: string | null) {
           filter: `connection_id=eq.${connectionId}`,
         },
         async (payload) => {
+          const recordId = (payload.new as any)?.id || (payload.old as any)?.id;
+
+          if (payload.eventType === 'DELETE') {
+            setConversations((prev) => prev.filter((c) => c.id !== recordId));
+            return;
+          }
+
+          // Deep fetch for both INSERT and UPDATE — never inject shallow payload
+          const { data: fresh } = await supabase
+            .from('whatsapp_conversations')
+            .select(CONV_SELECT)
+            .eq('id', recordId)
+            .maybeSingle();
+
+          if (!fresh) return;
+          const fullConv = fresh as WhatsAppConversationWithRelations;
+
           if (payload.eventType === 'INSERT') {
-            // Deep fetch to get joins
-            const { data: fresh } = await supabase
-              .from('whatsapp_conversations')
-              .select('*')
-              .eq('id', (payload.new as any).id)
-              .maybeSingle();
-            if (fresh) {
-              setConversations((prev) => [fresh as WhatsAppConversation, ...prev]);
-            } else {
-              setConversations((prev) => [payload.new as WhatsAppConversation, ...prev]);
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            // Deep fetch instead of shallow merge to preserve contact_name, deal_id etc.
-            const { data: fresh } = await supabase
-              .from('whatsapp_conversations')
-              .select('*')
-              .eq('id', (payload.new as any).id)
-              .maybeSingle();
-            const updated = (fresh as WhatsAppConversation) || (payload.new as WhatsAppConversation);
+            setConversations((prev) => {
+              if (prev.some(c => c.id === fullConv.id)) return prev;
+              return [fullConv, ...prev];
+            });
+          } else {
+            // UPDATE — replace in-place and re-sort
             setConversations((prev) =>
               prev
-                .map((c) => (c.id === updated.id ? updated : c))
+                .map((c) => (c.id === fullConv.id ? fullConv : c))
                 .sort((a, b) => {
                   const aTime = a.last_message_at || a.created_at;
                   const bTime = b.last_message_at || b.created_at;
                   return new Date(bTime).getTime() - new Date(aTime).getTime();
                 })
             );
-          } else if (payload.eventType === 'DELETE') {
-            setConversations((prev) => prev.filter((c) => c.id !== (payload.old as WhatsAppConversation).id));
           }
         }
       )
