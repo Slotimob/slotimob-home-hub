@@ -79,6 +79,7 @@ export function CreateActivityDialog({
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: parseInt(duration),
         lead_id: selectedLeadId && selectedLeadId !== 'none' ? selectedLeadId : null,
+        assigned_user_id: assignedUserId || user?.id || null,
       });
 
       if (error) throw error;
