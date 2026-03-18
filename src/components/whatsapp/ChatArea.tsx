@@ -237,10 +237,9 @@ export function ChatArea({
     );
   }
 
-  const displayName = conversation.contact_name || conversation.contact_phone;
-  const initials = conversation.contact_name
-    ? conversation.contact_name.split(' ').map(n => n[0]).join('').slice(0, 2)
-    : conversation.contact_phone.slice(-2);
+  const displayName = (conversation as any).contacts?.name || conversation.contact_name || conversation.contact_phone;
+  const isPhoneOnly = /^\d/.test(displayName);
+  const initials = isPhoneOnly ? '' : displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
 
   return (
     <div className="flex-1 flex flex-col h-full min-w-0">
