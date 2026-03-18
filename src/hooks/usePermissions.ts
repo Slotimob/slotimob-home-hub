@@ -50,6 +50,7 @@ export const PERMISSION_MODULES_KEYS = [
   'finance_reconciliation',
   'finance_categories',
   // CRM
+  'crm_admin',
   'crm_pipeline',
   'crm_contacts',
   'crm_schedule',
