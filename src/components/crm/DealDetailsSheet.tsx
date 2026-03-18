@@ -194,8 +194,8 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
               <User className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <SheetTitle className="text-left">{deal.lead.name}</SheetTitle>
-              <p className="text-sm text-muted-foreground">{deal.property.name}</p>
+              <SheetTitle className="text-left">{deal.lead?.name || 'Contato não atribuído'}</SheetTitle>
+              <p className="text-sm text-muted-foreground">{deal.property?.name || 'Sem imóvel'}</p>
             </div>
           </div>
         </SheetHeader>

@@ -172,7 +172,7 @@ export const DealCard = ({
   const TempIcon = tempConfig?.icon;
 
   // Check if unit is standalone
-  const isStandalone = deal.unit && !(deal.property?.name);
+  const isStandalone = deal.unit && !deal.property?.name;
 
   return (
     <Card

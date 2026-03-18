@@ -722,10 +722,10 @@ const Pipeline = () => {
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesSearch =
-          deal.lead.name.toLowerCase().includes(searchLower) ||
-          deal.lead.email?.toLowerCase().includes(searchLower) ||
-          deal.lead.phone?.includes(filters.search) ||
-          deal.property.name.toLowerCase().includes(searchLower);
+          deal.lead?.name?.toLowerCase().includes(searchLower) ||
+          deal.lead?.email?.toLowerCase().includes(searchLower) ||
+          deal.lead?.phone?.includes(filters.search) ||
+          deal.property?.name?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
       }
 
