@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Search, MessageSquarePlus, MessageCircle, RefreshCw, Users } from 'lucide-react';
+import { Search, MessageSquarePlus, MessageCircle, RefreshCw, Users, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -49,11 +49,14 @@ function formatTimestamp(dateStr: string | null): string {
   return formatDistanceToNow(date, { addSuffix: true, locale: ptBR });
 }
 
-function getInitials(name: string | null, phone: string): string {
-  if (name) {
-    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  }
-  return phone.slice(-2);
+function getDisplayName(conv: any): string {
+  return conv.contacts?.name || conv.contact_name || conv.contact_phone;
+}
+
+function getInitials(displayName: string): string {
+  // If displayName looks like a phone number (starts with digits), return empty for icon fallback
+  if (/^\d/.test(displayName)) return '';
+  return displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
 export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange, showTriageTabs = false }: ChatSidebarProps) {
@@ -252,7 +255,8 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
         ) : (
           <div>
             {filtered.map((conv) => {
-              const displayName = conv.contact_name || conv.contact_phone;
+              const displayName = getDisplayName(conv);
+              const initials = getInitials(displayName);
               return (
                 <button
                   key={conv.id}
@@ -268,7 +272,7 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
                         <AvatarImage src={conv.contact_profile_pic} alt={displayName} />
                       )}
                       <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                        {getInitials(conv.contact_name, conv.contact_phone)}
+                        {initials || <User className="h-5 w-5" />}
                       </AvatarFallback>
                     </Avatar>
                   </div>

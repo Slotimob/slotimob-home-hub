@@ -113,7 +113,16 @@ export default function WhatsApp() {
     return filtered;
   }, [allConversations, canManage, user, agentFilter]);
 
-  const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+
+  // Keep selectedConversation in sync with conversations list (deep-fetched data)
+  useEffect(() => {
+    if (!selectedConversation) return;
+    const updated = allConversations.find(c => c.id === selectedConversation.id);
+    if (updated && updated !== selectedConversation) {
+      setSelectedConversation(updated);
+    }
+  }, [allConversations, selectedConversation]);
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null, selectedConversation?.remote_jid || null);
   const { sendMessage, sending } = useSendMessage();
   const contactId = selectedConversation?.contact_id || selectedConversation?.lead_id || null;
@@ -224,15 +233,15 @@ export default function WhatsApp() {
   const handleDealCreated = useCallback(async (dealId: string, contactId: string) => {
     if (!selectedConversation) return;
     
-    // Immediate optimistic update so UI reacts instantly
-    setSelectedConversation(prev =>
+    // Optimistic local update
+    setSelectedConversation((prev: any) =>
       prev ? { ...prev, contact_id: contactId, deal_id: dealId } : prev
     );
-    
-    // Deep refetch the full conversation row to get all updated fields
+
+    // Deep fetch with relations to fully hydrate state
     const { data: fresh, error } = await supabase
       .from('whatsapp_conversations')
-      .select('*')
+      .select('*, contacts(*), deals(*)')
       .eq('id', selectedConversation.id)
       .maybeSingle();
 

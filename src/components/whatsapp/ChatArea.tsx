@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   MessageSquare, Send, Paperclip, FileText, Phone, MoreVertical,
   Check, CheckCheck, ArrowLeft, ChevronRight, Loader2, WifiOff,
-  Image as ImageIcon, Mic, Film, File, UserCheck,
+  Image as ImageIcon, Mic, Film, File, UserCheck, User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
@@ -237,10 +237,9 @@ export function ChatArea({
     );
   }
 
-  const displayName = conversation.contact_name || conversation.contact_phone;
-  const initials = conversation.contact_name
-    ? conversation.contact_name.split(' ').map(n => n[0]).join('').slice(0, 2)
-    : conversation.contact_phone.slice(-2);
+  const displayName = (conversation as any).contacts?.name || conversation.contact_name || conversation.contact_phone;
+  const isPhoneOnly = /^\d/.test(displayName);
+  const initials = isPhoneOnly ? '' : displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
 
   return (
     <div className="flex-1 flex flex-col h-full min-w-0">
@@ -257,7 +256,7 @@ export function ChatArea({
               <AvatarImage src={conversation.contact_profile_pic} alt={displayName} />
             )}
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              {initials}
+              {initials || <User className="h-5 w-5" />}
             </AvatarFallback>
           </Avatar>
         </div>
