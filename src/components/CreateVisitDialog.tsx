@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AgentSelector } from '@/components/shared/AgentSelector';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,6 +56,7 @@ export function CreateVisitDialog({
   const [standaloneUnitId, setStandaloneUnitId] = useState("");
   const [notes, setNotes] = useState("");
   const [assetType, setAssetType] = useState<AssetType>("property");
+  const [assignedUserId, setAssignedUserId] = useState("");
 
   const { data: leads } = useQuery({
     queryKey: ["leads", user?.id],
@@ -162,6 +164,7 @@ export function CreateVisitDialog({
         duration_minutes: parseInt(duration),
         notes,
         status: "scheduled" as const,
+        assigned_user_id: assignedUserId || user?.id || null,
       };
 
       const { error } = await supabase.from("visits").insert(visitData);
@@ -183,6 +186,7 @@ export function CreateVisitDialog({
       setStandaloneUnitId("");
       setNotes("");
       setAssetType("property");
+      setAssignedUserId("");
 
       onSuccess();
     } catch (error: any) {
@@ -383,6 +387,11 @@ export function CreateVisitDialog({
               </TabsContent>
             </Tabs>
           </div>
+
+          <AgentSelector
+            value={assignedUserId}
+            onValueChange={setAssignedUserId}
+          />
 
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>

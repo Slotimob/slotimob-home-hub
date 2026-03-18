@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { AgentSelector } from '@/components/shared/AgentSelector';
 import type { Database } from '@/integrations/supabase/types';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
@@ -38,9 +40,11 @@ interface AssetOption {
 
 export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onSuccess }: Props) {
   const { effectiveBrokerId } = useWorkspace();
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [assignedUserId, setAssignedUserId] = useState<string>('');
 
   const [title, setTitle] = useState('');
   const [value, setValue] = useState('');
@@ -148,6 +152,7 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         contact_id: contactId,
         stage: stage as any,
         estimated_value: parsedValue,
+        assigned_user_id: assignedUserId || user?.id || null,
         initial_task: title || `Negociação via WhatsApp - ${contactName}`,
       };
       if (propertyId && propertyId !== 'none') {
@@ -293,6 +298,11 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
               </Select>
             </div>
           </div>
+
+          <AgentSelector
+            value={assignedUserId}
+            onValueChange={setAssignedUserId}
+          />
 
           <Button onClick={handleSave} disabled={saving} className="w-full">
             {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}

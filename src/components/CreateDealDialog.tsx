@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { AgentSelector } from '@/components/shared/AgentSelector';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -97,6 +98,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
   const [unitSearch, setUnitSearch] = useState('');
   const [unitType, setUnitType] = useState<'all' | 'units' | 'standalone'>('all');
   const [dateOpen, setDateOpen] = useState(false);
+  const [assignedUserId, setAssignedUserId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     lead_id: '',
@@ -338,6 +340,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
         expected_close_date: formData.expected_close_date ? format(formData.expected_close_date, 'yyyy-MM-dd') : null,
         initial_task: formData.initial_task || null,
         broker_id: effectiveBrokerId,
+        assigned_user_id: assignedUserId || user?.id || null,
         stage: 'new_lead' as const,
       };
 
@@ -846,6 +849,12 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
               </Popover>
             </div>
           </div>
+
+          {/* ========== GRUPO: RESPONSÁVEL (Equipes) ========== */}
+          <AgentSelector
+            value={assignedUserId}
+            onValueChange={setAssignedUserId}
+          />
 
           <Separator />
 

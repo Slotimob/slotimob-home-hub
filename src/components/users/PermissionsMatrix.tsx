@@ -64,6 +64,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
 
   // CRM group
   { key: '_group_crm', label: 'CRM', actions: [], isGroupHeader: true },
+  { key: 'crm_admin', label: 'Admin CRM (Ver tudo)', actions: ['view'], indent: true },
   { key: 'crm_pipeline', label: 'Pipeline', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'crm_contacts', label: 'Contatos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'crm_schedule', label: 'Agenda', actions: ['view', 'create', 'edit', 'delete'], indent: true },
@@ -78,6 +79,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
 /** Alert tooltips for specific modules to warn the Master about data exposure */
 const MODULE_TOOLTIPS: Record<string, string> = {
   dashboard: 'Ao liberar a visualização, o utilizador poderá ver movimentos financeiros e métricas de CRM globais.',
+  crm_admin: 'Ao ativar, o membro verá TODAS as negociações e atividades da equipa, não apenas as que lhe foram atribuídas.',
   reports: 'Ao liberar a visualização, o utilizador poderá exportar todos os relatórios da imobiliária, incluindo dados financeiros.',
   integrations: 'Ao liberar, o utilizador terá a opção de conectar o seu próprio WhatsApp no módulo CRM.',
 };

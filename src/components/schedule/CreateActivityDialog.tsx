@@ -12,6 +12,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { ACTIVITY_TYPES } from './ActivityPalette';
+import { AgentSelector } from '@/components/shared/AgentSelector';
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -38,6 +39,7 @@ export function CreateActivityDialog({
   const [description, setDescription] = useState('');
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [duration, setDuration] = useState('30');
+  const [assignedUserId, setAssignedUserId] = useState<string>('');
 
   const { data: leads } = useQuery({
     queryKey: ['leads-for-activity', user?.id],
@@ -77,6 +79,7 @@ export function CreateActivityDialog({
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: parseInt(duration),
         lead_id: selectedLeadId && selectedLeadId !== 'none' ? selectedLeadId : null,
+        assigned_user_id: assignedUserId || user?.id || null,
       });
 
       if (error) throw error;
@@ -180,6 +183,11 @@ export function CreateActivityDialog({
               rows={3}
             />
           </div>
+
+          <AgentSelector
+            value={assignedUserId}
+            onValueChange={setAssignedUserId}
+          />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
