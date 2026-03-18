@@ -210,7 +210,7 @@ export default function Schedule() {
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
 
   const { data: activities, refetch: refetchActivities } = useQuery({
-    queryKey: ["schedule-activities", effectiveBrokerId, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode],
+    queryKey: ["schedule-activities", effectiveBrokerId, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode, teamFilter],
     queryFn: async () => {
       let startDate: Date;
       let endDate: Date;
@@ -227,7 +227,7 @@ export default function Schedule() {
         endDate.setHours(23, 59, 59, 999);
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("schedule_activities")
         .select(`
           *,
@@ -238,6 +238,9 @@ export default function Schedule() {
         .lte("scheduled_at", endDate.toISOString())
         .order("scheduled_at", { ascending: true });
 
+      query = applyTeamFilter(query);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any;
     },
