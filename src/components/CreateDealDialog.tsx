@@ -339,6 +339,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
         expected_close_date: formData.expected_close_date ? format(formData.expected_close_date, 'yyyy-MM-dd') : null,
         initial_task: formData.initial_task || null,
         broker_id: effectiveBrokerId,
+        assigned_user_id: assignedUserId || user?.id || null,
         stage: 'new_lead' as const,
       };
 
