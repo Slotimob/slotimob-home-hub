@@ -60,7 +60,9 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
   const { toast } = useToast();
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
+  const canDelete = isOwner || hasPermission('crm_pipeline', 'delete');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [linkedContact, setLinkedContact] = useState<LinkedContact | null>(null);
   const [editedDeal, setEditedDeal] = useState<{
     estimated_value: number | null;
