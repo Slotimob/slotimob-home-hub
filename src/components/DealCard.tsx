@@ -235,7 +235,7 @@ export const DealCard = ({
                     <Building2 className="h-3 w-3" />
                   )}
                   <span className="truncate">
-                    {deal.unit?.unit_number || deal.property.name}
+                    {deal.unit?.unit_number || deal.property?.name || 'Sem imóvel'}
                   </span>
                 </div>
               </div>
