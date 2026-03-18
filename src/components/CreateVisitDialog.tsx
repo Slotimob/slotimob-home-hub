@@ -186,6 +186,7 @@ export function CreateVisitDialog({
       setStandaloneUnitId("");
       setNotes("");
       setAssetType("property");
+      setAssignedUserId("");
 
       onSuccess();
     } catch (error: any) {
