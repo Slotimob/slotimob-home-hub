@@ -290,6 +290,8 @@ const Pipeline = () => {
   }, []);
 
 
+  const [teamFilter, setTeamFilter] = useState<string>('all');
+
   const [filters, setFilters] = useState<PipelineFiltersState>({
     search: '',
     priority: '',
