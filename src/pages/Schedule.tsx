@@ -40,6 +40,7 @@ export default function Schedule() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'day' | 'week'>('day');
+  const [teamFilter, setTeamFilter] = useState<string>('all');
   
   // Drag and drop state
   const [isDragging, setIsDragging] = useState(false);
