@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DealCard } from '@/components/DealCard';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { DollarSign, MoreVertical, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, GripVertical } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,

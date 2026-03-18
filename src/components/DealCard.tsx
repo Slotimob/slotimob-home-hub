@@ -4,11 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   Building2, 
   Phone, 
   Mail, 
-  DollarSign, 
   GripVertical, 
   AlertTriangle, 
   CheckSquare, 
