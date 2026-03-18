@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   MessageSquare, Send, Paperclip, FileText, Phone, MoreVertical,
   Check, CheckCheck, ArrowLeft, ChevronRight, Loader2, WifiOff,
-  Image as ImageIcon, Mic, Film, File, UserCheck,
+  Image as ImageIcon, Mic, Film, File, UserCheck, User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
