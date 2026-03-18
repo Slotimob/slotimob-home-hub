@@ -226,7 +226,7 @@ export const DealCard = ({
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-base text-foreground truncate">{deal.lead.name}</h4>
+                <h4 className="font-bold text-base text-foreground truncate">{deal.lead?.name || 'Contato não atribuído'}</h4>
                 {/* Property/Unit info */}
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   {isStandalone ? (
