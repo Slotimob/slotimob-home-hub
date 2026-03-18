@@ -240,10 +240,9 @@ export const SortableStageColumn = ({
               </div>
               {/* Valor total da coluna */}
               {totalValue > 0 && (
-                <div className="flex items-center gap-1.5 mt-2 py-1.5 px-2 rounded bg-muted/50 w-fit">
-                  <DollarSign className="h-3.5 w-3.5 text-primary" />
+                <div className="mt-2 py-1.5 px-2 rounded bg-muted/50 w-fit">
                   <span className="text-sm font-bold text-foreground">
-                    R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                    {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
                 </div>
               )}
