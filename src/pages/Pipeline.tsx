@@ -61,7 +61,7 @@ export interface Deal {
   property: {
     id: string;
     name: string;
-  };
+  } | null;
   unit: {
     id: string;
     unit_number: string;
