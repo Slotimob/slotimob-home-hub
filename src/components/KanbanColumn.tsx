@@ -198,8 +198,7 @@ export const KanbanColumn = ({
               </div>
             </div>
             {totalValue > 0 && (
-              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground font-normal">
-                <DollarSign className="h-3 w-3" />
+              <div className="mt-2 text-xs text-muted-foreground font-normal">
                 {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </div>
             )}
