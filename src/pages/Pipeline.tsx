@@ -402,7 +402,7 @@ const Pipeline = () => {
 
   const loadDeals = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('deals')
         .select(`
           *,
@@ -411,6 +411,16 @@ const Pipeline = () => {
           unit:units(id, unit_number, status)
         `)
         .order('created_at', { ascending: false });
+
+      // Apply team filter via query (not JS filter)
+      if (teamFilter === 'mine') {
+        query = query.eq('assigned_user_id', user?.id);
+      } else if (teamFilter !== 'all') {
+        // Specific team member selected
+        query = query.eq('assigned_user_id', teamFilter);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setDeals(data as Deal[]);
