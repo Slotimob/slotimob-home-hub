@@ -39,6 +39,7 @@ export function CreateActivityDialog({
   const [description, setDescription] = useState('');
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [duration, setDuration] = useState('30');
+  const [assignedUserId, setAssignedUserId] = useState<string>('');
 
   const { data: leads } = useQuery({
     queryKey: ['leads-for-activity', user?.id],
