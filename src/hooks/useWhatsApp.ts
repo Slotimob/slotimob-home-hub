@@ -10,9 +10,10 @@ type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
 type WhatsAppConnection = Database['public']['Tables']['whatsapp_connections']['Row'];
 
 // Extended conversation with joined relations (contacts, deals)
+// Using Record<string, any> for relations to avoid Supabase generated type conflicts
 export type WhatsAppConversationWithRelations = WhatsAppConversation & {
-  contacts?: { id: string; name: string; phone?: string | null; email?: string | null; avatar_url?: string | null } | null;
-  deals?: Array<{ id: string; stage: string; estimated_value?: number | null }>;
+  contacts?: Record<string, any> | null;
+  deals?: Record<string, any> | Record<string, any>[] | null;
 };
 
 export type ConversationWithConnection = WhatsAppConversation & {
