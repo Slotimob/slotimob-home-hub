@@ -258,7 +258,7 @@ export function useConversations(connectionId: string | null) {
       console.error('Error fetching conversations:', error);
       toast({ title: 'Erro ao carregar conversas', description: error.message, variant: 'destructive' });
     } else {
-      setConversations((data as WhatsAppConversationWithRelations[]) || []);
+      setConversations((data as any as WhatsAppConversationWithRelations[]) || []);
     }
     setLoading(false);
   }, [connectionId]);
