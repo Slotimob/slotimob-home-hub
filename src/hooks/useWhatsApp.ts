@@ -9,6 +9,12 @@ type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
 type WhatsAppConnection = Database['public']['Tables']['whatsapp_connections']['Row'];
 
+// Extended conversation with joined relations (contacts, deals)
+export type WhatsAppConversationWithRelations = WhatsAppConversation & {
+  contacts?: { id: string; name: string; phone?: string | null; email?: string | null; avatar_url?: string | null } | null;
+  deals?: Array<{ id: string; stage: string; estimated_value?: number | null }>;
+};
+
 export type ConversationWithConnection = WhatsAppConversation & {
   connection: WhatsAppConnection;
 };
