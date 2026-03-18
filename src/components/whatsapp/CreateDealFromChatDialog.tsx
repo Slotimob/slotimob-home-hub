@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { AgentSelector } from '@/components/shared/AgentSelector';
 import type { Database } from '@/integrations/supabase/types';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
