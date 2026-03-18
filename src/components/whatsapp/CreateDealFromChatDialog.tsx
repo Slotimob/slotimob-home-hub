@@ -39,6 +39,7 @@ interface AssetOption {
 export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onSuccess }: Props) {
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
 
   const [title, setTitle] = useState('');
