@@ -64,6 +64,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
 
   // CRM group
   { key: '_group_crm', label: 'CRM', actions: [], isGroupHeader: true },
+  { key: 'crm_admin', label: 'Admin CRM (Ver tudo)', actions: ['view'], indent: true },
   { key: 'crm_pipeline', label: 'Pipeline', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'crm_contacts', label: 'Contatos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'crm_schedule', label: 'Agenda', actions: ['view', 'create', 'edit', 'delete'], indent: true },
