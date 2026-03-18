@@ -97,6 +97,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
   const [unitSearch, setUnitSearch] = useState('');
   const [unitType, setUnitType] = useState<'all' | 'units' | 'standalone'>('all');
   const [dateOpen, setDateOpen] = useState(false);
+  const [assignedUserId, setAssignedUserId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     lead_id: '',
