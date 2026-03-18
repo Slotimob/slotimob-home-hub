@@ -2771,6 +2771,7 @@ export type Database = {
       schedule_activities: {
         Row: {
           activity_type: string
+          assigned_user_id: string | null
           broker_id: string
           completed_at: string | null
           created_at: string
@@ -2788,6 +2789,7 @@ export type Database = {
         }
         Insert: {
           activity_type: string
+          assigned_user_id?: string | null
           broker_id: string
           completed_at?: string | null
           created_at?: string
@@ -2805,6 +2807,7 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          assigned_user_id?: string | null
           broker_id?: string
           completed_at?: string | null
           created_at?: string
@@ -2821,6 +2824,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "schedule_activities_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "schedule_activities_broker_id_fkey"
             columns: ["broker_id"]
@@ -3412,6 +3422,7 @@ export type Database = {
       }
       visits: {
         Row: {
+          assigned_user_id: string | null
           broker_id: string
           created_at: string
           duration_minutes: number
@@ -3429,6 +3440,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_user_id?: string | null
           broker_id: string
           created_at?: string
           duration_minutes?: number
@@ -3446,6 +3458,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_user_id?: string | null
           broker_id?: string
           created_at?: string
           duration_minutes?: number
@@ -3463,6 +3476,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "visits_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "visits_lead_id_fkey"
             columns: ["lead_id"]
@@ -3940,6 +3960,14 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_assigned_record: {
+        Args: {
+          _assigned_user_id: string
+          _broker_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       can_write_as_broker: {
         Args: { p_broker_id: string; p_user_id: string }
         Returns: boolean
@@ -3985,6 +4013,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_crm_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
       reset_ai_credits_for_user: {
