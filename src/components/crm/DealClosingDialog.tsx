@@ -232,10 +232,10 @@ export const DealClosingDialog = ({
               )}
               <div>
                 <p className="font-medium text-green-600 dark:text-green-400">
-                  {deal.lead.name}
+                  {deal.lead?.name || 'Lead'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {deal.property.name}{deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}
+                  {deal.property?.name || 'Sem imóvel'}{deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}
                 </p>
               </div>
             </div>
