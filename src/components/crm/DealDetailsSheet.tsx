@@ -427,7 +427,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Comissão Estimada:</span>
                     <span className="font-semibold text-primary">
-                      R$ {calculatedCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {calculatedCommission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
