@@ -184,6 +184,22 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     }
   };
 
+  const handleDelete = async () => {
+    if (!deal) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.from('deals').delete().eq('id', deal.id);
+      if (error) throw error;
+      toast({ title: 'Negociação excluída com sucesso!' });
+      onUpdate();
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!deal) return null;
 
   const priorityColors: Record<string, string> = {
