@@ -249,13 +249,13 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
         <div className="py-4 space-y-4">
           {/* Contact Info */}
           <div className="flex flex-wrap gap-3">
-            {deal.lead.phone && (
+            {deal.lead?.phone && (
               <a href={`tel:${deal.lead.phone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Phone className="h-4 w-4" />
                 {deal.lead.phone}
               </a>
             )}
-            {deal.lead.email && (
+            {deal.lead?.email && (
               <a href={`mailto:${deal.lead.email}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="h-4 w-4" />
                 {deal.lead.email}
