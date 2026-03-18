@@ -56,6 +56,7 @@ export function CreateVisitDialog({
   const [standaloneUnitId, setStandaloneUnitId] = useState("");
   const [notes, setNotes] = useState("");
   const [assetType, setAssetType] = useState<AssetType>("property");
+  const [assignedUserId, setAssignedUserId] = useState("");
 
   const { data: leads } = useQuery({
     queryKey: ["leads", user?.id],
