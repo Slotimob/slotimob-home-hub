@@ -10,6 +10,7 @@ import { Loader2, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Database } from '@/integrations/supabase/types';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
@@ -38,6 +39,7 @@ interface AssetOption {
 export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onSuccess }: Props) {
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -170,6 +172,24 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         .from('whatsapp_conversations')
         .update({ contact_id: contactId, deal_id: newDeal.id, contact_name: contactName })
         .eq('id', conversation.id);
+
+      // Invalidate deals cache
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+
+      // Invalidate and deep-refetch the current conversation so the UI updates instantly
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+      const { data: updatedConv } = await supabase
+        .from('whatsapp_conversations')
+        .select('*, contacts(*), deals(*)')
+        .eq('id', conversation.id)
+        .single();
+      if (updatedConv) {
+        queryClient.setQueryData(['whatsapp-conversations'], (old: any) =>
+          Array.isArray(old)
+            ? old.map((c: any) => (c.id === conversation.id ? updatedConv : c))
+            : old
+        );
+      }
 
       toast({ title: 'Negociação e Contato criados com sucesso!' });
       onOpenChange(false);

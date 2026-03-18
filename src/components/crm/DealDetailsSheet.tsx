@@ -9,7 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -55,7 +60,9 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
   const { toast } = useToast();
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
+  const canDelete = isOwner || hasPermission('crm_pipeline', 'delete');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [linkedContact, setLinkedContact] = useState<LinkedContact | null>(null);
   const [editedDeal, setEditedDeal] = useState<{
     estimated_value: number | null;
@@ -177,6 +184,22 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     }
   };
 
+  const handleDelete = async () => {
+    if (!deal) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.from('deals').delete().eq('id', deal.id);
+      if (error) throw error;
+      toast({ title: 'Negociação excluída com sucesso!' });
+      onUpdate();
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!deal) return null;
 
   const priorityColors: Record<string, string> = {
@@ -193,23 +216,46 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
             <div className="p-2 rounded-full bg-primary/10">
               <User className="h-5 w-5 text-primary" />
             </div>
-            <div>
+            <div className="flex-1">
               <SheetTitle className="text-left">{deal.lead?.name || 'Contato não atribuído'}</SheetTitle>
               <p className="text-sm text-muted-foreground">{deal.property?.name || 'Sem imóvel'}</p>
             </div>
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir negociação?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. A negociação será permanentemente removida do pipeline.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      {isDeleting ? 'Excluindo...' : 'Excluir'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </SheetHeader>
 
         <div className="py-4 space-y-4">
           {/* Contact Info */}
           <div className="flex flex-wrap gap-3">
-            {deal.lead.phone && (
+            {deal.lead?.phone && (
               <a href={`tel:${deal.lead.phone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Phone className="h-4 w-4" />
                 {deal.lead.phone}
               </a>
             )}
-            {deal.lead.email && (
+            {deal.lead?.email && (
               <a href={`mailto:${deal.lead.email}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="h-4 w-4" />
                 {deal.lead.email}
@@ -427,7 +473,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Comissão Estimada:</span>
                     <span className="font-semibold text-primary">
-                      R$ {calculatedCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {calculatedCommission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
