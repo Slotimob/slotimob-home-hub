@@ -152,7 +152,7 @@ export const PipelineMetrics = ({ deals, stageHistory }: PipelineMetricsProps) =
                       <div className="text-xs text-muted-foreground truncate">{stageLabels[stage]}</div>
                       {value > 0 && (
                         <div className="text-xs font-medium mt-1">
-                          R$ {(value / 1000).toFixed(0)}k
+                          {value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', compactDisplay: 'short' } as any)}
                         </div>
                       )}
                     </div>
