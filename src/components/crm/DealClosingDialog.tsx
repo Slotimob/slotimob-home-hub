@@ -144,7 +144,7 @@ export const DealClosingDialog = ({
         const { error: transactionError } = await supabase.from('financial_transactions').insert({
           broker_id: effectiveBrokerId || user.id,
           type: 'income',
-          description: `Comissão - ${deal.lead.name} - ${deal.property.name}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`,
+          description: `Comissão - ${deal.lead?.name || 'Lead'} - ${deal.property?.name || 'Imóvel'}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`,
           amount: commissionValue,
           transaction_date: format(transactionDate, 'yyyy-MM-dd'),
           due_date: format(transactionDate, 'yyyy-MM-dd'),
@@ -232,10 +232,10 @@ export const DealClosingDialog = ({
               )}
               <div>
                 <p className="font-medium text-green-600 dark:text-green-400">
-                  {deal.lead.name}
+                  {deal.lead?.name || 'Lead'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {deal.property.name}{deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}
+                  {deal.property?.name || 'Sem imóvel'}{deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}
                 </p>
               </div>
             </div>

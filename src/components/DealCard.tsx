@@ -172,7 +172,7 @@ export const DealCard = ({
   const TempIcon = tempConfig?.icon;
 
   // Check if unit is standalone
-  const isStandalone = deal.unit && !(deal.property?.name);
+  const isStandalone = deal.unit && !deal.property?.name;
 
   return (
     <Card
@@ -226,7 +226,7 @@ export const DealCard = ({
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-base text-foreground truncate">{deal.lead.name}</h4>
+                <h4 className="font-bold text-base text-foreground truncate">{deal.lead?.name || 'Contato não atribuído'}</h4>
                 {/* Property/Unit info */}
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   {isStandalone ? (
@@ -235,7 +235,7 @@ export const DealCard = ({
                     <Building2 className="h-3 w-3" />
                   )}
                   <span className="truncate">
-                    {deal.unit?.unit_number || deal.property.name}
+                    {deal.unit?.unit_number || deal.property?.name || 'Sem imóvel'}
                   </span>
                 </div>
               </div>

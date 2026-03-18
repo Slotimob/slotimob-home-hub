@@ -204,8 +204,10 @@ async function handleSendMessage(supabaseAdmin: any, instanceName: string, data:
   try {
     const key = data?.key;
     const waMessageId = key?.id;
+    const remoteJid = key?.remoteJid;
     if (!waMessageId) return;
 
+    // Update message delivery status
     const { error } = await supabaseAdmin
       .from('whatsapp_messages')
       .update({ status: 'delivered' })
@@ -213,6 +215,49 @@ async function handleSendMessage(supabaseAdmin: any, instanceName: string, data:
 
     if (error) console.error('Erro update send status:', error);
     else console.log(`Mensagem ${waMessageId} confirmada como enviada`);
+
+    // Update conversation last_message preview for sidebar sync
+    if (remoteJid) {
+      const { data: connection } = await supabaseAdmin
+        .from('whatsapp_connections')
+        .select('id')
+        .eq('instance_name', instanceName)
+        .maybeSingle();
+
+      if (connection) {
+        const messageContent = data?.message || {};
+        const text = messageContent.conversation
+          || messageContent.extendedTextMessage?.text
+          || messageContent.imageMessage?.caption
+          || messageContent.videoMessage?.caption
+          || '';
+
+        const mediaLabels: Record<string, string> = {
+          image: '📷 Foto', audio: '🎵 Áudio', video: '🎬 Vídeo',
+          document: '📎 Documento', sticker: '😀 Sticker',
+        };
+        let msgType = 'text';
+        if (messageContent.imageMessage) msgType = 'image';
+        else if (messageContent.audioMessage || messageContent.pttMessage) msgType = 'audio';
+        else if (messageContent.videoMessage) msgType = 'video';
+        else if (messageContent.documentMessage) msgType = 'document';
+        else if (messageContent.stickerMessage) msgType = 'sticker';
+
+        const contentOrLabel = text || mediaLabels[msgType] || '';
+        const lastMsgPreview = contentOrLabel ? `Você: ${contentOrLabel}` : 'Você: mensagem';
+
+        await supabaseAdmin
+          .from('whatsapp_conversations')
+          .update({
+            last_message: lastMsgPreview,
+            last_message_at: new Date().toISOString(),
+          })
+          .eq('connection_id', connection.id)
+          .eq('remote_jid', remoteJid);
+
+        console.log(`Conversa atualizada com last_message para ${remoteJid}`);
+      }
+    }
   } catch (e) {
     console.error('handleSendMessage error:', e);
   }
