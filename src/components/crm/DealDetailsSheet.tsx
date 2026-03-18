@@ -216,10 +216,33 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
             <div className="p-2 rounded-full bg-primary/10">
               <User className="h-5 w-5 text-primary" />
             </div>
-            <div>
+            <div className="flex-1">
               <SheetTitle className="text-left">{deal.lead?.name || 'Contato não atribuído'}</SheetTitle>
               <p className="text-sm text-muted-foreground">{deal.property?.name || 'Sem imóvel'}</p>
             </div>
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir negociação?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. A negociação será permanentemente removida do pipeline.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      {isDeleting ? 'Excluindo...' : 'Excluir'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </SheetHeader>
 

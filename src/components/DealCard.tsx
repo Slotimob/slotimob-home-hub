@@ -268,7 +268,7 @@ export const DealCard = ({
           >
             <DollarSign className="h-5 w-5 text-primary flex-shrink-0" />
             <span className="text-lg font-bold text-foreground">
-              R$ {deal.estimated_value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              {deal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
           </div>
         )}

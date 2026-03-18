@@ -173,6 +173,24 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         .update({ contact_id: contactId, deal_id: newDeal.id, contact_name: contactName })
         .eq('id', conversation.id);
 
+      // Invalidate deals cache
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+
+      // Invalidate and deep-refetch the current conversation so the UI updates instantly
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+      const { data: updatedConv } = await supabase
+        .from('whatsapp_conversations')
+        .select('*, contacts(*), deals(*)')
+        .eq('id', conversation.id)
+        .single();
+      if (updatedConv) {
+        queryClient.setQueryData(['whatsapp-conversations'], (old: any) =>
+          Array.isArray(old)
+            ? old.map((c: any) => (c.id === conversation.id ? updatedConv : c))
+            : old
+        );
+      }
+
       toast({ title: 'Negociação e Contato criados com sucesso!' });
       onOpenChange(false);
       setTitle('');
