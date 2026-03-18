@@ -388,6 +388,11 @@ export function CreateVisitDialog({
             </Tabs>
           </div>
 
+          <AgentSelector
+            value={assignedUserId}
+            onValueChange={setAssignedUserId}
+          />
+
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
             <Textarea
