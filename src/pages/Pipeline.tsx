@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
+import { TeamFilter } from '@/components/shared/TeamFilter';
 import { Button } from '@/components/ui/button';
 import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
@@ -289,6 +290,8 @@ const Pipeline = () => {
   }, []);
 
 
+  const [teamFilter, setTeamFilter] = useState<string>('all');
+
   const [filters, setFilters] = useState<PipelineFiltersState>({
     search: '',
     priority: '',
@@ -388,7 +391,7 @@ const Pipeline = () => {
       loadCustomStages();
       loadStageOrder();
     }
-  }, [user]);
+  }, [user, teamFilter]);
 
   // Clear selection when exiting selection mode
   useEffect(() => {
@@ -399,7 +402,7 @@ const Pipeline = () => {
 
   const loadDeals = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('deals')
         .select(`
           *,
@@ -408,6 +411,16 @@ const Pipeline = () => {
           unit:units(id, unit_number, status)
         `)
         .order('created_at', { ascending: false });
+
+      // Apply team filter via query (not JS filter)
+      if (teamFilter === 'mine') {
+        query = query.eq('assigned_user_id', user?.id);
+      } else if (teamFilter !== 'all') {
+        // Specific team member selected
+        query = query.eq('assigned_user_id', teamFilter);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setDeals(data as Deal[]);
@@ -1127,11 +1140,16 @@ const Pipeline = () => {
         </Collapsible>
 
         {/* Filters */}
-        <PipelineFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-          properties={properties}
-        />
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <PipelineFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              properties={properties}
+            />
+          </div>
+          <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
+        </div>
 
         {/* Pipeline Kanban */}
         <div className="relative group">

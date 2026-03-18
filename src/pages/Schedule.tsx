@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { TeamFilter } from "@/components/shared/TeamFilter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,7 @@ export default function Schedule() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'day' | 'week'>('day');
+  const [teamFilter, setTeamFilter] = useState<string>('all');
   
   // Drag and drop state
   const [isDragging, setIsDragging] = useState(false);
@@ -68,14 +70,24 @@ export default function Schedule() {
     })
   );
 
+  // Helper to apply team filter to a query
+  const applyTeamFilter = (query: any, userIdCol = 'assigned_user_id') => {
+    if (teamFilter === 'mine') {
+      return query.eq(userIdCol, user?.id);
+    } else if (teamFilter !== 'all') {
+      return query.eq(userIdCol, teamFilter);
+    }
+    return query;
+  };
+
   // Fetch ALL visits for event counting (not filtered by date)
   const { data: allVisits } = useQuery({
-    queryKey: ["all-visits", effectiveBrokerId, currentMonth.toISOString()],
+    queryKey: ["all-visits", effectiveBrokerId, currentMonth.toISOString(), teamFilter],
     queryFn: async () => {
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
       
-      const { data, error } = await supabase
+      let query = supabase
         .from("visits")
         .select(`
           id,
@@ -91,6 +103,9 @@ export default function Schedule() {
         .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
 
+      query = applyTeamFilter(query);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any;
     },
@@ -99,12 +114,12 @@ export default function Schedule() {
 
   // Fetch ALL activities for event counting
   const { data: allActivities } = useQuery({
-    queryKey: ["all-schedule-activities", effectiveBrokerId, currentMonth.toISOString()],
+    queryKey: ["all-schedule-activities", effectiveBrokerId, currentMonth.toISOString(), teamFilter],
     queryFn: async () => {
       const monthStart = startOfMonth(subMonths(currentMonth, 1));
       const monthEnd = endOfMonth(addMonths(currentMonth, 1));
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("schedule_activities")
         .select(`
           id,
@@ -119,6 +134,9 @@ export default function Schedule() {
         .lte("scheduled_at", monthEnd.toISOString())
         .order("scheduled_at", { ascending: true });
 
+      query = applyTeamFilter(query);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any;
     },
@@ -192,7 +210,7 @@ export default function Schedule() {
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
 
   const { data: activities, refetch: refetchActivities } = useQuery({
-    queryKey: ["schedule-activities", effectiveBrokerId, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode],
+    queryKey: ["schedule-activities", effectiveBrokerId, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode, teamFilter],
     queryFn: async () => {
       let startDate: Date;
       let endDate: Date;
@@ -209,7 +227,7 @@ export default function Schedule() {
         endDate.setHours(23, 59, 59, 999);
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("schedule_activities")
         .select(`
           *,
@@ -220,6 +238,9 @@ export default function Schedule() {
         .lte("scheduled_at", endDate.toISOString())
         .order("scheduled_at", { ascending: true });
 
+      query = applyTeamFilter(query);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any;
     },
@@ -380,8 +401,11 @@ export default function Schedule() {
         onDragEnd={handleDragEnd}
       >
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">Gerencie suas atividades e visitas</p>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <p className="text-muted-foreground">Gerencie suas atividades e visitas</p>
+              <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
+            </div>
             <div className="flex items-center gap-2">
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'calendar' | 'day' | 'week')}>
                 <TabsList>
