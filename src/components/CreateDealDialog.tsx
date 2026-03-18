@@ -849,6 +849,12 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
             </div>
           </div>
 
+          {/* ========== GRUPO: RESPONSÁVEL (Equipes) ========== */}
+          <AgentSelector
+            value={assignedUserId}
+            onValueChange={setAssignedUserId}
+          />
+
           <Separator />
 
           {/* ========== GRUPO 4: PRÓXIMO PASSO ========== */}
