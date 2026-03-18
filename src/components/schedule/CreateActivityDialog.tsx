@@ -12,6 +12,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { ACTIVITY_TYPES } from './ActivityPalette';
+import { AgentSelector } from '@/components/shared/AgentSelector';
 
 interface CreateActivityDialogProps {
   open: boolean;
