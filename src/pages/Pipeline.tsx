@@ -391,7 +391,7 @@ const Pipeline = () => {
       loadCustomStages();
       loadStageOrder();
     }
-  }, [user]);
+  }, [user, teamFilter]);
 
   // Clear selection when exiting selection mode
   useEffect(() => {
