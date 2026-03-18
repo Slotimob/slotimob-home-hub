@@ -10,6 +10,7 @@ import { Loader2, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Database } from '@/integrations/supabase/types';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
