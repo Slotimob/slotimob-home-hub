@@ -1140,11 +1140,16 @@ const Pipeline = () => {
         </Collapsible>
 
         {/* Filters */}
-        <PipelineFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-          properties={properties}
-        />
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <PipelineFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              properties={properties}
+            />
+          </div>
+          <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
+        </div>
 
         {/* Pipeline Kanban */}
         <div className="relative group">
