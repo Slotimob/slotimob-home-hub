@@ -106,7 +106,7 @@ export const PipelineMetrics = ({ deals, stageHistory }: PipelineMetricsProps) =
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {(totalPipelineValue / 1000000).toFixed(1)}M
+              {totalPipelineValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', compactDisplay: 'short' } as any)}
             </div>
             <p className="text-xs text-muted-foreground">{activeDeals.length} deals ativos</p>
           </CardContent>
@@ -121,7 +121,7 @@ export const PipelineMetrics = ({ deals, stageHistory }: PipelineMetricsProps) =
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              R$ {(totalWonValue / 1000000).toFixed(1)}M
+              {totalWonValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', compactDisplay: 'short' } as any)}
             </div>
             <p className="text-xs text-muted-foreground">{wonDeals.length} vendas fechadas</p>
           </CardContent>
