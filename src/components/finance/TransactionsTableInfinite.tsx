@@ -491,7 +491,7 @@ export function TransactionsTableInfinite({
   // Desktop table view - compact layout
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="rounded-md border overflow-hidden">
+      <div className="rounded-md border overflow-hidden w-full overflow-x-auto">
         <div className="max-h-[calc(100vh-300px)] overflow-auto">
           <Table>
             <TableHeader className="sticky top-0 bg-background z-10">
@@ -530,6 +530,7 @@ export function TransactionsTableInfinite({
                   label="Categoria"
                   currentSort={sortConfig}
                   onSort={handleSortClick}
+                  className="hidden lg:table-cell"
                 />
                 <SortableTableHead
                   field="transaction_date"
@@ -538,7 +539,7 @@ export function TransactionsTableInfinite({
                   onSort={handleSortClick}
                   className="w-20"
                 />
-                <TableHead className="px-2 text-xs w-20">Vencim.</TableHead>
+                <TableHead className="px-2 text-xs w-20 hidden xl:table-cell">Vencim.</TableHead>
                 <SortableTableHead
                   field="amount"
                   label="Valor"
@@ -643,7 +644,7 @@ export function TransactionsTableInfinite({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="px-2 py-1.5">
+                    <TableCell className="px-2 py-1.5 hidden lg:table-cell">
                       {transaction.category ? (
                         <span className="text-[10px] text-muted-foreground truncate block max-w-[100px]">
                           {transaction.category.name}
@@ -655,7 +656,7 @@ export function TransactionsTableInfinite({
                     <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
                       {formatDateCompact(transaction.transaction_date)}
                     </TableCell>
-                    <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
+                    <TableCell className="px-2 py-1.5 text-xs text-muted-foreground hidden xl:table-cell">
                       {formatDateCompact(transaction.due_date)}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">

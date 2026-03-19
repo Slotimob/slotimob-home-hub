@@ -11,7 +11,7 @@ import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Arr
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { HeaderButton } from "@/components/ui/header-button";
 import { useToast } from '@/hooks/use-toast';
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { KanbanColumn } from '@/components/KanbanColumn';
 import { SortableStageColumn } from '@/components/crm/SortableStageColumn';
@@ -343,6 +343,12 @@ const Pipeline = () => {
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
       },
     })
   );

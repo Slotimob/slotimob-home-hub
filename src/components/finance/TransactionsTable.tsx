@@ -187,7 +187,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
 
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="rounded-md border">
+       <div className="rounded-md border w-full overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -203,7 +203,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
               </TableHead>
               <TableHead className="w-[50px]">Tipo</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
+              <TableHead className="hidden lg:table-cell">Categoria</TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Status</TableHead>
@@ -278,7 +278,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{transaction.description}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     {transaction.category ? (
                       <span className="text-xs text-muted-foreground">
                         {transaction.category.name}
