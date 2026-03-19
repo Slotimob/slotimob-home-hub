@@ -220,7 +220,6 @@ export function ChatArea({
 
   const handleQuickReply = (content: string) => {
     setMessageText(content);
-    setTemplatesOpen(false);
     textareaRef.current?.focus();
   };
 
