@@ -53,6 +53,7 @@ export interface Deal {
   loss_reason?: string | null;
   temperature?: 'hot' | 'warm' | 'cold';
   business_type?: 'sale' | 'rental';
+  pipeline_type?: string;
   lead: {
     id: string;
     name: string;
@@ -70,6 +71,12 @@ export interface Deal {
     status?: string;
   } | null;
 }
+
+const PIPELINE_TYPES = [
+  { value: 'sale', label: 'Vendas' },
+  { value: 'rental', label: 'Locações' },
+  { value: 'acquisition', label: 'Captações' },
+] as const;
 
 interface TaskCount {
   deal_id: string;
