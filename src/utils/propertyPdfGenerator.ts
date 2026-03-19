@@ -721,19 +721,13 @@ const addClosingSection = (doc: jsPDF, pageWidth: number, pageHeight: number, ma
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text('Entre em contato e garanta essa oportunidade única.', pageWidth / 2, y + 18, { align: 'center' });
-  
-  // Footer
-  const footerY = pageHeight - 12;
-  doc.setFontSize(7);
-  doc.setTextColor(...GRAY_LIGHT);
-  doc.text('Documento gerado automaticamente pelo SLOTIMOB', pageWidth / 2, footerY, { align: 'center' });
-  doc.text(new Date().toLocaleDateString('pt-BR'), pageWidth / 2, footerY + 4, { align: 'center' });
 };
 
 /**
  * Main PDF Generator Function - Commercial Brochure Premium
+ * Now async to support image loading
  */
-export function generatePropertyPDF(data: PDFAssetData): void {
+export async function generatePropertyPDF(data: PDFAssetData, agent?: AgentInfo): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -743,9 +737,13 @@ export function generatePropertyPDF(data: PDFAssetData): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
+
+  // Load cover image asynchronously
+  const imageUrl = data.unit.cover_image_url || data.parentProperty?.image_url || null;
+  const coverImageBase64 = imageUrl ? await loadImageAsBase64(imageUrl) : null;
   
   // PAGE 1: Hero Cover
-  addCoverPage(doc, data, pageWidth, margin);
+  addCoverPage(doc, data, pageWidth, margin, agent, coverImageBase64);
   
   // PAGE 2: Details
   doc.addPage();
@@ -753,6 +751,9 @@ export function generatePropertyPDF(data: PDFAssetData): void {
   
   // CTA on last page
   addClosingSection(doc, pageWidth, pageHeight, margin);
+
+  // Add branded footer to ALL pages
+  addBrandedFooter(doc, pageWidth, pageHeight, agent);
   
   // Generate filename
   const safeName = data.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);

@@ -211,13 +211,29 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{property.name}</p>
           </div>
-          {property.construction_stage && (
-            <Badge 
-              className={`text-white ${CONSTRUCTION_STAGE_COLORS[property.construction_stage]}`}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGeneratePDF}
+              disabled={isGeneratingPdf}
+              className="gap-1.5"
             >
-              {CONSTRUCTION_STAGE_LABELS[property.construction_stage]}
-            </Badge>
-          )}
+              {isGeneratingPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4" />
+              )}
+              {isGeneratingPdf ? 'Gerando PDF...' : 'Gerar Ficha'}
+            </Button>
+            {property.construction_stage && (
+              <Badge 
+                className={`text-white ${CONSTRUCTION_STAGE_COLORS[property.construction_stage]}`}
+              >
+                {CONSTRUCTION_STAGE_LABELS[property.construction_stage]}
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
 
