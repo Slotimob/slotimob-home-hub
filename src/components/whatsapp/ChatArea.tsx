@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  MessageSquare, Send, Paperclip, FileText, Phone, MoreVertical,
+  MessageSquare, Send, Paperclip, Phone, MoreVertical,
   Check, CheckCheck, ArrowLeft, ChevronRight, Loader2, WifiOff,
   Image as ImageIcon, Mic, Film, File, UserCheck, User,
 } from 'lucide-react';
