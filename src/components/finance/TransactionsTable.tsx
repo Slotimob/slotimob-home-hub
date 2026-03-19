@@ -278,7 +278,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{transaction.description}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     {transaction.category ? (
                       <span className="text-xs text-muted-foreground">
                         {transaction.category.name}

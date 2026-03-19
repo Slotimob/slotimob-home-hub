@@ -656,7 +656,7 @@ export function TransactionsTableInfinite({
                     <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
                       {formatDateCompact(transaction.transaction_date)}
                     </TableCell>
-                    <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
+                    <TableCell className="px-2 py-1.5 text-xs text-muted-foreground hidden xl:table-cell">
                       {formatDateCompact(transaction.due_date)}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">
