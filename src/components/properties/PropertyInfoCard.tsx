@@ -12,12 +12,17 @@ import {
   Leaf,
   Cpu,
   ChevronRight,
-  Image as ImageIcon
+  Image as ImageIcon,
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PropertyAmenitiesSelect, AMENITIES_OPTIONS } from './PropertyAmenitiesSelect';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { generatePropertyPDF, buildPDFDataFromStandalone, type AgentInfo } from '@/utils/propertyPdfGenerator';
 
 interface PropertyData {
   id: string;
