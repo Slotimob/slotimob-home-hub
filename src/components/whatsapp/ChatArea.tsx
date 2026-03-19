@@ -463,32 +463,17 @@ export function ChatArea({
               <Paperclip className="h-5 w-5" />
             </Button>
 
-            <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
-                  <FileText className="h-5 w-5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="start" side="top">
-                <div className="p-3 border-b">
-                  <h4 className="font-semibold text-sm">Respostas Rápidas</h4>
-                </div>
-                <ScrollArea className="max-h-60">
-                  <div className="p-1">
-                    {QUICK_REPLIES.map((qr) => (
-                      <button
-                        key={qr.id}
-                        onClick={() => handleQuickReply(qr.content)}
-                        className="w-full text-left px-3 py-2.5 hover:bg-accent/50 rounded-md transition-colors"
-                      >
-                        <span className="text-sm font-medium text-foreground">{qr.title}</span>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{qr.content}</p>
-                      </button>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </PopoverContent>
-            </Popover>
+            <QuickMessagesPopover onSelect={handleQuickReply} />
+
+            <AISuggestButton
+              messages={messages}
+              contactName={displayName}
+              onSuggestion={(text) => {
+                setMessageText(text);
+                textareaRef.current?.focus();
+              }}
+              onOpenBuyCredits={onOpenBuyCredits}
+            />
 
             <div className="flex-1 min-w-0 relative">
               <textarea
