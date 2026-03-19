@@ -181,6 +181,7 @@ export function ChatArea({
   conversationId,
   onCloseConversation,
   onReturnToQueue,
+  onOpenBuyCredits,
 }: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [templatesOpen, setTemplatesOpen] = useState(false);
