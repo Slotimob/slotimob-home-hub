@@ -107,7 +107,7 @@ export const KanbanColumn = ({
     <div ref={setNodeRef} className="flex-shrink-0 w-72 sm:w-80 snap-start">
       <Card 
         className={cn(
-          "h-full transition-shadow",
+          "h-full min-h-[calc(100vh-260px)] transition-shadow flex flex-col",
           isOver && 'ring-2 ring-primary',
           "shadow-[0_0_15px_-3px_rgba(var(--stage-glow-rgb),0.3)] hover:shadow-[0_0_20px_-2px_rgba(var(--stage-glow-rgb),0.4)]"
         )}
