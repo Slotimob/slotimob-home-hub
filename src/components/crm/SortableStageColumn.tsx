@@ -248,7 +248,7 @@ export const SortableStageColumn = ({
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent data-card-scroll className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent px-3 py-3">
+          <CardContent data-card-scroll className="space-y-2 flex-1 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent px-3 py-3">
             {deals.map((deal) => (
               <DealCard
                 key={deal.id}
