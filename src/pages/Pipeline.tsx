@@ -1143,7 +1143,18 @@ const Pipeline = () => {
         </>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
+        {/* Pipeline type tabs */}
+        <Tabs value={activePipeline} onValueChange={setActivePipeline} className="w-full">
+          <TabsList>
+            {PIPELINE_TYPES.map((pt) => (
+              <TabsTrigger key={pt.value} value={pt.value}>
+                {pt.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
         {/* Metrics Section */}
         <Collapsible open={showMetrics} onOpenChange={setShowMetrics}>
           <CollapsibleContent className="space-y-4">
