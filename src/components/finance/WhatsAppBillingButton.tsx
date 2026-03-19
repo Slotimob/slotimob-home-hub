@@ -29,26 +29,34 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 interface WhatsAppBillingButtonProps {
-  transactionId: string;
+  onClick: () => void;
+  isLoading?: boolean;
+  disabled?: boolean;
+  size?: "icon" | "sm" | "default";
+  variant?: "default" | "ghost" | "outline";
+  className?: string;
+  showLabel?: boolean;
+  /** Contact name for confirmation dialog */
   contactName?: string;
-  status: string;
+  /** Timestamp of last WhatsApp billing sent */
   whatsappSentAt?: string | null;
-  onSend: (transactionId: string) => void;
-  isPending?: boolean;
+  /** Whether to show confirmation dialog before sending */
+  showConfirmation?: boolean;
 }
 
 export function WhatsAppBillingButton({
-  transactionId,
+  onClick,
+  isLoading = false,
+  disabled = false,
+  size = "icon",
+  variant = "ghost",
+  className,
+  showLabel = false,
   contactName,
-  status,
   whatsappSentAt,
-  onSend,
-  isPending = false,
+  showConfirmation = true,
 }: WhatsAppBillingButtonProps) {
   const [showConfirm, setShowConfirm] = useState(false);
-
-  // Don't show for paid transactions
-  if (status === "paid") return null;
 
   const hasSent = !!whatsappSentAt;
   const sentDate = whatsappSentAt
@@ -57,47 +65,61 @@ export function WhatsAppBillingButton({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowConfirm(true);
+    if (disabled || isLoading) return;
+    if (showConfirmation) {
+      setShowConfirm(true);
+    } else {
+      onClick();
+    }
   };
 
   const handleConfirm = () => {
     setShowConfirm(false);
-    onSend(transactionId);
+    onClick();
   };
+
+  const tooltipText = hasSent
+    ? `Última cobrança enviada em: ${sentDate}`
+    : "Enviar cobrança via WhatsApp";
 
   const button = (
     <Button
-      variant="ghost"
-      size="icon"
+      variant={variant}
+      size={size}
       className={cn(
-        "h-7 w-7 transition-all",
+        "transition-all",
+        size === "icon" && "h-7 w-7",
         hasSent
           ? "text-emerald-500 hover:bg-emerald-500/10"
-          : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
+          : "hover:bg-emerald-500/10 hover:text-emerald-600 text-emerald-600",
+        className
       )}
       onClick={handleClick}
-      disabled={isPending}
+      disabled={disabled || isLoading}
     >
-      {isPending ? (
+      {isLoading ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
       ) : (
-        <WhatsAppIcon className="h-3.5 w-3.5" />
+        <>
+          <WhatsAppIcon className="h-3.5 w-3.5" />
+          {showLabel && <span className="ml-1.5">Cobrar</span>}
+        </>
       )}
     </Button>
   );
 
   return (
     <>
-      <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent>
-          <p className="text-xs">
-            {hasSent
-              ? `Última cobrança enviada em: ${sentDate}`
-              : "Enviar cobrança via WhatsApp"}
-          </p>
-        </TooltipContent>
-      </Tooltip>
+      {size === "icon" && !showLabel ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{tooltipText}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        button
+      )}
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>

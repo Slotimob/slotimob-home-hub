@@ -50,7 +50,6 @@ export function useWhatsAppBilling() {
     return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
   };
 
-  // Compose a professional billing message
   const composeBillingMessage = (data: BillingMessageData): string => {
     const unitPart = data.unitInfo ? ` referente ao imóvel ${data.unitInfo}` : "";
     
@@ -71,7 +70,6 @@ Atenciosamente,
 Equipe de Administração`;
   };
 
-  // Fetch contact data linked to a transaction
   const fetchContactData = async (contactId: string): Promise<ContactData | null> => {
     if (!user) return null;
     
@@ -81,7 +79,6 @@ Equipe de Administração`;
         .from("contacts")
         .select("id, name, phone, whatsapp")
         .eq("id", contactId)
-        .eq("broker_id", user.id)
         .single();
 
       if (error) {
@@ -98,7 +95,6 @@ Equipe de Administração`;
     }
   };
 
-  // Fetch unit info for context
   const fetchUnitInfo = async (unitId: string): Promise<string | null> => {
     if (!user) return null;
     
@@ -107,7 +103,6 @@ Equipe de Administração`;
         .from("units")
         .select("unit_number, property:properties(name)")
         .eq("id", unitId)
-        .eq("broker_id", user.id)
         .single();
 
       if (error || !data) return null;
@@ -122,7 +117,6 @@ Equipe de Administração`;
     }
   };
 
-  // Try to send via Edge Function, fallback to wa.me link
   const sendBillingReminder = async (
     transaction: Transaction,
     onSuccess?: () => void
@@ -148,7 +142,24 @@ Equipe de Administração`;
     setIsSending(true);
 
     try {
-      // 1. Fetch contact data
+      // Try edge function first (sends via Evolution API + updates whatsapp_sent_at)
+      const { data: edgeResult, error: edgeError } = await supabase.functions.invoke(
+        'whatsapp-billing',
+        { body: { transactionId: transaction.id } }
+      );
+
+      if (!edgeError && edgeResult?.success) {
+        toast({
+          title: "Cobrança enviada!",
+          description: `Mensagem enviada para ${edgeResult.contactName} via WhatsApp.`,
+        });
+        onSuccess?.();
+        return;
+      }
+
+      // If edge function fails (no WhatsApp connection, etc), fallback to wa.me
+      console.warn("Edge function billing failed, falling back to wa.me:", edgeError || edgeResult?.error);
+
       const contact = await fetchContactData(transaction.contact_id);
       
       if (!contact) {
@@ -170,16 +181,14 @@ Equipe de Administração`;
         return;
       }
 
-      // 2. Fetch unit info if available
       let unitInfo: string | undefined;
       if (transaction.unit_id) {
         const info = await fetchUnitInfo(transaction.unit_id);
         if (info) unitInfo = info;
       }
 
-      // 3. Compose message
       const messageData: BillingMessageData = {
-        contactName: contact.name.split(" ")[0], // First name only
+        contactName: contact.name.split(" ")[0],
         contactPhone: phoneNumber,
         amount: formatCurrency(transaction.amount),
         dueDate: formatDate(transaction.due_date),
@@ -190,28 +199,18 @@ Equipe de Administração`;
       const message = composeBillingMessage(messageData);
       const formattedPhone = formatPhoneForWhatsApp(phoneNumber);
 
-      // DISABLED: WhatsApp connection check - causing 406 errors that block network
-      // TODO: Re-enable once whatsapp_connections table RLS is fixed
-      // For now, skip WhatsApp entirely and go straight to fallback
-      const edgeFunctionSuccess = false;
-
-      // 5. Fallback: Open wa.me link
-      if (!edgeFunctionSuccess) {
-        const encodedMessage = encodeURIComponent(message);
-        const waLink = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-        
-        window.open(waLink, "_blank", "noopener,noreferrer");
-        
-        toast({
-          title: "WhatsApp aberto",
-          description: `Mensagem preparada para ${contact.name}. Clique em "Enviar" no WhatsApp.`,
-        });
-        
-        // Log the action
-        await logBillingAction(transaction.id, contact.name, true);
-        
-        onSuccess?.();
-      }
+      const encodedMessage = encodeURIComponent(message);
+      const waLink = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+      
+      window.open(waLink, "_blank", "noopener,noreferrer");
+      
+      toast({
+        title: "WhatsApp aberto",
+        description: `Mensagem preparada para ${contact.name}. Clique em "Enviar" no WhatsApp.`,
+      });
+      
+      await logBillingAction(transaction.id, contact.name, true);
+      onSuccess?.();
     } catch (error) {
       console.error("Error sending billing reminder:", error);
       toast({
@@ -224,7 +223,6 @@ Equipe de Administração`;
     }
   };
 
-  // Log the billing action in transaction notes
   const logBillingAction = async (
     transactionId: string,
     contactName: string,
@@ -235,7 +233,6 @@ Equipe de Administração`;
       const method = isManual ? "via link wa.me" : "via API";
       const newNote = `Cobrança enviada para ${contactName} ${method} em ${now}`;
 
-      // Get current notes
       const { data: current } = await supabase
         .from("financial_transactions")
         .select("notes")
@@ -256,9 +253,7 @@ Equipe de Administração`;
     }
   };
 
-  // Check if a transaction is eligible for billing reminder
   const isEligibleForBilling = (transaction: Transaction): boolean => {
-    // Only overdue or pending transactions past due date
     if (transaction.status === "overdue") return true;
     
     if (transaction.status === "pending" && transaction.due_date) {
