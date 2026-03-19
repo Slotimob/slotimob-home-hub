@@ -253,6 +253,71 @@ const safeAddImage = (
 };
 
 /**
+ * Load an image URL as a base64 data URL
+ */
+const loadImageAsBase64 = (url: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    if (!url) { resolve(null); return; }
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (e) {
+        console.warn('Failed to convert image to base64:', e);
+        resolve(null);
+      }
+    };
+    img.onerror = () => { resolve(null); };
+    img.src = url;
+  });
+};
+
+/**
+ * Add branded footer to every page
+ */
+const addBrandedFooter = (doc: jsPDF, pageWidth: number, pageHeight: number, agent?: AgentInfo) => {
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const footerY = pageHeight - 10;
+
+    // Divider line
+    doc.setDrawColor(...GRAY_LIGHT);
+    doc.setLineWidth(0.3);
+    doc.line(15, footerY - 5, pageWidth - 15, footerY - 5);
+
+    // Logo
+    safeAddImage(doc, SLOTI_LOGO_BASE64, 'PNG', 15, footerY - 3, 5, 5);
+
+    // Brand text
+    doc.setFontSize(6.5);
+    doc.setTextColor(...GRAY_MEDIUM);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Documento gerado de forma segura via SlotiMob - O SaaS Imobiliário', 22, footerY);
+
+    // Agent info (right side)
+    if (agent?.name) {
+      doc.setFontSize(6.5);
+      doc.setTextColor(...GRAY_MEDIUM);
+      const agentText = [agent.name, agent.email, agent.phone].filter(Boolean).join(' | ');
+      doc.text(agentText, pageWidth - 15, footerY, { align: 'right' });
+    }
+
+    // Page number
+    doc.setFontSize(6);
+    doc.setTextColor(...GRAY_LIGHT);
+    doc.text(`${i}/${totalPages}`, pageWidth / 2, footerY + 3, { align: 'center' });
+  }
+};
+
+/**
  * Draw a feature highlight box with icon
  */
 const drawFeatureBox = (
