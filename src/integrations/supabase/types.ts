@@ -1409,6 +1409,7 @@ export type Database = {
           type: string
           unit_id: string | null
           updated_at: string
+          whatsapp_sent_at: string | null
         }
         Insert: {
           amount: number
@@ -1440,6 +1441,7 @@ export type Database = {
           type: string
           unit_id?: string | null
           updated_at?: string
+          whatsapp_sent_at?: string | null
         }
         Update: {
           amount?: number
@@ -1471,6 +1473,7 @@ export type Database = {
           type?: string
           unit_id?: string | null
           updated_at?: string
+          whatsapp_sent_at?: string | null
         }
         Relationships: [
           {
