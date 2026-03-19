@@ -1011,6 +1011,7 @@ export type Database = {
           lead_id: string
           loss_reason: string | null
           notes: string | null
+          pipeline_type: string
           priority: string | null
           probability: number | null
           property_id: string | null
@@ -1034,6 +1035,7 @@ export type Database = {
           lead_id: string
           loss_reason?: string | null
           notes?: string | null
+          pipeline_type?: string
           priority?: string | null
           probability?: number | null
           property_id?: string | null
@@ -1057,6 +1059,7 @@ export type Database = {
           lead_id?: string
           loss_reason?: string | null
           notes?: string | null
+          pipeline_type?: string
           priority?: string | null
           probability?: number | null
           property_id?: string | null
@@ -2224,6 +2227,7 @@ export type Database = {
           is_lost_stage: boolean | null
           is_won_stage: boolean | null
           name: string
+          pipeline_type: string
           updated_at: string
         }
         Insert: {
@@ -2236,6 +2240,7 @@ export type Database = {
           is_lost_stage?: boolean | null
           is_won_stage?: boolean | null
           name: string
+          pipeline_type?: string
           updated_at?: string
         }
         Update: {
@@ -2248,6 +2253,7 @@ export type Database = {
           is_lost_stage?: boolean | null
           is_won_stage?: boolean | null
           name?: string
+          pipeline_type?: string
           updated_at?: string
         }
         Relationships: []
