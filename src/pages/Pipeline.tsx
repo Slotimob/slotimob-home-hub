@@ -591,6 +591,7 @@ const Pipeline = () => {
           display_order: newDisplayOrder,
           is_won_stage: isWonStage || false,
           is_lost_stage: isLostStage || false,
+          pipeline_type: activePipeline,
         });
 
       if (error) throw error;
