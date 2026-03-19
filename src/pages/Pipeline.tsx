@@ -1114,7 +1114,7 @@ const Pipeline = () => {
 
   return (
     <AppLayout
-      title="Pipeline Vendas"
+      title="Pipeline"
       headerActions={
         <>
           <PermissionGate permission="crm_pipeline.create">
