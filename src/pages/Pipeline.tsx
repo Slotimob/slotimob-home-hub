@@ -298,6 +298,7 @@ const Pipeline = () => {
   }, []);
 
 
+  const [activePipeline, setActivePipeline] = useState<string>('sale');
   const [teamFilter, setTeamFilter] = useState<string>('all');
 
   const [filters, setFilters] = useState<PipelineFiltersState>({
