@@ -184,7 +184,7 @@ export function ChatArea({
   onOpenBuyCredits,
 }: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
-  const [templatesOpen, setTemplatesOpen] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
