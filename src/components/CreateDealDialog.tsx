@@ -81,6 +81,7 @@ interface CreateDealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  pipelineType?: string;
 }
 
 export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDialogProps) => {
