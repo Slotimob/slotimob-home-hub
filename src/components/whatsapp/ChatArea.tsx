@@ -271,6 +271,14 @@ export function ChatArea({
               <Phone className="h-3 w-3" />
               {conversation.contact_phone}
             </p>
+            <ChatTagsInput
+              conversationId={conversation.id}
+              tags={((conversation as any).tags as string[]) || []}
+              onTagsChange={(newTags) => {
+                // Optimistic local update handled by ChatTagsInput
+              }}
+              compact
+            />
           </div>
         </div>
 
