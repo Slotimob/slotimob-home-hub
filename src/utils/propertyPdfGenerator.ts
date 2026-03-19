@@ -36,6 +36,12 @@ const CONSTRUCTION_STAGE_LABELS: Record<string, string> = {
   pronto: 'Pronto para Morar',
 };
 
+export interface AgentInfo {
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface FinancingSimulation {
   downPaymentPercent: number;
   downPayment: number;
