@@ -491,7 +491,7 @@ export function TransactionsTableInfinite({
   // Desktop table view - compact layout
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="rounded-md border overflow-hidden">
+      <div className="rounded-md border overflow-hidden w-full overflow-x-auto">
         <div className="max-h-[calc(100vh-300px)] overflow-auto">
           <Table>
             <TableHeader className="sticky top-0 bg-background z-10">
