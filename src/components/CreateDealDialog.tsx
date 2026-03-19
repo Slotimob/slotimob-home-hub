@@ -84,7 +84,7 @@ interface CreateDealDialogProps {
   pipelineType?: string;
 }
 
-export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDialogProps) => {
+export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType = 'sale' }: CreateDealDialogProps) => {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
