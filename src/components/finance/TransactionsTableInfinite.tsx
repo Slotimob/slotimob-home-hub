@@ -539,7 +539,7 @@ export function TransactionsTableInfinite({
                   onSort={handleSortClick}
                   className="w-20"
                 />
-                <TableHead className="px-2 text-xs w-20">Vencim.</TableHead>
+                <TableHead className="px-2 text-xs w-20 hidden xl:table-cell">Vencim.</TableHead>
                 <SortableTableHead
                   field="amount"
                   label="Valor"

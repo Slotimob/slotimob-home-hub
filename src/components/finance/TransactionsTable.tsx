@@ -203,7 +203,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
               </TableHead>
               <TableHead className="w-[50px]">Tipo</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
+              <TableHead className="hidden lg:table-cell">Categoria</TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Status</TableHead>

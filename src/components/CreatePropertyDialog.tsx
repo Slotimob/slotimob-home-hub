@@ -62,7 +62,7 @@ export const CreatePropertyDialog = ({ open, onOpenChange, onSuccess }: CreatePr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto px-4 sm:px-6">
+      <DialogContent className="w-[95vw] sm:w-full max-w-3xl max-h-[90vh] overflow-y-auto px-4 sm:px-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
