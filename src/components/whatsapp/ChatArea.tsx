@@ -13,9 +13,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
-import { QUICK_REPLIES } from './mockData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { QuickMessagesPopover } from './QuickMessagesPopover';
+import { AISuggestButton } from './AISuggestButton';
+import { ChatTagsInput } from './ChatTagsInput';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
