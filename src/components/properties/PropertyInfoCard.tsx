@@ -65,9 +65,56 @@ const CONSTRUCTION_STAGE_COLORS: Record<string, string> = {
 export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCardProps) => {
   const [showGallery, setShowGallery] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const amenities = property.amenities || [];
   const galleryImages = property.gallery_images || [];
+
+  const handleGeneratePDF = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const pdfData = buildPDFDataFromStandalone({
+        id: property.id,
+        unit_number: property.name,
+        property_type: null,
+        condition: property.construction_stage,
+        price: null,
+        rent_price: null,
+        area: property.total_land_area,
+        bedrooms: null,
+        suites: null,
+        bathrooms: null,
+        parking_spots: null,
+        condo_fee: null,
+        iptu: null,
+        furnished: null,
+        solar_orientation: null,
+        is_financeable: null,
+        description: property.description,
+        address: property.address,
+        neighborhood: null,
+        city: property.city,
+        state: property.state,
+        postal_code: null,
+        cover_image_url: property.image_url,
+      });
+
+      const agent: AgentInfo = {
+        name: user?.user_metadata?.full_name || user?.email || 'Corretor',
+        email: user?.email || undefined,
+      };
+
+      await generatePropertyPDF(pdfData, agent);
+      toast({ title: 'PDF gerado com sucesso!', description: 'O download iniciará automaticamente.' });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({ title: 'Erro ao gerar PDF', description: 'Tente novamente.', variant: 'destructive' });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   if (compact) {
     return (
