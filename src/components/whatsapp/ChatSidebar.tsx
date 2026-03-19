@@ -311,6 +311,15 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
                         </Badge>
                       )}
                     </div>
+                    {((conv as any).tags as string[] | undefined)?.length > 0 && (
+                      <div className="flex gap-0.5 mt-0.5 flex-wrap">
+                        {((conv as any).tags as string[]).slice(0, 3).map(tag => (
+                          <span key={tag} className="text-[9px] px-1 py-0 rounded bg-muted text-muted-foreground">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </button>
               );

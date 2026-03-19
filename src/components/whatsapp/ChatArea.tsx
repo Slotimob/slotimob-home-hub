@@ -7,15 +7,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  MessageSquare, Send, Paperclip, FileText, Phone, MoreVertical,
+  MessageSquare, Send, Paperclip, Phone, MoreVertical,
   Check, CheckCheck, ArrowLeft, ChevronRight, Loader2, WifiOff,
   Image as ImageIcon, Mic, Film, File, UserCheck, User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
-import { QUICK_REPLIES } from './mockData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { QuickMessagesPopover } from './QuickMessagesPopover';
+import { AISuggestButton } from './AISuggestButton';
+import { ChatTagsInput } from './ChatTagsInput';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
@@ -38,6 +40,7 @@ interface ChatAreaProps {
   conversationId?: string | null;
   onCloseConversation?: () => void;
   onReturnToQueue?: () => void;
+  onOpenBuyCredits?: () => void;
 }
 
 function formatTime(dateStr: string): string {
@@ -178,9 +181,10 @@ export function ChatArea({
   conversationId,
   onCloseConversation,
   onReturnToQueue,
+  onOpenBuyCredits,
 }: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
-  const [templatesOpen, setTemplatesOpen] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -216,7 +220,6 @@ export function ChatArea({
 
   const handleQuickReply = (content: string) => {
     setMessageText(content);
-    setTemplatesOpen(false);
     textareaRef.current?.focus();
   };
 
@@ -267,6 +270,14 @@ export function ChatArea({
               <Phone className="h-3 w-3" />
               {conversation.contact_phone}
             </p>
+            <ChatTagsInput
+              conversationId={conversation.id}
+              tags={((conversation as any).tags as string[]) || []}
+              onTagsChange={(newTags) => {
+                // Optimistic local update handled by ChatTagsInput
+              }}
+              compact
+            />
           </div>
         </div>
 
@@ -451,32 +462,17 @@ export function ChatArea({
               <Paperclip className="h-5 w-5" />
             </Button>
 
-            <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
-                  <FileText className="h-5 w-5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="start" side="top">
-                <div className="p-3 border-b">
-                  <h4 className="font-semibold text-sm">Respostas Rápidas</h4>
-                </div>
-                <ScrollArea className="max-h-60">
-                  <div className="p-1">
-                    {QUICK_REPLIES.map((qr) => (
-                      <button
-                        key={qr.id}
-                        onClick={() => handleQuickReply(qr.content)}
-                        className="w-full text-left px-3 py-2.5 hover:bg-accent/50 rounded-md transition-colors"
-                      >
-                        <span className="text-sm font-medium text-foreground">{qr.title}</span>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{qr.content}</p>
-                      </button>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </PopoverContent>
-            </Popover>
+            <QuickMessagesPopover onSelect={handleQuickReply} />
+
+            <AISuggestButton
+              messages={messages}
+              contactName={displayName}
+              onSuggestion={(text) => {
+                setMessageText(text);
+                textareaRef.current?.focus();
+              }}
+              onOpenBuyCredits={onOpenBuyCredits}
+            />
 
             <div className="flex-1 min-w-0 relative">
               <textarea
