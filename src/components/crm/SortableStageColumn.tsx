@@ -128,7 +128,7 @@ export const SortableStageColumn = ({
       <div ref={setDroppableRef}>
         <Card 
           className={cn(
-            "h-full transition-all bg-muted/30",
+            "h-full min-h-[calc(100vh-260px)] transition-all bg-muted/30 flex flex-col",
             isOver && !isDraggingStage && 'ring-2 ring-primary bg-muted/50',
             isDragging && 'shadow-lg',
           )}
