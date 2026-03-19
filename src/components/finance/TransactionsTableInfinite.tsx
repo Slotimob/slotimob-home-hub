@@ -530,6 +530,7 @@ export function TransactionsTableInfinite({
                   label="Categoria"
                   currentSort={sortConfig}
                   onSort={handleSortClick}
+                  className="hidden lg:table-cell"
                 />
                 <SortableTableHead
                   field="transaction_date"
