@@ -410,11 +410,11 @@ const enhanceDescription = (description: string | null, unit: PDFAssetData['unit
 /**
  * PAGE 1: Hero Cover Page
  */
-const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin: number) => {
+const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin: number, agent?: AgentInfo, coverImageBase64?: string | null) => {
   const { unit, parentProperty, title } = data;
   let y = 0;
   
-  // Header bar with gradient effect simulation
+  // Header bar
   doc.setFillColor(...BRAND_BLUE);
   doc.rect(0, 0, pageWidth, 35, 'F');
   
@@ -426,27 +426,45 @@ const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin:
   doc.setTextColor(...WHITE);
   doc.setFont('helvetica', 'bold');
   doc.text('SLOTIMOB', margin + 22, 20);
-  
-  // "Oportunidade Exclusiva" badge
-  doc.setFillColor(...BRAND_GREEN);
-  doc.roundedRect(pageWidth - margin - 55, 10, 55, 15, 3, 3, 'F');
-  doc.setFontSize(8);
-  doc.setTextColor(...WHITE);
-  doc.setFont('helvetica', 'bold');
-  doc.text('OPORTUNIDADE EXCLUSIVA', pageWidth - margin - 52, 19);
+
+  // Agent name on header right
+  if (agent?.name) {
+    doc.setFontSize(9);
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'normal');
+    doc.text(normalizeText(agent.name), pageWidth - margin, 16, { align: 'right' });
+    if (agent.phone) {
+      doc.setFontSize(8);
+      doc.text(agent.phone, pageWidth - margin, 22, { align: 'right' });
+    }
+  } else {
+    // "Oportunidade Exclusiva" badge
+    doc.setFillColor(...BRAND_GREEN);
+    doc.roundedRect(pageWidth - margin - 55, 10, 55, 15, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.text('OPORTUNIDADE EXCLUSIVA', pageWidth - margin - 52, 19);
+  }
   
   y = 45;
   
-  // Main image area (50-60% of page)
+  // Main image area
   const imageHeight = 90;
-  doc.setFillColor(245, 245, 250);
-  doc.roundedRect(margin, y, pageWidth - margin * 2, imageHeight, 4, 4, 'F');
+  const imgWidth = pageWidth - margin * 2;
   
-  // Placeholder text for image
-  doc.setFontSize(11);
-  doc.setTextColor(...GRAY_LIGHT);
-  const imageText = unit.cover_image_url ? 'Perspectiva do Imóvel' : 'Imagem não disponível';
-  doc.text(imageText, pageWidth / 2, y + imageHeight / 2, { align: 'center' });
+  if (coverImageBase64) {
+    // Draw real image
+    doc.setFillColor(245, 245, 250);
+    doc.roundedRect(margin, y, imgWidth, imageHeight, 4, 4, 'F');
+    safeAddImage(doc, coverImageBase64, 'JPEG', margin, y, imgWidth, imageHeight);
+  } else {
+    doc.setFillColor(245, 245, 250);
+    doc.roundedRect(margin, y, imgWidth, imageHeight, 4, 4, 'F');
+    doc.setFontSize(11);
+    doc.setTextColor(...GRAY_LIGHT);
+    doc.text('Imagem não disponível', pageWidth / 2, y + imageHeight / 2, { align: 'center' });
+  }
   
   y += imageHeight + 12;
   
