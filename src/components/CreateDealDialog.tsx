@@ -81,9 +81,10 @@ interface CreateDealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  pipelineType?: string;
 }
 
-export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDialogProps) => {
+export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType = 'sale' }: CreateDealDialogProps) => {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
@@ -342,6 +343,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess }: CreateDealDi
         broker_id: effectiveBrokerId,
         assigned_user_id: assignedUserId || user?.id || null,
         stage: 'new_lead' as const,
+        pipeline_type: pipelineType,
       };
 
       const { data: newDeal, error } = await supabase.from('deals').insert([dealPayload]).select('id').single();

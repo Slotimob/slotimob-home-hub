@@ -6,6 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { TeamFilter } from '@/components/shared/TeamFilter';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { HeaderButton } from "@/components/ui/header-button";
@@ -52,6 +53,7 @@ export interface Deal {
   loss_reason?: string | null;
   temperature?: 'hot' | 'warm' | 'cold';
   business_type?: 'sale' | 'rental';
+  pipeline_type?: string;
   lead: {
     id: string;
     name: string;
@@ -69,6 +71,12 @@ export interface Deal {
     status?: string;
   } | null;
 }
+
+const PIPELINE_TYPES = [
+  { value: 'sale', label: 'Vendas' },
+  { value: 'rental', label: 'Locações' },
+  { value: 'acquisition', label: 'Captações' },
+] as const;
 
 interface TaskCount {
   deal_id: string;
@@ -290,6 +298,7 @@ const Pipeline = () => {
   }, []);
 
 
+  const [activePipeline, setActivePipeline] = useState<string>('sale');
   const [teamFilter, setTeamFilter] = useState<string>('all');
 
   const [filters, setFilters] = useState<PipelineFiltersState>({
@@ -391,7 +400,7 @@ const Pipeline = () => {
       loadCustomStages();
       loadStageOrder();
     }
-  }, [user, teamFilter]);
+  }, [user, teamFilter, activePipeline]);
 
   // Clear selection when exiting selection mode
   useEffect(() => {
@@ -410,6 +419,7 @@ const Pipeline = () => {
           property:properties(id, name),
           unit:units(id, unit_number, status)
         `)
+        .eq('pipeline_type', activePipeline)
         .order('created_at', { ascending: false });
 
       // Apply team filter via query (not JS filter)
@@ -440,6 +450,7 @@ const Pipeline = () => {
       const { data, error } = await supabase
         .from('pipeline_stages')
         .select('*')
+        .eq('pipeline_type', activePipeline)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
@@ -580,6 +591,7 @@ const Pipeline = () => {
           display_order: newDisplayOrder,
           is_won_stage: isWonStage || false,
           is_lost_stage: isLostStage || false,
+          pipeline_type: activePipeline,
         });
 
       if (error) throw error;
@@ -1102,7 +1114,7 @@ const Pipeline = () => {
 
   return (
     <AppLayout
-      title="Pipeline Vendas"
+      title="Pipeline"
       headerActions={
         <>
           <PermissionGate permission="crm_pipeline.create">
@@ -1131,7 +1143,18 @@ const Pipeline = () => {
         </>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
+        {/* Pipeline type tabs */}
+        <Tabs value={activePipeline} onValueChange={setActivePipeline} className="w-full">
+          <TabsList>
+            {PIPELINE_TYPES.map((pt) => (
+              <TabsTrigger key={pt.value} value={pt.value}>
+                {pt.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
         {/* Metrics Section */}
         <Collapsible open={showMetrics} onOpenChange={setShowMetrics}>
           <CollapsibleContent className="space-y-4">
@@ -1314,6 +1337,7 @@ const Pipeline = () => {
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={loadDeals}
+        pipelineType={activePipeline}
       />
 
       <DealDetailsSheet
