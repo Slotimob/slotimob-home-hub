@@ -1337,6 +1337,7 @@ const Pipeline = () => {
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={loadDeals}
+        pipelineType={activePipeline}
       />
 
       <DealDetailsSheet
