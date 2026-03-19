@@ -2627,6 +2627,38 @@ export type Database = {
           },
         ]
       }
+      quick_messages: {
+        Row: {
+          broker_id: string
+          content: string
+          created_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          broker_id: string
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          broker_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_messages_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limits: {
         Row: {
           created_at: string | null
@@ -3584,6 +3616,7 @@ export type Database = {
           lead_id: string | null
           remote_jid: string
           status: string
+          tags: string[] | null
           unread_count: number
           updated_at: string
         }
@@ -3604,6 +3637,7 @@ export type Database = {
           lead_id?: string | null
           remote_jid: string
           status?: string
+          tags?: string[] | null
           unread_count?: number
           updated_at?: string
         }
@@ -3624,6 +3658,7 @@ export type Database = {
           lead_id?: string | null
           remote_jid?: string
           status?: string
+          tags?: string[] | null
           unread_count?: number
           updated_at?: string
         }
