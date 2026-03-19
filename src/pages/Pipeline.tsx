@@ -450,6 +450,7 @@ const Pipeline = () => {
       const { data, error } = await supabase
         .from('pipeline_stages')
         .select('*')
+        .eq('pipeline_type', activePipeline)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
