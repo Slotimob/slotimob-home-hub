@@ -419,6 +419,7 @@ const Pipeline = () => {
           property:properties(id, name),
           unit:units(id, unit_number, status)
         `)
+        .eq('pipeline_type', activePipeline)
         .order('created_at', { ascending: false });
 
       // Apply team filter via query (not JS filter)
