@@ -644,7 +644,7 @@ export function TransactionsTableInfinite({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="px-2 py-1.5">
+                    <TableCell className="px-2 py-1.5 hidden lg:table-cell">
                       {transaction.category ? (
                         <span className="text-[10px] text-muted-foreground truncate block max-w-[100px]">
                           {transaction.category.name}
