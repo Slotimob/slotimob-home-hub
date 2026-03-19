@@ -36,6 +36,12 @@ const CONSTRUCTION_STAGE_LABELS: Record<string, string> = {
   pronto: 'Pronto para Morar',
 };
 
+export interface AgentInfo {
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface FinancingSimulation {
   downPaymentPercent: number;
   downPayment: number;
@@ -247,6 +253,71 @@ const safeAddImage = (
 };
 
 /**
+ * Load an image URL as a base64 data URL
+ */
+const loadImageAsBase64 = (url: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    if (!url) { resolve(null); return; }
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (e) {
+        console.warn('Failed to convert image to base64:', e);
+        resolve(null);
+      }
+    };
+    img.onerror = () => { resolve(null); };
+    img.src = url;
+  });
+};
+
+/**
+ * Add branded footer to every page
+ */
+const addBrandedFooter = (doc: jsPDF, pageWidth: number, pageHeight: number, agent?: AgentInfo) => {
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const footerY = pageHeight - 10;
+
+    // Divider line
+    doc.setDrawColor(...GRAY_LIGHT);
+    doc.setLineWidth(0.3);
+    doc.line(15, footerY - 5, pageWidth - 15, footerY - 5);
+
+    // Logo
+    safeAddImage(doc, SLOTI_LOGO_BASE64, 'PNG', 15, footerY - 3, 5, 5);
+
+    // Brand text
+    doc.setFontSize(6.5);
+    doc.setTextColor(...GRAY_MEDIUM);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Documento gerado de forma segura via SlotiMob - O SaaS Imobiliário', 22, footerY);
+
+    // Agent info (right side)
+    if (agent?.name) {
+      doc.setFontSize(6.5);
+      doc.setTextColor(...GRAY_MEDIUM);
+      const agentText = [agent.name, agent.email, agent.phone].filter(Boolean).join(' | ');
+      doc.text(agentText, pageWidth - 15, footerY, { align: 'right' });
+    }
+
+    // Page number
+    doc.setFontSize(6);
+    doc.setTextColor(...GRAY_LIGHT);
+    doc.text(`${i}/${totalPages}`, pageWidth / 2, footerY + 3, { align: 'center' });
+  }
+};
+
+/**
  * Draw a feature highlight box with icon
  */
 const drawFeatureBox = (
@@ -339,11 +410,11 @@ const enhanceDescription = (description: string | null, unit: PDFAssetData['unit
 /**
  * PAGE 1: Hero Cover Page
  */
-const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin: number) => {
+const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin: number, agent?: AgentInfo, coverImageBase64?: string | null) => {
   const { unit, parentProperty, title } = data;
   let y = 0;
   
-  // Header bar with gradient effect simulation
+  // Header bar
   doc.setFillColor(...BRAND_BLUE);
   doc.rect(0, 0, pageWidth, 35, 'F');
   
@@ -355,27 +426,45 @@ const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin:
   doc.setTextColor(...WHITE);
   doc.setFont('helvetica', 'bold');
   doc.text('SLOTIMOB', margin + 22, 20);
-  
-  // "Oportunidade Exclusiva" badge
-  doc.setFillColor(...BRAND_GREEN);
-  doc.roundedRect(pageWidth - margin - 55, 10, 55, 15, 3, 3, 'F');
-  doc.setFontSize(8);
-  doc.setTextColor(...WHITE);
-  doc.setFont('helvetica', 'bold');
-  doc.text('OPORTUNIDADE EXCLUSIVA', pageWidth - margin - 52, 19);
+
+  // Agent name on header right
+  if (agent?.name) {
+    doc.setFontSize(9);
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'normal');
+    doc.text(normalizeText(agent.name), pageWidth - margin, 16, { align: 'right' });
+    if (agent.phone) {
+      doc.setFontSize(8);
+      doc.text(agent.phone, pageWidth - margin, 22, { align: 'right' });
+    }
+  } else {
+    // "Oportunidade Exclusiva" badge
+    doc.setFillColor(...BRAND_GREEN);
+    doc.roundedRect(pageWidth - margin - 55, 10, 55, 15, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.text('OPORTUNIDADE EXCLUSIVA', pageWidth - margin - 52, 19);
+  }
   
   y = 45;
   
-  // Main image area (50-60% of page)
+  // Main image area
   const imageHeight = 90;
-  doc.setFillColor(245, 245, 250);
-  doc.roundedRect(margin, y, pageWidth - margin * 2, imageHeight, 4, 4, 'F');
+  const imgWidth = pageWidth - margin * 2;
   
-  // Placeholder text for image
-  doc.setFontSize(11);
-  doc.setTextColor(...GRAY_LIGHT);
-  const imageText = unit.cover_image_url ? 'Perspectiva do Imóvel' : 'Imagem não disponível';
-  doc.text(imageText, pageWidth / 2, y + imageHeight / 2, { align: 'center' });
+  if (coverImageBase64) {
+    // Draw real image
+    doc.setFillColor(245, 245, 250);
+    doc.roundedRect(margin, y, imgWidth, imageHeight, 4, 4, 'F');
+    safeAddImage(doc, coverImageBase64, 'JPEG', margin, y, imgWidth, imageHeight);
+  } else {
+    doc.setFillColor(245, 245, 250);
+    doc.roundedRect(margin, y, imgWidth, imageHeight, 4, 4, 'F');
+    doc.setFontSize(11);
+    doc.setTextColor(...GRAY_LIGHT);
+    doc.text('Imagem não disponível', pageWidth / 2, y + imageHeight / 2, { align: 'center' });
+  }
   
   y += imageHeight + 12;
   
@@ -632,19 +721,13 @@ const addClosingSection = (doc: jsPDF, pageWidth: number, pageHeight: number, ma
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text('Entre em contato e garanta essa oportunidade única.', pageWidth / 2, y + 18, { align: 'center' });
-  
-  // Footer
-  const footerY = pageHeight - 12;
-  doc.setFontSize(7);
-  doc.setTextColor(...GRAY_LIGHT);
-  doc.text('Documento gerado automaticamente pelo SLOTIMOB', pageWidth / 2, footerY, { align: 'center' });
-  doc.text(new Date().toLocaleDateString('pt-BR'), pageWidth / 2, footerY + 4, { align: 'center' });
 };
 
 /**
  * Main PDF Generator Function - Commercial Brochure Premium
+ * Now async to support image loading
  */
-export function generatePropertyPDF(data: PDFAssetData): void {
+export async function generatePropertyPDF(data: PDFAssetData, agent?: AgentInfo): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -654,9 +737,13 @@ export function generatePropertyPDF(data: PDFAssetData): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
+
+  // Load cover image asynchronously
+  const imageUrl = data.unit.cover_image_url || data.parentProperty?.image_url || null;
+  const coverImageBase64 = imageUrl ? await loadImageAsBase64(imageUrl) : null;
   
   // PAGE 1: Hero Cover
-  addCoverPage(doc, data, pageWidth, margin);
+  addCoverPage(doc, data, pageWidth, margin, agent, coverImageBase64);
   
   // PAGE 2: Details
   doc.addPage();
@@ -664,6 +751,9 @@ export function generatePropertyPDF(data: PDFAssetData): void {
   
   // CTA on last page
   addClosingSection(doc, pageWidth, pageHeight, margin);
+
+  // Add branded footer to ALL pages
+  addBrandedFooter(doc, pageWidth, pageHeight, agent);
   
   // Generate filename
   const safeName = data.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
