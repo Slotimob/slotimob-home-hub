@@ -40,6 +40,7 @@ interface ChatAreaProps {
   conversationId?: string | null;
   onCloseConversation?: () => void;
   onReturnToQueue?: () => void;
+  onOpenBuyCredits?: () => void;
 }
 
 function formatTime(dateStr: string): string {
