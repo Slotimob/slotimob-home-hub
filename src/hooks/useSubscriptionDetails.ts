@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useWorkspace } from './useWorkspace';
 
 export interface SubscriptionDetails {
   plan_id: string;
@@ -13,20 +14,26 @@ export interface SubscriptionDetails {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   trial_ends_at: string | null;
+  trial_extension_count: number;
+  last_modified_by_admin: string | null;
 }
 
 export const useSubscriptionDetails = () => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
+
+  // Use effectiveBrokerId so members inherit the owner's subscription
+  const resolvedUserId = effectiveBrokerId || user?.id;
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['subscription-details', user?.id],
+    queryKey: ['subscription-details', resolvedUserId],
     queryFn: async (): Promise<SubscriptionDetails | null> => {
-      if (!user?.id) return null;
+      if (!resolvedUserId) return null;
 
       const { data, error } = await supabase
         .from('subscriptions')
-        .select('plan_id, status, is_early_adopter, extra_users_count, extra_unit_packs, stripe_customer_id, stripe_subscription_id, current_period_end, cancel_at_period_end, trial_ends_at')
-        .eq('user_id', user.id)
+        .select('plan_id, status, is_early_adopter, extra_users_count, extra_unit_packs, stripe_customer_id, stripe_subscription_id, current_period_end, cancel_at_period_end, trial_ends_at, trial_extension_count, last_modified_by_admin')
+        .eq('user_id', resolvedUserId)
         .maybeSingle();
 
       if (error) {
@@ -36,7 +43,7 @@ export const useSubscriptionDetails = () => {
 
       return data as SubscriptionDetails;
     },
-    enabled: !!user?.id,
+    enabled: !!resolvedUserId,
     staleTime: 2 * 60 * 1000,
   });
 
