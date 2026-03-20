@@ -3011,6 +3011,7 @@ export type Database = {
           extra_users_count: number
           id: string
           is_early_adopter: boolean | null
+          last_modified_by_admin: string | null
           plan_id: string
           price_locked: number | null
           status: string
@@ -3019,6 +3020,7 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           trial_ends_at: string | null
+          trial_extension_count: number
           updated_at: string | null
           user_id: string
         }
@@ -3033,6 +3035,7 @@ export type Database = {
           extra_users_count?: number
           id?: string
           is_early_adopter?: boolean | null
+          last_modified_by_admin?: string | null
           plan_id?: string
           price_locked?: number | null
           status?: string
@@ -3041,6 +3044,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
+          trial_extension_count?: number
           updated_at?: string | null
           user_id: string
         }
@@ -3055,6 +3059,7 @@ export type Database = {
           extra_users_count?: number
           id?: string
           is_early_adopter?: boolean | null
+          last_modified_by_admin?: string | null
           plan_id?: string
           price_locked?: number | null
           status?: string
@@ -3063,6 +3068,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
+          trial_extension_count?: number
           updated_at?: string | null
           user_id?: string
         }
@@ -3994,6 +4000,10 @@ export type Database = {
           p_role: string
           p_target_user_id: string
         }
+        Returns: undefined
+      }
+      admin_manage_trial: {
+        Args: { p_new_trial_end: string; p_target_user_id: string }
         Returns: undefined
       }
       can_access_whatsapp_connection: {
