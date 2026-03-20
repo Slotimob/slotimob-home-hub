@@ -236,10 +236,7 @@ export function AppSidebar() {
       return true;
     });
 
-  // Add Cockpit for staff roles (super_admin, admin, support)
-  if (hasCockpitAccess) {
-    filteredMenuItems.push({ title: 'Cockpit Master', url: '/admin/cockpit', icon: Shield });
-  }
+  // Cockpit is rendered separately in the footer
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/';
