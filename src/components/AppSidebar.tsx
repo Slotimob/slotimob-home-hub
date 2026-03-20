@@ -236,10 +236,7 @@ export function AppSidebar() {
       return true;
     });
 
-  // Add Cockpit for staff roles (super_admin, admin, support)
-  if (hasCockpitAccess) {
-    filteredMenuItems.push({ title: 'Cockpit Master', url: '/admin/cockpit', icon: Shield });
-  }
+  // Cockpit is rendered separately in the footer
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/';
@@ -496,6 +493,30 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t p-2">
+        {hasCockpitAccess && (
+          <SidebarGroup className="p-0">
+            <SidebarGroupLabel className={`transition-opacity duration-300 ${collapsed ? 'sr-only' : ''}`}>
+              Administração
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive('/admin/cockpit')} tooltip="Cockpit Master">
+                    <NavLink 
+                      to="/admin/cockpit" 
+                      className="flex items-center gap-3" 
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                      onClick={() => isMobile && setOpenMobile(false)}
+                    >
+                      <Shield className="h-4 w-4 shrink-0" />
+                      <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>Cockpit Master</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={isActive('/settings')} tooltip="Configurações">
