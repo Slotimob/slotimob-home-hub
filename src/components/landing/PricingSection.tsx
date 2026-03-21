@@ -103,6 +103,9 @@ const mobilePlanOrder: PlanId[] = ['pro', 'start', 'business'];
 
 const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
 export function PricingSection() {
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
