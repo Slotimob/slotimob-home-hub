@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-const ENV_GTM_ID = import.meta.env.VITE_GTM_ID;
+const ENV_GTM_ID = import.meta.env.VITE_GTM_ID || 'GTM-PPNZLQM5';
 const ENV_PIXEL_ID = import.meta.env.VITE_PIXEL_ID;
 
 // Extend window for tracking globals
@@ -89,6 +89,14 @@ export function trackLeadSignup(source?: string) {
   trackEvent('LeadSignup', { source });
   if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('track', 'Lead', { source });
+  }
+}
+
+/** Convenience: track StartTrial */
+export function trackStartTrial(planId?: string) {
+  trackEvent('StartTrial', { plan: planId });
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', 'StartTrial', { plan: planId });
   }
 }
 

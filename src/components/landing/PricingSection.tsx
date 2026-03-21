@@ -52,28 +52,6 @@ const plans: PlanDef[] = [
     bestValue: false,
   },
   {
-    id: 'essencial',
-    name: 'Essencial',
-    icon: Briefcase,
-    description: 'Organize seus imóveis e comece a vender',
-    units: 'Até 15 unidades',
-    users: '1 usuário',
-    features: [
-      'CRM Completo (Pipeline e Contatos)',
-      'Financeiro Simples (Lançamentos)',
-      'Chat IA (50 Créditos/mês)',
-      'Contatos ilimitados',
-    ],
-    notIncluded: [
-      'WhatsApp Oficial',
-      'Documentos e Contratos',
-      'Relatórios Avançados',
-    ],
-    cta: 'Começar com Essencial',
-    popular: false,
-    bestValue: false,
-  },
-  {
     id: 'pro',
     name: 'Pro',
     icon: Rocket,
@@ -81,7 +59,7 @@ const plans: PlanDef[] = [
     units: 'Até 50 unidades',
     users: '1 usuário',
     features: [
-      'Tudo do Essencial',
+      'CRM Completo (Pipeline e Contatos)',
       'Chat IA (250 créditos/mês)',
       'Contratos ilimitados',
       'Relatórios e DRE completos',
@@ -110,6 +88,8 @@ const plans: PlanDef[] = [
       'Gestão de equipe com permissões',
       'Roleta de leads automática',
       'Split de comissões',
+      'Automações Exclusivas',
+      'Integrações Avançadas',
       'Expansão sob demanda',
     ],
     cta: 'Garantir Vaga',
@@ -118,8 +98,8 @@ const plans: PlanDef[] = [
   },
 ];
 
-/* Mobile order: PRO first, then Start, Essencial, Business */
-const mobilePlanOrder: PlanId[] = ['pro', 'start', 'essencial', 'business'];
+/* Mobile order: PRO first, then Start, Business */
+const mobilePlanOrder: PlanId[] = ['pro', 'start', 'business'];
 
 const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
 
@@ -398,16 +378,16 @@ export function PricingSection() {
             <Label htmlFor="billing-toggle" className={cn('text-sm transition-colors', isAnnual ? 'text-foreground font-medium' : 'text-muted-foreground')}>
               Anual
             </Label>
-            {isAnnual && (
+             {isAnnual && (
               <Badge variant="secondary" className="text-accent bg-accent/10 border-accent/20">
-                Economize até 34%
+                Economize até 27%
               </Badge>
             )}
           </div>
         </div>
 
         {/* Desktop: 4 columns */}
-        <div className="hidden lg:grid gap-6 lg:grid-cols-4 max-w-7xl mx-auto items-stretch">
+        <div className="hidden lg:grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto items-stretch">
           {plans.map(renderCard)}
         </div>
 

@@ -12,6 +12,7 @@ import { SlotiLogo } from '@/components/SlotiLogo';
 import { Separator } from '@/components/ui/separator';
 import { SEOHead } from '@/components/SEOHead';
 import { toast as sonnerToast } from 'sonner';
+import { trackLeadSignup, trackStartTrial } from '@/components/TrackingProvider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { UserPlus, ArrowLeft, ArrowRight, Check, BarChart3, MessageSquare, Wallet, Building2, Loader2 } from 'lucide-react';
@@ -517,6 +518,8 @@ const Auth = () => {
         setSignupStep(1);
       } else {
         if (inviteToken) await handleAcceptInvite();
+        trackLeadSignup(pendingPlan || 'organic');
+        trackStartTrial(pendingPlan || 'start');
         toast({ title: 'Conta criada!', description: 'Sua conta foi criada com sucesso.' });
         if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
           handlePostAuthRedirect(pendingPlan);
