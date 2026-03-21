@@ -12,22 +12,27 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
-// Product IDs for add-on detection
+// Product IDs for add-on detection (legacy product-level matching)
 const ADDON_PRODUCT_IDS = {
   extra_user: 'prod_TxLj0Tr0pWaIOe',
   extra_units: 'prod_TxLk3rrSDN5a3t',
 };
 
+// Price-level add-on detection (preferred over product IDs)
+const ADDON_PRICE_IDS = {
+  extra_user: 'price_1T7307AUMiQcSICyi27XGFK4',
+  extra_units: 'price_1T72z0AUMiQcSICyrkWUm7fI',
+};
+
 const CREDIT_PRODUCT_IDS: Record<string, { type: 'whatsapp' | 'ai'; credits: number }> = {
   'prod_TxLl2AQ7sgNiwS': { type: 'whatsapp', credits: 500 },
-  'prod_TxLn14geNfUh5F': { type: 'ai', credits: 100 },
 };
 
 // Known credit price IDs for direct matching
 const CREDIT_PRICE_IDS: Record<string, { type: 'ai'; credits: number }> = {
-  'price_1T6gbTAUMiQcSICyei8sQCXE': { type: 'ai', credits: 500 },
-  'price_1T6gbrAUMiQcSICylWWUd3H5': { type: 'ai', credits: 1000 },
-  'price_1T6gcBAUMiQcSICyBGJwdX3B': { type: 'ai', credits: 2500 },
+  'price_1TDWqAAUMiQcSICyoAmLJb3j': { type: 'ai', credits: 500 },
+  'price_1TDWqAAUMiQcSICysOQz0Vbd': { type: 'ai', credits: 1000 },
+  'price_1TDWqAAUMiQcSICy3JWgkiA4': { type: 'ai', credits: 2000 },
 };
 
 /**
@@ -329,10 +334,13 @@ function syncAddonsFromSubscription(subscription: Stripe.Subscription) {
   let extraUnitPacks = 0;
 
   for (const item of subscription.items.data) {
+    const priceId = item.price?.id || '';
     const productId = typeof item.price.product === 'string' ? item.price.product : '';
-    if (productId === ADDON_PRODUCT_IDS.extra_user) {
+
+    // Match by price ID first (preferred), then fall back to product ID
+    if (priceId === ADDON_PRICE_IDS.extra_user || productId === ADDON_PRODUCT_IDS.extra_user) {
       extraUsers = item.quantity || 0;
-    } else if (productId === ADDON_PRODUCT_IDS.extra_units) {
+    } else if (priceId === ADDON_PRICE_IDS.extra_units || productId === ADDON_PRODUCT_IDS.extra_units) {
       extraUnitPacks = item.quantity || 0;
     }
   }

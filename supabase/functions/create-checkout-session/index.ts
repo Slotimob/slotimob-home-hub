@@ -14,9 +14,9 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 
 // Known credit price IDs → metadata
 const CREDIT_PRICES: Record<string, { credits: number; label: string }> = {
-  'price_1T6gbTAUMiQcSICyei8sQCXE': { credits: 500, label: '500 Créditos IA' },
-  'price_1T6gbrAUMiQcSICylWWUd3H5': { credits: 1000, label: '1000 Créditos IA' },
-  'price_1T6gcBAUMiQcSICyBGJwdX3B': { credits: 2500, label: '2500 Créditos IA' },
+  'price_1TDWqAAUMiQcSICyoAmLJb3j': { credits: 500, label: '500 Créditos IA' },
+  'price_1TDWqAAUMiQcSICysOQz0Vbd': { credits: 1000, label: '1000 Créditos IA' },
+  'price_1TDWqAAUMiQcSICy3JWgkiA4': { credits: 2000, label: '2000 Créditos IA' },
 };
 
 serve(async (req) => {
