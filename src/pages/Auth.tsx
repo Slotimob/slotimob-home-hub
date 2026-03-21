@@ -208,10 +208,7 @@ const Auth = () => {
       setInviteLoading(true);
       try {
         const { data, error } = await supabase
-          .from('organization_invitations')
-          .select('email, invited_by_name, organization_owner_id')
-          .eq('token', inviteToken)
-          .maybeSingle();
+          .rpc('get_invitation_by_token', { p_token: inviteToken });
         if (error || !data) {
           sonnerToast.error('Convite inválido, expirado ou já utilizado.');
         } else {
