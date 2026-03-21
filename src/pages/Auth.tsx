@@ -212,8 +212,9 @@ const Auth = () => {
         if (error || !data) {
           sonnerToast.error('Convite inválido, expirado ou já utilizado.');
         } else {
-          setInvitation(data);
-          setSignupForm(prev => ({ ...prev, email: data.email }));
+          const inviteData = data as unknown as { email: string; invited_by_name: string; organization_owner_id: string };
+          setInvitation(inviteData);
+          setSignupForm(prev => ({ ...prev, email: inviteData.email }));
           setActiveTab('signup');
         }
       } catch {
