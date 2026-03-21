@@ -103,6 +103,9 @@ const mobilePlanOrder: PlanId[] = ['pro', 'start', 'business'];
 
 const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
 export function PricingSection() {
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -130,17 +133,32 @@ export function PricingSection() {
     if (planId === 'start') return 0;
     const isEA = getEarlyAdopterAvailable(planId);
     if (isEA) {
+      // EA annual prices are already stored as monthly equivalents
       return isAnnual ? p.price_annual_early_adopter : p.price_early_adopter;
     }
-    return isAnnual ? p.price_annual : p.price_original;
+    // For regular prices, divide annual total by 12 to show monthly equivalent
+    return isAnnual ? p.price_annual / 12 : p.price_original;
+  };
+
+  const getAnnualTotal = (planId: PlanId): number | null => {
+    const p = pricing?.[planId];
+    if (!p || planId === 'start' || !isAnnual) return null;
+    const isEA = getEarlyAdopterAvailable(planId);
+    if (isEA) {
+      return p.price_annual_early_adopter * 12;
+    }
+    return p.price_annual;
   };
 
   const getOriginalPrice = (planId: PlanId): number | null => {
     const p = pricing?.[planId];
     if (!p || planId === 'start') return null;
     const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) return isAnnual ? p.price_original : p.price_original;
-    if (isAnnual && p.price_original > p.price_annual) return p.price_original;
+    if (isEA) return p.price_original;
+    if (isAnnual) {
+      const monthlyEquiv = p.price_annual / 12;
+      if (p.price_original > monthlyEquiv) return p.price_original;
+    }
     return null;
   };
 
@@ -150,7 +168,7 @@ export function PricingSection() {
     const isEA = getEarlyAdopterAvailable(planId);
     if (isEA) return null;
     if (!isAnnual && p.price_annual > 0) {
-      return `ou R$ ${formatPrice(p.price_annual)}/mês no anual`;
+      return `ou ${formatCurrency(p.price_annual / 12)}/mês no anual`;
     }
     return null;
   };
@@ -163,11 +181,11 @@ export function PricingSection() {
     setLoadingPlan(planId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      const cycle = isAnnual ? 'annual' : 'monthly';
       if (!session) {
-        navigate(`/auth?redirect=checkout&plan=${planId}`);
+        navigate(`/auth?redirect=checkout&plan=${planId}&cycle=${cycle}`);
         return;
       }
-      const cycle = isAnnual ? 'annual' : 'monthly';
       navigate(`/checkout?plan=${planId}&cycle=${cycle}`);
     } catch (err) {
       console.error('Checkout error:', err);
@@ -189,6 +207,7 @@ export function PricingSection() {
     const isPro = plan.id === 'pro';
     const isEarlyAdopter = getEarlyAdopterAvailable(plan.id);
     const displayPrice = getDisplayPrice(plan.id);
+    const annualTotal = getAnnualTotal(plan.id);
     const altPrice = getAlternativePrice(plan.id);
     const remaining = getRemainingSlots(plan.id);
 
@@ -244,26 +263,31 @@ export function PricingSection() {
             <>
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-foreground">
-                    R$ {formatPrice(displayPrice)}
+                    {formatCurrency(displayPrice)}
                   </span>
                   <span className="text-muted-foreground ml-1">/mês</span>
                 </div>
                 {isEarlyAdopter ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · '}
                     <span className="font-semibold text-accent">preço vitalício</span>
                   </p> :
               isAnnual ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · cobrado anualmente'}
                   </p> :
 
               <p className="text-xs text-muted-foreground mt-1">
-                    ou R$ {formatPrice(pricing?.[plan.id]?.price_annual || 0)}/mês no anual
+                    {altPrice}
                   </p>
               }
+              {annualTotal && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Faturado {formatCurrency(annualTotal)} anualmente
+                </p>
+              )}
               </>
             }
           </div>
