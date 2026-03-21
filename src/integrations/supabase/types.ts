@@ -2959,6 +2959,7 @@ export type Database = {
           price_annual_early_adopter: number | null
           price_early_adopter: number | null
           price_original: number | null
+          stripe_price_id_annual_early_adopter: string | null
           stripe_price_id_early_adopter: string | null
           stripe_price_id_monthly: string | null
           stripe_price_id_yearly: string | null
@@ -2976,6 +2977,7 @@ export type Database = {
           price_annual_early_adopter?: number | null
           price_early_adopter?: number | null
           price_original?: number | null
+          stripe_price_id_annual_early_adopter?: string | null
           stripe_price_id_early_adopter?: string | null
           stripe_price_id_monthly?: string | null
           stripe_price_id_yearly?: string | null
@@ -2993,6 +2995,7 @@ export type Database = {
           price_annual_early_adopter?: number | null
           price_early_adopter?: number | null
           price_original?: number | null
+          stripe_price_id_annual_early_adopter?: string | null
           stripe_price_id_early_adopter?: string | null
           stripe_price_id_monthly?: string | null
           stripe_price_id_yearly?: string | null

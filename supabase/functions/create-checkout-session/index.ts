@@ -181,7 +181,7 @@ serve(async (req) => {
     // Fetch plan price IDs from database
     const { data: planData, error: planError } = await supabaseAdmin
       .from('subscription_plans')
-      .select('stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter')
+      .select('stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter, stripe_price_id_annual_early_adopter')
       .eq('id', plan_id)
       .single();
 
@@ -204,9 +204,13 @@ serve(async (req) => {
     // Select the correct Stripe price ID
     let priceId: string | null = null;
     if (isEarlyAdopter) {
-      priceId = planData.stripe_price_id_early_adopter;
+      if (billing_cycle === 'annual') {
+        priceId = planData.stripe_price_id_annual_early_adopter || planData.stripe_price_id_early_adopter;
+      } else {
+        priceId = planData.stripe_price_id_early_adopter;
+      }
       if (!priceId) {
-        logStep("EA price not configured, falling back to standard pricing", { plan_id });
+        logStep("EA price not configured, falling back to standard pricing", { plan_id, billing_cycle });
       }
     }
     
