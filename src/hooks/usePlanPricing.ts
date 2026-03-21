@@ -43,6 +43,7 @@ export const usePlanPricing = () => {
           stripe_price_id_monthly: plan.stripe_price_id_monthly,
           stripe_price_id_yearly: plan.stripe_price_id_yearly,
           stripe_price_id_early_adopter: plan.stripe_price_id_early_adopter,
+          stripe_price_id_annual_early_adopter: (plan as any).stripe_price_id_annual_early_adopter ?? null,
         };
       }
       return map;
