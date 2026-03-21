@@ -29,74 +29,74 @@ interface PlanDef {
 }
 
 const plans: PlanDef[] = [
-  {
-    id: 'start',
-    name: 'Start',
-    icon: Briefcase,
-    description: 'Comece grátis e teste o PRO por 14 dias',
-    units: 'Até 5 unidades',
-    users: '1 usuário',
-    features: [
-      'Gestão de Contatos Simples',
-      'Financeiro: Entradas e Saídas',
-      'Contatos ilimitados',
-    ],
-    notIncluded: [
-      'Automações de WhatsApp',
-      'Inteligência Artificial',
-      'Documentos e Relatórios',
-      'Gestão de Ativos',
-    ],
-    cta: 'Começar Grátis',
-    popular: false,
-    bestValue: false,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    icon: Rocket,
-    description: 'Gestão completa para crescer com controle',
-    units: 'Até 50 unidades',
-    users: '1 usuário',
-    features: [
-      'CRM Completo (Pipeline e Contatos)',
-      'Chat IA (250 créditos/mês)',
-      'Contratos ilimitados',
-      'Relatórios e DRE completos',
-      'Gestão de ativos e reajustes',
-      'Pipeline personalizável',
-      'Todas as integrações',
-      'Suporte prioritário',
-    ],
-    notIncluded: [
-      'Gestão de Equipe',
-    ],
-    cta: 'Escolha Recomendada',
-    popular: true,
-    bestValue: false,
-  },
-  {
-    id: 'business',
-    name: 'Business',
-    icon: Building2,
-    description: 'Escale sua imobiliária com equipe e auditoria',
-    units: 'Até 150 unidades',
-    users: '4 usuários (1 Master + 3)',
-    features: [
-      'Tudo do Pro',
-      'Chat IA (750 créditos/mês)',
-      'Gestão de equipe com permissões',
-      'Roleta de leads automática',
-      'Split de comissões',
-      'Automações Exclusivas',
-      'Integrações Avançadas',
-      'Expansão sob demanda',
-    ],
-    cta: 'Garantir Vaga',
-    popular: false,
-    bestValue: true,
-  },
-];
+{
+  id: 'start',
+  name: 'Start',
+  icon: Briefcase,
+  description: 'Comece grátis e teste o PRO por 14 dias',
+  units: 'Até 5 unidades',
+  users: '1 usuário',
+  features: [
+  'Gestão de Contatos Simples',
+  'Financeiro: Entradas e Saídas',
+  'Contatos ilimitados'],
+
+  notIncluded: [
+  'Automações de WhatsApp',
+  'Inteligência Artificial',
+  'Documentos e Relatórios',
+  'Gestão de Ativos'],
+
+  cta: 'Começar Grátis',
+  popular: false,
+  bestValue: false
+},
+{
+  id: 'pro',
+  name: 'Pro',
+  icon: Rocket,
+  description: 'Gestão completa para crescer com controle',
+  units: 'Até 50 unidades',
+  users: '1 usuário',
+  features: [
+  'CRM Completo (Pipeline e Contatos)',
+  'Chat IA (250 créditos/mês)',
+  'Contratos ilimitados',
+  'Relatórios e DRE completos',
+  'Gestão de ativos e reajustes',
+  'Pipeline personalizável',
+  'Todas as integrações',
+  'Suporte prioritário'],
+
+  notIncluded: [
+  'Gestão de Equipe'],
+
+  cta: 'Escolha Recomendada',
+  popular: true,
+  bestValue: false
+},
+{
+  id: 'business',
+  name: 'Business',
+  icon: Building2,
+  description: 'Escale sua imobiliária com equipe e auditoria',
+  units: 'Até 150 unidades',
+  users: '4 usuários (1 Master + 3)',
+  features: [
+  'Tudo do Pro',
+  'Chat IA (750 créditos/mês)',
+  'Gestão de equipe com permissões',
+  'Roleta de leads automática',
+  'Split de comissões',
+  'Automações Exclusivas',
+  'Integrações Avançadas',
+  'Expansão sob demanda'],
+
+  cta: 'Garantir Vaga',
+  popular: false,
+  bestValue: true
+}];
+
 
 /* Mobile order: PRO first, then Start, Business */
 const mobilePlanOrder: PlanId[] = ['pro', 'start', 'business'];
@@ -197,30 +197,30 @@ export function PricingSection() {
         key={plan.id}
         className={cn(
           'relative flex flex-col transition-all duration-300',
-          isPro
-            ? 'border-accent shadow-xl lg:scale-105 z-10'
-            : plan.bestValue
-            ? 'border-border/50 shadow-sm'
-            : 'border-border/50 shadow-sm',
+          isPro ?
+          'border-accent shadow-xl lg:scale-105 z-10' :
+          plan.bestValue ?
+          'border-border/50 shadow-sm' :
+          'border-border/50 shadow-sm',
           'hover:-translate-y-1 hover:shadow-lg'
-        )}
-      >
-        {isStart && (
-          <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-muted-foreground text-background px-4 whitespace-nowrap">
+        )}>
+        
+        {isStart &&
+        <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-muted-foreground text-background px-4 whitespace-nowrap">
             🎁 TESTE O PRO POR 14 DIAS
           </Badge>
-        )}
-        {isPro && (
-          <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground px-4 whitespace-nowrap">
+        }
+        {isPro &&
+        <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground px-4 whitespace-nowrap">
             <Zap className="h-3 w-3 mr-1" />
             Recomendado
           </Badge>
-        )}
-        {plan.bestValue && (
-          <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-muted-foreground/80 text-background px-4 whitespace-nowrap">
+        }
+        {plan.bestValue &&
+        <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-muted-foreground/80 text-background px-4 whitespace-nowrap">
             ✨ Melhor Valor
           </Badge>
-        )}
+        }
 
         <CardHeader className="text-center pb-2">
           <div className={cn('mx-auto mb-2', isPro ? 'text-accent' : 'text-muted-foreground')}>
@@ -233,39 +233,39 @@ export function PricingSection() {
         <CardContent className="flex-1 flex flex-col">
           {/* Price */}
           <div className="text-center mb-4">
-            {isStart ? (
-              <>
+            {isStart ?
+            <>
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-foreground">Grátis</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">para sempre · sem cartão</p>
-              </>
-            ) : (
-              <>
+              </> :
+
+            <>
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-foreground">
                     R$ {formatPrice(displayPrice)}
                   </span>
-                  <span className="text-muted-foreground ml-1">/mês</span>
+                  <span className="text-muted-foreground ml-1">/ano</span>
                 </div>
-                {isEarlyAdopter ? (
-                  <p className="text-xs text-muted-foreground mt-1">
+                {isEarlyAdopter ?
+              <p className="text-xs text-muted-foreground mt-1">
                     <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · '}
                     <span className="font-semibold text-accent">preço vitalício</span>
-                  </p>
-                ) : isAnnual ? (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  </p> :
+              isAnnual ?
+              <p className="text-xs text-muted-foreground mt-1">
                     <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · cobrado anualmente'}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  </p> :
+
+              <p className="text-xs text-muted-foreground mt-1">
                     ou R$ {formatPrice(pricing?.[plan.id]?.price_annual || 0)}/mês no anual
                   </p>
-                )}
+              }
               </>
-            )}
+            }
           </div>
 
           {/* Limits */}
@@ -275,8 +275,8 @@ export function PricingSection() {
           </div>
 
           {/* Start trial highlight */}
-          {isStart && (
-            <div className="mb-5 rounded-lg p-3 border border-dashed border-muted-foreground/30 bg-muted/50">
+          {isStart &&
+          <div className="mb-5 rounded-lg p-3 border border-dashed border-muted-foreground/30 bg-muted/50">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Zap className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs font-semibold text-muted-foreground uppercase">14 dias de PRO</span>
@@ -285,50 +285,50 @@ export function PricingSection() {
                 Experimente o Plano PRO. Após o período, você decide.
               </p>
             </div>
-          )}
+          }
 
           {/* Early Adopter */}
-          {!isStart && isEarlyAdopter && (
-            <div className="mb-5">
+          {!isStart && isEarlyAdopter &&
+          <div className="mb-5">
               <div className={cn(
-                'rounded-lg p-3 border border-dashed',
-                isPro ? 'border-accent/50 bg-accent/5' : 'border-muted-foreground/30 bg-muted/50'
-              )}>
+              'rounded-lg p-3 border border-dashed',
+              isPro ? 'border-accent/50 bg-accent/5' : 'border-muted-foreground/30 bg-muted/50'
+            )}>
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Zap className={cn('h-4 w-4', isPro ? 'text-accent' : 'text-muted-foreground')} />
                   <span className={cn('text-xs font-semibold uppercase', isPro ? 'text-accent' : 'text-muted-foreground')}>
                     Early Adopter
                   </span>
                 </div>
-                {remaining !== null && remaining > 0 && (
-                  <p className={cn(
-                    'text-xs text-center font-medium',
-                    remaining <= 10 ? 'text-destructive' : 'text-muted-foreground'
-                  )}>
-                    {remaining <= 10
-                      ? `🔥 Últimas ${remaining} vagas!`
-                      : `${remaining} vagas restantes`
-                    }
+                {remaining !== null && remaining > 0 &&
+              <p className={cn(
+                'text-xs text-center font-medium',
+                remaining <= 10 ? 'text-destructive' : 'text-muted-foreground'
+              )}>
+                    {remaining <= 10 ?
+                `🔥 Últimas ${remaining} vagas!` :
+                `${remaining} vagas restantes`
+                }
                   </p>
-                )}
+              }
               </div>
             </div>
-          )}
+          }
 
           {/* Features */}
           <ul className="space-y-2.5 flex-1">
-            {plan.features.map((feature, i) => (
-              <li key={i} className="flex items-start gap-2.5">
+            {plan.features.map((feature, i) =>
+            <li key={i} className="flex items-start gap-2.5">
                 <Check className={cn('h-4 w-4 shrink-0 mt-0.5', isPro ? 'text-accent' : 'text-muted-foreground')} />
                 <span className="text-sm text-muted-foreground">{feature}</span>
               </li>
-            ))}
-            {plan.notIncluded?.map((feature, i) => (
-              <li key={`not-${i}`} className="flex items-start gap-2.5 opacity-40">
+            )}
+            {plan.notIncluded?.map((feature, i) =>
+            <li key={`not-${i}`} className="flex items-start gap-2.5 opacity-40">
                 <X className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground line-through">{feature}</span>
               </li>
-            ))}
+            )}
           </ul>
         </CardContent>
 
@@ -337,23 +337,23 @@ export function PricingSection() {
             variant={isPro ? 'default' : 'outline'}
             className={cn(
               'w-full',
-              isPro
-                ? 'bg-accent hover:bg-accent/90 text-accent-foreground shadow-md'
-                : 'border-border text-foreground hover:bg-muted'
+              isPro ?
+              'bg-accent hover:bg-accent/90 text-accent-foreground shadow-md' :
+              'border-border text-foreground hover:bg-muted'
             )}
             onClick={() => handleCheckout(plan.id)}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : isPro ? (
-              <Zap className="h-4 w-4 mr-2" />
-            ) : null}
+            disabled={isLoading}>
+            
+            {isLoading ?
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" /> :
+            isPro ?
+            <Zap className="h-4 w-4 mr-2" /> :
+            null}
             {isLoading ? 'Carregando...' : plan.cta}
           </Button>
         </CardFooter>
-      </Card>
-    );
+      </Card>);
+
   };
 
   return (
@@ -378,11 +378,11 @@ export function PricingSection() {
             <Label htmlFor="billing-toggle" className={cn('text-sm transition-colors', isAnnual ? 'text-foreground font-medium' : 'text-muted-foreground')}>
               Anual
             </Label>
-             {isAnnual && (
-              <Badge variant="secondary" className="text-accent bg-accent/10 border-accent/20">
+             {isAnnual &&
+            <Badge variant="secondary" className="text-accent bg-accent/10 border-accent/20">
                 Economize até 27%
               </Badge>
-            )}
+            }
           </div>
         </div>
 
@@ -395,15 +395,15 @@ export function PricingSection() {
         <div className="lg:hidden">
           <div
             ref={scrollRef}
-            className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4"
-          >
+            className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4">
+            
             {mobilePlanOrder.map((id) => {
               const plan = plans.find((p) => p.id === id)!;
               return (
                 <div key={plan.id} className="min-w-[280px] max-w-[320px] flex-shrink-0 snap-center">
                   {renderCard(plan)}
-                </div>
-              );
+                </div>);
+
             })}
           </div>
           {/* Carousel controls */}
@@ -427,6 +427,6 @@ export function PricingSection() {
           </p>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
