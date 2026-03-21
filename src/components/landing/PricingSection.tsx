@@ -263,26 +263,32 @@ export function PricingSection() {
             <>
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-foreground">
-                    R$ {formatPrice(displayPrice)}
+                    {formatCurrency(displayPrice)}
                   </span>
                   <span className="text-muted-foreground ml-1">/mês</span>
                 </div>
                 {isEarlyAdopter ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · '}
                     <span className="font-semibold text-accent">preço vitalício</span>
                   </p> :
               isAnnual ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · cobrado anualmente'}
                   </p> :
 
               <p className="text-xs text-muted-foreground mt-1">
-                    ou R$ {formatPrice(pricing?.[plan.id]?.price_annual || 0)}/mês no anual
+                    {altPrice}
                   </p>
               }
+              {annualTotal && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Faturado {formatCurrency(annualTotal)} anualmente
+                </p>
+              )}
+              </>
               </>
             }
           </div>
