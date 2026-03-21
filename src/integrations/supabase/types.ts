@@ -4051,6 +4051,7 @@ export type Database = {
       }
       get_effective_broker_id: { Args: { p_user_id: string }; Returns: string }
       get_effective_limits: { Args: { p_user_id: string }; Returns: Json }
+      get_invitation_by_token: { Args: { p_token: string }; Returns: Json }
       get_user_audit_logs: {
         Args: { p_limit?: number; p_target_user_id: string }
         Returns: Json
