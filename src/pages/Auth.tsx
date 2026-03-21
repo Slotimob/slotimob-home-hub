@@ -862,7 +862,7 @@ const Auth = () => {
         {/* Right column - form (scrollable) */}
         <motion.div layout transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }} className={`relative flex w-full bg-background ${activeTab === 'login' ? 'lg:w-1/2 xl:w-[45%]' : 'lg:w-[55%] xl:w-[50%]'}`}>
           <Link to="/" className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao início
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
           </Link>
 
           <div className="w-full overflow-y-auto max-h-[100dvh] flex items-start justify-center p-6 sm:p-10 pt-14 sm:pt-16">
