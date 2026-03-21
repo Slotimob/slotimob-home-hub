@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { QuickMessagesPopover } from './QuickMessagesPopover';
 import { AISuggestButton } from './AISuggestButton';
 import { ChatTagsInput } from './ChatTagsInput';
+import { useSignedMediaUrl } from '@/hooks/useSignedMediaUrl';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
