@@ -181,8 +181,11 @@ export function PricingSection() {
     setLoadingPlan(planId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      const cycle = isAnnual ? 'annual' : 'monthly';
       if (!session) {
-        navigate(`/auth?redirect=checkout&plan=${planId}`);
+        navigate(`/auth?redirect=checkout&plan=${planId}&cycle=${cycle}`);
+        return;
+      }
         return;
       }
       const cycle = isAnnual ? 'annual' : 'monthly';
