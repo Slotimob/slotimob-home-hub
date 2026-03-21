@@ -12,6 +12,7 @@ export interface PlanPricing {
   stripe_price_id_monthly: string | null;
   stripe_price_id_yearly: string | null;
   stripe_price_id_early_adopter: string | null;
+  stripe_price_id_annual_early_adopter: string | null;
 }
 
 export const usePlanPricing = () => {
