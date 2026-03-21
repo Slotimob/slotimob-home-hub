@@ -1,0 +1,3 @@
+UPDATE ai_credit_packs SET stripe_price_id = 'price_1TDWqAAUMiQcSICyoAmLJb3j' WHERE id = '2de8ae74-7120-4d2e-ad6f-5a3b66c24708';
+UPDATE ai_credit_packs SET stripe_price_id = 'price_1TDWqAAUMiQcSICysOQz0Vbd' WHERE id = '42a184b1-e075-45d6-8759-33fd08e85c61';
+UPDATE ai_credit_packs SET credits_amount = 2000, name = '2.000 Tokens', stripe_price_id = 'price_1TDWqAAUMiQcSICy3JWgkiA4' WHERE id = '5b01c307-a41a-432a-9f57-d778b87188eb';
