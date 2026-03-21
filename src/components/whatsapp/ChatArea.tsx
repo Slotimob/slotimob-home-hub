@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { QuickMessagesPopover } from './QuickMessagesPopover';
 import { AISuggestButton } from './AISuggestButton';
 import { ChatTagsInput } from './ChatTagsInput';
+import { useSignedMediaUrl } from '@/hooks/useSignedMediaUrl';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
@@ -66,7 +67,7 @@ function StatusIcon({ status, isOutgoing }: { status: string; isOutgoing: boolea
 }
 
 function MediaContent({ msg }: { msg: WhatsAppMessage }) {
-  const mediaUrl = msg.media_url;
+  const mediaUrl = useSignedMediaUrl(msg.media_url);
   const [mediaError, setMediaError] = useState(false);
   
   if (mediaError && mediaUrl) {

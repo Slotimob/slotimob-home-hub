@@ -268,9 +268,15 @@ export default function WhatsApp() {
       return;
     }
 
-    // 2. Get public URL
-    const { data: urlData } = supabase.storage.from('whatsapp-media').getPublicUrl(filePath);
-    const publicUrl = urlData.publicUrl;
+    // 2. Get signed URL (private bucket)
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from('whatsapp-media')
+      .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year — stored in DB for Evolution API
+    if (signedError || !signedData?.signedUrl) {
+      toast({ title: 'Erro ao gerar URL do arquivo', description: signedError?.message, variant: 'destructive' });
+      return;
+    }
+    const publicUrl = signedData.signedUrl;
 
     // 3. Determine message type
     let msgType: 'image' | 'document' = 'document';
