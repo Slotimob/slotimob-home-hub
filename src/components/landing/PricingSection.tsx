@@ -133,17 +133,32 @@ export function PricingSection() {
     if (planId === 'start') return 0;
     const isEA = getEarlyAdopterAvailable(planId);
     if (isEA) {
+      // EA annual prices are already stored as monthly equivalents
       return isAnnual ? p.price_annual_early_adopter : p.price_early_adopter;
     }
-    return isAnnual ? p.price_annual : p.price_original;
+    // For regular prices, divide annual total by 12 to show monthly equivalent
+    return isAnnual ? p.price_annual / 12 : p.price_original;
+  };
+
+  const getAnnualTotal = (planId: PlanId): number | null => {
+    const p = pricing?.[planId];
+    if (!p || planId === 'start' || !isAnnual) return null;
+    const isEA = getEarlyAdopterAvailable(planId);
+    if (isEA) {
+      return p.price_annual_early_adopter * 12;
+    }
+    return p.price_annual;
   };
 
   const getOriginalPrice = (planId: PlanId): number | null => {
     const p = pricing?.[planId];
     if (!p || planId === 'start') return null;
     const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) return isAnnual ? p.price_original : p.price_original;
-    if (isAnnual && p.price_original > p.price_annual) return p.price_original;
+    if (isEA) return p.price_original;
+    if (isAnnual) {
+      const monthlyEquiv = p.price_annual / 12;
+      if (p.price_original > monthlyEquiv) return p.price_original;
+    }
     return null;
   };
 
@@ -153,7 +168,7 @@ export function PricingSection() {
     const isEA = getEarlyAdopterAvailable(planId);
     if (isEA) return null;
     if (!isAnnual && p.price_annual > 0) {
-      return `ou R$ ${formatPrice(p.price_annual)}/mês no anual`;
+      return `ou ${formatCurrency(p.price_annual / 12)}/mês no anual`;
     }
     return null;
   };
