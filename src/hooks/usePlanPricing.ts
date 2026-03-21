@@ -21,7 +21,7 @@ export const usePlanPricing = () => {
     queryFn: async (): Promise<Record<string, PlanPricing>> => {
       const { data, error } = await supabase
         .from('subscription_plans')
-        .select('id, name, price_original, price_annual, price_early_adopter, price_annual_early_adopter, early_adopter_limit, stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter')
+        .select('id, name, price_original, price_annual, price_early_adopter, price_annual_early_adopter, early_adopter_limit, stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter, stripe_price_id_annual_early_adopter')
         .eq('is_active', true)
         .in('id', ['start', 'essencial', 'pro', 'business']);
 
