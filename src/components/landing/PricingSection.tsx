@@ -378,9 +378,9 @@ export function PricingSection() {
             <Label htmlFor="billing-toggle" className={cn('text-sm transition-colors', isAnnual ? 'text-foreground font-medium' : 'text-muted-foreground')}>
               Anual
             </Label>
-            {isAnnual && (
+             {isAnnual && (
               <Badge variant="secondary" className="text-accent bg-accent/10 border-accent/20">
-                Economize até 34%
+                Economize até 27%
               </Badge>
             )}
           </div>
