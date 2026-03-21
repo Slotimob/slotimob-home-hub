@@ -825,7 +825,7 @@ const Auth = () => {
 
       <div className="flex min-h-[100dvh]">
         {/* Left column - informational (hidden on mobile) */}
-        <motion.div layout transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }} className={cn("hidden lg:flex flex-col justify-between p-10 xl:p-16 text-primary-foreground relative overflow-hidden", isLogin ? "lg:w-1/2 xl:w-[55%]" : "lg:w-[45%] xl:w-[50%]")} style={{ background: 'var(--gradient-primary)' }}>
+        <motion.div layout transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }} className={`hidden lg:flex flex-col justify-between p-10 xl:p-16 text-primary-foreground relative overflow-hidden ${activeTab === 'login' ? 'lg:w-1/2 xl:w-[55%]' : 'lg:w-[45%] xl:w-[50%]'}`} style={{ background: 'var(--gradient-primary)' }}>
           <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/5" />
           <div className="absolute bottom-16 -left-16 h-48 w-48 rounded-full bg-white/5" />
           <div className="absolute top-1/2 right-1/4 h-32 w-32 rounded-full bg-white/[0.03]" />
