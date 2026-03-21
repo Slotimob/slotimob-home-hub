@@ -250,7 +250,7 @@ export function PricingSection() {
                 </div>
                 {isEarlyAdopter ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/ano</span>
                     {' · '}
                     <span className="font-semibold text-accent">preço vitalício</span>
                   </p> :
