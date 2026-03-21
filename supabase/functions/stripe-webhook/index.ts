@@ -334,10 +334,13 @@ function syncAddonsFromSubscription(subscription: Stripe.Subscription) {
   let extraUnitPacks = 0;
 
   for (const item of subscription.items.data) {
+    const priceId = item.price?.id || '';
     const productId = typeof item.price.product === 'string' ? item.price.product : '';
-    if (productId === ADDON_PRODUCT_IDS.extra_user) {
+
+    // Match by price ID first (preferred), then fall back to product ID
+    if (priceId === ADDON_PRICE_IDS.extra_user || productId === ADDON_PRODUCT_IDS.extra_user) {
       extraUsers = item.quantity || 0;
-    } else if (productId === ADDON_PRODUCT_IDS.extra_units) {
+    } else if (priceId === ADDON_PRICE_IDS.extra_units || productId === ADDON_PRODUCT_IDS.extra_units) {
       extraUnitPacks = item.quantity || 0;
     }
   }
