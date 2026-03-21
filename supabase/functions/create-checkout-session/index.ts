@@ -181,7 +181,7 @@ serve(async (req) => {
     // Fetch plan price IDs from database
     const { data: planData, error: planError } = await supabaseAdmin
       .from('subscription_plans')
-      .select('stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter')
+      .select('stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter, stripe_price_id_annual_early_adopter')
       .eq('id', plan_id)
       .single();
 
