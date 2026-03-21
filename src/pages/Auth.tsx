@@ -857,7 +857,7 @@ const Auth = () => {
           <p className="relative z-10 text-xs text-primary-foreground/50">
             © {new Date().getFullYear()} SLOTIMOB. Todos os direitos reservados.
           </p>
-        </div>
+        </motion.div>
 
         {/* Right column - form (scrollable) */}
         <div className="relative flex w-full lg:w-1/2 xl:w-[45%] bg-background">
