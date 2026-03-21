@@ -1,15 +1,29 @@
 
 
-## Fix: Presentation page 404
+## Expanding right panel on signup toggle
 
-**Root cause**: In `App.tsx` line 95, the route is `path="/apresentacao"` but the user (and likely other links) expects `/presentation`.
+### What changes
+**File: `src/pages/Auth.tsx`**
 
-**Solution**: Add a second route for `/presentation` pointing to the same `Presentation` component, keeping `/apresentacao` as well for backward compatibility.
+The layout uses a two-column flex: left info panel (`lg:w-1/2 xl:w-[55%]`) and right form panel (`lg:w-1/2 xl:w-[45%]`).
 
-### Changes
+When the user toggles to "Criar Conta" (`isLogin = false`), the right panel should grow ~100px wider, and the left panel should shrink accordingly. On "Login", revert.
 
-**File: `src/App.tsx`**
-- Add `<Route path="/presentation" element={<Presentation />} />` next to the existing `/apresentacao` route.
+### Implementation
 
-This is a one-line addition that fixes the 404 immediately.
+1. **Convert both column containers to `motion.div`** with `layout` and `transition` props for smooth width animation.
+
+2. **Left panel** (line 828): Change from `<div>` to `<motion.div>` with dynamic className:
+   - Login: `lg:w-1/2 xl:w-[55%]` (current)
+   - Signup: `lg:w-[45%] xl:w-[50%]` (~100px less)
+
+3. **Right panel** (line 863): Change from `<div>` to `<motion.div>` with dynamic className:
+   - Login: `lg:w-1/2 xl:w-[45%]` (current)
+   - Signup: `lg:w-[55%] xl:w-[50%]` (~100px more)
+
+4. Both `motion.div` elements get `transition={{ duration: 0.4, ease: 'easeInOut' }}` for a fluid resize.
+
+### Technical detail
+- Using `framer-motion` `layout` animation on flex children with Tailwind width classes. The `layout` prop handles interpolating between the two widths smoothly.
+- `isLogin` state already exists and controls the toggle — we just wire it to the className.
 
