@@ -186,9 +186,6 @@ export function PricingSection() {
         navigate(`/auth?redirect=checkout&plan=${planId}&cycle=${cycle}`);
         return;
       }
-        return;
-      }
-      const cycle = isAnnual ? 'annual' : 'monthly';
       navigate(`/checkout?plan=${planId}&cycle=${cycle}`);
     } catch (err) {
       console.error('Checkout error:', err);
