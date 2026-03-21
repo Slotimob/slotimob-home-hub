@@ -825,7 +825,7 @@ const Auth = () => {
 
       <div className="flex min-h-[100dvh]">
         {/* Left column - informational (hidden on mobile) */}
-        <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] flex-col justify-between p-10 xl:p-16 text-primary-foreground relative overflow-hidden" style={{ background: 'var(--gradient-primary)' }}>
+        <motion.div layout transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }} className={`hidden lg:flex flex-col justify-between p-10 xl:p-16 text-primary-foreground relative overflow-hidden ${activeTab === 'login' ? 'lg:w-1/2 xl:w-[55%]' : 'lg:w-[45%] xl:w-[50%]'}`} style={{ background: 'var(--gradient-primary)' }}>
           <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/5" />
           <div className="absolute bottom-16 -left-16 h-48 w-48 rounded-full bg-white/5" />
           <div className="absolute top-1/2 right-1/4 h-32 w-32 rounded-full bg-white/[0.03]" />
@@ -857,10 +857,10 @@ const Auth = () => {
           <p className="relative z-10 text-xs text-primary-foreground/50">
             © {new Date().getFullYear()} SLOTIMOB. Todos os direitos reservados.
           </p>
-        </div>
+        </motion.div>
 
         {/* Right column - form (scrollable) */}
-        <div className="relative flex w-full lg:w-1/2 xl:w-[45%] bg-background">
+        <motion.div layout transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }} className={`relative flex w-full bg-background ${activeTab === 'login' ? 'lg:w-1/2 xl:w-[45%]' : 'lg:w-[55%] xl:w-[50%]'}`}>
           <Link to="/" className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao início
           </Link>
@@ -1050,7 +1050,7 @@ const Auth = () => {
               )}
             </motion.div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </>
   );
