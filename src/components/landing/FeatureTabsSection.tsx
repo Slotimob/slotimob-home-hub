@@ -90,7 +90,7 @@ const tabs: TabData[] = [
   },
   {
     id: 'ativos',
-    label: 'Gestão de Aluguéis',
+    label: 'Gestão de Ativos',
     icon: Building2,
     headline: 'Reajustes, contratos e vencimentos no piloto automático.',
     subheadline: 'O sistema avisa sobre vencimentos, calcula reajustes automaticamente e gera os documentos sozinho. Você só acompanha.',

@@ -518,6 +518,8 @@ const Auth = () => {
         setSignupStep(1);
       } else {
         if (inviteToken) await handleAcceptInvite();
+        trackLeadSignup(pendingPlan || 'organic');
+        trackStartTrial(pendingPlan || 'start');
         toast({ title: 'Conta criada!', description: 'Sua conta foi criada com sucesso.' });
         if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
           handlePostAuthRedirect(pendingPlan);

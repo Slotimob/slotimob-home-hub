@@ -92,6 +92,14 @@ export function trackLeadSignup(source?: string) {
   }
 }
 
+/** Convenience: track StartTrial */
+export function trackStartTrial(planId?: string) {
+  trackEvent('StartTrial', { plan: planId });
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', 'StartTrial', { plan: planId });
+  }
+}
+
 export function TrackingProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [injected, setInjected] = useState(false);
