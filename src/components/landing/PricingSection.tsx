@@ -207,6 +207,7 @@ export function PricingSection() {
     const isPro = plan.id === 'pro';
     const isEarlyAdopter = getEarlyAdopterAvailable(plan.id);
     const displayPrice = getDisplayPrice(plan.id);
+    const annualTotal = getAnnualTotal(plan.id);
     const altPrice = getAlternativePrice(plan.id);
     const remaining = getRemainingSlots(plan.id);
 
