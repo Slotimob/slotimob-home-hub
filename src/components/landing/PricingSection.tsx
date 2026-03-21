@@ -256,7 +256,7 @@ export function PricingSection() {
                   </p> :
               isAnnual ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/ano</span>
                     {' · cobrado anualmente'}
                   </p> :
 
