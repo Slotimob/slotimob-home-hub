@@ -57,7 +57,7 @@ const plans: PlanDef[] = [
   icon: Rocket,
   description: 'Gestão completa para crescer com controle',
   units: 'Até 50 unidades',
-  users: '2 usuários',
+  users: '1 usuário',
   features: [
   'CRM Completo (Pipeline e Contatos)',
   'Chat IA (250 créditos/mês)',
@@ -80,7 +80,7 @@ const plans: PlanDef[] = [
   name: 'Business',
   icon: Building2,
   description: 'Escale sua imobiliária com equipe e auditoria',
-  units: '150 unidades',
+  units: 'Até 150 unidades',
   users: '4 usuários (1 Master + 3)',
   features: [
   'Tudo do Pro',
@@ -246,17 +246,17 @@ export function PricingSection() {
                   <span className="text-4xl font-bold text-foreground">
                     R$ {formatPrice(displayPrice)}
                   </span>
-                  <span className="text-muted-foreground ml-1">/ano</span>
+                  <span className="text-muted-foreground ml-1">/mês</span>
                 </div>
                 {isEarlyAdopter ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/ano</span>
+                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · '}
                     <span className="font-semibold text-accent">preço vitalício</span>
                   </p> :
               isAnnual ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/ano</span>
+                    <span className="line-through">R$ {formatPrice(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · cobrado anualmente'}
                   </p> :
 
