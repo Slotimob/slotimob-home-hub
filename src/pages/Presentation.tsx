@@ -37,7 +37,7 @@ function ModuleNav() {
 function VideoCtaSection() {
   return (
     <section className="py-20 md:py-28 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-accent/80" />
+      <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/90 to-accent/80" />
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px]" />
       <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-primary-foreground/5 rounded-full blur-[80px]" />
       <div className="container mx-auto px-4 relative z-10 text-center">
@@ -87,7 +87,7 @@ export default function Presentation() {
       <main className="min-h-screen bg-background">
         {/* Hero */}
         <section className="relative py-16 md:py-24 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-accent/80 opacity-95" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary via-primary/90 to-accent/80 opacity-95" />
           <div className="absolute top-10 right-10 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-96 h-48 bg-accent/10 rounded-full blur-[100px]" />
           <div className="container mx-auto px-4 relative z-10 text-center">
