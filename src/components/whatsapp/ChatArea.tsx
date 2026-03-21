@@ -67,7 +67,7 @@ function StatusIcon({ status, isOutgoing }: { status: string; isOutgoing: boolea
 }
 
 function MediaContent({ msg }: { msg: WhatsAppMessage }) {
-  const mediaUrl = msg.media_url;
+  const mediaUrl = useSignedMediaUrl(msg.media_url);
   const [mediaError, setMediaError] = useState(false);
   
   if (mediaError && mediaUrl) {
