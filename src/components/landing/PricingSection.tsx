@@ -56,7 +56,7 @@ const plans: PlanDef[] = [
   name: 'Pro',
   icon: Rocket,
   description: 'Gestão completa para crescer com controle',
-  units: 'Até 50 unidades',
+  units: '50 unidades',
   users: '1 usuário',
   features: [
   'CRM Completo (Pipeline e Contatos)',
