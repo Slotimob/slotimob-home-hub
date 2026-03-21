@@ -12,6 +12,7 @@ import { SlotiLogo } from '@/components/SlotiLogo';
 import { Separator } from '@/components/ui/separator';
 import { SEOHead } from '@/components/SEOHead';
 import { toast as sonnerToast } from 'sonner';
+import { trackLeadSignup, trackStartTrial } from '@/components/TrackingProvider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { UserPlus, ArrowLeft, ArrowRight, Check, BarChart3, MessageSquare, Wallet, Building2, Loader2 } from 'lucide-react';
