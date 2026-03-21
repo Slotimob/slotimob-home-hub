@@ -387,7 +387,7 @@ export function PricingSection() {
         </div>
 
         {/* Desktop: 4 columns */}
-        <div className="hidden lg:grid gap-6 lg:grid-cols-4 max-w-7xl mx-auto items-stretch">
+        <div className="hidden lg:grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto items-stretch">
           {plans.map(renderCard)}
         </div>
 
