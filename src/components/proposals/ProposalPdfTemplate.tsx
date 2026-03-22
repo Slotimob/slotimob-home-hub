@@ -32,6 +32,9 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
 
     const hasFinancial = unit.condo_fee || unit.iptu || (unit.price && unit.is_financeable !== false);
 
+    // Adaptive gallery grid: avoid empty holes
+    const galleryColClass = gallery.length === 1 ? 'grid-cols-1' : 'grid-cols-2';
+
     return (
       <div ref={ref} style={{ width: '794px' }} className="bg-white text-[#1e1e23] font-sans">
         {/* ══════ PAGE 1: COVER ══════ */}
@@ -48,8 +51,8 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
             ) : (
               <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, #0b0073 0%, #2fc9af 100%)' }} />
             )}
-            {/* Gradient overlay */}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.7) 100%)' }} />
+            {/* Darker gradient overlay to prevent text overlap */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)' }} />
           </div>
 
           {/* Top bar */}
@@ -75,9 +78,9 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                 {typeLabel}
               </span>
             )}
-            <h1 className="text-white font-bold text-4xl leading-tight mb-2">{title}</h1>
+            <h1 className="text-white font-bold text-4xl leading-tight mb-2 drop-shadow-lg">{title}</h1>
             {location && (
-              <div className="flex items-center gap-2 text-white/70 text-sm">
+              <div className="flex items-center gap-2 text-white/80 text-sm drop-shadow">
                 <MapPin className="w-4 h-4" />
                 <span>{location}</span>
               </div>
@@ -172,16 +175,20 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
             </div>
           )}
 
-          {/* Gallery grid */}
+          {/* Gallery grid — adaptive, no blank holes */}
           {gallery.length > 0 && (
             <div className="mt-auto">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1 h-6 rounded-full" style={{ background: '#0b0073' }} />
                 <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Galeria</h2>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid ${galleryColClass} gap-3`}>
                 {gallery.map((img, i) => (
-                  <div key={i} className="rounded-lg overflow-hidden" style={{ height: '180px', background: '#eee' }}>
+                  <div
+                    key={i}
+                    className={`rounded-lg overflow-hidden ${gallery.length === 3 && i === 2 ? 'col-span-2' : ''}`}
+                    style={{ height: '180px', background: '#eee' }}
+                  >
                     <img src={img} alt={`Foto ${i + 1}`} crossOrigin="anonymous" className="w-full h-full object-cover" />
                   </div>
                 ))}
@@ -224,9 +231,9 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                   <div className="w-1 h-6 rounded-full" style={{ background: '#0b0073' }} />
                   <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Matriz de Investimento</h2>
                 </div>
-                <InvestmentTable price={unit.price} />
+                <InvestmentTable price={unit.price} rate={financingSimulation?.annualRate} />
                 <p className="text-xs mt-3" style={{ color: '#aaa' }}>
-                  * Simulação baseada em taxa de 10,5% a.a. / 360 meses. Sujeito à aprovação de crédito.
+                  * Simulação baseada em taxa de {financingSimulation?.annualRate || 10.5}% a.a. / 360 meses. Sujeito à aprovação de crédito.
                 </p>
               </div>
             )}
@@ -325,8 +332,8 @@ function SpecCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function InvestmentTable({ price }: { price: number }) {
-  const rate = 10.5;
+function InvestmentTable({ price, rate: customRate }: { price: number; rate?: number }) {
+  const rate = customRate || 10.5;
   const months = 360;
   const monthlyRate = rate / 100 / 12;
 
@@ -356,8 +363,8 @@ function InvestmentTable({ price }: { price: number }) {
           style={{ background: i % 2 === 0 ? '#fafaff' : '#fff' }}
         >
           <span className="font-bold" style={{ color: '#0b0073' }}>{s.pct}%</span>
-          <span>{fmt(s.dp)}</span>
-          <span>{fmt(s.fin)}</span>
+          <span style={{ color: '#444' }}>{fmt(s.dp)}</span>
+          <span style={{ color: '#444' }}>{fmt(s.fin)}</span>
           <span className="font-bold" style={{ color: '#2fc9af' }}>{fmt(s.mp)}</span>
           <span style={{ color: '#888' }}>{fmt(s.income)}</span>
         </div>

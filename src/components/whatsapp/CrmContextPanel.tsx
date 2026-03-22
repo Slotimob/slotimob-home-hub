@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   Mail, Phone, Tag, Plus, Calendar, StickyNote,
   PhoneCall, FileText, MessageCircle, TrendingUp, Loader2,
-  UserPlus, ArrowDown, FileSignature, CheckCircle2,
+  UserPlus, ArrowDown, FileSignature, CheckCircle2, Link2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -82,6 +82,49 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [directDeal, setDirectDeal] = useState<any>(null);
 
+  // ── Auto-identify contact by phone ──
+  const [suggestedContact, setSuggestedContact] = useState<any>(null);
+  const [linkingContact, setLinkingContact] = useState(false);
+
+  useEffect(() => {
+    if (contact || !conversation?.contact_phone) {
+      setSuggestedContact(null);
+      return;
+    }
+    const normalized = normalizePhone(conversation.contact_phone);
+    if (!normalized || normalized.length < 8) return;
+
+    supabase
+      .from('contacts')
+      .select('id, name, phone, email')
+      .or(`phone.ilike.%${normalized.slice(-8)}%,whatsapp.ilike.%${normalized.slice(-8)}%`)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && normalizePhone(data.phone) === normalized) {
+          setSuggestedContact(data);
+        }
+      });
+  }, [contact, conversation?.contact_phone]);
+
+  const handleLinkSuggestedContact = useCallback(async () => {
+    if (!suggestedContact || !conversation?.id) return;
+    setLinkingContact(true);
+    try {
+      await supabase
+        .from('whatsapp_conversations')
+        .update({ contact_id: suggestedContact.id, contact_name: suggestedContact.name })
+        .eq('id', conversation.id);
+      toast({ title: 'Contato vinculado com sucesso!' });
+      onContactCreated?.();
+      setSuggestedContact(null);
+    } catch (e: any) {
+      toast({ title: 'Erro ao vincular', description: e.message, variant: 'destructive' });
+    } finally {
+      setLinkingContact(false);
+    }
+  }, [suggestedContact, conversation, toast, onContactCreated]);
+
   useEffect(() => {
     if (!dealId) {
       setDirectDeal(null);
@@ -138,7 +181,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   }, [activeDeal, conversation, toast]);
 
   const handleContactCreated = useCallback(async (newContact?: any) => {
-    // Link the new contact to the conversation
     if (newContact?.id && conversation?.id) {
       try {
         await supabase
@@ -153,6 +195,22 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
     onContactCreated?.();
   }, [toast, onContactCreated, conversation]);
 
+  // Save deal_id to conversation when a deal is created
+  const handleDealCreated = useCallback(async (newDealId: string, cId: string) => {
+    if (conversation?.id && newDealId) {
+      try {
+        await supabase
+          .from('whatsapp_conversations')
+          .update({ deal_id: newDealId } as any)
+          .eq('id', conversation.id);
+      } catch (e) {
+        console.error('Error saving deal_id to conversation:', e);
+      }
+    }
+    setDealRefetchKey(k => k + 1);
+    onDealCreated?.(newDealId, cId);
+  }, [conversation, onDealCreated]);
+
   if (!conversation) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground p-6">
@@ -164,6 +222,8 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const displayName = contact?.name || conversation.contact_name || conversation.contact_phone;
   const initials = (contact?.name || conversation.contact_name || '')
     .split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '??';
+
+  const activeDealsCount = deals.filter((d: any) => !['won', 'lost'].includes(d.stage)).length;
 
   return (
     <ScrollArea className="h-full">
@@ -188,6 +248,11 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
               </Avatar>
               <div>
                 <h3 className="font-semibold text-foreground">{displayName}</h3>
+                {contact && activeDealsCount > 0 && (
+                  <Badge variant="secondary" className="mt-1 text-[10px]">
+                    {activeDealsCount} negociação{activeDealsCount > 1 ? 'ões' : ''} ativa{activeDealsCount > 1 ? 's' : ''}
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -216,6 +281,26 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
               )}
             </div>
           </>
+        )}
+
+        {/* Suggested contact auto-identification */}
+        {!contact && suggestedContact && (
+          <div className="p-3 rounded-lg border border-amber-200 bg-amber-50">
+            <p className="text-xs font-medium text-amber-800 mb-1.5">📌 Contato Identificado</p>
+            <p className="text-xs text-amber-700 mb-2">
+              <strong>{suggestedContact.name}</strong> ({suggestedContact.phone}) já existe no CRM.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full h-7 text-xs gap-1.5"
+              disabled={linkingContact}
+              onClick={handleLinkSuggestedContact}
+            >
+              {linkingContact ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2 className="h-3 w-3" />}
+              Vincular a esta conversa
+            </Button>
+          </div>
         )}
 
         <Separator />
@@ -318,6 +403,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                   const unitId = activeDeal?.unit_id || activeDeal?.unit?.id;
                   const params = new URLSearchParams({ create: 'true' });
                   if (unitId) params.set('unitId', unitId);
+                  if (activeDeal?.id) params.set('dealId', activeDeal.id);
                   navigate(`/gestao/propostas?${params.toString()}`);
                 }}
               >
@@ -469,10 +555,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           open={isDealDialogOpen}
           onOpenChange={setIsDealDialogOpen}
           conversation={conversation}
-          onSuccess={(dealId, cId) => {
-            setDealRefetchKey(k => k + 1);
-            onDealCreated?.(dealId, cId);
-          }}
+          onSuccess={handleDealCreated}
         />
       )}
 

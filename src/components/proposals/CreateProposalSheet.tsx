@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useProposals, type CreateProposalInput, type Proposal } from '@/hooks/useProposals';
+import { useAICredits } from '@/hooks/useAICredits';
 import { useToast } from '@/hooks/use-toast';
 import {
   Sheet,
@@ -35,6 +36,8 @@ import {
   Building2,
   Sparkles,
   Wand2,
+  Zap,
+  Percent,
 } from 'lucide-react';
 import {
   generatePropertyPDF,
@@ -77,6 +80,7 @@ export function CreateProposalSheet({
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { createProposal, updateProposal } = useProposals();
+  const { credits } = useAICredits();
   const { toast } = useToast();
 
   const [units, setUnits] = useState<UnitOption[]>([]);
@@ -89,6 +93,7 @@ export function CreateProposalSheet({
   const [introMessage, setIntroMessage] = useState('');
   const [includeFinancing, setIncludeFinancing] = useState(false);
   const [includeCover, setIncludeCover] = useState(true);
+  const [interestRate, setInterestRate] = useState('10.5');
 
   // PDF template ref + data
   const templateRef = useRef<HTMLDivElement>(null);
@@ -150,6 +155,7 @@ export function CreateProposalSheet({
       setIntroMessage('');
       setIncludeFinancing(false);
       setIncludeCover(true);
+      setInterestRate('10.5');
       setPdfData(null);
       setReadyToCapture(false);
     }
@@ -165,7 +171,7 @@ export function CreateProposalSheet({
       ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
       : null;
 
-  // AI intro generation with robust parsing
+  // AI intro generation with robust parsing and full property context
   const handleGenerateAI = async () => {
     if (!selectedUnit) {
       toast({ title: 'Selecione um imóvel primeiro', variant: 'destructive' });
@@ -173,15 +179,42 @@ export function CreateProposalSheet({
     }
     setGeneratingAI(true);
     try {
+      // Fetch FULL unit data for rich context
       const { data: unitData } = await supabase
         .from('units')
-        .select('unit_number, property_type, price, area, bedrooms, suites, parking_spots, neighborhood, city, furnished, condition')
+        .select('*')
         .eq('id', selectedUnit.id)
         .single();
 
-      const propertyInfo = unitData
-        ? `Imóvel: ${unitData.unit_number}, Tipo: ${unitData.property_type || 'N/A'}, Preço: R$${unitData.price || 'N/A'}, Área: ${unitData.area || 'N/A'}m², Quartos: ${unitData.bedrooms || 'N/A'}, Suítes: ${unitData.suites || 'N/A'}, Vagas: ${unitData.parking_spots || 'N/A'}, Bairro: ${unitData.neighborhood || 'N/A'}, Cidade: ${unitData.city || 'N/A'}, Mobília: ${unitData.furnished || 'N/A'}, Condição: ${unitData.condition || 'N/A'}`
-        : 'Informações indisponíveis';
+      let propertyContext = '';
+      if (unitData?.property_id) {
+        const { data: propData } = await supabase
+          .from('properties')
+          .select('name, description, address, city, state, amenities, builder_name')
+          .eq('id', unitData.property_id)
+          .single();
+        if (propData) {
+          propertyContext = ` Empreendimento: ${propData.name || 'N/A'}. ${propData.description || ''} Endereço: ${propData.address || 'N/A'}, ${propData.city || ''}/${propData.state || ''}. Construtora: ${propData.builder_name || 'N/A'}. Amenidades: ${(propData.amenities || []).join(', ') || 'N/A'}.`;
+        }
+      }
+
+      const unitJson = unitData
+        ? JSON.stringify({
+            tipo: unitData.property_type,
+            preco: unitData.price,
+            area: unitData.area,
+            quartos: unitData.bedrooms,
+            suites: unitData.suites,
+            vagas: unitData.parking_spots,
+            bairro: unitData.neighborhood,
+            cidade: unitData.city,
+            mobilia: unitData.furnished,
+            condicao: unitData.condition,
+            condominio: unitData.condo_fee,
+            iptu: unitData.iptu,
+            orientacao_solar: unitData.solar_orientation,
+          })
+        : '{}';
 
       const clientRef = leadName ? ` O nome do cliente é ${leadName}.` : '';
 
@@ -190,7 +223,7 @@ export function CreateProposalSheet({
           messages: [
             {
               role: 'user',
-              content: `Escreva uma mensagem de introdução persuasiva e profissional de 3 parágrafos curtos para oferecer este imóvel a um cliente final. Seja elegante, direto e destaque os pontos fortes. Dados do imóvel: ${propertyInfo}.${clientRef} Responda apenas com a mensagem, sem markdown.`,
+              content: `Baseado nestes dados do imóvel: ${unitJson}.${propertyContext}${clientRef} Escreva uma mensagem de introdução persuasiva e profissional de 3 parágrafos curtos para oferecer este imóvel a um cliente final. Seja elegante, direto e destaque os pontos fortes. Responda apenas com a mensagem, sem markdown, sem aspas.`,
             },
           ],
         },
@@ -199,14 +232,12 @@ export function CreateProposalSheet({
       if (error) throw error;
 
       // ─── Robust type-safe extraction ───
-      // supabase.functions.invoke auto-parses JSON, so rawResponse is the parsed body
       const responseData = rawResponse?.data || rawResponse;
-      
+
       let aiText = '';
       if (typeof responseData === 'string') {
         aiText = responseData;
       } else if (responseData && typeof responseData === 'object') {
-        // Try every known response shape from various AI providers
         const candidates = [
           responseData.content,
           responseData.text,
@@ -222,13 +253,11 @@ export function CreateProposalSheet({
         for (const c of candidates) {
           if (typeof c === 'string' && c.trim()) { aiText = c; break; }
         }
-        // Handle OpenAI-style nested response
         if (!aiText && Array.isArray(responseData.choices) && responseData.choices[0]) {
           const choice = responseData.choices[0];
           if (typeof choice.message?.content === 'string') aiText = choice.message.content;
           else if (typeof choice.text === 'string') aiText = choice.text;
         }
-        // If still empty, try to find any string value in the object
         if (!aiText) {
           for (const val of Object.values(responseData)) {
             if (typeof val === 'string' && val.trim().length > 20) { aiText = val as string; break; }
@@ -236,11 +265,10 @@ export function CreateProposalSheet({
         }
       }
 
-      // Clean up: remove wrapping quotes or JSON artifacts
+      // Clean up
       if (aiText.startsWith('"') && aiText.endsWith('"')) {
         aiText = aiText.slice(1, -1);
       }
-      // Don't use raw JSON stringification as text
       if (aiText.startsWith('{') || aiText.startsWith('[')) {
         aiText = '';
       }
@@ -250,10 +278,9 @@ export function CreateProposalSheet({
         toast({ title: 'Texto gerado com IA!' });
       } else {
         console.error('AI Payload Error — could not parse response:', rawResponse);
-        // Fallback suave
         const fallback = `Confira esta excelente oportunidade que selecionei especialmente para você. Um imóvel com características únicas que atendem perfeitamente às suas necessidades.\n\nEste é um investimento seguro e com alto potencial de valorização, localizado em uma região privilegiada com toda a infraestrutura que você e sua família merecem.\n\nFicarei feliz em agendar uma visita para que você possa conhecer pessoalmente todos os diferenciais deste imóvel.`;
         setIntroMessage(fallback);
-        toast({ title: 'Texto padrão inserido', description: 'A IA não retornou texto. Edite a mensagem conforme desejar.' });
+        toast({ title: 'Texto padrão inserido', description: 'A IA não retornou texto. Edite conforme desejar.' });
       }
     } catch (err: any) {
       console.error('AI generation error:', err);
@@ -336,7 +363,6 @@ export function CreateProposalSheet({
       }
     };
 
-    // Small delay to let React render the template DOM before capturing
     const timer = setTimeout(capture, 100);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [readyToCapture, pdfData]);
@@ -349,7 +375,6 @@ export function CreateProposalSheet({
 
     setGenerating(true);
     try {
-      // Fetch full unit data
       const { data: unitData, error: unitError } = await supabase
         .from('units')
         .select('*')
@@ -371,10 +396,10 @@ export function CreateProposalSheet({
       }
 
       // Financing
+      const rate = parseFloat(interestRate) || 10.5;
       if (includeFinancing && selectedUnit.price) {
         const price = selectedUnit.price;
         const downPercent = 20;
-        const rate = 10.5;
         const months = 360;
         const downPayment = (price * downPercent) / 100;
         const financedAmount = price - downPayment;
@@ -409,7 +434,6 @@ export function CreateProposalSheet({
         phone: profile?.phone || undefined,
       };
 
-      // Set state to render the hidden template, then capture
       setPdfData(buildData);
       setAgentInfo(agent);
       setReadyToCapture(true);
@@ -555,6 +579,28 @@ export function CreateProposalSheet({
                   <Switch checked={includeFinancing} onCheckedChange={setIncludeFinancing} />
                 </div>
 
+                {/* Interest Rate — only visible when financing is on */}
+                {includeFinancing && (
+                  <div className="pl-3 space-y-1.5">
+                    <Label htmlFor="interest-rate" className="flex items-center gap-2 text-xs">
+                      <Percent className="h-3.5 w-3.5 text-muted-foreground" />
+                      Taxa de Juros Anual (%)
+                    </Label>
+                    <Input
+                      id="interest-rate"
+                      type="number"
+                      step="0.1"
+                      min="1"
+                      max="30"
+                      placeholder="10.5"
+                      value={interestRate}
+                      onChange={(e) => setInterestRate(e.target.value)}
+                      className="h-8 w-32 text-sm"
+                    />
+                    <p className="text-[10px] text-muted-foreground">Padrão: 10,5% a.a. (média de mercado)</p>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div className="flex items-center gap-3">
                     <ImageIcon className="h-5 w-5 text-primary" />
@@ -583,7 +629,7 @@ export function CreateProposalSheet({
                           : selectedUnit.unit_number}
                       </li>
                       {leadName && <li>👤 Cliente: {leadName}</li>}
-                      {includeFinancing && <li>💰 Com simulação de financiamento</li>}
+                      {includeFinancing && <li>💰 Com simulação de financiamento ({interestRate}% a.a.)</li>}
                       {includeCover && <li>🖼️ Com capa visual</li>}
                       {introMessage && <li>✍️ Com mensagem personalizada</li>}
                       {dealId && <li>🤝 Vinculada a negociação do CRM</li>}
@@ -595,27 +641,36 @@ export function CreateProposalSheet({
           </ScrollArea>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t flex-shrink-0 flex gap-3">
-            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button
-              className="flex-1"
-              disabled={!selectedUnit || generating}
-              onClick={handleGenerate}
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando magia...
-                </>
-              ) : (
-                <>
-                  <FileText className="mr-2 h-4 w-4" />
-                  {isEditing ? 'Atualizar Proposta' : 'Gerar Proposta'}
-                </>
-              )}
-            </Button>
+          <div className="px-6 py-4 border-t flex-shrink-0 space-y-2">
+            {/* AI Credits display */}
+            {credits && (
+              <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                <Zap className="h-3 w-3 text-amber-500" />
+                <span>Saldo: {credits.total_available} tokens IA</span>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                disabled={!selectedUnit || generating}
+                onClick={handleGenerate}
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando magia...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="mr-2 h-4 w-4" />
+                    {isEditing ? 'Atualizar Proposta' : 'Gerar Proposta'}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
