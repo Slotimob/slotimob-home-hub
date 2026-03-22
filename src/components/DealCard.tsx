@@ -1,4 +1,5 @@
 import { useDraggable } from '@dnd-kit/core';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,12 +18,12 @@ import {
   Home,
   Hourglass,
   MessageCircle,
-  AlertCircle
+  AlertCircle,
+  FileText,
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Deal } from '@/pages/Pipeline';
-
 interface DealCardProps {
   deal: Deal;
   isDragging?: boolean;
