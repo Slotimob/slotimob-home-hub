@@ -165,9 +165,9 @@ export const SIDEBAR_ITEMS = [
     title: 'Gestão',
     icon: ClipboardList,
     items: [
+      { title: 'Propostas', url: '/gestao/propostas' },
       { title: 'Aluguéis', url: '/gestao/alugueis' },
       { title: 'Contratos', url: '/gestao/contratos' },
-      { title: 'Propostas', url: '/gestao/propostas' },
       { title: 'Gerencial', url: '/gestao/gerencial' },
       { title: 'Afazeres', url: '/gestao/afazeres' },
     ],
