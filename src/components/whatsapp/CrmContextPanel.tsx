@@ -137,10 +137,21 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
     }
   }, [activeDeal, conversation, toast]);
 
-  const handleContactCreated = useCallback(() => {
+  const handleContactCreated = useCallback(async (newContact?: any) => {
+    // Link the new contact to the conversation
+    if (newContact?.id && conversation?.id) {
+      try {
+        await supabase
+          .from('whatsapp_conversations')
+          .update({ contact_id: newContact.id, contact_name: newContact.name })
+          .eq('id', conversation.id);
+      } catch (e) {
+        console.error('Error linking contact to conversation:', e);
+      }
+    }
     toast({ title: 'Contato criado com sucesso!' });
     onContactCreated?.();
-  }, [toast, onContactCreated]);
+  }, [toast, onContactCreated, conversation]);
 
   if (!conversation) {
     return (
