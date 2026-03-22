@@ -61,6 +61,9 @@ const signupSchema = z.object({
   businessName: z.string().optional(),
   creci: z.string().optional()
 }).superRefine((data, ctx) => {
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'As senhas não coincidem', path: ['confirmPassword'] });
+  }
   if (data.personType === 'pf') {
     const cpfDigits = (data.cpf || '').replace(/\D/g, '');
     if (!cpfDigits || cpfDigits.length !== 11) {
