@@ -493,6 +493,15 @@ const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin:
   doc.text(titleLines, margin, y);
   y += titleLines.length * 8 + 4;
   
+  // Lead name (personalized proposal)
+  if (data.leadName) {
+    doc.setFontSize(12);
+    doc.setTextColor(...BRAND_GREEN);
+    doc.setFont('helvetica', 'bold');
+    doc.text(normalizeText(`Proposta exclusiva para ${data.leadName}`), margin, y);
+    y += 8;
+  }
+
   // Location
   const locationParts = [unit.neighborhood, unit.city, unit.state].filter(Boolean);
   if (locationParts.length > 0) {
