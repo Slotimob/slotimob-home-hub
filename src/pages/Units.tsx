@@ -21,7 +21,7 @@ import { ViewModeTabs, type ViewMode } from '@/components/ui/view-mode-tabs';
 import { UnitsFilters, type UnitsFiltersState, type ManagementFilter } from '@/components/UnitsFilters';
 import { ActionToolbar } from '@/components/ActionToolbar';
 import { AddAssetButton } from '@/components/units/AddAssetButton';
-import { ShareAssetDialog } from '@/components/ShareAssetDialog';
+
 import {
   Select,
   SelectContent,
