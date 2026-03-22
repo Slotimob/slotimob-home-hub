@@ -20,7 +20,6 @@ export function TrialBanner() {
       welcomeShown.current = true;
       toast.success('Bem-vindo à SlotiMob! 🎉', {
         description: `Você está no período de teste PRO (${trialDaysRemaining} dias restantes). Aproveite todos os recursos.`,
-        duration: 1000,
       });
     }
   }, [isTrialActive, trialDaysRemaining, trialLoading, planLoading]);

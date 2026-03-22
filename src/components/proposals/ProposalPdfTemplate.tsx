@@ -404,7 +404,7 @@ function InvestmentTable({ price, rate: customRate }: { price: number; rate?: nu
           <span style={{ color: '#444' }}>{fmt(s.dp)}</span>
           <span style={{ color: '#444' }}>{fmt(s.fin)}</span>
           <span className="font-bold inline-flex items-center justify-center">
-            <span className="px-2 py-1 rounded" style={{ color: '#0b0073', background: 'rgba(47,201,175,0.12)' }}>{fmt(s.mp)}</span>
+            <span className="px-2 py-1 rounded" style={{ color: '#0b0073' }}>{fmt(s.mp)}</span>
           </span>
           <span className="text-sm" style={{ color: '#888' }}>{fmt(s.income)}</span>
         </div>
