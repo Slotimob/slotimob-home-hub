@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { useProposals } from '@/hooks/useProposals';
+import { useProposals, type Proposal } from '@/hooks/useProposals';
 import { CreateProposalSheet } from '@/components/proposals/CreateProposalSheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { FileText, Plus, Calculator, User, Building2, Clock } from 'lucide-react';
+import { FileText, Plus, Calculator, User, Building2, Clock, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -29,23 +29,28 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 export default function Proposals() {
   const { proposals, isLoading } = useProposals();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const preSelectedUnitId = searchParams.get('unitId') || undefined;
 
-  // Auto-open sheet when deep-linked with ?create=true
   useEffect(() => {
     if (searchParams.get('create') === 'true') {
       setSheetOpen(true);
     }
-  }, []); // run once on mount
+  }, []);
 
   const handleSheetClose = (open: boolean) => {
     setSheetOpen(open);
     if (!open) {
-      // Clear deep-link params from URL
+      setEditingProposal(null);
       setSearchParams({}, { replace: true });
     }
+  };
+
+  const handleEdit = (proposal: Proposal) => {
+    setEditingProposal(proposal);
+    setSheetOpen(true);
   };
 
   return (
@@ -65,7 +70,7 @@ export default function Proposals() {
                   Gere e gerencie propostas premium para seus clientes.
                 </p>
               </div>
-              <Button onClick={() => setSheetOpen(true)}>
+              <Button onClick={() => { setEditingProposal(null); setSheetOpen(true); }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Proposta
               </Button>
@@ -138,6 +143,7 @@ export default function Proposals() {
                           <TableHead>Opções</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Data</TableHead>
+                          <TableHead className="w-12"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -188,6 +194,16 @@ export default function Proposals() {
                                   locale: ptBR,
                                 })}
                               </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleEdit(proposal)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           );
                         })}
@@ -202,7 +218,12 @@ export default function Proposals() {
         <BottomNavigation />
       </div>
 
-      <CreateProposalSheet open={sheetOpen} onOpenChange={handleSheetClose} preSelectedUnitId={preSelectedUnitId} />
+      <CreateProposalSheet
+        open={sheetOpen}
+        onOpenChange={handleSheetClose}
+        preSelectedUnitId={preSelectedUnitId}
+        editingProposal={editingProposal}
+      />
     </SidebarProvider>
   );
 }
