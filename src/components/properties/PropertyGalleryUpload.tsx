@@ -35,6 +35,7 @@ export const PropertyGalleryUpload = ({
   onRefresh,
   onComplete,
 }: PropertyGalleryUploadProps) => {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [uploadingImages, setUploadingImages] = useState<UploadingImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
