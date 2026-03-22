@@ -599,6 +599,63 @@ export function CreateProposalSheet({
                   </div>
                 )}
 
+                {/* Custom Simulation */}
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <Calculator className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Simulação Personalizada</p>
+                      <p className="text-xs text-muted-foreground">
+                        Valores customizados de entrada, taxa e parcela
+                      </p>
+                    </div>
+                  </div>
+                  <Switch checked={includeCustomSim} onCheckedChange={setIncludeCustomSim} />
+                </div>
+
+                {includeCustomSim && (
+                  <div className="pl-3 space-y-3 p-3 rounded-lg bg-muted/30 border">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Valor Base do Imóvel (R$)</Label>
+                      <Input
+                        type="number"
+                        placeholder={selectedUnit?.price?.toString() || '0'}
+                        value={customBasePrice}
+                        onChange={(e) => setCustomBasePrice(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">% de Entrada</Label>
+                        <Input
+                          type="number"
+                          step="1"
+                          min="5"
+                          max="90"
+                          placeholder="20"
+                          value={customDownPercent}
+                          onChange={(e) => setCustomDownPercent(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Taxa de Juros (% a.a.)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="1"
+                          max="30"
+                          placeholder="10.5"
+                          value={customRate}
+                          onChange={(e) => setCustomRate(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div className="flex items-center gap-3">
                     <ImageIcon className="h-5 w-5 text-primary" />
@@ -610,6 +667,20 @@ export function CreateProposalSheet({
                     </div>
                   </div>
                   <Switch checked={includeCover} onCheckedChange={setIncludeCover} />
+                </div>
+
+                {/* Agent WhatsApp CTA */}
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.616l4.584-1.47A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.24 0-4.317-.727-6.002-1.96l-.42-.317-2.716.871.893-2.647-.345-.44A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+                    <div>
+                      <p className="text-sm font-medium">Incluir meu WhatsApp</p>
+                      <p className="text-xs text-muted-foreground">
+                        Adiciona seu número como CTA no final da proposta
+                      </p>
+                    </div>
+                  </div>
+                  <Switch checked={includeAgentWhatsApp} onCheckedChange={setIncludeAgentWhatsApp} />
                 </div>
               </div>
 
