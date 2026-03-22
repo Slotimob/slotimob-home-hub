@@ -780,7 +780,38 @@ const Auth = () => {
         />
       </div>
 
-      {/* Honeypot */}
+      {/* Password */}
+      <div className="space-y-2">
+        <Label htmlFor="signup-password">Senha</Label>
+        <Input
+          id="signup-password"
+          type="password"
+          placeholder="Mínimo 6 caracteres"
+          value={signupForm.password}
+          onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
+          className={fieldErrors.password ? 'border-destructive' : ''}
+          required
+        />
+        {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+      </div>
+
+      {/* Confirm Password */}
+      <div className="space-y-2">
+        <Label htmlFor="signup-confirmPassword">Confirmar Senha</Label>
+        <Input
+          id="signup-confirmPassword"
+          type="password"
+          placeholder="Digite a senha novamente"
+          value={signupForm.confirmPassword}
+          onChange={e => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
+          onPaste={e => e.preventDefault()}
+          className={fieldErrors.confirmPassword ? 'border-destructive' : ''}
+          required
+        />
+        {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
+      </div>
+
+
       <div className="absolute -left-[9999px] opacity-0 pointer-events-none" aria-hidden="true">
         <Label htmlFor="signup-website">Website</Label>
         <Input id="signup-website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={e => setHoneypot(e.target.value)} />
