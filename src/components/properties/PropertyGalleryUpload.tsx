@@ -42,7 +42,6 @@ export const PropertyGalleryUpload = ({
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const isSavingRef = useRef(false);
 
-  // Auto-save to database when enabled with proper error handling
   const saveToDatabase = async (newImages: string[]): Promise<boolean> => {
     if (!autoSave || !propertyId || isSavingRef.current) return true;
     
@@ -55,7 +54,6 @@ export const PropertyGalleryUpload = ({
 
       if (error) throw error;
       
-      // Force refresh parent data after successful save
       if (onRefresh) {
         await onRefresh();
       }
@@ -77,43 +75,27 @@ export const PropertyGalleryUpload = ({
   const uploadImage = async (file: File): Promise<string | null> => {
     const uploadId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    // Add to uploading state
     setUploadingImages(prev => [...prev, { id: uploadId, name: file.name, progress: 'compressing' }]);
 
     try {
-      // Validate
       const validationError = validateImageFile(file);
       if (validationError) {
-        toast({
-          title: 'Arquivo inválido',
-          description: validationError,
-          variant: 'destructive',
-        });
+        toast({ title: 'Arquivo inválido', description: validationError, variant: 'destructive' });
         setUploadingImages(prev => prev.filter(f => f.id !== uploadId));
         return null;
       }
 
-      // Compress image
       let fileToUpload = file;
       try {
-        const result = await compressImage(file, {
-          maxWidth: 1920,
-          maxHeight: 1920,
-          quality: 0.8,
-          format: 'image/jpeg',
-        });
-        
+        const result = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.8, format: 'image/jpeg' });
         fileToUpload = result.file;
-        
         if (result.compressionRatio > 0) {
           console.log(`Compressed ${file.name}: ${formatFileSize(result.originalSize)} → ${formatFileSize(result.optimizedSize)} (${result.compressionRatio}% reduction)`);
         }
       } catch (compressError) {
         console.error('Compression error:', compressError);
-        // Continue with original file
       }
 
-      // Update progress
       setUploadingImages(prev => prev.map(f => f.id === uploadId ? { ...f, progress: 'uploading' as const } : f));
 
       const fileExt = fileToUpload.name.split('.').pop()?.toLowerCase() || 'jpg';
@@ -123,10 +105,7 @@ export const PropertyGalleryUpload = ({
         .from('property-media')
         .upload(fileName, fileToUpload, { upsert: true });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('property-media')
@@ -136,11 +115,7 @@ export const PropertyGalleryUpload = ({
       return publicUrl;
     } catch (error: any) {
       setUploadingImages(prev => prev.filter(f => f.id !== uploadId));
-      toast({
-        title: 'Erro no upload',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' });
       return null;
     }
   };
@@ -150,31 +125,20 @@ export const PropertyGalleryUpload = ({
     const remaining = maxImages - images.length;
     
     if (fileArray.length > remaining) {
-      toast({
-        title: 'Limite excedido',
-        description: `Você pode adicionar no máximo ${remaining} imagem${remaining !== 1 ? 's' : ''}.`,
-        variant: 'destructive',
-      });
+      toast({ title: 'Limite excedido', description: `Você pode adicionar no máximo ${remaining} imagem${remaining !== 1 ? 's' : ''}.`, variant: 'destructive' });
       return;
     }
 
-    // Process files in parallel
     const uploadPromises = fileArray.slice(0, remaining).map(uploadImage);
     const results = await Promise.all(uploadPromises);
     const successfulUploads = results.filter((url): url is string => url !== null);
     
     if (successfulUploads.length > 0) {
       const newImages = [...images, ...successfulUploads];
-      
-      // Save to database first, then update local state
       const saved = await saveToDatabase(newImages);
-      
       if (saved) {
         onImagesChange(newImages);
-        toast({
-          title: 'Fotos salvas!',
-          description: `${successfulUploads.length} imagem${successfulUploads.length !== 1 ? 's' : ''} otimizada${successfulUploads.length !== 1 ? 's' : ''} e salva${successfulUploads.length !== 1 ? 's' : ''} com sucesso.`,
-        });
+        toast({ title: 'Fotos salvas!', description: `${successfulUploads.length} imagem${successfulUploads.length !== 1 ? 's' : ''} salva${successfulUploads.length !== 1 ? 's' : ''} com sucesso.` });
       }
     }
   };
@@ -185,25 +149,16 @@ export const PropertyGalleryUpload = ({
     handleFilesSelect(e.dataTransfer.files);
   }, [images, maxImages]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+  const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
+  const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); }, []);
 
   const removeImage = async (index: number) => {
-    if (isDeleting !== null) return; // Prevent double-click
-    
+    if (isDeleting !== null) return;
     setIsDeleting(index);
     const imageUrl = images[index];
     const newImages = images.filter((_, i) => i !== index);
 
     try {
-      // Try to delete from storage first
       try {
         const urlParts = imageUrl.split('/property-media/');
         if (urlParts[1]) {
@@ -211,34 +166,18 @@ export const PropertyGalleryUpload = ({
         }
       } catch (storageError) {
         console.error('Error deleting from storage:', storageError);
-        // Continue even if storage delete fails
       }
 
-      // Save to database
       const saved = await saveToDatabase(newImages);
-      
       if (saved) {
-        // Update local state only after successful database save
         onImagesChange(newImages);
-        toast({
-          title: 'Foto removida',
-          description: 'A imagem foi excluída com sucesso.',
-        });
+        toast({ title: 'Foto removida', description: 'A imagem foi excluída com sucesso.' });
       } else {
-        // If save failed, don't update local state
-        toast({
-          title: 'Erro ao remover foto',
-          description: 'Não foi possível salvar a alteração. Tente novamente.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração. Tente novamente.', variant: 'destructive' });
       }
     } catch (error: any) {
       console.error('Error removing image:', error);
-      toast({
-        title: 'Erro ao remover foto',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao remover foto', description: error.message, variant: 'destructive' });
     } finally {
       setIsDeleting(null);
     }
@@ -250,10 +189,8 @@ export const PropertyGalleryUpload = ({
     <div className="space-y-3">
       <Label>Galeria de Fotos (Áreas Comuns)</Label>
       
-      {/* Image Grid */}
       {(images.length > 0 || uploadingImages.length > 0) && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-          {/* Uploading placeholders */}
           {uploadingImages.map((img) => (
             <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
               <div className="w-full h-full flex flex-col items-center justify-center">
@@ -265,28 +202,25 @@ export const PropertyGalleryUpload = ({
             </div>
           ))}
           
-          {/* Existing images */}
           {images.map((url, index) => (
             <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
-              <img
-                src={url}
-                alt={`Área comum ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
+              <img src={url} alt={`Área comum ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
               <button
                 type="button"
                 onClick={() => removeImage(index)}
-                className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                disabled={isDeleting !== null}
+                className={cn(
+                  "absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full transition-opacity",
+                  isDeleting === index ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
               >
-                <X className="h-3 w-3" />
+                {isDeleting === index ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Upload Area */}
       {images.length < maxImages && (
         <div
           onDrop={handleDrop}
@@ -336,9 +270,9 @@ export const PropertyGalleryUpload = ({
         </div>
       )}
 
-      {/* Save / Complete button — always visible when there are images */}
+      {/* Save button — fixed at bottom with proper spacing */}
       {images.length > 0 && (
-        <div className="sticky bottom-0 bg-background pt-2 pb-1">
+        <div className="mt-4 border-t border-border pt-3">
           <Button
             type="button"
             className="w-full"

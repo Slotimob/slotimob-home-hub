@@ -29,73 +29,61 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
     const gallery = (unit.gallery || parentProperty?.gallery_images || []).slice(0, 4);
     const location = [unit.neighborhood, unit.city, unit.state].filter(Boolean).join(' · ');
     const typeLabel = unit.property_type ? PROPERTY_TYPE_LABELS[unit.property_type] || unit.property_type : '';
-
     const hasFinancial = unit.condo_fee || unit.iptu || (unit.price && unit.is_financeable !== false);
-
-    // Adaptive gallery grid: avoid empty holes
     const galleryColClass = gallery.length === 1 ? 'grid-cols-1' : 'grid-cols-2';
+    const generatedDate = new Date().toLocaleDateString('pt-BR');
 
     return (
-      <div ref={ref} style={{ width: '794px' }} className="bg-white text-[#1e1e23] font-sans">
+      <div ref={ref} style={{ width: '794px' }} className="bg-white font-sans">
         {/* ══════ PAGE 1: COVER ══════ */}
         <div style={{ width: '794px', height: '1123px' }} className="relative overflow-hidden flex flex-col">
-          {/* Cover image */}
-          <div className="relative flex-1 min-h-0" style={{ height: '65%' }}>
+          {/* Full-height cover image */}
+          <div className="relative flex-1 min-h-0">
             {coverImg ? (
-              <img
-                src={coverImg}
-                alt={title}
-                crossOrigin="anonymous"
-                className="w-full h-full object-cover"
-              />
+              <img src={coverImg} alt={title} crossOrigin="anonymous" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, #0b0073 0%, #2fc9af 100%)' }} />
             )}
-            {/* Darker gradient overlay to prevent text overlap */}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)' }} />
+            {/* Dark gradient overlay */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.8) 100%)' }} />
           </div>
 
-          {/* Top bar */}
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-10 py-5" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          {/* Top bar with logo */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-10 py-5">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#2fc9af' }}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#2fc9af' }}>
                 <Building2 className="w-5 h-5 text-white" />
               </div>
-              <span className="text-white font-bold text-lg tracking-wide">SLOTIMOB</span>
+              <span className="text-white font-bold text-lg tracking-wide drop-shadow-lg">SLOTIMOB</span>
             </div>
-            {agent?.name && (
-              <div className="text-right text-white/80 text-xs">
-                <p className="font-medium text-white/90">{agent.name}</p>
-                {agent.phone && <p>{agent.phone}</p>}
-              </div>
-            )}
-          </div>
-
-          {/* Content overlay at bottom of image */}
-          <div className="absolute left-0 right-0 px-10 pb-6" style={{ bottom: '35%' }}>
+            {/* Type badge */}
             {typeLabel && (
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider mb-3" style={{ background: '#2fc9af' }}>
+              <span className="px-4 py-1.5 rounded-full text-[11px] font-bold text-white uppercase tracking-widest" style={{ background: 'rgba(47,201,175,0.9)', backdropFilter: 'blur(4px)' }}>
                 {typeLabel}
               </span>
             )}
-            <h1 className="text-white font-bold text-4xl leading-tight mb-2 drop-shadow-lg">{title}</h1>
+          </div>
+
+          {/* Bottom content overlay with gradient */}
+          <div className="absolute bottom-0 left-0 right-0 px-10 pb-10 pt-32" style={{ background: 'linear-gradient(to top, rgba(11,0,115,0.95) 0%, rgba(11,0,115,0.7) 60%, transparent 100%)' }}>
+            <h1 className="text-white font-bold text-4xl leading-tight mb-3" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+              {title}
+            </h1>
             {location && (
-              <div className="flex items-center gap-2 text-white/80 text-sm drop-shadow">
+              <div className="flex items-center gap-2 text-white/80 text-sm mb-6">
                 <MapPin className="w-4 h-4" />
                 <span>{location}</span>
               </div>
             )}
-          </div>
 
-          {/* Bottom info section */}
-          <div className="px-10 py-8 flex items-center justify-between" style={{ height: '35%', background: '#0b0073' }}>
-            <div className="space-y-3">
-              {data.leadName && (
-                <p className="text-sm" style={{ color: '#2fc9af' }}>
-                  Proposta exclusiva para <span className="font-bold">{data.leadName}</span>
-                </p>
-              )}
+            {/* Price + Lead + Features row */}
+            <div className="flex items-end justify-between">
               <div>
+                {data.leadName && (
+                  <p className="text-sm mb-2" style={{ color: '#2fc9af' }}>
+                    Proposta exclusiva para <span className="font-bold">{data.leadName}</span>
+                  </p>
+                )}
                 {unit.price ? (
                   <>
                     <p className="text-white text-4xl font-bold">{fmt(unit.price)}</p>
@@ -107,24 +95,24 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                   <p className="text-white text-3xl font-bold">{fmt(unit.rent_price)}<span className="text-lg font-normal text-white/60">/mês</span></p>
                 ) : null}
               </div>
-            </div>
 
-            {/* Feature pills */}
-            <div className="grid grid-cols-2 gap-3">
-              {unit.area && (
-                <FeaturePill icon={<Maximize className="w-5 h-5" />} value={`${unit.area}m²`} label="Área" />
-              )}
-              {unit.bedrooms != null && (
-                <FeaturePill icon={<Bed className="w-5 h-5" />} value={`${unit.bedrooms}`} label="Quartos" />
-              )}
-              {unit.suites != null && unit.suites > 0 && (
-                <FeaturePill icon={<Bath className="w-5 h-5" />} value={`${unit.suites}`} label="Suítes" />
-              )}
-              {unit.parking_spots != null && (
-                <FeaturePill icon={<Car className="w-5 h-5" />} value={`${unit.parking_spots}`} label="Vagas" />
-              )}
+              {/* Feature pills */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {unit.area && <FeaturePill icon={<Maximize className="w-4 h-4" />} value={`${unit.area}m²`} label="Área" />}
+                {unit.bedrooms != null && <FeaturePill icon={<Bed className="w-4 h-4" />} value={`${unit.bedrooms}`} label="Quartos" />}
+                {unit.suites != null && unit.suites > 0 && <FeaturePill icon={<Bath className="w-4 h-4" />} value={`${unit.suites}`} label="Suítes" />}
+                {unit.parking_spots != null && <FeaturePill icon={<Car className="w-4 h-4" />} value={`${unit.parking_spots}`} label="Vagas" />}
+              </div>
             </div>
           </div>
+
+          {/* Agent info top-right */}
+          {agent?.name && (
+            <div className="absolute top-5 right-10 text-right text-white/80 text-xs bg-black/30 rounded-lg px-3 py-2 backdrop-blur-sm">
+              <p className="font-medium text-white/90">{agent.name}</p>
+              {agent.phone && <p>{agent.phone}</p>}
+            </div>
+          )}
         </div>
 
         {/* ══════ PAGE 2: DETAILS ══════ */}
@@ -132,10 +120,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
           {/* Introduction message */}
           {data.introductionMessage && (
             <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1 h-6 rounded-full" style={{ background: '#0b0073' }} />
-                <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Apresentação</h2>
-              </div>
+              <SectionTitle title="Apresentação" />
               <div className="p-6 rounded-xl border-l-4" style={{ background: '#f5f8ff', borderColor: '#0b0073' }}>
                 <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#444' }}>
                   {data.introductionMessage}
@@ -146,47 +131,36 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
 
           {/* Features grid */}
           <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1 h-6 rounded-full" style={{ background: '#0b0073' }} />
-              <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Características</h2>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              <SpecCard label="Área" value={unit.area ? `${unit.area}m²` : '—'} />
-              <SpecCard label="Quartos" value={unit.bedrooms != null ? `${unit.bedrooms}` : '—'} />
-              <SpecCard label="Suítes" value={unit.suites != null ? `${unit.suites}` : '—'} />
-              <SpecCard label="Vagas" value={unit.parking_spots != null ? `${unit.parking_spots}` : '—'} />
-              {unit.bathrooms != null && <SpecCard label="Banheiros" value={`${unit.bathrooms}`} />}
-              {unit.furnished && <SpecCard label="Mobília" value={FURNISHED_LABELS[unit.furnished] || unit.furnished} />}
-              {unit.solar_orientation && <SpecCard label="Orientação Solar" value={unit.solar_orientation} />}
-              {unit.condition && <SpecCard label="Condição" value={unit.condition} />}
+            <SectionTitle title="Características" />
+            <div className="grid grid-cols-4 gap-3">
+              <SpecCard icon={<Maximize className="w-5 h-5" />} label="Área" value={unit.area ? `${unit.area}m²` : '—'} />
+              <SpecCard icon={<Bed className="w-5 h-5" />} label="Quartos" value={unit.bedrooms != null ? `${unit.bedrooms}` : '—'} />
+              <SpecCard icon={<Bath className="w-5 h-5" />} label="Suítes" value={unit.suites != null ? `${unit.suites}` : '—'} />
+              <SpecCard icon={<Car className="w-5 h-5" />} label="Vagas" value={unit.parking_spots != null ? `${unit.parking_spots}` : '—'} />
+              {unit.bathrooms != null && <SpecCard icon={<Bath className="w-5 h-5" />} label="Banheiros" value={`${unit.bathrooms}`} />}
+              {unit.furnished && <SpecCard icon={<Sofa className="w-5 h-5" />} label="Mobília" value={FURNISHED_LABELS[unit.furnished] || unit.furnished} />}
+              {unit.solar_orientation && <SpecCard icon={<Sun className="w-5 h-5" />} label="Orientação" value={unit.solar_orientation} />}
+              {unit.condition && <SpecCard icon={<Hammer className="w-5 h-5" />} label="Condição" value={unit.condition} />}
             </div>
           </div>
 
           {/* Description */}
           {unit.description && (
             <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1 h-6 rounded-full" style={{ background: '#0b0073' }} />
-                <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Descrição</h2>
-              </div>
-              <p className="text-sm leading-relaxed" style={{ color: '#555' }}>
-                {unit.description}
-              </p>
+              <SectionTitle title="Descrição" />
+              <p className="text-sm leading-relaxed" style={{ color: '#555' }}>{unit.description}</p>
             </div>
           )}
 
-          {/* Gallery grid — adaptive, no blank holes */}
+          {/* Gallery grid */}
           {gallery.length > 0 && (
             <div className="mt-auto">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1 h-6 rounded-full" style={{ background: '#0b0073' }} />
-                <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Galeria</h2>
-              </div>
+              <SectionTitle title="Galeria" />
               <div className={`grid ${galleryColClass} gap-3`}>
                 {gallery.map((img, i) => (
                   <div
                     key={i}
-                    className={`rounded-lg overflow-hidden ${gallery.length === 3 && i === 2 ? 'col-span-2' : ''}`}
+                    className={`rounded-xl overflow-hidden ${gallery.length === 3 && i === 2 ? 'col-span-2' : ''}`}
                     style={{ height: '180px', background: '#eee' }}
                   >
                     <img src={img} alt={`Foto ${i + 1}`} crossOrigin="anonymous" className="w-full h-full object-cover" />
@@ -195,6 +169,9 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
               </div>
             </div>
           )}
+
+          {/* Page 2 footer */}
+          <PageFooter agent={agent} date={generatedDate} />
         </div>
 
         {/* ══════ PAGE 3: FINANCIAL (conditional) ══════ */}
@@ -203,10 +180,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
             {/* Condo / IPTU */}
             {(unit.condo_fee || unit.iptu) && (
               <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-1 h-6 rounded-full" style={{ background: '#0b0073' }} />
-                  <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Custos Mensais</h2>
-                </div>
+                <SectionTitle title="Custos Mensais" />
                 <div className="grid grid-cols-2 gap-4">
                   {unit.condo_fee && (
                     <div className="p-5 rounded-xl" style={{ background: '#f5f8ff' }}>
@@ -224,16 +198,13 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
               </div>
             )}
 
-            {/* Financing / Investment Matrix */}
+            {/* Investment Matrix */}
             {unit.price && unit.price > 0 && unit.is_financeable !== false && (
               <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-1 h-6 rounded-full" style={{ background: '#0b0073' }} />
-                  <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Matriz de Investimento</h2>
-                </div>
+                <SectionTitle title="Matriz de Investimento" />
                 <InvestmentTable price={unit.price} rate={financingSimulation?.annualRate} />
-                <p className="text-xs mt-3" style={{ color: '#aaa' }}>
-                  * Simulação baseada em taxa de {financingSimulation?.annualRate || 10.5}% a.a. / 360 meses. Sujeito à aprovação de crédito.
+                <p className="text-[10px] mt-3" style={{ color: '#aaa' }}>
+                  * Simulação baseada em taxa de {financingSimulation?.annualRate || 10.5}% a.a. / 360 meses. Valores sujeitos à aprovação de crédito e podem variar conforme perfil do comprador.
                 </p>
               </div>
             )}
@@ -241,27 +212,12 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
             {/* Custom financing simulation */}
             {financingSimulation && (
               <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-1 h-6 rounded-full" style={{ background: '#2fc9af' }} />
-                  <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Simulação Personalizada</h2>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-5 rounded-xl" style={{ background: '#f0fdf8' }}>
-                    <p className="text-xs uppercase tracking-wider mb-1" style={{ color: '#888' }}>Entrada ({financingSimulation.downPaymentPercent}%)</p>
-                    <p className="text-xl font-bold" style={{ color: '#0b0073' }}>{fmt(financingSimulation.downPayment)}</p>
-                  </div>
-                  <div className="p-5 rounded-xl" style={{ background: '#f0fdf8' }}>
-                    <p className="text-xs uppercase tracking-wider mb-1" style={{ color: '#888' }}>Valor Financiado</p>
-                    <p className="text-xl font-bold" style={{ color: '#0b0073' }}>{fmt(financingSimulation.financedAmount)}</p>
-                  </div>
-                  <div className="p-5 rounded-xl" style={{ background: '#f0fdf8' }}>
-                    <p className="text-xs uppercase tracking-wider mb-1" style={{ color: '#888' }}>Parcela Mensal</p>
-                    <p className="text-xl font-bold" style={{ color: '#2fc9af' }}>{fmt(financingSimulation.monthlyPayment)}</p>
-                  </div>
-                  <div className="p-5 rounded-xl" style={{ background: '#f0fdf8' }}>
-                    <p className="text-xs uppercase tracking-wider mb-1" style={{ color: '#888' }}>Prazo</p>
-                    <p className="text-xl font-bold" style={{ color: '#0b0073' }}>{financingSimulation.months} meses</p>
-                  </div>
+                <SectionTitle title="Simulação Personalizada" accent />
+                <div className="grid grid-cols-2 rounded-xl overflow-hidden" style={{ border: '1px solid #e0f5ef' }}>
+                  <SimCard label={`Entrada (${financingSimulation.downPaymentPercent}%)`} value={fmt(financingSimulation.downPayment)} />
+                  <SimCard label="Valor Financiado" value={fmt(financingSimulation.financedAmount)} borderLeft />
+                  <SimCard label="Parcela Mensal" value={fmt(financingSimulation.monthlyPayment)} highlight borderTop />
+                  <SimCard label="Prazo" value={`${financingSimulation.months} meses`} borderLeft borderTop />
                 </div>
               </div>
             )}
@@ -285,20 +241,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                 <p className="text-white text-xl font-bold mb-1">Gostou? Agende sua visita agora!</p>
                 <p className="text-white/80 text-sm">Entre em contato e garanta essa oportunidade única.</p>
               </div>
-              {/* Footer */}
-              <div className="flex items-center justify-between mt-6 pt-4 border-t" style={{ borderColor: '#e5e5ea' }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: '#2fc9af' }}>
-                    <Building2 className="w-3 h-3 text-white" />
-                  </div>
-                  <span className="text-xs" style={{ color: '#999' }}>Gerado via SlotiMob - O SaaS Imobiliário</span>
-                </div>
-                {agent?.name && (
-                  <span className="text-xs" style={{ color: '#999' }}>
-                    {[agent.name, agent.email, agent.phone].filter(Boolean).join(' | ')}
-                  </span>
-                )}
-              </div>
+              <PageFooter agent={agent} date={generatedDate} />
             </div>
           </div>
         )}
@@ -311,23 +254,67 @@ ProposalPdfTemplate.displayName = 'ProposalPdfTemplate';
 
 // ─── Sub-components ─────────────────────────
 
+function SectionTitle({ title, accent }: { title: string; accent?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <div className="w-1 h-6 rounded-full" style={{ background: accent ? '#2fc9af' : '#0b0073' }} />
+      <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>{title}</h2>
+    </div>
+  );
+}
+
+function PageFooter({ agent, date }: { agent?: AgentInfo; date: string }) {
+  return (
+    <div className="flex items-center justify-between mt-6 pt-4 border-t" style={{ borderColor: '#e5e5ea' }}>
+      <div className="flex items-center gap-2">
+        <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: '#2fc9af' }}>
+          <Building2 className="w-3 h-3 text-white" />
+        </div>
+        <span className="text-[10px]" style={{ color: '#999' }}>Gerado via SlotiMob · {date}</span>
+      </div>
+      {agent?.name && (
+        <span className="text-[10px]" style={{ color: '#999' }}>
+          {[agent.name, agent.email, agent.phone].filter(Boolean).join(' | ')}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function FeaturePill({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.1)' }}>
-      <div className="text-white/60">{icon}</div>
+    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(4px)' }}>
+      <div className="text-white/70">{icon}</div>
       <div>
-        <p className="text-white font-bold text-lg leading-none">{value}</p>
-        <p className="text-white/50 text-xs">{label}</p>
+        <p className="text-white font-bold text-base leading-none">{value}</p>
+        <p className="text-white/50 text-[10px]">{label}</p>
       </div>
     </div>
   );
 }
 
-function SpecCard({ label, value }: { label: string; value: string }) {
+function SpecCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="p-4 rounded-xl text-center" style={{ background: '#f5f5fa' }}>
-      <p className="text-2xl font-bold mb-1" style={{ color: '#0b0073' }}>{value}</p>
-      <p className="text-xs uppercase tracking-wider" style={{ color: '#888' }}>{label}</p>
+      <div className="flex justify-center mb-2" style={{ color: '#0b0073' }}>{icon}</div>
+      <p className="text-xl font-bold mb-0.5" style={{ color: '#0b0073' }}>{value}</p>
+      <p className="text-[10px] uppercase tracking-wider" style={{ color: '#888' }}>{label}</p>
+    </div>
+  );
+}
+
+function SimCard({ label, value, highlight, borderLeft, borderTop }: { label: string; value: string; highlight?: boolean; borderLeft?: boolean; borderTop?: boolean }) {
+  return (
+    <div
+      className="p-5"
+      style={{
+        background: highlight ? '#f0fdf8' : '#fafffe',
+        borderLeft: borderLeft ? '1px solid #e0f5ef' : undefined,
+        borderTop: borderTop ? '1px solid #e0f5ef' : undefined,
+      }}
+    >
+      <p className="text-xs uppercase tracking-wider mb-1" style={{ color: '#888' }}>{label}</p>
+      <p className="text-xl font-bold" style={{ color: highlight ? '#2fc9af' : '#0b0073' }}>{value}</p>
     </div>
   );
 }
@@ -348,25 +335,25 @@ function InvestmentTable({ price, rate: customRate }: { price: number; rate?: nu
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #e5e5ea' }}>
       {/* Header */}
-      <div className="grid grid-cols-5 text-center py-3 px-2 text-xs font-bold uppercase tracking-wider text-white" style={{ background: '#0b0073' }}>
+      <div className="grid grid-cols-5 text-center py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-white" style={{ background: '#0b0073' }}>
         <span>Entrada</span>
         <span>Valor Entrada</span>
         <span>Financiar</span>
         <span>1ª Parcela</span>
         <span>Renda Mín.</span>
       </div>
-      {/* Rows */}
+      {/* Rows with zebra-striping */}
       {scenarios.map((s, i) => (
         <div
           key={s.pct}
           className="grid grid-cols-5 text-center py-3 px-2 text-sm"
-          style={{ background: i % 2 === 0 ? '#fafaff' : '#fff' }}
+          style={{ background: i % 2 === 0 ? '#f8f8fc' : '#ffffff' }}
         >
           <span className="font-bold" style={{ color: '#0b0073' }}>{s.pct}%</span>
           <span style={{ color: '#444' }}>{fmt(s.dp)}</span>
           <span style={{ color: '#444' }}>{fmt(s.fin)}</span>
-          <span className="font-bold" style={{ color: '#2fc9af' }}>{fmt(s.mp)}</span>
-          <span style={{ color: '#888' }}>{fmt(s.income)}</span>
+          <span className="font-bold px-1 py-0.5 rounded" style={{ color: '#0b0073', background: 'rgba(47,201,175,0.12)' }}>{fmt(s.mp)}</span>
+          <span className="text-sm" style={{ color: '#888' }}>{fmt(s.income)}</span>
         </div>
       ))}
     </div>
