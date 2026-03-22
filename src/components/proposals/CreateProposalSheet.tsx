@@ -95,6 +95,15 @@ export function CreateProposalSheet({
   const [includeCover, setIncludeCover] = useState(true);
   const [interestRate, setInterestRate] = useState('10.5');
 
+  // Custom simulation fields
+  const [includeCustomSim, setIncludeCustomSim] = useState(false);
+  const [customBasePrice, setCustomBasePrice] = useState('');
+  const [customDownPercent, setCustomDownPercent] = useState('20');
+  const [customRate, setCustomRate] = useState('10.5');
+
+  // Agent WhatsApp toggle
+  const [includeAgentWhatsApp, setIncludeAgentWhatsApp] = useState(false);
+
   // PDF template ref + data
   const templateRef = useRef<HTMLDivElement>(null);
   const [pdfData, setPdfData] = useState<PDFAssetData | null>(null);
