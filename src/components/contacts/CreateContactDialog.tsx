@@ -17,7 +17,7 @@ import { Loader2 } from 'lucide-react';
 interface CreateContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess: (newContact?: any) => void;
   defaultCategory?: ContactCategory;
   initialPhone?: string;
 }
