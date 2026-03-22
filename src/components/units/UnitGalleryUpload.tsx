@@ -347,18 +347,22 @@ export const UnitGalleryUpload = ({
         </div>
       )}
 
-      {/* Save / Complete button */}
-      {onComplete && images.length > 0 && (
-        <Button
-          type="button"
-          className="w-full mt-2"
-          onClick={() => {
-            toast({ title: 'Galeria atualizada!' });
-            onComplete();
-          }}
-        >
-          Concluir Galeria
-        </Button>
+      {/* Save / Complete button — always visible when there are images */}
+      {images.length > 0 && (
+        <div className="sticky bottom-0 bg-background pt-2 pb-1">
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['units'] });
+              queryClient.invalidateQueries({ queryKey: ['unit'] });
+              toast({ title: 'Galeria atualizada!' });
+              onComplete?.();
+            }}
+          >
+            Salvar Alterações
+          </Button>
+        </div>
       )}
     </div>
   );
