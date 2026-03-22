@@ -143,12 +143,11 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
 
   // Track page views on route change
   useEffect(() => {
-    if (window.dataLayer) {
-      window.dataLayer.push({
-        event: 'ViewPage',
-        page_path: location.pathname + location.search,
-      });
-    }
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'virtual_page_view',
+      page_path: location.pathname + location.search,
+    });
     if (window.fbq) {
       window.fbq('track', 'PageView');
     }
