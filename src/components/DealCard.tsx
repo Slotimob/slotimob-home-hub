@@ -229,14 +229,31 @@ export const DealCard = ({
             )}
           </div>
           {deal.lead.phone && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30 flex-shrink-0"
-              onClick={handleWhatsAppClick}
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-primary hover:text-primary/80 hover:bg-primary/10 flex-shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const unitId = deal.unit_id || (deal as any).unit?.id;
+                  const params = new URLSearchParams({ create: 'true' });
+                  if (unitId) params.set('unitId', unitId);
+                  navigate(`/gestao/propostas?${params.toString()}`);
+                }}
+                title="Gerar Proposta"
+              >
+                <FileText className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30 flex-shrink-0"
+                onClick={handleWhatsAppClick}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           )}
         </div>
 
