@@ -1,68 +1,32 @@
 import { toast } from '@/hooks/use-toast';
 
 /**
- * Default toast duration in milliseconds (3 seconds as requested)
- */
-const DEFAULT_DURATION = 3000;
-
-/**
  * Shows a success toast notification.
- * Centralizes all success messages to ensure consistent UX.
- * 
- * @param title - Main message title
- * @param description - Optional detailed description
+ * Uses global duration from use-toast.ts (1000ms).
  */
 export function showSuccess(title: string, description?: string) {
-  return toast({
-    title,
-    description,
-    duration: DEFAULT_DURATION,
-  });
+  return toast({ title, description });
 }
 
 /**
  * Shows an error toast notification.
- * Centralizes all error messages to ensure consistent UX.
- * 
- * @param title - Main error title
- * @param description - Optional error details
  */
 export function showError(title: string, description?: string) {
-  return toast({
-    title,
-    description,
-    variant: 'destructive',
-    duration: DEFAULT_DURATION,
-  });
+  return toast({ title, description, variant: 'destructive' });
 }
 
 /**
  * Shows a warning toast notification.
- * 
- * @param title - Main warning title
- * @param description - Optional warning details
  */
 export function showWarning(title: string, description?: string) {
-  return toast({
-    title,
-    description,
-    // Using default variant with slightly different duration
-    duration: DEFAULT_DURATION + 1000,
-  });
+  return toast({ title, description });
 }
 
 /**
  * Shows an info toast notification.
- * 
- * @param title - Main info title
- * @param description - Optional info details
  */
 export function showInfo(title: string, description?: string) {
-  return toast({
-    title,
-    description,
-    duration: DEFAULT_DURATION,
-  });
+  return toast({ title, description });
 }
 
 /**
