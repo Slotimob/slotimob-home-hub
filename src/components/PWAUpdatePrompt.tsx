@@ -27,7 +27,7 @@ export function PWAUpdatePrompt() {
       // Show toast immediately
       toast.error('Nova versão disponível!', {
         description: 'Atualizando automaticamente em 3 segundos…',
-        duration: 4000,
+        duration: 1000,
         action: {
           label: 'Atualizar agora',
           onClick: () => {

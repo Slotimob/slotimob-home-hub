@@ -62,7 +62,7 @@ export function useWhatsAppGlobalListener() {
             toast({
               title: '✅ WhatsApp conectado!',
               description: 'Sua integração está ativa.',
-              duration: 5000,
+              duration: 1000,
             });
           }
         }

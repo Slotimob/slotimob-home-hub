@@ -280,10 +280,13 @@ export const PropertyGalleryUpload = ({
             type="button"
             className="w-full"
             disabled={uploadingImages.length > 0 || isDeleting !== null}
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['properties'] });
-              queryClient.invalidateQueries({ queryKey: ['property'] });
-              queryClient.invalidateQueries({ queryKey: ['property_images'] });
+            onClick={async () => {
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['properties'] }),
+                queryClient.invalidateQueries({ queryKey: ['property'] }),
+                queryClient.invalidateQueries({ queryKey: ['property_images'] }),
+                queryClient.refetchQueries({ queryKey: ['properties'] }),
+              ]);
               toast({ title: 'Galeria atualizada!' });
               onComplete?.();
             }}

@@ -270,7 +270,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (trialPro) {
-      sonnerToast.info('Você está criando sua conta no Plano Start. Aproveite seus 14 dias de acesso PRO liberados agora!', { duration: 8000 });
+      sonnerToast.info('Você está criando sua conta no Plano Start. Aproveite seus 14 dias de acesso PRO liberados agora!');
       if (activeTab !== 'signup') setActiveTab('signup');
     } else if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
       const planNames: Record<string, string> = { essencial: 'Essencial', pro: 'Pro', business: 'Business' };

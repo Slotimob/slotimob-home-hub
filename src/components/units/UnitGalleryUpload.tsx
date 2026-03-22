@@ -288,10 +288,13 @@ export const UnitGalleryUpload = ({
             type="button"
             className="w-full"
             disabled={uploadingImages.length > 0 || isDeleting !== null}
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['units'] });
-              queryClient.invalidateQueries({ queryKey: ['unit'] });
-              queryClient.invalidateQueries({ queryKey: ['unit_images'] });
+            onClick={async () => {
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['units'] }),
+                queryClient.invalidateQueries({ queryKey: ['unit'] }),
+                queryClient.invalidateQueries({ queryKey: ['unit_images'] }),
+                queryClient.refetchQueries({ queryKey: ['units'] }),
+              ]);
               toast({ title: 'Galeria atualizada!' });
               onComplete?.();
             }}
