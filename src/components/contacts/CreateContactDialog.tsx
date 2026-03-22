@@ -18,6 +18,7 @@ interface CreateContactDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   defaultCategory?: ContactCategory;
+  initialPhone?: string;
 }
 
 // Format helpers for automation-ready data
