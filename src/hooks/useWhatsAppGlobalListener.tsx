@@ -41,7 +41,7 @@ export function useWhatsAppGlobalListener() {
             toast({
               title: '📱 WhatsApp pronto!',
               description: 'O QR Code está disponível. Escaneie agora para conectar.',
-              duration: 10000,
+              duration: 1000,
               action: (
                 <button
                   className="ml-2 text-xs font-semibold underline text-primary whitespace-nowrap"
