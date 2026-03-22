@@ -134,6 +134,7 @@ export function AppSidebar() {
       icon: ClipboardList,
       moduleKey: 'management_rentals', // group-level: visible if any management_* is granted
       items: [
+        { title: 'Propostas', url: '/gestao/propostas', moduleKey: 'management_rentals' },
         { title: 'Aluguéis', url: '/gestao/alugueis', moduleKey: 'management_rentals' },
         { title: 'Contratos', url: '/gestao/contratos', moduleKey: 'management_contracts' },
         { title: 'Gerencial', url: '/gestao/gerencial', moduleKey: 'management_reports' },

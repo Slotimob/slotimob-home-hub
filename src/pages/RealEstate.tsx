@@ -413,10 +413,10 @@ const RealEstate = () => {
               variant="outline" 
               iconOnly 
               showTextAt="lg" 
-              icon={<Share2 className="h-4 w-4" />} 
-              onClick={() => setIsShareDialogOpen(true)}
-            >
-              Compartilhar
+            icon={<Share2 className="h-4 w-4" />} 
+            onClick={() => navigate('/gestao/propostas?create=true')}
+          >
+            Compartilhar
             </HeaderButton>
             {/* Tertiary: Exportar */}
             <ExportUnitsButton 
@@ -861,11 +861,7 @@ const RealEstate = () => {
           />
         )}
 
-        <ShareAssetDialog
-          open={isShareDialogOpen}
-          onOpenChange={setIsShareDialogOpen}
-          mode="standalone"
-        />
+        {/* ShareAssetDialog replaced by Proposals deep-link */}
       </AppLayout>
     </>
   );

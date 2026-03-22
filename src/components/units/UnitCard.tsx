@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ const formatCurrency = (value: number | null | undefined): string => {
 };
 
 export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: UnitCardProps) {
+  const navigate = useNavigate();
   const shouldShowRent = unit.status === 'rented' || unit.intent_type === 'rent' || unit.intent_type === 'both';
 
   return (
@@ -122,20 +124,18 @@ export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: Unit
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          {onShareClick && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 gap-1.5"
-              onClick={(e) => {
-                e.stopPropagation();
-                onShareClick(unit);
-              }}
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              Compartilhar
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-1.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+            }}
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Proposta
+          </Button>
           <Button
             variant="default"
             size="sm"

@@ -428,7 +428,7 @@ const Units = () => {
             iconOnly 
             showTextAt="lg" 
             icon={<Share2 className="h-4 w-4" />} 
-            onClick={() => setIsShareDialogOpen(true)}
+            onClick={() => navigate('/gestao/propostas?create=true')}
           >
             Compartilhar
           </HeaderButton>
@@ -725,8 +725,7 @@ const Units = () => {
               units={paginatedUnits}
               onUnitClick={setSelectedUnit}
               onShareClick={(unit) => {
-                setUnitToShare(unit);
-                setIsShareDialogOpen(true);
+                navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
               }}
               showProperty={isAllUnitsView}
             />
@@ -915,15 +914,7 @@ const Units = () => {
             onSuccess={reloadUnits}
           />
 
-          <ShareAssetDialog
-            open={isShareDialogOpen}
-            onOpenChange={(open) => {
-              setIsShareDialogOpen(open);
-              if (!open) setUnitToShare(null);
-            }}
-            mode="property_unit"
-            preSelectedId={unitToShare?.id}
-          />
+          {/* ShareAssetDialog replaced by Proposals deep-link */}
         </>
       ) : (
         propertyId && (
@@ -952,15 +943,7 @@ const Units = () => {
               onSuccess={reloadUnits}
             />
 
-            <ShareAssetDialog
-              open={isShareDialogOpen}
-              onOpenChange={(open) => {
-                setIsShareDialogOpen(open);
-                if (!open) setUnitToShare(null);
-              }}
-              mode="property_unit"
-              preSelectedId={unitToShare?.id}
-            />
+            {/* ShareAssetDialog replaced by Proposals deep-link */}
           </>
         )
       )}
