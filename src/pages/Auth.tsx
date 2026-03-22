@@ -52,6 +52,7 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
   password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' }),
+  confirmPassword: z.string().min(1, { message: 'Confirme sua senha' }),
   fullName: z.string().min(2, { message: 'Nome deve ter no mínimo 2 caracteres' }),
   phone: z.string().optional(),
   personType: z.enum(['pf', 'pj']),
