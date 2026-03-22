@@ -106,6 +106,8 @@ export interface PDFAssetData {
   title: string;
   subtitle?: string;
   financingSimulation?: FinancingSimulation | null;
+  leadName?: string | null;
+  introductionMessage?: string | null;
 }
 
 /**
