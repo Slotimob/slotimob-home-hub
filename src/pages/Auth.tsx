@@ -672,20 +672,8 @@ const Auth = () => {
         {invitation && <p className="text-xs text-muted-foreground">Email bloqueado — deve corresponder ao convite.</p>}
       </div>
 
-      {/* Password */}
-      <div className="space-y-2">
-        <Label htmlFor="signup-password">Senha</Label>
-        <Input
-          id="signup-password"
-          type="password"
-          placeholder="Mínimo 6 caracteres"
-          value={signupForm.password}
-          onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
-          className={fieldErrors.password ? 'border-destructive' : ''}
-          required
-        />
-        {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
-      </div>
+
+
 
       {/* Phone */}
       <div className="space-y-2">
