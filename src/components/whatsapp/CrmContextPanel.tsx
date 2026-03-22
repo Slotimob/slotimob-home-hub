@@ -192,8 +192,17 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
         <Separator />
 
-        {/* Create Deal Button - ALWAYS visible */}
-        <div>
+        {/* Progressive disclosure: Contact -> Deal -> Proposal */}
+        <div className="space-y-2">
+          {!contact && !contactLoading && (
+            <div className="p-3 rounded-lg border border-dashed border-muted-foreground/30 text-center space-y-2">
+              <UserPlus className="h-5 w-5 mx-auto text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">
+                Crie o contato primeiro para desbloquear a criação de negócios e propostas.
+              </p>
+            </div>
+          )}
+
           {hasValidName ? (
             <Button
               variant={activeDeal ? 'outline' : 'default'}
@@ -209,7 +218,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
               <Plus className="h-4 w-4" />
               {activeDeal ? 'Nova Negociação' : 'Criar Negociação'}
             </Button>
-          ) : (
+          ) : contact ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -225,6 +234,23 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 <p>Cadastre o nome do contato antes de criar uma negociação.</p>
               </TooltipContent>
             </Tooltip>
+          ) : null}
+
+          {/* Proposal button - only when deal exists */}
+          {activeDeal && (
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-primary/40 text-primary hover:bg-primary/5"
+              onClick={() => {
+                const unitId = activeDeal.unit_id || activeDeal.unit?.id;
+                const params = new URLSearchParams({ create: 'true' });
+                if (unitId) params.set('unitId', unitId);
+                navigate(`/gestao/propostas?${params.toString()}`);
+              }}
+            >
+              <FileText className="h-4 w-4" />
+              Gerar Proposta
+            </Button>
           )}
         </div>
 
