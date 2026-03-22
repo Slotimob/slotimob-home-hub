@@ -689,28 +689,17 @@ const RealEstate = () => {
                     </Badge>
                     {/* Share button overlay */}
                     <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-8 w-8 shadow-md"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                          <DropdownMenuItem onClick={(e) => handleCopyLink(unit, e as any)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copiar Link
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleGeneratePDF(unit, e as any)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Gerar PDF
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-8 w-8 shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                   <div className="p-4 space-y-3">
