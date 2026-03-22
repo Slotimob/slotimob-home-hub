@@ -2640,6 +2640,7 @@ export type Database = {
         Row: {
           broker_id: string
           created_at: string
+          deal_id: string | null
           id: string
           include_cover: boolean
           include_financing: boolean
@@ -2654,6 +2655,7 @@ export type Database = {
         Insert: {
           broker_id: string
           created_at?: string
+          deal_id?: string | null
           id?: string
           include_cover?: boolean
           include_financing?: boolean
@@ -2668,6 +2670,7 @@ export type Database = {
         Update: {
           broker_id?: string
           created_at?: string
+          deal_id?: string | null
           id?: string
           include_cover?: boolean
           include_financing?: boolean
@@ -2685,6 +2688,13 @@ export type Database = {
             columns: ["broker_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
             referencedColumns: ["id"]
           },
           {
