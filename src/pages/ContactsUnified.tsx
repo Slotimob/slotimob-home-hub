@@ -272,7 +272,12 @@ const ContactsUnified = () => {
       loadContacts();
       setDeleteDialog(null);
     } catch (error: any) {
-      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+      const msg = error.message || '';
+      if (msg.includes('foreign key') || msg.includes('violates') || msg.includes('referenced') || msg.includes('constraint')) {
+        toast({ title: 'Não é possível excluir', description: 'Este contato possui negociações ou históricos vinculados a ele no sistema.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro ao excluir', description: msg, variant: 'destructive' });
+      }
     } finally {
       setIsDeleting(false);
     }

@@ -17,7 +17,7 @@ import { Loader2 } from 'lucide-react';
 interface CreateContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess: (newContact?: any) => void;
   defaultCategory?: ContactCategory;
   initialPhone?: string;
 }
@@ -232,7 +232,7 @@ export const CreateContactDialog = ({
       const cleanWhatsappValue = cleanPhone(formData.whatsapp);
       
       // Inject both broker_id (organization) and assigned_user_id (individual user)
-      const { error } = await supabase.from('contacts').insert({
+      const { data, error } = await supabase.from('contacts').insert({
         broker_id: effectiveBrokerId,
         assigned_user_id: user.id, // Auto-inject: user who created this contact
         name: formData.name.trim(),
@@ -249,7 +249,7 @@ export const CreateContactDialog = ({
         notes: formData.notes.trim() || null,
         categories: formData.categories,
         metadata: Object.keys(metadata).length > 0 ? metadata : null,
-      });
+      }).select().single();
 
       if (error) throw error;
 
@@ -260,7 +260,7 @@ export const CreateContactDialog = ({
       queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
 
       toast({ title: 'Contato criado com sucesso!' });
-      onSuccess();
+      onSuccess(data);
       onOpenChange(false);
       // Form will be reset when dialog reopens via the useEffect
     } catch (error: any) {

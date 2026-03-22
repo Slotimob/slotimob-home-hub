@@ -444,6 +444,19 @@ export default function WhatsApp() {
                   contactLoading={contactLoading}
                   onCreateDeal={canCreateDeal ? handleCreateDeal : undefined}
                   onDealCreated={handleDealCreated}
+                  onContactCreated={() => {
+                    // Force re-fetch the conversation to pick up the new contact_id
+                    if (selectedConversation?.id) {
+                      supabase
+                        .from('whatsapp_conversations')
+                        .select('*, contacts(*), deals(*)')
+                        .eq('id', selectedConversation.id)
+                        .maybeSingle()
+                        .then(({ data }) => {
+                          if (data) setSelectedConversation(data as any);
+                        });
+                    }
+                  }}
                 />
               </div>
             )}

@@ -21,6 +21,7 @@ interface UnitGalleryUploadProps {
   maxImages?: number;
   autoSave?: boolean;
   onRefresh?: () => Promise<void>;
+  onComplete?: () => void;
 }
 
 export const UnitGalleryUpload = ({
@@ -31,6 +32,7 @@ export const UnitGalleryUpload = ({
   maxImages = 20,
   autoSave = true,
   onRefresh,
+  onComplete,
 }: UnitGalleryUploadProps) => {
   const { toast } = useToast();
   const [uploadingImages, setUploadingImages] = useState<UploadingImage[]>([]);
@@ -341,6 +343,20 @@ export const UnitGalleryUpload = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* Save / Complete button */}
+      {onComplete && images.length > 0 && (
+        <Button
+          type="button"
+          className="w-full mt-2"
+          onClick={() => {
+            toast({ title: 'Galeria atualizada!' });
+            onComplete();
+          }}
+        >
+          Concluir Galeria
+        </Button>
       )}
     </div>
   );

@@ -19,8 +19,9 @@ interface PropertyGalleryUploadProps {
   images: string[];
   onImagesChange: (images: string[]) => void;
   maxImages?: number;
-  autoSave?: boolean; // If true, saves directly to database on change
-  onRefresh?: () => Promise<void>; // Callback to refresh parent data after save
+  autoSave?: boolean;
+  onRefresh?: () => Promise<void>;
+  onComplete?: () => void;
 }
 
 export const PropertyGalleryUpload = ({
@@ -31,6 +32,7 @@ export const PropertyGalleryUpload = ({
   maxImages = 10,
   autoSave = true,
   onRefresh,
+  onComplete,
 }: PropertyGalleryUploadProps) => {
   const { toast } = useToast();
   const [uploadingImages, setUploadingImages] = useState<UploadingImage[]>([]);
@@ -330,6 +332,20 @@ export const PropertyGalleryUpload = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* Save / Complete button */}
+      {onComplete && images.length > 0 && (
+        <Button
+          type="button"
+          className="w-full mt-2"
+          onClick={() => {
+            toast({ title: 'Galeria atualizada!' });
+            onComplete();
+          }}
+        >
+          Concluir Galeria
+        </Button>
       )}
     </div>
   );
