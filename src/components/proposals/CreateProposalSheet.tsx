@@ -396,6 +396,28 @@ export function CreateProposalSheet({
       if (leadName.trim()) buildData.leadName = leadName.trim();
       if (introMessage.trim()) buildData.introductionMessage = introMessage.trim();
 
+      // Custom simulation
+      if (includeCustomSim) {
+        const cPrice = parseFloat(customBasePrice) || selectedUnit.price || 0;
+        const cDown = parseFloat(customDownPercent) || 20;
+        const cRate = parseFloat(customRate) || 10.5;
+        const cMonths = 360;
+        const cDownPayment = (cPrice * cDown) / 100;
+        const cFinanced = cPrice - cDownPayment;
+        const cMonthlyRate = cRate / 100 / 12;
+        const cMonthly = (cFinanced * cMonthlyRate * Math.pow(1 + cMonthlyRate, cMonths)) / (Math.pow(1 + cMonthlyRate, cMonths) - 1);
+
+        buildData.customSimulation = {
+          basePrice: cPrice,
+          downPaymentPercent: cDown,
+          downPayment: cDownPayment,
+          financedAmount: cFinanced,
+          monthlyPayment: cMonthly,
+          months: cMonths,
+          annualRate: cRate,
+        };
+      }
+
       // Agent info
       const { data: profile } = await supabase
         .from('profiles')
@@ -407,6 +429,7 @@ export function CreateProposalSheet({
         name: profile?.full_name || 'Corretor',
         email: profile?.email || undefined,
         phone: profile?.phone || undefined,
+        whatsapp: includeAgentWhatsApp ? (profile?.phone || undefined) : undefined,
       };
 
       setPdfData(buildData);
