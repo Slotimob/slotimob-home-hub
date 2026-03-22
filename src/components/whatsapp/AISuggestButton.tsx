@@ -23,7 +23,17 @@ export function AISuggestButton({ messages, contactName, onSuggestion, onOpenBuy
 
   const hasCredits = credits && credits.total_available > 0;
 
+  const hasMessages = messages && messages.length > 0;
+
   const handleClick = async () => {
+    if (!hasMessages) {
+      toast({
+        title: 'Sem mensagens',
+        description: 'Aguarde ou envie uma mensagem antes de gerar sugestão.',
+      });
+      return;
+    }
+
     if (!hasCredits) {
       if (onOpenBuyCredits) {
         onOpenBuyCredits();
