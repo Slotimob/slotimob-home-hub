@@ -61,7 +61,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
               </div>
               <div className="flex items-center gap-3">
                 {typeLabel && (
-                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold text-white uppercase tracking-widest" style={{ background: 'rgba(47,201,175,0.85)', backdropFilter: 'blur(4px)' }}>
+                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold text-white uppercase tracking-widest flex items-center justify-center text-center leading-none" style={{ background: 'rgba(47,201,175,0.85)', backdropFilter: 'blur(4px)' }}>
                     {typeLabel}
                   </span>
                 )}
@@ -404,7 +404,7 @@ function InvestmentTable({ price, rate: customRate }: { price: number; rate?: nu
           <span style={{ color: '#444' }}>{fmt(s.dp)}</span>
           <span style={{ color: '#444' }}>{fmt(s.fin)}</span>
           <span className="font-bold inline-flex items-center justify-center">
-            <span className="px-2 py-1 rounded" style={{ color: '#0b0073', background: 'rgba(47,201,175,0.12)' }}>{fmt(s.mp)}</span>
+            <span className="px-2 py-1 rounded" style={{ color: '#0b0073' }}>{fmt(s.mp)}</span>
           </span>
           <span className="text-sm" style={{ color: '#888' }}>{fmt(s.income)}</span>
         </div>

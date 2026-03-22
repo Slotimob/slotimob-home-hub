@@ -41,7 +41,6 @@ export function useWhatsAppGlobalListener() {
             toast({
               title: '📱 WhatsApp pronto!',
               description: 'O QR Code está disponível. Escaneie agora para conectar.',
-              duration: 1000,
               action: (
                 <button
                   className="ml-2 text-xs font-semibold underline text-primary whitespace-nowrap"
@@ -62,7 +61,6 @@ export function useWhatsAppGlobalListener() {
             toast({
               title: '✅ WhatsApp conectado!',
               description: 'Sua integração está ativa.',
-              duration: 1000,
             });
           }
         }

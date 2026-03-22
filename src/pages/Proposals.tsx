@@ -16,21 +16,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { FileText, Plus, Calculator, User, Building2, Clock, Pencil } from 'lucide-react';
+import { FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
-const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-  draft: { label: 'Rascunho', variant: 'secondary' },
+const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+  draft: { label: 'Não Enviada', variant: 'secondary' },
   sent: { label: 'Enviada', variant: 'default' },
   viewed: { label: 'Visualizada', variant: 'outline' },
 };
 
 export default function Proposals() {
-  const { proposals, isLoading } = useProposals();
+  const { proposals, isLoading, updateProposalStatus } = useProposals();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { toast } = useToast();
 
   const preSelectedUnitId = searchParams.get('unitId') || undefined;
 
@@ -52,6 +54,23 @@ export default function Proposals() {
     setEditingProposal(proposal);
     setSheetOpen(true);
   };
+
+  const handleToggleStatus = (proposal: Proposal) => {
+    const newStatus = proposal.status === 'sent' ? 'draft' : 'sent';
+    updateProposalStatus.mutate(
+      { id: proposal.id, status: newStatus },
+      {
+        onSuccess: () => {
+          toast({
+            title: newStatus === 'sent' ? 'Proposta marcada como enviada' : 'Proposta revertida para rascunho',
+          });
+        },
+      }
+    );
+  };
+
+  const draftCount = proposals.filter((p) => p.status === 'draft' || !p.status).length;
+  const sentCount = proposals.filter((p) => p.status === 'sent').length;
 
   return (
     <SidebarProvider>
@@ -86,10 +105,14 @@ export default function Proposals() {
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <p className="text-2xl font-bold">
-                    {proposals.filter((p) => p.status === 'sent').length}
-                  </p>
+                  <p className="text-2xl font-bold">{sentCount}</p>
                   <p className="text-xs text-muted-foreground">Enviadas</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-2xl font-bold">{draftCount}</p>
+                  <p className="text-xs text-muted-foreground">Não Enviadas</p>
                 </CardContent>
               </Card>
               <Card>
@@ -98,14 +121,6 @@ export default function Proposals() {
                     {proposals.filter((p) => p.include_financing).length}
                   </p>
                   <p className="text-xs text-muted-foreground">Com Financiamento</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-2xl font-bold">
-                    {proposals.filter((p) => p.lead_name).length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Personalizadas</p>
                 </CardContent>
               </Card>
             </div>
@@ -143,12 +158,13 @@ export default function Proposals() {
                           <TableHead>Opções</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Data</TableHead>
-                          <TableHead className="w-12"></TableHead>
+                          <TableHead className="w-20"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {proposals.map((proposal) => {
                           const status = statusLabels[proposal.status] || statusLabels.draft;
+                          const isDraft = proposal.status === 'draft' || !proposal.status;
                           return (
                             <TableRow key={proposal.id}>
                               <TableCell>
@@ -195,14 +211,29 @@ export default function Proposals() {
                                 })}
                               </TableCell>
                               <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => handleEdit(proposal)}
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    title={isDraft ? 'Marcar como enviada' : 'Reverter para rascunho'}
+                                    onClick={() => handleToggleStatus(proposal)}
+                                  >
+                                    {isDraft ? (
+                                      <Send className="h-3.5 w-3.5 text-muted-foreground" />
+                                    ) : (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => handleEdit(proposal)}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );

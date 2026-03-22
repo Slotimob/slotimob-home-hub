@@ -154,6 +154,9 @@ export const UnitGalleryUpload = ({
     const imageUrl = images[index];
     const newImages = images.filter((_, i) => i !== index);
 
+    // Optimistic update: immediately reflect in UI
+    onImagesChange(newImages);
+
     try {
       try {
         const urlParts = imageUrl.split('/unit-media/');
@@ -167,7 +170,7 @@ export const UnitGalleryUpload = ({
 
       const saved = await saveToDatabase(newImages);
       if (saved) {
-        onImagesChange(newImages);
+        // Force fresh data from server
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['units'] }),
           queryClient.invalidateQueries({ queryKey: ['unit'] }),
@@ -175,9 +178,13 @@ export const UnitGalleryUpload = ({
         ]);
         toast({ title: 'Foto removida' });
       } else {
+        // Rollback optimistic update
+        onImagesChange(images);
         toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });
       }
     } catch (error: any) {
+      // Rollback optimistic update
+      onImagesChange(images);
       console.error('Error removing image:', error);
       toast({ title: 'Erro ao remover foto', description: error.message, variant: 'destructive' });
     } finally {
