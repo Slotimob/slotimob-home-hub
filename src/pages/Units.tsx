@@ -21,7 +21,7 @@ import { ViewModeTabs, type ViewMode } from '@/components/ui/view-mode-tabs';
 import { UnitsFilters, type UnitsFiltersState, type ManagementFilter } from '@/components/UnitsFilters';
 import { ActionToolbar } from '@/components/ActionToolbar';
 import { AddAssetButton } from '@/components/units/AddAssetButton';
-import { ShareAssetDialog } from '@/components/ShareAssetDialog';
+
 import {
   Select,
   SelectContent,
@@ -110,8 +110,6 @@ const Units = () => {
   const [loadingUnits, setLoadingUnits] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [unitToShare, setUnitToShare] = useState<Unit | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<UnitsFiltersState>(initialFilters);

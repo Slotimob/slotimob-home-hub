@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { generatePropertyPDF, buildPDFDataFromStandalone } from '@/utils/propertyPdfGenerator';
-import { ShareAssetDialog } from '@/components/ShareAssetDialog';
+
 import { RealEstateKanbanView } from '@/components/units/RealEstateKanbanView';
 
 interface RealEstateUnit {
@@ -151,7 +151,7 @@ const RealEstate = () => {
   const [sortBy, setSortBy] = useState<SortOption>('created_at_desc');
   const [isLoading, setIsLoading] = useState(true);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  
   const [selectedUnit, setSelectedUnit] = useState<RealEstateUnit | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem('real-estate-view-mode');
