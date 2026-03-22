@@ -287,14 +287,16 @@ export const UnitGalleryUpload = ({
           <Button
             type="button"
             className="w-full"
+            disabled={uploadingImages.length > 0 || isDeleting !== null}
             onClick={() => {
               queryClient.invalidateQueries({ queryKey: ['units'] });
               queryClient.invalidateQueries({ queryKey: ['unit'] });
+              queryClient.invalidateQueries({ queryKey: ['unit_images'] });
               toast({ title: 'Galeria atualizada!' });
               onComplete?.();
             }}
           >
-            Salvar Alterações
+            Salvar e Atualizar Galeria
           </Button>
         </div>
       )}
