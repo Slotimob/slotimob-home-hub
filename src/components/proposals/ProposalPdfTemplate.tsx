@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { Bed, Bath, Car, Maximize, Sun, Sofa, Hammer, Building2, MapPin, Calculator, Phone } from 'lucide-react';
+import { Bed, Bath, Car, Maximize, Sun, Sofa, Hammer, Building2, MapPin, Calculator } from 'lucide-react';
 import type { PDFAssetData, AgentInfo, CustomSimulation } from '@/utils/propertyPdfGenerator';
 
 interface ProposalPdfTemplateProps {
@@ -273,15 +273,20 @@ function SectionTitle({ title, accent }: { title: string; accent?: boolean }) {
 }
 
 function CTAFooter({ agent }: { agent?: AgentInfo }) {
+  const phoneDisplay = agent?.whatsapp || '';
   return (
     <div className="p-6 rounded-xl text-center mb-6" style={{ background: '#2fc9af' }}>
       <p className="text-white text-xl font-bold mb-1">Gostou? Agende sua visita agora!</p>
       <p className="text-white/80 text-sm mb-3">Entre em contato e garanta essa oportunidade única.</p>
-      {agent?.whatsapp && (
-        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white font-bold text-sm" style={{ background: '#25D366' }}>
-          <Phone className="w-4 h-4" />
-          <span>WhatsApp: {agent.whatsapp}</span>
+      {phoneDisplay && (
+        <div className="inline-block px-6 py-3 rounded-full" style={{ background: '#25D366' }}>
+          <p className="text-white font-bold text-lg" style={{ letterSpacing: '0.5px' }}>
+            WhatsApp: {phoneDisplay}
+          </p>
         </div>
+      )}
+      {agent?.name && (
+        <p className="text-white/70 text-sm mt-3">{agent.name}{agent.email ? ` · ${agent.email}` : ''}</p>
       )}
     </div>
   );

@@ -678,6 +678,9 @@ export function CreateProposalSheet({
                       <p className="text-xs text-muted-foreground">
                         Adiciona seu número como CTA no final da proposta
                       </p>
+                      <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                        Número cadastrado neste usuário (configurações).
+                      </p>
                     </div>
                   </div>
                   <Switch checked={includeAgentWhatsApp} onCheckedChange={setIncludeAgentWhatsApp} />
