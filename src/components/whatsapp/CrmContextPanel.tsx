@@ -21,6 +21,7 @@ import { useContactDeals, useContactActivities } from '@/hooks/useWhatsApp';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CreateDealFromChatDialog } from './CreateDealFromChatDialog';
+import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
@@ -30,6 +31,7 @@ interface CrmContextPanelProps {
   contactLoading?: boolean;
   onCreateDeal?: () => void;
   onDealCreated?: (dealId: string, contactId: string) => void;
+  onContactCreated?: () => void;
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -66,7 +68,7 @@ function StepArrow() {
   );
 }
 
-export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated }: CrmContextPanelProps) {
+export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated, onContactCreated }: CrmContextPanelProps) {
   const navigate = useNavigate();
   const contactId = contact?.id || conversation?.contact_id || null;
   const dealId = (conversation as any)?.deal_id || null;
@@ -76,6 +78,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const { toast } = useToast();
   const [updatingStage, setUpdatingStage] = useState(false);
   const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
+  const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [directDeal, setDirectDeal] = useState<any>(null);
 
   useEffect(() => {
@@ -95,6 +98,9 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
   const contactName = (contact?.name || (conversation as any)?.contacts?.name || conversation?.contact_name || '').trim();
   const hasValidName = !!contactName && !isPhoneNumber(contactName);
+
+  // Extract phone for CreateContactDialog
+  const contactPhone = contact?.phone || conversation?.contact_phone || '';
 
   const handleStageChange = useCallback(async (newStage: string) => {
     if (!activeDeal) return;
@@ -129,6 +135,11 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
       setUpdatingStage(false);
     }
   }, [activeDeal, conversation, toast]);
+
+  const handleContactCreated = useCallback(() => {
+    toast({ title: 'Contato criado com sucesso!' });
+    onContactCreated?.();
+  }, [toast, onContactCreated]);
 
   if (!conversation) {
     return (
@@ -215,9 +226,17 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                   <p className="text-[10px] text-green-600">Contato vinculado</p>
                 </div>
               ) : (
-                <div className="p-2 rounded-md border border-dashed border-muted-foreground/30">
-                  <p className="text-xs font-medium text-muted-foreground">Criar Contato</p>
-                  <p className="text-[10px] text-muted-foreground">Primeiro passo para iniciar o funil</p>
+                <div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 h-8 text-xs"
+                    onClick={() => setIsCreateContactOpen(true)}
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Criar Contato
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground mt-1">Primeiro passo para iniciar o funil</p>
                 </div>
               )}
             </div>
@@ -444,6 +463,14 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           }}
         />
       )}
+
+      {/* Create Contact Dialog - opens as modal over WhatsApp panel */}
+      <CreateContactDialog
+        open={isCreateContactOpen}
+        onOpenChange={setIsCreateContactOpen}
+        onSuccess={handleContactCreated}
+        initialPhone={contactPhone}
+      />
     </ScrollArea>
   );
 }

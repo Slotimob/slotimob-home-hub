@@ -18,6 +18,7 @@ interface CreateContactDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   defaultCategory?: ContactCategory;
+  initialPhone?: string;
 }
 
 // Format helpers for automation-ready data
@@ -68,6 +69,7 @@ export const CreateContactDialog = ({
   onOpenChange,
   onSuccess,
   defaultCategory,
+  initialPhone,
 }: CreateContactDialogProps) => {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
@@ -114,6 +116,16 @@ export const CreateContactDialog = ({
       // Reset form when dialog opens
       setFormData(getInitialFormData());
       appliedDefaultRef.current = null;
+      
+      // Apply initialPhone if provided
+      if (initialPhone) {
+        const digits = initialPhone.replace(/\D/g, '');
+        setFormData(prev => ({
+          ...prev,
+          phone: formatPhone(digits),
+          whatsapp: formatPhone(digits),
+        }));
+      }
       
       // Apply defaultCategory if provided
       if (defaultCategory) {

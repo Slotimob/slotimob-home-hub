@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -41,19 +41,17 @@ import {
   buildPDFDataFromUnit,
   buildPDFDataFromStandalone,
   type AgentInfo,
+  type PDFAssetData,
 } from '@/utils/propertyPdfGenerator';
+import { ProposalPdfTemplate } from './ProposalPdfTemplate';
 
 interface CreateProposalSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preSelectedUnitId?: string;
-  /** Pre-fill lead name (e.g. from CRM deal) */
   initialLeadName?: string;
-  /** Link to a CRM deal */
   dealId?: string;
-  /** Existing proposal data for editing */
   editingProposal?: Proposal | null;
-  /** Callback after successful generation with pdf blob */
   onProposalGenerated?: (pdfBlob: Blob, proposalId: string) => void;
 }
 
@@ -92,6 +90,12 @@ export function CreateProposalSheet({
   const [includeFinancing, setIncludeFinancing] = useState(false);
   const [includeCover, setIncludeCover] = useState(true);
 
+  // PDF template ref + data
+  const templateRef = useRef<HTMLDivElement>(null);
+  const [pdfData, setPdfData] = useState<PDFAssetData | null>(null);
+  const [agentInfo, setAgentInfo] = useState<AgentInfo | undefined>();
+  const [readyToCapture, setReadyToCapture] = useState(false);
+
   const isEditing = !!editingProposal;
 
   // Load units
@@ -126,7 +130,6 @@ export function CreateProposalSheet({
   // Initialize form
   useEffect(() => {
     if (!open) return;
-
     if (editingProposal) {
       setSelectedUnitId(editingProposal.unit_id || '');
       setLeadName(editingProposal.lead_name || '');
@@ -147,6 +150,8 @@ export function CreateProposalSheet({
       setIntroMessage('');
       setIncludeFinancing(false);
       setIncludeCover(true);
+      setPdfData(null);
+      setReadyToCapture(false);
     }
   }, [open]);
 
@@ -160,7 +165,7 @@ export function CreateProposalSheet({
       ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
       : null;
 
-  // AI intro generation
+  // AI intro generation with robust parsing
   const handleGenerateAI = async () => {
     if (!selectedUnit) {
       toast({ title: 'Selecione um imóvel primeiro', variant: 'destructive' });
@@ -193,23 +198,34 @@ export function CreateProposalSheet({
 
       if (error) throw error;
 
-      // Robust extraction: handle multiple response shapes from ai-chat
+      // ─── Robust type-safe extraction ───
       let aiText = '';
       if (typeof data === 'string') {
         aiText = data;
-      } else if (data) {
-        aiText = data.content || data.message || data.response || data.text || data.reply || '';
-        // Handle nested response (e.g. { choices: [{ message: { content: "..." } }] })
-        if (!aiText && data.choices && Array.isArray(data.choices) && data.choices[0]) {
-          aiText = data.choices[0].message?.content || data.choices[0].text || '';
+      } else if (data && typeof data === 'object') {
+        // Try common response shapes
+        const candidates = [
+          data.content,
+          data.message,
+          data.response,
+          data.text,
+          data.reply,
+        ];
+        for (const c of candidates) {
+          if (typeof c === 'string' && c.trim()) { aiText = c; break; }
         }
+        // Handle OpenAI-style nested response
+        if (!aiText && Array.isArray(data.choices) && data.choices[0]) {
+          const choice = data.choices[0];
+          if (typeof choice.message?.content === 'string') aiText = choice.message.content;
+          else if (typeof choice.text === 'string') aiText = choice.text;
+        }
+        // Last resort: stringify
+        if (!aiText) aiText = JSON.stringify(data);
       }
-      
-      if (aiText && aiText.trim()) {
-        const cleaned = aiText.trim();
-        setIntroMessage(cleaned);
-        // Force a re-render tick to ensure textarea updates
-        setTimeout(() => setIntroMessage(cleaned), 0);
+
+      if (typeof aiText === 'string' && aiText.trim()) {
+        setIntroMessage(aiText.trim());
         toast({ title: 'Texto gerado com IA!' });
       } else {
         toast({ title: 'IA não retornou texto', description: 'Tente novamente ou escreva manualmente.', variant: 'destructive' });
@@ -221,6 +237,78 @@ export function CreateProposalSheet({
       setGeneratingAI(false);
     }
   };
+
+  // Capture the rendered template and generate PDF
+  useEffect(() => {
+    if (!readyToCapture || !pdfData || !templateRef.current) return;
+
+    const captureTimeout = setTimeout(async () => {
+      try {
+        const element = templateRef.current;
+        if (!element) throw new Error('Template element not found');
+
+        const pdfBlob = await generatePropertyPDF(pdfData, agentInfo, {
+          returnBlob: true,
+          templateElement: element,
+        });
+
+        let pdfUrl: string | null = null;
+        if (pdfBlob) {
+          const fileName = `${effectiveBrokerId}/${Date.now()}_proposta.pdf`;
+          const { error: uploadErr } = await supabase.storage
+            .from('proposals')
+            .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
+          if (!uploadErr) {
+            const { data: urlData } = supabase.storage.from('proposals').getPublicUrl(fileName);
+            pdfUrl = urlData?.publicUrl || null;
+          }
+        }
+
+        // Download
+        if (pdfBlob) {
+          const url = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Proposta_${Date.now()}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+
+        // Save to DB
+        const proposalInput = {
+          property_id: selectedUnit?.property_id,
+          unit_id: selectedUnit?.id,
+          deal_id: dealId || (editingProposal as any)?.deal_id || undefined,
+          lead_name: leadName.trim() || undefined,
+          introduction_message: introMessage.trim() || undefined,
+          include_financing: includeFinancing,
+          include_cover: includeCover,
+          status: 'draft' as const,
+          pdf_url: pdfUrl || undefined,
+        };
+
+        if (isEditing && editingProposal) {
+          await updateProposal.mutateAsync({ ...proposalInput, id: editingProposal.id });
+        } else {
+          const result = await createProposal.mutateAsync(proposalInput);
+          if (pdfBlob && onProposalGenerated && result?.id) {
+            onProposalGenerated(pdfBlob as Blob, result.id);
+          }
+        }
+
+        toast({ title: 'Proposta gerada com sucesso!' });
+        onOpenChange(false);
+      } catch (error: any) {
+        toast({ title: 'Erro ao gerar proposta', description: error.message, variant: 'destructive' });
+      } finally {
+        setGenerating(false);
+        setReadyToCapture(false);
+        setPdfData(null);
+      }
+    }, 1500); // wait for images to load in the hidden template
+
+    return () => clearTimeout(captureTimeout);
+  }, [readyToCapture, pdfData]);
 
   const handleGenerate = async () => {
     if (!selectedUnit) {
@@ -238,7 +326,7 @@ export function CreateProposalSheet({
         .single();
       if (unitError) throw unitError;
 
-      let pdfData;
+      let buildData: PDFAssetData;
       if (!selectedUnit.is_standalone && unitData.property_id) {
         const { data: propData, error: propError } = await supabase
           .from('properties')
@@ -246,9 +334,9 @@ export function CreateProposalSheet({
           .eq('id', unitData.property_id)
           .single();
         if (propError) throw propError;
-        pdfData = buildPDFDataFromUnit(unitData, propData);
+        buildData = buildPDFDataFromUnit(unitData, propData);
       } else {
-        pdfData = buildPDFDataFromStandalone(unitData);
+        buildData = buildPDFDataFromStandalone(unitData);
       }
 
       // Financing
@@ -264,7 +352,7 @@ export function CreateProposalSheet({
           (financedAmount * monthlyRate * Math.pow(1 + monthlyRate, months)) /
           (Math.pow(1 + monthlyRate, months) - 1);
 
-        pdfData.financingSimulation = {
+        buildData.financingSimulation = {
           downPaymentPercent: downPercent,
           downPayment,
           financedAmount,
@@ -274,8 +362,8 @@ export function CreateProposalSheet({
         };
       }
 
-      if (leadName.trim()) pdfData.leadName = leadName.trim();
-      if (introMessage.trim()) pdfData.introductionMessage = introMessage.trim();
+      if (leadName.trim()) buildData.leadName = leadName.trim();
+      if (introMessage.trim()) buildData.introductionMessage = introMessage.trim();
 
       // Agent info
       const { data: profile } = await supabase
@@ -290,262 +378,223 @@ export function CreateProposalSheet({
         phone: profile?.phone || undefined,
       };
 
-      // Generate PDF as blob for storage upload
-      const pdfBlob = await generatePropertyPDF(pdfData, agent, { returnBlob: true });
-
-      let pdfUrl: string | null = null;
-
-      if (pdfBlob) {
-        // Upload to storage
-        const fileName = `${effectiveBrokerId}/${Date.now()}_proposta.pdf`;
-        const { error: uploadErr } = await supabase.storage
-          .from('proposals')
-          .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
-
-        if (!uploadErr) {
-          const { data: urlData } = supabase.storage.from('proposals').getPublicUrl(fileName);
-          pdfUrl = urlData?.publicUrl || null;
-        }
-      }
-
-      // Also trigger download
-      if (pdfBlob) {
-        const url = URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Proposta_${Date.now()}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-
-      // Save / Update
-      const proposalInput = {
-        property_id: selectedUnit.property_id,
-        unit_id: selectedUnit.id,
-        deal_id: dealId || (editingProposal as any)?.deal_id || undefined,
-        lead_name: leadName.trim() || undefined,
-        introduction_message: introMessage.trim() || undefined,
-        include_financing: includeFinancing,
-        include_cover: includeCover,
-        status: 'draft' as const,
-        pdf_url: pdfUrl || undefined,
-      };
-
-      if (isEditing && editingProposal) {
-        await updateProposal.mutateAsync({ ...proposalInput, id: editingProposal.id });
-      } else {
-        const result = await createProposal.mutateAsync(proposalInput);
-        if (pdfBlob && onProposalGenerated && result?.id) {
-          onProposalGenerated(pdfBlob as Blob, result.id);
-        }
-      }
-
-      onOpenChange(false);
+      // Set state to render the hidden template, then capture
+      setPdfData(buildData);
+      setAgentInfo(agent);
+      setReadyToCapture(true);
     } catch (error: any) {
       toast({ title: 'Erro ao gerar proposta', description: error.message, variant: 'destructive' });
-    } finally {
       setGenerating(false);
     }
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col p-0">
-        <SheetHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
-          <SheetTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            {isEditing ? 'Editar Proposta' : 'Nova Proposta Comercial'}
-          </SheetTitle>
-          <SheetDescription>
-            {isEditing
-              ? 'Atualize os dados e regenere o PDF.'
-              : 'Gere uma proposta premium personalizada para o seu cliente.'}
-          </SheetDescription>
-        </SheetHeader>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col p-0">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
+            <SheetTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              {isEditing ? 'Editar Proposta' : 'Nova Proposta Comercial'}
+            </SheetTitle>
+            <SheetDescription>
+              {isEditing
+                ? 'Atualize os dados e regenere o PDF.'
+                : 'Gere uma proposta premium personalizada para o seu cliente.'}
+            </SheetDescription>
+          </SheetHeader>
 
-        <ScrollArea className="flex-1">
-          <div className="px-6 py-5 space-y-6">
-            {/* Unit Selection */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                Imóvel *
-              </Label>
-              <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingUnits ? 'Carregando...' : 'Selecione o imóvel'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {units.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      <span className="flex items-center gap-2">
-                        {u.property_name
-                          ? `${u.property_name} - ${u.unit_number}`
-                          : u.unit_number}
-                        {u.price && (
-                          <span className="text-muted-foreground text-xs">
-                            {formatPrice(u.price)}
-                          </span>
-                        )}
+          <ScrollArea className="flex-1">
+            <div className="px-6 py-5 space-y-6">
+              {/* Unit Selection */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  Imóvel *
+                </Label>
+                <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingUnits ? 'Carregando...' : 'Selecione o imóvel'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {units.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        <span className="flex items-center gap-2">
+                          {u.property_name
+                            ? `${u.property_name} - ${u.unit_number}`
+                            : u.unit_number}
+                          {u.price && (
+                            <span className="text-muted-foreground text-xs">
+                              {formatPrice(u.price)}
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedUnit && (
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        {selectedUnit.property_name
+                          ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}`
+                          : selectedUnit.unit_number}
                       </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedUnit && (
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      {selectedUnit.property_name
-                        ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}`
-                        : selectedUnit.unit_number}
-                    </span>
-                    {selectedUnit.price && (
-                      <Badge variant="secondary">{formatPrice(selectedUnit.price)}</Badge>
+                      {selectedUnit.price && (
+                        <Badge variant="secondary">{formatPrice(selectedUnit.price)}</Badge>
+                      )}
+                    </div>
+                    {selectedUnit.cover_image_url && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                        <ImageIcon className="h-3 w-3" />
+                        Imagem de capa disponível
+                      </div>
                     )}
                   </div>
-                  {selectedUnit.cover_image_url && (
-                    <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                      <ImageIcon className="h-3 w-3" />
-                      Imagem de capa disponível
-                    </div>
-                  )}
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Lead Name */}
+              <div className="space-y-2">
+                <Label htmlFor="lead-name" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  Nome do Cliente/Lead
+                </Label>
+                <Input
+                  id="lead-name"
+                  placeholder="Ex: João Silva"
+                  value={leadName}
+                  onChange={(e) => setLeadName(e.target.value)}
+                />
+              </div>
+
+              {/* Introduction Message + AI Button */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="intro-msg" className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                    Mensagem de Introdução
+                  </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs h-7"
+                    disabled={generatingAI || !selectedUnit}
+                    onClick={handleGenerateAI}
+                  >
+                    {generatingAI ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-3 w-3" />
+                    )}
+                    Gerar com IA
+                  </Button>
                 </div>
+                <Textarea
+                  id="intro-msg"
+                  placeholder="Escreva uma mensagem personalizada para o cliente..."
+                  value={introMessage}
+                  onChange={(e) => setIntroMessage(e.target.value)}
+                  rows={4}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Será incluída na proposta. Use o botão de IA para gerar automaticamente.
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* Options */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold">Opções da Proposta</h4>
+
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <Calculator className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Simulação de Financiamento</p>
+                      <p className="text-xs text-muted-foreground">
+                        Inclui tabela com cenários de entrada e parcelas
+                      </p>
+                    </div>
+                  </div>
+                  <Switch checked={includeFinancing} onCheckedChange={setIncludeFinancing} />
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <ImageIcon className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Capa com Imagem</p>
+                      <p className="text-xs text-muted-foreground">
+                        Exibe a foto principal do imóvel na primeira página
+                      </p>
+                    </div>
+                  </div>
+                  <Switch checked={includeCover} onCheckedChange={setIncludeCover} />
+                </div>
+              </div>
+
+              {/* Preview Summary */}
+              {selectedUnit && (
+                <>
+                  <Separator />
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+                    <h4 className="text-sm font-semibold text-primary">Resumo da Proposta</h4>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>
+                        📄 Imóvel:{' '}
+                        {selectedUnit.property_name
+                          ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}`
+                          : selectedUnit.unit_number}
+                      </li>
+                      {leadName && <li>👤 Cliente: {leadName}</li>}
+                      {includeFinancing && <li>💰 Com simulação de financiamento</li>}
+                      {includeCover && <li>🖼️ Com capa visual</li>}
+                      {introMessage && <li>✍️ Com mensagem personalizada</li>}
+                      {dealId && <li>🤝 Vinculada a negociação do CRM</li>}
+                    </ul>
+                  </div>
+                </>
               )}
             </div>
+          </ScrollArea>
 
-            <Separator />
-
-            {/* Lead Name */}
-            <div className="space-y-2">
-              <Label htmlFor="lead-name" className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                Nome do Cliente/Lead
-              </Label>
-              <Input
-                id="lead-name"
-                placeholder="Ex: João Silva"
-                value={leadName}
-                onChange={(e) => setLeadName(e.target.value)}
-              />
-            </div>
-
-            {/* Introduction Message + AI Button */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="intro-msg" className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-muted-foreground" />
-                  Mensagem de Introdução
-                </Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs h-7"
-                  disabled={generatingAI || !selectedUnit}
-                  onClick={handleGenerateAI}
-                >
-                  {generatingAI ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Wand2 className="h-3 w-3" />
-                  )}
-                  Gerar com IA
-                </Button>
-              </div>
-              <Textarea
-                id="intro-msg"
-                placeholder="Escreva uma mensagem personalizada para o cliente..."
-                value={introMessage}
-                onChange={(e) => setIntroMessage(e.target.value)}
-                rows={4}
-              />
-              <p className="text-xs text-muted-foreground">
-                Será incluída na proposta. Use o botão de IA para gerar automaticamente.
-              </p>
-            </div>
-
-            <Separator />
-
-            {/* Options */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold">Opções da Proposta</h4>
-
-              <div className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <Calculator className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">Simulação de Financiamento</p>
-                    <p className="text-xs text-muted-foreground">
-                      Inclui tabela com cenários de entrada e parcelas
-                    </p>
-                  </div>
-                </div>
-                <Switch checked={includeFinancing} onCheckedChange={setIncludeFinancing} />
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <ImageIcon className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">Capa com Imagem</p>
-                    <p className="text-xs text-muted-foreground">
-                      Exibe a foto principal do imóvel na primeira página
-                    </p>
-                  </div>
-                </div>
-                <Switch checked={includeCover} onCheckedChange={setIncludeCover} />
-              </div>
-            </div>
-
-            {/* Preview Summary */}
-            {selectedUnit && (
-              <>
-                <Separator />
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
-                  <h4 className="text-sm font-semibold text-primary">Resumo da Proposta</h4>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>
-                      📄 Imóvel:{' '}
-                      {selectedUnit.property_name
-                        ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}`
-                        : selectedUnit.unit_number}
-                    </li>
-                    {leadName && <li>👤 Cliente: {leadName}</li>}
-                    {includeFinancing && <li>💰 Com simulação de financiamento</li>}
-                    {includeCover && <li>🖼️ Com capa visual</li>}
-                    {introMessage && <li>✍️ Com mensagem personalizada</li>}
-                    {dealId && <li>🤝 Vinculada a negociação do CRM</li>}
-                  </ul>
-                </div>
-              </>
-            )}
+          {/* Footer */}
+          <div className="px-6 py-4 border-t flex-shrink-0 flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1"
+              disabled={!selectedUnit || generating}
+              onClick={handleGenerate}
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando magia...
+                </>
+              ) : (
+                <>
+                  <FileText className="mr-2 h-4 w-4" />
+                  {isEditing ? 'Atualizar Proposta' : 'Gerar Proposta'}
+                </>
+              )}
+            </Button>
           </div>
-        </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t flex-shrink-0 flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            className="flex-1"
-            disabled={!selectedUnit || generating}
-            onClick={handleGenerate}
-          >
-            {generating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Criando magia...
-              </>
-            ) : (
-              <>
-                <FileText className="mr-2 h-4 w-4" />
-                {isEditing ? 'Atualizar Proposta' : 'Gerar Proposta'}
-              </>
-            )}
-          </Button>
+      {/* Hidden PDF Template - rendered off-screen for html2canvas capture */}
+      {pdfData && (
+        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+          <ProposalPdfTemplate ref={templateRef} data={pdfData} agent={agentInfo} />
         </div>
-      </SheetContent>
-    </Sheet>
+      )}
+    </>
   );
 }
