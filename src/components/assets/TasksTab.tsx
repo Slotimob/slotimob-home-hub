@@ -8,6 +8,7 @@ import {
   PendingReceivable,
   PendingPayable,
   PendingContract,
+  PendingProposalFollowup,
 } from "@/hooks/useActionCenterPending";
 import { AdjustmentCalculatorDialog } from "./AdjustmentCalculatorDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,8 +24,10 @@ import {
   CheckSquare,
   Clock,
   FileSignature,
+  FileText,
   MessageCircle,
   RefreshCw,
+  Send,
   TrendingUp,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
@@ -32,13 +35,14 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 export function TasksTab() {
-  const { receivables, payables, contracts, totalCount, isLoading } = useActionCenterPending();
+  const { receivables, payables, contracts, proposalFollowups, totalCount, isLoading } = useActionCenterPending();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const [selectedLease, setSelectedLease] = useState<PendingContract | null>(null);
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
+  const [markingFollowupId, setMarkingFollowupId] = useState<string | null>(null);
 
   // Separate overdue receivables from upcoming
   const overdueReceivables = receivables.filter((r) => r.is_overdue);
