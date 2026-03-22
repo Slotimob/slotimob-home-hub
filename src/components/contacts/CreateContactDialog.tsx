@@ -117,6 +117,16 @@ export const CreateContactDialog = ({
       setFormData(getInitialFormData());
       appliedDefaultRef.current = null;
       
+      // Apply initialPhone if provided
+      if (initialPhone) {
+        const digits = initialPhone.replace(/\D/g, '');
+        setFormData(prev => ({
+          ...prev,
+          phone: formatPhone(digits),
+          whatsapp: formatPhone(digits),
+        }));
+      }
+      
       // Apply defaultCategory if provided
       if (defaultCategory) {
         setFormData(prev => ({
