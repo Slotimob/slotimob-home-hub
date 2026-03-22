@@ -29,7 +29,7 @@ export const PropertyGalleryUpload = ({
   images,
   onImagesChange,
   maxImages = 10,
-  autoSave = false,
+  autoSave = true,
   onRefresh,
 }: PropertyGalleryUploadProps) => {
   const { toast } = useToast();

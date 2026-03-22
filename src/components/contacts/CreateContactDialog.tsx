@@ -253,6 +253,12 @@ export const CreateContactDialog = ({
 
       if (error) throw error;
 
+      // Invalidate all relevant caches so panels update reactively
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-chats'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
+
       toast({ title: 'Contato criado com sucesso!' });
       onSuccess();
       onOpenChange(false);
