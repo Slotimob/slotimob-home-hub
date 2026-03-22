@@ -63,6 +63,7 @@ import AdminCockpit from "./pages/AdminCockpit";
 import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
 import AIChat from "./pages/AIChat";
+import Proposals from "./pages/Proposals";
 
 const queryClient = new QueryClient();
 
