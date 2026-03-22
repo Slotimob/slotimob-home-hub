@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -28,6 +29,24 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 export default function Proposals() {
   const { proposals, isLoading } = useProposals();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const preSelectedUnitId = searchParams.get('unitId') || undefined;
+
+  // Auto-open sheet when deep-linked with ?create=true
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      setSheetOpen(true);
+    }
+  }, []); // run once on mount
+
+  const handleSheetClose = (open: boolean) => {
+    setSheetOpen(open);
+    if (!open) {
+      // Clear deep-link params from URL
+      setSearchParams({}, { replace: true });
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -183,7 +202,7 @@ export default function Proposals() {
         <BottomNavigation />
       </div>
 
-      <CreateProposalSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+      <CreateProposalSheet open={sheetOpen} onOpenChange={handleSheetClose} preSelectedUnitId={preSelectedUnitId} />
     </SidebarProvider>
   );
 }

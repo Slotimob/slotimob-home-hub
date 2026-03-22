@@ -428,7 +428,7 @@ const Units = () => {
             iconOnly 
             showTextAt="lg" 
             icon={<Share2 className="h-4 w-4" />} 
-            onClick={() => setIsShareDialogOpen(true)}
+            onClick={() => navigate('/gestao/propostas?create=true')}
           >
             Compartilhar
           </HeaderButton>

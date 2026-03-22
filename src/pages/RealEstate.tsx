@@ -861,11 +861,7 @@ const RealEstate = () => {
           />
         )}
 
-        <ShareAssetDialog
-          open={isShareDialogOpen}
-          onOpenChange={setIsShareDialogOpen}
-          mode="standalone"
-        />
+        {/* ShareAssetDialog replaced by Proposals deep-link */}
       </AppLayout>
     </>
   );

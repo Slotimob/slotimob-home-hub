@@ -124,20 +124,18 @@ export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: Unit
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          {onShareClick && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 gap-1.5"
-              onClick={(e) => {
-                e.stopPropagation();
-                onShareClick(unit);
-              }}
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              Compartilhar
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-1.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+            }}
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Proposta
+          </Button>
           <Button
             variant="default"
             size="sm"
