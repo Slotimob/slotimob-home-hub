@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
-import { Bed, Bath, Car, Maximize, Sun, Sofa, Hammer, DollarSign, Building2, MapPin } from 'lucide-react';
-import type { PDFAssetData, AgentInfo, FinancingSimulation } from '@/utils/propertyPdfGenerator';
+import { Bed, Bath, Car, Maximize, Sun, Sofa, Hammer, Building2, MapPin, Calculator, Phone } from 'lucide-react';
+import type { PDFAssetData, AgentInfo, CustomSimulation } from '@/utils/propertyPdfGenerator';
 
 interface ProposalPdfTemplateProps {
   data: PDFAssetData;
@@ -24,95 +24,100 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
 
 export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplateProps>(
   ({ data, agent }, ref) => {
-    const { unit, parentProperty, title, financingSimulation } = data;
+    const { unit, parentProperty, title, financingSimulation, customSimulation } = data;
     const coverImg = unit.cover_image_url || parentProperty?.image_url || null;
-    const gallery = (unit.gallery || parentProperty?.gallery_images || []).slice(0, 4);
+    const allGallery = (unit.gallery || parentProperty?.gallery_images || []);
+    const gallery = allGallery.slice(0, 8);
     const location = [unit.neighborhood, unit.city, unit.state].filter(Boolean).join(' · ');
     const typeLabel = unit.property_type ? PROPERTY_TYPE_LABELS[unit.property_type] || unit.property_type : '';
     const hasFinancial = unit.condo_fee || unit.iptu || (unit.price && unit.is_financeable !== false);
-    const galleryColClass = gallery.length === 1 ? 'grid-cols-1' : 'grid-cols-2';
     const generatedDate = new Date().toLocaleDateString('pt-BR');
 
     return (
       <div ref={ref} style={{ width: '794px' }} className="bg-white font-sans">
+
         {/* ══════ PAGE 1: COVER ══════ */}
         <div style={{ width: '794px', height: '1123px' }} className="relative overflow-hidden flex flex-col">
-          {/* Full-height cover image */}
-          <div className="relative flex-1 min-h-0">
+          {/* Full-bleed background image */}
+          <div className="absolute inset-0">
             {coverImg ? (
               <img src={coverImg} alt={title} crossOrigin="anonymous" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, #0b0073 0%, #2fc9af 100%)' }} />
             )}
-            {/* Dark gradient overlay */}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.8) 100%)' }} />
+            {/* Heavy gradient for text legibility */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 30%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.85) 100%)' }} />
           </div>
 
-          {/* Top bar with logo */}
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-10 py-5">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#2fc9af' }}>
-                <Building2 className="w-5 h-5 text-white" />
+          {/* Content layer */}
+          <div className="relative z-10 flex flex-col justify-between h-full p-10">
+            {/* Top bar */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#2fc9af' }}>
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-white font-bold text-xl tracking-wider" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>SLOTIMOB</span>
               </div>
-              <span className="text-white font-bold text-lg tracking-wide drop-shadow-lg">SLOTIMOB</span>
-            </div>
-            {/* Type badge */}
-            {typeLabel && (
-              <span className="px-4 py-1.5 rounded-full text-[11px] font-bold text-white uppercase tracking-widest" style={{ background: 'rgba(47,201,175,0.9)', backdropFilter: 'blur(4px)' }}>
-                {typeLabel}
-              </span>
-            )}
-          </div>
-
-          {/* Bottom content overlay with gradient */}
-          <div className="absolute bottom-0 left-0 right-0 px-10 pb-10 pt-32" style={{ background: 'linear-gradient(to top, rgba(11,0,115,0.95) 0%, rgba(11,0,115,0.7) 60%, transparent 100%)' }}>
-            <h1 className="text-white font-bold text-4xl leading-tight mb-3" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-              {title}
-            </h1>
-            {location && (
-              <div className="flex items-center gap-2 text-white/80 text-sm mb-6">
-                <MapPin className="w-4 h-4" />
-                <span>{location}</span>
-              </div>
-            )}
-
-            {/* Price + Lead + Features row */}
-            <div className="flex items-end justify-between">
-              <div>
-                {data.leadName && (
-                  <p className="text-sm mb-2" style={{ color: '#2fc9af' }}>
-                    Proposta exclusiva para <span className="font-bold">{data.leadName}</span>
-                  </p>
+              <div className="flex items-center gap-3">
+                {typeLabel && (
+                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold text-white uppercase tracking-widest" style={{ background: 'rgba(47,201,175,0.85)', backdropFilter: 'blur(4px)' }}>
+                    {typeLabel}
+                  </span>
                 )}
-                {unit.price ? (
-                  <>
-                    <p className="text-white text-4xl font-bold">{fmt(unit.price)}</p>
-                    {unit.area && unit.area > 0 && (
-                      <p className="text-white/50 text-sm mt-1">{fmt(unit.price / unit.area)}/m²</p>
-                    )}
-                  </>
-                ) : unit.rent_price ? (
-                  <p className="text-white text-3xl font-bold">{fmt(unit.rent_price)}<span className="text-lg font-normal text-white/60">/mês</span></p>
-                ) : null}
+                {agent?.name && (
+                  <div className="text-right text-white/90 text-xs rounded-lg px-3 py-2" style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}>
+                    <p className="font-semibold">{agent.name}</p>
+                    {agent.phone && <p className="text-white/70">{agent.phone}</p>}
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Feature pills */}
-              <div className="grid grid-cols-2 gap-2.5">
-                {unit.area && <FeaturePill icon={<Maximize className="w-4 h-4" />} value={`${unit.area}m²`} label="Área" />}
-                {unit.bedrooms != null && <FeaturePill icon={<Bed className="w-4 h-4" />} value={`${unit.bedrooms}`} label="Quartos" />}
-                {unit.suites != null && unit.suites > 0 && <FeaturePill icon={<Bath className="w-4 h-4" />} value={`${unit.suites}`} label="Suítes" />}
-                {unit.parking_spots != null && <FeaturePill icon={<Car className="w-4 h-4" />} value={`${unit.parking_spots}`} label="Vagas" />}
+            {/* Bottom content */}
+            <div>
+              {data.leadName && (
+                <p className="text-sm mb-3 font-medium" style={{ color: '#2fc9af', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+                  Proposta exclusiva para <span className="font-bold">{data.leadName}</span>
+                </p>
+              )}
+
+              <h1 className="text-white font-bold text-4xl leading-tight mb-3" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+                {title}
+              </h1>
+
+              {location && (
+                <div className="flex items-center gap-2 text-white/80 text-sm mb-6" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                  <MapPin className="w-4 h-4" />
+                  <span>{location}</span>
+                </div>
+              )}
+
+              {/* Price + Features row */}
+              <div className="flex items-end justify-between gap-6">
+                <div>
+                  {unit.price ? (
+                    <>
+                      <p className="text-white text-4xl font-bold" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>{fmt(unit.price)}</p>
+                      {unit.area && unit.area > 0 && (
+                        <p className="text-white/50 text-sm mt-1">{fmt(unit.price / unit.area)}/m²</p>
+                      )}
+                    </>
+                  ) : unit.rent_price ? (
+                    <p className="text-white text-3xl font-bold">{fmt(unit.rent_price)}<span className="text-lg font-normal text-white/60">/mês</span></p>
+                  ) : null}
+                </div>
+
+                {/* Feature pills */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {unit.area && <FeaturePill icon={<Maximize className="w-4 h-4" />} value={`${unit.area}m²`} label="Área" />}
+                  {unit.bedrooms != null && <FeaturePill icon={<Bed className="w-4 h-4" />} value={`${unit.bedrooms}`} label="Quartos" />}
+                  {unit.suites != null && unit.suites > 0 && <FeaturePill icon={<Bath className="w-4 h-4" />} value={`${unit.suites}`} label="Suítes" />}
+                  {unit.parking_spots != null && <FeaturePill icon={<Car className="w-4 h-4" />} value={`${unit.parking_spots}`} label="Vagas" />}
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Agent info top-right */}
-          {agent?.name && (
-            <div className="absolute top-5 right-10 text-right text-white/80 text-xs bg-black/30 rounded-lg px-3 py-2 backdrop-blur-sm">
-              <p className="font-medium text-white/90">{agent.name}</p>
-              {agent.phone && <p>{agent.phone}</p>}
-            </div>
-          )}
         </div>
 
         {/* ══════ PAGE 2: DETAILS ══════ */}
@@ -152,31 +157,35 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
             </div>
           )}
 
-          {/* Gallery grid */}
-          {gallery.length > 0 && (
-            <div className="mt-auto">
-              <SectionTitle title="Galeria" />
-              <div className={`grid ${galleryColClass} gap-3`}>
-                {gallery.map((img, i) => (
-                  <div
-                    key={i}
-                    className={`rounded-xl overflow-hidden ${gallery.length === 3 && i === 2 ? 'col-span-2' : ''}`}
-                    style={{ height: '180px', background: '#eee' }}
-                  >
-                    <img src={img} alt={`Foto ${i + 1}`} crossOrigin="anonymous" className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Page 2 footer */}
-          <PageFooter agent={agent} date={generatedDate} />
+          <div className="mt-auto">
+            <PageFooter agent={agent} date={generatedDate} />
+          </div>
         </div>
 
-        {/* ══════ PAGE 3: FINANCIAL (conditional) ══════ */}
+        {/* ══════ PAGE 3: GALLERY (up to 8 photos) ══════ */}
+        {gallery.length > 0 && (
+          <div style={{ width: '794px', minHeight: '1123px', pageBreakBefore: 'always', pageBreakInside: 'avoid' }} className="px-10 py-10 flex flex-col">
+            <SectionTitle title="Galeria de Fotos" />
+            <div className="grid grid-cols-2 gap-4 flex-1">
+              {gallery.map((img, i) => (
+                <div
+                  key={i}
+                  className={`rounded-xl overflow-hidden ${gallery.length % 2 !== 0 && i === gallery.length - 1 ? 'col-span-2' : ''}`}
+                  style={{ height: gallery.length <= 4 ? '240px' : '200px' }}
+                >
+                  <img src={img} alt={`Foto ${i + 1}`} crossOrigin="anonymous" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+            <div className="mt-auto">
+              <PageFooter agent={agent} date={generatedDate} />
+            </div>
+          </div>
+        )}
+
+        {/* ══════ PAGE 4: FINANCIAL (conditional) ══════ */}
         {hasFinancial && (
-          <div style={{ width: '794px', minHeight: '1123px' }} className="px-10 py-10 flex flex-col">
+          <div style={{ width: '794px', minHeight: '1123px', pageBreakBefore: 'always' }} className="px-10 py-10 flex flex-col">
             {/* Condo / IPTU */}
             {(unit.condo_fee || unit.iptu) && (
               <div className="mb-8">
@@ -198,27 +207,22 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
               </div>
             )}
 
+            {/* Custom Simulation (before standard matrix) */}
+            {customSimulation && (
+              <div className="mb-8">
+                <SectionTitle title="Simulação Personalizada" accent />
+                <CustomSimulationCard sim={customSimulation} />
+              </div>
+            )}
+
             {/* Investment Matrix */}
             {unit.price && unit.price > 0 && unit.is_financeable !== false && (
               <div className="mb-8">
                 <SectionTitle title="Matriz de Investimento" />
                 <InvestmentTable price={unit.price} rate={financingSimulation?.annualRate} />
                 <p className="text-[10px] mt-3" style={{ color: '#aaa' }}>
-                  * Simulação baseada em taxa de {financingSimulation?.annualRate || 10.5}% a.a. / 360 meses. Valores sujeitos à aprovação de crédito e podem variar conforme perfil do comprador.
+                  * Simulação baseada em taxa de {financingSimulation?.annualRate || 10.5}% a.a. / 360 meses. Valores sujeitos à aprovação de crédito.
                 </p>
-              </div>
-            )}
-
-            {/* Custom financing simulation */}
-            {financingSimulation && (
-              <div className="mb-8">
-                <SectionTitle title="Simulação Personalizada" accent />
-                <div className="grid grid-cols-2 rounded-xl overflow-hidden" style={{ border: '1px solid #e0f5ef' }}>
-                  <SimCard label={`Entrada (${financingSimulation.downPaymentPercent}%)`} value={fmt(financingSimulation.downPayment)} />
-                  <SimCard label="Valor Financiado" value={fmt(financingSimulation.financedAmount)} borderLeft />
-                  <SimCard label="Parcela Mensal" value={fmt(financingSimulation.monthlyPayment)} highlight borderTop />
-                  <SimCard label="Prazo" value={`${financingSimulation.months} meses`} borderLeft borderTop />
-                </div>
               </div>
             )}
 
@@ -237,12 +241,17 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
 
             {/* CTA */}
             <div className="mt-auto">
-              <div className="p-6 rounded-xl text-center" style={{ background: '#2fc9af' }}>
-                <p className="text-white text-xl font-bold mb-1">Gostou? Agende sua visita agora!</p>
-                <p className="text-white/80 text-sm">Entre em contato e garanta essa oportunidade única.</p>
-              </div>
+              <CTAFooter agent={agent} />
               <PageFooter agent={agent} date={generatedDate} />
             </div>
+          </div>
+        )}
+
+        {/* ══════ FINAL PAGE: CTA (if no financial page) ══════ */}
+        {!hasFinancial && (
+          <div style={{ width: '794px', minHeight: '400px' }} className="px-10 py-10">
+            <CTAFooter agent={agent} />
+            <PageFooter agent={agent} date={generatedDate} />
           </div>
         )}
       </div>
@@ -259,6 +268,21 @@ function SectionTitle({ title, accent }: { title: string; accent?: boolean }) {
     <div className="flex items-center gap-2 mb-4">
       <div className="w-1 h-6 rounded-full" style={{ background: accent ? '#2fc9af' : '#0b0073' }} />
       <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>{title}</h2>
+    </div>
+  );
+}
+
+function CTAFooter({ agent }: { agent?: AgentInfo }) {
+  return (
+    <div className="p-6 rounded-xl text-center mb-6" style={{ background: '#2fc9af' }}>
+      <p className="text-white text-xl font-bold mb-1">Gostou? Agende sua visita agora!</p>
+      <p className="text-white/80 text-sm mb-3">Entre em contato e garanta essa oportunidade única.</p>
+      {agent?.whatsapp && (
+        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white font-bold text-sm" style={{ background: '#25D366' }}>
+          <Phone className="w-4 h-4" />
+          <span>WhatsApp: {agent.whatsapp}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -303,7 +327,29 @@ function SpecCard({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-function SimCard({ label, value, highlight, borderLeft, borderTop }: { label: string; value: string; highlight?: boolean; borderLeft?: boolean; borderTop?: boolean }) {
+function CustomSimulationCard({ sim }: { sim: CustomSimulation }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '2px solid #2fc9af' }}>
+      <div className="p-4 text-center" style={{ background: 'rgba(47,201,175,0.08)' }}>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Calculator className="w-4 h-4" style={{ color: '#2fc9af' }} />
+          <span className="text-sm font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>Sua Simulação</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-2" style={{ borderTop: '1px solid #e0f5ef' }}>
+        <SimCell label={`Entrada (${sim.downPaymentPercent}%)`} value={fmt(sim.downPayment)} />
+        <SimCell label="Valor Financiado" value={fmt(sim.financedAmount)} borderLeft />
+        <SimCell label="Parcela Mensal" value={fmt(sim.monthlyPayment)} highlight borderTop />
+        <SimCell label="Prazo" value={`${sim.months} meses`} borderLeft borderTop />
+      </div>
+      <div className="p-2 text-center text-[10px]" style={{ background: '#f8fffe', color: '#aaa', borderTop: '1px solid #e0f5ef' }}>
+        Taxa: {sim.annualRate}% a.a. · Valor base: {fmt(sim.basePrice)}
+      </div>
+    </div>
+  );
+}
+
+function SimCell({ label, value, highlight, borderLeft, borderTop }: { label: string; value: string; highlight?: boolean; borderLeft?: boolean; borderTop?: boolean }) {
   return (
     <div
       className="p-5"
@@ -346,13 +392,15 @@ function InvestmentTable({ price, rate: customRate }: { price: number; rate?: nu
       {scenarios.map((s, i) => (
         <div
           key={s.pct}
-          className="grid grid-cols-5 text-center py-3 px-2 text-sm"
+          className="grid grid-cols-5 text-center py-3 px-2 text-sm items-center"
           style={{ background: i % 2 === 0 ? '#f8f8fc' : '#ffffff' }}
         >
           <span className="font-bold" style={{ color: '#0b0073' }}>{s.pct}%</span>
           <span style={{ color: '#444' }}>{fmt(s.dp)}</span>
           <span style={{ color: '#444' }}>{fmt(s.fin)}</span>
-          <span className="font-bold px-1 py-0.5 rounded" style={{ color: '#0b0073', background: 'rgba(47,201,175,0.12)' }}>{fmt(s.mp)}</span>
+          <span className="font-bold inline-flex items-center justify-center">
+            <span className="px-2 py-1 rounded" style={{ color: '#0b0073', background: 'rgba(47,201,175,0.12)' }}>{fmt(s.mp)}</span>
+          </span>
           <span className="text-sm" style={{ color: '#888' }}>{fmt(s.income)}</span>
         </div>
       ))}

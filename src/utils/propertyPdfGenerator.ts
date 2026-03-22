@@ -11,6 +11,7 @@ export interface AgentInfo {
   name: string;
   email?: string;
   phone?: string;
+  whatsapp?: string;
 }
 
 export interface FinancingSimulation {
@@ -41,6 +42,16 @@ interface PropertyData {
   sustainability_features?: string | null;
   technology_features?: string | null;
   gallery_images?: string[] | null;
+}
+
+export interface CustomSimulation {
+  basePrice: number;
+  downPaymentPercent: number;
+  downPayment: number;
+  financedAmount: number;
+  monthlyPayment: number;
+  months: number;
+  annualRate: number;
 }
 
 export interface PDFAssetData {
@@ -75,6 +86,7 @@ export interface PDFAssetData {
   title: string;
   subtitle?: string;
   financingSimulation?: FinancingSimulation | null;
+  customSimulation?: CustomSimulation | null;
   leadName?: string | null;
   introductionMessage?: string | null;
 }
