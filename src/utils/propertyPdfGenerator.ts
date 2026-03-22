@@ -98,7 +98,7 @@ export function buildPDFDataFromUnit(unit: any, parentProperty: any): PDFAssetDa
       state: unit.state || parentProperty?.state,
       postal_code: unit.postal_code || parentProperty?.postal_code,
       cover_image_url: unit.cover_image_url,
-      gallery: unit.gallery || [],
+      gallery: unit.gallery_images || unit.gallery || [],
     },
     parentProperty: parentProperty ? {
       id: parentProperty.id, name: parentProperty.name,
