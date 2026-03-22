@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { addDays, isBefore, isToday, isTomorrow, startOfDay } from "date-fns";
+import { addDays, isBefore, isToday, isTomorrow, startOfDay, subHours } from "date-fns";
 
 export interface PendingReceivable {
   id: string;
@@ -42,10 +42,21 @@ export interface PendingContract {
   issue_type: "pending_signature" | "adjustment_due" | "adjustment_overdue";
 }
 
+export interface PendingProposalFollowup {
+  id: string;
+  lead_name: string;
+  unit_id: string | null;
+  unit_number?: string;
+  property_name?: string;
+  created_at: string;
+  hours_since_sent: number;
+}
+
 export interface ActionCenterData {
   receivables: PendingReceivable[];
   payables: PendingPayable[];
   contracts: PendingContract[];
+  proposalFollowups: PendingProposalFollowup[];
   totalCount: number;
   isLoading: boolean;
 }
@@ -224,13 +235,58 @@ export function useActionCenterPending(): ActionCenterData {
     staleTime: 1000 * 60 * 5,
   });
 
-  const totalCount = receivables.length + payables.length + contracts.length;
-  const isLoading = loadingReceivables || loadingPayables || loadingContracts;
+  // Fetch proposals sent > 48h ago needing follow-up
+  const { data: proposalFollowups = [], isLoading: loadingProposals } = useQuery({
+    queryKey: ["action-center-proposals", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const threshold48h = subHours(new Date(), 48).toISOString();
+
+      const { data, error } = await supabase
+        .from("proposals")
+        .select(`
+          id,
+          lead_name,
+          unit_id,
+          created_at,
+          unit:units(unit_number),
+          property:properties(name)
+        `)
+        .eq("broker_id", user.id)
+        .eq("status", "sent")
+        .lte("created_at", threshold48h)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      return (data || []).map((p) => {
+        const hoursSince = Math.floor(
+          (Date.now() - new Date(p.created_at).getTime()) / (1000 * 60 * 60)
+        );
+        return {
+          id: p.id,
+          lead_name: p.lead_name || "Lead sem nome",
+          unit_id: p.unit_id,
+          unit_number: (p.unit as any)?.unit_number || undefined,
+          property_name: (p.property as any)?.name || undefined,
+          created_at: p.created_at,
+          hours_since_sent: hoursSince,
+        } as PendingProposalFollowup;
+      });
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const totalCount = receivables.length + payables.length + contracts.length + proposalFollowups.length;
+  const isLoading = loadingReceivables || loadingPayables || loadingContracts || loadingProposals;
 
   return {
     receivables,
     payables,
     contracts,
+    proposalFollowups,
     totalCount,
     isLoading,
   };
