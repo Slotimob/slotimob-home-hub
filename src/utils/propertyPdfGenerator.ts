@@ -44,6 +44,16 @@ interface PropertyData {
   gallery_images?: string[] | null;
 }
 
+export interface CustomSimulation {
+  basePrice: number;
+  downPaymentPercent: number;
+  downPayment: number;
+  financedAmount: number;
+  monthlyPayment: number;
+  months: number;
+  annualRate: number;
+}
+
 export interface PDFAssetData {
   mode: 'property_unit' | 'standalone';
   unit: {
@@ -76,6 +86,7 @@ export interface PDFAssetData {
   title: string;
   subtitle?: string;
   financingSimulation?: FinancingSimulation | null;
+  customSimulation?: CustomSimulation | null;
   leadName?: string | null;
   introductionMessage?: string | null;
 }
