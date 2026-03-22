@@ -52,6 +52,7 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
   password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' }),
+  confirmPassword: z.string().min(1, { message: 'Confirme sua senha' }),
   fullName: z.string().min(2, { message: 'Nome deve ter no mínimo 2 caracteres' }),
   phone: z.string().optional(),
   personType: z.enum(['pf', 'pj']),
@@ -60,6 +61,9 @@ const signupSchema = z.object({
   businessName: z.string().optional(),
   creci: z.string().optional()
 }).superRefine((data, ctx) => {
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'As senhas não coincidem', path: ['confirmPassword'] });
+  }
   if (data.personType === 'pf') {
     const cpfDigits = (data.cpf || '').replace(/\D/g, '');
     if (!cpfDigits || cpfDigits.length !== 11) {
@@ -228,7 +232,7 @@ const Auth = () => {
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({
-    email: '', password: '', fullName: '', phone: '', companyName: '', creci: '',
+    email: '', password: '', confirmPassword: '', fullName: '', phone: '', companyName: '', creci: '',
     personType: 'pf' as 'pf' | 'pj', cpf: '', cnpj: '', businessName: ''
   });
   const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('complete_profile') === 'true');
@@ -429,6 +433,7 @@ const Auth = () => {
     const result = signupSchema.safeParse({
       email: signupForm.email,
       password: signupForm.password,
+      confirmPassword: signupForm.confirmPassword,
       fullName: signupForm.fullName,
       phone: signupForm.phone,
       personType: signupForm.personType,
@@ -519,7 +524,7 @@ const Auth = () => {
       if (data.user && !data.session) {
         setPendingVerificationEmail(signupForm.email);
         setShowVerificationMessage(true);
-        setSignupForm({ email: '', password: '', fullName: '', phone: '', companyName: '', creci: '', personType: 'pf', cpf: '', cnpj: '', businessName: '' });
+        setSignupForm({ email: '', password: '', confirmPassword: '', fullName: '', phone: '', companyName: '', creci: '', personType: 'pf', cpf: '', cnpj: '', businessName: '' });
         setAcceptedTerms(false);
       } else {
         if (inviteToken) await handleAcceptInvite();
@@ -667,20 +672,8 @@ const Auth = () => {
         {invitation && <p className="text-xs text-muted-foreground">Email bloqueado — deve corresponder ao convite.</p>}
       </div>
 
-      {/* Password */}
-      <div className="space-y-2">
-        <Label htmlFor="signup-password">Senha</Label>
-        <Input
-          id="signup-password"
-          type="password"
-          placeholder="Mínimo 6 caracteres"
-          value={signupForm.password}
-          onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
-          className={fieldErrors.password ? 'border-destructive' : ''}
-          required
-        />
-        {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
-      </div>
+
+
 
       {/* Phone */}
       <div className="space-y-2">
@@ -787,7 +780,38 @@ const Auth = () => {
         />
       </div>
 
-      {/* Honeypot */}
+      {/* Password */}
+      <div className="space-y-2">
+        <Label htmlFor="signup-password">Senha</Label>
+        <Input
+          id="signup-password"
+          type="password"
+          placeholder="Mínimo 6 caracteres"
+          value={signupForm.password}
+          onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
+          className={fieldErrors.password ? 'border-destructive' : ''}
+          required
+        />
+        {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+      </div>
+
+      {/* Confirm Password */}
+      <div className="space-y-2">
+        <Label htmlFor="signup-confirmPassword">Confirmar Senha</Label>
+        <Input
+          id="signup-confirmPassword"
+          type="password"
+          placeholder="Digite a senha novamente"
+          value={signupForm.confirmPassword}
+          onChange={e => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
+          onPaste={e => e.preventDefault()}
+          className={fieldErrors.confirmPassword ? 'border-destructive' : ''}
+          required
+        />
+        {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
+      </div>
+
+
       <div className="absolute -left-[9999px] opacity-0 pointer-events-none" aria-hidden="true">
         <Label htmlFor="signup-website">Website</Label>
         <Input id="signup-website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={e => setHoneypot(e.target.value)} />
