@@ -165,6 +165,11 @@ export function CreateProposalSheet({
       setIncludeFinancing(false);
       setIncludeCover(true);
       setInterestRate('10.5');
+      setIncludeCustomSim(false);
+      setCustomBasePrice('');
+      setCustomDownPercent('20');
+      setCustomRate('10.5');
+      setIncludeAgentWhatsApp(false);
       setPdfData(null);
       setReadyToCapture(false);
     }
