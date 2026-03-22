@@ -72,6 +72,7 @@ export const DealCard = ({
   leadOrigin,
   unitStatus,
 }: DealCardProps) => {
+  const navigate = useNavigate();
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: deal.id,
     disabled: selectionMode,
