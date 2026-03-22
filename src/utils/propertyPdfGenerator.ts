@@ -156,6 +156,28 @@ export function buildPDFDataFromStandalone(unit: any): PDFAssetData {
  * Takes a rendered HTML element (the ProposalPdfTemplate) and converts it
  * to a multi-page A4 PDF using html2canvas + jsPDF.
  */
+/** Wait for all images inside an element to finish loading */
+async function waitForImages(element: HTMLElement, timeoutMs = 8000): Promise<void> {
+  const images = Array.from(element.querySelectorAll('img'));
+  if (images.length === 0) return;
+
+  const promises = images.map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      img.onload = () => resolve();
+      img.onerror = () => resolve(); // Don't block on broken images
+    });
+  });
+
+  await Promise.race([
+    Promise.all(promises),
+    new Promise<void>(resolve => setTimeout(resolve, timeoutMs)),
+  ]);
+
+  // Small extra delay for browser paint
+  await new Promise(resolve => setTimeout(resolve, 300));
+}
+
 export async function generatePropertyPDF(
   _data: PDFAssetData,
   _agent?: AgentInfo,
@@ -166,6 +188,9 @@ export async function generatePropertyPDF(
     console.error('ProposalPdfTemplate element ref is required for PDF generation');
     return;
   }
+
+  // Wait for all gallery/cover images to load before capturing
+  await waitForImages(element);
 
   // A4 dimensions in mm
   const A4_W = 210;

@@ -185,7 +185,7 @@ export function CreateProposalSheet({
 
       const clientRef = leadName ? ` O nome do cliente é ${leadName}.` : '';
 
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
+      const { data: rawResponse, error } = await supabase.functions.invoke('ai-chat', {
         body: {
           messages: [
             {
@@ -199,35 +199,57 @@ export function CreateProposalSheet({
       if (error) throw error;
 
       // ─── Robust type-safe extraction ───
+      // supabase.functions.invoke auto-parses JSON, so rawResponse is the parsed body
+      const responseData = rawResponse?.data || rawResponse;
+      
       let aiText = '';
-      if (typeof data === 'string') {
-        aiText = data;
-      } else if (data && typeof data === 'object') {
-        // Try common response shapes
+      if (typeof responseData === 'string') {
+        aiText = responseData;
+      } else if (responseData && typeof responseData === 'object') {
+        // Try every known response shape from various AI providers
         const candidates = [
-          data.content,
-          data.message,
-          data.response,
-          data.text,
-          data.reply,
+          responseData.content,
+          responseData.text,
+          responseData.message,
+          responseData.answer,
+          responseData.response,
+          responseData.reply,
+          responseData.generatedText,
+          responseData.generated_text,
+          responseData.output,
+          responseData.result,
         ];
         for (const c of candidates) {
           if (typeof c === 'string' && c.trim()) { aiText = c; break; }
         }
         // Handle OpenAI-style nested response
-        if (!aiText && Array.isArray(data.choices) && data.choices[0]) {
-          const choice = data.choices[0];
+        if (!aiText && Array.isArray(responseData.choices) && responseData.choices[0]) {
+          const choice = responseData.choices[0];
           if (typeof choice.message?.content === 'string') aiText = choice.message.content;
           else if (typeof choice.text === 'string') aiText = choice.text;
         }
-        // Last resort: stringify
-        if (!aiText) aiText = JSON.stringify(data);
+        // If still empty, try to find any string value in the object
+        if (!aiText) {
+          for (const val of Object.values(responseData)) {
+            if (typeof val === 'string' && val.trim().length > 20) { aiText = val as string; break; }
+          }
+        }
       }
 
-      if (typeof aiText === 'string' && aiText.trim()) {
+      // Clean up: remove wrapping quotes or JSON artifacts
+      if (aiText.startsWith('"') && aiText.endsWith('"')) {
+        aiText = aiText.slice(1, -1);
+      }
+      // Don't use raw JSON stringification as text
+      if (aiText.startsWith('{') || aiText.startsWith('[')) {
+        aiText = '';
+      }
+
+      if (aiText.trim()) {
         setIntroMessage(aiText.trim());
         toast({ title: 'Texto gerado com IA!' });
       } else {
+        console.warn('AI response could not be parsed:', rawResponse);
         toast({ title: 'IA não retornou texto', description: 'Tente novamente ou escreva manualmente.', variant: 'destructive' });
       }
     } catch (err: any) {
@@ -242,15 +264,19 @@ export function CreateProposalSheet({
   useEffect(() => {
     if (!readyToCapture || !pdfData || !templateRef.current) return;
 
-    const captureTimeout = setTimeout(async () => {
+    let cancelled = false;
+
+    const capture = async () => {
       try {
         const element = templateRef.current;
-        if (!element) throw new Error('Template element not found');
+        if (!element || cancelled) return;
 
         const pdfBlob = await generatePropertyPDF(pdfData, agentInfo, {
           returnBlob: true,
           templateElement: element,
         });
+
+        if (cancelled) return;
 
         let pdfUrl: string | null = null;
         if (pdfBlob) {
@@ -305,9 +331,11 @@ export function CreateProposalSheet({
         setReadyToCapture(false);
         setPdfData(null);
       }
-    }, 1500); // wait for images to load in the hidden template
+    };
 
-    return () => clearTimeout(captureTimeout);
+    // Small delay to let React render the template DOM before capturing
+    const timer = setTimeout(capture, 100);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [readyToCapture, pdfData]);
 
   const handleGenerate = async () => {

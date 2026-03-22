@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +76,7 @@ export const CreateContactDialog = ({
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const { searchCepData, isLoadingCep } = useCepSearch();
+  const queryClient = useQueryClient();
   
   const [saving, setSaving] = useState(false);
   
@@ -250,6 +252,12 @@ export const CreateContactDialog = ({
       });
 
       if (error) throw error;
+
+      // Invalidate all relevant caches so panels update reactively
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-chats'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
 
       toast({ title: 'Contato criado com sucesso!' });
       onSuccess();
