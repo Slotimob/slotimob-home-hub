@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Home, DollarSign, Bed, Bath, Car, Square, Upload, Share2, Eye, Copy, Download } from 'lucide-react';
+import { Home, DollarSign, Bed, Bath, Car, Square, Upload, Share2, Eye } from 'lucide-react';
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
 import { ImportUnitsDialog } from '@/components/ImportUnitsDialog';
@@ -35,14 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { generatePropertyPDF, buildPDFDataFromStandalone } from '@/utils/propertyPdfGenerator';
 
 import { RealEstateKanbanView } from '@/components/units/RealEstateKanbanView';
 
@@ -163,38 +156,6 @@ const RealEstate = () => {
     setViewMode(mode);
     localStorage.setItem('real-estate-view-mode', mode);
   }, []);
-
-  const handleCopyLink = (unit: RealEstateUnit, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    const link = `${window.location.origin}/imovel/${unit.id}`;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: 'Link copiado!',
-      description: 'O link do imóvel foi copiado para a área de transferência.',
-    });
-  };
-
-  const handleGeneratePDF = (unit: RealEstateUnit, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    try {
-      toast({
-        title: 'Gerando PDF...',
-        description: 'Aguarde enquanto criamos a apresentação.',
-      });
-      const pdfData = buildPDFDataFromStandalone(unit);
-      generatePropertyPDF(pdfData);
-      toast({
-        title: 'PDF gerado com sucesso!',
-        description: 'O arquivo foi baixado automaticamente.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao gerar PDF',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -655,6 +616,26 @@ const RealEstate = () => {
                                     className="h-7 w-7"
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+                                    }}
+                                  >
+                                    <Share2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                {!isMobile && (
+                                  <TooltipContent>
+                                    <p>Proposta</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       setSelectedUnit(unit);
                                     }}
                                   >
@@ -667,28 +648,6 @@ const RealEstate = () => {
                                   </TooltipContent>
                                 )}
                               </Tooltip>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <Share2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={(e) => handleCopyLink(unit, e as any)}>
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    Copiar Link
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => handleGeneratePDF(unit, e as any)}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Gerar PDF
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -723,28 +682,17 @@ const RealEstate = () => {
                     </Badge>
                     {/* Share button overlay */}
                     <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-8 w-8 shadow-md"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                          <DropdownMenuItem onClick={(e) => handleCopyLink(unit, e as any)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copiar Link
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleGeneratePDF(unit, e as any)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Gerar PDF
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-8 w-8 shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                   <div className="p-4 space-y-3">
