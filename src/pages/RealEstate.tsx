@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { generatePropertyPDF, buildPDFDataFromStandalone } from '@/utils/propertyPdfGenerator';
-import { ShareAssetDialog } from '@/components/ShareAssetDialog';
+
 import { RealEstateKanbanView } from '@/components/units/RealEstateKanbanView';
 
 interface RealEstateUnit {
