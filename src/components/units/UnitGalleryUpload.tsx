@@ -32,6 +32,7 @@ export const UnitGalleryUpload = ({
   maxImages = 20,
   autoSave = true,
   onRefresh,
+  onComplete,
 }: UnitGalleryUploadProps) => {
   const { toast } = useToast();
   const [uploadingImages, setUploadingImages] = useState<UploadingImage[]>([]);
