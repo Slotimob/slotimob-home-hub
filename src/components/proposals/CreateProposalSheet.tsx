@@ -264,15 +264,19 @@ export function CreateProposalSheet({
   useEffect(() => {
     if (!readyToCapture || !pdfData || !templateRef.current) return;
 
-    const captureTimeout = setTimeout(async () => {
+    let cancelled = false;
+
+    const capture = async () => {
       try {
         const element = templateRef.current;
-        if (!element) throw new Error('Template element not found');
+        if (!element || cancelled) return;
 
         const pdfBlob = await generatePropertyPDF(pdfData, agentInfo, {
           returnBlob: true,
           templateElement: element,
         });
+
+        if (cancelled) return;
 
         let pdfUrl: string | null = null;
         if (pdfBlob) {
@@ -327,9 +331,11 @@ export function CreateProposalSheet({
         setReadyToCapture(false);
         setPdfData(null);
       }
-    }, 1500); // wait for images to load in the hidden template
+    };
 
-    return () => clearTimeout(captureTimeout);
+    // Small delay to let React render the template DOM before capturing
+    const timer = setTimeout(capture, 100);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [readyToCapture, pdfData]);
 
   const handleGenerate = async () => {
