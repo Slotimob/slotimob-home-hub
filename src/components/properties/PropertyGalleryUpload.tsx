@@ -19,8 +19,9 @@ interface PropertyGalleryUploadProps {
   images: string[];
   onImagesChange: (images: string[]) => void;
   maxImages?: number;
-  autoSave?: boolean; // If true, saves directly to database on change
-  onRefresh?: () => Promise<void>; // Callback to refresh parent data after save
+  autoSave?: boolean;
+  onRefresh?: () => Promise<void>;
+  onComplete?: () => void;
 }
 
 export const PropertyGalleryUpload = ({
