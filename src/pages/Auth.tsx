@@ -232,7 +232,7 @@ const Auth = () => {
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({
-    email: '', password: '', fullName: '', phone: '', companyName: '', creci: '',
+    email: '', password: '', confirmPassword: '', fullName: '', phone: '', companyName: '', creci: '',
     personType: 'pf' as 'pf' | 'pj', cpf: '', cnpj: '', businessName: ''
   });
   const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('complete_profile') === 'true');
