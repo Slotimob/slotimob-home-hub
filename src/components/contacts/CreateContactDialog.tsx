@@ -69,6 +69,7 @@ export const CreateContactDialog = ({
   onOpenChange,
   onSuccess,
   defaultCategory,
+  initialPhone,
 }: CreateContactDialogProps) => {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
