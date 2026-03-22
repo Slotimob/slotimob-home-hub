@@ -167,6 +167,7 @@ export const SIDEBAR_ITEMS = [
     items: [
       { title: 'Aluguéis', url: '/gestao/alugueis' },
       { title: 'Contratos', url: '/gestao/contratos' },
+      { title: 'Propostas', url: '/gestao/propostas' },
       { title: 'Gerencial', url: '/gestao/gerencial' },
       { title: 'Afazeres', url: '/gestao/afazeres' },
     ],
