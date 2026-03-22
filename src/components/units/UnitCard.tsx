@@ -55,6 +55,7 @@ const formatCurrency = (value: number | null | undefined): string => {
 };
 
 export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: UnitCardProps) {
+  const navigate = useNavigate();
   const shouldShowRent = unit.status === 'rented' || unit.intent_type === 'rent' || unit.intent_type === 'both';
 
   return (
