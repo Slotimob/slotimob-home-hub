@@ -523,7 +523,7 @@ const Auth = () => {
       if (data.user && !data.session) {
         setPendingVerificationEmail(signupForm.email);
         setShowVerificationMessage(true);
-        setSignupForm({ email: '', password: '', fullName: '', phone: '', companyName: '', creci: '', personType: 'pf', cpf: '', cnpj: '', businessName: '' });
+        setSignupForm({ email: '', password: '', confirmPassword: '', fullName: '', phone: '', companyName: '', creci: '', personType: 'pf', cpf: '', cnpj: '', businessName: '' });
         setAcceptedTerms(false);
       } else {
         if (inviteToken) await handleAcceptInvite();
