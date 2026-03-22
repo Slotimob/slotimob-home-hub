@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   Mail, Phone, Tag, Plus, Calendar, StickyNote,
   PhoneCall, FileText, MessageCircle, TrendingUp, Loader2,
-  UserPlus,
+  UserPlus, ArrowDown, FileSignature, CheckCircle2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -48,15 +48,22 @@ function getActivityIcon(type: string) {
     case 'visit': case 'Visita': return <Calendar className="h-3.5 w-3.5 text-primary" />;
     case 'note': case 'Anotação': return <StickyNote className="h-3.5 w-3.5 text-amber-500" />;
     case 'call': case 'Ligação': return <PhoneCall className="h-3.5 w-3.5 text-green-500" />;
-    case 'proposal': case 'Proposta': return <FileText className="h-3.5 w-3.5 text-blue-500" />;
+    case 'proposal': case 'Proposta': return <FileSignature className="h-3.5 w-3.5 text-blue-500" />;
     case 'message': case 'Mensagem': return <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />;
     default: return <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />;
   }
 }
 
-/** Check if a string looks like a raw phone number (digits only, possibly with +) */
 function isPhoneNumber(str: string): boolean {
   return /^[\d+\s()-]+$/.test(str.trim());
+}
+
+function StepArrow() {
+  return (
+    <div className="flex justify-center py-1">
+      <ArrowDown className="h-4 w-4 text-muted-foreground/40" />
+    </div>
+  );
 }
 
 export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated }: CrmContextPanelProps) {
@@ -71,7 +78,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
   const [directDeal, setDirectDeal] = useState<any>(null);
 
-  // If conversation has deal_id, always fetch it directly as backup
   useEffect(() => {
     if (!dealId) {
       setDirectDeal(null);
@@ -87,7 +93,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
   const activeDeal = deals.length > 0 ? deals[0] : directDeal;
 
-  // Identity gate: contact must have a real name (not just phone digits)
   const contactName = (contact?.name || (conversation as any)?.contacts?.name || conversation?.contact_name || '').trim();
   const hasValidName = !!contactName && !isPhoneNumber(contactName);
 
@@ -192,84 +197,142 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
         <Separator />
 
-        {/* Progressive disclosure: Contact -> Deal -> Proposal */}
-        <div className="space-y-2">
-          {!contact && !contactLoading && (
-            <div className="p-3 rounded-lg border border-dashed border-muted-foreground/30 text-center space-y-2">
-              <UserPlus className="h-5 w-5 mx-auto text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">
-                Crie o contato primeiro para desbloquear a criação de negócios e propostas.
-              </p>
+        {/* === VERTICAL FUNNEL === */}
+        <div className="space-y-0">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Esteira Comercial
+          </p>
+
+          {/* STEP 1: Contact */}
+          <div className="flex items-start gap-3">
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${contact ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+              {contact ? <CheckCircle2 className="h-4 w-4" /> : <span className="text-xs font-bold">1</span>}
             </div>
-          )}
+            <div className="flex-1 min-w-0">
+              {contact ? (
+                <div className="p-2 rounded-md bg-green-50 border border-green-200">
+                  <p className="text-xs font-medium text-green-800">{contact.name || 'Contato criado'}</p>
+                  <p className="text-[10px] text-green-600">Contato vinculado</p>
+                </div>
+              ) : (
+                <div className="p-2 rounded-md border border-dashed border-muted-foreground/30">
+                  <p className="text-xs font-medium text-muted-foreground">Criar Contato</p>
+                  <p className="text-[10px] text-muted-foreground">Primeiro passo para iniciar o funil</p>
+                </div>
+              )}
+            </div>
+          </div>
 
-          {hasValidName ? (
-            <Button
-              variant={activeDeal ? 'outline' : 'default'}
-              className={`w-full gap-2 ${activeDeal ? 'border-dashed border-primary/40 text-primary hover:bg-primary/5' : ''}`}
-              onClick={() => {
-                if (onCreateDeal) {
-                  onCreateDeal();
-                } else {
-                  setIsDealDialogOpen(true);
-                }
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              {activeDeal ? 'Nova Negociação' : 'Criar Negociação'}
-            </Button>
-          ) : contact ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full gap-2 border-dashed opacity-60 cursor-not-allowed"
-                  disabled
-                >
-                  <Plus className="h-4 w-4" />
-                  Criar Negociação
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Cadastre o nome do contato antes de criar uma negociação.</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : null}
+          <StepArrow />
 
-          {/* Proposal button - only when deal exists */}
-          {activeDeal && (
-            <Button
-              variant="outline"
-              className="w-full gap-2 border-primary/40 text-primary hover:bg-primary/5"
-              onClick={() => {
-                const unitId = activeDeal.unit_id || activeDeal.unit?.id;
-                const params = new URLSearchParams({ create: 'true' });
-                if (unitId) params.set('unitId', unitId);
-                navigate(`/gestao/propostas?${params.toString()}`);
-              }}
-            >
-              <FileText className="h-4 w-4" />
-              Gerar Proposta
-            </Button>
+          {/* STEP 2: Deal */}
+          <div className="flex items-start gap-3">
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${activeDeal ? 'bg-green-100 text-green-600' : contact ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+              {activeDeal ? <CheckCircle2 className="h-4 w-4" /> : <span className="text-xs font-bold">2</span>}
+            </div>
+            <div className="flex-1 min-w-0">
+              {activeDeal ? (
+                <div className="p-2 rounded-md bg-green-50 border border-green-200">
+                  <p className="text-xs font-medium text-green-800">
+                    {activeDeal.property?.name || 'Negociação'}
+                    {activeDeal.unit?.title ? ` - ${activeDeal.unit.title}` : ''}
+                  </p>
+                  <p className="text-[10px] text-green-600">
+                    {activeDeal.custom_stage?.name || STAGE_LABELS[activeDeal.stage] || activeDeal.stage}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 h-8 text-xs"
+                    disabled={!contact || !hasValidName}
+                    onClick={() => {
+                      if (onCreateDeal) {
+                        onCreateDeal();
+                      } else {
+                        setIsDealDialogOpen(true);
+                      }
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Criar Negociação
+                  </Button>
+                  {!contact && (
+                    <p className="text-[10px] text-muted-foreground mt-1">(Requer um contato criado)</p>
+                  )}
+                  {contact && !hasValidName && (
+                    <p className="text-[10px] text-muted-foreground mt-1">(Cadastre o nome do contato)</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <StepArrow />
+
+          {/* STEP 3: Proposal */}
+          <div className="flex items-start gap-3">
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${activeDeal ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+              <span className="text-xs font-bold">3</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <Button
+                variant={activeDeal ? 'default' : 'outline'}
+                size="sm"
+                className="w-full gap-2 h-8 text-xs"
+                disabled={!activeDeal}
+                onClick={() => {
+                  const unitId = activeDeal?.unit_id || activeDeal?.unit?.id;
+                  const params = new URLSearchParams({ create: 'true' });
+                  if (unitId) params.set('unitId', unitId);
+                  navigate(`/gestao/propostas?${params.toString()}`);
+                }}
+              >
+                <FileSignature className="h-3.5 w-3.5" />
+                Gerar e Enviar Proposta
+              </Button>
+              {!activeDeal && (
+                <p className="text-[10px] text-muted-foreground mt-1">(Requer uma negociação ativa)</p>
+              )}
+            </div>
+          </div>
+
+          {/* Extra: New Deal button when deal already exists */}
+          {activeDeal && hasValidName && (
+            <div className="pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full gap-2 h-7 text-[10px] text-muted-foreground"
+                onClick={() => {
+                  if (onCreateDeal) {
+                    onCreateDeal();
+                  } else {
+                    setIsDealDialogOpen(true);
+                  }
+                }}
+              >
+                <Plus className="h-3 w-3" />
+                Nova Negociação
+              </Button>
+            </div>
           )}
         </div>
 
-        {/* Active Deal Section */}
+        {/* Active Deal Details */}
         {dealsLoading ? (
           <Skeleton className="h-24 w-full rounded-lg" />
         ) : activeDeal ? (
           <div>
+            <Separator className="mb-3" />
             <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
               <TrendingUp className="h-4 w-4" />
               Negociação Atual
             </h4>
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-3 space-y-2">
-                <p className="font-medium text-sm text-foreground">
-                  {activeDeal.property?.name || 'Negociação'}
-                  {activeDeal.unit?.title ? ` - ${activeDeal.unit.title}` : ''}
-                </p>
-
                 {/* Stage Selector */}
                 <div className="space-y-1">
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Estágio</span>

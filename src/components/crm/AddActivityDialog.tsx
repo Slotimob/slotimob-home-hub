@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Phone, Mail, MessageSquare, Calendar as CalendarIcon, MapPin, FileText, Loader2, Clock } from 'lucide-react';
+import { Phone, Mail, MessageSquare, Calendar as CalendarIcon, MapPin, FileText, Loader2, Clock, FileSignature } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ const activityTypes = [
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
   { value: 'meeting', label: 'Reunião', icon: CalendarIcon },
   { value: 'visit', label: 'Visita', icon: MapPin },
+  { value: 'proposal', label: 'Proposta', icon: FileSignature },
   { value: 'note', label: 'Nota', icon: FileText },
 ];
 
