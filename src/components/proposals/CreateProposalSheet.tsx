@@ -249,8 +249,11 @@ export function CreateProposalSheet({
         setIntroMessage(aiText.trim());
         toast({ title: 'Texto gerado com IA!' });
       } else {
-        console.warn('AI response could not be parsed:', rawResponse);
-        toast({ title: 'IA não retornou texto', description: 'Tente novamente ou escreva manualmente.', variant: 'destructive' });
+        console.error('AI Payload Error — could not parse response:', rawResponse);
+        // Fallback suave
+        const fallback = `Confira esta excelente oportunidade que selecionei especialmente para você. Um imóvel com características únicas que atendem perfeitamente às suas necessidades.\n\nEste é um investimento seguro e com alto potencial de valorização, localizado em uma região privilegiada com toda a infraestrutura que você e sua família merecem.\n\nFicarei feliz em agendar uma visita para que você possa conhecer pessoalmente todos os diferenciais deste imóvel.`;
+        setIntroMessage(fallback);
+        toast({ title: 'Texto padrão inserido', description: 'A IA não retornou texto. Edite a mensagem conforme desejar.' });
       }
     } catch (err: any) {
       console.error('AI generation error:', err);

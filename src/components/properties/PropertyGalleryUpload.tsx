@@ -333,6 +333,20 @@ export const PropertyGalleryUpload = ({
           )}
         </div>
       )}
+
+      {/* Save / Complete button */}
+      {onComplete && images.length > 0 && (
+        <Button
+          type="button"
+          className="w-full mt-2"
+          onClick={() => {
+            toast({ title: 'Galeria atualizada!' });
+            onComplete();
+          }}
+        >
+          Concluir Galeria
+        </Button>
+      )}
     </div>
   );
 };

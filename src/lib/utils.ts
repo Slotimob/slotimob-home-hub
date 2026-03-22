@@ -16,3 +16,13 @@ export function formatPhoneForWhatsApp(phone: string): string {
   
   return cleaned;
 }
+
+export function normalizePhone(phone?: string | null): string {
+  if (!phone) return '';
+  let cleaned = phone.replace(/\D/g, '');
+  // Remove Brazil country code for comparison
+  if (cleaned.startsWith('55') && cleaned.length > 11) {
+    cleaned = cleaned.substring(2);
+  }
+  return cleaned;
+}
