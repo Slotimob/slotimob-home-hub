@@ -73,6 +73,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: 'Aluguéis', url: '/gestao/alugueis', icon: HeartPulse },
       { title: 'Contratos', url: '/gestao/contratos', icon: FileSignature },
+      { title: 'Propostas', url: '/gestao/propostas', icon: FileText },
       { title: 'Gerencial', url: '/gestao/gerencial', icon: Briefcase },
       { title: 'Afazeres', url: '/gestao/afazeres', icon: CheckSquare },
     ],
@@ -166,6 +167,7 @@ export const SIDEBAR_ITEMS = [
     items: [
       { title: 'Aluguéis', url: '/gestao/alugueis' },
       { title: 'Contratos', url: '/gestao/contratos' },
+      { title: 'Propostas', url: '/gestao/propostas' },
       { title: 'Gerencial', url: '/gestao/gerencial' },
       { title: 'Afazeres', url: '/gestao/afazeres' },
     ],

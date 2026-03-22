@@ -106,6 +106,8 @@ export interface PDFAssetData {
   title: string;
   subtitle?: string;
   financingSimulation?: FinancingSimulation | null;
+  leadName?: string | null;
+  introductionMessage?: string | null;
 }
 
 /**
@@ -491,6 +493,15 @@ const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin:
   doc.text(titleLines, margin, y);
   y += titleLines.length * 8 + 4;
   
+  // Lead name (personalized proposal)
+  if (data.leadName) {
+    doc.setFontSize(12);
+    doc.setTextColor(...BRAND_GREEN);
+    doc.setFont('helvetica', 'bold');
+    doc.text(normalizeText(`Proposta exclusiva para ${data.leadName}`), margin, y);
+    y += 8;
+  }
+
   // Location
   const locationParts = [unit.neighborhood, unit.city, unit.state].filter(Boolean);
   if (locationParts.length > 0) {
@@ -546,7 +557,25 @@ const addCoverPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, margin:
 const addDetailsPage = (doc: jsPDF, data: PDFAssetData, pageWidth: number, pageHeight: number, margin: number) => {
   const { unit, parentProperty } = data;
   let y = 20;
-  
+
+  // Introduction message (personalized)
+  if (data.introductionMessage) {
+    doc.setFillColor(245, 250, 255);
+    doc.roundedRect(margin, y, pageWidth - margin * 2, 10, 2, 2, 'F');
+    doc.setFontSize(11);
+    doc.setTextColor(...BRAND_BLUE);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MENSAGEM DO CORRETOR', margin + 5, y + 7);
+    y += 15;
+    doc.setFontSize(10);
+    doc.setTextColor(...GRAY_DARK);
+    doc.setFont('helvetica', 'italic');
+    const msgLines = doc.splitTextToSize(normalizeText(data.introductionMessage), pageWidth - margin * 2);
+    doc.text(msgLines, margin, y);
+    y += msgLines.length * 5 + 10;
+    doc.setFont('helvetica', 'normal');
+  }
+
   // Section: About the Property
   doc.setFillColor(...BRAND_BLUE);
   doc.roundedRect(margin, y, pageWidth - margin * 2, 10, 2, 2, 'F');

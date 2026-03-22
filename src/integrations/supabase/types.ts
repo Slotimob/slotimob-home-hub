@@ -2636,6 +2636,73 @@ export type Database = {
           },
         ]
       }
+      proposals: {
+        Row: {
+          broker_id: string
+          created_at: string
+          id: string
+          include_cover: boolean
+          include_financing: boolean
+          introduction_message: string | null
+          lead_name: string | null
+          pdf_url: string | null
+          property_id: string | null
+          status: string
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string
+          id?: string
+          include_cover?: boolean
+          include_financing?: boolean
+          introduction_message?: string | null
+          lead_name?: string | null
+          pdf_url?: string | null
+          property_id?: string | null
+          status?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string
+          id?: string
+          include_cover?: boolean
+          include_financing?: boolean
+          introduction_message?: string | null
+          lead_name?: string | null
+          pdf_url?: string | null
+          property_id?: string | null
+          status?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quick_messages: {
         Row: {
           broker_id: string

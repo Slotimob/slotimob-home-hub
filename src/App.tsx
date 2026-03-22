@@ -63,6 +63,7 @@ import AdminCockpit from "./pages/AdminCockpit";
 import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
 import AIChat from "./pages/AIChat";
+import Proposals from "./pages/Proposals";
 
 const queryClient = new QueryClient();
 
@@ -130,6 +131,7 @@ const App = () => (
               <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosEmGestao /></RequireFeature>)} />
               <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
               <Route path="/gestao/gerencial" element={guarded(<RequireFeature feature="asset_management"><GerencialGestao /></RequireFeature>)} />
+              <Route path="/gestao/propostas" element={guarded(<Proposals />)} />
               <Route path="/schedule" element={guarded(<Schedule />)} />
               <Route path="/portals" element={guarded(<Portals />)} />
               <Route path="/reports" element={guarded(<RequireFeature feature="reports_overview"><Reports /></RequireFeature>)} />
