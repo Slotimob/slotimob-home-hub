@@ -150,23 +150,28 @@ export function buildPDFDataFromStandalone(unit: any): PDFAssetData {
   };
 }
 
-// ─── HTML2Canvas → PDF Generator ───────────────────────────
+// ─── Image Preloading via decode() ─────────────────────────
 
-/**
- * Takes a rendered HTML element (the ProposalPdfTemplate) and converts it
- * to a multi-page A4 PDF using html2canvas + jsPDF.
- */
-/** Wait for all images inside an element to finish loading */
-async function waitForImages(element: HTMLElement, timeoutMs = 8000): Promise<void> {
+async function waitForImages(element: HTMLElement, timeoutMs = 10000): Promise<void> {
   const images = Array.from(element.querySelectorAll('img'));
   if (images.length === 0) return;
 
-  const promises = images.map(img => {
-    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-    return new Promise<void>((resolve) => {
-      img.onload = () => resolve();
-      img.onerror = () => resolve(); // Don't block on broken images
-    });
+  const promises = images.map(async (img) => {
+    try {
+      if (img.complete && img.naturalWidth > 0) {
+        await img.decode();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        img.onload = async () => {
+          try { await img.decode(); } catch {}
+          resolve();
+        };
+        img.onerror = () => resolve();
+      });
+    } catch {
+      // decode() can fail for broken images — non-blocking
+    }
   });
 
   await Promise.race([
@@ -174,9 +179,11 @@ async function waitForImages(element: HTMLElement, timeoutMs = 8000): Promise<vo
     new Promise<void>(resolve => setTimeout(resolve, timeoutMs)),
   ]);
 
-  // Small extra delay for browser paint
-  await new Promise(resolve => setTimeout(resolve, 300));
+  // Extra paint delay
+  await new Promise(resolve => setTimeout(resolve, 400));
 }
+
+// ─── HTML2Canvas → PDF Generator ───────────────────────────
 
 export async function generatePropertyPDF(
   _data: PDFAssetData,
@@ -189,14 +196,13 @@ export async function generatePropertyPDF(
     return;
   }
 
-  // Wait for all gallery/cover images to load before capturing
+  // Wait for all gallery/cover images to decode before capturing
   await waitForImages(element);
 
   // A4 dimensions in mm
   const A4_W = 210;
   const A4_H = 297;
-  // Template is 794px wide (A4 at 96dpi)
-  const PAGE_HEIGHT_PX = 1123; // A4 page height at 794px width
+  const PAGE_HEIGHT_PX = 1123;
 
   const canvas = await html2canvas(element, {
     scale: 2,
@@ -216,7 +222,6 @@ export async function generatePropertyPDF(
   for (let i = 0; i < numPages; i++) {
     if (i > 0) doc.addPage();
 
-    // Slice the canvas for this page
     const sliceH = Math.min(scaledPageH, totalHeight - i * scaledPageH);
     const pageCanvas = document.createElement('canvas');
     pageCanvas.width = canvas.width;

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +35,7 @@ export const PropertyGalleryUpload = ({
   onRefresh,
   onComplete,
 }: PropertyGalleryUploadProps) => {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [uploadingImages, setUploadingImages] = useState<UploadingImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -334,18 +336,22 @@ export const PropertyGalleryUpload = ({
         </div>
       )}
 
-      {/* Save / Complete button */}
-      {onComplete && images.length > 0 && (
-        <Button
-          type="button"
-          className="w-full mt-2"
-          onClick={() => {
-            toast({ title: 'Galeria atualizada!' });
-            onComplete();
-          }}
-        >
-          Concluir Galeria
-        </Button>
+      {/* Save / Complete button — always visible when there are images */}
+      {images.length > 0 && (
+        <div className="sticky bottom-0 bg-background pt-2 pb-1">
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['properties'] });
+              queryClient.invalidateQueries({ queryKey: ['property'] });
+              toast({ title: 'Galeria atualizada!' });
+              onComplete?.();
+            }}
+          >
+            Salvar Alterações
+          </Button>
+        </div>
       )}
     </div>
   );
