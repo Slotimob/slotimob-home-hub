@@ -35,6 +35,7 @@ const activityTypes = [
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
   { value: 'meeting', label: 'Reunião', icon: CalendarIcon },
   { value: 'visit', label: 'Visita', icon: MapPin },
+  { value: 'proposal', label: 'Proposta', icon: FileSignature },
   { value: 'note', label: 'Nota', icon: FileText },
 ];
 

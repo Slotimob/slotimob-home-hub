@@ -81,9 +81,24 @@ export const useProposals = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       toast({ title: 'Proposta criada!', description: 'A proposta foi salva no histórico.' });
+
+      // Auto-create CRM activity when linked to a deal
+      const linkedDealId = variables.deal_id;
+      if (linkedDealId && effectiveBrokerId) {
+        supabase.from('deal_activities').insert({
+          deal_id: linkedDealId,
+          broker_id: effectiveBrokerId,
+          activity_type: 'proposal',
+          title: 'Proposta comercial gerada',
+          description: `Proposta comercial gerada e enviada para o cliente${variables.lead_name ? ` (${variables.lead_name})` : ''}.`,
+        }).then(({ error }) => {
+          if (error) console.warn('Failed to create deal activity for proposal:', error);
+          else queryClient.invalidateQueries({ queryKey: ['deal-activities'] });
+        });
+      }
     },
     onError: (error: any) => {
       toast({ title: 'Erro ao criar proposta', description: error.message, variant: 'destructive' });

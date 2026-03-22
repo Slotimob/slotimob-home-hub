@@ -193,10 +193,26 @@ export function CreateProposalSheet({
 
       if (error) throw error;
 
-      const aiText = typeof data === 'string' ? data : data?.content || data?.message || '';
-      if (aiText) {
-        setIntroMessage(aiText.trim());
+      // Robust extraction: handle multiple response shapes from ai-chat
+      let aiText = '';
+      if (typeof data === 'string') {
+        aiText = data;
+      } else if (data) {
+        aiText = data.content || data.message || data.response || data.text || data.reply || '';
+        // Handle nested response (e.g. { choices: [{ message: { content: "..." } }] })
+        if (!aiText && data.choices && Array.isArray(data.choices) && data.choices[0]) {
+          aiText = data.choices[0].message?.content || data.choices[0].text || '';
+        }
+      }
+      
+      if (aiText && aiText.trim()) {
+        const cleaned = aiText.trim();
+        setIntroMessage(cleaned);
+        // Force a re-render tick to ensure textarea updates
+        setTimeout(() => setIntroMessage(cleaned), 0);
         toast({ title: 'Texto gerado com IA!' });
+      } else {
+        toast({ title: 'IA não retornou texto', description: 'Tente novamente ou escreva manualmente.', variant: 'destructive' });
       }
     } catch (err: any) {
       console.error('AI generation error:', err);
