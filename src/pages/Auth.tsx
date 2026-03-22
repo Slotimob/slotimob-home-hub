@@ -433,6 +433,7 @@ const Auth = () => {
     const result = signupSchema.safeParse({
       email: signupForm.email,
       password: signupForm.password,
+      confirmPassword: signupForm.confirmPassword,
       fullName: signupForm.fullName,
       phone: signupForm.phone,
       personType: signupForm.personType,
