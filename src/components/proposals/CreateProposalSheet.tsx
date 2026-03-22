@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
-import { useProposals, type CreateProposalInput } from '@/hooks/useProposals';
+import { useProposals, type CreateProposalInput, type Proposal } from '@/hooks/useProposals';
 import { useToast } from '@/hooks/use-toast';
 import {
   Sheet,
@@ -34,6 +34,7 @@ import {
   Image as ImageIcon,
   Building2,
   Sparkles,
+  Wand2,
 } from 'lucide-react';
 import {
   generatePropertyPDF,
@@ -46,6 +47,14 @@ interface CreateProposalSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preSelectedUnitId?: string;
+  /** Pre-fill lead name (e.g. from CRM deal) */
+  initialLeadName?: string;
+  /** Link to a CRM deal */
+  dealId?: string;
+  /** Existing proposal data for editing */
+  editingProposal?: Proposal | null;
+  /** Callback after successful generation with pdf blob */
+  onProposalGenerated?: (pdfBlob: Blob, proposalId: string) => void;
 }
 
 interface UnitOption {
@@ -58,21 +67,32 @@ interface UnitOption {
   cover_image_url: string | null;
 }
 
-export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: CreateProposalSheetProps) {
+export function CreateProposalSheet({
+  open,
+  onOpenChange,
+  preSelectedUnitId,
+  initialLeadName,
+  dealId,
+  editingProposal,
+  onProposalGenerated,
+}: CreateProposalSheetProps) {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
-  const { createProposal } = useProposals();
+  const { createProposal, updateProposal } = useProposals();
   const { toast } = useToast();
 
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   const [selectedUnitId, setSelectedUnitId] = useState('');
   const [leadName, setLeadName] = useState('');
   const [introMessage, setIntroMessage] = useState('');
   const [includeFinancing, setIncludeFinancing] = useState(false);
   const [includeCover, setIncludeCover] = useState(true);
+
+  const isEditing = !!editingProposal;
 
   // Load units
   useEffect(() => {
@@ -103,12 +123,21 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
     load();
   }, [open]);
 
-  // Pre-select unit
+  // Initialize form
   useEffect(() => {
-    if (preSelectedUnitId && open) {
-      setSelectedUnitId(preSelectedUnitId);
+    if (!open) return;
+
+    if (editingProposal) {
+      setSelectedUnitId(editingProposal.unit_id || '');
+      setLeadName(editingProposal.lead_name || '');
+      setIntroMessage(editingProposal.introduction_message || '');
+      setIncludeFinancing(editingProposal.include_financing);
+      setIncludeCover(editingProposal.include_cover);
+    } else {
+      if (preSelectedUnitId) setSelectedUnitId(preSelectedUnitId);
+      if (initialLeadName) setLeadName(initialLeadName);
     }
-  }, [preSelectedUnitId, open]);
+  }, [open, preSelectedUnitId, initialLeadName, editingProposal]);
 
   // Reset on close
   useEffect(() => {
@@ -130,6 +159,52 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
     v
       ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
       : null;
+
+  // AI intro generation
+  const handleGenerateAI = async () => {
+    if (!selectedUnit) {
+      toast({ title: 'Selecione um imóvel primeiro', variant: 'destructive' });
+      return;
+    }
+    setGeneratingAI(true);
+    try {
+      const { data: unitData } = await supabase
+        .from('units')
+        .select('unit_number, property_type, price, area, bedrooms, suites, parking_spots, neighborhood, city, furnished, condition')
+        .eq('id', selectedUnit.id)
+        .single();
+
+      const propertyInfo = unitData
+        ? `Imóvel: ${unitData.unit_number}, Tipo: ${unitData.property_type || 'N/A'}, Preço: R$${unitData.price || 'N/A'}, Área: ${unitData.area || 'N/A'}m², Quartos: ${unitData.bedrooms || 'N/A'}, Suítes: ${unitData.suites || 'N/A'}, Vagas: ${unitData.parking_spots || 'N/A'}, Bairro: ${unitData.neighborhood || 'N/A'}, Cidade: ${unitData.city || 'N/A'}, Mobília: ${unitData.furnished || 'N/A'}, Condição: ${unitData.condition || 'N/A'}`
+        : 'Informações indisponíveis';
+
+      const clientRef = leadName ? ` O nome do cliente é ${leadName}.` : '';
+
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: {
+          messages: [
+            {
+              role: 'user',
+              content: `Escreva uma mensagem de introdução persuasiva e profissional de 3 parágrafos curtos para oferecer este imóvel a um cliente final. Seja elegante, direto e destaque os pontos fortes. Dados do imóvel: ${propertyInfo}.${clientRef} Responda apenas com a mensagem, sem markdown.`,
+            },
+          ],
+        },
+      });
+
+      if (error) throw error;
+
+      const aiText = typeof data === 'string' ? data : data?.content || data?.message || '';
+      if (aiText) {
+        setIntroMessage(aiText.trim());
+        toast({ title: 'Texto gerado com IA!' });
+      }
+    } catch (err: any) {
+      console.error('AI generation error:', err);
+      toast({ title: 'Erro ao gerar texto com IA', description: err.message, variant: 'destructive' });
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!selectedUnit) {
@@ -160,7 +235,7 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
         pdfData = buildPDFDataFromStandalone(unitData);
       }
 
-      // Add financing if enabled
+      // Financing
       if (includeFinancing && selectedUnit.price) {
         const price = selectedUnit.price;
         const downPercent = 20;
@@ -183,17 +258,10 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
         };
       }
 
-      // Add lead name to title if provided
-      if (leadName.trim()) {
-        pdfData.leadName = leadName.trim();
-      }
+      if (leadName.trim()) pdfData.leadName = leadName.trim();
+      if (introMessage.trim()) pdfData.introductionMessage = introMessage.trim();
 
-      // Add introduction message
-      if (introMessage.trim()) {
-        pdfData.introductionMessage = introMessage.trim();
-      }
-
-      // Get agent info
+      // Agent info
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, email, phone')
@@ -206,18 +274,55 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
         phone: profile?.phone || undefined,
       };
 
-      await generatePropertyPDF(pdfData, agent);
+      // Generate PDF as blob for storage upload
+      const pdfBlob = await generatePropertyPDF(pdfData, agent, { returnBlob: true });
 
-      // Save to proposals history
-      await createProposal.mutateAsync({
+      let pdfUrl: string | null = null;
+
+      if (pdfBlob) {
+        // Upload to storage
+        const fileName = `${effectiveBrokerId}/${Date.now()}_proposta.pdf`;
+        const { error: uploadErr } = await supabase.storage
+          .from('proposals')
+          .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from('proposals').getPublicUrl(fileName);
+          pdfUrl = urlData?.publicUrl || null;
+        }
+      }
+
+      // Also trigger download
+      if (pdfBlob) {
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Proposta_${Date.now()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // Save / Update
+      const proposalInput = {
         property_id: selectedUnit.property_id,
         unit_id: selectedUnit.id,
+        deal_id: dealId || (editingProposal as any)?.deal_id || undefined,
         lead_name: leadName.trim() || undefined,
         introduction_message: introMessage.trim() || undefined,
         include_financing: includeFinancing,
         include_cover: includeCover,
-        status: 'draft',
-      });
+        status: 'draft' as const,
+        pdf_url: pdfUrl || undefined,
+      };
+
+      if (isEditing && editingProposal) {
+        await updateProposal.mutateAsync({ ...proposalInput, id: editingProposal.id });
+      } else {
+        const result = await createProposal.mutateAsync(proposalInput);
+        if (pdfBlob && onProposalGenerated && result?.id) {
+          onProposalGenerated(pdfBlob as Blob, result.id);
+        }
+      }
 
       onOpenChange(false);
     } catch (error: any) {
@@ -233,10 +338,12 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
         <SheetHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <SheetTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Nova Proposta Comercial
+            {isEditing ? 'Editar Proposta' : 'Nova Proposta Comercial'}
           </SheetTitle>
           <SheetDescription>
-            Gere uma proposta premium personalizada para o seu cliente.
+            {isEditing
+              ? 'Atualize os dados e regenere o PDF.'
+              : 'Gere uma proposta premium personalizada para o seu cliente.'}
           </SheetDescription>
         </SheetHeader>
 
@@ -305,17 +412,30 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
                 value={leadName}
                 onChange={(e) => setLeadName(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Se preenchido, o nome aparecerá na capa da proposta.
-              </p>
             </div>
 
-            {/* Introduction Message */}
+            {/* Introduction Message + AI Button */}
             <div className="space-y-2">
-              <Label htmlFor="intro-msg" className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-muted-foreground" />
-                Mensagem de Introdução
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="intro-msg" className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  Mensagem de Introdução
+                </Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs h-7"
+                  disabled={generatingAI || !selectedUnit}
+                  onClick={handleGenerateAI}
+                >
+                  {generatingAI ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-3 w-3" />
+                  )}
+                  Gerar com IA
+                </Button>
+              </div>
               <Textarea
                 id="intro-msg"
                 placeholder="Escreva uma mensagem personalizada para o cliente..."
@@ -324,7 +444,7 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
                 rows={4}
               />
               <p className="text-xs text-muted-foreground">
-                Será incluída no topo da proposta, logo após a capa.
+                Será incluída na proposta. Use o botão de IA para gerar automaticamente.
               </p>
             </div>
 
@@ -378,6 +498,7 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
                     {includeFinancing && <li>💰 Com simulação de financiamento</li>}
                     {includeCover && <li>🖼️ Com capa visual</li>}
                     {introMessage && <li>✍️ Com mensagem personalizada</li>}
+                    {dealId && <li>🤝 Vinculada a negociação do CRM</li>}
                   </ul>
                 </div>
               </>
@@ -398,12 +519,12 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
             {generating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Gerando...
+                Criando magia...
               </>
             ) : (
               <>
                 <FileText className="mr-2 h-4 w-4" />
-                Gerar Proposta
+                {isEditing ? 'Atualizar Proposta' : 'Gerar Proposta'}
               </>
             )}
           </Button>
