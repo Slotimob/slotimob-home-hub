@@ -14,10 +14,10 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
 
-    if (!lovableApiKey) {
-      return new Response(JSON.stringify({ error: 'AI gateway not configured' }), {
+    if (!anthropicApiKey) {
+      return new Response(JSON.stringify({ error: 'Serviço de IA não configurado.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -46,7 +46,16 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    const { messages, contactName } = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { messages, contactName, propertyContext } = body;
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: 'messages array is required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -71,6 +80,19 @@ serve(async (req) => {
       content: m.content || `[${m.message_type}]`,
     }));
 
+    // Build property context section
+    let propertySection = '';
+    if (propertyContext) {
+      try {
+        const contextStr = typeof propertyContext === 'string'
+          ? propertyContext
+          : JSON.stringify(propertyContext, null, 2);
+        propertySection = `\n\nDados do imóvel em negociação:\n${contextStr}\n\nUse estas informações para contextualizar sua sugestão de resposta.`;
+      } catch {
+        // Ignore serialization errors
+      }
+    }
+
     const systemPrompt = `Você é um assistente especializado em atendimento imobiliário. Sua tarefa é sugerir uma resposta educada, profissional e persuasiva para o corretor enviar ao cliente via WhatsApp.
 
 Contexto:
@@ -80,20 +102,23 @@ Contexto:
 - Seja conciso (máximo 2-3 parágrafos)
 - Use emojis com moderação
 - Foque em avançar a negociação
+${propertySection}
 
 Responda APENAS com a mensagem sugerida, sem explicações adicionais.`;
 
-    // Call AI gateway
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Call Claude API (same model as ai-chat)
+    const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
+        'x-api-key': anthropicApiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: systemPrompt,
         messages: [
-          { role: 'system', content: systemPrompt },
           ...recentMessages,
           { role: 'user', content: 'Sugira uma resposta profissional para eu enviar ao cliente.' },
         ],
@@ -102,27 +127,24 @@ Responda APENAS com a mensagem sugerida, sem explicações adicionais.`;
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
+      const errorText = await aiResponse.text();
+      console.error('Claude API error:', status, errorText);
+
       if (status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limited, tente novamente em instantes.' }), {
           status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: 'Créditos de IA esgotados na plataforma.' }), {
-          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      console.error('AI gateway error:', status, await aiResponse.text());
       return new Response(JSON.stringify({ error: 'Erro ao gerar sugestão' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const aiData = await aiResponse.json();
-    const suggestion = aiData.choices?.[0]?.message?.content || '';
+    // Claude returns content as array of content blocks
+    const suggestion = aiData.content?.[0]?.text || aiData.choices?.[0]?.message?.content || '';
 
     // Deduct 1 AI credit
-    // First try bonus credits, then plan credits
     const { data: bonusCredits } = await supabaseAdmin
       .from('ai_credits')
       .select('id, credits_remaining')
@@ -138,7 +160,6 @@ Responda APENAS com a mensagem sugerida, sem explicações adicionais.`;
         .update({ credits_remaining: bonusCredits[0].credits_remaining - 1 })
         .eq('id', bonusCredits[0].id);
     } else {
-      // Deduct from plan credits
       await supabaseAdmin
         .from('subscriptions')
         .update({ ai_credits_used: (balance.used || 0) + 1 })

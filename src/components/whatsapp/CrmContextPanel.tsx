@@ -4,15 +4,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Mail, Phone, Tag, Plus, Calendar, StickyNote,
   PhoneCall, FileText, MessageCircle, TrendingUp, Loader2,
-  UserPlus, ArrowDown, FileSignature, CheckCircle2, Link2,
+  UserPlus, ArrowDown, FileSignature, CheckCircle2, Link2, UserX, Search,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -21,6 +23,7 @@ import { useContactDeals, useContactActivities } from '@/hooks/useWhatsApp';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { normalizePhone } from '@/lib/utils';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { CreateDealFromChatDialog } from './CreateDealFromChatDialog';
 import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
 
@@ -71,6 +74,7 @@ function StepArrow() {
 
 export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated, onContactCreated }: CrmContextPanelProps) {
   const navigate = useNavigate();
+  const { effectiveBrokerId } = useWorkspace();
   const contactId = contact?.id || conversation?.contact_id || null;
   const dealId = (conversation as any)?.deal_id || null;
   const [dealRefetchKey, setDealRefetchKey] = useState(0);
@@ -82,48 +86,75 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [directDeal, setDirectDeal] = useState<any>(null);
 
-  // ── Auto-identify contact by phone ──
-  const [suggestedContact, setSuggestedContact] = useState<any>(null);
+  // ── Manual contact linking via Sheet ──
+  const [isLinkingSheetOpen, setIsLinkingSheetOpen] = useState(false);
   const [linkingContact, setLinkingContact] = useState(false);
+  const [linkSearchQuery, setLinkSearchQuery] = useState('');
+  const [allContacts, setAllContacts] = useState<any[]>([]);
+  const [contactsLoaded, setContactsLoaded] = useState(false);
 
+  // Load contacts when linking sheet opens
   useEffect(() => {
-    if (contact || !conversation?.contact_phone) {
-      setSuggestedContact(null);
-      return;
-    }
-    const normalized = normalizePhone(conversation.contact_phone);
-    if (!normalized || normalized.length < 8) return;
+    if (!isLinkingSheetOpen || contactsLoaded) return;
+    if (!effectiveBrokerId) return;
 
     supabase
       .from('contacts')
-      .select('id, name, phone, email')
-      .or(`phone.ilike.%${normalized.slice(-8)}%,whatsapp.ilike.%${normalized.slice(-8)}%`)
-      .limit(1)
-      .maybeSingle()
+      .select('id, name, phone, email, whatsapp')
+      .eq('broker_id', effectiveBrokerId)
+      .order('name')
+      .limit(500)
       .then(({ data }) => {
-        if (data && normalizePhone(data.phone) === normalized) {
-          setSuggestedContact(data);
-        }
+        setAllContacts(data || []);
+        setContactsLoaded(true);
       });
-  }, [contact, conversation?.contact_phone]);
+  }, [isLinkingSheetOpen, effectiveBrokerId, contactsLoaded]);
 
-  const handleLinkSuggestedContact = useCallback(async () => {
-    if (!suggestedContact || !conversation?.id) return;
+  // Filter contacts: phone match suggestions + text search
+  const conversationPhone = normalizePhone(conversation?.contact_phone);
+  const filteredContacts = allContacts.filter(c => {
+    // Text search filter
+    if (linkSearchQuery) {
+      const q = linkSearchQuery.toLowerCase();
+      const nameMatch = c.name?.toLowerCase().includes(q);
+      const phoneMatch = c.phone?.includes(q);
+      const emailMatch = c.email?.toLowerCase().includes(q);
+      return nameMatch || phoneMatch || emailMatch;
+    }
+    // Default: show phone matches first, then all
+    return true;
+  });
+
+  // Sort: phone-matching contacts first
+  const sortedContacts = [...filteredContacts].sort((a, b) => {
+    const aMatch = normalizePhone(a.phone) === conversationPhone || normalizePhone(a.whatsapp) === conversationPhone;
+    const bMatch = normalizePhone(b.phone) === conversationPhone || normalizePhone(b.whatsapp) === conversationPhone;
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return 0;
+  }).slice(0, 20);
+
+  const phoneMatchCount = allContacts.filter(c =>
+    normalizePhone(c.phone) === conversationPhone || normalizePhone(c.whatsapp) === conversationPhone
+  ).length;
+
+  const handleLinkContact = useCallback(async (selectedContact: any) => {
+    if (!selectedContact?.id || !conversation?.id) return;
     setLinkingContact(true);
     try {
       await supabase
         .from('whatsapp_conversations')
-        .update({ contact_id: suggestedContact.id, contact_name: suggestedContact.name })
+        .update({ contact_id: selectedContact.id, contact_name: selectedContact.name })
         .eq('id', conversation.id);
       toast({ title: 'Contato vinculado com sucesso!' });
+      setIsLinkingSheetOpen(false);
       onContactCreated?.();
-      setSuggestedContact(null);
     } catch (e: any) {
       toast({ title: 'Erro ao vincular', description: e.message, variant: 'destructive' });
     } finally {
       setLinkingContact(false);
     }
-  }, [suggestedContact, conversation, toast, onContactCreated]);
+  }, [conversation, toast, onContactCreated]);
 
   useEffect(() => {
     if (!dealId) {
@@ -143,7 +174,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const contactName = (contact?.name || (conversation as any)?.contacts?.name || conversation?.contact_name || '').trim();
   const hasValidName = !!contactName && !isPhoneNumber(contactName);
 
-  // Extract phone for CreateContactDialog
   const contactPhone = contact?.phone || conversation?.contact_phone || '';
 
   const handleStageChange = useCallback(async (newStage: string) => {
@@ -195,7 +225,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
     onContactCreated?.();
   }, [toast, onContactCreated, conversation]);
 
-  // Save deal_id to conversation when a deal is created
   const handleDealCreated = useCallback(async (newDealId: string, cId: string) => {
     if (conversation?.id && newDealId) {
       try {
@@ -283,24 +312,23 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           </>
         )}
 
-        {/* Suggested contact auto-identification */}
-        {!contact && suggestedContact && (
-          <div className="p-3 rounded-lg border border-amber-200 bg-amber-50">
-            <p className="text-xs font-medium text-amber-800 mb-1.5">📌 Contato Identificado</p>
-            <p className="text-xs text-amber-700 mb-2">
-              <strong>{suggestedContact.name}</strong> ({suggestedContact.phone}) já existe no CRM.
-            </p>
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full h-7 text-xs gap-1.5"
-              disabled={linkingContact}
-              onClick={handleLinkSuggestedContact}
-            >
-              {linkingContact ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2 className="h-3 w-3" />}
-              Vincular a esta conversa
-            </Button>
-          </div>
+        {/* Unlinked contact banner */}
+        {!contact && !contactLoading && (
+          <button
+            onClick={() => {
+              setContactsLoaded(false);
+              setLinkSearchQuery('');
+              setIsLinkingSheetOpen(true);
+            }}
+            className="w-full flex items-center gap-2.5 p-3 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors text-left"
+          >
+            <UserX className="h-4 w-4 text-amber-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-amber-800">Contato não identificado</p>
+              <p className="text-[10px] text-amber-600">Toque para vincular a um contato existente</p>
+            </div>
+            <Link2 className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+          </button>
         )}
 
         <Separator />
@@ -450,7 +478,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
             </h4>
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-3 space-y-2">
-                {/* Stage Selector */}
                 <div className="space-y-1">
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Estágio</span>
                   <Select
@@ -559,13 +586,98 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
         />
       )}
 
-      {/* Create Contact Dialog - opens as modal over WhatsApp panel */}
       <CreateContactDialog
         open={isCreateContactOpen}
         onOpenChange={setIsCreateContactOpen}
         onSuccess={handleContactCreated}
         initialPhone={contactPhone}
       />
+
+      {/* Manual Contact Linking Sheet */}
+      <Sheet open={isLinkingSheetOpen} onOpenChange={setIsLinkingSheetOpen}>
+        <SheetContent side="right" className="w-[340px] sm:w-[400px]">
+          <SheetHeader>
+            <SheetTitle className="text-base">Vincular Contato</SheetTitle>
+            <SheetDescription className="text-xs">
+              Selecione um contato existente para vincular a esta conversa.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-4 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, telefone ou e-mail..."
+                value={linkSearchQuery}
+                onChange={e => setLinkSearchQuery(e.target.value)}
+                className="pl-9 h-9 text-sm"
+              />
+            </div>
+
+            {phoneMatchCount > 0 && !linkSearchQuery && (
+              <p className="text-[10px] text-amber-600 font-medium">
+                📌 {phoneMatchCount} contato{phoneMatchCount > 1 ? 's' : ''} com telefone correspondente
+              </p>
+            )}
+
+            <ScrollArea className="h-[calc(100vh-260px)]">
+              <div className="space-y-1 pr-2">
+                {!contactsLoaded ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : sortedContacts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-8">
+                    Nenhum contato encontrado.
+                  </p>
+                ) : (
+                  sortedContacts.map(c => {
+                    const isMatch = normalizePhone(c.phone) === conversationPhone || normalizePhone(c.whatsapp) === conversationPhone;
+                    return (
+                      <div
+                        key={c.id}
+                        className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${isMatch ? 'border-amber-200 bg-amber-50' : 'border-transparent hover:bg-muted/50'}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {c.phone || c.email || '—'}
+                            {isMatch && <span className="ml-1 text-amber-600 font-medium">• Telefone correspondente</span>}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={isMatch ? 'default' : 'outline'}
+                          className="h-7 text-xs px-3 flex-shrink-0"
+                          disabled={linkingContact}
+                          onClick={() => handleLinkContact(c)}
+                        >
+                          {linkingContact ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2 className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+
+            <Separator />
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 text-xs"
+              onClick={() => {
+                setIsLinkingSheetOpen(false);
+                setIsCreateContactOpen(true);
+              }}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Criar novo contato
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </ScrollArea>
   );
 }
