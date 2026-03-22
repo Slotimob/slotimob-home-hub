@@ -76,6 +76,7 @@ export const CreateContactDialog = ({
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const { searchCepData, isLoadingCep } = useCepSearch();
+  const queryClient = useQueryClient();
   
   const [saving, setSaving] = useState(false);
   
