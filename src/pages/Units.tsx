@@ -725,8 +725,7 @@ const Units = () => {
               units={paginatedUnits}
               onUnitClick={setSelectedUnit}
               onShareClick={(unit) => {
-                setUnitToShare(unit);
-                setIsShareDialogOpen(true);
+                navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
               }}
               showProperty={isAllUnitsView}
             />
