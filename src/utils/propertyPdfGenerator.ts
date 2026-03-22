@@ -11,6 +11,7 @@ export interface AgentInfo {
   name: string;
   email?: string;
   phone?: string;
+  whatsapp?: string;
 }
 
 export interface FinancingSimulation {
