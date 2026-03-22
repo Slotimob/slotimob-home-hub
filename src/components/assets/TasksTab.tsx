@@ -593,3 +593,64 @@ function ContractItem({
     </div>
   );
 }
+
+// Sub-component: Proposal Follow-up Item
+function ProposalFollowupItem({
+  item,
+  isMarking,
+  onFollowup,
+  onMarkDone,
+}: {
+  item: PendingProposalFollowup;
+  isMarking: boolean;
+  onFollowup: () => void;
+  onMarkDone: () => void;
+}) {
+  const daysAgo = Math.floor(item.hours_since_sent / 24);
+  const locationLabel = item.unit_number || item.property_name || "";
+
+  return (
+    <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <FileText className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+          <p className="text-sm font-medium truncate">{item.lead_name}</p>
+        </div>
+        {locationLabel && (
+          <p className="text-xs text-muted-foreground truncate mt-0.5">{locationLabel}</p>
+        )}
+        <div className="flex items-center gap-2 mt-1">
+          <Badge variant="outline" className="text-[10px] px-1.5">
+            Enviada há {daysAgo}d ({item.hours_since_sent}h)
+          </Badge>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1"
+          onClick={onFollowup}
+          title="Fazer follow-up via WhatsApp"
+        >
+          <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+          <span className="text-xs hidden sm:inline">Follow-up</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={onMarkDone}
+          disabled={isMarking}
+          title="Marcar como concluído"
+        >
+          {isMarking ? (
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5 text-emerald-600" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
