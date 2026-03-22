@@ -249,7 +249,7 @@ export const CreateContactDialog = ({
         notes: formData.notes.trim() || null,
         categories: formData.categories,
         metadata: Object.keys(metadata).length > 0 ? metadata : null,
-      });
+      }).select().single();
 
       if (error) throw error;
 
@@ -260,7 +260,7 @@ export const CreateContactDialog = ({
       queryClient.invalidateQueries({ queryKey: ['whatsapp-conversations'] });
 
       toast({ title: 'Contato criado com sucesso!' });
-      onSuccess();
+      onSuccess(data);
       onOpenChange(false);
       // Form will be reset when dialog reopens via the useEffect
     } catch (error: any) {
