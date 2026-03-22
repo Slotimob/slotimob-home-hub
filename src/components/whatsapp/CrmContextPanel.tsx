@@ -60,6 +60,7 @@ function isPhoneNumber(str: string): boolean {
 }
 
 export function CrmContextPanel({ conversation, contact, contactLoading, onCreateDeal, onDealCreated }: CrmContextPanelProps) {
+  const navigate = useNavigate();
   const contactId = contact?.id || conversation?.contact_id || null;
   const dealId = (conversation as any)?.deal_id || null;
   const [dealRefetchKey, setDealRefetchKey] = useState(0);

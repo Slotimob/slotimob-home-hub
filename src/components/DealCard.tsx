@@ -236,7 +236,7 @@ export const DealCard = ({
                 className="h-6 w-6 text-primary hover:text-primary/80 hover:bg-primary/10 flex-shrink-0"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const unitId = deal.unit_id || (deal as any).unit?.id;
+                  const unitId = (deal as any).unit_id || (deal as any).unit?.id;
                   const params = new URLSearchParams({ create: 'true' });
                   if (unitId) params.set('unitId', unitId);
                   navigate(`/gestao/propostas?${params.toString()}`);
