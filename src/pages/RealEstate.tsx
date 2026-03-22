@@ -164,38 +164,6 @@ const RealEstate = () => {
     localStorage.setItem('real-estate-view-mode', mode);
   }, []);
 
-  const handleCopyLink = (unit: RealEstateUnit, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    const link = `${window.location.origin}/imovel/${unit.id}`;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: 'Link copiado!',
-      description: 'O link do imóvel foi copiado para a área de transferência.',
-    });
-  };
-
-  const handleGeneratePDF = (unit: RealEstateUnit, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    try {
-      toast({
-        title: 'Gerando PDF...',
-        description: 'Aguarde enquanto criamos a apresentação.',
-      });
-      const pdfData = buildPDFDataFromStandalone(unit);
-      generatePropertyPDF(pdfData);
-      toast({
-        title: 'PDF gerado com sucesso!',
-        description: 'O arquivo foi baixado automaticamente.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao gerar PDF',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
