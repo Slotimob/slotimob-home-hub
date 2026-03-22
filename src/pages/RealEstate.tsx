@@ -623,6 +623,26 @@ const RealEstate = () => {
                                     className="h-7 w-7"
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+                                    }}
+                                  >
+                                    <Share2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                {!isMobile && (
+                                  <TooltipContent>
+                                    <p>Proposta</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       setSelectedUnit(unit);
                                     }}
                                   >
@@ -635,28 +655,6 @@ const RealEstate = () => {
                                   </TooltipContent>
                                 )}
                               </Tooltip>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <Share2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={(e) => handleCopyLink(unit, e as any)}>
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    Copiar Link
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => handleGeneratePDF(unit, e as any)}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Gerar PDF
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>
