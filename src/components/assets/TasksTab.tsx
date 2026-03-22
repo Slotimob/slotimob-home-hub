@@ -136,11 +136,65 @@ Equipe de Administração`;
     setAdjustmentDialogOpen(true);
   };
 
+  // Handle proposal follow-up via WhatsApp
+  const handleProposalFollowup = (item: PendingProposalFollowup) => {
+    const firstName = item.lead_name.split(" ")[0];
+    const propertyInfo = item.unit_number
+      ? ` sobre o imóvel *${item.unit_number}*`
+      : item.property_name
+      ? ` sobre o *${item.property_name}*`
+      : "";
+
+    const message = `Olá ${firstName}! 👋
+
+Aqui é da equipe *SlotiMob*. Tudo bem?
+
+Conseguiu dar uma olhada na proposta que te enviei${propertyInfo}? 📋
+
+Estou à disposição para tirar qualquer dúvida ou ajustar condições. Seria ótimo conversar quando puder!
+
+Abraço! 🤝`;
+
+    const encodedMessage = encodeURIComponent(message);
+    // Open generic wa.me without phone — user will pick contact
+    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank", "noopener,noreferrer");
+  };
+
+  // Mark proposal follow-up as done
+  const handleMarkFollowupDone = async (item: PendingProposalFollowup) => {
+    setMarkingFollowupId(item.id);
+    try {
+      const { error } = await supabase
+        .from("proposals")
+        .update({ status: "viewed", updated_at: new Date().toISOString() })
+        .eq("id", item.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Follow-up concluído!",
+        description: `Proposta para ${item.lead_name} marcada como concluída.`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["action-center-proposals"] });
+      queryClient.invalidateQueries({ queryKey: ["proposals"] });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setMarkingFollowupId(null);
+    }
+  };
+
   // Refresh data
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
     queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
     queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
+    queryClient.invalidateQueries({ queryKey: ["action-center-proposals"] });
   };
 
   if (isLoading) {
