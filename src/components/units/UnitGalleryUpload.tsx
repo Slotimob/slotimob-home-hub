@@ -21,6 +21,7 @@ interface UnitGalleryUploadProps {
   maxImages?: number;
   autoSave?: boolean;
   onRefresh?: () => Promise<void>;
+  onComplete?: () => void;
 }
 
 export const UnitGalleryUpload = ({
