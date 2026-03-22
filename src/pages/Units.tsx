@@ -914,15 +914,7 @@ const Units = () => {
             onSuccess={reloadUnits}
           />
 
-          <ShareAssetDialog
-            open={isShareDialogOpen}
-            onOpenChange={(open) => {
-              setIsShareDialogOpen(open);
-              if (!open) setUnitToShare(null);
-            }}
-            mode="property_unit"
-            preSelectedId={unitToShare?.id}
-          />
+          {/* ShareAssetDialog replaced by Proposals deep-link */}
         </>
       ) : (
         propertyId && (
