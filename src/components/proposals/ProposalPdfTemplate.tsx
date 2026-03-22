@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { Bed, Bath, Car, Maximize, Sun, Sofa, Hammer, Building2, MapPin, Calculator, Phone } from 'lucide-react';
+import { Bed, Bath, Car, Maximize, Sun, Sofa, Hammer, Building2, MapPin, Calculator } from 'lucide-react';
 import type { PDFAssetData, AgentInfo, CustomSimulation } from '@/utils/propertyPdfGenerator';
 
 interface ProposalPdfTemplateProps {

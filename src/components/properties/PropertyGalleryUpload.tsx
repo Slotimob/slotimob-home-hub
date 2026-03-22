@@ -172,8 +172,11 @@ export const PropertyGalleryUpload = ({
       const saved = await saveToDatabase(newImages);
       if (saved) {
         onImagesChange(newImages);
-        queryClient.invalidateQueries({ queryKey: ['properties'] });
-        queryClient.invalidateQueries({ queryKey: ['property'] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['properties'] }),
+          queryClient.invalidateQueries({ queryKey: ['property'] }),
+          queryClient.refetchQueries({ queryKey: ['properties'] }),
+        ]);
         toast({ title: 'Foto removida' });
       } else {
         toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });

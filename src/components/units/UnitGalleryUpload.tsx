@@ -168,8 +168,11 @@ export const UnitGalleryUpload = ({
       const saved = await saveToDatabase(newImages);
       if (saved) {
         onImagesChange(newImages);
-        queryClient.invalidateQueries({ queryKey: ['units'] });
-        queryClient.invalidateQueries({ queryKey: ['unit'] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['units'] }),
+          queryClient.invalidateQueries({ queryKey: ['unit'] }),
+          queryClient.refetchQueries({ queryKey: ['units'] }),
+        ]);
         toast({ title: 'Foto removida' });
       } else {
         toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });
