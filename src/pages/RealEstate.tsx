@@ -35,14 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { generatePropertyPDF, buildPDFDataFromStandalone } from '@/utils/propertyPdfGenerator';
 
 import { RealEstateKanbanView } from '@/components/units/RealEstateKanbanView';
 
