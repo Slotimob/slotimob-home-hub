@@ -196,7 +196,7 @@ export function CreateProposalSheet({ open, onOpenChange, preSelectedUnitId }: C
       // Get agent info
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, email, phone, creci')
+        .select('full_name, email, phone')
         .eq('id', user?.id || '')
         .single();
 
