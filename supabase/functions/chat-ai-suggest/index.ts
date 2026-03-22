@@ -104,7 +104,7 @@ Contexto:
 - Foque em avançar a negociação
 ${propertySection}
 
-Responda APENAS com a mensagem sugerida, sem explicações adicionais.`;
+Responda APENAS com a mensagem sugerida, sem explicações adicionais, sem aspas, sem markdown.`;
 
     // Call Claude API (same model as ai-chat)
     const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {

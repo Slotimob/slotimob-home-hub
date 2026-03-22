@@ -162,7 +162,8 @@ export const PropertyGalleryUpload = ({
       try {
         const urlParts = imageUrl.split('/property-media/');
         if (urlParts[1]) {
-          await supabase.storage.from('property-media').remove([urlParts[1]]);
+          const path = urlParts[1].split('?')[0];
+          await supabase.storage.from('property-media').remove([path]);
         }
       } catch (storageError) {
         console.error('Error deleting from storage:', storageError);
@@ -171,9 +172,11 @@ export const PropertyGalleryUpload = ({
       const saved = await saveToDatabase(newImages);
       if (saved) {
         onImagesChange(newImages);
-        toast({ title: 'Foto removida', description: 'A imagem foi excluída com sucesso.' });
+        queryClient.invalidateQueries({ queryKey: ['properties'] });
+        queryClient.invalidateQueries({ queryKey: ['property'] });
+        toast({ title: 'Foto removida' });
       } else {
-        toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração. Tente novamente.', variant: 'destructive' });
+        toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });
       }
     } catch (error: any) {
       console.error('Error removing image:', error);

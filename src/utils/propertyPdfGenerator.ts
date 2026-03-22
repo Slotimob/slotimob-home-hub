@@ -98,7 +98,7 @@ export function buildPDFDataFromUnit(unit: any, parentProperty: any): PDFAssetDa
       state: unit.state || parentProperty?.state,
       postal_code: unit.postal_code || parentProperty?.postal_code,
       cover_image_url: unit.cover_image_url,
-      gallery: unit.gallery || [],
+      gallery: unit.gallery_images || unit.gallery || [],
     },
     parentProperty: parentProperty ? {
       id: parentProperty.id, name: parentProperty.name,
@@ -142,7 +142,7 @@ export function buildPDFDataFromStandalone(unit: any): PDFAssetData {
       description: unit.description, address: unit.address,
       neighborhood: unit.neighborhood, city: unit.city, state: unit.state,
       postal_code: unit.postal_code, cover_image_url: unit.cover_image_url,
-      gallery: unit.gallery || [],
+      gallery: unit.gallery_images || unit.gallery || [],
     },
     parentProperty: null,
     title: loc ? `${typeLabel} - ${loc}` : unit.unit_number,

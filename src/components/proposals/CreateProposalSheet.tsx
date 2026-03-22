@@ -218,62 +218,23 @@ export function CreateProposalSheet({
 
       const clientRef = leadName ? ` O nome do cliente é ${leadName}.` : '';
 
-      const { data: rawResponse, error } = await supabase.functions.invoke('ai-chat', {
+      // Use chat-ai-suggest (returns JSON, not SSE stream like ai-chat)
+      const promptContent = `Baseado nestes dados do imóvel: ${unitJson}.${propertyContext}${clientRef} Escreva uma mensagem de introdução persuasiva e profissional de 3 parágrafos curtos para oferecer este imóvel a um cliente final. Seja elegante, direto e destaque os pontos fortes. Responda apenas com a mensagem, sem markdown, sem aspas.`;
+
+      const { data: rawResponse, error } = await supabase.functions.invoke('chat-ai-suggest', {
         body: {
-          messages: [
-            {
-              role: 'user',
-              content: `Baseado nestes dados do imóvel: ${unitJson}.${propertyContext}${clientRef} Escreva uma mensagem de introdução persuasiva e profissional de 3 parágrafos curtos para oferecer este imóvel a um cliente final. Seja elegante, direto e destaque os pontos fortes. Responda apenas com a mensagem, sem markdown, sem aspas.`,
-            },
-          ],
+          messages: [{ direction: 'incoming', content: promptContent }],
+          contactName: leadName || 'Cliente',
+          propertyContext: unitJson,
         },
       });
 
       if (error) throw error;
 
-      // ─── Robust type-safe extraction ───
-      const responseData = rawResponse?.data || rawResponse;
+      // chat-ai-suggest returns { suggestion: "..." }
+      const aiText = rawResponse?.suggestion || rawResponse?.text || rawResponse?.message || '';
 
-      let aiText = '';
-      if (typeof responseData === 'string') {
-        aiText = responseData;
-      } else if (responseData && typeof responseData === 'object') {
-        const candidates = [
-          responseData.content,
-          responseData.text,
-          responseData.message,
-          responseData.answer,
-          responseData.response,
-          responseData.reply,
-          responseData.generatedText,
-          responseData.generated_text,
-          responseData.output,
-          responseData.result,
-        ];
-        for (const c of candidates) {
-          if (typeof c === 'string' && c.trim()) { aiText = c; break; }
-        }
-        if (!aiText && Array.isArray(responseData.choices) && responseData.choices[0]) {
-          const choice = responseData.choices[0];
-          if (typeof choice.message?.content === 'string') aiText = choice.message.content;
-          else if (typeof choice.text === 'string') aiText = choice.text;
-        }
-        if (!aiText) {
-          for (const val of Object.values(responseData)) {
-            if (typeof val === 'string' && val.trim().length > 20) { aiText = val as string; break; }
-          }
-        }
-      }
-
-      // Clean up
-      if (aiText.startsWith('"') && aiText.endsWith('"')) {
-        aiText = aiText.slice(1, -1);
-      }
-      if (aiText.startsWith('{') || aiText.startsWith('[')) {
-        aiText = '';
-      }
-
-      if (aiText.trim()) {
+      if (typeof aiText === 'string' && aiText.trim()) {
         setIntroMessage(aiText.trim());
         toast({ title: 'Texto gerado com IA!' });
       } else {
