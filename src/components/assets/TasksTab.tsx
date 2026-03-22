@@ -348,7 +348,34 @@ Abraço! 🤝`;
           </CardContent>
         </Card>
 
-        {/* Section 4: Contas do Imóvel (Payables) */}
+        {/* Section 4: Follow-up de Propostas */}
+        {proposalFollowups.length > 0 && (
+          <Card className="border-orange-200 dark:border-orange-900/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Send className="h-4 w-4 text-orange-500" />
+                Follow-up de Propostas
+                <Badge className="ml-auto text-xs bg-orange-500 hover:bg-orange-600">
+                  {proposalFollowups.length}
+                </Badge>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">Propostas enviadas há mais de 48h sem retorno</p>
+            </CardHeader>
+            <CardContent className="space-y-2 max-h-80 overflow-y-auto">
+              {proposalFollowups.map((item) => (
+                <ProposalFollowupItem
+                  key={item.id}
+                  item={item}
+                  isMarking={markingFollowupId === item.id}
+                  onFollowup={() => handleProposalFollowup(item)}
+                  onMarkDone={() => handleMarkFollowupDone(item)}
+                />
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Section 5: Contas do Imóvel (Payables) */}
         {payables.length > 0 && (
           <Card className="border-purple-200 dark:border-purple-900/50">
             <CardHeader className="pb-2">
