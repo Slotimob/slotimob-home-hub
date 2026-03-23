@@ -242,7 +242,7 @@ export const PropertyGalleryUpload = ({
           
           {visibleImages.map((url, index) => (
             <div key={url} className="relative aspect-square rounded-lg overflow-hidden group">
-              <img src={url} alt={`Área comum ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
+              <img src={url} alt={`Área comum ${index + 1}`} className="w-full h-full object-cover" loading="lazy" onError={() => void handleImageError(url)} />
               <button
                 type="button"
                 onClick={() => removeImage(index)}
