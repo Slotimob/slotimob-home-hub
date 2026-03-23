@@ -66,8 +66,20 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
   const [activeTab, setActiveTab] = useState('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [newConvOpen, setNewConvOpen] = useState(false);
+  const [newConvInitialPhone, setNewConvInitialPhone] = useState('');
+  const [newConvInitialMessage, setNewConvInitialMessage] = useState('');
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
+
+  // Handle deep link new conversation
+  useEffect(() => {
+    if (deepLinkNewConv) {
+      setNewConvInitialPhone(deepLinkNewConv.phone);
+      setNewConvInitialMessage(deepLinkNewConv.text);
+      setNewConvOpen(true);
+      onDeepLinkConsumed?.();
+    }
+  }, [deepLinkNewConv]);
 
   const handleSync = async () => {
     setSyncing(true);
