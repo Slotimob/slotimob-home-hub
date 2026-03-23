@@ -31,6 +31,8 @@ interface ChatSidebarProps {
   agentFilter?: string;
   onAgentFilterChange?: (value: string) => void;
   showTriageTabs?: boolean;
+  deepLinkNewConv?: { phone: string; text: string } | null;
+  onDeepLinkConsumed?: () => void;
 }
 
 function formatTimestamp(dateStr: string | null): string {
