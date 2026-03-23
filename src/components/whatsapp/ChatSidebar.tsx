@@ -344,8 +344,16 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
 
       <NewConversationDialog
         open={newConvOpen}
-        onOpenChange={setNewConvOpen}
+        onOpenChange={(open) => {
+          setNewConvOpen(open);
+          if (!open) {
+            setNewConvInitialPhone('');
+            setNewConvInitialMessage('');
+          }
+        }}
         connectionId={connectionId || null}
+        initialPhone={newConvInitialPhone}
+        initialMessage={newConvInitialMessage}
       />
     </div>
   );

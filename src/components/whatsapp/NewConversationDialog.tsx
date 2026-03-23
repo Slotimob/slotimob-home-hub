@@ -23,11 +23,19 @@ function sanitizePhone(phone: string): string {
   return cleaned;
 }
 
-export function NewConversationDialog({ open, onOpenChange, connectionId }: NewConversationDialogProps) {
-  const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState('');
+export function NewConversationDialog({ open, onOpenChange, connectionId, initialPhone = '', initialMessage = '' }: NewConversationDialogProps) {
+  const [phone, setPhone] = useState(initialPhone);
+  const [message, setMessage] = useState(initialMessage);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
+
+  // Sync initial values when dialog opens with deep link data
+  useEffect(() => {
+    if (open) {
+      if (initialPhone) setPhone(initialPhone);
+      if (initialMessage) setMessage(initialMessage);
+    }
+  }, [open, initialPhone, initialMessage]);
 
   const canSend = phone.replace(/\D/g, '').length >= 10 && message.trim().length > 0;
 
