@@ -441,6 +441,8 @@ export default function WhatsApp() {
                 agentFilter={agentFilter}
                 onAgentFilterChange={setAgentFilter}
                 showTriageTabs={canManage}
+                deepLinkNewConv={deepLinkNewConv}
+                onDeepLinkConsumed={() => setDeepLinkNewConv(null)}
               />
             </div>
 
