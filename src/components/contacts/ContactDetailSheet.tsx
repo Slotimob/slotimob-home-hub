@@ -8,6 +8,7 @@ import { Phone, Mail, MapPin, FileText, Pencil, MessageSquare, Trash2 } from 'lu
 import { ContactCategoryBadges } from './ContactCategoryFilter';
 import { UnifiedContact } from './ContactCard';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface ContactDetailSheetProps {
   contact: UnifiedContact | null;
