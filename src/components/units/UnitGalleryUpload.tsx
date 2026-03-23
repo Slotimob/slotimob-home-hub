@@ -339,8 +339,8 @@ export const UnitGalleryUpload = ({
                 queryClient.invalidateQueries({ queryKey: ['units'] }),
                 queryClient.invalidateQueries({ queryKey: ['unit'] }),
                 queryClient.invalidateQueries({ queryKey: ['unit_images'] }),
-                queryClient.refetchQueries({ queryKey: ['units'] }),
               ]);
+              await queryClient.refetchQueries({ queryKey: ['units'] });
               toast({ title: 'Galeria atualizada!' });
               onComplete?.();
             }}
