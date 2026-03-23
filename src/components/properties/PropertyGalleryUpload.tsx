@@ -1,11 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, sanitizeGalleryUrls } from '@/lib/utils';
 import { compressImage, validateImageFile, formatFileSize } from '@/utils/imageOptimizer';
 
 interface UploadingImage {
