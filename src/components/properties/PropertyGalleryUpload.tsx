@@ -259,7 +259,7 @@ export const PropertyGalleryUpload = ({
         </div>
       )}
 
-      {images.length < maxImages && (
+      {visibleImages.length < maxImages && (
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
