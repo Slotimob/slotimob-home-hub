@@ -157,8 +157,7 @@ Estou à disposição para tirar qualquer dúvida ou ajustar condições. Seria 
 Abraço! 🤝`;
 
     const encodedMessage = encodeURIComponent(message);
-    // Open generic wa.me without phone — user will pick contact
-    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank", "noopener,noreferrer");
+    navigate(`/whatsapp?text=${encodedMessage}`);
   };
 
   // Mark proposal follow-up as done
