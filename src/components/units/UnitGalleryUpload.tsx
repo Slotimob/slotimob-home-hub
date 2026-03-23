@@ -1,11 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, sanitizeGalleryUrls } from '@/lib/utils';
 import { compressImage, validateImageFile, formatFileSize } from '@/utils/imageOptimizer';
 
 interface UploadingImage {
@@ -40,11 +40,12 @@ export const UnitGalleryUpload = ({
   const [uploadingImages, setUploadingImages] = useState<UploadingImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [failedUrls, setFailedUrls] = useState<string[]>([]);
   const isSavingRef = useRef(false);
 
   const saveToDatabase = async (newImages: string[]): Promise<boolean> => {
     if (!autoSave || !unitId || isSavingRef.current) return true;
-    
+
     isSavingRef.current = true;
     try {
       const { error } = await supabase
@@ -53,11 +54,11 @@ export const UnitGalleryUpload = ({
         .eq('id', unitId);
 
       if (error) throw error;
-      
+
       if (onRefresh) {
         await onRefresh();
       }
-      
+
       return true;
     } catch (error: any) {
       console.error('Error saving gallery:', error);
@@ -70,7 +71,7 @@ export const UnitGalleryUpload = ({
 
   const uploadImage = async (file: File): Promise<string | null> => {
     const uploadId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     setUploadingImages(prev => [...prev, { id: uploadId, name: file.name, progress: 'compressing' }]);
 
     try {
@@ -116,10 +117,25 @@ export const UnitGalleryUpload = ({
     }
   };
 
+  useEffect(() => {
+    const sanitizedImages = sanitizeGalleryUrls(images);
+    const hasChanges =
+      sanitizedImages.length !== images.length ||
+      sanitizedImages.some((url, index) => url !== images[index]);
+
+    if (!hasChanges) return;
+
+    onImagesChange(sanitizedImages);
+    if (unitId && autoSave) {
+      void saveToDatabase(sanitizedImages);
+    }
+  }, [images, unitId, autoSave]);
+
   const handleFilesSelect = async (files: FileList | File[]) => {
+    const currentImages = sanitizeGalleryUrls(images);
     const fileArray = Array.from(files);
-    const remaining = maxImages - images.length;
-    
+    const remaining = maxImages - currentImages.length;
+
     if (fileArray.length > remaining) {
       toast({ title: 'Limite excedido', description: `Você pode adicionar no máximo ${remaining} imagem${remaining !== 1 ? 's' : ''}.`, variant: 'destructive' });
       return;
@@ -128,9 +144,9 @@ export const UnitGalleryUpload = ({
     const uploadPromises = fileArray.slice(0, remaining).map(uploadImage);
     const results = await Promise.all(uploadPromises);
     const successfulUploads = results.filter((url): url is string => url !== null);
-    
+
     if (successfulUploads.length > 0) {
-      const newImages = [...images, ...successfulUploads];
+      const newImages = [...currentImages, ...successfulUploads];
       const saved = await saveToDatabase(newImages);
       if (saved) {
         onImagesChange(newImages);
@@ -149,12 +165,12 @@ export const UnitGalleryUpload = ({
   const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); }, []);
 
   const removeImage = async (index: number) => {
-    if (isDeleting !== null) return;
+    const currentImages = sanitizeGalleryUrls(images);
+    if (isDeleting !== null || !currentImages[index]) return;
     setIsDeleting(index);
-    const imageUrl = images[index];
-    const newImages = images.filter((_, i) => i !== index);
+    const imageUrl = currentImages[index];
+    const newImages = currentImages.filter((_, i) => i !== index);
 
-    // Optimistic update: immediately reflect in UI
     onImagesChange(newImages);
 
     try {
@@ -170,7 +186,6 @@ export const UnitGalleryUpload = ({
 
       const saved = await saveToDatabase(newImages);
       if (saved) {
-        // Force fresh data from server
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['units'] }),
           queryClient.invalidateQueries({ queryKey: ['unit'] }),
@@ -178,13 +193,11 @@ export const UnitGalleryUpload = ({
         ]);
         toast({ title: 'Foto removida' });
       } else {
-        // Rollback optimistic update
-        onImagesChange(images);
+        onImagesChange(currentImages);
         toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });
       }
     } catch (error: any) {
-      // Rollback optimistic update
-      onImagesChange(images);
+      onImagesChange(currentImages);
       console.error('Error removing image:', error);
       toast({ title: 'Erro ao remover foto', description: error.message, variant: 'destructive' });
     } finally {
@@ -192,13 +205,25 @@ export const UnitGalleryUpload = ({
     }
   };
 
+  const handleImageError = async (failedUrl: string) => {
+    if (failedUrls.includes(failedUrl)) return;
+    setFailedUrls((prev) => [...prev, failedUrl]);
+
+    const currentImages = sanitizeGalleryUrls(images);
+    const failedIndex = currentImages.indexOf(failedUrl);
+    if (failedIndex >= 0) {
+      await removeImage(failedIndex);
+    }
+  };
+
+  const visibleImages = sanitizeGalleryUrls(images);
   const isUploading = uploadingImages.length > 0;
 
   return (
     <div className="space-y-3">
       <Label>Galeria de Fotos do Imóvel</Label>
-      
-      {(images.length > 0 || uploadingImages.length > 0) && (
+
+      {(visibleImages.length > 0 || uploadingImages.length > 0) && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {uploadingImages.map((img) => (
             <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
@@ -210,17 +235,18 @@ export const UnitGalleryUpload = ({
               </div>
             </div>
           ))}
-          
-          {images.map((url, index) => (
-            <div 
-              key={`${url}-${index}`} 
+
+          {visibleImages.map((url, index) => (
+            <div
+              key={url}
               className="relative aspect-square rounded-lg overflow-hidden group"
             >
               <img
-                src={url.includes('?') ? url : `${url}?t=${Date.now()}`}
+                src={url}
                 alt={`Foto ${index + 1}`}
                 className="w-full h-full object-cover"
                 loading="lazy"
+                onError={() => void handleImageError(url)}
               />
               <button
                 type="button"
@@ -242,7 +268,7 @@ export const UnitGalleryUpload = ({
         </div>
       )}
 
-      {images.length < maxImages && (
+      {visibleImages.length < maxImages && (
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -284,15 +310,14 @@ export const UnitGalleryUpload = ({
                 Selecionar Arquivos
               </Button>
               <p className="text-xs text-muted-foreground">
-                {images.length}/{maxImages} fotos • JPG, PNG ou WebP até 25MB (otimizadas automaticamente)
+                {visibleImages.length}/{maxImages} fotos • JPG, PNG ou WebP até 25MB (otimizadas automaticamente)
               </p>
             </div>
           )}
         </div>
       )}
 
-      {/* Save button — proper spacing, no sticky float */}
-      {images.length > 0 && (
+      {visibleImages.length > 0 && (
         <div className="mt-4 border-t border-border pt-3">
           <Button
             type="button"
