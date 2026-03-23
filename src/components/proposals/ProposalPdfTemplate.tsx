@@ -303,7 +303,7 @@ function PageFooter({ agent, date }: { agent?: AgentInfo; date: string }) {
       </div>
       {agent?.name && (
         <span className="text-[10px]" style={{ color: '#999' }}>
-          {[agent.name, agent.email, agent.phone].filter(Boolean).join(' | ')}
+          {[agent.name, agent.email, agent.whatsapp ? `WhatsApp: ${agent.whatsapp}` : agent.phone].filter(Boolean).join(' | ')}
         </span>
       )}
     </div>
