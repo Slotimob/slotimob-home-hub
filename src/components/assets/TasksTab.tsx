@@ -93,8 +93,7 @@ Atenciosamente,
 Equipe de Administração`;
 
     const encodedMessage = encodeURIComponent(message);
-    const waLink = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-    window.open(waLink, "_blank", "noopener,noreferrer");
+    navigate(`/whatsapp?phone=${formattedPhone}&text=${encodedMessage}`);
   };
 
   // Mark payable as paid
