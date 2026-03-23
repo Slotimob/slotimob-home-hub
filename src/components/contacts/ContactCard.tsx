@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, Mail, MapPin, MoreVertical, Pencil, Trash2, Briefcase, MessageSquare } from 'lucide-react';
 import { ContactCategoryBadges, ContactCategory } from './ContactCategoryFilter';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 export interface UnifiedContact {
   id: string;
