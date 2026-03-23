@@ -5,6 +5,7 @@ import { Phone, Mail, MapPin, MoreVertical, Pencil, Trash2, Briefcase, MessageSq
 import { ContactCategoryBadges } from './ContactCategoryFilter';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
 import { UnifiedContact } from './ContactCard';
+import { useNavigate } from 'react-router-dom';
 
 interface ContactListItemProps {
   contact: UnifiedContact;
