@@ -40,6 +40,7 @@ export const PropertyGalleryUpload = ({
   const [uploadingImages, setUploadingImages] = useState<UploadingImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [failedUrls, setFailedUrls] = useState<string[]>([]);
   const isSavingRef = useRef(false);
 
   const saveToDatabase = async (newImages: string[]): Promise<boolean> => {
