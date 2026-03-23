@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Settings, MessageSquare, WifiOff } from 'lucide-react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn, normalizePhone } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 
