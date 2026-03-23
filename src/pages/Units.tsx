@@ -559,7 +559,7 @@ const Units = () => {
           viewModeSlot={
             <div className="flex items-center gap-3">
               <ViewModeTabs value={viewMode} onValueChange={handleViewModeChange} showTable={true} />
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={reloadUnits} title="Atualizar lista">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setLoadingUnits(true); reloadUnits(); }} title="Atualizar lista">
                 <RefreshCw className="h-4 w-4" />
               </Button>
               {/* Active Filters Summary Badges */}

@@ -132,24 +132,31 @@ export default function WhatsApp() {
     const textParam = searchParams.get('text') || '';
     if (!phoneParam || conversationsLoading) return;
 
-    const normalizedParam = normalizePhone(phoneParam);
-    if (!normalizedParam) {
+    // Extract only digits for flexible matching
+    const digits = phoneParam.replace(/\D/g, '');
+    if (digits.length < 8) {
       setSearchParams({}, { replace: true });
       return;
     }
 
-    // Try to find an existing conversation with this phone
-    const match = allConversations.find(c =>
-      normalizePhone(c.contact_phone) === normalizedParam
-    );
+    // Use last 8-9 digits for flexible match (handles 55 prefix / extra 9 variations)
+    const lastDigits = digits.slice(-9);
+    const lastDigits8 = digits.slice(-8);
+
+    const match = allConversations.find(c => {
+      const cDigits = (c.contact_phone || '').replace(/\D/g, '');
+      return cDigits.endsWith(lastDigits) || cDigits.endsWith(lastDigits8);
+    });
 
     if (match) {
       handleSelectConversation(match);
       if (textParam) setDeepLinkText(textParam);
     } else {
-      // No existing conversation — open NewConversationDialog with pre-fill
-      // We pass data via the sidebar's dialog state
-      setDeepLinkNewConv({ phone: phoneParam, text: textParam });
+      // Ensure the phone passed to NewConversationDialog starts with 55
+      let sanitized = digits;
+      if (sanitized.startsWith('0')) sanitized = sanitized.substring(1);
+      if (sanitized.length <= 11) sanitized = '55' + sanitized;
+      setDeepLinkNewConv({ phone: sanitized, text: textParam });
     }
 
     // Clear params to prevent loops

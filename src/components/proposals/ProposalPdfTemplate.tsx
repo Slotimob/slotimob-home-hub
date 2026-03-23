@@ -273,20 +273,18 @@ function SectionTitle({ title, accent }: { title: string; accent?: boolean }) {
 }
 
 function CTAFooter({ agent }: { agent?: AgentInfo }) {
-  const phoneDisplay = agent?.whatsapp || '';
+  const phoneDisplay = agent?.whatsapp || agent?.phone || '';
   return (
     <div className="p-6 rounded-xl text-center mb-6" style={{ background: '#2fc9af' }}>
       <p className="text-white text-xl font-bold mb-1">Gostou? Agende sua visita agora!</p>
       <p className="text-white/80 text-sm mb-3">Entre em contato e garanta essa oportunidade única.</p>
       {phoneDisplay && (
-        <div className="inline-block px-6 py-3 rounded-full" style={{ background: '#25D366' }}>
-          <p className="text-white font-bold text-lg" style={{ letterSpacing: '0.5px' }}>
-            WhatsApp: {phoneDisplay}
-          </p>
-        </div>
+        <p className="text-white font-bold text-2xl mb-2" style={{ letterSpacing: '1px' }}>
+          {phoneDisplay}
+        </p>
       )}
       {agent?.name && (
-        <p className="text-white/70 text-sm mt-3">{agent.name}{agent.email ? ` · ${agent.email}` : ''}</p>
+        <p className="text-white/90 text-sm">{agent.name}{agent.email ? ` | ${agent.email}` : ''}</p>
       )}
     </div>
   );
