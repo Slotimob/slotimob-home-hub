@@ -220,13 +220,14 @@ export const PropertyGalleryUpload = ({
     }
   };
 
+  const visibleImages = sanitizeGalleryUrls(images);
   const isUploading = uploadingImages.length > 0;
 
   return (
     <div className="space-y-3">
       <Label>Galeria de Fotos (Áreas Comuns)</Label>
       
-      {(images.length > 0 || uploadingImages.length > 0) && (
+      {(visibleImages.length > 0 || uploadingImages.length > 0) && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {uploadingImages.map((img) => (
             <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
@@ -239,8 +240,8 @@ export const PropertyGalleryUpload = ({
             </div>
           ))}
           
-          {images.map((url, index) => (
-            <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
+          {visibleImages.map((url, index) => (
+            <div key={url} className="relative aspect-square rounded-lg overflow-hidden group">
               <img src={url} alt={`Área comum ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
               <button
                 type="button"
