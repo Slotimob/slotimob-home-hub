@@ -301,7 +301,7 @@ export const PropertyGalleryUpload = ({
                 Selecionar Arquivos
               </Button>
               <p className="text-xs text-muted-foreground">
-                {images.length}/{maxImages} fotos • JPG, PNG ou WebP até 25MB (otimizadas automaticamente)
+                {visibleImages.length}/{maxImages} fotos • JPG, PNG ou WebP até 25MB (otimizadas automaticamente)
               </p>
             </div>
           )}
