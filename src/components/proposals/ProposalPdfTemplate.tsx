@@ -66,9 +66,9 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                   </span>
                 )}
                 {agent?.name && (
-                  <div className="text-right text-white/90 text-xs rounded-lg px-3 py-2" style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}>
-                    <p className="font-semibold">{agent.name}</p>
-                    {agent.phone && <p className="text-white/70">{agent.phone}</p>}
+                  <div className="text-right rounded-lg px-3 py-2" style={{ background: '#ffffff', border: '2px solid #000000', color: '#000000' }}>
+                    <p className="font-semibold text-xs">{agent.name}</p>
+                    {agent.phone && <p className="text-[10px] opacity-70">{agent.phone}</p>}
                   </div>
                 )}
               </div>
