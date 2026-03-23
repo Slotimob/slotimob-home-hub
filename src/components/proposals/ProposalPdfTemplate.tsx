@@ -61,14 +61,14 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
               </div>
               <div className="flex items-center gap-3">
               {typeLabel && (
-                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none" style={{ background: '#ffffff', border: '2px solid #000000', color: '#000000' }}>
+                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none text-white" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
                     {typeLabel}
                   </span>
                 )}
                 {agent?.name && (
-                  <div className="text-right rounded-lg px-3 py-2" style={{ background: '#ffffff', border: '2px solid #000000', color: '#000000' }}>
-                    <p className="font-semibold text-xs">{agent.name}</p>
-                    {agent.phone && <p className="text-[10px] opacity-70">{agent.phone}</p>}
+                  <div className="text-right">
+                    <p className="font-semibold text-sm text-white" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>{agent.name}</p>
+                    {agent.phone && <p className="text-xs text-white/80" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{agent.phone}</p>}
                   </div>
                 )}
               </div>
