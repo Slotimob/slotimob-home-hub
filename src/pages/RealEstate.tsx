@@ -499,12 +499,17 @@ const RealEstate = () => {
               </>
             }
             viewModeSlot={
-              <ViewModeTabs
-                value={viewMode}
-                onValueChange={handleViewModeChange}
-                showKanban={true}
-                showTable={true}
-              />
+              <div className="flex items-center gap-3">
+                <ViewModeTabs
+                  value={viewMode}
+                  onValueChange={handleViewModeChange}
+                  showKanban={true}
+                  showTable={true}
+                />
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={loadRealEstateUnits} title="Atualizar lista">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             }
           />
 
