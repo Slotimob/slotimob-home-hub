@@ -169,12 +169,12 @@ export const PropertyGalleryUpload = ({
   const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); }, []);
 
   const removeImage = async (index: number) => {
-    if (isDeleting !== null) return;
+    const currentImages = sanitizeGalleryUrls(images);
+    if (isDeleting !== null || !currentImages[index]) return;
     setIsDeleting(index);
-    const imageUrl = images[index];
-    const newImages = images.filter((_, i) => i !== index);
+    const imageUrl = currentImages[index];
+    const newImages = currentImages.filter((_, i) => i !== index);
 
-    // Optimistic update: immediately reflect in UI
     onImagesChange(newImages);
 
     try {
@@ -190,7 +190,6 @@ export const PropertyGalleryUpload = ({
 
       const saved = await saveToDatabase(newImages);
       if (saved) {
-        // Force fresh data from server
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['properties'] }),
           queryClient.invalidateQueries({ queryKey: ['property'] }),
@@ -198,17 +197,26 @@ export const PropertyGalleryUpload = ({
         ]);
         toast({ title: 'Foto removida' });
       } else {
-        // Rollback optimistic update
-        onImagesChange(images);
+        onImagesChange(currentImages);
         toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });
       }
     } catch (error: any) {
-      // Rollback optimistic update
-      onImagesChange(images);
+      onImagesChange(currentImages);
       console.error('Error removing image:', error);
       toast({ title: 'Erro ao remover foto', description: error.message, variant: 'destructive' });
     } finally {
       setIsDeleting(null);
+    }
+  };
+
+  const handleImageError = async (failedUrl: string) => {
+    if (failedUrls.includes(failedUrl)) return;
+    setFailedUrls((prev) => [...prev, failedUrl]);
+
+    const currentImages = sanitizeGalleryUrls(images);
+    const failedIndex = currentImages.indexOf(failedUrl);
+    if (failedIndex >= 0) {
+      await removeImage(failedIndex);
     }
   };
 
