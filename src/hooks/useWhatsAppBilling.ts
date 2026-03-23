@@ -32,11 +32,20 @@ interface BillingMessageData {
   unitInfo?: string;
 }
 
-export function useWhatsAppBilling() {
+export function useWhatsAppBilling(navigateFn?: (path: string) => void) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
   const [isFetchingContact, setIsFetchingContact] = useState(false);
+
+  const openWhatsApp = (phone: string, message: string) => {
+    const encoded = encodeURIComponent(message);
+    if (navigateFn) {
+      navigateFn(`/whatsapp?phone=${phone}&text=${encoded}`);
+    } else {
+      window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank", "noopener,noreferrer");
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -200,9 +209,7 @@ Equipe de Administração`;
       const formattedPhone = formatPhoneForWhatsApp(phoneNumber);
 
       const encodedMessage = encodeURIComponent(message);
-      const waLink = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-      
-      window.open(waLink, "_blank", "noopener,noreferrer");
+      openWhatsApp(formattedPhone, message);
       
       toast({
         title: "WhatsApp aberto",

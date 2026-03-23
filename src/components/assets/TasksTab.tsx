@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 export function TasksTab() {
+  const navigate = useNavigate();
   const { receivables, payables, contracts, proposalFollowups, totalCount, isLoading } = useActionCenterPending();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -91,8 +93,7 @@ Atenciosamente,
 Equipe de Administração`;
 
     const encodedMessage = encodeURIComponent(message);
-    const waLink = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-    window.open(waLink, "_blank", "noopener,noreferrer");
+    navigate(`/whatsapp?phone=${formattedPhone}&text=${encodedMessage}`);
   };
 
   // Mark payable as paid
@@ -156,8 +157,7 @@ Estou à disposição para tirar qualquer dúvida ou ajustar condições. Seria 
 Abraço! 🤝`;
 
     const encodedMessage = encodeURIComponent(message);
-    // Open generic wa.me without phone — user will pick contact
-    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank", "noopener,noreferrer");
+    navigate(`/whatsapp?text=${encodedMessage}`);
   };
 
   // Mark proposal follow-up as done

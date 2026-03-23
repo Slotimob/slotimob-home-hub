@@ -150,6 +150,7 @@ export const UnitGalleryUpload = ({
       const saved = await saveToDatabase(newImages);
       if (saved) {
         onImagesChange(newImages);
+        updateParentCache(newImages);
         toast({ title: 'Fotos salvas!', description: `${successfulUploads.length} imagem${successfulUploads.length !== 1 ? 's' : ''} otimizada${successfulUploads.length !== 1 ? 's' : ''} e salva${successfulUploads.length !== 1 ? 's' : ''} com sucesso.` });
       }
     }
@@ -164,6 +165,17 @@ export const UnitGalleryUpload = ({
   const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
   const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); }, []);
 
+  const updateParentCache = (newImages: string[]) => {
+    queryClient.setQueriesData({ queryKey: ['units'] }, (old: any) => {
+      if (!old || !unitId) return old;
+      if (Array.isArray(old)) {
+        return old.map((u: any) => u.id === unitId ? { ...u, gallery_images: newImages } : u);
+      }
+      if (old?.id === unitId) return { ...old, gallery_images: newImages };
+      return old;
+    });
+  };
+
   const removeImage = async (index: number) => {
     const currentImages = sanitizeGalleryUrls(images);
     if (isDeleting !== null || !currentImages[index]) return;
@@ -172,6 +184,7 @@ export const UnitGalleryUpload = ({
     const newImages = currentImages.filter((_, i) => i !== index);
 
     onImagesChange(newImages);
+    updateParentCache(newImages);
 
     try {
       try {
@@ -186,18 +199,16 @@ export const UnitGalleryUpload = ({
 
       const saved = await saveToDatabase(newImages);
       if (saved) {
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['units'] }),
-          queryClient.invalidateQueries({ queryKey: ['unit'] }),
-          queryClient.refetchQueries({ queryKey: ['units'] }),
-        ]);
+        await queryClient.invalidateQueries({ queryKey: ['units'] });
         toast({ title: 'Foto removida' });
       } else {
         onImagesChange(currentImages);
+        updateParentCache(currentImages);
         toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });
       }
     } catch (error: any) {
       onImagesChange(currentImages);
+      updateParentCache(currentImages);
       console.error('Error removing image:', error);
       toast({ title: 'Erro ao remover foto', description: error.message, variant: 'destructive' });
     } finally {

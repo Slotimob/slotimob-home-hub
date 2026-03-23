@@ -154,6 +154,7 @@ export const PropertyGalleryUpload = ({
       const saved = await saveToDatabase(newImages);
       if (saved) {
         onImagesChange(newImages);
+        updateParentCache(newImages);
         toast({ title: 'Fotos salvas!', description: `${successfulUploads.length} imagem${successfulUploads.length !== 1 ? 's' : ''} salva${successfulUploads.length !== 1 ? 's' : ''} com sucesso.` });
       }
     }
@@ -168,6 +169,18 @@ export const PropertyGalleryUpload = ({
   const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
   const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); }, []);
 
+  const updateParentCache = (newImages: string[]) => {
+    // Directly mutate React Query cache so parent re-renders with fresh data
+    queryClient.setQueriesData({ queryKey: ['properties'] }, (old: any) => {
+      if (!old || !propertyId) return old;
+      if (Array.isArray(old)) {
+        return old.map((p: any) => p.id === propertyId ? { ...p, gallery_images: newImages } : p);
+      }
+      if (old?.id === propertyId) return { ...old, gallery_images: newImages };
+      return old;
+    });
+  };
+
   const removeImage = async (index: number) => {
     const currentImages = sanitizeGalleryUrls(images);
     if (isDeleting !== null || !currentImages[index]) return;
@@ -175,7 +188,9 @@ export const PropertyGalleryUpload = ({
     const imageUrl = currentImages[index];
     const newImages = currentImages.filter((_, i) => i !== index);
 
+    // Optimistic: update local + parent cache immediately
     onImagesChange(newImages);
+    updateParentCache(newImages);
 
     try {
       try {
@@ -190,18 +205,16 @@ export const PropertyGalleryUpload = ({
 
       const saved = await saveToDatabase(newImages);
       if (saved) {
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['properties'] }),
-          queryClient.invalidateQueries({ queryKey: ['property'] }),
-          queryClient.refetchQueries({ queryKey: ['properties'] }),
-        ]);
+        await queryClient.invalidateQueries({ queryKey: ['properties'] });
         toast({ title: 'Foto removida' });
       } else {
         onImagesChange(currentImages);
+        updateParentCache(currentImages);
         toast({ title: 'Erro ao remover foto', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });
       }
     } catch (error: any) {
       onImagesChange(currentImages);
+      updateParentCache(currentImages);
       console.error('Error removing image:', error);
       toast({ title: 'Erro ao remover foto', description: error.message, variant: 'destructive' });
     } finally {
