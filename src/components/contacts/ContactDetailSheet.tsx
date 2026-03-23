@@ -8,6 +8,7 @@ import { Phone, Mail, MapPin, FileText, Pencil, MessageSquare, Trash2 } from 'lu
 import { ContactCategoryBadges } from './ContactCategoryFilter';
 import { UnifiedContact } from './ContactCard';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface ContactDetailSheetProps {
   contact: UnifiedContact | null;
@@ -28,6 +29,7 @@ export const ContactDetailSheet = ({
   canEdit = true,
   canDelete = false,
 }: ContactDetailSheetProps) => {
+  const navigate = useNavigate();
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -41,7 +43,7 @@ export const ContactDetailSheet = ({
     const phoneNumber = contact?.whatsapp || contact?.phone;
     if (phoneNumber) {
       const formattedPhone = formatPhoneForWhatsApp(phoneNumber);
-      window.open(`https://wa.me/${formattedPhone}`, '_blank');
+      navigate(`/whatsapp?phone=${formattedPhone}`);
     }
   };
 

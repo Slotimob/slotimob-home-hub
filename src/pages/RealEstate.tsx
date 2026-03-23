@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Home, DollarSign, Bed, Bath, Car, Square, Upload, Share2, Eye } from 'lucide-react';
+import { Home, DollarSign, Bed, Bath, Car, Square, Upload, Share2, Eye, RefreshCw } from 'lucide-react';
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
 import { ImportUnitsDialog } from '@/components/ImportUnitsDialog';
@@ -499,12 +499,17 @@ const RealEstate = () => {
               </>
             }
             viewModeSlot={
-              <ViewModeTabs
-                value={viewMode}
-                onValueChange={handleViewModeChange}
-                showKanban={true}
-                showTable={true}
-              />
+              <div className="flex items-center gap-3">
+                <ViewModeTabs
+                  value={viewMode}
+                  onValueChange={handleViewModeChange}
+                  showKanban={true}
+                  showTable={true}
+                />
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={loadRealEstateUnits} title="Atualizar lista">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             }
           />
 

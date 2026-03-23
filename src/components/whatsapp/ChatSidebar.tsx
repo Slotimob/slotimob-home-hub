@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,6 +31,8 @@ interface ChatSidebarProps {
   agentFilter?: string;
   onAgentFilterChange?: (value: string) => void;
   showTriageTabs?: boolean;
+  deepLinkNewConv?: { phone: string; text: string } | null;
+  onDeepLinkConsumed?: () => void;
 }
 
 function formatTimestamp(dateStr: string | null): string {
@@ -59,13 +61,25 @@ function getInitials(displayName: string): string {
   return displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange, showTriageTabs = false }: ChatSidebarProps) {
+export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange, showTriageTabs = false, deepLinkNewConv, onDeepLinkConsumed }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [newConvOpen, setNewConvOpen] = useState(false);
+  const [newConvInitialPhone, setNewConvInitialPhone] = useState('');
+  const [newConvInitialMessage, setNewConvInitialMessage] = useState('');
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
+
+  // Handle deep link new conversation
+  useEffect(() => {
+    if (deepLinkNewConv) {
+      setNewConvInitialPhone(deepLinkNewConv.phone);
+      setNewConvInitialMessage(deepLinkNewConv.text);
+      setNewConvOpen(true);
+      onDeepLinkConsumed?.();
+    }
+  }, [deepLinkNewConv]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -330,8 +344,16 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
 
       <NewConversationDialog
         open={newConvOpen}
-        onOpenChange={setNewConvOpen}
+        onOpenChange={(open) => {
+          setNewConvOpen(open);
+          if (!open) {
+            setNewConvInitialPhone('');
+            setNewConvInitialMessage('');
+          }
+        }}
         connectionId={connectionId || null}
+        initialPhone={newConvInitialPhone}
+        initialMessage={newConvInitialMessage}
       />
     </div>
   );

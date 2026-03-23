@@ -60,15 +60,15 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                 <span className="text-white font-bold text-xl tracking-wider" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>SLOTIMOB</span>
               </div>
               <div className="flex items-center gap-3">
-                {typeLabel && (
-                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold text-white uppercase tracking-widest inline-flex items-center justify-center text-center leading-none relative -top-[2px] pb-[3px]" style={{ background: 'rgba(47,201,175,0.85)', backdropFilter: 'blur(4px)' }}>
+              {typeLabel && (
+                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none" style={{ background: '#ffffff', border: '2px solid #000000', color: '#000000' }}>
                     {typeLabel}
                   </span>
                 )}
                 {agent?.name && (
-                  <div className="text-right text-white/90 text-xs rounded-lg px-3 py-2" style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}>
-                    <p className="font-semibold">{agent.name}</p>
-                    {agent.phone && <p className="text-white/70">{agent.phone}</p>}
+                  <div className="text-right rounded-lg px-3 py-2" style={{ background: '#ffffff', border: '2px solid #000000', color: '#000000' }}>
+                    <p className="font-semibold text-xs">{agent.name}</p>
+                    {agent.phone && <p className="text-[10px] opacity-70">{agent.phone}</p>}
                   </div>
                 )}
               </div>
@@ -303,7 +303,7 @@ function PageFooter({ agent, date }: { agent?: AgentInfo; date: string }) {
       </div>
       {agent?.name && (
         <span className="text-[10px]" style={{ color: '#999' }}>
-          {[agent.name, agent.email, agent.phone].filter(Boolean).join(' | ')}
+          {[agent.name, agent.email, agent.whatsapp ? `WhatsApp: ${agent.whatsapp}` : agent.phone].filter(Boolean).join(' | ')}
         </span>
       )}
     </div>

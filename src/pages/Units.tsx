@@ -5,7 +5,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Home, Upload, X, ChevronLeft, ChevronRight, CheckSquare, Square, Plus, Share2 } from 'lucide-react';
+import { Home, Upload, X, ChevronLeft, ChevronRight, CheckSquare, Square, Plus, Share2, RefreshCw } from 'lucide-react';
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
 import { CreateUnitDialog } from '@/components/CreateUnitDialog';
@@ -559,6 +559,9 @@ const Units = () => {
           viewModeSlot={
             <div className="flex items-center gap-3">
               <ViewModeTabs value={viewMode} onValueChange={handleViewModeChange} showTable={true} />
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={reloadUnits} title="Atualizar lista">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
               {/* Active Filters Summary Badges */}
               {activeFiltersCount > 0 && (
                 <div className="hidden sm:flex items-center gap-1">

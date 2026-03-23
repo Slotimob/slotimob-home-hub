@@ -9,8 +9,8 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Settings, MessageSquare, WifiOff } from 'lucide-react';
-import { Link, Navigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { cn, normalizePhone } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -85,7 +85,9 @@ export default function WhatsApp() {
   const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [agentFilter, setAgentFilter] = useState<string>('all');
+  const [deepLinkText, setDeepLinkText] = useState<string>('');
 
   // Permission checks for crm_whatsapp
   const canView = isOwner || hasPermission('crm_whatsapp', 'view');
@@ -123,6 +125,39 @@ export default function WhatsApp() {
       setSelectedConversation(updated);
     }
   }, [allConversations, selectedConversation]);
+
+  // ── Deep Link: intercept ?phone=X&text=Y ──
+  useEffect(() => {
+    const phoneParam = searchParams.get('phone');
+    const textParam = searchParams.get('text') || '';
+    if (!phoneParam || conversationsLoading) return;
+
+    const normalizedParam = normalizePhone(phoneParam);
+    if (!normalizedParam) {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    // Try to find an existing conversation with this phone
+    const match = allConversations.find(c =>
+      normalizePhone(c.contact_phone) === normalizedParam
+    );
+
+    if (match) {
+      handleSelectConversation(match);
+      if (textParam) setDeepLinkText(textParam);
+    } else {
+      // No existing conversation — open NewConversationDialog with pre-fill
+      // We pass data via the sidebar's dialog state
+      setDeepLinkNewConv({ phone: phoneParam, text: textParam });
+    }
+
+    // Clear params to prevent loops
+    setSearchParams({}, { replace: true });
+  }, [searchParams, allConversations, conversationsLoading]);
+
+  const [deepLinkNewConv, setDeepLinkNewConv] = useState<{ phone: string; text: string } | null>(null);
+
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null, selectedConversation?.remote_jid || null);
   const { sendMessage, sending } = useSendMessage();
   const contactId = selectedConversation?.contact_id || selectedConversation?.lead_id || null;
@@ -406,6 +441,8 @@ export default function WhatsApp() {
                 agentFilter={agentFilter}
                 onAgentFilterChange={setAgentFilter}
                 showTriageTabs={canManage}
+                deepLinkNewConv={deepLinkNewConv}
+                onDeepLinkConsumed={() => setDeepLinkNewConv(null)}
               />
             </div>
 

@@ -333,8 +333,8 @@ export const PropertyGalleryUpload = ({
                 queryClient.invalidateQueries({ queryKey: ['properties'] }),
                 queryClient.invalidateQueries({ queryKey: ['property'] }),
                 queryClient.invalidateQueries({ queryKey: ['property_images'] }),
-                queryClient.refetchQueries({ queryKey: ['properties'] }),
               ]);
+              await queryClient.refetchQueries({ queryKey: ['properties'] });
               toast({ title: 'Galeria atualizada!' });
               onComplete?.();
             }}
