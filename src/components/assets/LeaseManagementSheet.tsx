@@ -51,7 +51,7 @@ import {
   Users,
 } from "lucide-react";
 import { RefreshCw, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatPhoneForWhatsApp } from "@/lib/utils";
 import { useLeaseByUnitId, generateBillingMessage, useUpdateLease, BillingLog } from "@/hooks/useLeases";
 import { useNavigate } from "react-router-dom";
 import { AssetHealth } from "@/hooks/useAssetHealth";
@@ -596,25 +596,25 @@ export function LeaseManagementSheet({
                   </CardHeader>
                   <CardContent className="py-2 px-4 space-y-2">
                     {(() => {
-                      const { whatsappLink, emailLink } = generateBillingMessage(
+                      const { whatsappPhone, emailLink, message } = generateBillingMessage(
                         lease,
                         billingStatus.overdue ? "overdue" : billingStatus.dueDay ? "due" : "reminder",
                         capitalizedMonth
                       );
                       return (
                         <div className="flex gap-2">
-                          {whatsappLink && (
+                          {whatsappPhone && (
                             <Button
                               variant="outline"
                               size="sm"
                               className="flex-1"
-                              asChild
+                              onClick={() => {
+                                const encodedMessage = encodeURIComponent(message);
+                                navigate(`/whatsapp?phone=${formatPhoneForWhatsApp(whatsappPhone)}&text=${encodedMessage}`);
+                              }}
                             >
-                              <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                                <MessageSquare className="h-4 w-4 mr-1.5 text-green-600" />
-                                WhatsApp
-                                <ExternalLink className="h-3 w-3 ml-1" />
-                              </a>
+                              <MessageSquare className="h-4 w-4 mr-1.5 text-green-600" />
+                              WhatsApp
                             </Button>
                           )}
                           {emailLink && (
@@ -641,6 +641,9 @@ export function LeaseManagementSheet({
                 <Card>
                   <CardHeader className="py-3 px-4">
                     <CardTitle className="text-sm font-medium">Régua de Cobrança</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Ao ativar uma etapa, ela também passa a ser acompanhada em Afazeres conforme a data de vencimento do contrato.
+                    </p>
                   </CardHeader>
                   <CardContent className="py-2 px-4">
                     <div className="space-y-3">

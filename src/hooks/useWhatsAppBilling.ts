@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface Transaction {
   id: string;
@@ -35,16 +36,14 @@ interface BillingMessageData {
 export function useWhatsAppBilling(navigateFn?: (path: string) => void) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isSending, setIsSending] = useState(false);
   const [isFetchingContact, setIsFetchingContact] = useState(false);
 
   const openWhatsApp = (phone: string, message: string) => {
     const encoded = encodeURIComponent(message);
-    if (navigateFn) {
-      navigateFn(`/whatsapp?phone=${phone}&text=${encoded}`);
-    } else {
-      window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank", "noopener,noreferrer");
-    }
+    const goToWhatsApp = navigateFn ?? navigate;
+    goToWhatsApp(`/whatsapp?phone=${phone}&text=${encoded}`);
   };
 
   const formatCurrency = (value: number) => {
@@ -166,8 +165,8 @@ Equipe de Administração`;
         return;
       }
 
-      // If edge function fails (no WhatsApp connection, etc), fallback to wa.me
-      console.warn("Edge function billing failed, falling back to wa.me:", edgeError || edgeResult?.error);
+      // If edge function fails (no active connection, etc), fallback to internal WhatsApp composer
+      console.warn("Edge function billing failed, opening internal WhatsApp composer:", edgeError || edgeResult?.error);
 
       const contact = await fetchContactData(transaction.contact_id);
       
@@ -208,7 +207,6 @@ Equipe de Administração`;
       const message = composeBillingMessage(messageData);
       const formattedPhone = formatPhoneForWhatsApp(phoneNumber);
 
-      const encodedMessage = encodeURIComponent(message);
       openWhatsApp(formattedPhone, message);
       
       toast({
@@ -237,7 +235,7 @@ Equipe de Administração`;
   ): Promise<void> => {
     try {
       const now = format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-      const method = isManual ? "via link wa.me" : "via API";
+      const method = isManual ? "via módulo interno do WhatsApp" : "via API";
       const newNote = `Cobrança enviada para ${contactName} ${method} em ${now}`;
 
       const { data: current } = await supabase
