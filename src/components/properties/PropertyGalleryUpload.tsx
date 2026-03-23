@@ -309,7 +309,7 @@ export const PropertyGalleryUpload = ({
       )}
 
       {/* Save button — fixed at bottom with proper spacing */}
-      {images.length > 0 && (
+      {visibleImages.length > 0 && (
         <div className="mt-4 border-t border-border pt-3">
           <Button
             type="button"
