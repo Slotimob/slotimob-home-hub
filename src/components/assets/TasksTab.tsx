@@ -36,6 +36,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 export function TasksTab() {
+  const navigate = useNavigate();
   const { receivables, payables, contracts, proposalFollowups, totalCount, isLoading } = useActionCenterPending();
   const { toast } = useToast();
   const queryClient = useQueryClient();
