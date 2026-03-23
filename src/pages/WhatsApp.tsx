@@ -125,6 +125,39 @@ export default function WhatsApp() {
       setSelectedConversation(updated);
     }
   }, [allConversations, selectedConversation]);
+
+  // ── Deep Link: intercept ?phone=X&text=Y ──
+  useEffect(() => {
+    const phoneParam = searchParams.get('phone');
+    const textParam = searchParams.get('text') || '';
+    if (!phoneParam || conversationsLoading) return;
+
+    const normalizedParam = normalizePhone(phoneParam);
+    if (!normalizedParam) {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    // Try to find an existing conversation with this phone
+    const match = allConversations.find(c =>
+      normalizePhone(c.contact_phone) === normalizedParam
+    );
+
+    if (match) {
+      handleSelectConversation(match);
+      if (textParam) setDeepLinkText(textParam);
+    } else {
+      // No existing conversation — open NewConversationDialog with pre-fill
+      // We pass data via the sidebar's dialog state
+      setDeepLinkNewConv({ phone: phoneParam, text: textParam });
+    }
+
+    // Clear params to prevent loops
+    setSearchParams({}, { replace: true });
+  }, [searchParams, allConversations, conversationsLoading]);
+
+  const [deepLinkNewConv, setDeepLinkNewConv] = useState<{ phone: string; text: string } | null>(null);
+
   const { messages, loading: messagesLoading } = useMessages(selectedConversation?.id || null, selectedConversation?.remote_jid || null);
   const { sendMessage, sending } = useSendMessage();
   const contactId = selectedConversation?.contact_id || selectedConversation?.lead_id || null;
