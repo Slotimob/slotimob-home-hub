@@ -88,7 +88,7 @@ export const DealCard = ({
     if (deal.lead.phone) {
       const phone = deal.lead.phone.replace(/\D/g, '');
       const formattedPhone = phone.startsWith('55') ? phone : `55${phone}`;
-      window.open(`https://wa.me/${formattedPhone}`, '_blank');
+      navigate(`/whatsapp?phone=${formattedPhone}`);
     }
   };
 

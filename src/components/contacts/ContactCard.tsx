@@ -53,6 +53,7 @@ export const ContactCard = ({
   canEdit = true,
   canDelete = true,
 }: ContactCardProps) => {
+  const navigate = useNavigate();
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -67,7 +68,7 @@ export const ContactCard = ({
     const phoneNumber = contact.whatsapp || contact.phone;
     if (phoneNumber) {
       const formattedPhone = formatPhoneForWhatsApp(phoneNumber);
-      window.open(`https://wa.me/${formattedPhone}`, '_blank');
+      navigate(`/whatsapp?phone=${formattedPhone}`);
     }
   };
 

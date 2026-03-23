@@ -29,6 +29,7 @@ export const ContactDetailSheet = ({
   canEdit = true,
   canDelete = false,
 }: ContactDetailSheetProps) => {
+  const navigate = useNavigate();
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -42,7 +43,7 @@ export const ContactDetailSheet = ({
     const phoneNumber = contact?.whatsapp || contact?.phone;
     if (phoneNumber) {
       const formattedPhone = formatPhoneForWhatsApp(phoneNumber);
-      window.open(`https://wa.me/${formattedPhone}`, '_blank');
+      navigate(`/whatsapp?phone=${formattedPhone}`);
     }
   };
 
