@@ -12,6 +12,8 @@ interface NewConversationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   connectionId: string | null;
+  initialPhone?: string;
+  initialMessage?: string;
 }
 
 function sanitizePhone(phone: string): string {
