@@ -61,7 +61,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
               </div>
               <div className="flex items-center gap-3">
                 {typeLabel && (
-                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold text-white uppercase tracking-widest inline-flex items-center justify-center text-center leading-none" style={{ background: 'rgba(47,201,175,0.85)', backdropFilter: 'blur(4px)' }}>
+                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold text-white uppercase tracking-widest inline-flex items-center justify-center text-center leading-none relative -top-[2px] pb-[3px]" style={{ background: 'rgba(47,201,175,0.85)', backdropFilter: 'blur(4px)' }}>
                     {typeLabel}
                   </span>
                 )}

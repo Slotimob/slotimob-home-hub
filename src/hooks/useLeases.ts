@@ -5,6 +5,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import type { Json } from "@/integrations/supabase/types";
 import { useLeaseFinancialProjection, useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
 import { format } from "date-fns";
+import { formatPhoneForWhatsApp } from "@/lib/utils";
 
 export interface GuarantorData {
   nome: string;
@@ -529,7 +530,7 @@ export function generateBillingMessage(
   lease: Lease,
   type: "reminder" | "due" | "overdue",
   month: string
-): { whatsappLink: string; emailLink: string; message: string } {
+): { whatsappPhone: string; emailLink: string; message: string } {
   const tenantName = lease.tenant?.name || "Inquilino";
   const unitName = lease.unit?.unit_number || "Imóvel";
   const propertyName = lease.unit?.property?.name;
@@ -565,7 +566,7 @@ export function generateBillingMessage(
   const encodedBody = encodeURIComponent(message);
 
   return {
-    whatsappLink: phone ? `https://wa.me/55${phone}?text=${encodedMessage}` : "",
+    whatsappPhone: phone ? formatPhoneForWhatsApp(phone) : "",
     emailLink: email ? `mailto:${email}?subject=${encodedSubject}&body=${encodedBody}` : "",
     message,
   };
