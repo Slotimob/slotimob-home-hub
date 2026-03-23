@@ -61,14 +61,14 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
               </div>
               <div className="flex items-center gap-3">
               {typeLabel && (
-                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none" style={{ background: '#ffffff', border: '2px solid #000000', color: '#000000' }}>
+                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none text-white" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
                     {typeLabel}
                   </span>
                 )}
                 {agent?.name && (
-                  <div className="text-right rounded-lg px-3 py-2" style={{ background: '#ffffff', border: '2px solid #000000', color: '#000000' }}>
-                    <p className="font-semibold text-xs">{agent.name}</p>
-                    {agent.phone && <p className="text-[10px] opacity-70">{agent.phone}</p>}
+                  <div className="text-right">
+                    <p className="font-semibold text-sm text-white" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>{agent.name}</p>
+                    {agent.phone && <p className="text-xs text-white/80" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{agent.phone}</p>}
                   </div>
                 )}
               </div>
@@ -273,20 +273,18 @@ function SectionTitle({ title, accent }: { title: string; accent?: boolean }) {
 }
 
 function CTAFooter({ agent }: { agent?: AgentInfo }) {
-  const phoneDisplay = agent?.whatsapp || '';
+  const phoneDisplay = agent?.whatsapp || agent?.phone || '';
   return (
     <div className="p-6 rounded-xl text-center mb-6" style={{ background: '#2fc9af' }}>
       <p className="text-white text-xl font-bold mb-1">Gostou? Agende sua visita agora!</p>
       <p className="text-white/80 text-sm mb-3">Entre em contato e garanta essa oportunidade única.</p>
       {phoneDisplay && (
-        <div className="inline-block px-6 py-3 rounded-full" style={{ background: '#25D366' }}>
-          <p className="text-white font-bold text-lg" style={{ letterSpacing: '0.5px' }}>
-            WhatsApp: {phoneDisplay}
-          </p>
-        </div>
+        <p className="text-white font-bold text-2xl mb-2" style={{ letterSpacing: '1px' }}>
+          {phoneDisplay}
+        </p>
       )}
       {agent?.name && (
-        <p className="text-white/70 text-sm mt-3">{agent.name}{agent.email ? ` · ${agent.email}` : ''}</p>
+        <p className="text-white/90 text-sm">{agent.name}{agent.email ? ` | ${agent.email}` : ''}</p>
       )}
     </div>
   );
