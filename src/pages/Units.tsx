@@ -5,7 +5,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Home, Upload, X, ChevronLeft, ChevronRight, CheckSquare, Square, Plus, Share2 } from 'lucide-react';
+import { Home, Upload, X, ChevronLeft, ChevronRight, CheckSquare, Square, Plus, Share2, RefreshCw } from 'lucide-react';
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
 import { CreateUnitDialog } from '@/components/CreateUnitDialog';
