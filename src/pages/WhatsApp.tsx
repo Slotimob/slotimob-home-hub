@@ -85,7 +85,9 @@ export default function WhatsApp() {
   const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [agentFilter, setAgentFilter] = useState<string>('all');
+  const [deepLinkText, setDeepLinkText] = useState<string>('');
 
   // Permission checks for crm_whatsapp
   const canView = isOwner || hasPermission('crm_whatsapp', 'view');
