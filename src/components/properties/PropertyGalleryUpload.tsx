@@ -154,6 +154,7 @@ export const PropertyGalleryUpload = ({
       const saved = await saveToDatabase(newImages);
       if (saved) {
         onImagesChange(newImages);
+        updateParentCache(newImages);
         toast({ title: 'Fotos salvas!', description: `${successfulUploads.length} imagem${successfulUploads.length !== 1 ? 's' : ''} salva${successfulUploads.length !== 1 ? 's' : ''} com sucesso.` });
       }
     }
