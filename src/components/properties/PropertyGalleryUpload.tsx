@@ -121,9 +121,24 @@ export const PropertyGalleryUpload = ({
     }
   };
 
+  useEffect(() => {
+    const sanitizedImages = sanitizeGalleryUrls(images);
+    const hasChanges =
+      sanitizedImages.length !== images.length ||
+      sanitizedImages.some((url, index) => url !== images[index]);
+
+    if (!hasChanges) return;
+
+    onImagesChange(sanitizedImages);
+    if (propertyId && autoSave) {
+      void saveToDatabase(sanitizedImages);
+    }
+  }, [images, propertyId, autoSave]);
+
   const handleFilesSelect = async (files: FileList | File[]) => {
+    const currentImages = sanitizeGalleryUrls(images);
     const fileArray = Array.from(files);
-    const remaining = maxImages - images.length;
+    const remaining = maxImages - currentImages.length;
     
     if (fileArray.length > remaining) {
       toast({ title: 'Limite excedido', description: `Você pode adicionar no máximo ${remaining} imagem${remaining !== 1 ? 's' : ''}.`, variant: 'destructive' });
@@ -135,7 +150,7 @@ export const PropertyGalleryUpload = ({
     const successfulUploads = results.filter((url): url is string => url !== null);
     
     if (successfulUploads.length > 0) {
-      const newImages = [...images, ...successfulUploads];
+      const newImages = [...currentImages, ...successfulUploads];
       const saved = await saveToDatabase(newImages);
       if (saved) {
         onImagesChange(newImages);
