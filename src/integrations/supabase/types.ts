@@ -2391,6 +2391,7 @@ export type Database = {
           push_subscription: Json | null
           subscription_plan: string | null
           terms_accepted_at: string | null
+          terms_signature: string | null
           terms_version: string | null
           theme_preference: string | null
           updated_at: string
@@ -2423,6 +2424,7 @@ export type Database = {
           push_subscription?: Json | null
           subscription_plan?: string | null
           terms_accepted_at?: string | null
+          terms_signature?: string | null
           terms_version?: string | null
           theme_preference?: string | null
           updated_at?: string
@@ -2455,6 +2457,7 @@ export type Database = {
           push_subscription?: Json | null
           subscription_plan?: string | null
           terms_accepted_at?: string | null
+          terms_signature?: string | null
           terms_version?: string | null
           theme_preference?: string | null
           updated_at?: string
@@ -4047,6 +4050,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_latest_terms: {
+        Args: { p_terms_version: string }
+        Returns: undefined
+      }
       admin_add_credits: {
         Args: {
           p_amount: number
