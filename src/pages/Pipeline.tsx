@@ -19,6 +19,7 @@ import { DealCard } from '@/components/DealCard';
 import { CreateDealDialog } from '@/components/CreateDealDialog';
 import { DealDetailsSheet } from '@/components/crm/DealDetailsSheet';
 import { CreateCommissionDialog } from '@/components/crm/CreateCommissionDialog';
+import { CreateProposalDialog, type DealContext } from '@/components/CreateProposalDialog';
 import { DealClosingDialog } from '@/components/crm/DealClosingDialog';
 import { PipelineMetrics } from '@/components/crm/PipelineMetrics';
 import { PipelineFilters, type PipelineFiltersState } from '@/components/crm/PipelineFilters';
@@ -332,6 +333,10 @@ const Pipeline = () => {
   // Edit stage dialog state
   const [isEditStageDialogOpen, setIsEditStageDialogOpen] = useState(false);
   const [editingStage, setEditingStage] = useState<CustomStage | null>(null);
+
+  // Proposal auto-trigger state
+  const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
+  const [proposalDealContext, setProposalDealContext] = useState<DealContext | null>(null);
 
   // Reorder mode state (now used to open dialog)
   const [isReorderMode, setIsReorderMode] = useState(false);
@@ -966,6 +971,27 @@ const Pipeline = () => {
       return;
     }
 
+    // If moving to proposal stage, trigger proposal creation
+    if (newVisibleStageId === 'proposal') {
+      await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
+        stage: newVisibleStageId as PipelineStage,
+        custom_stage_id: null,
+      });
+
+      setProposalDealContext({
+        deal_id: dealId,
+        lead_id: deal.lead?.id || '',
+        lead_name: deal.lead?.name || '',
+        property_id: deal.property?.id || null,
+        property_name: deal.property?.name || null,
+        unit_id: deal.unit?.id || null,
+        unit_number: deal.unit?.unit_number || null,
+        estimated_value: deal.estimated_value,
+      });
+      setIsProposalDialogOpen(true);
+      return;
+    }
+
     // Default stage target
     await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
       stage: newVisibleStageId as PipelineStage,
@@ -1396,6 +1422,19 @@ const Pipeline = () => {
           setPendingWonDeal(null);
           loadDeals(); // Reload deals to reflect updated unit status
         }}
+      />
+
+      <CreateProposalDialog
+        open={isProposalDialogOpen}
+        onOpenChange={(open) => {
+          setIsProposalDialogOpen(open);
+          if (!open) setProposalDealContext(null);
+        }}
+        onSuccess={() => {
+          setProposalDealContext(null);
+          loadDeals();
+        }}
+        dealContext={proposalDealContext}
       />
     </AppLayout>
   );
