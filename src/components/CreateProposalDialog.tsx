@@ -23,13 +23,25 @@ import {
 import { FileText, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+export interface DealContext {
+  deal_id: string;
+  lead_id: string;
+  lead_name: string;
+  property_id?: string | null;
+  property_name?: string | null;
+  unit_id?: string | null;
+  unit_number?: string | null;
+  estimated_value?: number | null;
+}
+
 interface CreateProposalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  dealContext?: DealContext | null;
 }
 
-export const CreateProposalDialog = ({ open, onOpenChange, onSuccess }: CreateProposalDialogProps) => {
+export const CreateProposalDialog = ({ open, onOpenChange, onSuccess, dealContext }: CreateProposalDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { effectiveBrokerId } = useWorkspace();
@@ -44,6 +56,19 @@ export const CreateProposalDialog = ({ open, onOpenChange, onSuccess }: CreatePr
     price: '',
     observations: '',
   });
+
+  // Pre-fill from dealContext when it changes
+  useEffect(() => {
+    if (open && dealContext) {
+      setFormData(prev => ({
+        ...prev,
+        lead_id: dealContext.lead_id || '',
+        unit_id: dealContext.unit_id || '',
+        price: dealContext.estimated_value ? dealContext.estimated_value.toString() : prev.price,
+        title: `Proposta - ${dealContext.lead_name}`,
+      }));
+    }
+  }, [open, dealContext]);
 
   useEffect(() => {
     if (open) {
