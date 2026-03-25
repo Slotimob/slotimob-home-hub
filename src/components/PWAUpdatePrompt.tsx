@@ -10,11 +10,11 @@ export function PWAUpdatePrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
-      // Check for updates every 30 seconds
+      // Check for updates every 60 seconds (less aggressive)
       if (registration) {
         setInterval(() => {
           registration.update();
-        }, 30 * 1000);
+        }, 60 * 1000);
       }
     },
     onRegisterError(error) {
@@ -22,30 +22,36 @@ export function PWAUpdatePrompt() {
     },
   });
 
+  const handleUpdate = async () => {
+    if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current);
+    try {
+      await updateServiceWorker(true);
+    } catch {
+      // If SW update fails, force a hard reload
+    }
+    // Hard reload to bust any remaining cache
+    window.location.reload();
+  };
+
   useEffect(() => {
     if (needRefresh) {
-      // Show toast immediately
-      toast.error('Nova versão disponível!', {
+      toast.info('Nova versão disponível!', {
         description: 'Atualizando automaticamente em 3 segundos…',
+        duration: 5000,
         action: {
           label: 'Atualizar agora',
-          onClick: () => {
-            if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current);
-            updateServiceWorker(true);
-          },
+          onClick: handleUpdate,
         },
       });
 
-      // Force update after 3 seconds regardless
-      autoReloadTimer.current = setTimeout(() => {
-        updateServiceWorker(true);
-      }, 3000);
+      // Force update after 3 seconds
+      autoReloadTimer.current = setTimeout(handleUpdate, 3000);
     }
 
     return () => {
       if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current);
     };
-  }, [needRefresh, updateServiceWorker]);
+  }, [needRefresh]);
 
   return null;
 }

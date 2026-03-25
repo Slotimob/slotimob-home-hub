@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      devOptions: { enabled: false },
       includeAssets: ["sloti-logo.png", "favicon.ico"],
       manifest: {
         name: "SLOTIMOB - Gestão Imobiliária",

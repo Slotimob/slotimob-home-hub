@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Shield, FileText } from 'lucide-react';
+import { Shield, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,45 +33,36 @@ export const TermsReacceptDialog = ({
   const { toast } = useToast();
 
   const handleAccept = async () => {
-    if (!accepted) {
-      toast({
-        title: 'Aceite necessário',
-        description: 'Você precisa aceitar os termos para continuar usando o aplicativo.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!accepted || loading) return;
 
     setLoading(true);
 
-    // Close dialog optimistically first
-    onAccepted();
-
     try {
-      const now = new Date().toISOString();
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          accepted_terms: true,
-          terms_accepted_at: now,
-          terms_version: currentVersion,
-        })
-        .eq('id', userId);
+      // Use the RPC for cryptographic signature persistence
+      const { error } = await supabase.rpc('accept_latest_terms', {
+        p_terms_version: currentVersion,
+      });
 
       if (error) {
         console.error('Error saving terms acceptance:', error);
+        toast({
+          title: 'Erro ao salvar',
+          description: 'Não foi possível registrar a aceitação. Tente novamente.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
       }
 
-      // Log consent for LGPD compliance
-      await supabase.from('consent_logs').insert({
-        user_id: userId,
-        consent_type: 'terms_reaccept',
-        terms_version: currentVersion,
-        user_agent: navigator.userAgent,
-        accepted_at: now,
-      });
+      // Only close dialog after successful DB write
+      onAccepted();
     } catch (error: any) {
       console.error('Error saving terms acceptance:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Ocorreu um erro inesperado. Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -115,6 +106,7 @@ export const TermsReacceptDialog = ({
               id="reaccept-terms"
               checked={accepted}
               onCheckedChange={(checked) => setAccepted(checked as boolean)}
+              disabled={loading}
               className="mt-0.5"
             />
             <Label
@@ -132,7 +124,14 @@ export const TermsReacceptDialog = ({
             disabled={!accepted || loading}
             className="w-full"
           >
-            {loading ? 'Salvando...' : 'Aceitar e Continuar'}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Aceitar e Continuar'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
