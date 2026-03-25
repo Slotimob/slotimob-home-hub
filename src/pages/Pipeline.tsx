@@ -334,6 +334,10 @@ const Pipeline = () => {
   const [isEditStageDialogOpen, setIsEditStageDialogOpen] = useState(false);
   const [editingStage, setEditingStage] = useState<CustomStage | null>(null);
 
+  // Proposal auto-trigger state
+  const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
+  const [proposalDealContext, setProposalDealContext] = useState<DealContext | null>(null);
+
   // Reorder mode state (now used to open dialog)
   const [isReorderMode, setIsReorderMode] = useState(false);
 
