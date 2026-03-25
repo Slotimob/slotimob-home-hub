@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Fallback version - will be overridden by active version from database
@@ -21,72 +21,11 @@ export const useTermsAcceptance = (userId: string | undefined) => {
     currentVersion: CURRENT_TERMS_VERSION,
   });
 
-  useEffect(() => {
+  const checkTermsAcceptance = useCallback(async () => {
     if (!userId) {
       setStatus(prev => ({ ...prev, loading: false }));
       return;
     }
-
-    const checkTermsAcceptance = async () => {
-      try {
-        // Fetch user profile and active terms version in parallel
-        const [profileResult, termsResult] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('terms_accepted_at, terms_version')
-            .eq('id', userId)
-            .maybeSingle(),
-          supabase
-            .from('terms_versions')
-            .select('version')
-            .eq('is_active', true)
-            .maybeSingle(),
-        ]);
-
-        if (profileResult.error) {
-          console.error('Error fetching profile for terms:', profileResult.error);
-          // On error, don't block the user - assume terms accepted
-          setStatus(prev => ({ ...prev, loading: false, needsReaccept: false }));
-          return;
-        }
-
-        const userVersion = profileResult.data?.terms_version || null;
-        const acceptedAt = profileResult.data?.terms_accepted_at || null;
-        const currentVersion = termsResult.data?.version || CURRENT_TERMS_VERSION;
-        
-        // Check if user needs to re-accept terms
-        const needsReaccept = !userVersion || userVersion !== currentVersion;
-
-        setStatus({
-          needsReaccept,
-          loading: false,
-          userVersion,
-          acceptedAt,
-          currentVersion,
-        });
-      } catch (error) {
-        console.error('Error checking terms acceptance:', error);
-        // On error, don't block the user
-        setStatus(prev => ({ ...prev, loading: false, needsReaccept: false }));
-      }
-    };
-
-    checkTermsAcceptance();
-  }, [userId]);
-
-  const markAccepted = () => {
-    setStatus(prev => ({
-      ...prev,
-      needsReaccept: false,
-      userVersion: prev.currentVersion,
-      acceptedAt: new Date().toISOString(),
-    }));
-  };
-
-  const refreshStatus = async () => {
-    if (!userId) return;
-
-    setStatus(prev => ({ ...prev, loading: true }));
 
     try {
       const [profileResult, termsResult] = await Promise.all([
@@ -102,7 +41,11 @@ export const useTermsAcceptance = (userId: string | undefined) => {
           .maybeSingle(),
       ]);
 
-      if (profileResult.error) throw profileResult.error;
+      if (profileResult.error) {
+        console.error('Error fetching profile for terms:', profileResult.error);
+        setStatus(prev => ({ ...prev, loading: false, needsReaccept: false }));
+        return;
+      }
 
       const userVersion = profileResult.data?.terms_version || null;
       const acceptedAt = profileResult.data?.terms_accepted_at || null;
@@ -117,11 +60,49 @@ export const useTermsAcceptance = (userId: string | undefined) => {
         currentVersion,
       });
     } catch (error) {
-      console.error('Error refreshing terms status:', error);
-      setStatus(prev => ({ ...prev, loading: false }));
+      console.error('Error checking terms acceptance:', error);
+      setStatus(prev => ({ ...prev, loading: false, needsReaccept: false }));
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    checkTermsAcceptance();
+  }, [checkTermsAcceptance]);
+
+  const acceptTerms = async (version: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.rpc('accept_latest_terms', {
+        p_terms_version: version,
+      });
+
+      if (error) {
+        console.error('Error accepting terms via RPC:', error);
+        return false;
+      }
+
+      // Update local state immediately
+      setStatus(prev => ({
+        ...prev,
+        needsReaccept: false,
+        userVersion: version,
+        acceptedAt: new Date().toISOString(),
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('Error accepting terms:', error);
+      return false;
     }
   };
 
-  return { ...status, markAccepted, refreshStatus };
-};
+  const markAccepted = () => {
+    setStatus(prev => ({
+      ...prev,
+      needsReaccept: false,
+      userVersion: prev.currentVersion,
+      acceptedAt: new Date().toISOString(),
+    }));
+  };
 
+  return { ...status, markAccepted, acceptTerms, refreshStatus: checkTermsAcceptance };
+};
