@@ -971,6 +971,27 @@ const Pipeline = () => {
       return;
     }
 
+    // If moving to proposal stage, trigger proposal creation
+    if (newVisibleStageId === 'proposal') {
+      await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
+        stage: newVisibleStageId as PipelineStage,
+        custom_stage_id: null,
+      });
+
+      setProposalDealContext({
+        deal_id: dealId,
+        lead_id: deal.lead?.id || '',
+        lead_name: deal.lead?.name || '',
+        property_id: deal.property?.id || null,
+        property_name: deal.property?.name || null,
+        unit_id: deal.unit?.id || null,
+        unit_number: deal.unit?.unit_number || null,
+        estimated_value: deal.estimated_value,
+      });
+      setIsProposalDialogOpen(true);
+      return;
+    }
+
     // Default stage target
     await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
       stage: newVisibleStageId as PipelineStage,
