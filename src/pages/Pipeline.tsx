@@ -1423,6 +1423,19 @@ const Pipeline = () => {
           loadDeals(); // Reload deals to reflect updated unit status
         }}
       />
+
+      <CreateProposalDialog
+        open={isProposalDialogOpen}
+        onOpenChange={(open) => {
+          setIsProposalDialogOpen(open);
+          if (!open) setProposalDealContext(null);
+        }}
+        onSuccess={() => {
+          setProposalDealContext(null);
+          loadDeals();
+        }}
+        dealContext={proposalDealContext}
+      />
     </AppLayout>
   );
 };
