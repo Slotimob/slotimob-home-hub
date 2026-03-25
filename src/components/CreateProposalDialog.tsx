@@ -220,21 +220,25 @@ Assinatura do Corretor
 
           <div className="space-y-2">
             <Label htmlFor="lead_id">Cliente *</Label>
-            <Select
-              value={formData.lead_id}
-              onValueChange={(value) => setFormData({ ...formData, lead_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {leads.map((lead) => (
-                  <SelectItem key={lead.id} value={lead.id}>
-                    {lead.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {dealContext?.lead_id ? (
+              <Input value={dealContext.lead_name} disabled className="bg-muted" />
+            ) : (
+              <Select
+                value={formData.lead_id}
+                onValueChange={(value) => setFormData({ ...formData, lead_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leads.map((lead) => (
+                    <SelectItem key={lead.id} value={lead.id}>
+                      {lead.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-2">
