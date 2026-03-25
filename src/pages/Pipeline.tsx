@@ -19,6 +19,7 @@ import { DealCard } from '@/components/DealCard';
 import { CreateDealDialog } from '@/components/CreateDealDialog';
 import { DealDetailsSheet } from '@/components/crm/DealDetailsSheet';
 import { CreateCommissionDialog } from '@/components/crm/CreateCommissionDialog';
+import { CreateProposalDialog, type DealContext } from '@/components/CreateProposalDialog';
 import { DealClosingDialog } from '@/components/crm/DealClosingDialog';
 import { PipelineMetrics } from '@/components/crm/PipelineMetrics';
 import { PipelineFilters, type PipelineFiltersState } from '@/components/crm/PipelineFilters';
