@@ -611,9 +611,13 @@ export function CreateProposalSheet({
                     </SelectTrigger>
                     <SelectContent position="popper" className="max-h-[300px] overflow-y-auto">
                       <SelectItem value="none">Nenhuma</SelectItem>
-                      {contactDeals.map((deal: any) => (
+                      {contactDeals.map((deal: any) => {
+                        const pipelineLabels: Record<string, string> = { vendas: 'Venda', locacoes: 'Locação', captacoes: 'Captação' };
+                        const pipelineLabel = pipelineLabels[deal.pipeline_type] || deal.pipeline_type || 'Venda';
+                        const dealTitle = (deal.lead as any)?.name || 'Negociação';
+                        return (
                         <SelectItem key={deal.id} value={deal.id}>
-                          {(deal.lead as any)?.name || 'Negociação'} — {deal.pipeline_type || 'Vendas'} ({deal.stage})
+                          [{pipelineLabel}] {dealTitle}
                         </SelectItem>
                       ))}
                     </SelectContent>
