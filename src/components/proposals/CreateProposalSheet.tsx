@@ -5,6 +5,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { useProposals, type CreateProposalInput, type Proposal } from '@/hooks/useProposals';
 import { useAICredits } from '@/hooks/useAICredits';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Sheet,
   SheetContent,
@@ -31,13 +32,13 @@ import {
   FileText,
   Loader2,
   Calculator,
-  User,
   Image as ImageIcon,
   Building2,
   Sparkles,
   Wand2,
   Zap,
   Percent,
+  Briefcase,
 } from 'lucide-react';
 import {
   generatePropertyPDF,
@@ -47,6 +48,7 @@ import {
   type PDFAssetData,
 } from '@/utils/propertyPdfGenerator';
 import { ProposalPdfTemplate } from './ProposalPdfTemplate';
+import { ContactSelector } from '@/components/ContactSelector';
 
 interface CreateProposalSheetProps {
   open: boolean;
@@ -82,6 +84,7 @@ export function CreateProposalSheet({
   const { createProposal, updateProposal } = useProposals();
   const { credits } = useAICredits();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [loadingUnits, setLoadingUnits] = useState(false);
@@ -89,6 +92,8 @@ export function CreateProposalSheet({
   const [generatingAI, setGeneratingAI] = useState(false);
 
   const [selectedUnitId, setSelectedUnitId] = useState('');
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [leadName, setLeadName] = useState('');
   const [introMessage, setIntroMessage] = useState('');
   const [includeFinancing, setIncludeFinancing] = useState(false);
@@ -111,6 +116,45 @@ export function CreateProposalSheet({
   const [readyToCapture, setReadyToCapture] = useState(false);
 
   const isEditing = !!editingProposal;
+
+  // Fetch deals for selected contact
+  const { data: contactDeals } = useQuery({
+    queryKey: ['contact-deals', selectedContactId],
+    queryFn: async () => {
+      if (!selectedContactId) return [];
+      const { data, error } = await supabase
+        .from('deals')
+        .select('id, stage, pipeline_type, lead:leads(name)')
+        .eq('contact_id', selectedContactId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedContactId,
+  });
+
+  // Fetch contact name for leadName sync
+  const { data: selectedContactData } = useQuery({
+    queryKey: ['contact-name', selectedContactId],
+    queryFn: async () => {
+      if (!selectedContactId) return null;
+      const { data } = await supabase
+        .from('contacts')
+        .select('name')
+        .eq('id', selectedContactId)
+        .single();
+      return data;
+    },
+    enabled: !!selectedContactId,
+  });
+
+  // Sync leadName when contact changes
+  useEffect(() => {
+    if (selectedContactData?.name) {
+      setLeadName(selectedContactData.name);
+    }
+  }, [selectedContactData]);
 
   // Load units
   useEffect(() => {
@@ -160,6 +204,8 @@ export function CreateProposalSheet({
   useEffect(() => {
     if (!open) {
       setSelectedUnitId('');
+      setSelectedContactId(null);
+      setSelectedDealId(null);
       setLeadName('');
       setIntroMessage('');
       setIncludeFinancing(false);
@@ -309,7 +355,7 @@ export function CreateProposalSheet({
         const proposalInput = {
           property_id: selectedUnit?.property_id,
           unit_id: selectedUnit?.id,
-          deal_id: dealId || (editingProposal as any)?.deal_id || undefined,
+          deal_id: selectedDealId || dealId || (editingProposal as any)?.deal_id || undefined,
           lead_name: leadName.trim() || undefined,
           introduction_message: introMessage.trim() || undefined,
           include_financing: includeFinancing,
@@ -324,6 +370,23 @@ export function CreateProposalSheet({
           const result = await createProposal.mutateAsync(proposalInput);
           if (pdfBlob && onProposalGenerated && result?.id) {
             onProposalGenerated(pdfBlob as Blob, result.id);
+          }
+        }
+
+        // FASE 3: Insert deal_activity if a deal is linked
+        const activeDealId = selectedDealId || dealId;
+        if (activeDealId && effectiveBrokerId) {
+          try {
+            await supabase.from('deal_activities').insert({
+              deal_id: activeDealId,
+              broker_id: effectiveBrokerId,
+              activity_type: 'note',
+              title: 'Proposta Comercial Gerada',
+              description: `Proposta vinculada ao imóvel ${selectedUnit?.property_name ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}` : selectedUnit?.unit_number}. Cliente: ${leadName.trim() || 'N/A'}.`,
+            });
+            queryClient.invalidateQueries({ queryKey: ['deal-activities', activeDealId] });
+          } catch (actErr) {
+            console.error('Deal activity insert error (non-critical):', actErr);
           }
         }
 
@@ -510,19 +573,53 @@ export function CreateProposalSheet({
 
               <Separator />
 
-              {/* Lead Name */}
+              {/* Contact Selector */}
               <div className="space-y-2">
-                <Label htmlFor="lead-name" className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  Nome do Cliente/Lead
+                <Label className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  Cliente / Contato
                 </Label>
-                <Input
-                  id="lead-name"
-                  placeholder="Ex: João Silva"
-                  value={leadName}
-                  onChange={(e) => setLeadName(e.target.value)}
+                <ContactSelector
+                  value={selectedContactId}
+                  onChange={(id) => {
+                    setSelectedContactId(id);
+                    setSelectedDealId(null); // reset deal when contact changes
+                  }}
+                  placeholder="Selecione um contato..."
                 />
+                {/* Fallback manual name if no contact selected */}
+                {!selectedContactId && (
+                  <Input
+                    placeholder="Ou digite o nome do cliente"
+                    value={leadName}
+                    onChange={(e) => setLeadName(e.target.value)}
+                    className="mt-1"
+                  />
+                )}
               </div>
+
+              {/* Deal Selector — only show when contact has deals */}
+              {selectedContactId && contactDeals && contactDeals.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    Vincular a uma Negociação? (opcional)
+                  </Label>
+                  <Select value={selectedDealId || ''} onValueChange={(v) => setSelectedDealId(v || null)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Nenhuma negociação selecionada" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma</SelectItem>
+                      {contactDeals.map((deal: any) => (
+                        <SelectItem key={deal.id} value={deal.id}>
+                          {(deal.lead as any)?.name || 'Negociação'} — {deal.pipeline_type || 'Vendas'} ({deal.stage})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Introduction Message + AI Button */}
               <div className="space-y-2">

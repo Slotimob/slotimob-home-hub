@@ -534,23 +534,24 @@ serve(async (req) => {
               const name = chat.pushName || chat.name || chat.contact?.name || chat.contact || phone;
               const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || chat.profilePicture || null;
 
-              // Flexible phone matching (last 8-9 digits)
-              const last9 = phone.slice(-9);
+              // Robust JS-side phone matching: strip all non-digits, compare last 8 digits
               const last8 = phone.slice(-8);
-              const { data: existingContacts } = await supabaseAdmin
+              const { data: allBrokerContacts } = await supabaseAdmin
                 .from('contacts')
                 .select('id, avatar_url, phone, whatsapp')
                 .eq('broker_id', userId)
-                .or(`phone.eq.${phone},whatsapp.eq.${phone},phone.eq.+${phone},whatsapp.eq.+${phone},phone.like.%${last9},whatsapp.like.%${last9},phone.like.%${last8},whatsapp.like.%${last8}`)
-                .limit(5);
+                .or('phone.not.is.null,whatsapp.not.is.null')
+                .limit(500);
 
               let contactId: string | null = null;
-              if (existingContacts && existingContacts.length > 0) {
-                // Prefer exact match
-                const exactMatch = existingContacts.find(
-                  (c: any) => c.phone?.replace(/\D/g, '') === phone || c.whatsapp?.replace(/\D/g, '') === phone
+              if (allBrokerContacts && allBrokerContacts.length > 0) {
+                const exactMatch = allBrokerContacts.find(
+                  (c: any) => (c.phone || '').replace(/\D/g, '') === phone || (c.whatsapp || '').replace(/\D/g, '') === phone
                 );
-                const bestMatch = exactMatch || existingContacts[0];
+                const suffixMatch = !exactMatch ? allBrokerContacts.find(
+                  (c: any) => (c.phone || '').replace(/\D/g, '').endsWith(last8) || (c.whatsapp || '').replace(/\D/g, '').endsWith(last8)
+                ) : null;
+                const bestMatch = exactMatch || suffixMatch;
                 contactId = bestMatch.id;
                 if (profilePicUrl && !bestMatch.avatar_url) {
                   await supabaseAdmin.from('contacts').update({ avatar_url: profilePicUrl }).eq('id', contactId);
