@@ -161,6 +161,7 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         estimated_value: parsedValue,
         assigned_user_id: assignedUserId || user?.id || null,
         initial_task: title || `Negociação via WhatsApp - ${contactName}`,
+        pipeline_type: pipelineType,
       };
       if (propertyId && propertyId !== 'none') {
         const selected = properties.find(p => p.id === propertyId);
