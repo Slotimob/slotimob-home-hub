@@ -1232,7 +1232,7 @@ const Pipeline = () => {
           
           <div
             ref={kanbanScrollRef}
-            className="w-full min-w-0 overflow-x-scroll overflow-y-visible pb-4 touch-pan-x overscroll-x-contain pipeline-scrollbar cursor-grab px-6 snap-x snap-proximity md:snap-none"
+            className="w-full min-w-0 overflow-x-scroll overflow-y-hidden h-[calc(100vh-16rem)] pb-4 touch-pan-x overscroll-x-contain pipeline-scrollbar cursor-grab px-6 snap-x snap-proximity md:snap-none"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={endPointerDrag}
@@ -1240,7 +1240,7 @@ const Pipeline = () => {
             onPointerLeave={endPointerDrag}
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div className="min-w-max px-2 py-3 select-none pr-8 md:pr-2">
+            <div className="min-w-max px-2 py-3 select-none pr-8 md:pr-2 h-full">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -1251,7 +1251,7 @@ const Pipeline = () => {
                 items={customStages.map(s => `stage_${s.id}`)}
                 strategy={horizontalListSortingStrategy}
               >
-                <div className="flex gap-4 min-w-max">
+                <div className="flex gap-4 min-w-max h-full">
                   {/* Render all stages in the correct order from allStages */}
                   {allStages.map((stage) => {
                     // Custom stage

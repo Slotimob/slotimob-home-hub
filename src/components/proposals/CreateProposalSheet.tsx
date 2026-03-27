@@ -583,46 +583,41 @@ export function CreateProposalSheet({
                   value={selectedContactId}
                   onChange={(id) => {
                     setSelectedContactId(id);
-                    setSelectedDealId(null); // reset deal when contact changes
+                    setSelectedDealId(null);
                   }}
                   placeholder="Selecione um contato..."
                 />
-                {/* Fallback manual name if no contact selected */}
-                {!selectedContactId && (
-                  <Input
-                    placeholder="Ou digite o nome do cliente"
-                    value={leadName}
-                    onChange={(e) => setLeadName(e.target.value)}
-                    className="mt-1"
-                  />
-                )}
               </div>
 
               {/* Deal Selector — only show when contact has deals */}
-              {selectedContactId && contactDeals && contactDeals.length > 0 && (
+              {selectedContactId && (
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                     Vincular a uma Negociação? (opcional)
                   </Label>
-                  <Select value={selectedDealId || 'none'} onValueChange={(v) => setSelectedDealId(v === 'none' ? null : v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Nenhuma negociação selecionada" />
-                    </SelectTrigger>
-                    <SelectContent position="popper" className="max-h-[300px] overflow-y-auto">
-                      <SelectItem value="none">Nenhuma</SelectItem>
-                      {contactDeals.map((deal: any) => {
-                        const pipelineLabels: Record<string, string> = { vendas: 'Venda', locacoes: 'Locação', captacoes: 'Captação' };
-                        const pipelineLabel = pipelineLabels[deal.pipeline_type] || deal.pipeline_type || 'Venda';
-                        const dealTitle = (deal.lead as any)?.name || 'Negociação';
-                        return (
-                        <SelectItem key={deal.id} value={deal.id}>
-                          [{pipelineLabel}] {dealTitle}
-                        </SelectItem>
-                      );
-                      })}
-                    </SelectContent>
-                  </Select>
+                  {contactDeals && contactDeals.length > 0 ? (
+                    <Select value={selectedDealId || 'none'} onValueChange={(v) => setSelectedDealId(v === 'none' ? null : v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Nenhuma negociação selecionada" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" sideOffset={5} className="max-h-[300px] overflow-y-auto z-[100]">
+                        <SelectItem value="none">Nenhuma</SelectItem>
+                        {contactDeals.map((deal: any) => {
+                          const pipelineLabels: Record<string, string> = { sale: 'Venda', rental: 'Locação', acquisition: 'Captação' };
+                          const pipelineLabel = pipelineLabels[deal.pipeline_type] || deal.pipeline_type || 'Venda';
+                          const dealTitle = (deal.lead as any)?.name || 'Negociação';
+                          return (
+                            <SelectItem key={deal.id} value={deal.id}>
+                              [{pipelineLabel}] {dealTitle}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic py-2">Nenhuma negociação encontrada para este contato.</p>
+                  )}
                 </div>
               )}
 
