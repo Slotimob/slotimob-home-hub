@@ -265,7 +265,35 @@ export function ChatArea({
           </Avatar>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
+            {/* Conversation status control */}
+            {conversation.id && (
+              <Select
+                value={(conversation as any).status || 'pending'}
+                onValueChange={async (newStatus) => {
+                  try {
+                    await supabase
+                      .from('whatsapp_conversations')
+                      .update({ status: newStatus, updated_at: new Date().toISOString() })
+                      .eq('id', conversation.id);
+                    toast({ title: 'Status atualizado' });
+                  } catch (err: any) {
+                    toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
+                  }
+                }}
+              >
+                <SelectTrigger className="h-5 w-auto min-w-0 text-[10px] border-none bg-muted/60 px-1.5 py-0 gap-0.5 font-normal">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending" className="text-xs">Triagem</SelectItem>
+                  <SelectItem value="active" className="text-xs">Atendimento</SelectItem>
+                  <SelectItem value="closed" className="text-xs">Fechado</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Phone className="h-3 w-3" />
