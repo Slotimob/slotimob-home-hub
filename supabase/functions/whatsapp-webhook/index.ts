@@ -444,7 +444,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   const rawPushName = msgData.pushName || msgData.data?.pushName || msgData.message?.pushName || null;
   if (isGroup) return;
 
-  const pushName = msgData.pushName || senderPhone;
+  const pushName = rawPushName || senderPhone;
   const messageContent = msgData.message;
   if (!messageContent) return;
 
