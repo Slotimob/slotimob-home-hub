@@ -573,19 +573,53 @@ export function CreateProposalSheet({
 
               <Separator />
 
-              {/* Lead Name */}
+              {/* Contact Selector */}
               <div className="space-y-2">
-                <Label htmlFor="lead-name" className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  Nome do Cliente/Lead
+                <Label className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  Cliente / Contato
                 </Label>
-                <Input
-                  id="lead-name"
-                  placeholder="Ex: João Silva"
-                  value={leadName}
-                  onChange={(e) => setLeadName(e.target.value)}
+                <ContactSelector
+                  value={selectedContactId}
+                  onChange={(id) => {
+                    setSelectedContactId(id);
+                    setSelectedDealId(null); // reset deal when contact changes
+                  }}
+                  placeholder="Selecione um contato..."
                 />
+                {/* Fallback manual name if no contact selected */}
+                {!selectedContactId && (
+                  <Input
+                    placeholder="Ou digite o nome do cliente"
+                    value={leadName}
+                    onChange={(e) => setLeadName(e.target.value)}
+                    className="mt-1"
+                  />
+                )}
               </div>
+
+              {/* Deal Selector — only show when contact has deals */}
+              {selectedContactId && contactDeals && contactDeals.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    Vincular a uma Negociação? (opcional)
+                  </Label>
+                  <Select value={selectedDealId || ''} onValueChange={(v) => setSelectedDealId(v || null)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Nenhuma negociação selecionada" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma</SelectItem>
+                      {contactDeals.map((deal: any) => (
+                        <SelectItem key={deal.id} value={deal.id}>
+                          {(deal.lead as any)?.name || 'Negociação'} — {deal.pipeline_type || 'Vendas'} ({deal.stage})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Introduction Message + AI Button */}
               <div className="space-y-2">
