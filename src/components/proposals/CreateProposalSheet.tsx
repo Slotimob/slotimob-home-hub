@@ -117,6 +117,45 @@ export function CreateProposalSheet({
 
   const isEditing = !!editingProposal;
 
+  // Fetch deals for selected contact
+  const { data: contactDeals } = useQuery({
+    queryKey: ['contact-deals', selectedContactId],
+    queryFn: async () => {
+      if (!selectedContactId) return [];
+      const { data, error } = await supabase
+        .from('deals')
+        .select('id, stage, pipeline_type, lead:leads(name)')
+        .eq('contact_id', selectedContactId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedContactId,
+  });
+
+  // Fetch contact name for leadName sync
+  const { data: selectedContactData } = useQuery({
+    queryKey: ['contact-name', selectedContactId],
+    queryFn: async () => {
+      if (!selectedContactId) return null;
+      const { data } = await supabase
+        .from('contacts')
+        .select('name')
+        .eq('id', selectedContactId)
+        .single();
+      return data;
+    },
+    enabled: !!selectedContactId,
+  });
+
+  // Sync leadName when contact changes
+  useEffect(() => {
+    if (selectedContactData?.name) {
+      setLeadName(selectedContactData.name);
+    }
+  }, [selectedContactData]);
+
   // Load units
   useEffect(() => {
     if (!open) return;
