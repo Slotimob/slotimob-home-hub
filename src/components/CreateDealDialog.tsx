@@ -111,6 +111,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const [formData, setFormData] = useState({
     lead_id: '',
     unit_id: '',
+    title: '',
     estimated_value: '',
     estimated_commission: '',
     notes: '',
