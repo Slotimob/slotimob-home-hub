@@ -204,6 +204,8 @@ export function CreateProposalSheet({
   useEffect(() => {
     if (!open) {
       setSelectedUnitId('');
+      setSelectedContactId(null);
+      setSelectedDealId(null);
       setLeadName('');
       setIntroMessage('');
       setIncludeFinancing(false);
