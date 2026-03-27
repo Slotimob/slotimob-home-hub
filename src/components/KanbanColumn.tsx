@@ -204,7 +204,7 @@ export const KanbanColumn = ({
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent data-card-scroll className="space-y-2 flex-1 overflow-y-auto overscroll-contain">
+        <CardContent data-card-scroll className="space-y-2 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain min-h-0">
           {deals.map((deal) => (
             <DealCard
               key={deal.id}

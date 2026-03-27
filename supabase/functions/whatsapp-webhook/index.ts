@@ -679,10 +679,16 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
       last_message: lastMsgPreview,
       last_message_at: messageTimestamp,
     };
+    // ALWAYS update contact_id if we matched one (self-healing)
+    if (contactId && !conversation.contact_id) {
+      updatePayload.contact_id = contactId;
+      console.log(`🔗 Self-healing: linked contact ${contactId} to conversation ${conversation.id}`);
+    }
     if (direction === 'incoming') {
       updatePayload.unread_count = (conversation.unread_count || 0) + 1;
-      // Prefer linked contact name > pushName > existing name > phone fallback
-      updatePayload.contact_name = resolvedContactName || pushName || conversation.contact_name || senderPhone || 'Desconhecido';
+      // Prefer linked contact name > pushName (only if real name, not phone) > existing name > phone fallback
+      const pushNameIsReal = rawPushName && !/^\d+$/.test(rawPushName);
+      updatePayload.contact_name = resolvedContactName || (pushNameIsReal ? rawPushName : null) || conversation.contact_name || senderPhone || 'Desconhecido';
       // Re-open closed conversations when customer sends a new message
       if (conversation.status === 'closed') {
         updatePayload.status = 'pending';

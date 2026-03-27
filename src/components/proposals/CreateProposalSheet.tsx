@@ -619,7 +619,8 @@ export function CreateProposalSheet({
                         <SelectItem key={deal.id} value={deal.id}>
                           [{pipelineLabel}] {dealTitle}
                         </SelectItem>
-                      ))}
+                      );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
