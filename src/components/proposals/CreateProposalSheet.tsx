@@ -605,12 +605,12 @@ export function CreateProposalSheet({
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                     Vincular a uma Negociação? (opcional)
                   </Label>
-                  <Select value={selectedDealId || ''} onValueChange={(v) => setSelectedDealId(v || null)}>
+                  <Select value={selectedDealId || 'none'} onValueChange={(v) => setSelectedDealId(v === 'none' ? null : v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Nenhuma negociação selecionada" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma</SelectItem>
+                      <SelectItem value="none">Nenhuma</SelectItem>
                       {contactDeals.map((deal: any) => (
                         <SelectItem key={deal.id} value={deal.id}>
                           {(deal.lead as any)?.name || 'Negociação'} — {deal.pipeline_type || 'Vendas'} ({deal.stage})
