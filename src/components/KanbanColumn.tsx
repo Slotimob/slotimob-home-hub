@@ -104,7 +104,7 @@ export const KanbanColumn = ({
   };
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 w-72 sm:w-80 snap-start">
+    <div ref={setNodeRef} className="flex-shrink-0 w-72 sm:w-80 snap-start h-full">
       <Card 
         className={cn(
           "h-full min-h-[calc(100vh-260px)] transition-shadow flex flex-col",
