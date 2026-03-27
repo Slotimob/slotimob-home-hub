@@ -440,6 +440,8 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
 
   const senderPhone = remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '');
   const isGroup = remoteJid.endsWith('@g.us');
+  // Extract pushName from multiple possible paths in Evolution API payload
+  const rawPushName = msgData.pushName || msgData.data?.pushName || msgData.message?.pushName || null;
   if (isGroup) return;
 
   const pushName = msgData.pushName || senderPhone;
