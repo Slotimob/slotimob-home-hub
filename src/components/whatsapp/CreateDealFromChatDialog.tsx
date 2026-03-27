@@ -25,6 +25,12 @@ const STAGE_OPTIONS = [
   { value: 'negotiation', label: 'Negociação' },
 ];
 
+const PIPELINE_OPTIONS = [
+  { value: 'sale', label: '🏷️ Vendas' },
+  { value: 'rental', label: '🏠 Locações' },
+  { value: 'acquisition', label: '📋 Captações' },
+];
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
