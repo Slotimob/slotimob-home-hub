@@ -350,7 +350,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
         broker_id: effectiveBrokerId,
         assigned_user_id: assignedUserId || user?.id || null,
         stage: 'new_lead' as const,
-        pipeline_type: pipelineType,
+        pipeline_type: selectedPipeline,
       };
 
       const { data: newDeal, error } = await supabase.from('deals').insert([dealPayload]).select('id').single();
