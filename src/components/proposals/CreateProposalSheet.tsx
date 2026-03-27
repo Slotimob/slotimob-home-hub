@@ -95,6 +95,7 @@ export function CreateProposalSheet({
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [leadName, setLeadName] = useState('');
+  const [introMessage, setIntroMessage] = useState('');
   const [includeFinancing, setIncludeFinancing] = useState(false);
   const [includeCover, setIncludeCover] = useState(true);
   const [interestRate, setInterestRate] = useState('10.5');
