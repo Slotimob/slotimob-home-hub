@@ -609,7 +609,7 @@ export function CreateProposalSheet({
                     <SelectTrigger>
                       <SelectValue placeholder="Nenhuma negociação selecionada" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper" className="max-h-[300px] overflow-y-auto">
                       <SelectItem value="none">Nenhuma</SelectItem>
                       {contactDeals.map((deal: any) => (
                         <SelectItem key={deal.id} value={deal.id}>
