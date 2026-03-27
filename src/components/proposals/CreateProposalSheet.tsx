@@ -5,6 +5,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { useProposals, type CreateProposalInput, type Proposal } from '@/hooks/useProposals';
 import { useAICredits } from '@/hooks/useAICredits';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Sheet,
   SheetContent,
@@ -31,13 +32,13 @@ import {
   FileText,
   Loader2,
   Calculator,
-  User,
   Image as ImageIcon,
   Building2,
   Sparkles,
   Wand2,
   Zap,
   Percent,
+  Briefcase,
 } from 'lucide-react';
 import {
   generatePropertyPDF,
@@ -47,6 +48,7 @@ import {
   type PDFAssetData,
 } from '@/utils/propertyPdfGenerator';
 import { ProposalPdfTemplate } from './ProposalPdfTemplate';
+import { ContactSelector } from '@/components/ContactSelector';
 
 interface CreateProposalSheetProps {
   open: boolean;
