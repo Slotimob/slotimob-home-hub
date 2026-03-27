@@ -431,6 +431,18 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
             </Select>
           </div>
 
+          {/* ========== TÍTULO DA NEGOCIAÇÃO ========== */}
+          <div className="space-y-2">
+            <Label htmlFor="deal_title">Título da Negociação</Label>
+            <Input
+              id="deal_title"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Ex: Venda Apt 302 - Edifício Aurora"
+              maxLength={150}
+            />
+          </div>
+
           <Separator />
 
           {/* ========== GRUPO 1: CLIENTE ========== */}
