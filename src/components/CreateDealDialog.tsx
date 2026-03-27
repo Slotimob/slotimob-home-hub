@@ -111,6 +111,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const [formData, setFormData] = useState({
     lead_id: '',
     unit_id: '',
+    title: '',
     estimated_value: '',
     estimated_commission: '',
     notes: '',
@@ -138,6 +139,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       setFormData({
         lead_id: '',
         unit_id: '',
+        title: '',
         estimated_value: '',
         estimated_commission: '',
         notes: '',
@@ -338,6 +340,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
 
       const dealPayload = {
         lead_id: formData.lead_id,
+        title: formData.title || null,
         property_id: propertyId!,
         unit_id: formData.unit_id || null,
         estimated_value: formData.estimated_value ? parseFloat(formData.estimated_value) : null,
@@ -427,6 +430,18 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* ========== TÍTULO DA NEGOCIAÇÃO ========== */}
+          <div className="space-y-2">
+            <Label htmlFor="deal_title">Título da Negociação</Label>
+            <Input
+              id="deal_title"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Ex: Venda Apt 302 - Edifício Aurora"
+              maxLength={150}
+            />
           </div>
 
           <Separator />
