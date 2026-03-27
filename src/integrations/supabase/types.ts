@@ -1017,6 +1017,7 @@ export type Database = {
           property_id: string | null
           stage: Database["public"]["Enums"]["pipeline_stage"]
           temperature: string | null
+          title: string | null
           unit_id: string | null
           updated_at: string
         }
@@ -1041,6 +1042,7 @@ export type Database = {
           property_id?: string | null
           stage?: Database["public"]["Enums"]["pipeline_stage"]
           temperature?: string | null
+          title?: string | null
           unit_id?: string | null
           updated_at?: string
         }
@@ -1065,6 +1067,7 @@ export type Database = {
           property_id?: string | null
           stage?: Database["public"]["Enums"]["pipeline_stage"]
           temperature?: string | null
+          title?: string | null
           unit_id?: string | null
           updated_at?: string
         }
