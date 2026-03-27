@@ -1232,7 +1232,7 @@ const Pipeline = () => {
           
           <div
             ref={kanbanScrollRef}
-            className="w-full min-w-0 overflow-x-scroll overflow-y-visible pb-4 touch-pan-x overscroll-x-contain pipeline-scrollbar cursor-grab px-6 snap-x snap-proximity md:snap-none"
+            className="w-full min-w-0 overflow-x-scroll overflow-y-hidden h-[calc(100vh-16rem)] pb-4 touch-pan-x overscroll-x-contain pipeline-scrollbar cursor-grab px-6 snap-x snap-proximity md:snap-none"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={endPointerDrag}

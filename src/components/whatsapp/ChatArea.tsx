@@ -248,80 +248,105 @@ export function ChatArea({
   return (
     <div className="flex-1 flex flex-col h-full min-w-0">
       {/* Chat Header */}
-      <div className="px-4 py-3 border-b bg-card flex items-center gap-3 flex-shrink-0">
-        {onBack && (
-          <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0" onClick={onBack}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        <div className="relative flex-shrink-0">
-          <Avatar className="h-10 w-10">
+      <div className="px-3 py-2 border-b bg-card flex-shrink-0">
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0 h-8 w-8" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <Avatar className="h-9 w-9 flex-shrink-0">
             {conversation.contact_profile_pic && (
               <AvatarImage src={conversation.contact_profile_pic} alt={displayName} />
             )}
-            <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              {initials || <User className="h-5 w-5" />}
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+              {initials || <User className="h-4 w-4" />}
             </AvatarFallback>
           </Avatar>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
-            {/* Conversation status control */}
-            {conversation.id && (
-              <Select
-                value={(conversation as any).status || 'pending'}
-                onValueChange={async (newStatus) => {
-                  try {
-                    await supabase
-                      .from('whatsapp_conversations')
-                      .update({ status: newStatus, updated_at: new Date().toISOString() })
-                      .eq('id', conversation.id);
-                    toast({ title: 'Status atualizado' });
-                  } catch (err: any) {
-                    toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
-                  }
-                }}
-              >
-                <SelectTrigger className="h-5 w-auto min-w-0 text-[10px] border-none bg-muted/60 px-1.5 py-0 gap-0.5 font-normal">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending" className="text-xs">Triagem</SelectItem>
-                  <SelectItem value="active" className="text-xs">Atendimento</SelectItem>
-                  <SelectItem value="closed" className="text-xs">Fechado</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
+              {conversation.id && (
+                <Select
+                  value={(conversation as any).status || 'pending'}
+                  onValueChange={async (newStatus) => {
+                    try {
+                      await supabase
+                        .from('whatsapp_conversations')
+                        .update({ status: newStatus, updated_at: new Date().toISOString() })
+                        .eq('id', conversation.id);
+                      toast({ title: 'Status atualizado' });
+                    } catch (err: any) {
+                      toast({ title: 'Erro ao atualizar status', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-5 w-auto min-w-0 text-[10px] border-none bg-muted/60 px-1.5 py-0 gap-0.5 font-normal">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending" className="text-xs">Triagem</SelectItem>
+                    <SelectItem value="active" className="text-xs">Atendimento</SelectItem>
+                    <SelectItem value="closed" className="text-xs">Fechado</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                <Phone className="h-3 w-3 flex-shrink-0" />
+                <span className="hidden sm:inline">{conversation.contact_phone}</span>
+                <span className="sm:hidden">{conversation.contact_phone?.slice(-4)}</span>
+              </p>
+              <div className="hidden sm:block">
+                <ChatTagsInput
+                  conversationId={conversation.id}
+                  tags={((conversation as any).tags as string[]) || []}
+                  onTagsChange={() => {}}
+                  compact
+                />
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Phone className="h-3 w-3" />
-              {conversation.contact_phone}
-            </p>
-            <ChatTagsInput
-              conversationId={conversation.id}
-              tags={((conversation as any).tags as string[]) || []}
-              onTagsChange={(newTags) => {
-                // Optimistic local update handled by ChatTagsInput
-              }}
-              compact
-            />
-          </div>
-        </div>
 
-        {/* Agent Badge + Reassignment / Initial Assignment */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {assignedUserId ? (
-            isOwner && teamMembers.length > 0 && onReassign && conversationId ? (
+          {/* Agent + Actions — collapsed into icon buttons on mobile */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Agent assignment (hidden on very small screens) */}
+            {assignedUserId ? (
+              isOwner && teamMembers.length > 0 && onReassign && conversationId ? (
+                <Select
+                  value={assignedUserId}
+                  onValueChange={(val) => onReassign(conversationId, val)}
+                >
+                  <SelectTrigger className="hidden sm:flex h-7 w-auto min-w-[120px] text-xs border-border/50 bg-muted/50">
+                    <div className="flex items-center gap-1">
+                      <UserCheck className="h-3 w-3 text-primary" />
+                      <SelectValue placeholder="Responsável" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teamMembers.map(m => (
+                      <SelectItem key={m.id} value={m.id} className="text-xs">
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge variant="secondary" className="hidden sm:flex text-[10px] gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  {agentName || 'Agente'}
+                </Badge>
+              )
+            ) : isOwner && teamMembers.length > 0 && onReassign && conversationId ? (
               <Select
-                value={assignedUserId}
+                value=""
                 onValueChange={(val) => onReassign(conversationId, val)}
               >
-                <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs border-border/50 bg-muted/50">
-                  <div className="flex items-center gap-1.5">
+                <SelectTrigger className="hidden sm:flex h-7 w-auto min-w-[120px] text-xs border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-1">
                     <UserCheck className="h-3 w-3 text-primary" />
-                    <SelectValue placeholder="Responsável" />
+                    <SelectValue placeholder="Atribuir" />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
@@ -332,68 +357,50 @@ export function ChatArea({
                   ))}
                 </SelectContent>
               </Select>
-            ) : (
-              <Badge variant="secondary" className="text-[10px] gap-1">
-                <UserCheck className="h-3 w-3" />
-                {agentName || 'Agente'}
-              </Badge>
-            )
-          ) : isOwner && teamMembers.length > 0 && onReassign && conversationId ? (
-            <Select
-              value=""
-              onValueChange={(val) => onReassign(conversationId, val)}
-            >
-              <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs border-primary/30 bg-primary/5">
-                <div className="flex items-center gap-1.5">
-                  <UserCheck className="h-3 w-3 text-primary" />
-                  <SelectValue placeholder="Atribuir agente" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {teamMembers.map(m => (
-                  <SelectItem key={m.id} value={m.id} className="text-xs">
-                    {m.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-        </div>
+            ) : null}
 
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {showCrmToggle && (
-            <Button variant="ghost" size="icon" onClick={onToggleCrm} className="hidden lg:flex">
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          )}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-5 w-5" />
+            {showCrmToggle && (
+              <Button variant="ghost" size="icon" onClick={onToggleCrm} className="hidden lg:flex h-8 w-8">
+                <ChevronRight className="h-4 w-4" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-1" align="end" side="bottom">
-              {onCloseConversation && (
-                <button
-                  onClick={onCloseConversation}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors text-destructive"
-                >
-                  Finalizar Atendimento
-                </button>
-              )}
-              {onReturnToQueue && (
-                <button
-                  onClick={onReturnToQueue}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors"
-                >
-                  Devolver para Fila
-                </button>
-              )}
-              {!onCloseConversation && !onReturnToQueue && (
-                <p className="px-3 py-2 text-xs text-muted-foreground">Sem ações disponíveis</p>
-              )}
-            </PopoverContent>
-          </Popover>
+            )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="end" side="bottom">
+                {onCloseConversation && (
+                  <button
+                    onClick={onCloseConversation}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors text-destructive"
+                  >
+                    Finalizar Atendimento
+                  </button>
+                )}
+                {onReturnToQueue && (
+                  <button
+                    onClick={onReturnToQueue}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors"
+                  >
+                    Devolver para Fila
+                  </button>
+                )}
+                {showCrmToggle && (
+                  <button
+                    onClick={onToggleCrm}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors lg:hidden"
+                  >
+                    Painel CRM
+                  </button>
+                )}
+                {!onCloseConversation && !onReturnToQueue && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">Sem ações disponíveis</p>
+                )}
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
 
