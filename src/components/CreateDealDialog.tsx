@@ -410,6 +410,27 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ========== PIPELINE SELECTOR ========== */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              Pipeline / Funil *
+            </Label>
+            <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o funil" />
+              </SelectTrigger>
+              <SelectContent>
+                {PIPELINE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
           {/* ========== GRUPO 1: CLIENTE ========== */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
