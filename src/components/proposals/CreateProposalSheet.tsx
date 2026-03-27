@@ -583,19 +583,10 @@ export function CreateProposalSheet({
                   value={selectedContactId}
                   onChange={(id) => {
                     setSelectedContactId(id);
-                    setSelectedDealId(null); // reset deal when contact changes
+                    setSelectedDealId(null);
                   }}
                   placeholder="Selecione um contato..."
                 />
-                {/* Fallback manual name if no contact selected */}
-                {!selectedContactId && (
-                  <Input
-                    placeholder="Ou digite o nome do cliente"
-                    value={leadName}
-                    onChange={(e) => setLeadName(e.target.value)}
-                    className="mt-1"
-                  />
-                )}
               </div>
 
               {/* Deal Selector — only show when contact has deals */}
