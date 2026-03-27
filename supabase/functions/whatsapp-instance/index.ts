@@ -534,17 +534,25 @@ serve(async (req) => {
               const name = chat.pushName || chat.name || chat.contact?.name || chat.contact || phone;
               const profilePicUrl = chat.profilePictureUrl || chat.profilePicUrl || chat.profilePicture || null;
 
+              // Flexible phone matching (last 8-9 digits)
+              const last9 = phone.slice(-9);
+              const last8 = phone.slice(-8);
               const { data: existingContacts } = await supabaseAdmin
                 .from('contacts')
-                .select('id, avatar_url')
+                .select('id, avatar_url, phone, whatsapp')
                 .eq('broker_id', userId)
-                .or(`phone.eq.${phone},whatsapp.eq.${phone},phone.eq.+${phone},whatsapp.eq.+${phone}`)
-                .limit(1);
+                .or(`phone.eq.${phone},whatsapp.eq.${phone},phone.eq.+${phone},whatsapp.eq.+${phone},phone.like.%${last9},whatsapp.like.%${last9},phone.like.%${last8},whatsapp.like.%${last8}`)
+                .limit(5);
 
               let contactId: string | null = null;
               if (existingContacts && existingContacts.length > 0) {
-                contactId = existingContacts[0].id;
-                if (profilePicUrl && !existingContacts[0].avatar_url) {
+                // Prefer exact match
+                const exactMatch = existingContacts.find(
+                  (c: any) => c.phone?.replace(/\D/g, '') === phone || c.whatsapp?.replace(/\D/g, '') === phone
+                );
+                const bestMatch = exactMatch || existingContacts[0];
+                contactId = bestMatch.id;
+                if (profilePicUrl && !bestMatch.avatar_url) {
                   await supabaseAdmin.from('contacts').update({ avatar_url: profilePicUrl }).eq('id', contactId);
                 }
               } else if (name && name !== phone) {

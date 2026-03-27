@@ -241,6 +241,23 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
             </div>
           </div>
 
+          {/* Pipeline Selector */}
+          <div className="space-y-1.5">
+            <Label>Pipeline / Funil *</Label>
+            <Select value={pipelineType} onValueChange={setPipelineType}>
+              <SelectTrigger className="text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PIPELINE_OPTIONS.map((p) => (
+                  <SelectItem key={p.value} value={p.value} className="text-sm">
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="deal-title">Título da Negociação</Label>
             <Input
