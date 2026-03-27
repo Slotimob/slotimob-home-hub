@@ -51,6 +51,7 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [assignedUserId, setAssignedUserId] = useState<string>('');
+  const [pipelineType, setPipelineType] = useState('sale');
 
   const [title, setTitle] = useState('');
   const [value, setValue] = useState('');
