@@ -61,7 +61,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
               </div>
               <div className="flex items-center gap-3">
               {typeLabel && (
-                  <span className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none text-white" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
+                  <span className="px-4 py-1.5 rounded-full text-[12px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none text-white" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}>
                     {typeLabel}
                   </span>
                 )}
@@ -276,15 +276,15 @@ function CTAFooter({ agent }: { agent?: AgentInfo }) {
   const phoneDisplay = agent?.whatsapp || agent?.phone || '';
   return (
     <div className="p-6 rounded-xl text-center mb-6" style={{ background: '#2fc9af' }}>
-      <p className="text-white text-xl font-bold mb-1">Gostou? Agende sua visita agora!</p>
-      <p className="text-white/80 text-sm mb-3">Entre em contato e garanta essa oportunidade única.</p>
+      <p className="text-white text-xl font-bold mb-1" style={{ textShadow: '-1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3)' }}>Gostou? Agende sua visita agora!</p>
+      <p className="text-white/90 text-sm mb-3">Entre em contato e garanta essa oportunidade única.</p>
       {phoneDisplay && (
-        <p className="text-white font-bold text-2xl mb-2" style={{ letterSpacing: '1px' }}>
+        <p className="text-white font-black text-3xl mb-2" style={{ letterSpacing: '2px', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
           {phoneDisplay}
         </p>
       )}
       {agent?.name && (
-        <p className="text-white/90 text-sm">{agent.name}{agent.email ? ` | ${agent.email}` : ''}</p>
+        <p className="text-white/90 text-sm font-medium">{agent.name}{agent.email ? ` | ${agent.email}` : ''}</p>
       )}
     </div>
   );
