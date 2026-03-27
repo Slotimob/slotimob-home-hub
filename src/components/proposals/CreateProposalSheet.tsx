@@ -532,7 +532,7 @@ export function CreateProposalSheet({
                   <SelectTrigger>
                     <SelectValue placeholder={loadingUnits ? 'Carregando...' : 'Selecione o imóvel'} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" className="max-h-[300px] overflow-y-auto">
                     {units.map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         <span className="flex items-center gap-2">
