@@ -44,11 +44,43 @@ export function NewConversationDialog({ open, onOpenChange, connectionId, initia
     setSending(true);
     try {
       const sanitized = sanitizePhone(phone);
+      const remoteJid = `${sanitized}@s.whatsapp.net`;
+
+      // Step 1: Create or find conversation in DB
+      const { data: existingConv } = await supabase
+        .from('whatsapp_conversations')
+        .select('id')
+        .eq('connection_id', connectionId)
+        .eq('remote_jid', remoteJid)
+        .maybeSingle();
+
+      let conversationId: string;
+
+      if (existingConv) {
+        conversationId = existingConv.id;
+      } else {
+        const { data: newConv, error: createErr } = await supabase
+          .from('whatsapp_conversations')
+          .insert({
+            connection_id: connectionId,
+            remote_jid: remoteJid,
+            contact_phone: sanitized,
+            contact_name: sanitized,
+            status: 'active',
+            unread_count: 0,
+          })
+          .select('id')
+          .single();
+        if (createErr) throw createErr;
+        conversationId = newConv.id;
+      }
+
+      // Step 2: Send message via edge function with correct payload
       const { data, error } = await supabase.functions.invoke('whatsapp-send', {
         body: {
-          to: sanitized,
-          message: message.trim(),
-          connectionId,
+          conversationId,
+          content: message.trim(),
+          messageType: 'text',
         },
       });
       if (error) throw error;
