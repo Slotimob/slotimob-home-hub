@@ -139,6 +139,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       setFormData({
         lead_id: '',
         unit_id: '',
+        title: '',
         estimated_value: '',
         estimated_commission: '',
         notes: '',
