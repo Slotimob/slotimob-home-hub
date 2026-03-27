@@ -100,6 +100,13 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const [unitType, setUnitType] = useState<'all' | 'units' | 'standalone'>('all');
   const [dateOpen, setDateOpen] = useState(false);
   const [assignedUserId, setAssignedUserId] = useState<string>('');
+  const [selectedPipeline, setSelectedPipeline] = useState(pipelineType);
+
+  const PIPELINE_OPTIONS = [
+    { value: 'sale', label: '🏷️ Vendas' },
+    { value: 'rental', label: '🏠 Locações' },
+    { value: 'acquisition', label: '📋 Captações' },
+  ];
 
   const [formData, setFormData] = useState({
     lead_id: '',
