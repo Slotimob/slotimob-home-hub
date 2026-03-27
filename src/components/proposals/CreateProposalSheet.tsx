@@ -355,7 +355,7 @@ export function CreateProposalSheet({
         const proposalInput = {
           property_id: selectedUnit?.property_id,
           unit_id: selectedUnit?.id,
-          deal_id: dealId || (editingProposal as any)?.deal_id || undefined,
+          deal_id: selectedDealId || dealId || (editingProposal as any)?.deal_id || undefined,
           lead_name: leadName.trim() || undefined,
           introduction_message: introMessage.trim() || undefined,
           include_financing: includeFinancing,
@@ -370,6 +370,23 @@ export function CreateProposalSheet({
           const result = await createProposal.mutateAsync(proposalInput);
           if (pdfBlob && onProposalGenerated && result?.id) {
             onProposalGenerated(pdfBlob as Blob, result.id);
+          }
+        }
+
+        // FASE 3: Insert deal_activity if a deal is linked
+        const activeDealId = selectedDealId || dealId;
+        if (activeDealId && effectiveBrokerId) {
+          try {
+            await supabase.from('deal_activities').insert({
+              deal_id: activeDealId,
+              broker_id: effectiveBrokerId,
+              activity_type: 'note',
+              title: 'Proposta Comercial Gerada',
+              description: `Proposta vinculada ao imóvel ${selectedUnit?.property_name ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}` : selectedUnit?.unit_number}. Cliente: ${leadName.trim() || 'N/A'}.`,
+            });
+            queryClient.invalidateQueries({ queryKey: ['deal-activities', activeDealId] });
+          } catch (actErr) {
+            console.error('Deal activity insert error (non-critical):', actErr);
           }
         }
 
