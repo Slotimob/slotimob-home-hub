@@ -498,34 +498,45 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     mediaUrl = `data:${mime};base64,${msgData.media.base64}`;
   }
 
-  // Find or create contact — flexible phone matching (last 8-9 digits)
+  // Find or create contact — robust JS-side phone matching
   let contactId: string | null = null;
   const cleanPhone = senderPhone.replace(/\D/g, '');
-  const last9 = cleanPhone.slice(-9);
   const last8 = cleanPhone.slice(-8);
 
-  // Try exact match first, then flexible suffix match
-  const { data: existingContacts } = await supabaseAdmin
+  // Fetch ALL contacts with phone/whatsapp for this broker and match in JS
+  // This handles any formatting (parentheses, dashes, spaces) in stored numbers
+  const { data: allContacts } = await supabaseAdmin
     .from('contacts')
     .select('id, phone, whatsapp')
     .eq('broker_id', connection.broker_id)
-    .or(`phone.eq.${cleanPhone},whatsapp.eq.${cleanPhone},phone.eq.+${cleanPhone},whatsapp.eq.+${cleanPhone},phone.like.%${last9},whatsapp.like.%${last9},phone.like.%${last8},whatsapp.like.%${last8}`)
-    .limit(5);
+    .or('phone.not.is.null,whatsapp.not.is.null')
+    .limit(500);
 
-  // Pick the best match (exact > suffix)
-  if (existingContacts && existingContacts.length > 0) {
-    const exactMatch = existingContacts.find(
-      (c: any) => c.phone?.replace(/\D/g, '') === cleanPhone || c.whatsapp?.replace(/\D/g, '') === cleanPhone
-    );
-    existingContacts[0] = exactMatch || existingContacts[0];
+  if (allContacts && allContacts.length > 0) {
+    // Strip all non-digits from stored numbers and compare last 8 digits
+    const exactMatch = allContacts.find((c: any) => {
+      const cp = (c.phone || '').replace(/\D/g, '');
+      const cw = (c.whatsapp || '').replace(/\D/g, '');
+      return cp === cleanPhone || cw === cleanPhone;
+    });
+    const suffixMatch = !exactMatch ? allContacts.find((c: any) => {
+      const cp = (c.phone || '').replace(/\D/g, '');
+      const cw = (c.whatsapp || '').replace(/\D/g, '');
+      return cp.endsWith(last8) || cw.endsWith(last8);
+    }) : null;
+    const bestMatch = exactMatch || suffixMatch;
+    if (bestMatch) {
+      contactId = bestMatch.id;
+      console.log(`✅ Contact matched: ${contactId} (exact=${!!exactMatch})`);
+    }
   }
 
   let isNewContact = false;
   // Get the agent to assign (via round robin) - computed once per new contact
   let assignedAgentId: string | null = null;
 
-  if (existingContacts && existingContacts.length > 0) {
-    contactId = existingContacts[0].id;
+  if (contactId) {
+    // Contact found — no need to create
   } else if (direction === 'incoming') {
     // Determine agent assignment BEFORE creating contact
     assignedAgentId = await getNextAgentRoundRobin(supabaseAdmin, connection.broker_id);
