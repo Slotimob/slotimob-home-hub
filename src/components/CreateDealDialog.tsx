@@ -100,6 +100,13 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const [unitType, setUnitType] = useState<'all' | 'units' | 'standalone'>('all');
   const [dateOpen, setDateOpen] = useState(false);
   const [assignedUserId, setAssignedUserId] = useState<string>('');
+  const [selectedPipeline, setSelectedPipeline] = useState(pipelineType);
+
+  const PIPELINE_OPTIONS = [
+    { value: 'sale', label: '🏷️ Vendas' },
+    { value: 'rental', label: '🏠 Locações' },
+    { value: 'acquisition', label: '📋 Captações' },
+  ];
 
   const [formData, setFormData] = useState({
     lead_id: '',
@@ -343,7 +350,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
         broker_id: effectiveBrokerId,
         assigned_user_id: assignedUserId || user?.id || null,
         stage: 'new_lead' as const,
-        pipeline_type: pipelineType,
+        pipeline_type: selectedPipeline,
       };
 
       const { data: newDeal, error } = await supabase.from('deals').insert([dealPayload]).select('id').single();
@@ -403,6 +410,27 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ========== PIPELINE SELECTOR ========== */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              Pipeline / Funil *
+            </Label>
+            <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o funil" />
+              </SelectTrigger>
+              <SelectContent>
+                {PIPELINE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
           {/* ========== GRUPO 1: CLIENTE ========== */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

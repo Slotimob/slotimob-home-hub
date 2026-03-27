@@ -25,6 +25,12 @@ const STAGE_OPTIONS = [
   { value: 'negotiation', label: 'Negociação' },
 ];
 
+const PIPELINE_OPTIONS = [
+  { value: 'sale', label: '🏷️ Vendas' },
+  { value: 'rental', label: '🏠 Locações' },
+  { value: 'acquisition', label: '📋 Captações' },
+];
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,6 +51,7 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [assignedUserId, setAssignedUserId] = useState<string>('');
+  const [pipelineType, setPipelineType] = useState('sale');
 
   const [title, setTitle] = useState('');
   const [value, setValue] = useState('');
@@ -154,6 +161,7 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
         estimated_value: parsedValue,
         assigned_user_id: assignedUserId || user?.id || null,
         initial_task: title || `Negociação via WhatsApp - ${contactName}`,
+        pipeline_type: pipelineType,
       };
       if (propertyId && propertyId !== 'none') {
         const selected = properties.find(p => p.id === propertyId);
@@ -231,6 +239,23 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
               <Label className="text-xs text-muted-foreground">Telefone</Label>
               <Input value={contactPhone} disabled className="bg-muted/50 text-sm" />
             </div>
+          </div>
+
+          {/* Pipeline Selector */}
+          <div className="space-y-1.5">
+            <Label>Pipeline / Funil *</Label>
+            <Select value={pipelineType} onValueChange={setPipelineType}>
+              <SelectTrigger className="text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PIPELINE_OPTIONS.map((p) => (
+                  <SelectItem key={p.value} value={p.value} className="text-sm">
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">
