@@ -1240,7 +1240,7 @@ const Pipeline = () => {
             onPointerLeave={endPointerDrag}
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div className="min-w-max px-2 py-3 select-none pr-8 md:pr-2">
+            <div className="min-w-max px-2 py-3 select-none pr-8 md:pr-2 h-full">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
