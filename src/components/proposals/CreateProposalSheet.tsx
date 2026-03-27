@@ -84,6 +84,7 @@ export function CreateProposalSheet({
   const { createProposal, updateProposal } = useProposals();
   const { credits } = useAICredits();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [loadingUnits, setLoadingUnits] = useState(false);
