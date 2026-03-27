@@ -1251,7 +1251,7 @@ const Pipeline = () => {
                 items={customStages.map(s => `stage_${s.id}`)}
                 strategy={horizontalListSortingStrategy}
               >
-                <div className="flex gap-4 min-w-max">
+                <div className="flex gap-4 min-w-max h-full">
                   {/* Render all stages in the correct order from allStages */}
                   {allStages.map((stage) => {
                     // Custom stage
