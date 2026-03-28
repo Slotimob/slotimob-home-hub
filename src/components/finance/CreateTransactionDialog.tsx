@@ -423,8 +423,8 @@ export function CreateTransactionDialog({
                   />
                 </div>
 
-                {/* Amount + Unit - 2 col grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Amount + Unit - 2 col grid, aligned by input base */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                   <div className="space-y-2">
                     <Label htmlFor="amount">Valor *</Label>
                     <CurrencyInput
@@ -433,7 +433,7 @@ export function CreateTransactionDialog({
                       value={formData.amount}
                       onChange={(value) => setFormData({ ...formData, amount: value })}
                       disabled={isReconciled}
-                      className={isReconciled ? "bg-muted cursor-not-allowed" : ""}
+                      className={cn("h-10", isReconciled ? "bg-muted cursor-not-allowed" : "")}
                     />
                   </div>
 
