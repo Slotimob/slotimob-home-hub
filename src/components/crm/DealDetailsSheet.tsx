@@ -192,6 +192,14 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
 
       if (error) throw error;
 
+      // Update lead origin if changed
+      if (editedDeal.lead_origin && deal.lead?.id) {
+        await supabase
+          .from('leads')
+          .update({ origin: editedDeal.lead_origin })
+          .eq('id', deal.lead.id);
+      }
+
       toast({
         title: 'Negociação atualizada!',
         description: 'As informações foram salvas com sucesso.',
