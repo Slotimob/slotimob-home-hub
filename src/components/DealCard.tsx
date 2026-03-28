@@ -209,10 +209,10 @@ export const DealCard = ({
         {/* Value - compact prominent display */}
         {deal.estimated_value ? (
           <div 
-            className="py-1.5 px-2.5 rounded-md bg-primary/8 cursor-pointer"
+            className="py-1 px-2 rounded-md bg-primary/8 cursor-pointer"
             onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
           >
-            <span className="text-sm font-bold text-foreground">
+            <span className="text-xs sm:text-sm font-bold text-foreground">
               {deal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
           </div>
