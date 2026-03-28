@@ -239,8 +239,13 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
       }
     }
     setDealRefetchKey(k => k + 1);
+    // Invalidate contact-deals cache for instant UI update
+    if (cId) {
+      queryClient.invalidateQueries({ queryKey: ['contact-deals', cId] });
+    }
+    queryClient.invalidateQueries({ queryKey: ['deals'] });
     onDealCreated?.(newDealId, cId);
-  }, [conversation, onDealCreated]);
+  }, [conversation, onDealCreated, queryClient]);
 
   if (!conversation) {
     return (
