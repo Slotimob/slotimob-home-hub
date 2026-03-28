@@ -107,17 +107,20 @@ export function CreateDealFromChatDialog({ open, onOpenChange, conversation, onS
     setSaving(true);
 
     try {
-      // 1. Check if contact with this phone already exists
+      // 1. Use conversation's linked contact_id first, then fallback to phone lookup
       const normalizedPhone = contactPhone.replace(/\D/g, '');
-      const { data: existingContact } = await supabase
-        .from('contacts')
-        .select('id')
-        .eq('broker_id', effectiveBrokerId)
-        .or(`phone.eq.${normalizedPhone},whatsapp.eq.${normalizedPhone},phone.eq.${contactPhone},whatsapp.eq.${contactPhone}`)
-        .limit(1)
-        .maybeSingle();
+      let contactId = conversation.contact_id || null;
 
-      let contactId = existingContact?.id;
+      if (!contactId) {
+        const { data: existingContact } = await supabase
+          .from('contacts')
+          .select('id')
+          .eq('broker_id', effectiveBrokerId)
+          .or(`phone.eq.${normalizedPhone},whatsapp.eq.${normalizedPhone},phone.eq.${contactPhone},whatsapp.eq.${contactPhone}`)
+          .limit(1)
+          .maybeSingle();
+        contactId = existingContact?.id || null;
+      }
 
       // 2. Create contact if not exists
       if (!contactId) {

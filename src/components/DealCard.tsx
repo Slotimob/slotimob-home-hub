@@ -174,8 +174,14 @@ export const DealCard = ({
             <div className="flex items-start justify-between gap-1">
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-sm text-foreground truncate leading-tight">
-                  {deal.lead?.name || 'Sem contato'}
+                  {(deal as any).title || deal.lead?.name || 'Sem título'}
                 </h4>
+                {/* Contact name - secondary */}
+                {(deal as any).title && deal.lead?.name && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                    <span className="truncate">{deal.lead.name}</span>
+                  </div>
+                )}
                 {/* Property - only if exists */}
                 {(deal.unit?.unit_number || deal.property?.name) && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">

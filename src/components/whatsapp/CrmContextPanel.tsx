@@ -22,6 +22,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { useContactDeals, useContactActivities } from '@/hooks/useWhatsApp';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { normalizePhone, formatWhatsAppToCrm } from '@/lib/utils';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { CreateDealFromChatDialog } from './CreateDealFromChatDialog';
@@ -82,6 +83,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const { deals, loading: dealsLoading } = useContactDeals(contactId, dealRefetchKey);
   const { activities, loading: activitiesLoading } = useContactActivities(contactId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [updatingStage, setUpdatingStage] = useState(false);
   const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
@@ -239,8 +241,13 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
       }
     }
     setDealRefetchKey(k => k + 1);
+    // Invalidate contact-deals cache for instant UI update
+    if (cId) {
+      queryClient.invalidateQueries({ queryKey: ['contact-deals', cId] });
+    }
+    queryClient.invalidateQueries({ queryKey: ['deals'] });
     onDealCreated?.(newDealId, cId);
-  }, [conversation, onDealCreated]);
+  }, [conversation, onDealCreated, queryClient]);
 
   if (!conversation) {
     return (
