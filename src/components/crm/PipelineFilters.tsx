@@ -383,7 +383,7 @@ export const PipelineFilters = ({
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por lead, email, telefone ou imóvel..."
+            placeholder="Buscar por título, lead, email, telefone ou imóvel..."
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
             className="pl-9"
