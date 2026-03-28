@@ -80,6 +80,7 @@ const ICON_MAP: Record<string, typeof Home> = {
 // Extended obligation config with installation code
 interface ExtendedObligationConfig extends ObligationConfig {
   installation_code?: string;
+  control_type?: ControlType;
 }
 
 interface ExtendedObligationsConfig {
