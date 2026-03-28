@@ -552,17 +552,13 @@ serve(async (req) => {
                   (c: any) => (c.phone || '').replace(/\D/g, '').endsWith(last8) || (c.whatsapp || '').replace(/\D/g, '').endsWith(last8)
                 ) : null;
                 const bestMatch = exactMatch || suffixMatch;
-                contactId = bestMatch.id;
-                if (profilePicUrl && !bestMatch.avatar_url) {
-                  await supabaseAdmin.from('contacts').update({ avatar_url: profilePicUrl }).eq('id', contactId);
+                if (bestMatch) {
+                  contactId = bestMatch.id;
+                  if (profilePicUrl && !bestMatch.avatar_url) {
+                    await supabaseAdmin.from('contacts').update({ avatar_url: profilePicUrl }).eq('id', contactId);
+                  }
                 }
-              } else if (name && name !== phone) {
-                const { data: newContact, error: newContactErr } = await supabaseAdmin
-                  .from('contacts')
-                  .insert({ broker_id: userId, name, phone, whatsapp: phone, avatar_url: profilePicUrl, categories: ['lead'], metadata: { origin: 'whatsapp_sync' } })
-                  .select('id')
-                  .single();
-                if (!newContactErr && newContact) contactId = newContact.id;
+                // No auto-creation: only link to existing CRM contacts
               }
 
               if (contactId) {
