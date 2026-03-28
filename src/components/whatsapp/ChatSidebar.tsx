@@ -63,8 +63,7 @@ function getInitials(displayName: string): string {
 
 export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange, showTriageTabs = false, deepLinkNewConv, onDeepLinkConsumed }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('pending');
   const [newConvOpen, setNewConvOpen] = useState(false);
   const [newConvInitialPhone, setNewConvInitialPhone] = useState('');
   const [newConvInitialMessage, setNewConvInitialMessage] = useState('');
