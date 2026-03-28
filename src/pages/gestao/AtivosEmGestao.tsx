@@ -11,6 +11,8 @@ import { ConfigureObligationsDialog } from "@/components/assets/ConfigureObligat
 import { AssetHealthEmptyState } from "@/components/assets/AssetHealthEmptyState";
 import { LeaseManagementSheet } from "@/components/assets/LeaseManagementSheet";
 import { CreateLeaseWizard } from "@/components/assets/CreateLeaseWizard";
+import { LinkTransactionDialog } from "@/components/assets/LinkTransactionDialog";
+import { AssetManagementGuide } from "@/components/assets/AssetManagementGuide";
 import { MonthYearPicker } from "@/components/schedule/MonthYearPicker";
 import { SEOHead } from "@/components/SEOHead";
 import { Badge } from "@/components/ui/badge";
