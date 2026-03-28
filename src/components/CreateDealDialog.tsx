@@ -119,6 +119,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
     business_type: 'sale' as 'sale' | 'rental',
     expected_close_date: undefined as Date | undefined,
     initial_task: '',
+    lead_origin: '',
   });
 
   const [newLeadData, setNewLeadData] = useState({
