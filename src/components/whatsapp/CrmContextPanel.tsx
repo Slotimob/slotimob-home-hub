@@ -266,6 +266,15 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const activeDealsCount = deals.filter((d: any) => !['won', 'lost'].includes(d.stage)).length;
   const allDealsForDisplay = deals.filter((d: any) => !['won', 'lost'].includes(d.stage));
 
+  // Filter proposals for this contact
+  const contactProposals = proposals.filter((p: any) => {
+    if (!contactId) return false;
+    // Match by deal_id linking or lead_name
+    const contactDealsIds = deals.map((d: any) => d.id);
+    return contactDealsIds.includes(p.deal_id) || 
+      (p.lead_name && contact?.name && p.lead_name.toLowerCase() === contact.name.toLowerCase());
+  });
+
   return (
     <TooltipProvider>
     <ScrollArea className="h-full">
