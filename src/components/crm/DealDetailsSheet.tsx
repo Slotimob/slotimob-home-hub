@@ -171,6 +171,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
       const { error } = await supabase
         .from('deals')
         .update({
+          title: editedDeal.title || null,
           estimated_value: editedDeal.estimated_value,
           estimated_commission: calculatedCommission,
           notes: editedDeal.notes,
@@ -178,6 +179,9 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
           probability: getProbabilityValue(editedDeal.probability),
           expected_close_date: editedDeal.expected_close_date?.toISOString().split('T')[0] ?? null,
           temperature: editedDeal.temperature,
+          contact_id: editedDeal.contact_id,
+          unit_id: editedDeal.unit_id,
+          property_id: editedDeal.property_id,
         })
         .eq('id', deal.id);
 
