@@ -21,6 +21,7 @@ interface Unit {
   intent_type?: string | null;
   property_type?: string | null;
   cover_image_url: string | null;
+  is_published_portal?: boolean | null;
   property?: {
     id: string;
     name: string;
