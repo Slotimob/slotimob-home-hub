@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, Sparkles, Plus, Home, HelpCircle, Repeat, AlertCircle, User, ArrowRightLeft, ClipboardList } from "lucide-react";
 import { useFinancialCategories } from "@/hooks/useFinancialCategories";
+import { cn } from "@/lib/utils";
 import { CreateCategoryDialog } from "@/components/finance/CreateCategoryDialog";
 import { UnitSelector } from "@/components/finance/UnitSelector";
 import { ContactSelector } from "@/components/ContactSelector";
@@ -379,8 +380,8 @@ export function CreateTransactionDialog({
             </Alert>
           )}
 
-          <form id="transaction-form" onSubmit={handleSubmit} className="space-y-5">
-            <fieldset disabled={!canEdit || isReconciled} className="space-y-5">
+          <form id="transaction-form" onSubmit={handleSubmit} className="space-y-6">
+            <fieldset disabled={!canEdit || isReconciled} className="space-y-6">
               {/* Type Selector - 3 tabs */}
               <Tabs value={mode} onValueChange={(v) => setMode(v as "income" | "expense" | "transfer")}>
                 <TabsList className="grid w-full grid-cols-3">
@@ -423,8 +424,8 @@ export function CreateTransactionDialog({
                   />
                 </div>
 
-                {/* Amount + Unit - 2 col grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Amount + Unit - 2 col grid, aligned by input base */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                   <div className="space-y-2">
                     <Label htmlFor="amount">Valor *</Label>
                     <CurrencyInput
@@ -433,7 +434,7 @@ export function CreateTransactionDialog({
                       value={formData.amount}
                       onChange={(value) => setFormData({ ...formData, amount: value })}
                       disabled={isReconciled}
-                      className={isReconciled ? "bg-muted cursor-not-allowed" : ""}
+                      className={cn("h-10", isReconciled ? "bg-muted cursor-not-allowed" : "")}
                     />
                   </div>
 
@@ -468,8 +469,8 @@ export function CreateTransactionDialog({
                   </div>
                 )}
 
-                {/* Contact + Category - 2 col grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Contact + Category - 2 col grid, aligned by input base */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       <User className="h-4 w-4" />
@@ -572,7 +573,7 @@ export function CreateTransactionDialog({
 
                 {/* Dates Row */}
                 <TooltipProvider>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 items-end">
                     <div className="space-y-2">
                       <Label htmlFor="transactionDate" className="flex items-center gap-1">
                         Data Emissão *
@@ -618,7 +619,7 @@ export function CreateTransactionDialog({
                 </TooltipProvider>
 
                 {/* Status and Payment Method */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 items-end">
                   <div className="space-y-2">
                     <Label>Status</Label>
                     <Select
