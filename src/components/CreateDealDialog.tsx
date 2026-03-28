@@ -148,6 +148,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
         business_type: 'sale',
         expected_close_date: undefined,
         initial_task: '',
+        lead_origin: '',
       });
     }
   }, [open]);
