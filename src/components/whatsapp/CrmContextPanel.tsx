@@ -604,7 +604,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
         open={isCreateContactOpen}
         onOpenChange={setIsCreateContactOpen}
         onSuccess={handleContactCreated}
-        initialPhone={contactPhone}
+        initialPhone={formatWhatsAppToCrm(contactPhone)}
       />
 
       {/* Manual Contact Linking Sheet */}
