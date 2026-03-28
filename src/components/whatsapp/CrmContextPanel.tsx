@@ -436,6 +436,47 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
               )}
             </div>
           </div>
+
+          <StepArrow />
+
+          {/* STEP 3: Proposal */}
+          <div className="flex items-start gap-3">
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${activeDeal ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+              <span className="text-xs font-bold">3</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              {activeDeal ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full gap-2 h-8 text-xs"
+                  onClick={() => setIsProposalOpen(true)}
+                >
+                  <FileSignature className="h-3.5 w-3.5" />
+                  Gerar Proposta
+                </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="w-full">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-2 h-8 text-xs pointer-events-none opacity-50"
+                        disabled
+                      >
+                        <FileSignature className="h-3.5 w-3.5" />
+                        Gerar Proposta
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Crie uma negociação primeiro</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Active Deal Details */}
