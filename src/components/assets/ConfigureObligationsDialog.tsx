@@ -258,6 +258,16 @@ export function ConfigureObligationsDialog({
     }));
   };
 
+  const handleControlTypeChange = (type: ObligationType, controlType: ControlType) => {
+    setConfig((prev) => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        control_type: controlType,
+      },
+    }));
+  };
+
   const handleSave = async () => {
     if (!unitId) return;
 
