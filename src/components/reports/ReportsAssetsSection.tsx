@@ -417,7 +417,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
           description="Prestação de contas com receitas, deduções e repasse líquido ao proprietário."
           icon={<Receipt className="h-4 w-4" />}
           onGeneratePDF={handleOwnerReportPdf}
-          onDownloadCSV={async () => toast({ title: 'Disponível apenas em PDF', description: 'Este relatório é gerado exclusivamente em formato PDF.' })}
+          onDownloadCSV={async () => { toast({ title: 'Disponível apenas em PDF', description: 'Este relatório é gerado exclusivamente em formato PDF.' }); }}
           pdfDisabled={!selectedLeaseId}
           csvDisabled={true}
         />
@@ -426,7 +426,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
           description="Histórico de pagamentos, saldo devedor e próximos vencimentos do inquilino."
           icon={<FileText className="h-4 w-4" />}
           onGeneratePDF={handleTenantStatementPdf}
-          onDownloadCSV={async () => toast({ title: 'Disponível apenas em PDF', description: 'Este relatório é gerado exclusivamente em formato PDF.' })}
+          onDownloadCSV={async () => { toast({ title: 'Disponível apenas em PDF', description: 'Este relatório é gerado exclusivamente em formato PDF.' }); }}
           pdfDisabled={!selectedLeaseId}
           csvDisabled={true}
         />
