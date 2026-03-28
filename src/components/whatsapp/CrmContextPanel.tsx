@@ -169,7 +169,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
     }
     supabase
       .from('deals')
-      .select('*, custom_stage:pipeline_stages(name, color), property:properties(name), unit:units(title)')
+      .select('*, custom_stage:pipeline_stages(name, color), property:properties(name), unit:units(unit_number)')
       .eq('id', dealId)
       .maybeSingle()
       .then(({ data }) => setDirectDeal(data));
