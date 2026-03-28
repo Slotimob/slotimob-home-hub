@@ -46,6 +46,7 @@ export interface ObligationHealth {
   dueDay: number | null;
   responsible: ResponsibleRole | null;
   installationCode?: string | null;
+  controlType: ControlType;
   transactionId?: string;
   amount?: number;
 }
