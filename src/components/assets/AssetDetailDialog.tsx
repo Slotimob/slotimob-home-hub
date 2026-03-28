@@ -60,6 +60,7 @@ import {
 } from "@/hooks/useAssetHealth";
 import { EditUnitDialog } from "@/components/units/EditUnitDialog";
 import { AssetMetricsCards } from "./AssetMetricsCards";
+import { ObligationsConfigForm } from "./ObligationsConfigForm";
 import { DimobStatusCard } from "./DimobStatusCard";
 import { ContractGeneratorDialog } from "./ContractGeneratorDialog";
 import { CreateLeaseWizard } from "./CreateLeaseWizard";
