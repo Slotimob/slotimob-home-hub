@@ -38,9 +38,10 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 };
 
 export default function Proposals() {
-  const { proposals, isLoading, updateProposalStatus } = useProposals();
+  const { proposals, isLoading, updateProposalStatus, deleteProposal } = useProposals();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
 
