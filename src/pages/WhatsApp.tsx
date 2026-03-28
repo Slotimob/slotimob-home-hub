@@ -474,7 +474,6 @@ export default function WhatsApp() {
                   onCreateDeal={canCreateDeal ? handleCreateDeal : undefined}
                   onDealCreated={handleDealCreated}
                   onContactCreated={() => {
-                    // Force re-fetch the conversation to pick up the new contact_id
                     if (selectedConversation?.id) {
                       supabase
                         .from('whatsapp_conversations')
@@ -492,6 +491,45 @@ export default function WhatsApp() {
           </div>
         </div>
       </div>
+
+      {/* Mobile CRM floating button */}
+      {isMobile && selectedConversation && mobileView === 'chat' && (
+        <Button
+          size="icon"
+          variant="secondary"
+          className="fixed bottom-20 right-4 z-40 h-10 w-10 rounded-full shadow-lg"
+          onClick={() => setMobileCrmOpen(true)}
+        >
+          <PanelRightOpen className="h-5 w-5" />
+        </Button>
+      )}
+
+      {/* Mobile CRM Sheet */}
+      <Sheet open={mobileCrmOpen} onOpenChange={setMobileCrmOpen}>
+        <SheetContent side="right" className="w-[320px] p-0">
+          {selectedConversation && (
+            <CrmContextPanel
+              conversation={selectedConversation}
+              contact={contact}
+              contactLoading={contactLoading}
+              onCreateDeal={canCreateDeal ? handleCreateDeal : undefined}
+              onDealCreated={handleDealCreated}
+              onContactCreated={() => {
+                if (selectedConversation?.id) {
+                  supabase
+                    .from('whatsapp_conversations')
+                    .select('*, contacts(*), deals(*)')
+                    .eq('id', selectedConversation.id)
+                    .maybeSingle()
+                    .then(({ data }) => {
+                      if (data) setSelectedConversation(data as any);
+                    });
+                }
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
       <BottomNavigation />
 
