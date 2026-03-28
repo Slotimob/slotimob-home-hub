@@ -268,8 +268,8 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className={cn(
-                        'font-medium text-sm truncate',
-                        conv.unread_count > 0 && 'font-semibold text-foreground'
+                        'font-bold text-sm truncate',
+                        conv.unread_count > 0 && 'font-extrabold text-foreground'
                       )}>
                         {displayName}
                       </span>

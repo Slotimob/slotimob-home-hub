@@ -270,7 +270,7 @@ export function ChatArea({
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
+              <h3 className="font-bold text-sm text-foreground truncate">{displayName}</h3>
               {conversation.id && (
                 <Select
                   value={currentStatus}
