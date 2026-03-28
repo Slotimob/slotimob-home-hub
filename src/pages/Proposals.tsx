@@ -16,7 +16,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, CheckCircle2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, CheckCircle2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -28,9 +38,10 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 };
 
 export default function Proposals() {
-  const { proposals, isLoading, updateProposalStatus } = useProposals();
+  const { proposals, isLoading, updateProposalStatus, deleteProposal } = useProposals();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
 
@@ -233,6 +244,14 @@ export default function Proposals() {
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={() => setDeletingId(proposal.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -255,6 +274,31 @@ export default function Proposals() {
         preSelectedUnitId={preSelectedUnitId}
         editingProposal={editingProposal}
       />
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir proposta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. A proposta será removida permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deletingId) {
+                  deleteProposal.mutate(deletingId);
+                  setDeletingId(null);
+                }
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 }

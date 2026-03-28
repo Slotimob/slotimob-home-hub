@@ -296,7 +296,6 @@ export function CreateProposalSheet({
 
       if (typeof aiText === 'string' && aiText.trim()) {
         setIntroMessage(aiText.trim());
-        toast({ title: 'Texto gerado com IA!' });
       } else {
         console.error('AI Payload Error — could not parse response:', rawResponse);
         const fallback = `Confira esta excelente oportunidade que selecionei especialmente para você. Um imóvel com características únicas que atendem perfeitamente às suas necessidades.\n\nEste é um investimento seguro e com alto potencial de valorização, localizado em uma região privilegiada com toda a infraestrutura que você e sua família merecem.\n\nFicarei feliz em agendar uma visita para que você possa conhecer pessoalmente todos os diferenciais deste imóvel.`;
