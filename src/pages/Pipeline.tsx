@@ -777,12 +777,12 @@ const Pipeline = () => {
 
       // Origin filter
       if (filters.origin && filters.origin !== 'all') {
-        if (deal.lead.origin?.toLowerCase() !== filters.origin.toLowerCase()) return false;
+        if (deal.lead?.origin?.toLowerCase() !== filters.origin.toLowerCase()) return false;
       }
 
       // Property filter
       if (filters.propertyId && filters.propertyId !== 'all') {
-        if (deal.property.id !== filters.propertyId) return false;
+        if (deal.property?.id !== filters.propertyId) return false;
       }
 
       // Value range filter
