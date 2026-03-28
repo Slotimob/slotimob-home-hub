@@ -88,15 +88,23 @@ function TrafficLight({
   const showActions = obligation.status === "pending" || obligation.status === "overdue";
   const Icon = OBLIGATION_ICONS[obligation.type] || MoreHorizontal;
 
+  const isManagerial = obligation.controlType === "managerial";
+
   const lightElement = (
-    <div
-      className={cn(
-        "w-6 h-6 rounded-md shrink-0 transition-all cursor-pointer flex items-center justify-center",
-        config.bgClassName,
-        obligation.status === "overdue" && "animate-pulse"
+    <div className="relative">
+      <div
+        className={cn(
+          "w-6 h-6 rounded-md shrink-0 transition-all cursor-pointer flex items-center justify-center",
+          config.bgClassName,
+          obligation.status === "overdue" && "animate-pulse",
+          isManagerial && "ring-1 ring-purple-400/50"
+        )}
+      >
+        <Icon className={cn("h-3.5 w-3.5", config.textClassName)} />
+      </div>
+      {isManagerial && (
+        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-purple-500 border border-background" />
       )}
-    >
-      <Icon className={cn("h-3.5 w-3.5", config.textClassName)} />
     </div>
   );
 
