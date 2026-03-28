@@ -136,6 +136,25 @@ export const PipelineFilters = ({
 
   const FiltersContent = () => (
     <>
+      {/* Priority Filter */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Prioridade</label>
+        <Select
+          value={filters.priority}
+          onValueChange={(value) => updateFilter('priority', value)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Todas as prioridades" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="low">Baixa</SelectItem>
+            <SelectItem value="medium">Média</SelectItem>
+            <SelectItem value="high">Alta</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Temperature Filter - Lead Temperature */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Temperatura do Lead</label>

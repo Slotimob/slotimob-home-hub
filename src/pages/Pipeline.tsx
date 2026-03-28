@@ -758,10 +758,12 @@ const Pipeline = () => {
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesSearch =
+          (deal as any).title?.toLowerCase().includes(searchLower) ||
           deal.lead?.name?.toLowerCase().includes(searchLower) ||
           deal.lead?.email?.toLowerCase().includes(searchLower) ||
           deal.lead?.phone?.includes(filters.search) ||
-          deal.property?.name?.toLowerCase().includes(searchLower);
+          deal.property?.name?.toLowerCase().includes(searchLower) ||
+          deal.unit?.unit_number?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
       }
 
