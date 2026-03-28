@@ -409,7 +409,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                     <div key={deal.id} className="p-2 rounded-md border border-border/50 bg-muted/30">
                       <p className="text-[11px] font-medium text-foreground truncate">
                         {deal.title || deal.property?.name || 'Negociação'}
-                        {deal.unit?.title ? ` - ${deal.unit.title}` : ''}
+                        {deal.unit?.unit_number ? ` - ${deal.unit.unit_number}` : ''}
                       </p>
                       <div className="flex items-center justify-between mt-0.5">
                         <p className="text-[10px] text-muted-foreground">
