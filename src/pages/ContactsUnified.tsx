@@ -209,7 +209,115 @@ const ContactsUnified = () => {
     setCurrentPage(1);
   };
 
-  // RULE 3: Clean handlers - no side effects in children
+  // Selection handlers
+  const handleToggleSelection = (contactId: string, selected: boolean) => {
+    setSelectedContacts(prev => {
+      const next = new Set(prev);
+      if (selected) next.add(contactId);
+      else next.delete(contactId);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedContacts.size === paginatedContacts.length) {
+      setSelectedContacts(new Set());
+    } else {
+      setSelectedContacts(new Set(paginatedContacts.map(c => c.id)));
+    }
+  };
+
+  const handleExitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedContacts(new Set());
+  };
+
+  // Check linked resources for bulk delete
+  const handleBulkDeleteCheck = async () => {
+    if (selectedContacts.size === 0) return;
+    setIsBulkDeleting(true);
+
+    try {
+      const ids = Array.from(selectedContacts);
+      
+      // Check units
+      const { data: linkedUnits } = await supabase
+        .from('units')
+        .select('id, owner_contact_id, tenant_contact_id')
+        .or(ids.map(id => `owner_contact_id.eq.${id},tenant_contact_id.eq.${id}`).join(','))
+        .limit(1);
+
+      // Check transactions
+      const { data: linkedTx } = await supabase
+        .from('financial_transactions')
+        .select('id, contact_id')
+        .in('contact_id', ids)
+        .limit(1);
+
+      // Check deals
+      const { data: linkedDeals } = await supabase
+        .from('deals')
+        .select('id, contact_id')
+        .in('contact_id', ids)
+        .limit(1);
+
+      // Check leases
+      const { data: linkedLeases } = await supabase
+        .from('leases')
+        .select('id, tenant_contact_id, owner_contact_id')
+        .or(ids.map(id => `tenant_contact_id.eq.${id},owner_contact_id.eq.${id}`).join(','))
+        .limit(1);
+
+      const blockers: string[] = [];
+      if (linkedUnits && linkedUnits.length > 0) blockers.push('imóveis');
+      if (linkedTx && linkedTx.length > 0) blockers.push('transações financeiras');
+      if (linkedDeals && linkedDeals.length > 0) blockers.push('negociações');
+      if (linkedLeases && linkedLeases.length > 0) blockers.push('contratos');
+
+      if (blockers.length > 0) {
+        setBulkDeleteBlockedMessage(
+          `Alguns dos contatos selecionados estão vinculados a: ${blockers.join(', ')}. Remova os vínculos antes de excluir.`
+        );
+        setIsBulkDeleting(false);
+        return;
+      }
+
+      setShowBulkDeleteConfirm(true);
+    } catch (error) {
+      toast({ title: 'Erro ao verificar vínculos', variant: 'destructive' });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedContacts);
+      const { error } = await supabase
+        .from('contacts')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+
+      toast({ title: `${ids.length} contato${ids.length > 1 ? 's' : ''} excluído${ids.length > 1 ? 's' : ''} com sucesso!` });
+      handleExitSelectionMode();
+      loadContacts();
+    } catch (error: any) {
+      const msg = error.message || '';
+      if (msg.includes('foreign key') || msg.includes('violates') || msg.includes('constraint')) {
+        toast({ title: 'Não é possível excluir', description: 'Alguns contatos possuem vínculos no sistema que impedem a exclusão.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro ao excluir', description: msg, variant: 'destructive' });
+      }
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
+
+  // RULE 3: Clean handlers
   const handleOpenSheet = (contact: UnifiedContact) => {
     setSheetContact(contact);
     setIsSheetOpen(true);
@@ -217,7 +325,6 @@ const ContactsUnified = () => {
 
   const handleCloseSheet = () => {
     setIsSheetOpen(false);
-    // Don't clear sheetContact immediately - let animation finish
   };
 
   const handleOpenEdit = (contact: UnifiedContact) => {
@@ -230,7 +337,6 @@ const ContactsUnified = () => {
   };
 
   const handleEditFromSheet = () => {
-    // Close sheet first, then open edit with delay
     const contactToEdit = sheetContact;
     setIsSheetOpen(false);
     setTimeout(() => {
@@ -251,7 +357,6 @@ const ContactsUnified = () => {
 
     setIsDeleting(true);
     try {
-      // Check for linked units or transactions
       const { count: unitsCount } = await supabase
         .from('units')
         .select('id', { count: 'exact', head: true })
