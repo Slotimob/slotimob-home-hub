@@ -404,15 +404,22 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                       {activeDealsCount} negociação{activeDealsCount > 1 ? 'ões' : ''} ativa{activeDealsCount > 1 ? 's' : ''}
                     </p>
                   </div>
-                  {allDealsForDisplay.map((deal: any) => (
+                  {allDealsForDisplay.slice(0, 3).map((deal: any) => (
                     <div key={deal.id} className="p-2 rounded-md border border-border/50 bg-muted/30">
                       <p className="text-[11px] font-medium text-foreground truncate">
                         {deal.title || deal.property?.name || 'Negociação'}
                         {deal.unit?.title ? ` - ${deal.unit.title}` : ''}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {deal.custom_stage?.name || STAGE_LABELS[deal.stage] || deal.stage}
-                      </p>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <p className="text-[10px] text-muted-foreground">
+                          {deal.custom_stage?.name || STAGE_LABELS[deal.stage] || deal.stage}
+                        </p>
+                        {deal.estimated_value && (
+                          <p className="text-[10px] font-medium text-foreground">
+                            {deal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   ))}
                   {hasValidName && (
