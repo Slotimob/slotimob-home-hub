@@ -144,7 +144,7 @@ export function ContactSelector({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between font-normal"
+          className="w-full h-10 justify-between font-normal"
           disabled={disabled}
         >
           {selectedContact ? (
