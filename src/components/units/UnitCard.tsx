@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Share2, Home, Ruler, Bed } from "lucide-react";
+import { Eye, Share2, Home, Ruler, Bed, Rss } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES } from "@/utils/uiConstants";
 
