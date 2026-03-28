@@ -56,6 +56,7 @@ interface CreateProposalSheetProps {
   preSelectedUnitId?: string;
   initialLeadName?: string;
   dealId?: string;
+  contactId?: string;
   editingProposal?: Proposal | null;
   onProposalGenerated?: (pdfBlob: Blob, proposalId: string) => void;
 }
