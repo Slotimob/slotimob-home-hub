@@ -123,7 +123,14 @@ function TrafficLight({
             </div>
             <div>
               <p className="text-xs font-medium">{obligation.label}</p>
-              <p className="text-[10px] text-muted-foreground">{config.label}</p>
+              <div className="flex items-center gap-1">
+                <p className="text-[10px] text-muted-foreground">{config.label}</p>
+                {obligation.controlType === "managerial" && (
+                  <Badge variant="outline" className="h-3.5 px-1 text-[8px] border-purple-400 text-purple-600">
+                    Gerencial
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           
