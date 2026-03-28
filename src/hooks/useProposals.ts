@@ -26,6 +26,7 @@ export interface CreateProposalInput {
   property_id?: string | null;
   unit_id?: string | null;
   deal_id?: string | null;
+  contact_id?: string | null;
   lead_name?: string;
   introduction_message?: string;
   include_financing?: boolean;
