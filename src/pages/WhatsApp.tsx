@@ -172,6 +172,7 @@ export default function WhatsApp() {
   const { contact, loading: contactLoading } = useConversationContact(contactId);
 
   const [showCrmPanel, setShowCrmPanel] = useState(true);
+  const [mobileCrmOpen, setMobileCrmOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
   // Fetch team members (manager only)
