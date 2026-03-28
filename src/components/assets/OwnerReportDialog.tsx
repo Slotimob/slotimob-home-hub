@@ -150,7 +150,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
 
         <Separator />
 
-        <ScrollArea className="flex-1 max-h-[380px]">
+        <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: 'calc(90vh - 280px)' }}>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
