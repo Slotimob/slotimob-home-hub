@@ -527,9 +527,11 @@ function ObligationResponsibilityCard({
   onDueDayChange,
   onResponsibleChange,
   onInstallationCodeChange,
+  onControlTypeChange,
   getResponsibleFeedback,
 }: ObligationResponsibilityCardProps) {
   const currentResponsible = config.responsible || "owner";
+  const currentControlType = config.control_type || "financial";
   const feedback = getResponsibleFeedback(currentResponsible, label);
 
   return (
