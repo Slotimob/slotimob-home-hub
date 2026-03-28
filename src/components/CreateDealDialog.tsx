@@ -164,7 +164,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   }, [formData.unit_id, units]);
 
   const loadLeads = async () => {
-    const { data } = await supabase.from('leads').select('id, name, email, phone').order('name');
+    const { data } = await supabase.from('leads').select('id, name, email, phone, origin').order('name');
     setLeads(data || []);
   };
 
