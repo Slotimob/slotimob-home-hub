@@ -110,15 +110,11 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
         (conv.last_message || '').toLowerCase().includes(search);
 
       if (!matchesSearch) return false;
-      if (activeTab === 'unread') return conv.unread_count > 0;
-      if (activeTab === 'waiting') return conv.status === 'waiting';
 
-      // Triage status filter (manager view)
-      if (showTriageTabs && statusFilter !== 'all') {
-        if (statusFilter === 'pending') return conv.status === 'pending' || !conv.assigned_user_id;
-        if (statusFilter === 'active') return conv.status === 'active' || (conv.assigned_user_id && conv.status !== 'closed');
-        if (statusFilter === 'closed') return conv.status === 'closed';
-      }
+      // Filter by status tab
+      if (activeTab === 'pending') return conv.status === 'pending' || (!conv.status);
+      if (activeTab === 'active') return conv.status === 'active';
+      if (activeTab === 'closed') return conv.status === 'closed';
 
       return true;
     });
