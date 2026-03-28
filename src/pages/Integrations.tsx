@@ -611,6 +611,13 @@ const Integrations = () => {
         </div>
       </div>
 
+      <PortalSetupDialog
+        open={showPortalSetup}
+        onOpenChange={setShowPortalSetup}
+        feedUrl={xmlFeedUrl}
+        publishedCount={publishedCount}
+      />
+
       <WhatsAppDisclaimerDialog
         open={showDisclaimer}
         onOpenChange={setShowDisclaimer}
