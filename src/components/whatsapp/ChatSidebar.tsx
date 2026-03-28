@@ -1,14 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Search, MessageSquarePlus, MessageCircle, RefreshCw, Users, User } from 'lucide-react';
+import { Search, MessageSquarePlus, MessageCircle, RefreshCw, Users, User, Tag, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -16,6 +15,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { NewConversationDialog } from './NewConversationDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWhatsAppTags } from '@/hooks/useWhatsAppTags';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
@@ -56,19 +56,38 @@ function getDisplayName(conv: any): string {
 }
 
 function getInitials(displayName: string): string {
-  // If displayName looks like a phone number (starts with digits), return empty for icon fallback
   if (/^\d/.test(displayName)) return '';
   return displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
 export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange, showTriageTabs = false, deepLinkNewConv, onDeepLinkConsumed }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('pending');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [newConvOpen, setNewConvOpen] = useState(false);
   const [newConvInitialPhone, setNewConvInitialPhone] = useState('');
   const [newConvInitialMessage, setNewConvInitialMessage] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [convTagMap, setConvTagMap] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
+  const { tags: allTags } = useWhatsAppTags();
+
+  // Load conversation<->tag mapping
+  useEffect(() => {
+    if (conversations.length === 0) return;
+    const convIds = conversations.map(c => c.id);
+    supabase
+      .from('whatsapp_conversation_tags')
+      .select('conversation_id, tag_id')
+      .in('conversation_id', convIds)
+      .then(({ data }) => {
+        const map: Record<string, string[]> = {};
+        for (const row of (data as any[] || [])) {
+          if (!map[row.conversation_id]) map[row.conversation_id] = [];
+          map[row.conversation_id].push(row.tag_id);
+        }
+        setConvTagMap(map);
+      });
+  }, [conversations]);
 
   // Handle deep link new conversation
   useEffect(() => {
@@ -95,31 +114,38 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
     }
   };
 
-  const filtered = [...conversations]
-    .sort((a, b) => {
-      const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-      const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-      return dateB - dateA;
-    })
-    .filter((conv) => {
-      const displayName = conv.contact_name || conv.contact_phone;
-      const search = searchTerm.toLowerCase();
-      const matchesSearch =
-        displayName.toLowerCase().includes(search) ||
-        conv.contact_phone.includes(searchTerm) ||
-        (conv.last_message || '').toLowerCase().includes(search);
+  const toggleTagFilter = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  };
 
-      if (!matchesSearch) return false;
+  const filtered = useMemo(() => {
+    return [...conversations]
+      .sort((a, b) => {
+        const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+        const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+        return dateB - dateA;
+      })
+      .filter((conv) => {
+        const displayName = conv.contact_name || conv.contact_phone;
+        const search = searchTerm.toLowerCase();
+        const matchesSearch =
+          displayName.toLowerCase().includes(search) ||
+          conv.contact_phone.includes(searchTerm) ||
+          (conv.last_message || '').toLowerCase().includes(search);
 
-      // Filter by status tab
-      if (activeTab === 'pending') return conv.status === 'pending' || (!conv.status);
-      if (activeTab === 'active') return conv.status === 'active';
-      if (activeTab === 'closed') return conv.status === 'closed';
+        if (!matchesSearch) return false;
 
-      return true;
-    });
+        // Filter by selected tags (AND logic: conversation must have ALL selected tags)
+        if (selectedTagIds.length > 0) {
+          const convTags = convTagMap[conv.id] || [];
+          return selectedTagIds.every(tid => convTags.includes(tid));
+        }
 
-  const pendingCount = conversations.filter(c => c.status === 'pending' || !c.status).length;
+        return true;
+      });
+  }, [conversations, searchTerm, selectedTagIds, convTagMap]);
 
   return (
     <div className="flex flex-col h-full bg-card">
@@ -165,24 +191,42 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
           />
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="pending" className="text-xs">
-              🟡 Triagem
-              {pendingCount > 0 && (
-                <Badge variant="destructive" className="ml-1 h-4 min-w-4 px-1 text-[10px] rounded-full">
-                  {pendingCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="active" className="text-xs">
-              🟢 Atendimento
-            </TabsTrigger>
-            <TabsTrigger value="closed" className="text-xs">
-              ⚫ Fechado
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Tag filters */}
+        {allTags.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            <Tag className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            {allTags.map(tag => {
+              const isActive = selectedTagIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() => toggleTagFilter(tag.id)}
+                  className={cn(
+                    'text-[10px] px-2 py-0.5 rounded-full border transition-colors',
+                    isActive
+                      ? 'font-semibold'
+                      : 'opacity-70 hover:opacity-100'
+                  )}
+                  style={{
+                    backgroundColor: isActive ? tag.color + '25' : 'transparent',
+                    color: tag.color,
+                    borderColor: tag.color + '50',
+                  }}
+                >
+                  {tag.name}
+                </button>
+              );
+            })}
+            {selectedTagIds.length > 0 && (
+              <button
+                onClick={() => setSelectedTagIds([])}
+                className="text-[10px] px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        )}
 
         {isOwner && teamMembers.length > 0 && onAgentFilterChange && (
           <Select value={agentFilter} onValueChange={onAgentFilterChange}>
@@ -239,12 +283,21 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
           <div className="p-8 text-center text-muted-foreground">
             <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Nenhuma conversa encontrada</p>
+            {selectedTagIds.length > 0 && (
+              <Button size="sm" variant="ghost" className="mt-2 text-xs" onClick={() => setSelectedTagIds([])}>
+                Limpar filtros
+              </Button>
+            )}
           </div>
         ) : (
           <div>
             {filtered.map((conv) => {
               const displayName = getDisplayName(conv);
               const initials = getInitials(displayName);
+              const convTags = (convTagMap[conv.id] || [])
+                .map(tid => allTags.find(t => t.id === tid))
+                .filter(Boolean);
+
               return (
                 <button
                   key={conv.id}
@@ -293,13 +346,23 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
                         </Badge>
                       )}
                     </div>
-                    {((conv as any).tags as string[] | undefined)?.length > 0 && (
+                    {convTags.length > 0 && (
                       <div className="flex gap-0.5 mt-0.5 flex-wrap">
-                        {((conv as any).tags as string[]).slice(0, 3).map(tag => (
-                          <span key={tag} className="text-[9px] px-1 py-0 rounded bg-muted text-muted-foreground">
-                            {tag}
+                        {convTags.slice(0, 3).map(tag => (
+                          <span
+                            key={tag!.id}
+                            className="text-[9px] px-1 py-0 rounded"
+                            style={{
+                              backgroundColor: tag!.color + '20',
+                              color: tag!.color,
+                            }}
+                          >
+                            {tag!.name}
                           </span>
                         ))}
+                        {convTags.length > 3 && (
+                          <span className="text-[9px] text-muted-foreground">+{convTags.length - 3}</span>
+                        )}
                       </div>
                     )}
                   </div>
