@@ -2380,6 +2380,7 @@ export type Database = {
           dark_mode_preference: boolean | null
           dashboard_settings: Json | null
           email: string
+          feed_token: string | null
           full_name: string
           glow_intensity: number | null
           ical_token: string | null
@@ -2413,6 +2414,7 @@ export type Database = {
           dark_mode_preference?: boolean | null
           dashboard_settings?: Json | null
           email: string
+          feed_token?: string | null
           full_name: string
           glow_intensity?: number | null
           ical_token?: string | null
@@ -2446,6 +2448,7 @@ export type Database = {
           dark_mode_preference?: boolean | null
           dashboard_settings?: Json | null
           email?: string
+          feed_token?: string | null
           full_name?: string
           glow_intensity?: number | null
           ical_token?: string | null
@@ -3377,6 +3380,7 @@ export type Database = {
           is_financeable: boolean | null
           is_managed: boolean | null
           is_occupied: boolean | null
+          is_published_portal: boolean
           is_standalone: boolean | null
           lead_id: string | null
           market_value: number | null
@@ -3425,6 +3429,7 @@ export type Database = {
           is_financeable?: boolean | null
           is_managed?: boolean | null
           is_occupied?: boolean | null
+          is_published_portal?: boolean
           is_standalone?: boolean | null
           lead_id?: string | null
           market_value?: number | null
@@ -3473,6 +3478,7 @@ export type Database = {
           is_financeable?: boolean | null
           is_managed?: boolean | null
           is_occupied?: boolean | null
+          is_published_portal?: boolean
           is_standalone?: boolean | null
           lead_id?: string | null
           market_value?: number | null
@@ -4238,6 +4244,7 @@ export type Database = {
       }
       is_crm_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
+      regenerate_feed_token: { Args: { p_user_id: string }; Returns: string }
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
       reset_ai_credits_for_user: {
         Args: { p_user_id: string }
