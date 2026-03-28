@@ -237,8 +237,8 @@ const Integrations = () => {
     }
   };
 
-  const xmlFeedUrl = xmlToken
-    ? `https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/xml-feed?token=${xmlToken}`
+  const xmlFeedUrl = feedToken
+    ? `https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/xml-feed?token=${feedToken}`
     : '';
 
   const copyXmlUrl = () => {
@@ -249,6 +249,21 @@ const Integrations = () => {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // Count published units for portal
+  const { data: publishedCount = 0 } = useQuery({
+    queryKey: ['portal-published-count', effectiveBrokerId],
+    queryFn: async () => {
+      if (!effectiveBrokerId) return 0;
+      const { count } = await supabase
+        .from('units')
+        .select('id', { count: 'exact', head: true })
+        .eq('broker_id', effectiveBrokerId)
+        .eq('is_published_portal', true);
+      return count || 0;
+    },
+    enabled: !!effectiveBrokerId,
+  });
 
   if (loading || isLoadingToken) {
     return (
