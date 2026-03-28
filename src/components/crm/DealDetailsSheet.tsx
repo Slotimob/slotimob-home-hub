@@ -14,7 +14,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2 } from 'lucide-react';
+import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2, Pencil } from 'lucide-react';
+import { ContactSelector } from '@/components/ContactSelector';
+import { UnitSelector } from '@/components/finance/UnitSelector';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
