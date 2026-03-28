@@ -21,6 +21,7 @@ import {
   ObligationsConfig,
   ObligationConfig,
   ResponsibleRole,
+  ControlType,
   useUnitObligationsConfig,
   updateUnitObligationsConfig,
 } from "@/hooks/useAssetHealth";
