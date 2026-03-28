@@ -63,8 +63,7 @@ function getInitials(displayName: string): string {
 
 export function ChatSidebar({ conversations, selectedId, onSelect, loading, connectionId, isConnected = true, isOwner = false, teamMembers = [], agentFilter = 'all', onAgentFilterChange, showTriageTabs = false, deepLinkNewConv, onDeepLinkConsumed }: ChatSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('pending');
   const [newConvOpen, setNewConvOpen] = useState(false);
   const [newConvInitialPhone, setNewConvInitialPhone] = useState('');
   const [newConvInitialMessage, setNewConvInitialMessage] = useState('');
@@ -111,21 +110,16 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
         (conv.last_message || '').toLowerCase().includes(search);
 
       if (!matchesSearch) return false;
-      if (activeTab === 'unread') return conv.unread_count > 0;
-      if (activeTab === 'waiting') return conv.status === 'waiting';
 
-      // Triage status filter (manager view)
-      if (showTriageTabs && statusFilter !== 'all') {
-        if (statusFilter === 'pending') return conv.status === 'pending' || !conv.assigned_user_id;
-        if (statusFilter === 'active') return conv.status === 'active' || (conv.assigned_user_id && conv.status !== 'closed');
-        if (statusFilter === 'closed') return conv.status === 'closed';
-      }
+      // Filter by status tab
+      if (activeTab === 'pending') return conv.status === 'pending' || (!conv.status);
+      if (activeTab === 'active') return conv.status === 'active';
+      if (activeTab === 'closed') return conv.status === 'closed';
 
       return true;
     });
 
-  const unreadTotal = conversations.filter(c => c.unread_count > 0).length;
-  const pendingCount = showTriageTabs ? conversations.filter(c => c.status === 'pending' || !c.assigned_user_id).length : 0;
+  const pendingCount = conversations.filter(c => c.status === 'pending' || !c.status).length;
 
   return (
     <div className="flex flex-col h-full bg-card">
@@ -173,48 +167,22 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="all" className="text-xs">Todas</TabsTrigger>
-            <TabsTrigger value="unread" className="text-xs">
-              Não lidas
-              {unreadTotal > 0 && (
+            <TabsTrigger value="pending" className="text-xs">
+              🟡 Triagem
+              {pendingCount > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 min-w-4 px-1 text-[10px] rounded-full">
-                  {unreadTotal}
+                  {pendingCount}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="waiting" className="text-xs">Aguardando</TabsTrigger>
+            <TabsTrigger value="active" className="text-xs">
+              🟢 Atendimento
+            </TabsTrigger>
+            <TabsTrigger value="closed" className="text-xs">
+              ⚫ Fechado
+            </TabsTrigger>
           </TabsList>
         </Tabs>
-
-        {/* Triage status tabs for managers */}
-        {showTriageTabs && (
-          <div className="flex gap-1">
-            {[
-              { value: 'all', label: 'Todos' },
-              { value: 'pending', label: 'Triagem', count: pendingCount },
-              { value: 'active', label: 'Atendimento' },
-              { value: 'closed', label: 'Fechados' },
-            ].map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setStatusFilter(tab.value)}
-                className={cn(
-                  'px-2 py-1 text-[11px] rounded-md transition-colors font-medium',
-                  statusFilter === tab.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                )}
-              >
-                {tab.label}
-                {tab.count && tab.count > 0 ? (
-                  <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1 rounded-full">
-                    {tab.count}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </div>
-        )}
 
         {isOwner && teamMembers.length > 0 && onAgentFilterChange && (
           <Select value={agentFilter} onValueChange={onAgentFilterChange}>

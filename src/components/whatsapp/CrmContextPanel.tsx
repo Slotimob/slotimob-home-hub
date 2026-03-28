@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
   Mail, Phone, Tag, Plus, Calendar, StickyNote,
   PhoneCall, FileText, MessageCircle, TrendingUp, Loader2,
@@ -255,8 +255,10 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
     .split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '??';
 
   const activeDealsCount = deals.filter((d: any) => !['won', 'lost'].includes(d.stage)).length;
+  const allDealsForDisplay = deals.filter((d: any) => !['won', 'lost'].includes(d.stage));
 
   return (
+    <TooltipProvider>
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
         {/* Contact Info */}
@@ -377,15 +379,38 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
               {activeDeal ? <CheckCircle2 className="h-4 w-4" /> : <span className="text-xs font-bold">2</span>}
             </div>
             <div className="flex-1 min-w-0">
-              {activeDeal ? (
-                <div className="p-2 rounded-md bg-green-50 border border-green-200">
-                  <p className="text-xs font-medium text-green-800">
-                    {activeDeal.property?.name || 'Negociação'}
-                    {activeDeal.unit?.title ? ` - ${activeDeal.unit.title}` : ''}
-                  </p>
-                  <p className="text-[10px] text-green-600">
-                    {activeDeal.custom_stage?.name || STAGE_LABELS[activeDeal.stage] || activeDeal.stage}
-                  </p>
+              {activeDealsCount > 0 ? (
+                <div className="space-y-1.5">
+                  <div className="p-2 rounded-md bg-green-50 border border-green-200">
+                    <p className="text-xs font-medium text-green-800">
+                      {activeDealsCount} negociação{activeDealsCount > 1 ? 'ões' : ''} ativa{activeDealsCount > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  {allDealsForDisplay.map((deal: any) => (
+                    <div key={deal.id} className="p-2 rounded-md border border-border/50 bg-muted/30">
+                      <p className="text-[11px] font-medium text-foreground truncate">
+                        {deal.title || deal.property?.name || 'Negociação'}
+                        {deal.unit?.title ? ` - ${deal.unit.title}` : ''}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {deal.custom_stage?.name || STAGE_LABELS[deal.stage] || deal.stage}
+                      </p>
+                    </div>
+                  ))}
+                  {hasValidName && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full gap-2 h-7 text-[10px] text-muted-foreground"
+                      onClick={() => {
+                        if (onCreateDeal) onCreateDeal();
+                        else setIsDealDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-3 w-3" />
+                      Nova Negociação
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div>
@@ -395,11 +420,8 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                     className="w-full gap-2 h-8 text-xs"
                     disabled={!contact || !hasValidName}
                     onClick={() => {
-                      if (onCreateDeal) {
-                        onCreateDeal();
-                      } else {
-                        setIsDealDialogOpen(true);
-                      }
+                      if (onCreateDeal) onCreateDeal();
+                      else setIsDealDialogOpen(true);
                     }}
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -424,42 +446,38 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
               <span className="text-xs font-bold">3</span>
             </div>
             <div className="flex-1 min-w-0">
-              <Button
-                variant={activeDeal ? 'default' : 'outline'}
-                size="sm"
-                className="w-full gap-2 h-8 text-xs"
-                disabled={!activeDeal}
-                onClick={() => setIsProposalOpen(true)}
-              >
-                <FileSignature className="h-3.5 w-3.5" />
-                Gerar Proposta
-              </Button>
-              {!activeDeal && (
-                <p className="text-[10px] text-muted-foreground mt-1">(Requer uma negociação ativa)</p>
+              {activeDeal ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full gap-2 h-8 text-xs"
+                  onClick={() => setIsProposalOpen(true)}
+                >
+                  <FileSignature className="h-3.5 w-3.5" />
+                  Gerar Proposta
+                </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="w-full">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-2 h-8 text-xs pointer-events-none opacity-50"
+                        disabled
+                      >
+                        <FileSignature className="h-3.5 w-3.5" />
+                        Gerar Proposta
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Crie uma negociação primeiro</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
-
-          {/* Extra: New Deal button when deal already exists */}
-          {activeDeal && hasValidName && (
-            <div className="pt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full gap-2 h-7 text-[10px] text-muted-foreground"
-                onClick={() => {
-                  if (onCreateDeal) {
-                    onCreateDeal();
-                  } else {
-                    setIsDealDialogOpen(true);
-                  }
-                }}
-              >
-                <Plus className="h-3 w-3" />
-                Nova Negociação
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Active Deal Details */}
@@ -705,5 +723,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
         }}
       />
     </ScrollArea>
+    </TooltipProvider>
   );
 }
