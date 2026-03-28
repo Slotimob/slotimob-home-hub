@@ -175,8 +175,8 @@ const Integrations = () => {
   const loadUserToken = async () => {
     try {
       setIsLoadingToken(true);
-      const { data } = await supabase.from('profiles').select('ical_token').eq('id', user!.id).single();
-      setXmlToken(data?.ical_token || null);
+      const { data } = await supabase.from('profiles').select('feed_token').eq('id', user!.id).single();
+      setFeedToken(data?.feed_token || null);
     } catch (error) {
       console.error('Error loading token:', error);
     } finally {
