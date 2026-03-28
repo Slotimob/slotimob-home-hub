@@ -11,7 +11,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   TrendingUp, TrendingDown, Download, Calendar, Building2, Wrench, Receipt, Banknote, Loader2,
 } from "lucide-react";
@@ -117,7 +116,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-xl w-[95vw] max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-emerald-500" />
@@ -150,7 +149,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
 
         <Separator />
 
-        <ScrollArea className="flex-1 max-h-[380px]">
+        <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: 'calc(90vh - 280px)' }}>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -234,7 +233,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
               )}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>

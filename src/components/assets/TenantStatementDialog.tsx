@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -135,7 +134,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
@@ -189,7 +188,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
         <Separator />
 
         {/* Payment History */}
-        <ScrollArea className="flex-1 max-h-[280px]">
+        <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: 'calc(90vh - 340px)' }}>
           <div className="space-y-2">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -229,7 +228,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>

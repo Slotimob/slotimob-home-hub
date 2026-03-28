@@ -1,15 +1,8 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Lease } from '@/hooks/useLeases';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    lastAutoTable: { finalY: number };
-  }
-}
 
 const normalizeText = (text: string): string => text.normalize('NFC');
 
@@ -215,7 +208,7 @@ export const generateTenantStatementPDF = (data: TenantStatementData): void => {
       p.status === 'paid' ? 'Pago' : p.status === 'pending' ? 'Pendente' : 'Atrasado',
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [[normalizeText('Referencia'), 'Vencimento', 'Pagamento', 'Valor', 'Pago', 'Status']],
       body: tableRows,
@@ -255,7 +248,7 @@ export const generateTenantStatementPDF = (data: TenantStatementData): void => {
       },
     });
 
-    y = doc.lastAutoTable.finalY + 12;
+    y = (doc as any).lastAutoTable.finalY + 12;
   }
 
   // === PROXIMOS VENCIMENTOS ===
