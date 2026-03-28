@@ -592,7 +592,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                             key={lead.id}
                             value={lead.id}
                             onSelect={() => {
-                              setFormData(prev => ({ ...prev, lead_id: lead.id }));
+                              setFormData(prev => ({ ...prev, lead_id: lead.id, lead_origin: lead.origin || prev.lead_origin }));
                               setLeadOpen(false);
                               setLeadSearch('');
                             }}
