@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, Sparkles, Plus, Home, HelpCircle, Repeat, AlertCircle, User, ArrowRightLeft, ClipboardList } from "lucide-react";
 import { useFinancialCategories } from "@/hooks/useFinancialCategories";
+import { cn } from "@/lib/utils";
 import { CreateCategoryDialog } from "@/components/finance/CreateCategoryDialog";
 import { UnitSelector } from "@/components/finance/UnitSelector";
 import { ContactSelector } from "@/components/ContactSelector";
