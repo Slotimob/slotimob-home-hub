@@ -1,15 +1,8 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Lease } from '@/hooks/useLeases';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    lastAutoTable: { finalY: number };
-  }
-}
 
 const normalizeText = (text: string): string => text.normalize('NFC');
 
