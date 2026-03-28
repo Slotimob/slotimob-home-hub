@@ -362,6 +362,14 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
 
       if (error) throw error;
 
+      // Update lead origin if provided
+      if (formData.lead_origin && formData.lead_id) {
+        await supabase
+          .from('leads')
+          .update({ origin: formData.lead_origin })
+          .eq('id', formData.lead_id);
+      }
+
       // Create initial task if provided
       if (formData.initial_task && newDeal) {
         await supabase.from('deal_tasks').insert([{
