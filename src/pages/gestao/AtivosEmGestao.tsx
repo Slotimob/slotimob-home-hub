@@ -247,12 +247,18 @@ const AtivosEmGestao = () => {
       <AppLayout title="Aluguéis">
         <div className="space-y-6">
           {/* Header */}
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Gestão de Ativos</h1>
-            <p className="text-muted-foreground">
-              Monitore a saúde operacional dos seus imóveis em tempo real
-            </p>
-          </div>
+           <div className="flex items-center justify-between flex-wrap gap-2">
+             <div>
+               <h1 className="text-2xl font-bold tracking-tight">Gestão de Ativos</h1>
+               <p className="text-muted-foreground">
+                 Monitore a saúde operacional dos seus imóveis em tempo real
+               </p>
+             </div>
+             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setGuideOpen(true)}>
+               <BookOpen className="h-4 w-4" />
+               Como funciona?
+             </Button>
+           </div>
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
