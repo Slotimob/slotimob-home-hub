@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Share2, Home, Ruler, Bed } from "lucide-react";
+import { Eye, Share2, Home, Ruler, Bed, Rss } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES } from "@/utils/uiConstants";
 
@@ -21,6 +21,7 @@ interface Unit {
   intent_type?: string | null;
   property_type?: string | null;
   cover_image_url: string | null;
+  is_published_portal?: boolean | null;
   property?: {
     id: string;
     name: string;
@@ -77,12 +78,20 @@ export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: Unit
               )}
             </div>
           </div>
-          <Badge
-            variant="outline"
-            className={`text-[10px] px-1.5 py-0.5 whitespace-nowrap flex-shrink-0 ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
-          >
-            {UNIT_STATUS_STYLES[unit.status].label}
-          </Badge>
+          <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
+            <Badge
+              variant="outline"
+              className={`text-[10px] px-1.5 py-0.5 whitespace-nowrap ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
+            >
+              {UNIT_STATUS_STYLES[unit.status].label}
+            </Badge>
+            {unit.is_published_portal && (
+              <Badge className="text-[10px] px-1.5 py-0.5 bg-violet-500/10 text-violet-600 border-violet-500/20 whitespace-nowrap">
+                <Rss className="h-2.5 w-2.5 mr-0.5" />
+                Portal
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Property Name (if applicable) */}

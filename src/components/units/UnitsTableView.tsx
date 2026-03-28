@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Eye, Share2, Home } from "lucide-react";
+import { Eye, Share2, Home, Rss } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UnitCard } from "./UnitCard";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -43,6 +43,7 @@ interface Unit {
   market_value?: number | null;
   rent_price?: number | null;
   is_standalone?: boolean | null;
+  is_published_portal?: boolean | null;
   property?: {
     id: string;
     name: string;
@@ -171,12 +172,20 @@ export function UnitsTableView({
                   </div>
                 </TableCell>
                 <TableCell className="py-2 sm:py-4">
-                  <Badge
-                    variant="outline"
-                    className={`text-[10px] px-1.5 sm:px-2 py-0.5 whitespace-nowrap ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
-                  >
-                    {UNIT_STATUS_STYLES[unit.status].label}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] px-1.5 sm:px-2 py-0.5 whitespace-nowrap ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
+                    >
+                      {UNIT_STATUS_STYLES[unit.status].label}
+                    </Badge>
+                    {unit.is_published_portal && (
+                      <Badge className="text-[10px] px-1.5 py-0.5 bg-violet-500/10 text-violet-600 border-violet-500/20 whitespace-nowrap">
+                        <Rss className="h-2.5 w-2.5 mr-0.5" />
+                        Portal
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 {showProperty && (
                   <TableCell className="hidden md:table-cell py-2 sm:py-4">
