@@ -89,9 +89,10 @@ const Integrations = () => {
   const canManageWhatsApp = isOwner || hasPermission('crm_whatsapp', 'edit');
 
   // XML Feed state
-  const [xmlToken, setXmlToken] = useState<string | null>(null);
+  const [feedToken, setFeedToken] = useState<string | null>(null);
   const [isLoadingToken, setIsLoadingToken] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showPortalSetup, setShowPortalSetup] = useState(false);
 
   // WhatsApp — centralized hook
   const { connection, loading: whatsappLoading, waitingForQr, setWaitingForQr, countdown, timedOut, setTimedOut, cancelRequest, checkInstanceStatus, refetch } = useWhatsAppSettingsConnection();
