@@ -258,6 +258,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const allDealsForDisplay = deals.filter((d: any) => !['won', 'lost'].includes(d.stage));
 
   return (
+    <TooltipProvider>
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
         {/* Contact Info */}
