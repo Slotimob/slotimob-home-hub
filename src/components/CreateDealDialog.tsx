@@ -308,42 +308,12 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
         }
       }
 
-      // If no property, create a placeholder or use a default approach
-      // For now, we'll require a unit selection that has a property
-      if (!propertyId && formData.unit_id) {
-        // For standalone units, we still need a property reference
-        // The system will use the unit_id directly
-      }
-
-      // We need at least a property_id for the deal
-      // Let's fetch or create based on unit
-      if (!propertyId) {
-        // Get or create a default "Avulsos" property
-        const { data: defaultProp } = await supabase
-          .from('properties')
-          .select('id')
-          .eq('name', 'Imóveis Avulsos')
-          .eq('broker_id', effectiveBrokerId)
-          .maybeSingle();
-
-        if (defaultProp) {
-          propertyId = defaultProp.id;
-        } else {
-          const { data: newProp, error: propError } = await supabase
-            .from('properties')
-            .insert([{ name: 'Imóveis Avulsos', broker_id: effectiveBrokerId }])
-            .select('id')
-            .single();
-          
-          if (propError) throw propError;
-          propertyId = newProp.id;
-        }
-      }
+      // property_id is optional - don't create phantom "Imóveis Avulsos" properties
 
       const dealPayload = {
         lead_id: formData.lead_id,
         title: formData.title || null,
-        property_id: propertyId!,
+        property_id: propertyId || null,
         unit_id: formData.unit_id || null,
         estimated_value: formData.estimated_value ? parseFloat(formData.estimated_value) : null,
         estimated_commission: formData.estimated_commission ? parseFloat(formData.estimated_commission) : null,
