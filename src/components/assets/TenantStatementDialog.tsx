@@ -1,13 +1,8 @@
 import { useState, useMemo } from "react";
-import { format, subMonths, startOfMonth, endOfMonth, addMonths } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,30 +10,16 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  FileText,
-  Download,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Calendar,
-} from "lucide-react";
+import { FileText, Download, CheckCircle2, Clock, AlertCircle, Calendar, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Lease } from "@/hooks/useLeases";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  generateTenantStatementPDF,
-  TenantStatementData,
-  PaymentHistoryItem,
-  formatCurrency,
+  generateTenantStatementPDF, TenantStatementData, PaymentHistoryItem, formatCurrency,
 } from "@/utils/tenantStatementPdf";
 import { useToast } from "@/hooks/use-toast";
 
@@ -48,29 +29,21 @@ interface TenantStatementDialogProps {
   lease: Lease;
 }
 
-export function TenantStatementDialog({
-  open,
-  onOpenChange,
-  lease,
-}: TenantStatementDialogProps) {
+export function TenantStatementDialog({ open, onOpenChange, lease }: TenantStatementDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [periodMonths, setPeriodMonths] = useState("6");
-  
-  // Calculate period dates
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const periodDates = useMemo(() => {
     const months = parseInt(periodMonths);
-    const end = endOfMonth(new Date());
-    const start = startOfMonth(subMonths(new Date(), months - 1));
-    return { start, end };
+    return { start: startOfMonth(subMonths(new Date(), months - 1)), end: endOfMonth(new Date()) };
   }, [periodMonths]);
-  
-  // Fetch transactions for this unit in the period
+
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["lease-transactions", lease.unit_id, periodDates.start, periodDates.end],
     queryFn: async () => {
       if (!user) return [];
-      
       const { data, error } = await supabase
         .from("financial_transactions")
         .select("*")
@@ -79,105 +52,87 @@ export function TenantStatementDialog({
         .gte("due_date", format(periodDates.start, "yyyy-MM-dd"))
         .lte("due_date", format(periodDates.end, "yyyy-MM-dd"))
         .order("due_date", { ascending: true });
-      
       if (error) throw error;
       return data || [];
     },
     enabled: open && !!user,
   });
-  
-  // Generate payment history items
+
   const paymentHistory: PaymentHistoryItem[] = useMemo(() => {
     const items: PaymentHistoryItem[] = [];
     const months = parseInt(periodMonths);
-    
     for (let i = months - 1; i >= 0; i--) {
       const monthDate = subMonths(new Date(), i);
       const monthStr = format(monthDate, "MMMM/yyyy", { locale: ptBR });
-      const capitalizedMonth = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
-      
-      // Find transaction for this month
       const dueDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), lease.due_day);
       const transaction = transactions.find((t) => {
         if (!t.due_date) return false;
         const tDate = new Date(t.due_date);
         return tDate.getMonth() === monthDate.getMonth() && tDate.getFullYear() === monthDate.getFullYear();
       });
-      
       const isPaid = transaction?.status === "paid";
       const isOverdue = !isPaid && dueDate < new Date();
-      
       items.push({
-        month: capitalizedMonth,
+        month: monthStr.charAt(0).toUpperCase() + monthStr.slice(1),
         reference: format(monthDate, "MM/yyyy"),
         dueDate: format(dueDate, "yyyy-MM-dd"),
         paidDate: transaction?.paid_date || null,
         amount: lease.rent_amount,
-        lateFee: 0, // Could calculate based on business rules
+        lateFee: 0,
         totalPaid: isPaid ? (transaction?.amount || lease.rent_amount) : 0,
         status: isPaid ? "paid" : isOverdue ? "overdue" : "pending",
       });
     }
-    
     return items;
   }, [transactions, periodMonths, lease]);
-  
-  // Summary calculations
+
   const summary = useMemo(() => {
     const paid = paymentHistory.filter((p) => p.status === "paid");
     const pending = paymentHistory.filter((p) => p.status === "pending");
     const overdue = paymentHistory.filter((p) => p.status === "overdue");
-    
     return {
-      totalPaid: paid.reduce((sum, p) => sum + p.totalPaid, 0),
-      totalPending: pending.reduce((sum, p) => sum + p.amount, 0),
-      totalOverdue: overdue.reduce((sum, p) => sum + p.amount, 0),
+      totalPaid: paid.reduce((s, p) => s + p.totalPaid, 0),
+      totalPending: pending.reduce((s, p) => s + p.amount, 0),
+      totalOverdue: overdue.reduce((s, p) => s + p.amount, 0),
       paidCount: paid.length,
       pendingCount: pending.length,
       overdueCount: overdue.length,
     };
   }, [paymentHistory]);
-  
-  const handleGeneratePDF = () => {
-    const data: TenantStatementData = {
-      lease,
-      payments: paymentHistory,
-      period: {
-        start: format(periodDates.start, "dd/MM/yyyy"),
-        end: format(periodDates.end, "dd/MM/yyyy"),
-      },
-    };
-    
-    generateTenantStatementPDF(data);
-    toast({ title: "PDF gerado com sucesso!" });
+
+  const handleGeneratePDF = async () => {
+    setIsGenerating(true);
+    try {
+      const data: TenantStatementData = {
+        lease,
+        payments: paymentHistory,
+        period: { start: format(periodDates.start, "dd/MM/yyyy"), end: format(periodDates.end, "dd/MM/yyyy") },
+      };
+      generateTenantStatementPDF(data);
+      toast({ title: "PDF gerado com sucesso!" });
+    } finally {
+      setIsGenerating(false);
+    }
   };
-  
+
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "paid":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case "overdue":
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return null;
+      case "paid": return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
+      case "overdue": return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default: return null;
     }
   };
-  
+
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid":
-        return <Badge className="bg-green-500/15 text-green-600 border-green-500/30">Pago</Badge>;
-      case "pending":
-        return <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30">Pendente</Badge>;
-      case "overdue":
-        return <Badge className="bg-red-500/15 text-red-600 border-red-500/30">Atrasado</Badge>;
-      default:
-        return null;
+      case "paid": return <Badge className="bg-green-500/15 text-green-600 border-green-500/30">Pago</Badge>;
+      case "pending": return <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30">Pendente</Badge>;
+      case "overdue": return <Badge className="bg-red-500/15 text-red-600 border-red-500/30">Atrasado</Badge>;
+      default: return null;
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
@@ -190,7 +145,7 @@ export function TenantStatementDialog({
             {lease.tenant?.name} - {lease.unit?.unit_number}
           </DialogDescription>
         </DialogHeader>
-        
+
         {/* Period Selector */}
         <div className="flex items-center gap-4 py-2">
           <div className="flex items-center gap-2">
@@ -198,7 +153,7 @@ export function TenantStatementDialog({
             <Label>Período:</Label>
           </div>
           <Select value={periodMonths} onValueChange={setPeriodMonths}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -209,9 +164,9 @@ export function TenantStatementDialog({
             </SelectContent>
           </Select>
         </div>
-        
+
         <Separator />
-        
+
         {/* Summary Cards */}
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg bg-green-500/10 p-3 text-center">
@@ -230,15 +185,16 @@ export function TenantStatementDialog({
             <p className="text-xs text-muted-foreground">{summary.overdueCount} parcelas</p>
           </div>
         </div>
-        
+
         <Separator />
-        
-        {/* Payment History List */}
+
+        {/* Payment History */}
         <ScrollArea className="flex-1 max-h-[280px]">
           <div className="space-y-2">
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Carregando histórico...
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Carregando histórico...</span>
               </div>
             ) : (
               paymentHistory.map((payment, index) => (
@@ -266,9 +222,6 @@ export function TenantStatementDialog({
                       <p className="font-semibold text-sm">
                         {payment.status === "paid" ? formatCurrency(payment.totalPaid) : formatCurrency(payment.amount)}
                       </p>
-                      {payment.lateFee > 0 && (
-                        <p className="text-xs text-red-500">+{formatCurrency(payment.lateFee)} multa</p>
-                      )}
                     </div>
                     {getStatusBadge(payment.status)}
                   </div>
@@ -277,14 +230,25 @@ export function TenantStatementDialog({
             )}
           </div>
         </ScrollArea>
-        
+
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Fechar
-          </Button>
-          <Button onClick={handleGeneratePDF} className="glow-primary">
-            <Download className="h-4 w-4 mr-2" />
-            Baixar PDF
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button
+            onClick={handleGeneratePDF}
+            disabled={isGenerating}
+            className="glow-primary"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Gerando PDF...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Baixar PDF
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
