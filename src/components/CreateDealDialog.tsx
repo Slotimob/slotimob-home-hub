@@ -619,6 +619,26 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Lead Origin - shown when an existing lead is selected */}
+            <div className="space-y-2">
+              <Label>Origem do Lead</Label>
+              <Select
+                value={formData.lead_origin}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, lead_origin: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a origem" />
+                </SelectTrigger>
+                <SelectContent>
+                  {originOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <Separator />
