@@ -555,6 +555,9 @@ const ContactsUnified = () => {
                     }}
                     canEdit={canEditContact}
                     canDelete={canDeleteContact}
+                    selectionMode={selectionMode}
+                    isSelected={selectedContacts.has(contact.id)}
+                    onSelectionChange={(selected) => handleToggleSelection(contact.id, selected)}
                   />
                 ))}
               </div>
