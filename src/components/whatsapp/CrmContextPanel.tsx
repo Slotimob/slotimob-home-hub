@@ -82,6 +82,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const { deals, loading: dealsLoading } = useContactDeals(contactId, dealRefetchKey);
   const { activities, loading: activitiesLoading } = useContactActivities(contactId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [updatingStage, setUpdatingStage] = useState(false);
   const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
