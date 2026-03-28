@@ -180,7 +180,7 @@ export const generateOwnerReportPDF = (data: OwnerReportData): void => {
     rows.push([normalizeText('Nenhuma despesa no periodo'), '', '-', '-']);
   }
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: y,
     head: [[normalizeText('Descricao'), 'Data', 'Valor', 'Tipo']],
     body: rows,
@@ -217,7 +217,7 @@ export const generateOwnerReportPDF = (data: OwnerReportData): void => {
     },
   });
 
-  y = doc.lastAutoTable.finalY + 10;
+  y = (doc as any).lastAutoTable.finalY + 10;
 
   // === REPASSE DESTAQUE ===
   doc.setFillColor(30, 41, 59);

@@ -234,7 +234,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
               )}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>

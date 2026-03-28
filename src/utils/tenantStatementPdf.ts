@@ -208,7 +208,7 @@ export const generateTenantStatementPDF = (data: TenantStatementData): void => {
       p.status === 'paid' ? 'Pago' : p.status === 'pending' ? 'Pendente' : 'Atrasado',
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [[normalizeText('Referencia'), 'Vencimento', 'Pagamento', 'Valor', 'Pago', 'Status']],
       body: tableRows,
@@ -248,7 +248,7 @@ export const generateTenantStatementPDF = (data: TenantStatementData): void => {
       },
     });
 
-    y = doc.lastAutoTable.finalY + 12;
+    y = (doc as any).lastAutoTable.finalY + 12;
   }
 
   // === PROXIMOS VENCIMENTOS ===

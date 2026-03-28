@@ -229,7 +229,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
