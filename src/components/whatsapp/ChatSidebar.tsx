@@ -173,48 +173,22 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="all" className="text-xs">Todas</TabsTrigger>
-            <TabsTrigger value="unread" className="text-xs">
-              Não lidas
-              {unreadTotal > 0 && (
+            <TabsTrigger value="pending" className="text-xs">
+              🟡 Triagem
+              {pendingCount > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 min-w-4 px-1 text-[10px] rounded-full">
-                  {unreadTotal}
+                  {pendingCount}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="waiting" className="text-xs">Aguardando</TabsTrigger>
+            <TabsTrigger value="active" className="text-xs">
+              🟢 Atendimento
+            </TabsTrigger>
+            <TabsTrigger value="closed" className="text-xs">
+              ⚫ Fechado
+            </TabsTrigger>
           </TabsList>
         </Tabs>
-
-        {/* Triage status tabs for managers */}
-        {showTriageTabs && (
-          <div className="flex gap-1">
-            {[
-              { value: 'all', label: 'Todos' },
-              { value: 'pending', label: 'Triagem', count: pendingCount },
-              { value: 'active', label: 'Atendimento' },
-              { value: 'closed', label: 'Fechados' },
-            ].map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setStatusFilter(tab.value)}
-                className={cn(
-                  'px-2 py-1 text-[11px] rounded-md transition-colors font-medium',
-                  statusFilter === tab.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                )}
-              >
-                {tab.label}
-                {tab.count && tab.count > 0 ? (
-                  <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1 rounded-full">
-                    {tab.count}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </div>
-        )}
 
         {isOwner && teamMembers.length > 0 && onAgentFilterChange && (
           <Select value={agentFilter} onValueChange={onAgentFilterChange}>
