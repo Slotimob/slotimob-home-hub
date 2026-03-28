@@ -25,8 +25,8 @@ const steps = [
     icon: Settings2,
     title: "1. Configure suas Obrigações",
     bullets: [
-      "Abra o card do ativo e clique em "Configurar".",
-      "Ative as obrigações que deseja acompanhar (Aluguel, IPTU, Condomínio…).",
+      'Abra o card do ativo e clique em "Configurar".',
+      "Ative as obrigações que deseja acompanhar (Aluguel, IPTU, Condomínio...).",
       "Defina o dia de vencimento e o responsável pelo pagamento.",
     ],
   },
