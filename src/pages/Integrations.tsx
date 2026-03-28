@@ -16,6 +16,7 @@ import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useQuery } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { PortalSetupDialog } from '@/components/integrations/PortalSetupDialog';
 
 const COMPATIBLE_PORTALS = [
   { name: 'Zap Imóveis', logo: '🏠' },
