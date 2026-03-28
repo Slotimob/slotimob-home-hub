@@ -163,6 +163,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
         contact_id: (deal as any).contact_id ?? null,
         unit_id: (deal as any).unit_id ?? null,
         property_id: (deal as any).property_id ?? null,
+        lead_origin: deal?.lead?.origin ?? '',
       });
     }
   }, [deal?.id, open]);
