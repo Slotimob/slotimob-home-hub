@@ -78,12 +78,20 @@ export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: Unit
               )}
             </div>
           </div>
-          <Badge
-            variant="outline"
-            className={`text-[10px] px-1.5 py-0.5 whitespace-nowrap flex-shrink-0 ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
-          >
-            {UNIT_STATUS_STYLES[unit.status].label}
-          </Badge>
+          <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
+            <Badge
+              variant="outline"
+              className={`text-[10px] px-1.5 py-0.5 whitespace-nowrap ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
+            >
+              {UNIT_STATUS_STYLES[unit.status].label}
+            </Badge>
+            {unit.is_published_portal && (
+              <Badge className="text-[10px] px-1.5 py-0.5 bg-violet-500/10 text-violet-600 border-violet-500/20 whitespace-nowrap">
+                <Rss className="h-2.5 w-2.5 mr-0.5" />
+                Portal
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Property Name (if applicable) */}
