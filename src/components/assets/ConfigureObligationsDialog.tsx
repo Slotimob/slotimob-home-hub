@@ -566,6 +566,46 @@ function ObligationResponsibilityCard({
       {/* Expanded Configuration when Active */}
       {config.active && (
         <div className="space-y-4 pt-3 border-t">
+          {/* Control Type Selection */}
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Tipo de Controle
+            </Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={currentControlType === "financial" ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "flex-1 h-8 text-xs gap-1.5",
+                  currentControlType === "financial" && "bg-blue-600 hover:bg-blue-700 text-white"
+                )}
+                onClick={() => onControlTypeChange(type, "financial")}
+              >
+                <Receipt className="h-3 w-3" />
+                Financeiro
+              </Button>
+              <Button
+                type="button"
+                variant={currentControlType === "managerial" ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "flex-1 h-8 text-xs gap-1.5",
+                  currentControlType === "managerial" && "bg-purple-600 hover:bg-purple-700 text-white"
+                )}
+                onClick={() => onControlTypeChange(type, "managerial")}
+              >
+                <ClipboardList className="h-3 w-3" />
+                Gerencial
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {currentControlType === "financial" 
+                ? "Afeta o fluxo de caixa real da imobiliária (DRE)." 
+                : "Apenas para conferência. Não afeta o caixa da imobiliária."}
+            </p>
+          </div>
           {/* Responsible Selection */}
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">
