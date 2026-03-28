@@ -184,6 +184,8 @@ export function ChatArea({
   const [messageText, setMessageText] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { tags: allTags, createTag } = useWhatsAppTags();
+  const { tagIds: conversationTagIds, addTag: addConvTag, removeTag: removeConvTag } = useConversationTags(conversation?.id || null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const agentName = useAgentName(assignedUserId || null, teamMembers);
