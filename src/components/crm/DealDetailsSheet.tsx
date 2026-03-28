@@ -65,6 +65,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
   const [isDeleting, setIsDeleting] = useState(false);
   const [linkedContact, setLinkedContact] = useState<LinkedContact | null>(null);
   const [editedDeal, setEditedDeal] = useState<{
+    title: string;
     estimated_value: number | null;
     commission_rate: number;
     notes: string | null;
@@ -72,7 +73,12 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     probability: string;
     expected_close_date: Date | null;
     temperature: 'hot' | 'warm' | 'cold';
+    lead_id: string | null;
+    contact_id: string | null;
+    unit_id: string | null;
+    property_id: string | null;
   }>({
+    title: (deal as any)?.title ?? '',
     estimated_value: deal?.estimated_value ?? null,
     commission_rate: deal?.estimated_commission && deal?.estimated_value 
       ? (deal.estimated_commission / deal.estimated_value) * 100 
@@ -82,6 +88,10 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     probability: getProbabilityLabel((deal as any)?.probability ?? 50),
     expected_close_date: (deal as any)?.expected_close_date ? new Date((deal as any).expected_close_date) : null,
     temperature: (deal as any)?.temperature ?? 'warm',
+    lead_id: deal?.lead_id ?? null,
+    contact_id: (deal as any)?.contact_id ?? null,
+    unit_id: (deal as any)?.unit_id ?? null,
+    property_id: (deal as any)?.property_id ?? null,
   });
 
   // Load linked contact from unit
