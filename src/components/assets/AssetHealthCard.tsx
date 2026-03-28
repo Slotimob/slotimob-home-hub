@@ -173,14 +173,5 @@ export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onLink
           </div>
         </CardContent>
       </Card>
-
-      {/* Transaction Dialog */}
-      <CreateTransactionDialog
-        open={transactionDialogOpen}
-        onOpenChange={setTransactionDialogOpen}
-        onSuccess={handleTransactionSuccess}
-        prefill={transactionPrefill}
-      />
-    </>
   );
 }
