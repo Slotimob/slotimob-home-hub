@@ -674,6 +674,36 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Proposal Sheet (embedded) */}
+      <CreateProposalSheet
+        open={isProposalOpen}
+        onOpenChange={setIsProposalOpen}
+        preSelectedUnitId={activeDeal?.unit_id || activeDeal?.unit?.id || undefined}
+        initialLeadName={contact?.name || conversation?.contact_name || ''}
+        dealId={activeDeal?.id || undefined}
+        onProposalGenerated={async (pdfBlob, proposalId) => {
+          // Log a note in the chat
+          if (conversation?.id) {
+            try {
+              await supabase
+                .from('whatsapp_messages')
+                .insert({
+                  conversation_id: conversation.id,
+                  message_id: `proposal-${Date.now()}`,
+                  direction: 'outgoing' as const,
+                  message_type: 'text' as const,
+                  is_internal_note: true,
+                  content: `📄 Proposta gerada (ID: ${proposalId?.slice(0, 8)}...)`,
+                  status: 'read' as const,
+                  sent_at: new Date().toISOString(),
+                });
+            } catch (e) {
+              console.error('Error logging proposal note:', e);
+            }
+          }
+        }}
+      />
     </ScrollArea>
   );
 }
