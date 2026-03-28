@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Eye, Share2, Home } from "lucide-react";
+import { Eye, Share2, Home, Rss } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UnitCard } from "./UnitCard";
 import { EmptyState } from "@/components/shared/EmptyState";
