@@ -83,7 +83,7 @@ export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onLink
           {/* Asset Type Badge */}
           <Badge 
             variant="secondary" 
-            className="absolute top-2 left-2 text-[10px] px-2 py-0.5 gap-1 bg-background/80 backdrop-blur-sm"
+            className="absolute top-2 left-2 text-[10px] px-2 py-0.5 gap-1 bg-background/80 backdrop-blur-sm text-foreground"
           >
             {asset.propertyName ? (
               <>
