@@ -633,142 +633,164 @@ export function AssetDetailDialog({
 
         {/* Obligations Tab */}
         <TabsContent value="obligations" className="flex-1 overflow-hidden m-0">
-          <div className="flex flex-col h-full">
-            {/* Month Navigation */}
-            <div className="flex items-center justify-center px-4 py-3 bg-muted/30 border-b">
-              <MonthYearPicker
-                value={currentMonth}
-                onChange={setCurrentMonth}
-                showNavigation={true}
-              />
-            </div>
+          <ScrollArea className="h-full px-4 py-4">
+            <Tabs defaultValue="config" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="config" className="text-xs">Configurar</TabsTrigger>
+                <TabsTrigger value="status" className="text-xs">Status Mensal</TabsTrigger>
+              </TabsList>
 
-            {/* Obligations List */}
-            <ScrollArea className="flex-1 px-4 py-4">
-              <div className="space-y-3">
-                {monthlyObligations.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Nenhuma obrigação configurada</p>
+              {/* Configuration Sub-Tab */}
+              <TabsContent value="config" className="mt-0">
+                <ObligationsConfigForm
+                  unitId={asset?.unitId || null}
+                  unitName={asset?.unitNumber}
+                  onSaved={() => {
+                    queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", asset?.unitId] });
+                    queryClient.invalidateQueries({ queryKey: ["asset-health"] });
+                  }}
+                />
+              </TabsContent>
+
+              {/* Monthly Status Sub-Tab */}
+              <TabsContent value="status" className="mt-0">
+                <div className="space-y-4">
+                  {/* Month Navigation */}
+                  <div className="flex items-center justify-center py-2">
+                    <MonthYearPicker
+                      value={currentMonth}
+                      onChange={setCurrentMonth}
+                      showNavigation={true}
+                    />
                   </div>
-                ) : (
-                  monthlyObligations.map((obligation) => {
-                    const Icon = OBLIGATION_ICONS[obligation.type];
-                    const statusConfig = STATUS_CONFIG[obligation.status];
-                    const StatusIcon = statusConfig.icon;
 
-                    return (
-                      <Card key={obligation.type} className="overflow-hidden">
-                        <CardContent className="p-3">
-                          <div className="flex items-start gap-3">
-                            <div className={cn(
-                              "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                              statusConfig.bgClassName
-                            )}>
-                              <Icon className="h-5 w-5" />
-                            </div>
+                  {/* Obligations List */}
+                  <div className="space-y-3">
+                    {monthlyObligations.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nenhuma obrigação configurada</p>
+                      </div>
+                    ) : (
+                      monthlyObligations.map((obligation) => {
+                        const Icon = OBLIGATION_ICONS[obligation.type];
+                        const statusConfig = STATUS_CONFIG[obligation.status];
+                        const StatusIcon = statusConfig.icon;
 
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-medium">{obligation.label}</span>
-                                <Badge variant="outline" className={cn("text-xs", statusConfig.bgClassName)}>
-                                  <StatusIcon className="h-3 w-3 mr-1" />
-                                  {statusConfig.label}
-                                </Badge>
-                              </div>
+                        return (
+                          <Card key={obligation.type} className="overflow-hidden">
+                            <CardContent className="p-3">
+                              <div className="flex items-start gap-3">
+                                <div className={cn(
+                                  "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                                  statusConfig.bgClassName
+                                )}>
+                                  <Icon className="h-5 w-5" />
+                                </div>
 
-                              {obligation.config?.due_day && (
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  Vence dia {obligation.config.due_day}
-                                </p>
-                              )}
-
-                              {obligation.transaction ? (
-                                <div className="mt-2 p-2 bg-muted/50 rounded-md">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm truncate">{obligation.transaction.description}</span>
-                                    <span className="text-sm font-medium">
-                                      R$ {obligation.transaction.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                                    </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium">{obligation.label}</span>
+                                    <Badge variant="outline" className={cn("text-xs", statusConfig.bgClassName)}>
+                                      <StatusIcon className="h-3 w-3 mr-1" />
+                                      {statusConfig.label}
+                                    </Badge>
                                   </div>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {format(parseISO(obligation.transaction.transaction_date), "dd/MM/yyyy")}
-                                  </p>
-                                </div>
-                              ) : obligation.status !== "ignored" && (
-                                <div className="flex gap-2 mt-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 text-xs flex-1"
-                                    onClick={() => handleCreateTransaction(obligation.type)}
-                                  >
-                                    <Plus className="h-3 w-3 mr-1" />
-                                    Criar Lançamento
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 text-xs"
-                                    onClick={() => setLinkingTransactionFor(obligation.type)}
-                                  >
-                                    <Link2 className="h-3 w-3 mr-1" />
-                                    Vincular
-                                  </Button>
-                                </div>
-                              )}
 
-                              {linkingTransactionFor === obligation.type && (
-                                <div className="mt-2 p-2 border rounded-md bg-background">
-                                  <p className="text-xs font-medium mb-2">Selecione um lançamento:</p>
-                                  {availableTransactions.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground">Nenhum lançamento disponível</p>
-                                  ) : (
-                                    <div className="space-y-1 max-h-40 overflow-y-auto">
-                                      {availableTransactions.map((tx: any) => (
-                                        <button
-                                          key={`${tx.source}-${tx.id}`}
-                                          className="w-full text-left p-2 text-xs rounded hover:bg-muted transition-colors"
-                                          onClick={() => handleLinkTransaction(tx.id, obligation.type, tx.source)}
-                                        >
-                                          <div className="flex justify-between items-center">
-                                            <span className="truncate flex items-center gap-1">
-                                              {tx.description}
-                                              {tx.source === "managerial" && (
-                                                <span className="text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-medium">Gerencial</span>
-                                              )}
-                                            </span>
-                                            <span className="font-medium">
-                                              R$ {tx.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                                            </span>
-                                          </div>
-                                          <span className="text-muted-foreground">
-                                            {tx.transaction_date ? format(parseISO(tx.transaction_date), "dd/MM/yyyy") : "—"}
-                                          </span>
-                                        </button>
-                                      ))}
+                                  {obligation.config?.due_day && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      Vence dia {obligation.config.due_day}
+                                    </p>
+                                  )}
+
+                                  {obligation.transaction ? (
+                                    <div className="mt-2 p-2 bg-muted/50 rounded-md">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-sm truncate">{obligation.transaction.description}</span>
+                                        <span className="text-sm font-medium">
+                                          R$ {obligation.transaction.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        {format(parseISO(obligation.transaction.transaction_date), "dd/MM/yyyy")}
+                                      </p>
+                                    </div>
+                                  ) : obligation.status !== "ignored" && (
+                                    <div className="flex gap-2 mt-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 text-xs flex-1"
+                                        onClick={() => handleCreateTransaction(obligation.type)}
+                                      >
+                                        <Plus className="h-3 w-3 mr-1" />
+                                        Criar Lançamento
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={() => setLinkingTransactionFor(obligation.type)}
+                                      >
+                                        <Link2 className="h-3 w-3 mr-1" />
+                                        Vincular
+                                      </Button>
                                     </div>
                                   )}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full h-6 text-xs mt-2"
-                                    onClick={() => setLinkingTransactionFor(null)}
-                                  >
-                                    Cancelar
-                                  </Button>
+
+                                  {linkingTransactionFor === obligation.type && (
+                                    <div className="mt-2 p-2 border rounded-md bg-background">
+                                      <p className="text-xs font-medium mb-2">Selecione um lançamento:</p>
+                                      {availableTransactions.length === 0 ? (
+                                        <p className="text-xs text-muted-foreground">Nenhum lançamento disponível</p>
+                                      ) : (
+                                        <div className="space-y-1 max-h-40 overflow-y-auto">
+                                          {availableTransactions.map((tx: any) => (
+                                            <button
+                                              key={`${tx.source}-${tx.id}`}
+                                              className="w-full text-left p-2 text-xs rounded hover:bg-muted transition-colors"
+                                              onClick={() => handleLinkTransaction(tx.id, obligation.type, tx.source)}
+                                            >
+                                              <div className="flex justify-between items-center">
+                                                <span className="truncate flex items-center gap-1">
+                                                  {tx.description}
+                                                  {tx.source === "managerial" && (
+                                                    <span className="text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-medium">Gerencial</span>
+                                                  )}
+                                                </span>
+                                                <span className="font-medium">
+                                                  R$ {tx.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                                </span>
+                                              </div>
+                                              <span className="text-muted-foreground">
+                                                {tx.transaction_date ? format(parseISO(tx.transaction_date), "dd/MM/yyyy") : "—"}
+                                              </span>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-full h-6 text-xs mt-2"
+                                        onClick={() => setLinkingTransactionFor(null)}
+                                      >
+                                        Cancelar
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </ScrollArea>
-          </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </ScrollArea>
         </TabsContent>
 
         {/* Fiscal/DIMOB Tab */}
