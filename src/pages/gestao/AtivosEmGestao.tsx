@@ -68,6 +68,9 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ViewMode = "grid" | "list";
 type StatusFilter = "all" | "healthy" | "attention" | "critical";
