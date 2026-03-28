@@ -50,10 +50,10 @@ const steps = [
   },
   {
     icon: Link2,
-    title: "4. Conciliação & Vínculo Manual",
+    title: "4. Conciliação e Vínculo Manual",
     bullets: [
       "O semáforo fica verde quando o match é automático.",
-      "Se o valor ou data divergirem, use o botão "Vincular" para ensinar o sistema.",
+      'Se o valor ou data divergirem, use o botão "Vincular" para ensinar o sistema.',
       "A partir do vínculo, o status atualiza instantaneamente.",
     ],
   },
