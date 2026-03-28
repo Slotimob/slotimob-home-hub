@@ -419,8 +419,7 @@ const AtivosEmGestao = () => {
                   asset={asset}
                   onConfigureClick={handleConfigureClick}
                   onManageClick={handleAssetClick}
-                  onWhatsAppClick={whatsAppConnection ? handleWhatsAppClick : undefined}
-                  referenceDate={selectedMonth}
+                  onLinkClick={handleLinkClick}
                 />
               ))}
             </div>
