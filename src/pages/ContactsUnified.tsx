@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +6,8 @@ import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, X, Users, LayoutGrid, LayoutList } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Search, X, Users, LayoutGrid, LayoutList, Trash2, CheckSquare } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +20,10 @@ import { EditContactDialog } from '@/components/contacts/EditContactDialog';
 import { DeleteContactDialog } from '@/components/DeleteContactDialog';
 import { ContactsSortDropdown, SortField, SortDirection } from '@/components/contacts/ContactsSortDropdown';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -43,10 +48,17 @@ const ContactsUnified = () => {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
-  // View mode - list as default
+  // View mode
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   
-  // RULE 1: State for modals - use booleans + separate data
+  // Multi-select
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkDeleteBlockedMessage, setBulkDeleteBlockedMessage] = useState<string | null>(null);
+  
+  // Modals
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [sheetContact, setSheetContact] = useState<UnifiedContact | null>(null);
   
