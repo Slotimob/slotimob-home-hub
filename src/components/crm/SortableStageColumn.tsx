@@ -123,7 +123,7 @@ export const SortableStageColumn = ({
     <div 
       ref={setSortableRef} 
       style={style} 
-      className="flex-shrink-0 w-72 sm:w-80 snap-start"
+      className="flex-shrink-0 w-64 sm:w-72 md:w-76 snap-start"
     >
       <div ref={setDroppableRef}>
         <Card 
