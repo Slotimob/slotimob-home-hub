@@ -269,10 +269,11 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   // Filter proposals for this contact
   const contactProposals = proposals.filter((p: any) => {
     if (!contactId) return false;
-    // Match by deal_id linking or lead_name
+    // Match by contact_id first, then deal_id, then lead_name
+    if (p.contact_id === contactId) return true;
     const contactDealsIds = deals.map((d: any) => d.id);
-    return contactDealsIds.includes(p.deal_id) || 
-      (p.lead_name && contact?.name && p.lead_name.toLowerCase() === contact.name.toLowerCase());
+    if (p.deal_id && contactDealsIds.includes(p.deal_id)) return true;
+    return p.lead_name && contact?.name && p.lead_name.toLowerCase() === contact.name.toLowerCase();
   });
 
   return (
