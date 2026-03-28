@@ -28,6 +28,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { CreateDealFromChatDialog } from './CreateDealFromChatDialog';
 import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
 import { CreateProposalSheet } from '@/components/proposals/CreateProposalSheet';
+import { useProposals } from '@/hooks/useProposals';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
