@@ -302,7 +302,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 <h3 className="font-semibold text-foreground">{displayName}</h3>
                 {contact && activeDealsCount > 0 && (
                   <Badge variant="secondary" className="mt-1 text-[10px]">
-                    {activeDealsCount} negociação{activeDealsCount > 1 ? 'ões' : ''} ativa{activeDealsCount > 1 ? 's' : ''}
+                     {activeDealsCount} negociaç{activeDealsCount > 1 ? 'ões ativas' : 'ão ativa'}
                   </Badge>
                 )}
               </div>
