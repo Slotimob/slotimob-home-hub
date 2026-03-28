@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +6,8 @@ import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, X, Users, LayoutGrid, LayoutList } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Search, X, Users, LayoutGrid, LayoutList, Trash2, CheckSquare } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +20,10 @@ import { EditContactDialog } from '@/components/contacts/EditContactDialog';
 import { DeleteContactDialog } from '@/components/DeleteContactDialog';
 import { ContactsSortDropdown, SortField, SortDirection } from '@/components/contacts/ContactsSortDropdown';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -43,10 +48,17 @@ const ContactsUnified = () => {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
-  // View mode - list as default
+  // View mode
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   
-  // RULE 1: State for modals - use booleans + separate data
+  // Multi-select
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkDeleteBlockedMessage, setBulkDeleteBlockedMessage] = useState<string | null>(null);
+  
+  // Modals
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [sheetContact, setSheetContact] = useState<UnifiedContact | null>(null);
   
@@ -197,7 +209,115 @@ const ContactsUnified = () => {
     setCurrentPage(1);
   };
 
-  // RULE 3: Clean handlers - no side effects in children
+  // Selection handlers
+  const handleToggleSelection = (contactId: string, selected: boolean) => {
+    setSelectedContacts(prev => {
+      const next = new Set(prev);
+      if (selected) next.add(contactId);
+      else next.delete(contactId);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedContacts.size === paginatedContacts.length) {
+      setSelectedContacts(new Set());
+    } else {
+      setSelectedContacts(new Set(paginatedContacts.map(c => c.id)));
+    }
+  };
+
+  const handleExitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedContacts(new Set());
+  };
+
+  // Check linked resources for bulk delete
+  const handleBulkDeleteCheck = async () => {
+    if (selectedContacts.size === 0) return;
+    setIsBulkDeleting(true);
+
+    try {
+      const ids = Array.from(selectedContacts);
+      
+      // Check units
+      const { data: linkedUnits } = await supabase
+        .from('units')
+        .select('id, owner_contact_id, tenant_contact_id')
+        .or(ids.map(id => `owner_contact_id.eq.${id},tenant_contact_id.eq.${id}`).join(','))
+        .limit(1);
+
+      // Check transactions
+      const { data: linkedTx } = await supabase
+        .from('financial_transactions')
+        .select('id, contact_id')
+        .in('contact_id', ids)
+        .limit(1);
+
+      // Check deals
+      const { data: linkedDeals } = await supabase
+        .from('deals')
+        .select('id, contact_id')
+        .in('contact_id', ids)
+        .limit(1);
+
+      // Check leases
+      const { data: linkedLeases } = await supabase
+        .from('leases')
+        .select('id, tenant_contact_id, owner_contact_id')
+        .or(ids.map(id => `tenant_contact_id.eq.${id},owner_contact_id.eq.${id}`).join(','))
+        .limit(1);
+
+      const blockers: string[] = [];
+      if (linkedUnits && linkedUnits.length > 0) blockers.push('imóveis');
+      if (linkedTx && linkedTx.length > 0) blockers.push('transações financeiras');
+      if (linkedDeals && linkedDeals.length > 0) blockers.push('negociações');
+      if (linkedLeases && linkedLeases.length > 0) blockers.push('contratos');
+
+      if (blockers.length > 0) {
+        setBulkDeleteBlockedMessage(
+          `Alguns dos contatos selecionados estão vinculados a: ${blockers.join(', ')}. Remova os vínculos antes de excluir.`
+        );
+        setIsBulkDeleting(false);
+        return;
+      }
+
+      setShowBulkDeleteConfirm(true);
+    } catch (error) {
+      toast({ title: 'Erro ao verificar vínculos', variant: 'destructive' });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedContacts);
+      const { error } = await supabase
+        .from('contacts')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+
+      toast({ title: `${ids.length} contato${ids.length > 1 ? 's' : ''} excluído${ids.length > 1 ? 's' : ''} com sucesso!` });
+      handleExitSelectionMode();
+      loadContacts();
+    } catch (error: any) {
+      const msg = error.message || '';
+      if (msg.includes('foreign key') || msg.includes('violates') || msg.includes('constraint')) {
+        toast({ title: 'Não é possível excluir', description: 'Alguns contatos possuem vínculos no sistema que impedem a exclusão.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro ao excluir', description: msg, variant: 'destructive' });
+      }
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
+
+  // RULE 3: Clean handlers
   const handleOpenSheet = (contact: UnifiedContact) => {
     setSheetContact(contact);
     setIsSheetOpen(true);
@@ -205,7 +325,6 @@ const ContactsUnified = () => {
 
   const handleCloseSheet = () => {
     setIsSheetOpen(false);
-    // Don't clear sheetContact immediately - let animation finish
   };
 
   const handleOpenEdit = (contact: UnifiedContact) => {
@@ -218,7 +337,6 @@ const ContactsUnified = () => {
   };
 
   const handleEditFromSheet = () => {
-    // Close sheet first, then open edit with delay
     const contactToEdit = sheetContact;
     setIsSheetOpen(false);
     setTimeout(() => {
@@ -239,7 +357,6 @@ const ContactsUnified = () => {
 
     setIsDeleting(true);
     try {
-      // Check for linked units or transactions
       const { count: unitsCount } = await supabase
         .from('units')
         .select('id', { count: 'exact', head: true })
@@ -301,6 +418,37 @@ const ContactsUnified = () => {
           counts={categoryCounts}
         />
 
+        {/* Selection Mode Bar */}
+        {selectionMode && (
+          <div className="flex items-center gap-2 p-3 rounded-lg border bg-primary/5 border-primary/20">
+            <Checkbox
+              checked={selectedContacts.size === paginatedContacts.length && paginatedContacts.length > 0}
+              onCheckedChange={handleSelectAll}
+            />
+            <span className="text-sm font-medium flex-1">
+              {selectedContacts.size > 0 
+                ? `${selectedContacts.size} selecionado${selectedContacts.size > 1 ? 's' : ''}`
+                : 'Selecione contatos'}
+            </span>
+            {selectedContacts.size > 0 && canDeleteContact && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDeleteCheck}
+                disabled={isBulkDeleting}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Excluir ({selectedContacts.size})
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={handleExitSelectionMode}>
+              <X className="h-4 w-4 mr-1" />
+              Cancelar
+            </Button>
+          </div>
+        )}
+
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
@@ -324,6 +472,14 @@ const ContactsUnified = () => {
             >
               <X className="h-4 w-4" />
               <span className="hidden sm:inline">Limpar</span>
+            </Button>
+          )}
+          
+          {/* Select mode toggle */}
+          {canDeleteContact && filteredContacts.length > 0 && !selectionMode && (
+            <Button variant="outline" size="sm" onClick={() => setSelectionMode(true)} className="gap-2">
+              <CheckSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Selecionar</span>
             </Button>
           )}
           
@@ -399,6 +555,9 @@ const ContactsUnified = () => {
                     }}
                     canEdit={canEditContact}
                     canDelete={canDeleteContact}
+                    selectionMode={selectionMode}
+                    isSelected={selectedContacts.has(contact.id)}
+                    onSelectionChange={(selected) => handleToggleSelection(contact.id, selected)}
                   />
                 ))}
               </div>
@@ -494,6 +653,43 @@ const ContactsUnified = () => {
           isDeleting={isDeleting}
         />
       )}
+
+      {/* Bulk Delete Confirm */}
+      <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selectedContacts.size} contato{selectedContacts.size > 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Os contatos selecionados serão permanentemente removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Blocked */}
+      <AlertDialog open={!!bulkDeleteBlockedMessage} onOpenChange={() => setBulkDeleteBlockedMessage(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Não é possível excluir</AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkDeleteBlockedMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Entendi</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 };

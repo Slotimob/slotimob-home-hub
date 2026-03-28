@@ -4,11 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Phone, Mail, MapPin, FileText, Pencil, MessageSquare, Trash2 } from 'lucide-react';
+import { Phone, Mail, MapPin, FileText, Pencil, MessageSquare, Trash2, AlertTriangle } from 'lucide-react';
 import { ContactCategoryBadges } from './ContactCategoryFilter';
+import { ContactLinkedResources } from './ContactLinkedResources';
 import { UnifiedContact } from './ContactCard';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useContactLinkedResources } from '@/hooks/useContactLinkedResources';
+import { useToast } from '@/hooks/use-toast';
 
 interface ContactDetailSheetProps {
   contact: UnifiedContact | null;
@@ -30,6 +33,11 @@ export const ContactDetailSheet = ({
   canDelete = false,
 }: ContactDetailSheetProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { resources, isLoading: resourcesLoading, hasAnyLinks, getBlockingMessage } = useContactLinkedResources(
+    open && contact ? contact.id : null
+  );
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -47,7 +55,19 @@ export const ContactDetailSheet = ({
     }
   };
 
-  // RULE 1: Sheet is ALWAYS rendered - visibility controlled by `open` prop only
+  const handleDeleteClick = () => {
+    if (hasAnyLinks) {
+      const msg = getBlockingMessage();
+      toast({
+        title: 'Não é possível excluir',
+        description: msg || 'Este contato possui vínculos no sistema.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    onDelete?.();
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg overflow-hidden flex flex-col">
@@ -88,8 +108,15 @@ export const ContactDetailSheet = ({
                   </Button>
                 )}
                 {canDelete && onDelete && (
-                  <Button variant="outline" size="sm" onClick={onDelete} className="text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeleteClick}
+                    className="text-destructive hover:text-destructive"
+                    disabled={hasAnyLinks}
+                    title={hasAnyLinks ? 'Contato possui vínculos' : 'Excluir contato'}
+                  >
+                    {hasAnyLinks ? <AlertTriangle className="h-4 w-4 mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
                     Excluir
                   </Button>
                 )}
@@ -133,6 +160,9 @@ export const ContactDetailSheet = ({
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Linked Resources */}
+                <ContactLinkedResources resources={resources} isLoading={resourcesLoading} />
 
                 {/* Notes Card */}
                 {contact.notes && (
