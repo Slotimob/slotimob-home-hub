@@ -572,7 +572,7 @@ export function CreateTransactionDialog({
 
                 {/* Dates Row */}
                 <TooltipProvider>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 items-end">
                     <div className="space-y-2">
                       <Label htmlFor="transactionDate" className="flex items-center gap-1">
                         Data Emissão *
