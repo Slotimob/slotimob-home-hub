@@ -19,7 +19,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
-import { useContactDeals, useContactActivities } from '@/hooks/useWhatsApp';
+import { useContactDeals } from '@/hooks/useWhatsApp';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -82,7 +82,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const dealId = (conversation as any)?.deal_id || null;
   const [dealRefetchKey, setDealRefetchKey] = useState(0);
   const { deals, loading: dealsLoading } = useContactDeals(contactId, dealRefetchKey);
-  const { activities, loading: activitiesLoading } = useContactActivities(contactId);
+  
   const { proposals, isLoading: proposalsLoading } = useProposals();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -302,7 +302,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 <h3 className="font-semibold text-foreground">{displayName}</h3>
                 {contact && activeDealsCount > 0 && (
                   <Badge variant="secondary" className="mt-1 text-[10px]">
-                    {activeDealsCount} negociação{activeDealsCount > 1 ? 'ões' : ''} ativa{activeDealsCount > 1 ? 's' : ''}
+                     {activeDealsCount} negociaç{activeDealsCount > 1 ? 'ões ativas' : 'ão ativa'}
                   </Badge>
                 )}
               </div>
@@ -402,7 +402,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 <div className="space-y-1.5">
                   <div className="p-2 rounded-md bg-green-50 border border-green-200">
                     <p className="text-xs font-medium text-green-800">
-                      {activeDealsCount} negociação{activeDealsCount > 1 ? 'ões' : ''} ativa{activeDealsCount > 1 ? 's' : ''}
+                      {activeDealsCount} negociaç{activeDealsCount > 1 ? 'ões ativas' : 'ão ativa'}
                     </p>
                   </div>
                   {allDealsForDisplay.slice(0, 3).map((deal: any) => (
@@ -506,66 +506,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           </div>
         </div>
 
-        {/* Active Deal Details */}
-        {dealsLoading ? (
-          <Skeleton className="h-24 w-full rounded-lg" />
-        ) : activeDeal ? (
-          <div>
-            <Separator className="mb-3" />
-            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4" />
-              Negociação Atual
-            </h4>
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="p-3 space-y-2">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Estágio</span>
-                  <Select
-                    value={activeDeal.custom_stage_id ? undefined : activeDeal.stage}
-                    onValueChange={handleStageChange}
-                    disabled={updatingStage || !!activeDeal.custom_stage_id}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder={activeDeal.custom_stage?.name || STAGE_LABELS[activeDeal.stage] || activeDeal.stage} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(STAGE_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value} className="text-xs">
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {updatingStage && (
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Atualizando...
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">Valor</span>
-                    <p className="font-semibold text-foreground">
-                      {activeDeal.estimated_value
-                        ? activeDeal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                        : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Previsão</span>
-                    <p className="font-semibold text-foreground">
-                      {activeDeal.expected_close_date
-                        ? format(new Date(activeDeal.expected_close_date), "dd/MM/yyyy", { locale: ptBR })
-                        : '—'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : null}
 
         <Separator />
 
@@ -612,54 +552,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           )}
         </div>
 
-        <Separator />
-
-        {/* Activities Timeline */}
-        <div>
-          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
-            <Calendar className="h-4 w-4" />
-            Últimas Atividades
-          </h4>
-
-          {activitiesLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex gap-3">
-                  <Skeleton className="h-7 w-7 rounded-full flex-shrink-0" />
-                  <div className="flex-1 space-y-1">
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-2 w-20" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : activities.length > 0 ? (
-            <div className="space-y-0">
-              {activities.slice(0, 5).map((activity: any, idx: number) => (
-                <div key={activity.id} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="h-7 w-7 rounded-full bg-muted/80 flex items-center justify-center flex-shrink-0">
-                      {getActivityIcon(activity.activity_type)}
-                    </div>
-                    {idx < Math.min(activities.length, 5) - 1 && (
-                      <div className="w-px flex-1 bg-border my-1" />
-                    )}
-                  </div>
-                  <div className="pb-4 min-w-0">
-                    <p className="text-xs text-foreground leading-relaxed">
-                      {activity.title || activity.description || activity.activity_type}
-                    </p>
-                    <span className="text-[10px] text-muted-foreground">
-                      {format(new Date(activity.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground text-center py-4">Nenhuma atividade registrada</p>
-          )}
-        </div>
       </div>
 
       {conversation && (
