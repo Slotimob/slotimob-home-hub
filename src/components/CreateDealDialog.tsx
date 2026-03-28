@@ -90,7 +90,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [savingLead, setSavingLead] = useState(false);
-  const [leads, setLeads] = useState<{ id: string; name: string; email?: string | null; phone?: string | null }[]>([]);
+  const [leads, setLeads] = useState<{ id: string; name: string; email?: string | null; phone?: string | null; origin?: string | null }[]>([]);
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [leadOpen, setLeadOpen] = useState(false);
@@ -119,6 +119,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
     business_type: 'sale' as 'sale' | 'rental',
     expected_close_date: undefined as Date | undefined,
     initial_task: '',
+    lead_origin: '',
   });
 
   const [newLeadData, setNewLeadData] = useState({
@@ -147,6 +148,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
         business_type: 'sale',
         expected_close_date: undefined,
         initial_task: '',
+        lead_origin: '',
       });
     }
   }, [open]);
@@ -162,7 +164,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   }, [formData.unit_id, units]);
 
   const loadLeads = async () => {
-    const { data } = await supabase.from('leads').select('id, name, email, phone').order('name');
+    const { data } = await supabase.from('leads').select('id, name, email, phone, origin').order('name');
     setLeads(data || []);
   };
 
@@ -359,6 +361,14 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       const { data: newDeal, error } = await supabase.from('deals').insert([dealPayload]).select('id').single();
 
       if (error) throw error;
+
+      // Update lead origin if provided
+      if (formData.lead_origin && formData.lead_id) {
+        await supabase
+          .from('leads')
+          .update({ origin: formData.lead_origin })
+          .eq('id', formData.lead_id);
+      }
 
       // Create initial task if provided
       if (formData.initial_task && newDeal) {
@@ -590,7 +600,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                             key={lead.id}
                             value={lead.id}
                             onSelect={() => {
-                              setFormData(prev => ({ ...prev, lead_id: lead.id }));
+                              setFormData(prev => ({ ...prev, lead_id: lead.id, lead_origin: lead.origin || prev.lead_origin }));
                               setLeadOpen(false);
                               setLeadSearch('');
                             }}
@@ -616,6 +626,26 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                   </Command>
                 </PopoverContent>
               </Popover>
+            </div>
+
+            {/* Lead Origin - shown when an existing lead is selected */}
+            <div className="space-y-2">
+              <Label>Origem do Lead</Label>
+              <Select
+                value={formData.lead_origin}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, lead_origin: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a origem" />
+                </SelectTrigger>
+                <SelectContent>
+                  {originOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

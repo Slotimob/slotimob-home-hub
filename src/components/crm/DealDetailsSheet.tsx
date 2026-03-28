@@ -14,7 +14,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2, Pencil } from 'lucide-react';
+import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2, Pencil, MapPin } from 'lucide-react';
 import { ContactSelector } from '@/components/ContactSelector';
 import { UnitSelector } from '@/components/finance/UnitSelector';
 import { format } from 'date-fns';
@@ -79,6 +79,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     contact_id: string | null;
     unit_id: string | null;
     property_id: string | null;
+    lead_origin: string;
   }>({
     title: (deal as any)?.title ?? '',
     estimated_value: deal?.estimated_value ?? null,
@@ -94,6 +95,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     contact_id: (deal as any)?.contact_id ?? null,
     unit_id: (deal as any)?.unit_id ?? null,
     property_id: (deal as any)?.property_id ?? null,
+    lead_origin: deal?.lead?.origin ?? '',
   });
 
   // Load linked contact from unit
@@ -161,6 +163,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
         contact_id: (deal as any).contact_id ?? null,
         unit_id: (deal as any).unit_id ?? null,
         property_id: (deal as any).property_id ?? null,
+        lead_origin: deal?.lead?.origin ?? '',
       });
     }
   }, [deal?.id, open]);
@@ -188,6 +191,14 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
         .eq('id', deal.id);
 
       if (error) throw error;
+
+      // Update lead origin if changed
+      if (editedDeal.lead_origin && deal.lead?.id) {
+        await supabase
+          .from('leads')
+          .update({ origin: editedDeal.lead_origin })
+          .eq('id', deal.lead.id);
+      }
 
       toast({
         title: 'Negociação atualizada!',
@@ -369,6 +380,38 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                   placeholder="Selecione um imóvel (opcional)"
                   disabled={!canEdit}
                 />
+              </div>
+
+              {/* Lead Origin */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  Origem do Lead
+                </Label>
+                <Select
+                  value={editedDeal.lead_origin}
+                  onValueChange={(value) => setEditedDeal({ ...editedDeal, lead_origin: value })}
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a origem" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="website">Site</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="google_ads">Google Ads</SelectItem>
+                    <SelectItem value="portal">Portal Imobiliário</SelectItem>
+                    <SelectItem value="zap">ZAP Imóveis</SelectItem>
+                    <SelectItem value="olx">OLX</SelectItem>
+                    <SelectItem value="vivareal">VivaReal</SelectItem>
+                    <SelectItem value="referral">Indicação</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="walk_in">Presencial</SelectItem>
+                    <SelectItem value="phone">Telefone</SelectItem>
+                    <SelectItem value="other">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Temperature */}

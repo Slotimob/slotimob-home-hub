@@ -136,6 +136,25 @@ export const PipelineFilters = ({
 
   const FiltersContent = () => (
     <>
+      {/* Priority Filter */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Prioridade</label>
+        <Select
+          value={filters.priority}
+          onValueChange={(value) => updateFilter('priority', value)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Todas as prioridades" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="low">Baixa</SelectItem>
+            <SelectItem value="medium">Média</SelectItem>
+            <SelectItem value="high">Alta</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Temperature Filter - Lead Temperature */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Temperatura do Lead</label>
@@ -364,7 +383,7 @@ export const PipelineFilters = ({
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por lead, email, telefone ou imóvel..."
+            placeholder="Buscar por título, lead, email, telefone ou imóvel..."
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
             className="pl-9"
