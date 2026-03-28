@@ -568,6 +568,51 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
         <Separator />
 
+        {/* Proposals History */}
+        <div>
+          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+            <FileSignature className="h-4 w-4" />
+            Propostas
+            {contactProposals.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-auto">
+                {contactProposals.length}
+              </Badge>
+            )}
+          </h4>
+
+          {proposalsLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full rounded-md" />
+              <Skeleton className="h-12 w-full rounded-md" />
+            </div>
+          ) : contactProposals.length > 0 ? (
+            <div className="space-y-1.5">
+              {contactProposals.slice(0, 5).map((proposal: any) => (
+                <div key={proposal.id} className="p-2 rounded-md border border-border/50 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-medium text-foreground truncate">
+                      {proposal.property?.name || proposal.lead_name || 'Proposta'}
+                    </p>
+                    <Badge
+                      variant={proposal.status === 'sent' ? 'default' : 'secondary'}
+                      className="text-[9px] px-1.5 py-0 h-4"
+                    >
+                      {proposal.status === 'sent' ? 'Enviada' : proposal.status === 'draft' ? 'Rascunho' : proposal.status === 'accepted' ? 'Aceita' : proposal.status}
+                    </Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {format(new Date(proposal.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-3">Nenhuma proposta ainda</p>
+          )}
+        </div>
+
+        <Separator />
+
         {/* Activities Timeline */}
         <div>
           <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
