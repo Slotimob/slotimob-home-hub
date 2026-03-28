@@ -215,50 +215,14 @@ const AtivosEmGestao = () => {
     toast({ title: "CSV gerado!", description: `Relatório com ${overdueItems.length} pendência(s) exportado.` });
   };
 
-  const handleWhatsAppClick = (asset: AssetHealthType, obligation: ObligationHealth) => {
-    if (!whatsAppConnection) {
-      toast({ title: "WhatsApp não conectado", description: "Conecte o WhatsApp primeiro nas configurações.", variant: "destructive" });
-      return;
-    }
-    const now = new Date();
-    const monthYear = format(now, "MMMM/yyyy", { locale: ptBR });
-    const capitalizedMonthYear = monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
-    const statusText = obligation.status === "overdue" ? "está em atraso" : "está pendente";
-    const defaultMessage = `Olá! \n\nReferente ao imóvel *${asset.unitNumber}*${asset.propertyName ? ` (${asset.propertyName})` : ""}, a obrigação de *${obligation.label}* de ${capitalizedMonthYear} ${statusText}.\n\nPor gentileza, envie o comprovante de pagamento ou entre em contato para regularização.\n\nAtenciosamente.`;
-    setSelectedObligationForMessage({ asset, obligation });
-    setWhatsAppMessage(defaultMessage);
-    setWhatsAppDialogOpen(true);
+  const handleLinkClick = (asset: AssetHealthType, obligation: ObligationHealth) => {
+    setLinkUnitId(asset.unitId);
+    setLinkUnitName(asset.unitNumber);
+    setLinkObligation(obligation);
+    setLinkDialogOpen(true);
   };
 
-  const handleSendWhatsAppMessage = async () => {
-    if (!selectedObligationForMessage || !whatsAppMessage.trim()) return;
-    setIsSendingMessage(true);
-    try {
-      const { data: unitData, error: unitError } = await supabase
-        .from("units")
-        .select(`owner:owners(phone, name), lead:leads(phone, name)`)
-        .eq("id", selectedObligationForMessage.asset.unitId)
-        .single();
-      if (unitError) throw unitError;
-      const phone = unitData?.owner?.phone || unitData?.lead?.phone;
-      if (!phone) {
-        toast({ title: "Telefone não encontrado", description: "O proprietário/inquilino não tem telefone cadastrado.", variant: "destructive" });
-        return;
-      }
-      const { error: sendError } = await supabase.functions.invoke("whatsapp-send", {
-        body: { phone: phone.replace(/\D/g, ""), message: whatsAppMessage },
-      });
-      if (sendError) throw sendError;
-      toast({ title: "Mensagem enviada!", description: `Cobrança enviada para ${unitData?.owner?.name || unitData?.lead?.name || phone}` });
-      setWhatsAppDialogOpen(false);
-      setSelectedObligationForMessage(null);
-      setWhatsAppMessage("");
-    } catch (error: any) {
-      toast({ title: "Erro ao enviar mensagem", description: error.message, variant: "destructive" });
-    } finally {
-      setIsSendingMessage(false);
-    }
-  };
+  const competencyPeriod = format(selectedMonth, "yyyy-MM");
 
   if (loading) {
     return (
