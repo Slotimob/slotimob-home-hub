@@ -173,7 +173,7 @@ export const DealCard = ({
           >
             <div className="flex items-start justify-between gap-1">
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-sm text-foreground truncate leading-tight">
+                <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate leading-tight">
                   {(deal as any).title || deal.lead?.name || 'Sem título'}
                 </h4>
                 {/* Contact name - secondary */}
