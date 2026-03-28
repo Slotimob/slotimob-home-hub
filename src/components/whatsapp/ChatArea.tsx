@@ -273,7 +273,7 @@ export function ChatArea({
               <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
               {conversation.id && (
                 <Select
-                  value={(conversation as any).status || 'pending'}
+                  value={currentStatus}
                   onValueChange={async (newStatus) => {
                     try {
                       await supabase
@@ -286,13 +286,13 @@ export function ChatArea({
                     }
                   }}
                 >
-                  <SelectTrigger className="h-5 w-auto min-w-0 text-[10px] border-none bg-muted/60 px-1.5 py-0 gap-0.5 font-normal">
+                  <SelectTrigger className={cn("h-5 w-auto min-w-0 text-[10px] border px-1.5 py-0 gap-0.5 font-medium rounded-full", statusCfg.color)}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending" className="text-xs">Triagem</SelectItem>
-                    <SelectItem value="active" className="text-xs">Atendimento</SelectItem>
-                    <SelectItem value="closed" className="text-xs">Fechado</SelectItem>
+                    <SelectItem value="pending" className="text-xs">🟡 Triagem</SelectItem>
+                    <SelectItem value="active" className="text-xs">🟢 Atendimento</SelectItem>
+                    <SelectItem value="closed" className="text-xs">⚫ Fechado</SelectItem>
                   </SelectContent>
                 </Select>
               )}
