@@ -131,8 +131,7 @@ export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onLink
               </p>
               <ObligationTrafficLights
                 obligations={asset.obligations}
-                onPayClick={handlePayClick}
-                onWhatsAppClick={onWhatsAppClick ? handleWhatsAppClick : undefined}
+                onLinkClick={onLinkClick ? handleLinkClick : undefined}
               />
             </div>
           ) : (
