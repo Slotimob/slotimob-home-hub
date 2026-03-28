@@ -723,5 +723,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
         }}
       />
     </ScrollArea>
+    </TooltipProvider>
   );
 }
