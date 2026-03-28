@@ -458,13 +458,13 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
           <StepArrow />
 
-          {/* STEP 3: Proposal */}
+          {/* STEP 3: Proposal — requires only contact_id */}
           <div className="flex items-start gap-3">
-            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${activeDeal ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${contactId ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
               <span className="text-xs font-bold">3</span>
             </div>
             <div className="flex-1 min-w-0">
-              {activeDeal ? (
+              {contactId ? (
                 <Button
                   variant="default"
                   size="sm"
@@ -490,7 +490,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Crie uma negociação primeiro</p>
+                    <p className="text-xs">Vincule um contato para liberar</p>
                   </TooltipContent>
                 </Tooltip>
               )}
