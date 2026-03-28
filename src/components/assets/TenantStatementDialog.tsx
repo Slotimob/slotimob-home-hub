@@ -189,7 +189,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
         <Separator />
 
         {/* Payment History */}
-        <ScrollArea className="flex-1 max-h-[280px]">
+        <div className="flex-1 overflow-y-auto pr-1" style={{ maxHeight: 'calc(90vh - 340px)' }}>
           <div className="space-y-2">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
