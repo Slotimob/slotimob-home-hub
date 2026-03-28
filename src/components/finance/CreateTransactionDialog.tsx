@@ -468,8 +468,8 @@ export function CreateTransactionDialog({
                   </div>
                 )}
 
-                {/* Contact + Category - 2 col grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Contact + Category - 2 col grid, aligned by input base */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       <User className="h-4 w-4" />
