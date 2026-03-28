@@ -18,11 +18,14 @@ export type ObligationStatus = "paid" | "pending" | "overdue" | "ignored";
 
 export type ResponsibleRole = "owner" | "tenant" | "agency";
 
+export type ControlType = "financial" | "managerial";
+
 export interface ObligationConfig {
   active: boolean;
   due_day?: number;
   responsible?: ResponsibleRole;
   installation_code?: string;
+  control_type?: ControlType;
 }
 
 export interface ObligationsConfig {
@@ -43,6 +46,7 @@ export interface ObligationHealth {
   dueDay: number | null;
   responsible: ResponsibleRole | null;
   installationCode?: string | null;
+  controlType: ControlType;
   transactionId?: string;
   amount?: number;
 }
@@ -256,11 +260,7 @@ export function useAssetHealth(referenceDate?: Date) {
       const { start, end } = getMonthRange(targetDate);
       const unitIds = units.map((u) => u.id);
 
-      // Strategy: Fetch transactions that match the competency period OR
-      // fall within the date range when competency_period is not set
-      // Using two separate queries for clarity and reliability
-      
-      // Query 1: Transactions with explicit competency_period matching
+      // Query 1: Financial transactions with explicit competency_period matching
       const { data: txByCompetency, error: txCompError } = await supabase
         .from("financial_transactions")
         .select(`
@@ -281,7 +281,7 @@ export function useAssetHealth(referenceDate?: Date) {
 
       if (txCompError) throw txCompError;
 
-      // Query 2: Transactions without competency_period but within date range (legacy fallback)
+      // Query 2: Financial transactions without competency_period but within date range (legacy fallback)
       const { data: txByDate, error: txDateError } = await supabase
         .from("financial_transactions")
         .select(`
@@ -304,13 +304,22 @@ export function useAssetHealth(referenceDate?: Date) {
 
       if (txDateError) throw txDateError;
 
-      // Merge transactions, avoiding duplicates by id
+      // Merge financial transactions, avoiding duplicates by id
       const txMap = new Map<string, typeof txByCompetency[0]>();
       (txByCompetency || []).forEach(tx => txMap.set(tx.id, tx));
       (txByDate || []).forEach(tx => {
         if (!txMap.has(tx.id)) txMap.set(tx.id, tx);
       });
-      const transactions = Array.from(txMap.values());
+      const financialTransactions = Array.from(txMap.values());
+
+      // Query 3: Managerial transactions for the competency period
+      const { data: managerialTx, error: managerialError } = await supabase
+        .from("managerial_transactions")
+        .select("id, unit_id, description, amount, status, due_date, obligation_type, competency_period")
+        .in("unit_id", unitIds)
+        .eq("competency_period", competencyPeriod);
+
+      if (managerialError) throw managerialError;
 
       // Process each unit
       const assetHealthList: AssetHealth[] = units.map((unit) => {
@@ -320,12 +329,24 @@ export function useAssetHealth(referenceDate?: Date) {
         // Check each obligation type
         (Object.keys(OBLIGATION_LABELS) as ObligationType[]).forEach((type) => {
           const obligationConfig = config[type] || { active: false };
-          const matchingTx = findMatchingTransaction(
-            transactions || [],
-            type,
-            unit.id,
-            competencyPeriod
-          );
+          const controlType: ControlType = obligationConfig.control_type || "financial";
+
+          let matchingTx: any = null;
+
+          if (controlType === "managerial") {
+            // Search in managerial_transactions
+            matchingTx = (managerialTx || []).find((t) => 
+              t.unit_id === unit.id && t.obligation_type === type
+            ) || null;
+          } else {
+            // Search in financial_transactions (existing logic)
+            matchingTx = findMatchingTransaction(
+              financialTransactions || [],
+              type,
+              unit.id,
+              competencyPeriod
+            );
+          }
 
           const status = calculateObligationStatus(obligationConfig, matchingTx, targetDate);
 
@@ -336,6 +357,7 @@ export function useAssetHealth(referenceDate?: Date) {
             dueDay: obligationConfig.due_day || null,
             responsible: obligationConfig.responsible || null,
             installationCode: obligationConfig.installation_code || null,
+            controlType,
             transactionId: matchingTx?.id,
             amount: matchingTx?.amount,
           });

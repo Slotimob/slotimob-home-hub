@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
-import { ObligationHealth, ObligationStatus, ObligationType } from "@/hooks/useAssetHealth";
+import { ObligationHealth, ObligationStatus, ObligationType, ControlType } from "@/hooks/useAssetHealth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { 
   Receipt, 
   MessageSquare, 
@@ -11,6 +12,7 @@ import {
   Flame, 
   Shield, 
   MoreHorizontal,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -86,15 +88,23 @@ function TrafficLight({
   const showActions = obligation.status === "pending" || obligation.status === "overdue";
   const Icon = OBLIGATION_ICONS[obligation.type] || MoreHorizontal;
 
+  const isManagerial = obligation.controlType === "managerial";
+
   const lightElement = (
-    <div
-      className={cn(
-        "w-6 h-6 rounded-md shrink-0 transition-all cursor-pointer flex items-center justify-center",
-        config.bgClassName,
-        obligation.status === "overdue" && "animate-pulse"
+    <div className="relative">
+      <div
+        className={cn(
+          "w-6 h-6 rounded-md shrink-0 transition-all cursor-pointer flex items-center justify-center",
+          config.bgClassName,
+          obligation.status === "overdue" && "animate-pulse",
+          isManagerial && "ring-1 ring-purple-400/50"
+        )}
+      >
+        <Icon className={cn("h-3.5 w-3.5", config.textClassName)} />
+      </div>
+      {isManagerial && (
+        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-purple-500 border border-background" />
       )}
-    >
-      <Icon className={cn("h-3.5 w-3.5", config.textClassName)} />
     </div>
   );
 
@@ -121,7 +131,14 @@ function TrafficLight({
             </div>
             <div>
               <p className="text-xs font-medium">{obligation.label}</p>
-              <p className="text-[10px] text-muted-foreground">{config.label}</p>
+              <div className="flex items-center gap-1">
+                <p className="text-[10px] text-muted-foreground">{config.label}</p>
+                {obligation.controlType === "managerial" && (
+                  <Badge variant="outline" className="h-3.5 px-1 text-[8px] border-purple-400 text-purple-600">
+                    Gerencial
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           

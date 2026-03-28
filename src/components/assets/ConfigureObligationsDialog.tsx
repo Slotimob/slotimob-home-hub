@@ -21,6 +21,7 @@ import {
   ObligationsConfig,
   ObligationConfig,
   ResponsibleRole,
+  ControlType,
   useUnitObligationsConfig,
   updateUnitObligationsConfig,
 } from "@/hooks/useAssetHealth";
@@ -45,6 +46,7 @@ import {
   Users,
   Briefcase,
   Info,
+  ClipboardList,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -79,6 +81,7 @@ const ICON_MAP: Record<string, typeof Home> = {
 // Extended obligation config with installation code
 interface ExtendedObligationConfig extends ObligationConfig {
   installation_code?: string;
+  control_type?: ControlType;
 }
 
 interface ExtendedObligationsConfig {
@@ -256,6 +259,16 @@ export function ConfigureObligationsDialog({
     }));
   };
 
+  const handleControlTypeChange = (type: ObligationType, controlType: ControlType) => {
+    setConfig((prev) => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        control_type: controlType,
+      },
+    }));
+  };
+
   const handleSave = async () => {
     if (!unitId) return;
 
@@ -414,6 +427,7 @@ export function ConfigureObligationsDialog({
                       onDueDayChange={handleDueDayChange}
                       onResponsibleChange={handleResponsibleChange}
                       onInstallationCodeChange={handleInstallationCodeChange}
+                      onControlTypeChange={handleControlTypeChange}
                       getResponsibleFeedback={getResponsibleFeedback}
                     />
                   );
@@ -446,6 +460,7 @@ export function ConfigureObligationsDialog({
                           onDueDayChange={handleDueDayChange}
                           onResponsibleChange={handleResponsibleChange}
                           onInstallationCodeChange={handleInstallationCodeChange}
+                          onControlTypeChange={handleControlTypeChange}
                           getResponsibleFeedback={getResponsibleFeedback}
                         />
                       );
@@ -499,6 +514,7 @@ interface ObligationResponsibilityCardProps {
   onDueDayChange: (type: ObligationType, dueDay: number) => void;
   onResponsibleChange: (type: ObligationType, responsible: ResponsibleRole) => void;
   onInstallationCodeChange: (type: ObligationType, code: string) => void;
+  onControlTypeChange: (type: ObligationType, controlType: ControlType) => void;
   getResponsibleFeedback: (role: ResponsibleRole, label: string) => string;
 }
 
@@ -514,9 +530,11 @@ function ObligationResponsibilityCard({
   onDueDayChange,
   onResponsibleChange,
   onInstallationCodeChange,
+  onControlTypeChange,
   getResponsibleFeedback,
 }: ObligationResponsibilityCardProps) {
   const currentResponsible = config.responsible || "owner";
+  const currentControlType = config.control_type || "financial";
   const feedback = getResponsibleFeedback(currentResponsible, label);
 
   return (
@@ -549,6 +567,46 @@ function ObligationResponsibilityCard({
       {/* Expanded Configuration when Active */}
       {config.active && (
         <div className="space-y-4 pt-3 border-t">
+          {/* Control Type Selection */}
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Tipo de Controle
+            </Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={currentControlType === "financial" ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "flex-1 h-8 text-xs gap-1.5",
+                  currentControlType === "financial" && "bg-blue-600 hover:bg-blue-700 text-white"
+                )}
+                onClick={() => onControlTypeChange(type, "financial")}
+              >
+                <Receipt className="h-3 w-3" />
+                Financeiro
+              </Button>
+              <Button
+                type="button"
+                variant={currentControlType === "managerial" ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "flex-1 h-8 text-xs gap-1.5",
+                  currentControlType === "managerial" && "bg-purple-600 hover:bg-purple-700 text-white"
+                )}
+                onClick={() => onControlTypeChange(type, "managerial")}
+              >
+                <ClipboardList className="h-3 w-3" />
+                Gerencial
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {currentControlType === "financial" 
+                ? "Afeta o fluxo de caixa real da imobiliária (DRE)." 
+                : "Apenas para conferência. Não afeta o caixa da imobiliária."}
+            </p>
+          </div>
           {/* Responsible Selection */}
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">
