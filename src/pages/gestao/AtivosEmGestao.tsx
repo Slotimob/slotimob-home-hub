@@ -100,14 +100,11 @@ const AtivosEmGestao = () => {
     ownerContactId?: string | null;
   } | null>(null);
 
-  const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false);
-  const [selectedObligationForMessage, setSelectedObligationForMessage] = useState<{
-    asset: AssetHealthType;
-    obligation: ObligationHealth;
-  } | null>(null);
-  const [whatsAppMessage, setWhatsAppMessage] = useState("");
-  const [isSendingMessage, setIsSendingMessage] = useState(false);
-  const whatsAppConnection = null;
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkObligation, setLinkObligation] = useState<ObligationHealth | null>(null);
+  const [linkUnitId, setLinkUnitId] = useState("");
+  const [linkUnitName, setLinkUnitName] = useState("");
 
   useEffect(() => {
     if (!loading && !user) {
