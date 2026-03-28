@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { MessageSquare, Globe, Copy, CheckCircle, ExternalLink, Building2, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle, XCircle, Timer, ArrowUpCircle, ShieldCheck } from 'lucide-react';
+import { MessageSquare, Globe, CheckCircle, Plug, Loader2, QrCode, Wifi, WifiOff, RefreshCw, Clock, AlertTriangle, XCircle, Timer, ArrowUpCircle, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSettingsConnection } from '@/hooks/useWhatsApp';
 import { WhatsAppDisclaimerDialog } from '@/components/whatsapp/WhatsAppDisclaimerDialog';
