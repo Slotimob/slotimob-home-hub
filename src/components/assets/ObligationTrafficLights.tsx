@@ -1,10 +1,7 @@
 import { cn } from "@/lib/utils";
-import { ObligationHealth, ObligationStatus, ObligationType, ControlType } from "@/hooks/useAssetHealth";
-import { Button } from "@/components/ui/button";
+import { ObligationHealth, ObligationStatus, ObligationType } from "@/hooks/useAssetHealth";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Receipt, 
-  MessageSquare, 
   Home, 
   Building, 
   Zap, 
@@ -12,7 +9,7 @@ import {
   Flame, 
   Shield, 
   MoreHorizontal,
-  ClipboardList,
+  Link2,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -26,12 +23,12 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ObligationTrafficLightsProps {
   obligations: ObligationHealth[];
-  onPayClick: (obligation: ObligationHealth) => void;
-  onWhatsAppClick?: (obligation: ObligationHealth) => void;
+  onLinkClick?: (obligation: ObligationHealth) => void;
   compact?: boolean;
 }
 
@@ -65,7 +62,7 @@ const STATUS_CONFIG: Record<ObligationStatus, {
 const OBLIGATION_ICONS: Record<ObligationType, LucideIcon> = {
   rent: Home,
   condominium: Building,
-  iptu: Receipt,
+  iptu: MoreHorizontal,
   energy: Zap,
   water: Droplets,
   gas: Flame,
@@ -75,26 +72,23 @@ const OBLIGATION_ICONS: Record<ObligationType, LucideIcon> = {
 
 function TrafficLight({
   obligation,
-  onPayClick,
-  onWhatsAppClick,
+  onLinkClick,
   isMobile,
 }: {
   obligation: ObligationHealth;
-  onPayClick: () => void;
-  onWhatsAppClick?: () => void;
+  onLinkClick?: () => void;
   isMobile: boolean;
 }) {
   const config = STATUS_CONFIG[obligation.status];
-  const showActions = obligation.status === "pending" || obligation.status === "overdue";
+  const showLink = (obligation.status === "pending" || obligation.status === "overdue") && onLinkClick;
   const Icon = OBLIGATION_ICONS[obligation.type] || MoreHorizontal;
-
   const isManagerial = obligation.controlType === "managerial";
 
   const lightElement = (
     <div className="relative">
       <div
         className={cn(
-          "w-6 h-6 rounded-md shrink-0 transition-all cursor-pointer flex items-center justify-center",
+          "w-6 h-6 rounded-md shrink-0 transition-all flex items-center justify-center",
           config.bgClassName,
           obligation.status === "overdue" && "animate-pulse",
           isManagerial && "ring-1 ring-purple-400/50"
@@ -108,7 +102,6 @@ function TrafficLight({
     </div>
   );
 
-  // On mobile, just show the light without tooltip
   if (isMobile) {
     return lightElement;
   }
@@ -133,7 +126,7 @@ function TrafficLight({
               <p className="text-xs font-medium">{obligation.label}</p>
               <div className="flex items-center gap-1">
                 <p className="text-[10px] text-muted-foreground">{config.label}</p>
-                {obligation.controlType === "managerial" && (
+                {isManagerial && (
                   <Badge variant="outline" className="h-3.5 px-1 text-[8px] border-purple-400 text-purple-600">
                     Gerencial
                   </Badge>
@@ -142,34 +135,20 @@ function TrafficLight({
             </div>
           </div>
           
-          {showActions && (
-            <div className="flex gap-1 pt-1 border-t">
+          {showLink && (
+            <div className="pt-1 border-t">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 text-[10px] px-2"
+                className="h-6 text-[10px] px-2 w-full"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onPayClick();
+                  onLinkClick();
                 }}
               >
-                <Receipt className="h-3 w-3 mr-1 text-green-600" />
-                Pagar
+                <Link2 className="h-3 w-3 mr-1 text-primary" />
+                Vincular lançamento
               </Button>
-              {onWhatsAppClick && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-[10px] px-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onWhatsAppClick();
-                  }}
-                >
-                  <MessageSquare className="h-3 w-3 mr-1 text-blue-600" />
-                  Cobrar
-                </Button>
-              )}
             </div>
           )}
         </div>
@@ -180,8 +159,7 @@ function TrafficLight({
 
 export function ObligationTrafficLights({
   obligations,
-  onPayClick,
-  onWhatsAppClick,
+  onLinkClick,
   compact = false,
 }: ObligationTrafficLightsProps) {
   const isMobile = useIsMobile();
@@ -198,20 +176,17 @@ export function ObligationTrafficLights({
 
   return (
     <div className="space-y-1.5">
-      {/* Active obligations */}
       <div className="flex flex-wrap gap-1.5">
         {activeObligations.map((obligation) => (
           <TrafficLight
             key={obligation.type}
             obligation={obligation}
-            onPayClick={() => onPayClick(obligation)}
-            onWhatsAppClick={onWhatsAppClick ? () => onWhatsAppClick(obligation) : undefined}
+            onLinkClick={onLinkClick ? () => onLinkClick(obligation) : undefined}
             isMobile={isMobile}
           />
         ))}
       </div>
 
-      {/* Ignored count (only in non-compact mode) */}
       {!compact && ignoredObligations.length > 0 && activeObligations.length > 0 && (
         <TooltipProvider>
           <Tooltip>
