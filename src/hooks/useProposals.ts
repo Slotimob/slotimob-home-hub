@@ -26,6 +26,7 @@ export interface CreateProposalInput {
   property_id?: string | null;
   unit_id?: string | null;
   deal_id?: string | null;
+  contact_id?: string | null;
   lead_name?: string;
   introduction_message?: string;
   include_financing?: boolean;
@@ -68,6 +69,7 @@ export const useProposals = () => {
           property_id: input.property_id || null,
           unit_id: input.unit_id || null,
           deal_id: (input as any).deal_id || null,
+          contact_id: (input as any).contact_id || null,
           lead_name: input.lead_name || null,
           introduction_message: input.introduction_message || null,
           include_financing: input.include_financing ?? false,

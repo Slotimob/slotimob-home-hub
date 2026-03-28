@@ -56,6 +56,7 @@ interface CreateProposalSheetProps {
   preSelectedUnitId?: string;
   initialLeadName?: string;
   dealId?: string;
+  contactId?: string;
   editingProposal?: Proposal | null;
   onProposalGenerated?: (pdfBlob: Blob, proposalId: string) => void;
 }
@@ -76,6 +77,7 @@ export function CreateProposalSheet({
   preSelectedUnitId,
   initialLeadName,
   dealId,
+  contactId,
   editingProposal,
   onProposalGenerated,
 }: CreateProposalSheetProps) {
@@ -355,6 +357,7 @@ export function CreateProposalSheet({
           property_id: selectedUnit?.property_id,
           unit_id: selectedUnit?.id,
           deal_id: selectedDealId || dealId || (editingProposal as any)?.deal_id || undefined,
+          contact_id: contactId || undefined,
           lead_name: leadName.trim() || undefined,
           introduction_message: introMessage.trim() || undefined,
           include_financing: includeFinancing,

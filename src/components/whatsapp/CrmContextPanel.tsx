@@ -169,7 +169,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
     }
     supabase
       .from('deals')
-      .select('*, custom_stage:pipeline_stages(name, color), property:properties(name), unit:units(title)')
+      .select('*, custom_stage:pipeline_stages(name, color), property:properties(name), unit:units(unit_number)')
       .eq('id', dealId)
       .maybeSingle()
       .then(({ data }) => setDirectDeal(data));
@@ -269,10 +269,11 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   // Filter proposals for this contact
   const contactProposals = proposals.filter((p: any) => {
     if (!contactId) return false;
-    // Match by deal_id linking or lead_name
+    // Match by contact_id first, then deal_id, then lead_name
+    if (p.contact_id === contactId) return true;
     const contactDealsIds = deals.map((d: any) => d.id);
-    return contactDealsIds.includes(p.deal_id) || 
-      (p.lead_name && contact?.name && p.lead_name.toLowerCase() === contact.name.toLowerCase());
+    if (p.deal_id && contactDealsIds.includes(p.deal_id)) return true;
+    return p.lead_name && contact?.name && p.lead_name.toLowerCase() === contact.name.toLowerCase();
   });
 
   return (
@@ -408,7 +409,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                     <div key={deal.id} className="p-2 rounded-md border border-border/50 bg-muted/30">
                       <p className="text-[11px] font-medium text-foreground truncate">
                         {deal.title || deal.property?.name || 'Negociação'}
-                        {deal.unit?.title ? ` - ${deal.unit.title}` : ''}
+                        {deal.unit?.unit_number ? ` - ${deal.unit.unit_number}` : ''}
                       </p>
                       <div className="flex items-center justify-between mt-0.5">
                         <p className="text-[10px] text-muted-foreground">
@@ -770,6 +771,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
         preSelectedUnitId={activeDeal?.unit_id || activeDeal?.unit?.id || undefined}
         initialLeadName={contact?.name || conversation?.contact_name || ''}
         dealId={activeDeal?.id || undefined}
+        contactId={contactId || undefined}
         onProposalGenerated={async (pdfBlob, proposalId) => {
           // Log a note in the chat
           if (conversation?.id) {
