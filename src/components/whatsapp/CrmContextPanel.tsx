@@ -255,6 +255,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
     .split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '??';
 
   const activeDealsCount = deals.filter((d: any) => !['won', 'lost'].includes(d.stage)).length;
+  const allDealsForDisplay = deals.filter((d: any) => !['won', 'lost'].includes(d.stage));
 
   return (
     <ScrollArea className="h-full">
