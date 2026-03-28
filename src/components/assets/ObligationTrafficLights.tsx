@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
-import { ObligationHealth, ObligationStatus, ObligationType } from "@/hooks/useAssetHealth";
+import { ObligationHealth, ObligationStatus, ObligationType, ControlType } from "@/hooks/useAssetHealth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { 
   Receipt, 
   MessageSquare, 
@@ -11,6 +12,7 @@ import {
   Flame, 
   Shield, 
   MoreHorizontal,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import {
