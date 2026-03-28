@@ -91,7 +91,6 @@ const Integrations = () => {
   // XML Feed state
   const [feedToken, setFeedToken] = useState<string | null>(null);
   const [isLoadingToken, setIsLoadingToken] = useState(true);
-  const [copied, setCopied] = useState(false);
   const [showPortalSetup, setShowPortalSetup] = useState(false);
 
   // WhatsApp — centralized hook
