@@ -552,54 +552,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           )}
         </div>
 
-        <Separator />
-
-        {/* Activities Timeline */}
-        <div>
-          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
-            <Calendar className="h-4 w-4" />
-            Últimas Atividades
-          </h4>
-
-          {activitiesLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex gap-3">
-                  <Skeleton className="h-7 w-7 rounded-full flex-shrink-0" />
-                  <div className="flex-1 space-y-1">
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-2 w-20" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : activities.length > 0 ? (
-            <div className="space-y-0">
-              {activities.slice(0, 5).map((activity: any, idx: number) => (
-                <div key={activity.id} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="h-7 w-7 rounded-full bg-muted/80 flex items-center justify-center flex-shrink-0">
-                      {getActivityIcon(activity.activity_type)}
-                    </div>
-                    {idx < Math.min(activities.length, 5) - 1 && (
-                      <div className="w-px flex-1 bg-border my-1" />
-                    )}
-                  </div>
-                  <div className="pb-4 min-w-0">
-                    <p className="text-xs text-foreground leading-relaxed">
-                      {activity.title || activity.description || activity.activity_type}
-                    </p>
-                    <span className="text-[10px] text-muted-foreground">
-                      {format(new Date(activity.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground text-center py-4">Nenhuma atividade registrada</p>
-          )}
-        </div>
       </div>
 
       {conversation && (
