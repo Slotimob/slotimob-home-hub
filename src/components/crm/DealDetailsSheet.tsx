@@ -329,6 +329,48 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
             </TabsList>
 
             <TabsContent value="details" className="space-y-4 pt-4">
+              {/* Title */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <Pencil className="h-3 w-3" />
+                  Título da Negociação
+                </Label>
+                <Input
+                  value={editedDeal.title}
+                  onChange={(e) => setEditedDeal({ ...editedDeal, title: e.target.value })}
+                  placeholder="Ex: Venda Apt 101"
+                  disabled={!canEdit}
+                />
+              </div>
+
+              {/* Contact */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  Contato
+                </Label>
+                <ContactSelector
+                  value={editedDeal.contact_id}
+                  onChange={(val) => setEditedDeal({ ...editedDeal, contact_id: val })}
+                  placeholder="Selecione o contato..."
+                  disabled={!canEdit}
+                />
+              </div>
+
+              {/* Unit / Property */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <Building2 className="h-3 w-3" />
+                  Imóvel de Interesse
+                </Label>
+                <UnitSelector
+                  value={editedDeal.unit_id ?? ''}
+                  onChange={(val) => setEditedDeal({ ...editedDeal, unit_id: val || null })}
+                  placeholder="Selecione um imóvel (opcional)"
+                  disabled={!canEdit}
+                />
+              </div>
+
               {/* Temperature */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">

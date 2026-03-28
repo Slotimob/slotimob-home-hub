@@ -138,7 +138,7 @@ export const DealCard = ({
         isSelected && 'ring-2 ring-primary bg-primary/5',
       )}
     >
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="p-2 sm:p-2.5 space-y-1.5">
         {/* Unit Unavailable Warning - compact */}
         {isUnitUnavailable && (
           <div className="flex items-center gap-1.5 text-xs text-destructive">
