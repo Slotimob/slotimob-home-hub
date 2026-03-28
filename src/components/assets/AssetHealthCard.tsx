@@ -150,7 +150,7 @@ export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onLink
             </div>
           )}
 
-          {/* Quick Actions - 3 buttons */}
+          {/* Quick Actions - 2 buttons */}
           <div className="pt-2 border-t space-y-1.5">
             <Button
               variant="default"
@@ -161,26 +161,15 @@ export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onLink
               <ClipboardList className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">Gerenciar Ativo</span>
             </Button>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs gap-1 px-2"
-                onClick={() => onConfigureClick(asset.unitId)}
-              >
-                <Settings2 className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Configurar</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs gap-1 px-2"
-                onClick={() => navigate(`/finance/transactions?unitId=${asset.unitId}`)}
-              >
-                <FileText className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Lançamentos</span>
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-xs gap-1 px-2"
+              onClick={() => onConfigureClick(asset.unitId)}
+            >
+              <Settings2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Configurar</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
