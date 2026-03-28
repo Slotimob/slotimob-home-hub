@@ -511,6 +511,7 @@ interface ObligationResponsibilityCardProps {
   onDueDayChange: (type: ObligationType, dueDay: number) => void;
   onResponsibleChange: (type: ObligationType, responsible: ResponsibleRole) => void;
   onInstallationCodeChange: (type: ObligationType, code: string) => void;
+  onControlTypeChange: (type: ObligationType, controlType: ControlType) => void;
   getResponsibleFeedback: (role: ResponsibleRole, label: string) => string;
 }
 
