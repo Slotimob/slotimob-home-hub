@@ -43,6 +43,7 @@ interface Unit {
   market_value?: number | null;
   rent_price?: number | null;
   is_standalone?: boolean | null;
+  is_published_portal?: boolean | null;
   property?: {
     id: string;
     name: string;
