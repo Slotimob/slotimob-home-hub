@@ -354,8 +354,8 @@ export function CreateTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle>
             {editTransaction 
               ? (canEdit ? "Editar Lançamento" : "Detalhes do Lançamento") 
@@ -368,374 +368,377 @@ export function CreateTransactionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Reconciliation Warning */}
-        {isReconciled && (
-          <Alert variant="default" className="border-amber-200 bg-amber-50 text-amber-800">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Este lançamento foi conciliado e não pode ser editado sem que a conciliação seja desfeita.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <fieldset disabled={!canEdit || isReconciled}>
-          {/* Type Selector - 3 tabs */}
-          <Tabs value={mode} onValueChange={(v) => setMode(v as "income" | "expense" | "transfer")}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="income" className="gap-1.5 text-xs sm:text-sm" disabled={editTransaction && !isTransferEdit}>
-                <TrendingUp className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Receita</span>
-                <span className="sm:hidden">Rec.</span>
-              </TabsTrigger>
-              <TabsTrigger value="expense" className="gap-1.5 text-xs sm:text-sm" disabled={editTransaction && !isTransferEdit}>
-                <TrendingDown className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Despesa</span>
-                <span className="sm:hidden">Desp.</span>
-              </TabsTrigger>
-              <TabsTrigger value="transfer" className="gap-1.5 text-xs sm:text-sm" disabled={editTransaction && !isTransferEdit}>
-                <ArrowRightLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Transferência</span>
-                <span className="sm:hidden">Transf.</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {/* Transfer Form */}
-          {mode === "transfer" ? (
-            <TransferFormContent
-              formData={transferData}
-              onChange={setTransferData}
-              bankAccounts={bankAccounts}
-            />
-          ) : (
-          <>
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição *</Label>
-            <Input
-              id="description"
-              placeholder="Ex: Comissão venda apt 101"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              required
-            />
-          </div>
-
-          {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">Valor *</Label>
-            <CurrencyInput
-              id="amount"
-              placeholder="0,00"
-              value={formData.amount}
-              onChange={(value) => setFormData({ ...formData, amount: value })}
-              disabled={isReconciled}
-              className={isReconciled ? "bg-muted cursor-not-allowed" : ""}
-            />
-          </div>
-
-          {/* Unit Selector */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Home className="h-4 w-4" />
-              Unidade / Imóvel
-            </Label>
-            <UnitSelector
-              value={formData.unitId}
-              onChange={(v) => setFormData({ ...formData, unitId: v })}
-              placeholder="Vincular a uma unidade (opcional)"
-            />
-          </div>
-
-          {/* Obligation Selector - Shows when unit is selected and has obligations */}
-          {formData.unitId && (
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <ClipboardList className="h-4 w-4" />
-                Obrigação do Ativo
-              </Label>
-              <ObligationSelector
-                unitId={formData.unitId}
-                value={selectedObligationType}
-                onChange={handleObligationChange}
-              />
-              <p className="text-xs text-muted-foreground">
-                Vincule este lançamento a uma obrigação para rastreamento automático na Gestão de Ativos.
-              </p>
-            </div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-2">
+          {/* Reconciliation Warning */}
+          {isReconciled && (
+            <Alert variant="default" className="border-amber-200 bg-amber-50 text-amber-800 mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Este lançamento foi conciliado e não pode ser editado sem que a conciliação seja desfeita.
+              </AlertDescription>
+            </Alert>
           )}
 
-          {/* Contact Selector - Favorecido/Pagador */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              {type === "income" ? "Favorecido (quem paga)" : "Fornecedor/Pagador"}
-            </Label>
-            <ContactSelector
-              value={formData.contactId}
-              onChange={(v) => setFormData({ ...formData, contactId: v })}
-              placeholder="Selecione um contato (opcional)"
-            />
-          </div>
+          <form id="transaction-form" onSubmit={handleSubmit} className="space-y-5">
+            <fieldset disabled={!canEdit || isReconciled} className="space-y-5">
+              {/* Type Selector - 3 tabs */}
+              <Tabs value={mode} onValueChange={(v) => setMode(v as "income" | "expense" | "transfer")}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="income" className="gap-1.5 text-xs sm:text-sm" disabled={editTransaction && !isTransferEdit}>
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Receita</span>
+                    <span className="sm:hidden">Rec.</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="expense" className="gap-1.5 text-xs sm:text-sm" disabled={editTransaction && !isTransferEdit}>
+                    <TrendingDown className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Despesa</span>
+                    <span className="sm:hidden">Desp.</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="transfer" className="gap-1.5 text-xs sm:text-sm" disabled={editTransaction && !isTransferEdit}>
+                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Transferência</span>
+                    <span className="sm:hidden">Transf.</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-          {/* Category */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Categoria</Label>
-              <div className="flex gap-1">
-                {!hasCategories && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs gap-1"
-                    onClick={() => seedDefaultCategories.mutate()}
-                    disabled={seedDefaultCategories.isPending}
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    {seedDefaultCategories.isPending ? "Criando..." : "Criar padrões"}
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs gap-1"
-                  onClick={() => setCategoryDialogOpen(true)}
-                >
-                  <Plus className="h-3 w-3" />
-                  Nova
-                </Button>
-              </div>
-            </div>
-            <Select
-              value={formData.categoryId}
-              onValueChange={(v) => setFormData({ ...formData, categoryId: v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma categoria" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{cat.name}</span>
-                      {cat.tooltip && (
-                        <span className="text-xs text-muted-foreground" title={cat.tooltip}>
-                          <HelpCircle className="h-3 w-3" />
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Show tooltip for selected category with repasse warning */}
-            {formData.categoryId && categories.find(c => c.id === formData.categoryId)?.name?.toLowerCase().includes("repasse") && (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <HelpCircle className="h-3 w-3 flex-shrink-0" />
-                Use esta categoria para valores que você recebe do inquilino e transfere ao dono do imóvel.
-              </p>
-            )}
-          </div>
-
-          <CreateCategoryDialog
-            open={categoryDialogOpen}
-            onOpenChange={setCategoryDialogOpen}
-            onSuccess={handleCategoryCreated}
-            defaultType={type}
-          />
-
-          {/* Bank Account */}
-          <div className="space-y-2">
-            <Label>Conta Bancária</Label>
-            <Select
-              value={formData.bankAccountId}
-              onValueChange={(v) => setFormData({ ...formData, bankAccountId: v })}
-              disabled={isReconciled}
-            >
-              <SelectTrigger className={isReconciled ? "bg-muted cursor-not-allowed" : ""}>
-                <SelectValue placeholder="Selecione uma conta" />
-              </SelectTrigger>
-              <SelectContent>
-                {bankAccounts.map((acc) => (
-                  <SelectItem key={acc.id} value={acc.id}>
-                    {acc.name} {acc.bank_name && `- ${acc.bank_name}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Dates Row */}
-          <TooltipProvider>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="transactionDate" className="flex items-center gap-1">
-                  Data Emissão *
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[220px]">
-                      <p>Data de competência para DRE e geração da receita/despesa.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </Label>
-                <Input
-                  id="transactionDate"
-                  type="date"
-                  value={formData.transactionDate}
-                  onChange={(e) => setFormData({ ...formData, transactionDate: e.target.value })}
-                  required
-                  disabled={isReconciled}
-                  className={isReconciled ? "bg-muted cursor-not-allowed" : ""}
+              {/* Transfer Form */}
+              {mode === "transfer" ? (
+                <TransferFormContent
+                  formData={transferData}
+                  onChange={setTransferData}
+                  bankAccounts={bankAccounts}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dueDate" className="flex items-center gap-1">
-                  Vencimento
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[220px]">
-                      <p>Esta data alimenta o Fluxo de Caixa na Visão Geral.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                />
-              </div>
-            </div>
-          </TooltipProvider>
+              ) : (
+              <>
+                {/* Description - full width */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição *</Label>
+                  <Input
+                    id="description"
+                    placeholder="Ex: Comissão venda apt 101"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    required
+                  />
+                </div>
 
-          {/* Status and Payment Method */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(v) => setFormData({ ...formData, status: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="paid">Pago</SelectItem>
-                  <SelectItem value="overdue">Vencido</SelectItem>
-                  <SelectItem value="cancelled">Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Forma de Pagamento</Label>
-              <Select
-                value={formData.paymentMethod}
-                onValueChange={(v) => setFormData({ ...formData, paymentMethod: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="transfer">Transferência</SelectItem>
-                  <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                  <SelectItem value="debit_card">Cartão de Débito</SelectItem>
-                  <SelectItem value="cash">Dinheiro</SelectItem>
-                  <SelectItem value="boleto">Boleto</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Recurring Transaction - Only for new transactions */}
-          {!editTransaction && (
-            <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="recurring" className="flex items-center gap-2 cursor-pointer">
-                  <Repeat className="h-4 w-4" />
-                  Repetir lançamento?
-                </Label>
-                <Switch
-                  id="recurring"
-                  checked={isRecurring}
-                  onCheckedChange={setIsRecurring}
-                />
-              </div>
-
-              {isRecurring && (
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                {/* Amount + Unit - 2 col grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Frequência</Label>
+                    <Label htmlFor="amount">Valor *</Label>
+                    <CurrencyInput
+                      id="amount"
+                      placeholder="0,00"
+                      value={formData.amount}
+                      onChange={(value) => setFormData({ ...formData, amount: value })}
+                      disabled={isReconciled}
+                      className={isReconciled ? "bg-muted cursor-not-allowed" : ""}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Home className="h-4 w-4" />
+                      Unidade / Imóvel
+                    </Label>
+                    <UnitSelector
+                      value={formData.unitId}
+                      onChange={(v) => setFormData({ ...formData, unitId: v })}
+                      placeholder="Vincular (opcional)"
+                    />
+                  </div>
+                </div>
+
+                {/* Obligation Selector - Shows when unit is selected */}
+                {formData.unitId && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4" />
+                      Obrigação do Ativo
+                    </Label>
+                    <ObligationSelector
+                      unitId={formData.unitId}
+                      value={selectedObligationType}
+                      onChange={handleObligationChange}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Vincule este lançamento a uma obrigação para rastreamento automático na Gestão de Ativos.
+                    </p>
+                  </div>
+                )}
+
+                {/* Contact + Category - 2 col grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {type === "income" ? "Favorecido" : "Fornecedor"}
+                    </Label>
+                    <ContactSelector
+                      value={formData.contactId}
+                      onChange={(v) => setFormData({ ...formData, contactId: v })}
+                      placeholder="Contato (opcional)"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Categoria</Label>
+                      <div className="flex gap-1">
+                        {!hasCategories && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs gap-1"
+                            onClick={() => seedDefaultCategories.mutate()}
+                            disabled={seedDefaultCategories.isPending}
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            {seedDefaultCategories.isPending ? "Criando..." : "Criar padrões"}
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs gap-1"
+                          onClick={() => setCategoryDialogOpen(true)}
+                        >
+                          <Plus className="h-3 w-3" />
+                          Nova
+                        </Button>
+                      </div>
+                    </div>
                     <Select
-                      value={recurrenceFrequency}
-                      onValueChange={setRecurrenceFrequency}
+                      value={formData.categoryId}
+                      onValueChange={(v) => setFormData({ ...formData, categoryId: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{cat.name}</span>
+                              {cat.tooltip && (
+                                <span className="text-xs text-muted-foreground" title={cat.tooltip}>
+                                  <HelpCircle className="h-3 w-3" />
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.categoryId && categories.find(c => c.id === formData.categoryId)?.name?.toLowerCase().includes("repasse") && (
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <HelpCircle className="h-3 w-3 flex-shrink-0" />
+                        Valores recebidos do inquilino e transferidos ao dono.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <CreateCategoryDialog
+                  open={categoryDialogOpen}
+                  onOpenChange={setCategoryDialogOpen}
+                  onSuccess={handleCategoryCreated}
+                  defaultType={type}
+                />
+
+                {/* Bank Account - full width */}
+                <div className="space-y-2">
+                  <Label>Conta Bancária</Label>
+                  <Select
+                    value={formData.bankAccountId}
+                    onValueChange={(v) => setFormData({ ...formData, bankAccountId: v })}
+                    disabled={isReconciled}
+                  >
+                    <SelectTrigger className={isReconciled ? "bg-muted cursor-not-allowed" : ""}>
+                      <SelectValue placeholder="Selecione uma conta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bankAccounts.map((acc) => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.name} {acc.bank_name && `- ${acc.bank_name}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Dates Row */}
+                <TooltipProvider>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="transactionDate" className="flex items-center gap-1">
+                        Data Emissão *
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px]">
+                            <p>Data de competência para DRE e geração da receita/despesa.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
+                      <Input
+                        id="transactionDate"
+                        type="date"
+                        value={formData.transactionDate}
+                        onChange={(e) => setFormData({ ...formData, transactionDate: e.target.value })}
+                        required
+                        disabled={isReconciled}
+                        className={isReconciled ? "bg-muted cursor-not-allowed" : ""}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dueDate" className="flex items-center gap-1">
+                        Vencimento
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px]">
+                            <p>Esta data alimenta o Fluxo de Caixa na Visão Geral.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
+                      <Input
+                        id="dueDate"
+                        type="date"
+                        value={formData.dueDate}
+                        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </TooltipProvider>
+
+                {/* Status and Payment Method */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(v) => setFormData({ ...formData, status: v })}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="monthly">Mensal</SelectItem>
+                        <SelectItem value="pending">Pendente</SelectItem>
+                        <SelectItem value="paid">Pago</SelectItem>
+                        <SelectItem value="overdue">Vencido</SelectItem>
+                        <SelectItem value="cancelled">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Quantidade de meses</Label>
-                    <Input
-                      type="number"
-                      min="2"
-                      max="60"
-                      value={recurrenceCount}
-                      onChange={(e) => setRecurrenceCount(e.target.value)}
-                    />
+                    <Label>Forma de Pagamento</Label>
+                    <Select
+                      value={formData.paymentMethod}
+                      onValueChange={(v) => setFormData({ ...formData, paymentMethod: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pix">PIX</SelectItem>
+                        <SelectItem value="transfer">Transferência</SelectItem>
+                        <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                        <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                        <SelectItem value="cash">Dinheiro</SelectItem>
+                        <SelectItem value="boleto">Boleto</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+
+                {/* Recurring Transaction */}
+                {!editTransaction && (
+                  <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="recurring" className="flex items-center gap-2 cursor-pointer">
+                        <Repeat className="h-4 w-4" />
+                        Repetir lançamento?
+                      </Label>
+                      <Switch
+                        id="recurring"
+                        checked={isRecurring}
+                        onCheckedChange={setIsRecurring}
+                      />
+                    </div>
+
+                    {isRecurring && (
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <div className="space-y-2">
+                          <Label>Frequência</Label>
+                          <Select
+                            value={recurrenceFrequency}
+                            onValueChange={setRecurrenceFrequency}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="monthly">Mensal</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Quantidade de meses</Label>
+                          <Input
+                            type="number"
+                            min="2"
+                            max="60"
+                            value={recurrenceCount}
+                            onChange={(e) => setRecurrenceCount(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Notes - full width */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Observações</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Anotações adicionais..."
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+              </>
               )}
-            </div>
-          )}
+            </fieldset>
+          </form>
+        </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              placeholder="Anotações adicionais..."
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={2}
-            />
-          </div>
-          </>
-          )}
-
-          </fieldset>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {canEdit ? "Cancelar" : "Fechar"}
+        <DialogFooter className="px-6 py-4 border-t">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {canEdit ? "Cancelar" : "Fechar"}
+          </Button>
+          {canEdit && (
+            <Button type="submit" form="transaction-form" disabled={isLoading}>
+              {isLoading 
+                ? "Salvando..." 
+                : editTransaction 
+                  ? "Atualizar" 
+                  : mode === "transfer"
+                    ? "Criar Transferência"
+                    : isRecurring 
+                      ? `Criar ${recurrenceCount} Lançamentos` 
+                      : "Criar Lançamento"
+              }
             </Button>
-            {canEdit && (
-              <Button type="submit" disabled={isLoading}>
-                {isLoading 
-                  ? "Salvando..." 
-                  : editTransaction 
-                    ? "Atualizar" 
-                    : mode === "transfer"
-                      ? "Criar Transferência"
-                      : isRecurring 
-                        ? `Criar ${recurrenceCount} Lançamentos` 
-                        : "Criar Lançamento"
-                }
-              </Button>
-            )}
-          </DialogFooter>
-        </form>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -100,7 +100,7 @@ export function UnitSelector({
       <PopoverContent className="w-full min-w-[300px] p-0" align="start">
         <Command>
           <CommandInput placeholder="Buscar unidade..." />
-          <CommandList>
+          <CommandList className="max-h-[250px] overflow-y-auto" onWheel={(e) => e.stopPropagation()}>
             <CommandEmpty>Nenhuma unidade encontrada.</CommandEmpty>
             <CommandGroup>
               <CommandItem
