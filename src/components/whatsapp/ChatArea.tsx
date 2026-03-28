@@ -19,6 +19,7 @@ import { QuickMessagesPopover } from './QuickMessagesPopover';
 import { AISuggestButton } from './AISuggestButton';
 import { ChatTagsInput } from './ChatTagsInput';
 import { useSignedMediaUrl } from '@/hooks/useSignedMediaUrl';
+import { useWhatsAppTags, useConversationTags } from '@/hooks/useWhatsAppTags';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
