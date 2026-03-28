@@ -90,7 +90,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [savingLead, setSavingLead] = useState(false);
-  const [leads, setLeads] = useState<{ id: string; name: string; email?: string | null; phone?: string | null }[]>([]);
+  const [leads, setLeads] = useState<{ id: string; name: string; email?: string | null; phone?: string | null; origin?: string | null }[]>([]);
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [leadOpen, setLeadOpen] = useState(false);
