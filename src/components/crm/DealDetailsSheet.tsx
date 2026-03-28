@@ -155,7 +155,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
         probability: getProbabilityLabel((deal as any).probability ?? 50),
         expected_close_date: (deal as any).expected_close_date ? new Date((deal as any).expected_close_date) : null,
         temperature: (deal as any).temperature ?? 'warm',
-        lead_id: deal.lead_id ?? null,
+        lead_id: deal?.lead?.id ?? null,
         contact_id: (deal as any).contact_id ?? null,
         unit_id: (deal as any).unit_id ?? null,
         property_id: (deal as any).property_id ?? null,
