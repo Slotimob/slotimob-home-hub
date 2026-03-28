@@ -376,22 +376,6 @@ export function ChatArea({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-1" align="end" side="bottom">
-                {onCloseConversation && (
-                  <button
-                    onClick={onCloseConversation}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors text-destructive"
-                  >
-                    Finalizar Atendimento
-                  </button>
-                )}
-                {onReturnToQueue && (
-                  <button
-                    onClick={onReturnToQueue}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors"
-                  >
-                    Devolver para Fila
-                  </button>
-                )}
                 {showCrmToggle && (
                   <button
                     onClick={onToggleCrm}
@@ -400,8 +384,26 @@ export function ChatArea({
                     Painel CRM
                   </button>
                 )}
-                {!onCloseConversation && !onReturnToQueue && (
-                  <p className="px-3 py-2 text-xs text-muted-foreground">Sem ações disponíveis</p>
+                {/* Mobile: agent reassign */}
+                {isOwner && teamMembers.length > 0 && onReassign && conversationId && (
+                  <div className="sm:hidden px-2 py-1">
+                    <Select
+                      value={assignedUserId || ''}
+                      onValueChange={(val) => onReassign(conversationId, val)}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue placeholder="Atribuir agente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teamMembers.map(m => (
+                          <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {!showCrmToggle && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">Sem ações adicionais</p>
                 )}
               </PopoverContent>
             </Popover>
