@@ -11,6 +11,8 @@ import { ConfigureObligationsDialog } from "@/components/assets/ConfigureObligat
 import { AssetHealthEmptyState } from "@/components/assets/AssetHealthEmptyState";
 import { LeaseManagementSheet } from "@/components/assets/LeaseManagementSheet";
 import { CreateLeaseWizard } from "@/components/assets/CreateLeaseWizard";
+import { LinkTransactionDialog } from "@/components/assets/LinkTransactionDialog";
+import { AssetManagementGuide } from "@/components/assets/AssetManagementGuide";
 import { MonthYearPicker } from "@/components/schedule/MonthYearPicker";
 import { SEOHead } from "@/components/SEOHead";
 import { Badge } from "@/components/ui/badge";
@@ -24,14 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -47,11 +41,10 @@ import {
   RefreshCw,
   LayoutGrid,
   List,
-  MessageSquare,
-  Send,
   Download,
   FileText,
   FileSpreadsheet,
+  BookOpen,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -99,14 +92,11 @@ const AtivosEmGestao = () => {
     ownerContactId?: string | null;
   } | null>(null);
 
-  const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false);
-  const [selectedObligationForMessage, setSelectedObligationForMessage] = useState<{
-    asset: AssetHealthType;
-    obligation: ObligationHealth;
-  } | null>(null);
-  const [whatsAppMessage, setWhatsAppMessage] = useState("");
-  const [isSendingMessage, setIsSendingMessage] = useState(false);
-  const whatsAppConnection = null;
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkObligation, setLinkObligation] = useState<ObligationHealth | null>(null);
+  const [linkUnitId, setLinkUnitId] = useState("");
+  const [linkUnitName, setLinkUnitName] = useState("");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -217,50 +207,14 @@ const AtivosEmGestao = () => {
     toast({ title: "CSV gerado!", description: `Relatório com ${overdueItems.length} pendência(s) exportado.` });
   };
 
-  const handleWhatsAppClick = (asset: AssetHealthType, obligation: ObligationHealth) => {
-    if (!whatsAppConnection) {
-      toast({ title: "WhatsApp não conectado", description: "Conecte o WhatsApp primeiro nas configurações.", variant: "destructive" });
-      return;
-    }
-    const now = new Date();
-    const monthYear = format(now, "MMMM/yyyy", { locale: ptBR });
-    const capitalizedMonthYear = monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
-    const statusText = obligation.status === "overdue" ? "está em atraso" : "está pendente";
-    const defaultMessage = `Olá! \n\nReferente ao imóvel *${asset.unitNumber}*${asset.propertyName ? ` (${asset.propertyName})` : ""}, a obrigação de *${obligation.label}* de ${capitalizedMonthYear} ${statusText}.\n\nPor gentileza, envie o comprovante de pagamento ou entre em contato para regularização.\n\nAtenciosamente.`;
-    setSelectedObligationForMessage({ asset, obligation });
-    setWhatsAppMessage(defaultMessage);
-    setWhatsAppDialogOpen(true);
+  const handleLinkClick = (asset: AssetHealthType, obligation: ObligationHealth) => {
+    setLinkUnitId(asset.unitId);
+    setLinkUnitName(asset.unitNumber);
+    setLinkObligation(obligation);
+    setLinkDialogOpen(true);
   };
 
-  const handleSendWhatsAppMessage = async () => {
-    if (!selectedObligationForMessage || !whatsAppMessage.trim()) return;
-    setIsSendingMessage(true);
-    try {
-      const { data: unitData, error: unitError } = await supabase
-        .from("units")
-        .select(`owner:owners(phone, name), lead:leads(phone, name)`)
-        .eq("id", selectedObligationForMessage.asset.unitId)
-        .single();
-      if (unitError) throw unitError;
-      const phone = unitData?.owner?.phone || unitData?.lead?.phone;
-      if (!phone) {
-        toast({ title: "Telefone não encontrado", description: "O proprietário/inquilino não tem telefone cadastrado.", variant: "destructive" });
-        return;
-      }
-      const { error: sendError } = await supabase.functions.invoke("whatsapp-send", {
-        body: { phone: phone.replace(/\D/g, ""), message: whatsAppMessage },
-      });
-      if (sendError) throw sendError;
-      toast({ title: "Mensagem enviada!", description: `Cobrança enviada para ${unitData?.owner?.name || unitData?.lead?.name || phone}` });
-      setWhatsAppDialogOpen(false);
-      setSelectedObligationForMessage(null);
-      setWhatsAppMessage("");
-    } catch (error: any) {
-      toast({ title: "Erro ao enviar mensagem", description: error.message, variant: "destructive" });
-    } finally {
-      setIsSendingMessage(false);
-    }
-  };
+  const competencyPeriod = format(selectedMonth, "yyyy-MM");
 
   if (loading) {
     return (
@@ -285,12 +239,18 @@ const AtivosEmGestao = () => {
       <AppLayout title="Aluguéis">
         <div className="space-y-6">
           {/* Header */}
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Gestão de Ativos</h1>
-            <p className="text-muted-foreground">
-              Monitore a saúde operacional dos seus imóveis em tempo real
-            </p>
-          </div>
+           <div className="flex items-center justify-between flex-wrap gap-2">
+             <div>
+               <h1 className="text-2xl font-bold tracking-tight">Gestão de Ativos</h1>
+               <p className="text-muted-foreground">
+                 Monitore a saúde operacional dos seus imóveis em tempo real
+               </p>
+             </div>
+             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setGuideOpen(true)}>
+               <BookOpen className="h-4 w-4" />
+               Como funciona?
+             </Button>
+           </div>
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
@@ -439,8 +399,7 @@ const AtivosEmGestao = () => {
                   asset={asset}
                   onConfigureClick={handleConfigureClick}
                   onManageClick={handleAssetClick}
-                  onWhatsAppClick={whatsAppConnection ? handleWhatsAppClick : undefined}
-                  referenceDate={selectedMonth}
+                  onLinkClick={handleLinkClick}
                 />
               ))}
             </div>
@@ -452,8 +411,7 @@ const AtivosEmGestao = () => {
                   asset={asset}
                   onConfigureClick={handleConfigureClick}
                   onManageClick={handleAssetClick}
-                  onWhatsAppClick={whatsAppConnection ? handleWhatsAppClick : undefined}
-                  referenceDate={selectedMonth}
+                  onLinkClick={handleLinkClick}
                 />
               ))}
             </div>
@@ -470,38 +428,15 @@ const AtivosEmGestao = () => {
         <ConfigureObligationsDialog open={configDialogOpen} onOpenChange={setConfigDialogOpen} unitId={selectedUnit?.id || null} unitName={selectedUnit?.name || ""} />
         <AssetDetailDialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen} asset={selectedAsset} />
 
-        <Dialog open={whatsAppDialogOpen} onOpenChange={setWhatsAppDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Enviar Cobrança via WhatsApp
-              </DialogTitle>
-              <DialogDescription>
-                {selectedObligationForMessage && (
-                  <>Cobrança de <strong>{selectedObligationForMessage.obligation.label}</strong> para o imóvel <strong>{selectedObligationForMessage.asset.unitNumber}</strong></>
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Mensagem</label>
-                <textarea
-                  className="w-full mt-1.5 p-3 text-sm border rounded-md min-h-[150px] resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={whatsAppMessage}
-                  onChange={(e) => setWhatsAppMessage(e.target.value)}
-                  placeholder="Digite a mensagem..."
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setWhatsAppDialogOpen(false)} disabled={isSendingMessage}>Cancelar</Button>
-              <Button onClick={handleSendWhatsAppMessage} disabled={isSendingMessage || !whatsAppMessage.trim()}>
-                {isSendingMessage ? "Enviando..." : (<><Send className="h-4 w-4 mr-2" />Enviar Mensagem</>)}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <AssetManagementGuide open={guideOpen} onOpenChange={setGuideOpen} />
+        <LinkTransactionDialog
+          open={linkDialogOpen}
+          onOpenChange={setLinkDialogOpen}
+          unitId={linkUnitId}
+          unitName={linkUnitName}
+          obligation={linkObligation}
+          competencyPeriod={competencyPeriod}
+        />
 
         <LeaseManagementSheet open={leaseSheetOpen} onOpenChange={setLeaseSheetOpen} asset={selectedAsset} onCreateLease={handleCreateLease} onEditUnit={handleEditUnit} />
 
