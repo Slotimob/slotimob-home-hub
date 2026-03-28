@@ -570,74 +570,45 @@ const Integrations = () => {
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                   <Globe className="h-6 w-6 text-primary" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-xl">Portais Imobiliários</CardTitle>
-                  <CardDescription>Publicação via Feed XML</CardDescription>
+                  <CardDescription>Publique seus imóveis no Zap, VivaReal, OLX e outros portais via Feed XML.</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Compatible portals logos */}
+              <div className="flex flex-wrap gap-2">
+                {COMPATIBLE_PORTALS.map((portal) => (
+                  <Badge key={portal.name} variant="secondary" className="gap-1">
+                    <span>{portal.logo}</span>
+                    {portal.name}
+                  </Badge>
+                ))}
+              </div>
+
+              {/* Status summary */}
               <div className="flex items-center gap-2">
-                <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Ativo
+                <Badge className={publishedCount > 0
+                  ? 'bg-green-500/10 text-green-600 border-green-500/20'
+                  : 'bg-muted text-muted-foreground'
+                }>
+                  {publishedCount > 0 ? (
+                    <><CheckCircle className="h-3 w-3 mr-1" /> {publishedCount} {publishedCount === 1 ? 'imóvel no feed' : 'imóveis no feed'}</>
+                  ) : (
+                    'Nenhum imóvel publicado'
+                  )}
                 </Badge>
-                <Badge variant="outline">Padrão Zap</Badge>
               </div>
 
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Publique seus imóveis automaticamente nos principais portais do Brasil.
-              </p>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">URL do Feed XML</label>
-                <div className="flex gap-2">
-                  <Input value={xmlFeedUrl || 'Token não disponível'} readOnly className="font-mono text-xs bg-muted" />
-                  <Button variant="outline" size="icon" onClick={copyXmlUrl} disabled={!xmlToken}>
-                    {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Portais Compatíveis</label>
-                <div className="flex flex-wrap gap-2">
-                  {COMPATIBLE_PORTALS.map((portal) => (
-                    <Badge key={portal.name} variant="secondary" className="gap-1">
-                      <span>{portal.logo}</span>
-                      {portal.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-lg bg-blue-500/5 border border-blue-500/20 p-4 space-y-2">
-                <h4 className="font-medium text-sm flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4 text-blue-500" />
-                  Como Configurar
-                </h4>
-                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Copie a URL do Feed XML acima</li>
-                  <li>Acesse a área de "Carga de Dados" do portal</li>
-                  <li>Cole a URL no campo indicado</li>
-                  <li>Seus imóveis serão atualizados automaticamente</li>
-                </ol>
-              </div>
+              {/* Configure Button */}
+              <Button className="w-full" onClick={() => setShowPortalSetup(true)}>
+                <Plug className="h-4 w-4 mr-2" />
+                Configurar Integração
+              </Button>
             </CardContent>
           </Card>
         </div>
-
-        <Card className="bg-muted/30">
-          <CardContent className="flex items-center gap-4 py-4">
-            <Building2 className="h-8 w-8 text-muted-foreground" />
-            <div>
-              <p className="font-medium">Identificação Visual</p>
-              <p className="text-sm text-muted-foreground">
-                Imóveis incluídos no Feed XML são identificados com uma badge "Publicado no Feed" na listagem de unidades.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <WhatsAppDisclaimerDialog
