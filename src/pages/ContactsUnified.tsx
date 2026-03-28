@@ -418,6 +418,37 @@ const ContactsUnified = () => {
           counts={categoryCounts}
         />
 
+        {/* Selection Mode Bar */}
+        {selectionMode && (
+          <div className="flex items-center gap-2 p-3 rounded-lg border bg-primary/5 border-primary/20">
+            <Checkbox
+              checked={selectedContacts.size === paginatedContacts.length && paginatedContacts.length > 0}
+              onCheckedChange={handleSelectAll}
+            />
+            <span className="text-sm font-medium flex-1">
+              {selectedContacts.size > 0 
+                ? `${selectedContacts.size} selecionado${selectedContacts.size > 1 ? 's' : ''}`
+                : 'Selecione contatos'}
+            </span>
+            {selectedContacts.size > 0 && canDeleteContact && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDeleteCheck}
+                disabled={isBulkDeleting}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Excluir ({selectedContacts.size})
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={handleExitSelectionMode}>
+              <X className="h-4 w-4 mr-1" />
+              Cancelar
+            </Button>
+          </div>
+        )}
+
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
@@ -441,6 +472,14 @@ const ContactsUnified = () => {
             >
               <X className="h-4 w-4" />
               <span className="hidden sm:inline">Limpar</span>
+            </Button>
+          )}
+          
+          {/* Select mode toggle */}
+          {canDeleteContact && filteredContacts.length > 0 && !selectionMode && (
+            <Button variant="outline" size="sm" onClick={() => setSelectionMode(true)} className="gap-2">
+              <CheckSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Selecionar</span>
             </Button>
           )}
           
