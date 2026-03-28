@@ -193,39 +193,52 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
 
         {/* Tag filters */}
         {allTags.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap">
-            <Tag className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-            {allTags.map(tag => {
-              const isActive = selectedTagIds.includes(tag.id);
-              return (
-                <button
-                  key={tag.id}
-                  onClick={() => toggleTagFilter(tag.id)}
-                  className={cn(
-                    'text-[10px] px-2 py-0.5 rounded-full border transition-colors',
-                    isActive
-                      ? 'font-semibold'
-                      : 'opacity-70 hover:opacity-100'
-                  )}
-                  style={{
-                    backgroundColor: isActive ? tag.color + '25' : 'transparent',
-                    color: tag.color,
-                    borderColor: tag.color + '50',
-                  }}
-                >
-                  {tag.name}
-                </button>
-              );
-            })}
-            {selectedTagIds.length > 0 && (
-              <button
-                onClick={() => setSelectedTagIds([])}
-                className="text-[10px] px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full justify-start gap-2 h-8 text-xs font-normal">
+                <Tag className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                {selectedTagIds.length > 0 ? (
+                  <span className="truncate">
+                    {selectedTagIds.length} tag{selectedTagIds.length > 1 ? 's' : ''} selecionada{selectedTagIds.length > 1 ? 's' : ''}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">Filtrar por tags</span>
+                )}
+                {selectedTagIds.length > 0 && (
+                  <button
+                    className="ml-auto"
+                    onClick={(e) => { e.stopPropagation(); setSelectedTagIds([]); }}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                  </button>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="start">
+              <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                {allTags.map(tag => {
+                  const isActive = selectedTagIds.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      onClick={() => toggleTagFilter(tag.id)}
+                      className={cn(
+                        'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors text-left',
+                        isActive ? 'bg-accent' : 'hover:bg-muted'
+                      )}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      <span className="flex-1 truncate">{tag.name}</span>
+                      {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
 
         {isOwner && teamMembers.length > 0 && onAgentFilterChange && (

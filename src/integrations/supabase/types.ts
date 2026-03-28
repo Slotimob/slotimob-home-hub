@@ -2645,6 +2645,7 @@ export type Database = {
       proposals: {
         Row: {
           broker_id: string
+          contact_id: string | null
           created_at: string
           deal_id: string | null
           id: string
@@ -2660,6 +2661,7 @@ export type Database = {
         }
         Insert: {
           broker_id: string
+          contact_id?: string | null
           created_at?: string
           deal_id?: string | null
           id?: string
@@ -2675,6 +2677,7 @@ export type Database = {
         }
         Update: {
           broker_id?: string
+          contact_id?: string | null
           created_at?: string
           deal_id?: string | null
           id?: string
@@ -2694,6 +2697,13 @@ export type Database = {
             columns: ["broker_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
           {

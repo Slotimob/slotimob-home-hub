@@ -771,6 +771,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
         preSelectedUnitId={activeDeal?.unit_id || activeDeal?.unit?.id || undefined}
         initialLeadName={contact?.name || conversation?.contact_name || ''}
         dealId={activeDeal?.id || undefined}
+        contactId={contactId || undefined}
         onProposalGenerated={async (pdfBlob, proposalId) => {
           // Log a note in the chat
           if (conversation?.id) {

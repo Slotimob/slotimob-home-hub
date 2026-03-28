@@ -540,7 +540,7 @@ export function useContactDeals(contactId: string | null, refetchKey: number = 0
           *,
           custom_stage:pipeline_stages(name, color),
           property:properties(name),
-          unit:units(title)
+          unit:units(unit_number)
         `)
         .eq('contact_id', contactId)
         .not('stage', 'in', '("won","lost")')
