@@ -436,38 +436,15 @@ const AtivosEmGestao = () => {
         <ConfigureObligationsDialog open={configDialogOpen} onOpenChange={setConfigDialogOpen} unitId={selectedUnit?.id || null} unitName={selectedUnit?.name || ""} />
         <AssetDetailDialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen} asset={selectedAsset} />
 
-        <Dialog open={whatsAppDialogOpen} onOpenChange={setWhatsAppDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Enviar Cobrança via WhatsApp
-              </DialogTitle>
-              <DialogDescription>
-                {selectedObligationForMessage && (
-                  <>Cobrança de <strong>{selectedObligationForMessage.obligation.label}</strong> para o imóvel <strong>{selectedObligationForMessage.asset.unitNumber}</strong></>
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Mensagem</label>
-                <textarea
-                  className="w-full mt-1.5 p-3 text-sm border rounded-md min-h-[150px] resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={whatsAppMessage}
-                  onChange={(e) => setWhatsAppMessage(e.target.value)}
-                  placeholder="Digite a mensagem..."
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setWhatsAppDialogOpen(false)} disabled={isSendingMessage}>Cancelar</Button>
-              <Button onClick={handleSendWhatsAppMessage} disabled={isSendingMessage || !whatsAppMessage.trim()}>
-                {isSendingMessage ? "Enviando..." : (<><Send className="h-4 w-4 mr-2" />Enviar Mensagem</>)}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <AssetManagementGuide open={guideOpen} onOpenChange={setGuideOpen} />
+        <LinkTransactionDialog
+          open={linkDialogOpen}
+          onOpenChange={setLinkDialogOpen}
+          unitId={linkUnitId}
+          unitName={linkUnitName}
+          obligation={linkObligation}
+          competencyPeriod={competencyPeriod}
+        />
 
         <LeaseManagementSheet open={leaseSheetOpen} onOpenChange={setLeaseSheetOpen} asset={selectedAsset} onCreateLease={handleCreateLease} onEditUnit={handleEditUnit} />
 
