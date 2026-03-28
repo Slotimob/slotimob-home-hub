@@ -17,10 +17,12 @@ export function formatPhoneForWhatsApp(phone: string): string {
   // but WhatsApp's canonical JID often drops the leading 9.
   // If we have 55 + 2-digit DDD + 9 digits (13 total), and DDD is 11–28,
   // remove the 9th digit (first digit after DDD) to match the canonical format.
+  // 9th digit rule: All Brazilian mobile numbers now use the 9th digit,
+  // but WhatsApp's canonical JID often drops it. If we have 55 + 2-digit DDD
+  // + 9 digits (13 total) and the first digit after DDD is '9', remove it.
   if (cleaned.length === 13 && cleaned.startsWith('55')) {
-    const ddd = parseInt(cleaned.substring(2, 4), 10);
-    if (ddd >= 11 && ddd <= 28) {
-      // Remove the 5th character (index 4), which is the leading '9' after DDD
+    const fifthChar = cleaned.charAt(4);
+    if (fifthChar === '9') {
       cleaned = cleaned.substring(0, 4) + cleaned.substring(5);
     }
   }
