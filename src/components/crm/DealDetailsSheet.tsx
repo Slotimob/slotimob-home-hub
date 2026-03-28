@@ -14,7 +14,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2 } from 'lucide-react';
+import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2, Pencil } from 'lucide-react';
+import { ContactSelector } from '@/components/ContactSelector';
+import { UnitSelector } from '@/components/finance/UnitSelector';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -65,6 +67,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
   const [isDeleting, setIsDeleting] = useState(false);
   const [linkedContact, setLinkedContact] = useState<LinkedContact | null>(null);
   const [editedDeal, setEditedDeal] = useState<{
+    title: string;
     estimated_value: number | null;
     commission_rate: number;
     notes: string | null;
@@ -72,7 +75,12 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     probability: string;
     expected_close_date: Date | null;
     temperature: 'hot' | 'warm' | 'cold';
+    lead_id: string | null;
+    contact_id: string | null;
+    unit_id: string | null;
+    property_id: string | null;
   }>({
+    title: (deal as any)?.title ?? '',
     estimated_value: deal?.estimated_value ?? null,
     commission_rate: deal?.estimated_commission && deal?.estimated_value 
       ? (deal.estimated_commission / deal.estimated_value) * 100 
@@ -82,6 +90,10 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
     probability: getProbabilityLabel((deal as any)?.probability ?? 50),
     expected_close_date: (deal as any)?.expected_close_date ? new Date((deal as any).expected_close_date) : null,
     temperature: (deal as any)?.temperature ?? 'warm',
+    lead_id: deal?.lead?.id ?? null,
+    contact_id: (deal as any)?.contact_id ?? null,
+    unit_id: (deal as any)?.unit_id ?? null,
+    property_id: (deal as any)?.property_id ?? null,
   });
 
   // Load linked contact from unit
@@ -135,6 +147,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
   useEffect(() => {
     if (deal && open) {
       setEditedDeal({
+        title: (deal as any).title ?? '',
         estimated_value: deal.estimated_value,
         commission_rate: deal.estimated_commission && deal.estimated_value 
           ? (deal.estimated_commission / deal.estimated_value) * 100 
@@ -144,6 +157,10 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
         probability: getProbabilityLabel((deal as any).probability ?? 50),
         expected_close_date: (deal as any).expected_close_date ? new Date((deal as any).expected_close_date) : null,
         temperature: (deal as any).temperature ?? 'warm',
+        lead_id: deal?.lead?.id ?? null,
+        contact_id: (deal as any).contact_id ?? null,
+        unit_id: (deal as any).unit_id ?? null,
+        property_id: (deal as any).property_id ?? null,
       });
     }
   }, [deal?.id, open]);
@@ -156,6 +173,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
       const { error } = await supabase
         .from('deals')
         .update({
+          title: editedDeal.title || null,
           estimated_value: editedDeal.estimated_value,
           estimated_commission: calculatedCommission,
           notes: editedDeal.notes,
@@ -163,6 +181,9 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
           probability: getProbabilityValue(editedDeal.probability),
           expected_close_date: editedDeal.expected_close_date?.toISOString().split('T')[0] ?? null,
           temperature: editedDeal.temperature,
+          contact_id: editedDeal.contact_id,
+          unit_id: editedDeal.unit_id,
+          property_id: editedDeal.property_id,
         })
         .eq('id', deal.id);
 
@@ -308,6 +329,48 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
             </TabsList>
 
             <TabsContent value="details" className="space-y-4 pt-4">
+              {/* Title */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <Pencil className="h-3 w-3" />
+                  Título da Negociação
+                </Label>
+                <Input
+                  value={editedDeal.title}
+                  onChange={(e) => setEditedDeal({ ...editedDeal, title: e.target.value })}
+                  placeholder="Ex: Venda Apt 101"
+                  disabled={!canEdit}
+                />
+              </div>
+
+              {/* Contact */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  Contato
+                </Label>
+                <ContactSelector
+                  value={editedDeal.contact_id}
+                  onChange={(val) => setEditedDeal({ ...editedDeal, contact_id: val })}
+                  placeholder="Selecione o contato..."
+                  disabled={!canEdit}
+                />
+              </div>
+
+              {/* Unit / Property */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <Building2 className="h-3 w-3" />
+                  Imóvel de Interesse
+                </Label>
+                <UnitSelector
+                  value={editedDeal.unit_id ?? ''}
+                  onChange={(val) => setEditedDeal({ ...editedDeal, unit_id: val || null })}
+                  placeholder="Selecione um imóvel (opcional)"
+                  disabled={!canEdit}
+                />
+              </div>
+
               {/* Temperature */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">

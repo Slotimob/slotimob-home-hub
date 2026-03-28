@@ -138,7 +138,7 @@ export const DealCard = ({
         isSelected && 'ring-2 ring-primary bg-primary/5',
       )}
     >
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="p-2 sm:p-2.5 space-y-1.5">
         {/* Unit Unavailable Warning - compact */}
         {isUnitUnavailable && (
           <div className="flex items-center gap-1.5 text-xs text-destructive">
@@ -173,7 +173,7 @@ export const DealCard = ({
           >
             <div className="flex items-start justify-between gap-1">
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-sm text-foreground truncate leading-tight">
+                <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate leading-tight">
                   {(deal as any).title || deal.lead?.name || 'Sem título'}
                 </h4>
                 {/* Contact name - secondary */}
@@ -209,10 +209,10 @@ export const DealCard = ({
         {/* Value - compact prominent display */}
         {deal.estimated_value ? (
           <div 
-            className="py-1.5 px-2.5 rounded-md bg-primary/8 cursor-pointer"
+            className="py-1 px-2 rounded-md bg-primary/8 cursor-pointer"
             onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
           >
-            <span className="text-sm font-bold text-foreground">
+            <span className="text-xs sm:text-sm font-bold text-foreground">
               {deal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
           </div>
