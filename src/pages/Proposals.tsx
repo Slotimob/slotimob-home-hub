@@ -16,7 +16,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, CheckCircle2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, CheckCircle2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';

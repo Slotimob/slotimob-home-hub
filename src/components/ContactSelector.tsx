@@ -179,7 +179,7 @@ export function ContactSelector({
             value={search}
             onValueChange={setSearch}
           />
-          <CommandList>
+          <CommandList className="max-h-[250px] overflow-y-auto" onWheel={(e) => e.stopPropagation()}>
             <CommandEmpty>
               {loading ? (
                 <div className="flex items-center justify-center py-6 gap-2">

@@ -145,11 +145,29 @@ export const useProposals = () => {
     },
   });
 
+  const deleteProposal = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('proposals')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proposals', effectiveBrokerId] });
+      toast({ title: 'Proposta excluída' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao excluir proposta', description: error.message, variant: 'destructive' });
+    },
+  });
+
   return {
     proposals: proposalsQuery.data ?? [],
     isLoading: proposalsQuery.isLoading,
     createProposal,
     updateProposal,
     updateProposalStatus,
+    deleteProposal,
   };
 };
