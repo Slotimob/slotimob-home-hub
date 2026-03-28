@@ -402,7 +402,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 <div className="space-y-1.5">
                   <div className="p-2 rounded-md bg-green-50 border border-green-200">
                     <p className="text-xs font-medium text-green-800">
-                      {activeDealsCount} negociação{activeDealsCount > 1 ? 'ões' : ''} ativa{activeDealsCount > 1 ? 's' : ''}
+                      {activeDealsCount} negociaç{activeDealsCount > 1 ? 'ões ativas' : 'ão ativa'}
                     </p>
                   </div>
                   {allDealsForDisplay.slice(0, 3).map((deal: any) => (
