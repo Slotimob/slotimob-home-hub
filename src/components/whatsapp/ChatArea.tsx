@@ -19,6 +19,7 @@ import { QuickMessagesPopover } from './QuickMessagesPopover';
 import { AISuggestButton } from './AISuggestButton';
 import { ChatTagsInput } from './ChatTagsInput';
 import { useSignedMediaUrl } from '@/hooks/useSignedMediaUrl';
+import { useWhatsAppTags, useConversationTags } from '@/hooks/useWhatsAppTags';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
@@ -183,6 +184,8 @@ export function ChatArea({
   const [messageText, setMessageText] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { tags: allTags, createTag } = useWhatsAppTags();
+  const { tagIds: conversationTagIds, addTag: addConvTag, removeTag: removeConvTag } = useConversationTags(conversation?.id || null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const agentName = useAgentName(assignedUserId || null, teamMembers);
@@ -305,9 +308,11 @@ export function ChatArea({
               </p>
               <div className="hidden sm:block">
                 <ChatTagsInput
-                  conversationId={conversation.id}
-                  tags={((conversation as any).tags as string[]) || []}
-                  onTagsChange={() => {}}
+                  conversationTagIds={conversationTagIds}
+                  allTags={allTags}
+                  onAddTag={addConvTag}
+                  onRemoveTag={removeConvTag}
+                  onCreateTag={createTag}
                   compact
                 />
               </div>
