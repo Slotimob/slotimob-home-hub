@@ -178,8 +178,6 @@ export function ChatArea({
   isOwner = false,
   onReassign,
   conversationId,
-  onCloseConversation,
-  onReturnToQueue,
   onOpenBuyCredits,
 }: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
