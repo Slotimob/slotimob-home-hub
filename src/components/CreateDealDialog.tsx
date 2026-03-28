@@ -313,7 +313,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       const dealPayload = {
         lead_id: formData.lead_id,
         title: formData.title || null,
-        property_id: propertyId!,
+        property_id: propertyId || null,
         unit_id: formData.unit_id || null,
         estimated_value: formData.estimated_value ? parseFloat(formData.estimated_value) : null,
         estimated_commission: formData.estimated_commission ? parseFloat(formData.estimated_commission) : null,
