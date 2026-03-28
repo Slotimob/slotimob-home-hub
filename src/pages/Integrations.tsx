@@ -241,14 +241,6 @@ const Integrations = () => {
     ? `https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/xml-feed?token=${feedToken}`
     : '';
 
-  const copyXmlUrl = () => {
-    if (xmlFeedUrl) {
-      navigator.clipboard.writeText(xmlFeedUrl);
-      setCopied(true);
-      toast({ title: 'URL copiada!' });
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   // Count published units for portal
   const { data: publishedCount = 0 } = useQuery({
