@@ -18,11 +18,14 @@ export type ObligationStatus = "paid" | "pending" | "overdue" | "ignored";
 
 export type ResponsibleRole = "owner" | "tenant" | "agency";
 
+export type ControlType = "financial" | "managerial";
+
 export interface ObligationConfig {
   active: boolean;
   due_day?: number;
   responsible?: ResponsibleRole;
   installation_code?: string;
+  control_type?: ControlType;
 }
 
 export interface ObligationsConfig {
