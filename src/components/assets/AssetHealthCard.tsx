@@ -15,8 +15,7 @@ interface AssetHealthCardProps {
   asset: AssetHealth;
   onConfigureClick: (unitId: string) => void;
   onManageClick: (asset: AssetHealth) => void;
-  onWhatsAppClick?: (asset: AssetHealth, obligation: ObligationHealth) => void;
-  referenceDate?: Date;
+  onLinkClick?: (asset: AssetHealth, obligation: ObligationHealth) => void;
 }
 
 const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
