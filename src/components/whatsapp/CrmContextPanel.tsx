@@ -506,66 +506,6 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           </div>
         </div>
 
-        {/* Active Deal Details */}
-        {dealsLoading ? (
-          <Skeleton className="h-24 w-full rounded-lg" />
-        ) : activeDeal ? (
-          <div>
-            <Separator className="mb-3" />
-            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4" />
-              Negociação Atual
-            </h4>
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="p-3 space-y-2">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Estágio</span>
-                  <Select
-                    value={activeDeal.custom_stage_id ? undefined : activeDeal.stage}
-                    onValueChange={handleStageChange}
-                    disabled={updatingStage || !!activeDeal.custom_stage_id}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder={activeDeal.custom_stage?.name || STAGE_LABELS[activeDeal.stage] || activeDeal.stage} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(STAGE_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value} className="text-xs">
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {updatingStage && (
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Atualizando...
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">Valor</span>
-                    <p className="font-semibold text-foreground">
-                      {activeDeal.estimated_value
-                        ? activeDeal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                        : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Previsão</span>
-                    <p className="font-semibold text-foreground">
-                      {activeDeal.expected_close_date
-                        ? format(new Date(activeDeal.expected_close_date), "dd/MM/yyyy", { locale: ptBR })
-                        : '—'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : null}
 
         <Separator />
 
