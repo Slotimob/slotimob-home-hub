@@ -49,11 +49,10 @@ import {
   RefreshCw,
   LayoutGrid,
   List,
-  MessageSquare,
-  Send,
   Download,
   FileText,
   FileSpreadsheet,
+  BookOpen,
 } from "lucide-react";
 import {
   DropdownMenu,
