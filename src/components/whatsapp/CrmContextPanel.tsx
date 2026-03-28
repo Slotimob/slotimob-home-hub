@@ -26,6 +26,7 @@ import { normalizePhone } from '@/lib/utils';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { CreateDealFromChatDialog } from './CreateDealFromChatDialog';
 import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
+import { CreateProposalSheet } from '@/components/proposals/CreateProposalSheet';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
@@ -85,6 +86,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [directDeal, setDirectDeal] = useState<any>(null);
+  const [isProposalOpen, setIsProposalOpen] = useState(false);
 
   // ── Manual contact linking via Sheet ──
   const [isLinkingSheetOpen, setIsLinkingSheetOpen] = useState(false);
@@ -427,16 +429,10 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                 size="sm"
                 className="w-full gap-2 h-8 text-xs"
                 disabled={!activeDeal}
-                onClick={() => {
-                  const unitId = activeDeal?.unit_id || activeDeal?.unit?.id;
-                  const params = new URLSearchParams({ create: 'true' });
-                  if (unitId) params.set('unitId', unitId);
-                  if (activeDeal?.id) params.set('dealId', activeDeal.id);
-                  navigate(`/gestao/propostas?${params.toString()}`);
-                }}
+                onClick={() => setIsProposalOpen(true)}
               >
                 <FileSignature className="h-3.5 w-3.5" />
-                Gerar e Enviar Proposta
+                Gerar Proposta
               </Button>
               {!activeDeal && (
                 <p className="text-[10px] text-muted-foreground mt-1">(Requer uma negociação ativa)</p>
@@ -678,6 +674,36 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Proposal Sheet (embedded) */}
+      <CreateProposalSheet
+        open={isProposalOpen}
+        onOpenChange={setIsProposalOpen}
+        preSelectedUnitId={activeDeal?.unit_id || activeDeal?.unit?.id || undefined}
+        initialLeadName={contact?.name || conversation?.contact_name || ''}
+        dealId={activeDeal?.id || undefined}
+        onProposalGenerated={async (pdfBlob, proposalId) => {
+          // Log a note in the chat
+          if (conversation?.id) {
+            try {
+              await supabase
+                .from('whatsapp_messages')
+                .insert({
+                  conversation_id: conversation.id,
+                  message_id: `proposal-${Date.now()}`,
+                  direction: 'outgoing' as const,
+                  message_type: 'text' as const,
+                  is_internal_note: true,
+                  content: `📄 Proposta gerada (ID: ${proposalId?.slice(0, 8)}...)`,
+                  status: 'read' as const,
+                  sent_at: new Date().toISOString(),
+                });
+            } catch (e) {
+              console.error('Error logging proposal note:', e);
+            }
+          }
+        }}
+      />
     </ScrollArea>
   );
 }

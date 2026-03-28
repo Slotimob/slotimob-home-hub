@@ -39,8 +39,6 @@ interface ChatAreaProps {
   isOwner?: boolean;
   onReassign?: (conversationId: string, newUserId: string) => void;
   conversationId?: string | null;
-  onCloseConversation?: () => void;
-  onReturnToQueue?: () => void;
   onOpenBuyCredits?: () => void;
 }
 
@@ -180,8 +178,6 @@ export function ChatArea({
   isOwner = false,
   onReassign,
   conversationId,
-  onCloseConversation,
-  onReturnToQueue,
   onOpenBuyCredits,
 }: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
@@ -245,6 +241,15 @@ export function ChatArea({
   const isPhoneOnly = /^\d/.test(displayName);
   const initials = isPhoneOnly ? '' : displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
 
+  const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+    pending: { label: 'Triagem', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+    active: { label: 'Atendimento', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    closed: { label: 'Fechado', color: 'bg-muted text-muted-foreground border-border' },
+    waiting: { label: 'Aguardando', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  };
+  const currentStatus = (conversation as any).status || 'pending';
+  const statusCfg = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.pending;
+
   return (
     <div className="flex-1 flex flex-col h-full min-w-0">
       {/* Chat Header */}
@@ -268,7 +273,7 @@ export function ChatArea({
               <h3 className="font-semibold text-sm text-foreground truncate">{displayName}</h3>
               {conversation.id && (
                 <Select
-                  value={(conversation as any).status || 'pending'}
+                  value={currentStatus}
                   onValueChange={async (newStatus) => {
                     try {
                       await supabase
@@ -281,13 +286,13 @@ export function ChatArea({
                     }
                   }}
                 >
-                  <SelectTrigger className="h-5 w-auto min-w-0 text-[10px] border-none bg-muted/60 px-1.5 py-0 gap-0.5 font-normal">
+                  <SelectTrigger className={cn("h-5 w-auto min-w-0 text-[10px] border px-1.5 py-0 gap-0.5 font-medium rounded-full", statusCfg.color)}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending" className="text-xs">Triagem</SelectItem>
-                    <SelectItem value="active" className="text-xs">Atendimento</SelectItem>
-                    <SelectItem value="closed" className="text-xs">Fechado</SelectItem>
+                    <SelectItem value="pending" className="text-xs">🟡 Triagem</SelectItem>
+                    <SelectItem value="active" className="text-xs">🟢 Atendimento</SelectItem>
+                    <SelectItem value="closed" className="text-xs">⚫ Fechado</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -371,22 +376,6 @@ export function ChatArea({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-1" align="end" side="bottom">
-                {onCloseConversation && (
-                  <button
-                    onClick={onCloseConversation}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors text-destructive"
-                  >
-                    Finalizar Atendimento
-                  </button>
-                )}
-                {onReturnToQueue && (
-                  <button
-                    onClick={onReturnToQueue}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md transition-colors"
-                  >
-                    Devolver para Fila
-                  </button>
-                )}
                 {showCrmToggle && (
                   <button
                     onClick={onToggleCrm}
@@ -395,8 +384,26 @@ export function ChatArea({
                     Painel CRM
                   </button>
                 )}
-                {!onCloseConversation && !onReturnToQueue && (
-                  <p className="px-3 py-2 text-xs text-muted-foreground">Sem ações disponíveis</p>
+                {/* Mobile: agent reassign */}
+                {isOwner && teamMembers.length > 0 && onReassign && conversationId && (
+                  <div className="sm:hidden px-2 py-1">
+                    <Select
+                      value={assignedUserId || ''}
+                      onValueChange={(val) => onReassign(conversationId, val)}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue placeholder="Atribuir agente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teamMembers.map(m => (
+                          <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {!showCrmToggle && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">Sem ações adicionais</p>
                 )}
               </PopoverContent>
             </Popover>

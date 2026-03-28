@@ -8,7 +8,8 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Settings, MessageSquare, WifiOff } from 'lucide-react';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Settings, MessageSquare, WifiOff, PanelRightOpen } from 'lucide-react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { cn, normalizePhone } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -171,6 +172,7 @@ export default function WhatsApp() {
   const { contact, loading: contactLoading } = useConversationContact(contactId);
 
   const [showCrmPanel, setShowCrmPanel] = useState(true);
+  const [mobileCrmOpen, setMobileCrmOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
   // Fetch team members (manager only)
@@ -246,22 +248,7 @@ export default function WhatsApp() {
     if (error) {
       toast({ title: 'Erro ao finalizar', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Atendimento finalizado' });
       setSelectedConversation(prev => prev ? { ...prev, status: 'closed' } : prev);
-    }
-  }, [selectedConversation, toast]);
-
-  const handleReturnToQueue = useCallback(async () => {
-    if (!selectedConversation) return;
-    const { error } = await supabase
-      .from('whatsapp_conversations')
-      .update({ assigned_user_id: null, status: 'pending' })
-      .eq('id', selectedConversation.id);
-    if (error) {
-      toast({ title: 'Erro ao devolver', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Conversa devolvida para a fila de triagem' });
-      setSelectedConversation(prev => prev ? { ...prev, assigned_user_id: null, status: 'pending' } : prev);
     }
   }, [selectedConversation, toast]);
 
@@ -475,8 +462,6 @@ export default function WhatsApp() {
                 isOwner={canManage}
                 onReassign={handleReassign}
                 conversationId={selectedConversation?.id || null}
-                onCloseConversation={canArchive && selectedConversation ? handleCloseConversation : undefined}
-                onReturnToQueue={canManage && selectedConversation ? handleReturnToQueue : undefined}
               />
             </div>
 
@@ -489,7 +474,6 @@ export default function WhatsApp() {
                   onCreateDeal={canCreateDeal ? handleCreateDeal : undefined}
                   onDealCreated={handleDealCreated}
                   onContactCreated={() => {
-                    // Force re-fetch the conversation to pick up the new contact_id
                     if (selectedConversation?.id) {
                       supabase
                         .from('whatsapp_conversations')
@@ -507,6 +491,45 @@ export default function WhatsApp() {
           </div>
         </div>
       </div>
+
+      {/* Mobile CRM floating button */}
+      {isMobile && selectedConversation && mobileView === 'chat' && (
+        <Button
+          size="icon"
+          variant="secondary"
+          className="fixed bottom-20 right-4 z-40 h-10 w-10 rounded-full shadow-lg"
+          onClick={() => setMobileCrmOpen(true)}
+        >
+          <PanelRightOpen className="h-5 w-5" />
+        </Button>
+      )}
+
+      {/* Mobile CRM Sheet */}
+      <Sheet open={mobileCrmOpen} onOpenChange={setMobileCrmOpen}>
+        <SheetContent side="right" className="w-[320px] p-0">
+          {selectedConversation && (
+            <CrmContextPanel
+              conversation={selectedConversation}
+              contact={contact}
+              contactLoading={contactLoading}
+              onCreateDeal={canCreateDeal ? handleCreateDeal : undefined}
+              onDealCreated={handleDealCreated}
+              onContactCreated={() => {
+                if (selectedConversation?.id) {
+                  supabase
+                    .from('whatsapp_conversations')
+                    .select('*, contacts(*), deals(*)')
+                    .eq('id', selectedConversation.id)
+                    .maybeSingle()
+                    .then(({ data }) => {
+                      if (data) setSelectedConversation(data as any);
+                    });
+                }
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
       <BottomNavigation />
 

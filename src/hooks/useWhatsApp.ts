@@ -258,7 +258,39 @@ export function useConversations(connectionId: string | null) {
       console.error('Error fetching conversations:', error);
       toast({ title: 'Erro ao carregar conversas', description: error.message, variant: 'destructive' });
     } else {
-      setConversations((data as any as WhatsAppConversationWithRelations[]) || []);
+      const convs = (data as any as WhatsAppConversationWithRelations[]) || [];
+      setConversations(convs);
+
+      // Auto-link: for conversations without contact_id, try to find a match
+      for (const conv of convs) {
+        if (conv.contact_id || !conv.contact_phone) continue;
+        const digits = conv.contact_phone.replace(/\D/g, '');
+        if (digits.length < 8) continue;
+        const last9 = digits.slice(-9);
+        const last8 = digits.slice(-8);
+
+        const { data: matched } = await supabase
+          .from('contacts')
+          .select('id, name')
+          .or(`phone.ilike.%${last9},phone.ilike.%${last8},whatsapp.ilike.%${last9},whatsapp.ilike.%${last8}`)
+          .limit(1)
+          .maybeSingle();
+
+        if (matched) {
+          await supabase
+            .from('whatsapp_conversations')
+            .update({ contact_id: matched.id, contact_name: matched.name })
+            .eq('id', conv.id);
+          // Update local state
+          setConversations(prev =>
+            prev.map(c =>
+              c.id === conv.id
+                ? { ...c, contact_id: matched.id, contact_name: matched.name, contacts: matched as any }
+                : c
+            )
+          );
+        }
+      }
     }
     setLoading(false);
   }, [connectionId]);
