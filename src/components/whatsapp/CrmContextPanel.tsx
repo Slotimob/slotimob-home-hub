@@ -22,6 +22,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { useContactDeals, useContactActivities } from '@/hooks/useWhatsApp';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { normalizePhone, formatWhatsAppToCrm } from '@/lib/utils';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { CreateDealFromChatDialog } from './CreateDealFromChatDialog';
