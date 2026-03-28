@@ -382,6 +382,38 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
                 />
               </div>
 
+              {/* Lead Origin */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  Origem do Lead
+                </Label>
+                <Select
+                  value={editedDeal.lead_origin}
+                  onValueChange={(value) => setEditedDeal({ ...editedDeal, lead_origin: value })}
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a origem" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="website">Site</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="google_ads">Google Ads</SelectItem>
+                    <SelectItem value="portal">Portal Imobiliário</SelectItem>
+                    <SelectItem value="zap">ZAP Imóveis</SelectItem>
+                    <SelectItem value="olx">OLX</SelectItem>
+                    <SelectItem value="vivareal">VivaReal</SelectItem>
+                    <SelectItem value="referral">Indicação</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="walk_in">Presencial</SelectItem>
+                    <SelectItem value="phone">Telefone</SelectItem>
+                    <SelectItem value="other">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Temperature */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
