@@ -248,22 +248,7 @@ export default function WhatsApp() {
     if (error) {
       toast({ title: 'Erro ao finalizar', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Atendimento finalizado' });
       setSelectedConversation(prev => prev ? { ...prev, status: 'closed' } : prev);
-    }
-  }, [selectedConversation, toast]);
-
-  const handleReturnToQueue = useCallback(async () => {
-    if (!selectedConversation) return;
-    const { error } = await supabase
-      .from('whatsapp_conversations')
-      .update({ assigned_user_id: null, status: 'pending' })
-      .eq('id', selectedConversation.id);
-    if (error) {
-      toast({ title: 'Erro ao devolver', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Conversa devolvida para a fila de triagem' });
-      setSelectedConversation(prev => prev ? { ...prev, assigned_user_id: null, status: 'pending' } : prev);
     }
   }, [selectedConversation, toast]);
 
