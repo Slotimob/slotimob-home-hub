@@ -30,6 +30,21 @@ export function formatPhoneForWhatsApp(phone: string): string {
   return cleaned;
 }
 
+/**
+ * Converts a WhatsApp JID/phone (e.g. +5511988887777, 5511988887777)
+ * into CRM-friendly format: just DDD + number (e.g. 11988887777).
+ * Removes country code 55 and any non-digit chars.
+ */
+export function formatWhatsAppToCrm(phone?: string | null): string {
+  if (!phone) return '';
+  let digits = phone.replace(/\D/g, '');
+  // Remove Brazilian country code prefix
+  if (digits.startsWith('55') && digits.length > 11) {
+    digits = digits.substring(2);
+  }
+  return digits;
+}
+
 export function normalizePhone(phone?: string | null): string {
   if (!phone) return '';
   let cleaned = phone.replace(/\D/g, '');
