@@ -77,6 +77,7 @@ export function CreateProposalSheet({
   preSelectedUnitId,
   initialLeadName,
   dealId,
+  contactId,
   editingProposal,
   onProposalGenerated,
 }: CreateProposalSheetProps) {
