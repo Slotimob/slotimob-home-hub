@@ -86,6 +86,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const [isDealDialogOpen, setIsDealDialogOpen] = useState(false);
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [directDeal, setDirectDeal] = useState<any>(null);
+  const [isProposalOpen, setIsProposalOpen] = useState(false);
 
   // ── Manual contact linking via Sheet ──
   const [isLinkingSheetOpen, setIsLinkingSheetOpen] = useState(false);
