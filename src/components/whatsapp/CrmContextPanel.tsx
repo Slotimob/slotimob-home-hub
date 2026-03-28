@@ -28,6 +28,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { CreateDealFromChatDialog } from './CreateDealFromChatDialog';
 import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
 import { CreateProposalSheet } from '@/components/proposals/CreateProposalSheet';
+import { useProposals } from '@/hooks/useProposals';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 
@@ -82,6 +83,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const [dealRefetchKey, setDealRefetchKey] = useState(0);
   const { deals, loading: dealsLoading } = useContactDeals(contactId, dealRefetchKey);
   const { activities, loading: activitiesLoading } = useContactActivities(contactId);
+  const { proposals, isLoading: proposalsLoading } = useProposals();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [updatingStage, setUpdatingStage] = useState(false);
@@ -264,6 +266,15 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
   const activeDealsCount = deals.filter((d: any) => !['won', 'lost'].includes(d.stage)).length;
   const allDealsForDisplay = deals.filter((d: any) => !['won', 'lost'].includes(d.stage));
 
+  // Filter proposals for this contact
+  const contactProposals = proposals.filter((p: any) => {
+    if (!contactId) return false;
+    // Match by deal_id linking or lead_name
+    const contactDealsIds = deals.map((d: any) => d.id);
+    return contactDealsIds.includes(p.deal_id) || 
+      (p.lead_name && contact?.name && p.lead_name.toLowerCase() === contact.name.toLowerCase());
+  });
+
   return (
     <TooltipProvider>
     <ScrollArea className="h-full">
@@ -393,15 +404,22 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                       {activeDealsCount} negociação{activeDealsCount > 1 ? 'ões' : ''} ativa{activeDealsCount > 1 ? 's' : ''}
                     </p>
                   </div>
-                  {allDealsForDisplay.map((deal: any) => (
+                  {allDealsForDisplay.slice(0, 3).map((deal: any) => (
                     <div key={deal.id} className="p-2 rounded-md border border-border/50 bg-muted/30">
                       <p className="text-[11px] font-medium text-foreground truncate">
                         {deal.title || deal.property?.name || 'Negociação'}
                         {deal.unit?.title ? ` - ${deal.unit.title}` : ''}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {deal.custom_stage?.name || STAGE_LABELS[deal.stage] || deal.stage}
-                      </p>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <p className="text-[10px] text-muted-foreground">
+                          {deal.custom_stage?.name || STAGE_LABELS[deal.stage] || deal.stage}
+                        </p>
+                        {deal.estimated_value && (
+                          <p className="text-[10px] font-medium text-foreground">
+                            {deal.estimated_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   ))}
                   {hasValidName && (
@@ -447,13 +465,13 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
           <StepArrow />
 
-          {/* STEP 3: Proposal */}
+          {/* STEP 3: Proposal — requires only contact_id */}
           <div className="flex items-start gap-3">
-            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${activeDeal ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${contactId ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
               <span className="text-xs font-bold">3</span>
             </div>
             <div className="flex-1 min-w-0">
-              {activeDeal ? (
+              {contactId ? (
                 <Button
                   variant="default"
                   size="sm"
@@ -479,7 +497,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Crie uma negociação primeiro</p>
+                    <p className="text-xs">Vincule um contato para liberar</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -547,6 +565,51 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
             </Card>
           </div>
         ) : null}
+
+        <Separator />
+
+        {/* Proposals History */}
+        <div>
+          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+            <FileSignature className="h-4 w-4" />
+            Propostas
+            {contactProposals.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-auto">
+                {contactProposals.length}
+              </Badge>
+            )}
+          </h4>
+
+          {proposalsLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full rounded-md" />
+              <Skeleton className="h-12 w-full rounded-md" />
+            </div>
+          ) : contactProposals.length > 0 ? (
+            <div className="space-y-1.5">
+              {contactProposals.slice(0, 5).map((proposal: any) => (
+                <div key={proposal.id} className="p-2 rounded-md border border-border/50 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-medium text-foreground truncate">
+                      {proposal.property?.name || proposal.lead_name || 'Proposta'}
+                    </p>
+                    <Badge
+                      variant={proposal.status === 'sent' ? 'default' : 'secondary'}
+                      className="text-[9px] px-1.5 py-0 h-4"
+                    >
+                      {proposal.status === 'sent' ? 'Enviada' : proposal.status === 'draft' ? 'Rascunho' : proposal.status === 'accepted' ? 'Aceita' : proposal.status}
+                    </Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {format(new Date(proposal.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-3">Nenhuma proposta ainda</p>
+          )}
+        </div>
 
         <Separator />
 
