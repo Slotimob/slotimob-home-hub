@@ -308,9 +308,11 @@ export function ChatArea({
               </p>
               <div className="hidden sm:block">
                 <ChatTagsInput
-                  conversationId={conversation.id}
-                  tags={((conversation as any).tags as string[]) || []}
-                  onTagsChange={() => {}}
+                  conversationTagIds={conversationTagIds}
+                  allTags={allTags}
+                  onAddTag={addConvTag}
+                  onRemoveTag={removeConvTag}
+                  onCreateTag={createTag}
                   compact
                 />
               </div>
