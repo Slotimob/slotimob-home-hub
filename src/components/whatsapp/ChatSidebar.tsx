@@ -119,8 +119,7 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
       return true;
     });
 
-  const unreadTotal = conversations.filter(c => c.unread_count > 0).length;
-  const pendingCount = showTriageTabs ? conversations.filter(c => c.status === 'pending' || !c.assigned_user_id).length : 0;
+  const pendingCount = conversations.filter(c => c.status === 'pending' || !c.status).length;
 
   return (
     <div className="flex flex-col h-full bg-card">
