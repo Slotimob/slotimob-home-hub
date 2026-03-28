@@ -36,62 +36,18 @@ const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
   },
 };
 
-export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onWhatsAppClick, referenceDate }: AssetHealthCardProps) {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onLinkClick }: AssetHealthCardProps) {
   const overallConfig = OVERALL_STATUS_CONFIG[asset.overallStatus];
-  const { findCategoryForObligation, getTransactionTypeForObligation } = useObligationCategoryMapping();
-
-  const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
-  const [transactionPrefill, setTransactionPrefill] = useState<TransactionPrefill | undefined>();
-
-  // Filter to show only relevant obligations (active ones first)
   const activeObligations = asset.obligations.filter(o => o.status !== "ignored");
-  const ignoredObligations = asset.obligations.filter(o => o.status === "ignored");
 
-  const handlePayClick = (obligation: ObligationHealth) => {
-    const refDate = referenceDate || new Date();
-    const monthYear = format(refDate, "MMMM/yyyy", { locale: ptBR });
-    const capitalizedMonthYear = monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
-    
-    // Calculate due date for current month
-    const dueDay = obligation.dueDay || 10;
-    const dueDate = new Date(refDate.getFullYear(), refDate.getMonth(), dueDay);
-    
-    // Find matching category
-    const categoryId = findCategoryForObligation(obligation.type);
-    const transactionType = getTransactionTypeForObligation(obligation.type);
-
-    setTransactionPrefill({
-      description: `${obligation.label} - ${capitalizedMonthYear}`,
-      unitId: asset.unitId,
-      categoryId: categoryId || undefined,
-      type: transactionType,
-      dueDate: format(dueDate, "yyyy-MM-dd"),
-      status: "paid",
-      amount: obligation.amount || undefined,
-    });
-    setTransactionDialogOpen(true);
-  };
-
-  const handleTransactionSuccess = () => {
-    setTransactionDialogOpen(false);
-    setTransactionPrefill(undefined);
-    // Refresh asset health data
-    queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-    queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
-    queryClient.invalidateQueries({ queryKey: ["finance-overview"] });
-  };
-
-  const handleWhatsAppClick = (obligation: ObligationHealth) => {
-    if (onWhatsAppClick) {
-      onWhatsAppClick(asset, obligation);
+  const handleLinkClick = (obligation: ObligationHealth) => {
+    if (onLinkClick) {
+      onLinkClick(asset, obligation);
     }
   };
 
   return (
-    <>
-      <Card 
+      <Card
         className={cn(
           "overflow-hidden transition-all hover:shadow-md",
           asset.overallStatus === "critical" && "ring-1 ring-red-500/30",
