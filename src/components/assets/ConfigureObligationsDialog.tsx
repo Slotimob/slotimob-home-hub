@@ -426,6 +426,7 @@ export function ConfigureObligationsDialog({
                       onDueDayChange={handleDueDayChange}
                       onResponsibleChange={handleResponsibleChange}
                       onInstallationCodeChange={handleInstallationCodeChange}
+                      onControlTypeChange={handleControlTypeChange}
                       getResponsibleFeedback={getResponsibleFeedback}
                     />
                   );
