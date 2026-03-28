@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,19 +5,10 @@ import {
   Home, 
   Building2, 
   Settings2,
-  ExternalLink,
   ClipboardList,
-  FileText,
-  Warehouse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AssetHealth, ObligationHealth } from "@/hooks/useAssetHealth";
-import { useNavigate } from "react-router-dom";
-import { CreateTransactionDialog, TransactionPrefill } from "@/components/finance/CreateTransactionDialog";
-import { useObligationCategoryMapping } from "@/hooks/useObligationCategoryMapping";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { useQueryClient } from "@tanstack/react-query";
 import { ObligationTrafficLights } from "./ObligationTrafficLights";
 
 interface AssetHealthCardProps {
