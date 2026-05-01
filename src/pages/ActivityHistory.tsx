@@ -14,8 +14,9 @@ import {
   FileText,
   MessageSquare,
   Loader2,
+  User,
 } from 'lucide-react';
-import { format, isToday, isYesterday, startOfDay, subWeeks, subMonths, isAfter } from 'date-fns';
+import { format, isToday, isYesterday, startOfDay, subDays, subMonths, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppLayout } from '@/components/AppLayout';
 import {
@@ -85,7 +86,8 @@ const ActivityHistory = () => {
   const [loadingLogs, setLoadingLogs] = useState(true);
   const [filterTable, setFilterTable] = useState('all');
   const [filterAction, setFilterAction] = useState('all');
-  const [filterPeriod, setFilterPeriod] = useState('all');
+  const [filterPeriod, setFilterPeriod] = useState('30');
+  const [filterActor, setFilterActor] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -99,7 +101,7 @@ const ActivityHistory = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterTable, filterAction, filterPeriod, searchQuery]);
+  }, [filterTable, filterAction, filterPeriod, filterActor, searchQuery]);
 
   const loadLogs = async () => {
     try {
@@ -138,12 +140,27 @@ const ActivityHistory = () => {
     }
   };
 
+  // Build a list of unique actors from the loaded logs
+  const actorOptions = useMemo(() => {
+    const actors = new Map<string, string>();
+    logs.forEach(log => {
+      const actorId = log.actor_user_id || log.broker_id;
+      if (actorId && !actors.has(actorId)) {
+        actors.set(actorId, profileMap[actorId] || 'Usuário');
+      }
+    });
+    return Array.from(actors.entries())
+      .sort((a, b) => a[1].localeCompare(b[1]));
+  }, [logs, profileMap]);
+
   const getPeriodStartDate = (period: string): Date | null => {
     const now = new Date();
     switch (period) {
       case 'today': return startOfDay(now);
-      case 'week': return subWeeks(now, 1);
-      case 'month': return subMonths(now, 1);
+      case '7': return subDays(now, 7);
+      case '30': return subDays(now, 30);
+      case '90': return subDays(now, 90);
+      case '180': return subDays(now, 180);
       default: return null;
     }
   };
@@ -152,6 +169,10 @@ const ActivityHistory = () => {
     return logs.filter(log => {
       if (filterTable !== 'all' && log.table_name !== filterTable) return false;
       if (filterAction !== 'all' && log.action !== filterAction) return false;
+      if (filterActor !== 'all') {
+        const actorId = log.actor_user_id || log.broker_id;
+        if (actorId !== filterActor) return false;
+      }
       if (filterPeriod !== 'all') {
         const periodStart = getPeriodStartDate(filterPeriod);
         if (periodStart && !isAfter(new Date(log.created_at), periodStart)) return false;
@@ -160,12 +181,12 @@ const ActivityHistory = () => {
         const q = searchQuery.toLowerCase();
         const record = getRecordName(log).toLowerCase();
         const table = (TABLE_LABELS[log.table_name] || log.table_name).toLowerCase();
-        const author = (profileMap[log.broker_id] || '').toLowerCase();
+        const author = (profileMap[log.actor_user_id || log.broker_id] || '').toLowerCase();
         if (!record.includes(q) && !table.includes(q) && !author.includes(q)) return false;
       }
       return true;
     });
-  }, [logs, filterTable, filterAction, filterPeriod, searchQuery, profileMap]);
+  }, [logs, filterTable, filterAction, filterActor, filterPeriod, searchQuery, profileMap]);
 
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
   const paginatedLogs = useMemo(() => {
@@ -216,7 +237,23 @@ const ActivityHistory = () => {
               className="pl-9 h-9 text-sm"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {/* Actor filter */}
+            {actorOptions.length > 1 && (
+              <Select value={filterActor} onValueChange={setFilterActor}>
+                <SelectTrigger className="w-[150px] h-9 text-xs">
+                  <User className="h-3 w-3 mr-1.5 text-muted-foreground" />
+                  <SelectValue placeholder="Membro" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os membros</SelectItem>
+                  {actorOptions.map(([id, name]) => (
+                    <SelectItem key={id} value={id}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <Select value={filterTable} onValueChange={setFilterTable}>
               <SelectTrigger className="w-[130px] h-9 text-xs">
                 <Filter className="h-3 w-3 mr-1.5 text-muted-foreground" />
@@ -256,8 +293,10 @@ const ActivityHistory = () => {
               <SelectContent>
                 <SelectItem value="all">Tudo</SelectItem>
                 <SelectItem value="today">Hoje</SelectItem>
-                <SelectItem value="week">7 dias</SelectItem>
-                <SelectItem value="month">30 dias</SelectItem>
+                <SelectItem value="7">7 dias</SelectItem>
+                <SelectItem value="30">30 dias</SelectItem>
+                <SelectItem value="90">90 dias</SelectItem>
+                <SelectItem value="180">180 dias</SelectItem>
               </SelectContent>
             </Select>
           </div>
