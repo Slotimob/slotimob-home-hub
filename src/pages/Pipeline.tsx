@@ -25,6 +25,8 @@ import { PipelineMetrics } from '@/components/crm/PipelineMetrics';
 import { PipelineFilters, type PipelineFiltersState } from '@/components/crm/PipelineFilters';
 import { LossReasonDialog } from '@/components/crm/LossReasonDialog';
 import { BulkActionsBar } from '@/components/crm/BulkActionsBar';
+import { useBulkActionGate, type BulkGateInput } from '@/hooks/useBulkActionGate';
+import { RequestApprovalDialog } from '@/components/approvals/RequestApprovalDialog';
 import { AddStageCard } from '@/components/crm/AddStageCard';
 import { EditStageDialog } from '@/components/crm/EditStageDialog';
 import { ReorderStagesDialog } from '@/components/crm/ReorderStagesDialog';
