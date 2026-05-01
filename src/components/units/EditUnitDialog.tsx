@@ -23,7 +23,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { z } from 'zod';
-import { Info, Image, FileText, AlertCircle, Trash2 } from 'lucide-react';
+import { Info, Image, FileText, AlertCircle, Trash2, ClipboardList } from 'lucide-react';
+import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 import { UnitFormFields, UnitFormData, getInitialFormData } from '@/components/units/UnitFormFields';
 import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
 import { UnitDocuments } from '@/components/units/UnitDocuments';
@@ -104,6 +105,7 @@ interface EditUnitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  defaultTab?: string;
 }
 
 function mapUnitToFormData(u: Unit): UnitFormData {
@@ -153,6 +155,7 @@ export const EditUnitDialog = ({
   open, 
   onOpenChange, 
   onSuccess,
+  defaultTab = 'info',
 }: EditUnitDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -160,7 +163,7 @@ export const EditUnitDialog = ({
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   
@@ -183,9 +186,9 @@ export const EditUnitDialog = ({
     if (open && !hasDraft) {
       setFormData(mapUnitToFormData(unit));
       setGalleryImages(unit.gallery_images || []);
-      setActiveTab('info');
+      setActiveTab(defaultTab || 'info');
     }
-  }, [open, unit, hasDraft, setFormData]);
+  }, [open, unit, hasDraft, setFormData, defaultTab]);
 
   useEffect(() => {
     if (open && user) {
@@ -373,7 +376,7 @@ export const EditUnitDialog = ({
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="info" className="text-xs sm:text-sm">
               <Info className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Informações</span>
@@ -381,12 +384,18 @@ export const EditUnitDialog = ({
             </TabsTrigger>
             <TabsTrigger value="gallery" className="text-xs sm:text-sm">
               <Image className="h-4 w-4 mr-1 sm:mr-2" />
-              Galeria
+              <span className="hidden sm:inline">Galeria</span>
+              <span className="sm:hidden">Fotos</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="text-xs sm:text-sm">
               <FileText className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Documentos</span>
               <span className="sm:hidden">Docs</span>
+            </TabsTrigger>
+            <TabsTrigger value="activities" className="text-xs sm:text-sm">
+              <ClipboardList className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Atividades</span>
+              <span className="sm:hidden">Log</span>
             </TabsTrigger>
           </TabsList>
 
@@ -455,6 +464,17 @@ export const EditUnitDialog = ({
           <TabsContent value="documents" className="mt-4">
             {user && (
               <UnitDocuments unitId={unit.id} userId={user.id} />
+            )}
+          </TabsContent>
+
+          {/* Activities Tab */}
+          <TabsContent value="activities" className="mt-4">
+            {user && (
+              <AssetActivityTimeline
+                assetType="unit"
+                assetId={unit.id}
+                brokerId={user.id}
+              />
             )}
           </TabsContent>
         </Tabs>

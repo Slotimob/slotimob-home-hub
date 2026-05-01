@@ -6,18 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  Building2,
-  LayoutGrid,
-  Users,
-  Kanban,
-  CalendarDays,
   Filter,
   Search,
   Plus,
   Pencil,
   Trash2,
   FileText,
-  DollarSign,
   MessageSquare,
   Loader2,
 } from 'lucide-react';
@@ -40,213 +34,23 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 
-interface AuditLog {
-  id: string;
-  action: string;
-  table_name: string;
-  record_id: string | null;
-  old_data: any;
-  new_data: any;
-  created_at: string;
-  broker_id: string;
-  metadata: any;
-}
+import {
+  TABLE_LABELS,
+  TABLE_ICONS,
+  type AuditLog,
+  getChangedFields,
+  getRecordName,
+  humanizeLog,
+  getActionStyle,
+} from '@/lib/audit-formatting';
 
 interface ProfileMap {
   [userId: string]: string;
 }
 
-// ── Constants ──────────────────────────────────────────────
-
-const TABLE_LABELS: Record<string, string> = {
-  units: 'unidade',
-  leads: 'lead',
-  deals: 'negócio',
-  properties: 'empreendimento',
-  visits: 'visita',
-  financial_transactions: 'transação',
-  contacts: 'contato',
-  leases: 'contrato',
-  documents: 'documento',
-};
-
-const TABLE_ICONS: Record<string, any> = {
-  units: LayoutGrid,
-  leads: Users,
-  deals: Kanban,
-  properties: Building2,
-  visits: CalendarDays,
-  financial_transactions: DollarSign,
-  contacts: Users,
-  leases: FileText,
-  documents: FileText,
-};
-
-const IGNORED_FIELDS = new Set([
-  'id', 'broker_id', 'created_at', 'updated_at', 'deleted_at',
-  'metadata', 'user_agent', 'ip_address', 'tenant_id',
-]);
-
-const FIELD_LABELS: Record<string, string> = {
-  name: 'Nome',
-  title: 'Título',
-  status: 'Status',
-  stage: 'Etapa',
-  pipeline_stage: 'Etapa',
-  price: 'Preço',
-  rent_amount: 'Aluguel',
-  estimated_value: 'Valor estimado',
-  estimated_commission: 'Comissão estimada',
-  email: 'Email',
-  phone: 'Telefone',
-  whatsapp: 'WhatsApp',
-  city: 'Cidade',
-  neighborhood: 'Bairro',
-  state: 'Estado',
-  address: 'Endereço',
-  unit_number: 'Nº Unidade',
-  bedrooms: 'Quartos',
-  bathrooms: 'Banheiros',
-  area: 'Área',
-  parking_spots: 'Vagas',
-  description: 'Descrição',
-  notes: 'Notas',
-  temperature: 'Temperatura',
-  priority: 'Prioridade',
-  amount: 'Valor',
-  type: 'Tipo',
-  due_date: 'Vencimento',
-  paid_date: 'Data pagamento',
-  transaction_date: 'Data transação',
-  probability: 'Probabilidade',
-  expected_close_date: 'Previsão fechamento',
-  business_type: 'Tipo negócio',
-  guarantee_type: 'Tipo garantia',
-  contract_status: 'Status contrato',
-  signature_status: 'Status assinatura',
-  loss_reason: 'Motivo perda',
-  origin: 'Origem',
-  lead_type: 'Tipo lead',
-  payment_method: 'Forma pagamento',
-  document_type: 'Tipo documento',
-  adjustment_index: 'Índice reajuste',
-  admin_fee_percentage: 'Taxa administração',
-  deposit_amount: 'Valor caução',
-  due_day: 'Dia vencimento',
-  categories: 'Categorias',
-  initial_task: 'Tarefa inicial',
-};
-
-const ENUM_TRANSLATIONS: Record<string, string> = {
-  new_lead: 'Novo Lead',
-  in_contact: 'Em Contato',
-  scheduling: 'Agendamento',
-  visit_done: 'Visita Realizada',
-  proposal: 'Proposta',
-  negotiation: 'Negociação',
-  won: 'Ganho',
-  lost: 'Perdido',
-  available: 'Disponível',
-  sold: 'Vendido',
-  rented: 'Alugado',
-  reserved: 'Reservado',
-  unavailable: 'Indisponível',
-  high: 'Alta',
-  medium: 'Média',
-  low: 'Baixa',
-  hot: 'Quente',
-  warm: 'Morno',
-  cold: 'Frio',
-  sale: 'Venda',
-  rent: 'Locação',
-  income: 'Receita',
-  expense: 'Despesa',
-  pending: 'Pendente',
-  paid: 'Pago',
-  overdue: 'Atrasado',
-  cancelled: 'Cancelado',
-  active: 'Ativo',
-  inactive: 'Inativo',
-  terminated: 'Encerrado',
-  signed: 'Assinado',
-  caucao: 'Caução',
-  fiador: 'Fiador',
-  seguro_fianca: 'Seguro Fiança',
-  lead: 'Lead',
-  owner: 'Proprietário',
-  tenant: 'Inquilino',
-};
-
 const ITEMS_PER_PAGE = 30;
 
 // ── Helpers ────────────────────────────────────────────────
-
-function shouldIgnoreField(key: string): boolean {
-  if (IGNORED_FIELDS.has(key)) return true;
-  if (key.endsWith('_id')) return true;
-  return false;
-}
-
-function translateValue(val: any): string {
-  if (val === null || val === undefined || val === '') return '—';
-  if (typeof val === 'boolean') return val ? 'Sim' : 'Não';
-  if (typeof val === 'number') {
-    if (val >= 100) return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    return String(val);
-  }
-  if (typeof val === 'object') return '—';
-  const str = String(val);
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) return '—';
-  return ENUM_TRANSLATIONS[str] || str;
-}
-
-function getRecordName(log: AuditLog): string {
-  const data = log.new_data || log.old_data;
-  if (!data) return '';
-  return data.name || data.title || (data.unit_number ? `Unidade ${data.unit_number}` : '') || data.description?.slice(0, 40) || '';
-}
-
-function getChangedFields(log: AuditLog): { label: string; from: string; to: string }[] {
-  if (log.action !== 'UPDATE') return [];
-  const oldD = log.old_data || {};
-  const newD = log.new_data || {};
-  const changes: { label: string; from: string; to: string }[] = [];
-
-  for (const key of Object.keys(newD)) {
-    if (shouldIgnoreField(key)) continue;
-    const label = FIELD_LABELS[key];
-    if (!label) continue;
-    if (JSON.stringify(oldD[key]) !== JSON.stringify(newD[key])) {
-      const from = translateValue(oldD[key]);
-      const to = translateValue(newD[key]);
-      if (from === to || (from === '—' && to === '—')) continue;
-      changes.push({ label, from, to });
-    }
-  }
-  return changes.slice(0, 6);
-}
-
-function humanizeLog(log: AuditLog): string {
-  const table = TABLE_LABELS[log.table_name] || log.table_name;
-  const record = getRecordName(log);
-  const recordSuffix = record ? ` "${record}"` : '';
-
-  switch (log.action) {
-    case 'INSERT':
-      return `cadastrou ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
-    case 'DELETE':
-      return `excluiu ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
-    case 'UPDATE': {
-      const changes = getChangedFields(log);
-      if (changes.length === 1) {
-        return `alterou ${changes[0].label.toLowerCase()} d${table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
-      }
-      return `atualizou ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
-    }
-    default:
-      return `realizou ação em ${table}${recordSuffix}`;
-  }
-}
 
 function formatTimestamp(dateStr: string): string {
   const date = new Date(dateStr);
@@ -260,17 +64,6 @@ function getDayLabel(dateStr: string): string {
   if (isToday(date)) return 'Hoje';
   if (isYesterday(date)) return 'Ontem';
   return format(date, "dd 'de' MMMM", { locale: ptBR });
-}
-
-// ── Action icon bg colors ──────────────────────────────────
-
-function getActionStyle(action: string) {
-  switch (action) {
-    case 'INSERT': return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
-    case 'DELETE': return 'bg-destructive/15 text-destructive';
-    case 'UPDATE': return 'bg-blue-500/15 text-blue-600 dark:text-blue-400';
-    default: return 'bg-muted text-muted-foreground';
-  }
 }
 
 function getActionIcon(action: string) {
@@ -319,7 +112,6 @@ const ActivityHistory = () => {
       if (error) throw error;
       setLogs(data || []);
 
-      // Collect unique broker_ids and fetch their names
       const brokerIds = [...new Set((data || []).map((l: AuditLog) => l.broker_id))];
       if (brokerIds.length > 0) {
         const { data: profiles } = await supabase
@@ -377,7 +169,6 @@ const ActivityHistory = () => {
 
   const goToPage = (page: number) => setCurrentPage(Math.max(1, Math.min(page, totalPages)));
 
-  // Group by day
   const groupedLogs = useMemo(() => {
     const groups: { label: string; logs: AuditLog[] }[] = [];
     let currentDayLabel = '';
@@ -478,7 +269,6 @@ const ActivityHistory = () => {
           <div className="space-y-1">
             {groupedLogs.map((group, gi) => (
               <div key={gi}>
-                {/* Day separator */}
                 <div className="flex items-center gap-3 py-3">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {group.label}
@@ -486,7 +276,6 @@ const ActivityHistory = () => {
                   <Separator className="flex-1" />
                 </div>
 
-                {/* Logs for this day */}
                 <div className="space-y-0.5">
                   {group.logs.map((log) => {
                     const ActionIcon = getActionIcon(log.action);
@@ -499,12 +288,10 @@ const ActivityHistory = () => {
                         key={log.id}
                         className="flex items-start gap-3 py-2.5 px-3 rounded-lg hover:bg-muted/50 transition-colors group"
                       >
-                        {/* Icon */}
                         <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${getActionStyle(log.action)}`}>
                           <TableIcon className="h-3.5 w-3.5" />
                         </div>
 
-                        {/* Content */}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm leading-snug">
                             <span className="font-semibold">{authorName}</span>
@@ -512,7 +299,6 @@ const ActivityHistory = () => {
                             <span className="text-muted-foreground">{humanizeLog(log)}</span>
                           </p>
 
-                          {/* Changed fields inline */}
                           {changes.length > 0 && (
                             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                               {changes.map((c, i) => (
@@ -527,7 +313,6 @@ const ActivityHistory = () => {
                           )}
                         </div>
 
-                        {/* Timestamp */}
                         <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity">
                           {formatTimestamp(log.created_at)}
                         </span>
