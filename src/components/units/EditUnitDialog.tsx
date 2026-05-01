@@ -155,6 +155,7 @@ export const EditUnitDialog = ({
   open, 
   onOpenChange, 
   onSuccess,
+  defaultTab = 'info',
 }: EditUnitDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
