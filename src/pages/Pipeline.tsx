@@ -1069,6 +1069,17 @@ const Pipeline = () => {
   const handleBulkMove = async (targetStage: string) => {
     if (selectedDeals.size === 0) return;
 
+    // Gate check
+    const dealIds = Array.from(selectedDeals);
+    const gateInput: BulkGateInput = { actionType: 'bulk_status_change', itemCount: dealIds.length, targetTable: 'deals', targetIds: dealIds };
+    const r = await gate.check(gateInput);
+    if (!r.canProceed) {
+      setPendingGateInput(gateInput);
+      setPendingThreshold(r.thresholdValue ?? 0);
+      setApprovalDialogOpen(true);
+      return;
+    }
+
     // Only allow moving to default stages (enum values)
     const isDefaultStage = DEFAULT_STAGES.some(s => s.id === targetStage);
     if (!isDefaultStage) {
@@ -1080,7 +1091,6 @@ const Pipeline = () => {
       return;
     }
 
-    const dealIds = Array.from(selectedDeals);
     const typedTargetStage = targetStage as PipelineStage;
     
     // Optimistic update
