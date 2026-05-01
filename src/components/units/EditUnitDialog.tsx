@@ -105,6 +105,7 @@ interface EditUnitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  defaultTab?: string;
 }
 
 function mapUnitToFormData(u: Unit): UnitFormData {
