@@ -20,7 +20,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Calendar, Trash2, Building2, ExternalLink, ChevronDown, ClipboardList, Info } from 'lucide-react';
+import { Calendar, Trash2, Building2, ExternalLink, ChevronDown, ClipboardList, Info, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
