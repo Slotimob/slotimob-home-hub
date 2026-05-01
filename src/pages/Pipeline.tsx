@@ -319,6 +319,10 @@ const Pipeline = () => {
   // Selection mode state
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState<Set<string>>(new Set());
+  const gate = useBulkActionGate();
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [pendingGateInput, setPendingGateInput] = useState<BulkGateInput | null>(null);
+  const [pendingThreshold, setPendingThreshold] = useState(0);
 
   // Loss reason dialog state
   const [isLossDialogOpen, setIsLossDialogOpen] = useState(false);
