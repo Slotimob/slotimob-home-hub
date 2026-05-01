@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { X, Download, Tag, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useBulkActionGate, type BulkGateInput } from '@/hooks/useBulkActionGate';
+import { RequestApprovalDialog } from '@/components/approvals/RequestApprovalDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
