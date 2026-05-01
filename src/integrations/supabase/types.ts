@@ -168,6 +168,201 @@ export type Database = {
       }
       audit_logs: {
         Row: {
+          action: string | null
+          actor_user_id: string | null
+          broker_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs_2026_05: {
+        Row: {
+          action: string | null
+          actor_user_id: string | null
+          broker_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs_2026_06: {
+        Row: {
+          action: string | null
+          actor_user_id: string | null
+          broker_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs_2026_07: {
+        Row: {
+          action: string | null
+          actor_user_id: string | null
+          broker_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs_default: {
+        Row: {
+          action: string | null
+          actor_user_id: string | null
+          broker_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs_legacy: {
+        Row: {
           action: string
           broker_id: string
           created_at: string
@@ -4198,6 +4393,7 @@ export type Database = {
         Args: { p_new_trial_end: string; p_target_user_id: string }
         Returns: undefined
       }
+      audit_diff: { Args: { new_row: Json; old_row: Json }; Returns: Json }
       can_access_whatsapp_connection: {
         Args: { _broker_id: string; _user_id: string }
         Returns: boolean
@@ -4212,6 +4408,10 @@ export type Database = {
           _broker_id: string
           _user_id: string
         }
+        Returns: boolean
+      }
+      can_view_audit_log: {
+        Args: { p_broker_id: string; p_viewer_id: string }
         Returns: boolean
       }
       can_write_as_broker: {
@@ -4262,6 +4462,7 @@ export type Database = {
       }
       is_crm_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
+      maintain_audit_partitions: { Args: never; Returns: undefined }
       regenerate_feed_token: { Args: { p_user_id: string }; Returns: string }
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
       reset_ai_credits_for_user: {
