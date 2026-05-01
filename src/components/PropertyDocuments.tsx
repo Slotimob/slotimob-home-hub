@@ -31,7 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import * as DOMPurify from 'dompurify';
+import DOMPurify from 'dompurify';
 
 interface PropertyDocument {
   id: string;
