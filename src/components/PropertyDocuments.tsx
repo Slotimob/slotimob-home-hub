@@ -485,6 +485,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
+              type="button"
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
