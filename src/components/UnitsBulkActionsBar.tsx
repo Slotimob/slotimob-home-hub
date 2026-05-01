@@ -314,6 +314,15 @@ export const UnitsBulkActionsBar = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {pendingGateInput && (
+        <RequestApprovalDialog
+          open={approvalDialogOpen}
+          onClose={() => setApprovalDialogOpen(false)}
+          gateInput={pendingGateInput}
+          thresholdValue={pendingThreshold}
+        />
+      )}
     </div>
   );
 };
