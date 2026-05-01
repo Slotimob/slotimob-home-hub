@@ -71,8 +71,16 @@ export const UnitsBulkActionsBar = ({
   const [pendingThreshold, setPendingThreshold] = useState(0);
 
   const handleChangeStatus = async (newStatus: UnitStatus) => {
+    const ids = selectedUnits.map((u) => u.id);
+    const gateInput: BulkGateInput = { actionType: 'bulk_status_change', itemCount: ids.length, targetTable: 'units', targetIds: ids };
+    const r = await gate.check(gateInput);
+    if (!r.canProceed) {
+      setPendingGateInput(gateInput);
+      setPendingThreshold(r.thresholdValue ?? 0);
+      setApprovalDialogOpen(true);
+      return;
+    }
     try {
-      const ids = selectedUnits.map((u) => u.id);
       const { error } = await supabase
         .from('units')
         .update({ status: newStatus })
