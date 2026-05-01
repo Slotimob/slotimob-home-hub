@@ -222,8 +222,11 @@ const ActivityHistory = () => {
                 <SelectItem value="deals">Negócios</SelectItem>
                 <SelectItem value="properties">Empreend.</SelectItem>
                 <SelectItem value="contacts">Contatos</SelectItem>
-                <SelectItem value="financial_transactions">Transações</SelectItem>
+                <SelectItem value="financial_transactions">Cobranças</SelectItem>
                 <SelectItem value="leases">Contratos</SelectItem>
+                <SelectItem value="proposals">Propostas</SelectItem>
+                <SelectItem value="deal_activities">Atividades</SelectItem>
+                <SelectItem value="schedule_activities">Agenda</SelectItem>
               </SelectContent>
             </Select>
 
