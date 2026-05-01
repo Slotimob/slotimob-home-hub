@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { FormEvent } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockDeleteEq = vi.fn();
@@ -59,7 +60,7 @@ describe('PropertyDocuments', () => {
 
   it('remove external_link sem acessar o Storage nem submeter o form pai', async () => {
     const user = userEvent.setup();
-    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => event.preventDefault());
+    const onSubmit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault());
 
     render(
       <form onSubmit={onSubmit}>
