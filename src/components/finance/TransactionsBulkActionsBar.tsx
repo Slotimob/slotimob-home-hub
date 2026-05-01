@@ -5,6 +5,8 @@ import { Pencil, Trash2, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBulkActionGate, type BulkGateInput } from "@/hooks/useBulkActionGate";
+import { RequestApprovalDialog } from "@/components/approvals/RequestApprovalDialog";
 import {
   AlertDialog,
   AlertDialogAction,
