@@ -186,9 +186,9 @@ export const EditUnitDialog = ({
     if (open && !hasDraft) {
       setFormData(mapUnitToFormData(unit));
       setGalleryImages(unit.gallery_images || []);
-      setActiveTab('info');
+      setActiveTab(defaultTab || 'info');
     }
-  }, [open, unit, hasDraft, setFormData]);
+  }, [open, unit, hasDraft, setFormData, defaultTab]);
 
   useEffect(() => {
     if (open && user) {
