@@ -65,6 +65,10 @@ export const UnitsBulkActionsBar = ({
   const { toast } = useToast();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const gate = useBulkActionGate();
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [pendingGateInput, setPendingGateInput] = useState<BulkGateInput | null>(null);
+  const [pendingThreshold, setPendingThreshold] = useState(0);
 
   const handleChangeStatus = async (newStatus: UnitStatus) => {
     try {
