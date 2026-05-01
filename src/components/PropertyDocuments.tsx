@@ -382,6 +382,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
                       {isExternal ? (
                         safeExternalUrl && (
                           <Button
+                            type="button"
                             size="icon"
                             variant="ghost"
                             onClick={() => window.open(safeExternalUrl, '_blank', 'noopener,noreferrer')}
@@ -409,6 +410,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
                         </>
                       )}
                       <Button
+                        type="button"
                         size="icon"
                         variant="ghost"
                         className="text-destructive hover:text-destructive"
