@@ -382,6 +382,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
                       {isExternal ? (
                         safeExternalUrl && (
                           <Button
+                            type="button"
                             size="icon"
                             variant="ghost"
                             onClick={() => window.open(safeExternalUrl, '_blank', 'noopener,noreferrer')}
@@ -409,9 +410,11 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
                         </>
                       )}
                       <Button
+                        type="button"
                         size="icon"
                         variant="ghost"
                         className="text-destructive hover:text-destructive"
+                        aria-label={`Excluir documento ${doc.title}`}
                         onClick={() => setDeleteId(doc.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -483,6 +486,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
+              type="button"
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
