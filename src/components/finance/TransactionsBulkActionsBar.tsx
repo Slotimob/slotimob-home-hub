@@ -112,7 +112,18 @@ export function TransactionsBulkActionsBar({
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => setShowDeleteDialog(true)}
+              onClick={async () => {
+                const ids = selectedTransactions.map((t) => t.id);
+                const gateInput: BulkGateInput = { actionType: 'bulk_delete', itemCount: ids.length, targetTable: 'financial_transactions', targetIds: ids };
+                const r = await gate.check(gateInput);
+                if (!r.canProceed) {
+                  setPendingGateInput(gateInput);
+                  setPendingThreshold(r.thresholdValue ?? 0);
+                  setApprovalDialogOpen(true);
+                  return;
+                }
+                setShowDeleteDialog(true);
+              }}
               className="gap-1.5"
             >
               <Trash2 className="h-4 w-4" />
