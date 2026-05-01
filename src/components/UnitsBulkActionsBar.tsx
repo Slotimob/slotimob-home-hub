@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { X, Download, Tag, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useBulkActionGate, type BulkGateInput } from '@/hooks/useBulkActionGate';
+import { RequestApprovalDialog } from '@/components/approvals/RequestApprovalDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,10 +65,22 @@ export const UnitsBulkActionsBar = ({
   const { toast } = useToast();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const gate = useBulkActionGate();
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [pendingGateInput, setPendingGateInput] = useState<BulkGateInput | null>(null);
+  const [pendingThreshold, setPendingThreshold] = useState(0);
 
   const handleChangeStatus = async (newStatus: UnitStatus) => {
+    const ids = selectedUnits.map((u) => u.id);
+    const gateInput: BulkGateInput = { actionType: 'bulk_status_change', itemCount: ids.length, targetTable: 'units', targetIds: ids };
+    const r = await gate.check(gateInput);
+    if (!r.canProceed) {
+      setPendingGateInput(gateInput);
+      setPendingThreshold(r.thresholdValue ?? 0);
+      setApprovalDialogOpen(true);
+      return;
+    }
     try {
-      const ids = selectedUnits.map((u) => u.id);
       const { error } = await supabase
         .from('units')
         .update({ status: newStatus })
@@ -254,7 +268,18 @@ export const UnitsBulkActionsBar = ({
         <Button 
           variant="destructive" 
           size="sm" 
-          onClick={() => setShowDeleteDialog(true)}
+          onClick={async () => {
+            const ids = selectedUnits.map((u) => u.id);
+            const gateInput: BulkGateInput = { actionType: 'bulk_delete', itemCount: ids.length, targetTable: 'units', targetIds: ids };
+            const r = await gate.check(gateInput);
+            if (!r.canProceed) {
+              setPendingGateInput(gateInput);
+              setPendingThreshold(r.thresholdValue ?? 0);
+              setApprovalDialogOpen(true);
+              return;
+            }
+            setShowDeleteDialog(true);
+          }}
         >
           <Trash2 className="mr-2 h-4 w-4" />
           Excluir
@@ -289,6 +314,15 @@ export const UnitsBulkActionsBar = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {pendingGateInput && (
+        <RequestApprovalDialog
+          open={approvalDialogOpen}
+          onClose={() => setApprovalDialogOpen(false)}
+          gateInput={pendingGateInput}
+          thresholdValue={pendingThreshold}
+        />
+      )}
     </div>
   );
 };

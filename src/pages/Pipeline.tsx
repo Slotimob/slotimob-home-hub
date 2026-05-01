@@ -25,6 +25,8 @@ import { PipelineMetrics } from '@/components/crm/PipelineMetrics';
 import { PipelineFilters, type PipelineFiltersState } from '@/components/crm/PipelineFilters';
 import { LossReasonDialog } from '@/components/crm/LossReasonDialog';
 import { BulkActionsBar } from '@/components/crm/BulkActionsBar';
+import { useBulkActionGate, type BulkGateInput } from '@/hooks/useBulkActionGate';
+import { RequestApprovalDialog } from '@/components/approvals/RequestApprovalDialog';
 import { AddStageCard } from '@/components/crm/AddStageCard';
 import { EditStageDialog } from '@/components/crm/EditStageDialog';
 import { ReorderStagesDialog } from '@/components/crm/ReorderStagesDialog';
@@ -317,6 +319,10 @@ const Pipeline = () => {
   // Selection mode state
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState<Set<string>>(new Set());
+  const gate = useBulkActionGate();
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [pendingGateInput, setPendingGateInput] = useState<BulkGateInput | null>(null);
+  const [pendingThreshold, setPendingThreshold] = useState(0);
 
   // Loss reason dialog state
   const [isLossDialogOpen, setIsLossDialogOpen] = useState(false);
@@ -1063,6 +1069,17 @@ const Pipeline = () => {
   const handleBulkMove = async (targetStage: string) => {
     if (selectedDeals.size === 0) return;
 
+    // Gate check
+    const dealIds = Array.from(selectedDeals);
+    const gateInput: BulkGateInput = { actionType: 'bulk_status_change', itemCount: dealIds.length, targetTable: 'deals', targetIds: dealIds };
+    const r = await gate.check(gateInput);
+    if (!r.canProceed) {
+      setPendingGateInput(gateInput);
+      setPendingThreshold(r.thresholdValue ?? 0);
+      setApprovalDialogOpen(true);
+      return;
+    }
+
     // Only allow moving to default stages (enum values)
     const isDefaultStage = DEFAULT_STAGES.some(s => s.id === targetStage);
     if (!isDefaultStage) {
@@ -1074,7 +1091,6 @@ const Pipeline = () => {
       return;
     }
 
-    const dealIds = Array.from(selectedDeals);
     const typedTargetStage = targetStage as PipelineStage;
     
     // Optimistic update
@@ -1365,6 +1381,15 @@ const Pipeline = () => {
           onMove={handleBulkMove}
           onCancel={handleCancelSelection}
         />
+
+        {pendingGateInput && (
+          <RequestApprovalDialog
+            open={approvalDialogOpen}
+            onClose={() => setApprovalDialogOpen(false)}
+            gateInput={pendingGateInput}
+            thresholdValue={pendingThreshold}
+          />
+        )}
       </div>
 
       <CreateDealDialog

@@ -5,6 +5,8 @@ import { Pencil, Trash2, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBulkActionGate, type BulkGateInput } from "@/hooks/useBulkActionGate";
+import { RequestApprovalDialog } from "@/components/approvals/RequestApprovalDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +35,10 @@ export function TransactionsBulkActionsBar({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const gate = useBulkActionGate();
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [pendingGateInput, setPendingGateInput] = useState<BulkGateInput | null>(null);
+  const [pendingThreshold, setPendingThreshold] = useState(0);
 
   const selectedCount = selectedTransactions.length;
   const hasRecurring = selectedTransactions.some((t) => t.group_id);
@@ -106,7 +112,18 @@ export function TransactionsBulkActionsBar({
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => setShowDeleteDialog(true)}
+              onClick={async () => {
+                const ids = selectedTransactions.map((t) => t.id);
+                const gateInput: BulkGateInput = { actionType: 'bulk_delete', itemCount: ids.length, targetTable: 'financial_transactions', targetIds: ids };
+                const r = await gate.check(gateInput);
+                if (!r.canProceed) {
+                  setPendingGateInput(gateInput);
+                  setPendingThreshold(r.thresholdValue ?? 0);
+                  setApprovalDialogOpen(true);
+                  return;
+                }
+                setShowDeleteDialog(true);
+              }}
               className="gap-1.5"
             >
               <Trash2 className="h-4 w-4" />
@@ -164,6 +181,15 @@ export function TransactionsBulkActionsBar({
         selectedTransactions={selectedTransactions}
         onSuccess={handleEditSuccess}
       />
+
+      {pendingGateInput && (
+        <RequestApprovalDialog
+          open={approvalDialogOpen}
+          onClose={() => setApprovalDialogOpen(false)}
+          gateInput={pendingGateInput}
+          thresholdValue={pendingThreshold}
+        />
+      )}
     </>
   );
 }

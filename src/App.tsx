@@ -64,6 +64,7 @@ import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
 import AIChat from "./pages/AIChat";
 import Proposals from "./pages/Proposals";
+import AdminApprovals from "./pages/AdminApprovals";
 
 const queryClient = new QueryClient();
 
@@ -145,6 +146,7 @@ const App = () => (
               <Route path="/admin/terms" element={guarded(<TermsAdmin />)} />
               <Route path="/admin/users" element={guarded(<UsersAdmin />)} />
               <Route path="/admin/cockpit" element={guarded(<AdminCockpit />)} />
+              <Route path="/admin/approvals" element={guarded(<AdminApprovals />)} />
               <Route path="/ai-chat" element={guarded(<RequireFeature feature="ai_chat"><AIChat /></RequireFeature>)} />
 
               {/* Catch-all */}

@@ -18,6 +18,7 @@ import {
   Sparkles,
   Lock,
   ClipboardList,
+  ShieldCheck,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -517,6 +518,23 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+        )}
+        {!isMember && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isActive('/admin/approvals')} tooltip="Aprovações">
+                <NavLink 
+                  to="/admin/approvals" 
+                  className="flex items-center gap-3" 
+                  activeClassName="bg-primary/10 text-primary font-medium"
+                  onClick={() => isMobile && setOpenMobile(false)}
+                >
+                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>Aprovações</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         )}
         <SidebarMenu>
           <SidebarMenuItem>

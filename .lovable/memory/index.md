@@ -1,0 +1,109 @@
+# Project Memory
+
+## Core
+- **Tech Stack**: React, Vite, TS, Tailwind, shadcn/ui, Supabase (RLS).
+- **Terminology**: 'Negociação' (Oportunidade), 'Assinante' (Cliente). Use 'Integração inteligente', never 'API Oficial da Meta'.
+- **Multi-Tenant**: Mutations MUST use `effectiveBrokerId`. Remove `user_id` filters on SELECTs (backend RLS handles it).
+- **Data Architect**: Subscriptions logic ONLY in `public.subscriptions`. `auth.users` must remain untouched.
+- **Currency**: Format strictly to `pt-BR` and `BRL` via utility functions. No hardcoded `R$` or `$`.
+- **UI/Mobile**: Use `Sheet`/`Drawer` for complex mobile forms. Inputs min 16px for iOS. Native `div` + `overflow-y-auto` in Dialogs (No Radix ScrollArea).
+- **Integrity**: Deals can have null property_id. Never auto-create generic 'Imóveis Avulsos' as fallbacks.
+- **Notifications**: Toasts/Sonner duration exactly 1000ms. Light theme fixed on auth/landing; dashboard uses user preference.
+
+## Memories
+- [Tech Stack](mem://tech/stack) — Core technologies, PDF generators, markdown parsers
+- [Project Info](mem://project/info) — SaaS description and broker isolation architecture
+- [Visual Identity](mem://style/visual-identity) — SlotiLogo, async glow intensity
+- [Color Palette](mem://style/color-palette) — Brand Blue for text, Brand Teal for actions
+- [Theme Standard](mem://ui/theme-standard) — Light-green for auth/landing, user preference for dashboard
+- [Currency Standard](mem://ui/currency-standard) — Strict pt-BR / BRL formatting rules
+- [UI Scrolling Standard](mem://tech/ui-scrolling-standard) — div with overflow-y-auto in Dialogs
+- [Responsive Design](mem://ui/responsive-design-standards) — Sheets/Drawers on mobile, 16px font inputs, horizontal table scroll
+- [Dashboard Layout](mem://ui/dashboard-layout) — Hierarchy: Shortcuts, Indicators, Patrimony, Finance, CRM
+- [Sidebar Admin](mem://ui/sidebar-admin-footer) — Cockpit Master fixed at bottom of sidebar for staff
+- [Navigation Sync](mem://tech/navigation-sync) — navigationItems.ts as single source of truth for menus
+- [Kanban Logic](mem://ui/kanban-structure-logic) — Height constraints, muted contacts, touch sensor delays
+- [Gallery UX](mem://ui/gallery-ux-standard) — Auto-save, refresh logic, self-healing URLs
+- [Finance Form](mem://ui/finance-form-architecture) — Grid layouts, onWheel propagation stops
+- [Permissions UX](mem://ui/permissions-matrix-ux) — Tooltips for sensitive data exposure
+- [Toast Config](mem://ui/toast-configuration) — Ultra-fast 1000ms toast durations
+- [Nomenclature](mem://project/nomenclature) — Project terminology (Negociação, Assinante, Slotimob Academy)
+- [Copywriting WhatsApp](mem://project/copywriting-whatsapp) — Use "Integração inteligente", avoid Meta API references
+- [Routing Policy](mem://project/routing-policy) — Route consolidation, integration paths, presentation routes
+- [Auth Logic](mem://auth/implementation) — Login/Signup UI, CPF/CNPJ, framer motion
+- [Auth Init](mem://auth/initialization-logic) — isAuthReady, background redirect from root
+- [OAuth Popup](mem://auth/oauth-popup-flow) — Google popup skipBrowserRedirect, auto-close callback
+- [Social Security](mem://features/social-account-security) — Google login password creation fallback
+- [Terms Consent](mem://auth/terms-consent-audit) — Persisted SHA-256 signature for LGPD
+- [Security Protections](mem://security/protections) — Leaked passwords, DOMPurify, RLS specifics
+- [Access Control](mem://security/access-control) — JWT role validation in Edge Functions, webhook isolation
+- [Database Arch](mem://constraints/database-architecture) — Plan logic in public.subscriptions, auth.users untouched
+- [RLS Helpers](mem://db/workspace-rls-helpers) — Security definer functions for multi-tenant isolation
+- [External Integ](mem://security/external-integrations) — HMAC-SHA256 verification, API encryption key
+- [RBAC Roles](mem://auth/rbac-roles) — Platform and Organization hierarchy
+- [RBAC Matrix](mem://features/granular-rbac-matrix) — Granular keys, Read-Only mode mechanics
+- [RBAC Logic](mem://security/workspace-rbac-logic) — Separation of edit vs delete in UI permissions
+- [Permissions Depth](mem://features/granular-permissions) — Disabled fieldsets for read-only, inherited master plans
+- [Sidebar Permissions](mem://tech/sidebar-permission-enforcement) — Hide menu groups based on child permissions
+- [Business Model](mem://monetization/business-model) — Stripe plans, pricing, and fixed limits
+- [Stripe Webhook](mem://tech/stripe-webhook-reliability) — Retry strategy, trial clearance, direct profile fetch
+- [Stripe Subscription](mem://monetization/stripe-subscription-logic) — Early Adopter columns and auto-routing
+- [Stripe Addons](mem://tech/stripe-addon-migration) — Production price IDs for Add-ons and AI credits
+- [Checkout Dynamic](mem://tech/checkout-dynamic-refetch) — sessionKey remounts on plan change
+- [Multi-Tenant Logic](mem://features/multi-tenant-workspace) — effectiveBrokerId usage for INSERT/UPDATE
+- [Gating Logic](mem://tech/gating-logic) — Master plan/trial inheritance
+- [Data Consistency](mem://tech/data-consistency) — assigned_user_id standardization
+- [Profile Management](mem://features/profile-management) — Supabase Auth to profiles sync, fallback names
+- [Team Management](mem://features/team-management-hierarchy) — Member deletion asset transfer to Master
+- [Team Invitations](mem://features/team-invitations) — Direct add for existing emails, metadata syncing
+- [Account Deletion](mem://features/account-deletion) — Manual phrase confirmation, Edge Function cascade
+- [Trial Extension](mem://features/trial-extension-management) — RPC for admin extensions, auditable
+- [Trial Notification](mem://ui/trial-downgrade-notification) — First-access modal on expiration
+- [Cockpit Master](mem://features/cockpit-master) — Central admin dashboard functionalities
+- [Support Tools](mem://features/support-tools) — Debug sessions, activity timeline
+- [Email System](mem://tech/email-delivery-system) — Resend edge functions, email_notifications audit
+- [PWA Update](mem://tech/pwa-update-policy) — Skip waiting and reload for zombie cache
+- [Service Worker](mem://tech/service-worker-architecture) — Push notifications vs Workbox separation
+- [Pipeline Management](mem://features/pipeline-crm-management) — CRM funnels, Deal creation rules
+- [CRM Sync](mem://features/crm-sync) — Agenda sync rules, date/time precision
+- [Team Assignment](mem://features/crm-team-assignment) — Manual assignment on Business, auto on lower plans
+- [Team Filters](mem://ui/team-view-filters) — Team/personal view toggles on DB level
+- [Visit Scheduling](mem://features/visit-scheduling) — Unified property tabs for visits
+- [Schedule Page](mem://ui/schedule-page) — Responsive calendar, event badges
+- [Calendar Sync](mem://features/calendar-sync) — iCal feed synchronization
+- [Proposals Logic](mem://features/proposals-crm-integration) — CRM integration via contact_id without active deals
+- [Contacts Logic](mem://features/contacts-management) — System links validation blocking deletion
+- [WhatsApp Infra](mem://tech/whatsapp-infrastructure) — Evolution API v2.3.7, hierarchy of naming
+- [WhatsApp Sync](mem://tech/whatsapp-realtime-sync) — Explicit UPDATE for sidebar realtime
+- [WhatsApp Lazy Load](mem://tech/whatsapp-lazy-load-messages) — Fallback external fetch for empty histories
+- [WhatsApp Deep Link](mem://features/whatsapp-deep-linking) — Internal routing interception via phone/text
+- [WhatsApp Media](mem://tech/whatsapp-media-handling) — Signed URLs, Evolution API forwarding
+- [WhatsApp Naming](mem://features/whatsapp-ui-naming-hierarchy) — Priority: DB > pushName > Tag > Phone
+- [WhatsApp Suite](mem://features/whatsapp-crm-suite) — 360 CRM panel, auto match normalization
+- [WhatsApp Cockpit](mem://features/whatsapp-crm-cockpit) — Contact context panel, responsive header badges
+- [WhatsApp Lead Dist](mem://features/whatsapp-lead-distribution) — Round Robin distribution for new leads
+- [WhatsApp Convos](mem://features/whatsapp-conversation-management) — Tags system with AND logic
+- [WhatsApp Quick Msg](mem://features/whatsapp-quick-messages) — RLS protected quick messages template
+- [Phone Normalization](mem://tech/phone-normalization-strategy) — Internal vs external 55 prefix and 9th digit rules
+- [AI Chat Engine](mem://features/ai-chat-broker) — Claude 3.5 Sonnet limits, streaming, RLS isolation
+- [AI Chat Context](mem://features/ai-chat-context-selection) — Selective RAG via property IDs
+- [AI Suggestions](mem://features/ai-chat-suggestions-engine) — JSON responses for fast form injection
+- [System Settings](mem://tech/system-settings) — Global parameters, marketing vs super_admin logic
+- [Tracking Infra](mem://marketing/tracking-infrastructure) — GTM, UTMs, Meta Pixel events
+- [Product Tours](mem://features/marketing-product-tours) — Modular /presentation animations
+- [Blog Engine](mem://features/blog-engine) — SEO score, client-side WebP, EEAT metadata
+- [Activity Feed](mem://features/activity-history-feed) — Audit trail sanitization and translation
+- [Audit Logs Scale](mem://tech/audit-logs-scale) — Partitioned table, workspace RLS, diff triggers, 90-day retention
+- [Reports Center](mem://features/reports-center) — Owner/Tenant financial reports
+- [Gestão Accounting](mem://features/gestao-module-accounting) — Financial vs Managerial control types
+- [Lease Rules](mem://features/lease-management-rules) — is_managed filter, assignment via effectiveBrokerId
+- [Finance Structure](mem://features/finance-structure) — Dashboards vs Transactions conciliation
+- [Portals XML](mem://features/real-estate-portals-integration) — Zap/VivaReal feeds via UUID token
+- [Simulator](mem://features/real-estate-simulator) — Financing, Rentability, Sell vs Rent comparatives
+- [Contracts Auto](mem://features/contract-automation) — PDF variables mapping, dotting fallback
+- [Docs Management](mem://features/documents-management) — Templates and contextual property navigation
+- [Training Portal](mem://features/training-portal) — Slotimob Academy embedded YouTube/checkout
+- [Property Standards](mem://features/property-management-standards) — Null property_id on deals, no dummy defaults
+- [PDF Styling](mem://tech/pdf-premium-styling) — html2canvas scaling, shadow overlays, jsPDF-autotable
+- [Realtime Deep Fetch](mem://tech/realtime-deep-fetch-strategy) — Avoiding UI Amnesia on nested joins
+- [Bulk Action Approvals](mem://features/bulk-action-approvals) — Gate system for bulk actions requiring owner approval

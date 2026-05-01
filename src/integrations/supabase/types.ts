@@ -166,6 +166,96 @@ export type Database = {
           },
         ]
       }
+      approval_requests: {
+        Row: {
+          action_type: string
+          consumed_at: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          expires_at: string
+          id: string
+          item_count: number
+          justification: string | null
+          organization_owner_id: string
+          parameters: Json | null
+          requested_by: string
+          status: string
+          target_ids: string[] | null
+          target_table: string | null
+        }
+        Insert: {
+          action_type: string
+          consumed_at?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          expires_at?: string
+          id?: string
+          item_count: number
+          justification?: string | null
+          organization_owner_id: string
+          parameters?: Json | null
+          requested_by: string
+          status?: string
+          target_ids?: string[] | null
+          target_table?: string | null
+        }
+        Update: {
+          action_type?: string
+          consumed_at?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          expires_at?: string
+          id?: string
+          item_count?: number
+          justification?: string | null
+          organization_owner_id?: string
+          parameters?: Json | null
+          requested_by?: string
+          status?: string
+          target_ids?: string[] | null
+          target_table?: string | null
+        }
+        Relationships: []
+      }
+      approval_thresholds: {
+        Row: {
+          action_type: string
+          approval_validity_hours: number
+          created_at: string
+          enabled: boolean
+          id: string
+          organization_owner_id: string
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          approval_validity_hours?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_owner_id: string
+          threshold: number
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          approval_validity_hours?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_owner_id?: string
+          threshold?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string | null
@@ -4431,6 +4521,7 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      consume_approval: { Args: { p_request_id: string }; Returns: boolean }
       get_ai_credits_balance: { Args: { p_user_id: string }; Returns: Json }
       get_cockpit_organizations: { Args: never; Returns: Json }
       get_early_adopter_count: { Args: { p_plan_id: string }; Returns: number }
