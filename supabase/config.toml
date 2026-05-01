@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.whatsapp-billing]
 verify_jwt = false
+
+[functions.audit-logs-retention]
+verify_jwt = false
