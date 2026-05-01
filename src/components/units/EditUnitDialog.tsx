@@ -376,7 +376,7 @@ export const EditUnitDialog = ({
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="info" className="text-xs sm:text-sm">
               <Info className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Informações</span>
@@ -384,12 +384,18 @@ export const EditUnitDialog = ({
             </TabsTrigger>
             <TabsTrigger value="gallery" className="text-xs sm:text-sm">
               <Image className="h-4 w-4 mr-1 sm:mr-2" />
-              Galeria
+              <span className="hidden sm:inline">Galeria</span>
+              <span className="sm:hidden">Fotos</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="text-xs sm:text-sm">
               <FileText className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Documentos</span>
               <span className="sm:hidden">Docs</span>
+            </TabsTrigger>
+            <TabsTrigger value="activities" className="text-xs sm:text-sm">
+              <ClipboardList className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Atividades</span>
+              <span className="sm:hidden">Log</span>
             </TabsTrigger>
           </TabsList>
 
