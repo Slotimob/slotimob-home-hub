@@ -59,7 +59,7 @@ describe('PropertyDocuments', () => {
 
   it('remove external_link sem acessar o Storage nem submeter o form pai', async () => {
     const user = userEvent.setup();
-    const onSubmit = vi.fn((event: Event) => event.preventDefault());
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => event.preventDefault());
 
     render(
       <form onSubmit={onSubmit}>
