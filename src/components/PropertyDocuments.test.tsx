@@ -3,15 +3,33 @@ import userEvent from '@testing-library/user-event';
 import type { FormEvent } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockDeleteEq = vi.fn();
-const mockDelete = vi.fn(() => ({ eq: mockDeleteEq }));
-const mockSelectEq = vi.fn();
-const mockSelectOrder = vi.fn();
-const mockSelect = vi.fn(() => ({
-  eq: mockSelectEq.mockReturnValue({ order: mockSelectOrder }),
-}));
-const mockStorageRemove = vi.fn();
-const mockStorageFrom = vi.fn(() => ({ remove: mockStorageRemove }));
+const {
+  mockDeleteEq,
+  mockDelete,
+  mockSelectEq,
+  mockSelectOrder,
+  mockSelect,
+  mockStorageRemove,
+  mockStorageFrom,
+} = vi.hoisted(() => {
+  const mockDeleteEq = vi.fn();
+  const mockDelete = vi.fn(() => ({ eq: mockDeleteEq }));
+  const mockSelectOrder = vi.fn();
+  const mockSelectEq = vi.fn(() => ({ order: mockSelectOrder }));
+  const mockSelect = vi.fn(() => ({ eq: mockSelectEq }));
+  const mockStorageRemove = vi.fn();
+  const mockStorageFrom = vi.fn(() => ({ remove: mockStorageRemove }));
+
+  return {
+    mockDeleteEq,
+    mockDelete,
+    mockSelectEq,
+    mockSelectOrder,
+    mockSelect,
+    mockStorageRemove,
+    mockStorageFrom,
+  };
+});
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -49,7 +67,9 @@ describe('PropertyDocuments', () => {
   ];
 
   beforeEach(() => {
-    mockSelectOrder.mockResolvedValue({ data: documents, error: null });
+    mockSelectOrder
+      .mockResolvedValueOnce({ data: documents, error: null })
+      .mockResolvedValueOnce({ data: [], error: null });
     mockDeleteEq.mockResolvedValue({ error: null });
     mockStorageRemove.mockResolvedValue({ error: null });
   });
@@ -82,6 +102,9 @@ describe('PropertyDocuments', () => {
 
     expect(mockStorageFrom).not.toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByText('Contrato Drive')).not.toBeInTheDocument();
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Documento excluído!')).toBeInTheDocument();
