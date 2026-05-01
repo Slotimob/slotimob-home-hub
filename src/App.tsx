@@ -64,6 +64,7 @@ import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
 import AIChat from "./pages/AIChat";
 import Proposals from "./pages/Proposals";
+import AdminApprovals from "./pages/AdminApprovals";
 
 const queryClient = new QueryClient();
 
