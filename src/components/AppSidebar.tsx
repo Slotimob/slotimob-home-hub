@@ -18,6 +18,7 @@ import {
   Sparkles,
   Lock,
   ClipboardList,
+  ShieldCheck,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
