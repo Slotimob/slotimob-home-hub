@@ -181,6 +181,15 @@ export function TransactionsBulkActionsBar({
         selectedTransactions={selectedTransactions}
         onSuccess={handleEditSuccess}
       />
+
+      {pendingGateInput && (
+        <RequestApprovalDialog
+          open={approvalDialogOpen}
+          onClose={() => setApprovalDialogOpen(false)}
+          gateInput={pendingGateInput}
+          thresholdValue={pendingThreshold}
+        />
+      )}
     </>
   );
 }
