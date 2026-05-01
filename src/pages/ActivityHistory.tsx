@@ -112,12 +112,18 @@ const ActivityHistory = () => {
       if (error) throw error;
       setLogs(data || []);
 
-      const brokerIds = [...new Set((data || []).map((l: AuditLog) => l.broker_id))];
-      if (brokerIds.length > 0) {
+      // Collect both broker_id and actor_user_id for profile lookup
+      const userIds = new Set<string>();
+      (data || []).forEach((l: AuditLog) => {
+        if (l.broker_id) userIds.add(l.broker_id);
+        if (l.actor_user_id) userIds.add(l.actor_user_id);
+      });
+      const uniqueIds = [...userIds];
+      if (uniqueIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, full_name')
-          .in('id', brokerIds);
+          .in('id', uniqueIds);
 
         if (profiles) {
           const map: ProfileMap = {};

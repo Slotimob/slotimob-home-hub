@@ -247,6 +247,7 @@ export interface AuditLog {
   new_data: any;
   created_at: string;
   broker_id: string;
+  actor_user_id: string | null;
   metadata: any;
 }
 
