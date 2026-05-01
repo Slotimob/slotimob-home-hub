@@ -414,6 +414,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
                         size="icon"
                         variant="ghost"
                         className="text-destructive hover:text-destructive"
+                        aria-label={`Excluir documento ${doc.title}`}
                         onClick={() => setDeleteId(doc.id)}
                       >
                         <Trash2 className="h-4 w-4" />
