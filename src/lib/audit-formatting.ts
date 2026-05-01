@@ -6,8 +6,12 @@ import {
   CalendarDays,
   DollarSign,
   FileText,
+  FileSignature,
+  MessageSquare,
   type LucideIcon,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // ── Shared constants ──────────────────────────────────────
 
@@ -17,12 +21,15 @@ export const TABLE_LABELS: Record<string, string> = {
   deals: 'negócio',
   properties: 'empreendimento',
   visits: 'visita',
-  financial_transactions: 'transação',
+  financial_transactions: 'cobrança/lançamento',
   contacts: 'contato',
   leases: 'contrato',
   documents: 'documento',
   property_documents: 'documento do empreendimento',
   sales: 'venda',
+  proposals: 'proposta',
+  deal_activities: 'atividade do negócio',
+  schedule_activities: 'agenda',
 };
 
 export const TABLE_ICONS: Record<string, LucideIcon> = {
@@ -37,6 +44,9 @@ export const TABLE_ICONS: Record<string, LucideIcon> = {
   documents: FileText,
   property_documents: FileText,
   sales: DollarSign,
+  proposals: FileSignature,
+  deal_activities: MessageSquare,
+  schedule_activities: CalendarDays,
 };
 
 export const ACTION_LABELS: Record<string, string> = {
@@ -50,6 +60,11 @@ export const ACTION_LABELS: Record<string, string> = {
   document_updated: 'Atualizou documento',
   document_deleted: 'Removeu documento',
   sale_recorded: 'Registrou venda',
+  proposal_sent: 'Enviou proposta',
+  lease_signed: 'Contrato assinado',
+  lease_rent_adjusted: 'Reajustou aluguel',
+  visit_completed: 'Visita realizada',
+  billing_issued: 'Cobrança gerada',
 };
 
 export const IGNORED_FIELDS = new Set([
@@ -152,6 +167,75 @@ export const ENUM_TRANSLATIONS: Record<string, string> = {
   tenant: 'Inquilino',
 };
 
+// ── Event Groups for timeline filters ──────────────────────
+
+export interface EventGroupDef {
+  label: string;
+  match: (log: AuditLog) => boolean;
+}
+
+export const EVENT_GROUPS: Record<string, EventGroupDef> = {
+  edits: {
+    label: 'Edições do ativo',
+    match: (l) => ['properties', 'units'].includes(l.table_name) && ['INSERT', 'UPDATE', 'DELETE'].includes(l.action),
+  },
+  documents: {
+    label: 'Documentos',
+    match: (l) =>
+      ['property_documents', 'documents'].includes(l.table_name) ||
+      ['property_document_created', 'property_document_deleted', 'document_created', 'document_deleted', 'document_updated'].includes(l.action),
+  },
+  deals: {
+    label: 'Negócios',
+    match: (l) => l.table_name === 'deals' || l.action === 'deal_stage_change',
+  },
+  proposals: {
+    label: 'Propostas',
+    match: (l) => l.table_name === 'proposals' || l.action === 'proposal_sent',
+  },
+  leases: {
+    label: 'Contratos',
+    match: (l) => l.table_name === 'leases' || ['lease_signed', 'lease_rent_adjusted'].includes(l.action),
+  },
+  billing: {
+    label: 'Cobranças',
+    match: (l) => l.table_name === 'financial_transactions' || l.action === 'billing_issued',
+  },
+  visits: {
+    label: 'Visitas',
+    match: (l) => (l.table_name === 'visits' || l.action === 'visit_completed') &&
+      l.new_data?.activity_type !== 'inspection',
+  },
+  inspections: {
+    label: 'Vistorias',
+    match: (l) =>
+      (l.table_name === 'schedule_activities' && l.new_data?.activity_type === 'inspection') ||
+      (l.table_name === 'visits' && l.new_data?.activity_type === 'inspection'),
+  },
+  meetings: {
+    label: 'Reuniões',
+    match: (l) =>
+      (l.table_name === 'deal_activities' && l.new_data?.activity_type === 'meeting') ||
+      (l.table_name === 'schedule_activities' && l.new_data?.activity_type === 'meeting'),
+  },
+  sales: {
+    label: 'Vendas',
+    match: (l) => l.table_name === 'sales' || l.action === 'sale_recorded',
+  },
+};
+
+// ── Activity type labels ──────────────────────────────────
+
+const ACTIVITY_TYPE_LABELS: Record<string, string> = {
+  meeting: 'Reunião',
+  call: 'Ligação',
+  email: 'E-mail',
+  whatsapp: 'WhatsApp',
+  note: 'Nota',
+  inspection: 'Vistoria',
+  task: 'Tarefa',
+};
+
 // ── Helpers ──────────────────────────────────────────────
 
 export interface AuditLog {
@@ -172,11 +256,26 @@ export function shouldIgnoreField(key: string): boolean {
   return false;
 }
 
+const brlFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function formatBRL(val: number): string {
+  return brlFormatter.format(val);
+}
+
+function formatDateBR(val: string | null | undefined): string {
+  if (!val) return '—';
+  try {
+    return format(new Date(val), 'dd/MM/yyyy', { locale: ptBR });
+  } catch {
+    return String(val);
+  }
+}
+
 export function translateValue(val: any): string {
   if (val === null || val === undefined || val === '') return '—';
   if (typeof val === 'boolean') return val ? 'Sim' : 'Não';
   if (typeof val === 'number') {
-    if (val >= 100) return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if (val >= 100) return formatBRL(val);
     return String(val);
   }
   if (typeof val === 'object') return '—';
@@ -230,6 +329,48 @@ export function diffOldNew(old_data: any, new_data: any): { label: string; from:
 }
 
 export function humanizeLog(log: AuditLog): string {
+  const meta = log.metadata || {};
+
+  // Semantic milestone actions
+  switch (log.action) {
+    case 'proposal_sent':
+      return `enviou proposta para ${meta.lead_name || 'lead'}`;
+    case 'lease_signed':
+      return `contrato assinado${meta.start_date ? ` (vigência a partir de ${formatDateBR(meta.start_date)})` : ''}`;
+    case 'lease_rent_adjusted': {
+      const oldAmt = meta.old_amount != null ? formatBRL(Number(meta.old_amount)) : '?';
+      const newAmt = meta.new_amount != null ? formatBRL(Number(meta.new_amount)) : '?';
+      const pct = meta.adjustment_pct != null ? ` (${meta.adjustment_pct}%)` : '';
+      return `reajustou aluguel: ${oldAmt} → ${newAmt}${pct}`;
+    }
+    case 'visit_completed':
+      return `visita realizada${meta.scheduled_at ? ` em ${formatDateBR(meta.scheduled_at)}` : ''}`;
+    case 'billing_issued': {
+      const amt = meta.amount != null ? formatBRL(Number(meta.amount)) : '?';
+      const due = meta.due_date ? formatDateBR(meta.due_date) : '?';
+      return `cobrança gerada: ${amt}, vence em ${due}`;
+    }
+  }
+
+  // Deal activities / schedule activities with activity_type
+  if (['deal_activities', 'schedule_activities'].includes(log.table_name)) {
+    const data = log.new_data || log.old_data;
+    if (data?.activity_type) {
+      const typeLabel = ACTIVITY_TYPE_LABELS[data.activity_type] || data.activity_type;
+      const title = data.title || data.description?.slice(0, 40) || '';
+      const titleSuffix = title ? ` — ${title}` : '';
+
+      if (log.action === 'INSERT') {
+        return `registrou ${typeLabel.toLowerCase()}${titleSuffix}`;
+      }
+      if (log.action === 'DELETE') {
+        return `removeu ${typeLabel.toLowerCase()}${titleSuffix}`;
+      }
+      return `atualizou ${typeLabel.toLowerCase()}${titleSuffix}`;
+    }
+  }
+
+  // Existing standard labels
   const actionLabel = ACTION_LABELS[log.action];
   const table = TABLE_LABELS[log.table_name] || log.table_name;
   const record = getRecordName(log);
@@ -262,6 +403,8 @@ export function getActionStyle(action: string) {
     case 'property_document_created':
     case 'document_created':
     case 'sale_recorded':
+    case 'lease_signed':
+    case 'billing_issued':
       return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
     case 'DELETE':
     case 'property_document_deleted':
@@ -270,6 +413,9 @@ export function getActionStyle(action: string) {
     case 'UPDATE':
     case 'deal_stage_change':
     case 'document_updated':
+    case 'lease_rent_adjusted':
+    case 'visit_completed':
+    case 'proposal_sent':
       return 'bg-blue-500/15 text-blue-600 dark:text-blue-400';
     default:
       return 'bg-muted text-muted-foreground';
@@ -296,5 +442,40 @@ export function formatTimestampAbsolute(dateStr: string): string {
   return new Date(dateStr).toLocaleString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
+  });
+}
+
+// ── Deduplication helper ──────────────────────────────────
+
+/** Specific milestone actions that override generic INSERT/UPDATE/DELETE */
+const SPECIFIC_ACTIONS = new Set([
+  'proposal_sent', 'lease_signed', 'lease_rent_adjusted',
+  'visit_completed', 'billing_issued', 'deal_stage_change',
+  'sale_recorded', 'property_document_created', 'property_document_deleted',
+  'document_created', 'document_updated', 'document_deleted',
+]);
+
+/**
+ * Remove generic INSERT/UPDATE/DELETE when a specific milestone event
+ * exists for the same record_id within 2 seconds.
+ */
+export function deduplicateAuditLogs(logs: AuditLog[]): AuditLog[] {
+  // Build set of (record_id, ~timestamp) that have specific actions
+  const specificKeys = new Set<string>();
+  for (const log of logs) {
+    if (SPECIFIC_ACTIONS.has(log.action) && log.record_id) {
+      // Round to 2-second window
+      const ts = Math.floor(new Date(log.created_at).getTime() / 2000);
+      specificKeys.add(`${log.record_id}:${ts}`);
+      specificKeys.add(`${log.record_id}:${ts - 1}`);
+      specificKeys.add(`${log.record_id}:${ts + 1}`);
+    }
+  }
+
+  return logs.filter(log => {
+    if (!['INSERT', 'UPDATE', 'DELETE'].includes(log.action)) return true;
+    if (!log.record_id) return true;
+    const ts = Math.floor(new Date(log.created_at).getTime() / 2000);
+    return !specificKeys.has(`${log.record_id}:${ts}`);
   });
 }
