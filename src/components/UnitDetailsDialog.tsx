@@ -302,6 +302,12 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
               </div>
             </TabsContent>
 
+            <TabsContent value="documents" className="mt-4">
+              {user && (
+                <UnitDocuments unitId={unit.id} userId={user.id} />
+              )}
+            </TabsContent>
+
             <TabsContent value="activities" className="mt-4">
               {user && (
                 <AssetActivityTimeline
