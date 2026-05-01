@@ -163,7 +163,7 @@ export const EditUnitDialog = ({
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   
