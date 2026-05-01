@@ -35,7 +35,7 @@ export function useBulkActionGate() {
     if (!ownerId) return { canProceed: false, reason: 'requires_approval' };
 
     // 2) Fetch threshold
-    const { data: threshold } = await supabase
+    const { data: threshold } = await (supabase as any)
       .from('approval_thresholds')
       .select('threshold, enabled')
       .eq('organization_owner_id', ownerId)
@@ -52,7 +52,7 @@ export function useBulkActionGate() {
     }
 
     // 4) Check for existing approved request
-    const { data: approved } = await supabase
+    const { data: approved } = await (supabase as any)
       .from('approval_requests')
       .select('id, item_count')
       .eq('requested_by', user.id)
@@ -64,7 +64,7 @@ export function useBulkActionGate() {
       .maybeSingle();
 
     if (approved) {
-      const { data: consumed } = await supabase.rpc('consume_approval', {
+      const { data: consumed } = await supabase.rpc('consume_approval' as any, {
         p_request_id: approved.id,
       });
 
@@ -87,7 +87,7 @@ export function useBulkActionGate() {
   ): Promise<string> => {
     if (!user?.id || !ownerId) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('approval_requests')
       .insert({
         organization_owner_id: ownerId,
