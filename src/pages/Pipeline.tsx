@@ -1381,6 +1381,15 @@ const Pipeline = () => {
           onMove={handleBulkMove}
           onCancel={handleCancelSelection}
         />
+
+        {pendingGateInput && (
+          <RequestApprovalDialog
+            open={approvalDialogOpen}
+            onClose={() => setApprovalDialogOpen(false)}
+            gateInput={pendingGateInput}
+            thresholdValue={pendingThreshold}
+          />
+        )}
       </div>
 
       <CreateDealDialog
