@@ -39,6 +39,7 @@ import {
 
 import { PropertyInfoCard } from '@/components/properties/PropertyInfoCard';
 import { EditUnitDialog } from '@/components/units/EditUnitDialog';
+import { UnitDocuments } from '@/components/units/UnitDocuments';
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 
 import { UNIT_STATUS_STYLES } from '@/utils/uiConstants';
