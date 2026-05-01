@@ -1159,12 +1159,15 @@ export type Database = {
           deal_id: string | null
           description: string | null
           document_type: string
-          file_path: string
+          external_provider: string | null
+          external_url: string | null
+          file_path: string | null
           file_size: number | null
           id: string
           lead_id: string | null
           mime_type: string | null
           parent_id: string | null
+          source_type: string
           title: string
           unit_id: string | null
           updated_at: string
@@ -1176,12 +1179,15 @@ export type Database = {
           deal_id?: string | null
           description?: string | null
           document_type: string
-          file_path: string
+          external_provider?: string | null
+          external_url?: string | null
+          file_path?: string | null
           file_size?: number | null
           id?: string
           lead_id?: string | null
           mime_type?: string | null
           parent_id?: string | null
+          source_type?: string
           title: string
           unit_id?: string | null
           updated_at?: string
@@ -1193,12 +1199,15 @@ export type Database = {
           deal_id?: string | null
           description?: string | null
           document_type?: string
-          file_path?: string
+          external_provider?: string | null
+          external_url?: string | null
+          file_path?: string | null
           file_size?: number | null
           id?: string
           lead_id?: string | null
           mime_type?: string | null
           parent_id?: string | null
+          source_type?: string
           title?: string
           unit_id?: string | null
           updated_at?: string

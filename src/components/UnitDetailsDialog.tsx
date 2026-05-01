@@ -20,7 +20,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Calendar, Trash2, Building2, ExternalLink, ChevronDown, ClipboardList, Info } from 'lucide-react';
+import { Calendar, Trash2, Building2, ExternalLink, ChevronDown, ClipboardList, Info, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,7 @@ import {
 
 import { PropertyInfoCard } from '@/components/properties/PropertyInfoCard';
 import { EditUnitDialog } from '@/components/units/EditUnitDialog';
+import { UnitDocuments } from '@/components/units/UnitDocuments';
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 
 import { UNIT_STATUS_STYLES } from '@/utils/uiConstants';
@@ -51,7 +52,7 @@ interface UnitDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  defaultTab?: 'details' | 'activities';
+  defaultTab?: 'details' | 'documents' | 'activities';
 }
 
 interface PropertyDetails {
@@ -151,10 +152,14 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details" className="text-xs sm:text-sm">
                 <Info className="h-4 w-4 mr-1.5" />
                 Detalhes
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs sm:text-sm">
+                <FileText className="h-4 w-4 mr-1.5" />
+                Documentos
               </TabsTrigger>
               <TabsTrigger value="activities" className="text-xs sm:text-sm">
                 <ClipboardList className="h-4 w-4 mr-1.5" />
@@ -295,6 +300,12 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
                   </div>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="documents" className="mt-4">
+              {user && (
+                <UnitDocuments unitId={unit.id} userId={user.id} />
+              )}
             </TabsContent>
 
             <TabsContent value="activities" className="mt-4">
