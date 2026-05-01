@@ -201,7 +201,8 @@ const ActivityHistory = () => {
     <AppLayout title="Histórico de Atividades">
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Timeline de todas as alterações realizadas no sistema
+          Timeline de todas as alterações realizadas no sistema.
+          <span className="ml-1 opacity-70">Histórico mantido pelos últimos 90 dias.</span>
         </p>
 
         {/* Compact filters */}
@@ -289,7 +290,7 @@ const ActivityHistory = () => {
                   {group.logs.map((log) => {
                     const ActionIcon = getActionIcon(log.action);
                     const TableIcon = TABLE_ICONS[log.table_name] || FileText;
-                    const authorName = profileMap[log.broker_id] || 'Usuário';
+                    const authorName = profileMap[log.actor_user_id || log.broker_id] || 'Usuário';
                     const changes = getChangedFields(log);
 
                     return (
