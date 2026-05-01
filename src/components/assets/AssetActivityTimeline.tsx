@@ -19,6 +19,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
   FileText,
   Download,
   FileDown,
@@ -26,6 +31,7 @@ import {
   X,
   AlertCircle,
   RefreshCw,
+  ChevronDown,
 } from 'lucide-react';
 import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
 import { format } from 'date-fns';
@@ -35,6 +41,7 @@ import {
   TABLE_LABELS,
   TABLE_ICONS,
   ACTION_LABELS,
+  EVENT_GROUPS,
   type AuditLog,
   getChangedFields,
   getRecordName,
@@ -42,6 +49,7 @@ import {
   getActionStyle,
   formatTimestamp,
   formatTimestampAbsolute,
+  deduplicateAuditLogs,
 } from '@/lib/audit-formatting';
 
 // ── Types ──────────────────────────────────────────────────
@@ -61,12 +69,10 @@ interface ProfileMap {
 
 const EVENT_TYPE_FILTERS = [
   { value: 'all', label: 'Todos' },
-  { value: 'edits', label: 'Edições' },
-  { value: 'documents', label: 'Documentos' },
-  { value: 'deals', label: 'Negócios' },
-  { value: 'visits', label: 'Visitas' },
-  { value: 'sales', label: 'Vendas' },
-  { value: 'leases', label: 'Contratos' },
+  ...Object.entries(EVENT_GROUPS).map(([key, def]) => ({
+    value: key,
+    label: def.label,
+  })),
 ];
 
 const PERIOD_FILTERS = [
@@ -76,24 +82,13 @@ const PERIOD_FILTERS = [
   { value: 'all', label: 'Todo o histórico' },
 ];
 
+// Migration deployment date – used for empty state message
+const FEATURE_DEPLOY_DATE = '01/05/2026';
+
 function matchesEventType(log: AuditLog, filterType: string): boolean {
-  switch (filterType) {
-    case 'all': return true;
-    case 'edits':
-      return ['properties', 'units'].includes(log.table_name) && ['INSERT', 'UPDATE', 'DELETE'].includes(log.action);
-    case 'documents':
-      return ['property_documents', 'documents'].includes(log.table_name) ||
-        ['property_document_created', 'property_document_deleted', 'document_created', 'document_deleted', 'document_updated'].includes(log.action);
-    case 'deals':
-      return log.table_name === 'deals' || log.action === 'deal_stage_change';
-    case 'visits':
-      return log.table_name === 'visits';
-    case 'sales':
-      return log.table_name === 'sales' || log.action === 'sale_recorded';
-    case 'leases':
-      return log.table_name === 'leases';
-    default: return true;
-  }
+  if (filterType === 'all') return true;
+  const group = EVENT_GROUPS[filterType];
+  return group ? group.match(log) : true;
 }
 
 function getDayLabel(dateStr: string): string {
@@ -101,6 +96,65 @@ function getDayLabel(dateStr: string): string {
   if (isToday(date)) return 'Hoje';
   if (isYesterday(date)) return 'Ontem';
   return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+}
+
+// ── Billing summary helpers ────────────────────────────────
+
+interface BillingSummary {
+  type: 'billing_summary';
+  monthKey: string;
+  monthLabel: string;
+  logs: AuditLog[];
+}
+
+type TimelineItem = AuditLog | BillingSummary;
+
+function isBillingSummary(item: TimelineItem): item is BillingSummary {
+  return 'type' in item && item.type === 'billing_summary';
+}
+
+function collapseBillingEvents(logs: AuditLog[]): TimelineItem[] {
+  // Count billing_issued per month
+  const billingByMonth = new Map<string, AuditLog[]>();
+  const nonBilling: AuditLog[] = [];
+
+  for (const log of logs) {
+    if (log.action === 'billing_issued') {
+      const d = new Date(log.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!billingByMonth.has(key)) billingByMonth.set(key, []);
+      billingByMonth.get(key)!.push(log);
+    } else {
+      nonBilling.push(log);
+    }
+  }
+
+  // Build items: if a month has >5 billing events, collapse into summary
+  const result: TimelineItem[] = [...nonBilling];
+
+  for (const [key, bLogs] of billingByMonth) {
+    if (bLogs.length > 5) {
+      const d = new Date(bLogs[0].created_at);
+      const label = format(d, "MMMM 'de' yyyy", { locale: ptBR });
+      result.push({
+        type: 'billing_summary',
+        monthKey: key,
+        monthLabel: label,
+        logs: bLogs,
+      });
+    } else {
+      result.push(...bLogs);
+    }
+  }
+
+  // Sort by created_at desc (summaries use first log's date)
+  result.sort((a, b) => {
+    const dateA = isBillingSummary(a) ? a.logs[0].created_at : a.created_at;
+    const dateB = isBillingSummary(b) ? b.logs[0].created_at : b.created_at;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
+
+  return result;
 }
 
 // ── Component ──────────────────────────────────────────────
@@ -127,12 +181,10 @@ export const AssetActivityTimeline = ({
   const { data: rawLogs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['asset-audit-logs', assetType, assetId],
     queryFn: async () => {
-      // We need an OR query: (table_name = X AND record_id = assetId) OR metadata->>key = assetId
-      // Supabase JS doesn't support complex OR on metadata easily, so we use two queries
       const metadataKey = assetType === 'property' ? 'property_id' : 'unit_id';
       const tableName = assetType === 'property' ? 'properties' : 'units';
 
-      const [directResult, metadataResult] = await Promise.all([
+      const [directResult, metaResult] = await Promise.all([
         supabase
           .from('audit_logs')
           .select('*')
@@ -143,22 +195,13 @@ export const AssetActivityTimeline = ({
         supabase
           .from('audit_logs')
           .select('*')
-          .containedBy('metadata', {} as any) // dummy to chain
+          .filter(`metadata->>${metadataKey}`, 'eq', assetId)
           .order('created_at', { ascending: false })
           .limit(500),
       ]);
 
-      // For metadata query, use rpc or raw filter
-      // Actually, supabase-js can filter on jsonb with .filter()
-      const { data: metaData } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .filter(`metadata->>` + metadataKey, 'eq', assetId)
-        .order('created_at', { ascending: false })
-        .limit(500);
-
       const directLogs = directResult.data || [];
-      const metaLogs = metaData || [];
+      const metaLogs = metaResult.data || [];
 
       // Merge and deduplicate by id
       const map = new Map<string, AuditLog>();
@@ -166,10 +209,12 @@ export const AssetActivityTimeline = ({
         map.set(log.id, log as AuditLog);
       }
 
-      // Sort by created_at desc
-      return Array.from(map.values()).sort(
+      const merged = Array.from(map.values()).sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
+
+      // Deduplicate generic vs specific
+      return deduplicateAuditLogs(merged);
     },
     staleTime: 30_000,
   });
@@ -205,27 +250,30 @@ export const AssetActivityTimeline = ({
     });
   }, [rawLogs, eventFilter, periodStartDate, userFilter]);
 
-  // Paginate
-  const paginatedLogs = useMemo(() => {
-    return filteredLogs.slice(0, page * pageSize);
+  // Collapse billing and paginate
+  const timelineItems = useMemo(() => {
+    const collapsed = collapseBillingEvents(filteredLogs);
+    return collapsed.slice(0, page * pageSize);
   }, [filteredLogs, page, pageSize]);
 
-  const hasMore = paginatedLogs.length < filteredLogs.length;
+  const totalItems = useMemo(() => collapseBillingEvents(filteredLogs).length, [filteredLogs]);
+  const hasMore = timelineItems.length < totalItems;
 
   // Group by day
-  const groupedLogs = useMemo(() => {
-    const groups: { label: string; logs: AuditLog[] }[] = [];
+  const groupedItems = useMemo(() => {
+    const groups: { label: string; items: TimelineItem[] }[] = [];
     let currentDayLabel = '';
-    for (const log of paginatedLogs) {
-      const dayLabel = getDayLabel(log.created_at);
+    for (const item of timelineItems) {
+      const dateStr = isBillingSummary(item) ? item.logs[0].created_at : item.created_at;
+      const dayLabel = getDayLabel(dateStr);
       if (dayLabel !== currentDayLabel) {
         currentDayLabel = dayLabel;
-        groups.push({ label: dayLabel, logs: [] });
+        groups.push({ label: dayLabel, items: [] });
       }
-      groups[groups.length - 1].logs.push(log);
+      groups[groups.length - 1].items.push(item);
     }
     return groups;
-  }, [paginatedLogs]);
+  }, [timelineItems]);
 
   // Users available in logs for filter
   const userOptions = useMemo(() => {
@@ -343,7 +391,7 @@ export const AssetActivityTimeline = ({
       <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
         <div className="flex flex-wrap gap-2">
           <Select value={eventFilter} onValueChange={(v) => { setEventFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-[130px] h-8 text-xs">
+            <SelectTrigger className="w-[150px] h-8 text-xs">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
@@ -419,16 +467,19 @@ export const AssetActivityTimeline = ({
       </p>
 
       {/* Timeline */}
-      {paginatedLogs.length === 0 ? (
+      {timelineItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="h-10 w-10 text-muted-foreground/30 mb-2" />
           <p className="text-sm text-muted-foreground">
-            Nenhuma atividade registrada para este ativo ainda.
+            Histórico de atividades a partir de {FEATURE_DEPLOY_DATE}.
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            Novas atividades aparecerão aqui automaticamente.
           </p>
         </div>
       ) : (
         <div className="space-y-0.5">
-          {groupedLogs.map((group, gi) => (
+          {groupedItems.map((group, gi) => (
             <div key={gi}>
               <div className="flex items-center gap-3 py-2">
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
@@ -438,7 +489,18 @@ export const AssetActivityTimeline = ({
               </div>
 
               <div className="space-y-0.5">
-                {group.logs.map((log) => {
+                {group.items.map((item, idx) => {
+                  if (isBillingSummary(item)) {
+                    return (
+                      <BillingSummaryItem
+                        key={`bs-${item.monthKey}`}
+                        summary={item}
+                        profileMap={profileMap}
+                      />
+                    );
+                  }
+
+                  const log = item;
                   const TableIcon = TABLE_ICONS[log.table_name] || FileText;
                   const authorName = profileMap[log.broker_id] || 'Usuário';
                   const changes = getChangedFields(log);
@@ -503,10 +565,68 @@ export const AssetActivityTimeline = ({
             className="text-xs"
             onClick={() => setPage(p => p + 1)}
           >
-            Carregar mais ({filteredLogs.length - paginatedLogs.length} restantes)
+            Carregar mais ({totalItems - timelineItems.length} restantes)
           </Button>
         </div>
       )}
     </div>
   );
 };
+
+// ── Billing Summary Collapsible ────────────────────────────
+
+function BillingSummaryItem({
+  summary,
+  profileMap,
+}: {
+  summary: BillingSummary;
+  profileMap: ProfileMap;
+}) {
+  const [open, setOpen] = useState(false);
+  const brlFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const totalAmount = summary.logs.reduce((sum, l) => {
+    const amt = l.metadata?.amount ?? l.new_data?.amount ?? 0;
+    return sum + Number(amt);
+  }, 0);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <div className="flex items-center gap-2.5 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+            <FileText className="h-3 w-3" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm leading-snug text-muted-foreground">
+              <span className="font-medium text-foreground">{summary.logs.length} cobranças</span>
+              {' '}geradas em {summary.monthLabel}
+              {totalAmount > 0 && (
+                <span className="ml-1 text-xs">
+                  — total {brlFmt.format(totalAmount)}
+                </span>
+              )}
+            </p>
+          </div>
+          <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="ml-9 border-l-2 border-muted pl-3 space-y-0.5">
+          {summary.logs.map(log => {
+            const authorName = profileMap[log.broker_id] || 'Usuário';
+            return (
+              <div key={log.id} className="flex items-start gap-2 py-1.5 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground/70">{authorName}</span>
+                <span>{humanizeLog(log)}</span>
+                <span className="ml-auto whitespace-nowrap text-[10px]">
+                  {formatTimestamp(log.created_at)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
