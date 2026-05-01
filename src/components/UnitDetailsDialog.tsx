@@ -86,7 +86,7 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [propertyDetails, setPropertyDetails] = useState<PropertyDetails | null>(null);
   const [showPropertyInfo, setShowPropertyInfo] = useState(false);
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
   useEffect(() => {
     if (open) setActiveTab(defaultTab);

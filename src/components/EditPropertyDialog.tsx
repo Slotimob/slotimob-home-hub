@@ -103,7 +103,7 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [freshProperty, setFreshProperty] = useState<Property | null>(null);
   const [loadingProperty, setLoadingProperty] = useState(false);
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
   const currentProperty = freshProperty || property;
 
