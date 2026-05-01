@@ -240,9 +240,19 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
     if (!doc) return;
 
     try {
-      // Only delete from storage if it's an upload
+      // Only remove from Storage if it's an upload with a valid file_path.
+      // External links have no file in Storage.
       if (doc.source_type === 'upload' && doc.file_path) {
-        await supabase.storage.from('property-media').remove([doc.file_path]);
+        const { error: storageError } = await supabase
+          .storage
+          .from('property-media')
+          .remove([doc.file_path]);
+
+        if (storageError) {
+          // Don't block the flow — just log. Orphan files are less critical
+          // than leaving the DB row dangling.
+          console.warn('Falha ao remover arquivo do Storage:', storageError);
+        }
       }
 
       const { error } = await supabase
@@ -252,7 +262,12 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
 
       if (error) throw error;
 
-      toast({ title: 'Documento excluído!', description: 'O registro foi removido.' });
+      toast({
+        title: 'Documento excluído!',
+        description: doc.source_type === 'external_link'
+          ? 'O link foi removido.'
+          : 'O arquivo foi removido.',
+      });
       loadDocuments();
     } catch (err: any) {
       toast({ title: 'Erro ao excluir', description: err.message, variant: 'destructive' });
