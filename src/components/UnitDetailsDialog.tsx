@@ -152,10 +152,14 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details" className="text-xs sm:text-sm">
                 <Info className="h-4 w-4 mr-1.5" />
                 Detalhes
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs sm:text-sm">
+                <FileText className="h-4 w-4 mr-1.5" />
+                Documentos
               </TabsTrigger>
               <TabsTrigger value="activities" className="text-xs sm:text-sm">
                 <ClipboardList className="h-4 w-4 mr-1.5" />
