@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Dialog,
   DialogContent,
@@ -18,12 +19,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { PropertyForm, PropertyPayload, PropertyFormData } from '@/components/properties/PropertyForm';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, ClipboardList, Settings2 } from 'lucide-react';
 import { useFormDraft } from '@/hooks/useFormDraft';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 
 interface Property {
   id: string;
@@ -47,7 +50,6 @@ interface Property {
   sustainability_features?: string | null;
   technology_features?: string | null;
   gallery_images?: string[] | null;
-  // New fields for asset intelligence
   intent_type?: 'sale' | 'rental' | 'both' | null;
   is_under_management?: boolean | null;
   market_value?: number | null;
@@ -60,9 +62,9 @@ interface EditPropertyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  defaultTab?: 'details' | 'activities';
 }
 
-// Convert property data to form initial data format
 const propertyToFormData = (prop: Property): PropertyFormData => ({
   name: prop.name,
   description: prop.description || '',
@@ -84,7 +86,6 @@ const propertyToFormData = (prop: Property): PropertyFormData => ({
   sustainability_features: prop.sustainability_features || '',
   technology_features: prop.technology_features || '',
   gallery_images: prop.gallery_images || [],
-  // New fields
   intent_type: prop.intent_type || 'sale',
   is_under_management: prop.is_under_management ?? false,
   market_value: prop.market_value?.toString() || '',
@@ -92,7 +93,8 @@ const propertyToFormData = (prop: Property): PropertyFormData => ({
   is_occupied: prop.is_occupied ?? false,
 });
 
-export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: EditPropertyDialogProps) => {
+export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, defaultTab = 'details' }: EditPropertyDialogProps) => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('assets_properties', 'edit');
@@ -101,10 +103,16 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [freshProperty, setFreshProperty] = useState<Property | null>(null);
   const [loadingProperty, setLoadingProperty] = useState(false);
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
   const currentProperty = freshProperty || property;
 
-  // Fetch fresh property data when dialog opens
+  useEffect(() => {
+    if (open) {
+      setActiveTab(defaultTab);
+    }
+  }, [open, defaultTab]);
+
   const fetchProperty = useCallback(async () => {
     if (!open || !property.id) return;
     
@@ -120,7 +128,6 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
       setFreshProperty(data as Property);
     } catch (error: any) {
       console.error('Error fetching property:', error);
-      // Fallback to prop data if fetch fails
       setFreshProperty(property);
     } finally {
       setLoadingProperty(false);
@@ -131,12 +138,10 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
     if (open) {
       fetchProperty();
     } else {
-      // Reset when dialog closes
       setFreshProperty(null);
     }
   }, [open, fetchProperty]);
 
-  // Use form draft hook for persistence
   const draftKey = `edit-property-${property.id}`;
   const { data: formData, setData: setFormData, clearDraft, hasDraft, discardDraft } = useFormDraft({
     key: draftKey,
@@ -144,7 +149,6 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
     enabled: open,
   });
 
-  // Update draft when fresh property is loaded (only if no existing draft)
   useEffect(() => {
     if (freshProperty && !hasDraft) {
       setFormData(propertyToFormData(freshProperty));
@@ -154,15 +158,12 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
   const handleSubmit = async (payload: PropertyPayload) => {
     try {
       setSaving(true);
-
       const { error } = await supabase
         .from('properties')
         .update(payload)
         .eq('id', property.id);
 
       if (error) throw error;
-
-      // Clear draft on successful save
       clearDraft();
 
       toast({
@@ -207,8 +208,6 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
         .eq('id', property.id);
 
       if (error) throw error;
-
-      // Clear draft on delete
       clearDraft();
 
       toast({
@@ -228,17 +227,14 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
   };
 
   const handleCancel = () => {
-    // Clear draft when canceling
     clearDraft();
     onOpenChange(false);
   };
 
-  // Callback to refresh property data after gallery changes
   const handleRefreshProperty = async () => {
     await fetchProperty();
   };
 
-  // Handle discard draft
   const handleDiscardDraft = () => {
     discardDraft();
     if (freshProperty) {
@@ -257,43 +253,68 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess }: 
             </DialogDescription>
           </DialogHeader>
 
-          {/* Draft recovery notice */}
-          {hasDraft && !loadingProperty && (
-            <Alert className="border-amber-500/50 bg-amber-500/10">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
-              <AlertDescription className="flex items-center justify-between">
-                <span className="text-sm">Rascunho recuperado. Você tinha alterações não salvas.</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleDiscardDraft}
-                  className="ml-2 h-7 text-xs"
-                >
-                  Descartar
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="details" className="text-xs sm:text-sm">
+                <Settings2 className="h-4 w-4 mr-1.5" />
+                Detalhes
+              </TabsTrigger>
+              <TabsTrigger value="activities" className="text-xs sm:text-sm">
+                <ClipboardList className="h-4 w-4 mr-1.5" />
+                Atividades
+              </TabsTrigger>
+            </TabsList>
 
-          {loadingProperty ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <PropertyForm
-              key={`${property.id}-${freshProperty?.gallery_images?.length || 0}`}
-              initialData={formData}
-              isEditing={true}
-              onSubmit={canEdit ? handleSubmit : undefined as any}
-              onCancel={handleCancel}
-              onDelete={canDelete ? () => setShowDeleteDialog(true) : undefined}
-              isSubmitting={saving}
-              propertyId={property.id}
-              onRefreshProperty={handleRefreshProperty}
-              onFormChange={setFormData}
-              disabled={!canEdit}
-            />
-          )}
+            <TabsContent value="details" className="mt-4">
+              {/* Draft recovery notice */}
+              {hasDraft && !loadingProperty && (
+                <Alert className="border-amber-500/50 bg-amber-500/10 mb-4">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="flex items-center justify-between">
+                    <span className="text-sm">Rascunho recuperado. Você tinha alterações não salvas.</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleDiscardDraft}
+                      className="ml-2 h-7 text-xs"
+                    >
+                      Descartar
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {loadingProperty ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <PropertyForm
+                  key={`${property.id}-${freshProperty?.gallery_images?.length || 0}`}
+                  initialData={formData}
+                  isEditing={true}
+                  onSubmit={canEdit ? handleSubmit : undefined as any}
+                  onCancel={handleCancel}
+                  onDelete={canDelete ? () => setShowDeleteDialog(true) : undefined}
+                  isSubmitting={saving}
+                  propertyId={property.id}
+                  onRefreshProperty={handleRefreshProperty}
+                  onFormChange={setFormData}
+                  disabled={!canEdit}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="activities" className="mt-4">
+              {user && (
+                <AssetActivityTimeline
+                  assetType="property"
+                  assetId={property.id}
+                  brokerId={user.id}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
