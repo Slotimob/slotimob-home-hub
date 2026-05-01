@@ -52,7 +52,7 @@ interface UnitDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  defaultTab?: 'details' | 'activities';
+  defaultTab?: 'details' | 'documents' | 'activities';
 }
 
 interface PropertyDetails {
