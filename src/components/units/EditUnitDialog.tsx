@@ -466,6 +466,17 @@ export const EditUnitDialog = ({
               <UnitDocuments unitId={unit.id} userId={user.id} />
             )}
           </TabsContent>
+
+          {/* Activities Tab */}
+          <TabsContent value="activities" className="mt-4">
+            {user && (
+              <AssetActivityTimeline
+                assetType="unit"
+                assetId={unit.id}
+                brokerId={user.id}
+              />
+            )}
+          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
