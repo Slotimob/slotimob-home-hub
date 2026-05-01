@@ -268,7 +268,18 @@ export const UnitsBulkActionsBar = ({
         <Button 
           variant="destructive" 
           size="sm" 
-          onClick={() => setShowDeleteDialog(true)}
+          onClick={async () => {
+            const ids = selectedUnits.map((u) => u.id);
+            const gateInput: BulkGateInput = { actionType: 'bulk_delete', itemCount: ids.length, targetTable: 'units', targetIds: ids };
+            const r = await gate.check(gateInput);
+            if (!r.canProceed) {
+              setPendingGateInput(gateInput);
+              setPendingThreshold(r.thresholdValue ?? 0);
+              setApprovalDialogOpen(true);
+              return;
+            }
+            setShowDeleteDialog(true);
+          }}
         >
           <Trash2 className="mr-2 h-4 w-4" />
           Excluir
