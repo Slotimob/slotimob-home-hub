@@ -5,6 +5,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { useWhatsAppGlobalListener } from '@/hooks/useWhatsAppGlobalListener';
 import { supabase } from '@/integrations/supabase/client';
+import { ApprovalStatusBanner } from '@/components/approvals/ApprovalStatusBanner';
 
 interface AppLayoutProps {
   children: ReactNode;
