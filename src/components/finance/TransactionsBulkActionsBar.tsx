@@ -35,6 +35,10 @@ export function TransactionsBulkActionsBar({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const gate = useBulkActionGate();
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [pendingGateInput, setPendingGateInput] = useState<BulkGateInput | null>(null);
+  const [pendingThreshold, setPendingThreshold] = useState(0);
 
   const selectedCount = selectedTransactions.length;
   const hasRecurring = selectedTransactions.some((t) => t.group_id);
