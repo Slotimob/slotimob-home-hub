@@ -1145,6 +1145,72 @@ export type Database = {
           },
         ]
       }
+      data_export_requests: {
+        Row: {
+          admin_note: string | null
+          delivered_at: string | null
+          delivered_by: string | null
+          delivery_file_path: string | null
+          delivery_file_size: number | null
+          download_count: number
+          expected_by: string
+          expires_at: string | null
+          handled_by: string | null
+          id: string
+          internal_note: string | null
+          last_downloaded_at: string | null
+          organization_owner_id: string
+          reason: string
+          request_note: string | null
+          requested_at: string
+          requested_by: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_file_path?: string | null
+          delivery_file_size?: number | null
+          download_count?: number
+          expected_by?: string
+          expires_at?: string | null
+          handled_by?: string | null
+          id?: string
+          internal_note?: string | null
+          last_downloaded_at?: string | null
+          organization_owner_id: string
+          reason: string
+          request_note?: string | null
+          requested_at?: string
+          requested_by: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_file_path?: string | null
+          delivery_file_size?: number | null
+          download_count?: number
+          expected_by?: string
+          expires_at?: string | null
+          handled_by?: string | null
+          id?: string
+          internal_note?: string | null
+          last_downloaded_at?: string | null
+          organization_owner_id?: string
+          reason?: string
+          request_note?: string | null
+          requested_at?: string
+          requested_by?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       deal_activities: {
         Row: {
           activity_type: string
@@ -2680,6 +2746,7 @@ export type Database = {
           ical_token: string | null
           id: string
           instagram_url: string | null
+          is_super_admin: boolean
           linkedin_url: string | null
           notification_sound_enabled: boolean | null
           notification_vibration_enabled: boolean | null
@@ -2714,6 +2781,7 @@ export type Database = {
           ical_token?: string | null
           id: string
           instagram_url?: string | null
+          is_super_admin?: boolean
           linkedin_url?: string | null
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
@@ -2748,6 +2816,7 @@ export type Database = {
           ical_token?: string | null
           id?: string
           instagram_url?: string | null
+          is_super_admin?: boolean
           linkedin_url?: string | null
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
@@ -4556,6 +4625,10 @@ export type Database = {
       maintain_audit_partitions: { Args: never; Returns: undefined }
       regenerate_feed_token: { Args: { p_user_id: string }; Returns: string }
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
+      register_export_download: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
       reset_ai_credits_for_user: {
         Args: { p_user_id: string }
         Returns: undefined
