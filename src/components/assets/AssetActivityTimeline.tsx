@@ -170,10 +170,12 @@ export const AssetActivityTimeline = ({
   brokerId,
   pageSize = 25,
 }: AssetActivityTimelineProps) => {
+  const { toast } = useToast();
   const [eventFilter, setEventFilter] = useState('all');
   const [periodFilter, setPeriodFilter] = useState('30');
   const [userFilter, setUserFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [raConfigOpen, setRaConfigOpen] = useState(false);
 
   // Build date filter
   const periodStartDate = useMemo(() => {
