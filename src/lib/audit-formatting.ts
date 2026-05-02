@@ -8,6 +8,8 @@ import {
   FileText,
   FileSignature,
   MessageSquare,
+  Hammer,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -50,6 +52,8 @@ export const TABLE_ICONS: Record<string, LucideIcon> = {
   proposals: FileSignature,
   deal_activities: MessageSquare,
   schedule_activities: CalendarDays,
+  asset_improvements: Hammer,
+  market_value_history: TrendingUp,
 };
 
 export const ACTION_LABELS: Record<string, string> = {
