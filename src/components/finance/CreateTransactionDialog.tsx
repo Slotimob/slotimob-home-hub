@@ -25,6 +25,7 @@ import { ObligationType } from "@/hooks/useAssetHealth";
 import { ObligationSelector } from "@/components/finance/ObligationSelector";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ASSET_EXPENSE_CATEGORY_LIST } from "@/lib/asset-expense-categories";
 
 export interface TransactionPrefill {
   description?: string;
