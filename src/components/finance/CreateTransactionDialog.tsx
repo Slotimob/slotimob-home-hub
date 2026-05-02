@@ -86,6 +86,7 @@ export function CreateTransactionDialog({
     notes: editTransaction?.notes || "",
     unitId: editTransaction?.unit_id || prefill?.unitId || "",
     contactId: editTransaction?.contact_id || "",
+    assetExpenseCategory: editTransaction?.asset_expense_category || "",
   });
 
   // Obligation linking state
