@@ -189,6 +189,7 @@ export function TransactionsBulkEditDialog({
         }
       }
       if (updateBankAccount) updateData.bank_account_id = bankAccountId;
+      if (updateAssetExpenseCategory) updateData.asset_expense_category = assetExpenseCategory || null;
 
       const { error } = await supabase
         .from("financial_transactions")
