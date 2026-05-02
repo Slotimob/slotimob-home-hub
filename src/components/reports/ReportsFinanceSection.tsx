@@ -25,6 +25,7 @@ interface ReportsFinanceSectionProps {
 }
 
 export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: ReportsFinanceSectionProps) => {
+  const [cashflowConfigOpen, setCashflowConfigOpen] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchTransactions = async (type?: 'income' | 'expense') => {
