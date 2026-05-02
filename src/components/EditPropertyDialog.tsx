@@ -310,6 +310,15 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
               )}
             </TabsContent>
 
+            <TabsContent value="financial" className="mt-4">
+              <AssetFinancialPanel
+                assetType="property"
+                assetId={property.id}
+                currentMarketValue={currentProperty.market_value}
+                disabled={!canEdit}
+              />
+            </TabsContent>
+
             <TabsContent value="activities" className="mt-4">
               {user && (
                 <AssetActivityTimeline
