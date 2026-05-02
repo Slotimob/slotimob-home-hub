@@ -68,6 +68,7 @@ export function TransactionsBulkEditDialog({
   const [amount, setAmount] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [bankAccountId, setBankAccountId] = useState<string>("");
+  const [assetExpenseCategory, setAssetExpenseCategory] = useState<string>("");
 
   // Bank accounts
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
