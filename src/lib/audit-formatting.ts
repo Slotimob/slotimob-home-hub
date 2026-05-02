@@ -31,6 +31,8 @@ export const TABLE_LABELS: Record<string, string> = {
   deal_activities: 'atividade do negócio',
   schedule_activities: 'agenda',
   data_export_requests: 'exportação de dados',
+  asset_improvements: 'benfeitoria',
+  market_value_history: 'avaliação de mercado',
 };
 
 export const TABLE_ICONS: Record<string, LucideIcon> = {
@@ -72,6 +74,8 @@ export const ACTION_LABELS: Record<string, string> = {
   data_export_rejected: 'Exportação recusada',
   data_export_cancelled: 'Exportação cancelada',
   data_export_purged: 'Arquivo de exportação removido',
+  improvement_created: 'Registrou benfeitoria',
+  market_value_recorded: 'Reavaliou valor de mercado',
 };
 
 export const IGNORED_FIELDS = new Set([
