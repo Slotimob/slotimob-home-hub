@@ -63,7 +63,7 @@ interface EditPropertyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  defaultTab?: 'details' | 'activities';
+  defaultTab?: 'details' | 'financial' | 'activities';
 }
 
 const propertyToFormData = (prop: Property): PropertyFormData => ({
