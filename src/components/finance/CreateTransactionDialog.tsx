@@ -25,6 +25,7 @@ import { ObligationType } from "@/hooks/useAssetHealth";
 import { ObligationSelector } from "@/components/finance/ObligationSelector";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ASSET_EXPENSE_CATEGORY_LIST } from "@/lib/asset-expense-categories";
 
 export interface TransactionPrefill {
   description?: string;
@@ -85,6 +86,7 @@ export function CreateTransactionDialog({
     notes: editTransaction?.notes || "",
     unitId: editTransaction?.unit_id || prefill?.unitId || "",
     contactId: editTransaction?.contact_id || "",
+    assetExpenseCategory: editTransaction?.asset_expense_category || "",
   });
 
   // Obligation linking state
@@ -263,6 +265,7 @@ export function CreateTransactionDialog({
         contact_id: formData.contactId || null,
         obligation_type: selectedObligationType || obligationType || null,
         competency_period: selectedCompetencyPeriod || competencyPeriod || null,
+        asset_expense_category: (type === 'expense' && formData.unitId && formData.assetExpenseCategory) ? formData.assetExpenseCategory : null,
       };
 
       if (editTransaction) {
@@ -335,6 +338,7 @@ export function CreateTransactionDialog({
       notes: "",
       unitId: "",
       contactId: "",
+      assetExpenseCategory: "",
     });
     setTransferData({
       amount: "",
@@ -465,6 +469,38 @@ export function CreateTransactionDialog({
                     />
                     <p className="text-xs text-muted-foreground">
                       Vincule este lançamento a uma obrigação para rastreamento automático na Gestão de Ativos.
+                    </p>
+                  </div>
+                )}
+
+                {/* Asset Expense Category - Shows when expense + unit selected */}
+                {type === 'expense' && formData.unitId && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Home className="h-4 w-4" />
+                      Categoria do imóvel
+                    </Label>
+                    <Select
+                      value={formData.assetExpenseCategory || '__none__'}
+                      onValueChange={(v) => setFormData({ ...formData, assetExpenseCategory: v === '__none__' ? '' : v })}
+                    >
+                      <SelectTrigger className="text-base">
+                        <SelectValue placeholder="Selecionar (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Nenhuma</SelectItem>
+                        {ASSET_EXPENSE_CATEGORY_LIST.map((cat) => (
+                          <SelectItem key={cat.key} value={cat.key}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                              {cat.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Classificação padronizada para relatórios patrimoniais.
                     </p>
                   </div>
                 )}

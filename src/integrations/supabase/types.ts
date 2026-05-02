@@ -1814,6 +1814,7 @@ export type Database = {
       financial_transactions: {
         Row: {
           amount: number
+          asset_expense_category: string | null
           assigned_user_id: string | null
           bank_account_id: string | null
           broker_id: string
@@ -1846,6 +1847,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          asset_expense_category?: string | null
           assigned_user_id?: string | null
           bank_account_id?: string | null
           broker_id: string
@@ -1878,6 +1880,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          asset_expense_category?: string | null
           assigned_user_id?: string | null
           bank_account_id?: string | null
           broker_id?: string

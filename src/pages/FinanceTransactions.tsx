@@ -27,6 +27,7 @@ export interface TransactionFilters {
   bankAccountId: string;
   reconciled: string; // "all" | "reconciled" | "not_reconciled"
   hideTransfers: boolean;
+  assetExpenseCategory: string; // "all" | specific category | "uncategorized"
 }
 
 const FinanceTransactions = () => {
@@ -56,6 +57,7 @@ const FinanceTransactions = () => {
     bankAccountId: "",
     reconciled: "all",
     hideTransfers: false,
+    assetExpenseCategory: "all",
   });
 
   const [sortConfig, setSortConfig] = useState<SortConfig | undefined>(undefined);

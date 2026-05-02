@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { ASSET_EXPENSE_CATEGORY_LIST } from "@/lib/asset-expense-categories";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -56,6 +57,7 @@ export function TransactionsBulkEditDialog({
   const [updateAmount, setUpdateAmount] = useState(false);
   const [updateStatus, setUpdateStatus] = useState(false);
   const [updateBankAccount, setUpdateBankAccount] = useState(false);
+  const [updateAssetExpenseCategory, setUpdateAssetExpenseCategory] = useState(false);
 
   // Field values
   const [type, setType] = useState<string>("");
@@ -66,6 +68,7 @@ export function TransactionsBulkEditDialog({
   const [amount, setAmount] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [bankAccountId, setBankAccountId] = useState<string>("");
+  const [assetExpenseCategory, setAssetExpenseCategory] = useState<string>("");
 
   // Bank accounts
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
@@ -101,6 +104,7 @@ export function TransactionsBulkEditDialog({
       setUpdateAmount(false);
       setUpdateStatus(false);
       setUpdateBankAccount(false);
+      setUpdateAssetExpenseCategory(false);
       setType("");
       setDescription("");
       setCategoryId("");
@@ -109,13 +113,14 @@ export function TransactionsBulkEditDialog({
       setAmount("");
       setStatus("");
       setBankAccountId("");
+      setAssetExpenseCategory("");
     }
   }, [open, user?.id]);
 
   const handlePrepareSubmit = () => {
     // Validate at least one field selected
     const hasAnyUpdate = updateType || updateDescription || updateCategory || updateIssueDate || 
-                         updateDueDate || updateAmount || updateStatus || updateBankAccount;
+                         updateDueDate || updateAmount || updateStatus || updateBankAccount || updateAssetExpenseCategory;
     
     if (!hasAnyUpdate) {
       toast({
@@ -184,6 +189,7 @@ export function TransactionsBulkEditDialog({
         }
       }
       if (updateBankAccount) updateData.bank_account_id = bankAccountId;
+      if (updateAssetExpenseCategory) updateData.asset_expense_category = assetExpenseCategory || null;
 
       const { error } = await supabase
         .from("financial_transactions")
@@ -235,6 +241,7 @@ export function TransactionsBulkEditDialog({
     if (updateAmount) updates.push("Valor");
     if (updateStatus) updates.push("Status");
     if (updateBankAccount) updates.push("Conta Bancária");
+    if (updateAssetExpenseCategory) updates.push("Categoria Patrimonial");
     return updates;
   };
 
@@ -483,6 +490,37 @@ export function TransactionsBulkEditDialog({
                     {bankAccounts.map((acc) => (
                       <SelectItem key={acc.id} value={acc.id}>
                         {acc.name} {acc.bank_name && `(${acc.bank_name})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Asset Expense Category */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="update-asset-expense-category"
+                  checked={updateAssetExpenseCategory}
+                  onCheckedChange={(c) => setUpdateAssetExpenseCategory(c === true)}
+                />
+                <Label htmlFor="update-asset-expense-category" className="text-sm font-medium cursor-pointer">
+                  Categoria Patrimonial
+                </Label>
+              </div>
+              {updateAssetExpenseCategory && (
+                <Select value={assetExpenseCategory} onValueChange={setAssetExpenseCategory}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASSET_EXPENSE_CATEGORY_LIST.map((cat) => (
+                      <SelectItem key={cat.key} value={cat.key}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                          {cat.label}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>

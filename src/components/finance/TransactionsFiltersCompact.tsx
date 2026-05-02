@@ -59,6 +59,7 @@ export function TransactionsFiltersCompact({ filters, onFiltersChange }: Transac
     filters.dueDateTo !== "",
     filters.reconciled !== "all",
     filters.hideTransfers === true,
+    filters.assetExpenseCategory !== "all",
   ].filter(Boolean).length;
 
   const hasAnyFilters = activeFiltersCount > 0 || filters.search !== "";
@@ -77,6 +78,7 @@ export function TransactionsFiltersCompact({ filters, onFiltersChange }: Transac
       bankAccountId: "",
       reconciled: "all",
       hideTransfers: false,
+      assetExpenseCategory: "all",
     });
     setIsOpen(false);
   };
@@ -130,6 +132,7 @@ export function TransactionsFiltersCompact({ filters, onFiltersChange }: Transac
                       dueDateTo: "",
                       reconciled: "all",
                       hideTransfers: false,
+                      assetExpenseCategory: "all",
                     });
                   }}
                 >
