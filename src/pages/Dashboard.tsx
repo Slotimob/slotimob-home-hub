@@ -22,6 +22,10 @@ import {
   FinancialWidget,
   PipelineWidget,
   PortfolioWidget,
+  AppointmentsWidget,
+  RentReceivablesWidget,
+  OpenRentalsWidget,
+  DelinquencyWidget,
   DatePreset,
   DateRange,
 } from '@/components/dashboard';
@@ -213,6 +217,34 @@ const Dashboard = () => {
                 {preferences.widgets.assets && (
                   <section>
                     <AssetsWidget />
+                  </section>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════════
+                    LINHA 3.5: COMPROMISSOS | ALUGUÉIS A RECEBER
+                   ═══════════════════════════════════════════════════════════════ */}
+                {(preferences.widgets.appointments || preferences.widgets.rent_receivables) && (
+                  <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                    {preferences.widgets.appointments && (
+                      <AppointmentsWidget dateRange={dateRange} refreshKey={refreshKey} />
+                    )}
+                    {preferences.widgets.rent_receivables && (
+                      <RentReceivablesWidget dateRange={dateRange} refreshKey={refreshKey} />
+                    )}
+                  </section>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════════
+                    LINHA 3.6: INADIMPLÊNCIA | IMÓVEIS COM ALUGUEL EM ABERTO
+                   ═══════════════════════════════════════════════════════════════ */}
+                {(preferences.widgets.delinquency || preferences.widgets.open_rentals) && (
+                  <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                    {preferences.widgets.delinquency && (
+                      <DelinquencyWidget dateRange={dateRange} refreshKey={refreshKey} />
+                    )}
+                    {preferences.widgets.open_rentals && (
+                      <OpenRentalsWidget dateRange={dateRange} refreshKey={refreshKey} />
+                    )}
                   </section>
                 )}
 

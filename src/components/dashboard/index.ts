@@ -7,3 +7,7 @@ export { AssetsWidget } from './AssetsWidget';
 export { FinancialWidget } from './FinancialWidget';
 export { PipelineWidget } from './PipelineWidget';
 export { PortfolioWidget } from './PortfolioWidget';
+export { AppointmentsWidget } from './AppointmentsWidget';
+export { RentReceivablesWidget } from './RentReceivablesWidget';
+export { OpenRentalsWidget } from './OpenRentalsWidget';
+export { DelinquencyWidget } from './DelinquencyWidget';

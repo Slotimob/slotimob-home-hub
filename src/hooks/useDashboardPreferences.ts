@@ -8,6 +8,10 @@ export interface DashboardWidgetPreferences {
   assets: boolean;
   financial: boolean;
   pipeline: boolean;
+  appointments: boolean;
+  rent_receivables: boolean;
+  open_rentals: boolean;
+  delinquency: boolean;
 }
 
 export interface ShortcutConfig {
@@ -76,13 +80,19 @@ const DEFAULT_PIPELINE_STAGE_CONFIGS: PipelineStageConfig[] = DEFAULT_PIPELINE_S
   enabled: index < 3,
 }));
 
+const DEFAULT_WIDGET_PREFS: DashboardWidgetPreferences = {
+  shortcuts: true,
+  assets: true,
+  financial: true,
+  pipeline: true,
+  appointments: true,
+  rent_receivables: true,
+  open_rentals: false,
+  delinquency: true,
+};
+
 const DEFAULT_PREFERENCES: DashboardPreferences = {
-  widgets: {
-    shortcuts: true,
-    assets: true,
-    financial: true,
-    pipeline: true,
-  },
+  widgets: DEFAULT_WIDGET_PREFS,
   shortcuts: DEFAULT_SHORTCUTS,
   pipelineStages: DEFAULT_PIPELINE_STAGE_CONFIGS,
 };
@@ -140,7 +150,7 @@ export function useDashboardPreferences() {
           });
 
           setPreferences({
-            widgets: settings.visible_widgets || DEFAULT_PREFERENCES.widgets,
+            widgets: { ...DEFAULT_WIDGET_PREFS, ...(settings.visible_widgets || {}) },
             shortcuts: mergedShortcuts,
             pipelineStages: mergedPipelineStages,
             dateFilter: settings.date_filter,
