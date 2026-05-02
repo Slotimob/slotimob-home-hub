@@ -31,6 +31,10 @@ const WIDGET_LABELS: Record<keyof DashboardWidgetPreferences, { label: string; d
   assets: { label: 'Patrimônio', description: 'Visão consolidada de ativos' },
   financial: { label: 'Financeiro', description: 'Receitas, despesas e fluxo de caixa' },
   pipeline: { label: 'Pipeline (CRM)', description: 'Métricas de funil de vendas' },
+  appointments: { label: 'Compromissos', description: 'Próximos compromissos da agenda' },
+  rent_receivables: { label: 'Aluguéis a receber', description: 'Cobranças de aluguel no período' },
+  open_rentals: { label: 'Imóveis com aluguel em aberto', description: 'Imóveis com cobranças pendentes' },
+  delinquency: { label: 'Inadimplência', description: 'Aging de cobranças em atraso' },
 };
 
 export function DashboardCustomizeSheet({
