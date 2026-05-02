@@ -9,14 +9,19 @@ import { FinanceBankAccountsCard } from "@/components/finance/FinanceBankAccount
 import { FinanceUpcomingPayments } from "@/components/finance/FinanceUpcomingPayments";
 import { FinanceUpcomingReceipts } from "@/components/finance/FinanceUpcomingReceipts";
 import { FinanceFilters, FinanceFiltersState } from "@/components/finance/FinanceFilters";
+import { BankAccountFilter } from "@/components/finance/BankAccountFilter";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
+import { useSelectedBankAccount } from "@/hooks/useSelectedBankAccount";
+import { useProgressiveBalance } from "@/hooks/useProgressiveBalance";
 
 const Finance = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { selectedBankAccountId, setSelectedBankAccountId, isAll } = useSelectedBankAccount();
+  const { accounts } = useProgressiveBalance();
 
   // Initialize with current month
   const now = new Date();
@@ -45,6 +50,8 @@ const Finance = () => {
 
   if (!user) return null;
 
+  const bankAccountId = isAll ? undefined : selectedBankAccountId;
+
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
@@ -68,11 +75,21 @@ const Finance = () => {
           dateTo={filters.dateTo}
         />
 
+        {/* Bank Account Filter */}
+        <BankAccountFilter
+          value={selectedBankAccountId}
+          onChange={setSelectedBankAccountId}
+          accounts={accounts}
+        />
+
         {/* Cash Flow Section - Full Width */}
         <FinanceCashFlowChart 
           unitId={filters.unitId}
           dateFrom={filters.dateFrom}
           dateTo={filters.dateTo}
+          bankAccountId={bankAccountId}
+          bankAccounts={accounts}
+          isAllAccounts={isAll}
         />
 
         {/* Categories Charts - Full Width Stacked */}
