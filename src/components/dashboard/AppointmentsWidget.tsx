@@ -161,7 +161,7 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-muted-foreground">
-                        {format(new Date(item.start_at), 'HH:mm')}
+                        {format(new Date(item.scheduled_at), 'HH:mm')}
                       </span>
                       <span className="text-sm font-medium truncate">{item.title}</span>
                     </div>
