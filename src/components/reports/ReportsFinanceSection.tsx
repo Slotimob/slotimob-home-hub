@@ -391,6 +391,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
   };
 
   return (
+    <>
     <ReportsTable
       title="Relatórios Financeiros"
       icon={<BarChart3 className="h-5 w-5" />}
