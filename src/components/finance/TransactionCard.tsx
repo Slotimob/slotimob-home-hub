@@ -213,13 +213,29 @@ export function TransactionCard({
 
       {/* Category and Status */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {transaction.category ? (
             <span className="text-[10px] text-muted-foreground">
               {transaction.category.name}
             </span>
           ) : (
             <span className="text-muted-foreground text-[10px]">Sem categoria</span>
+          )}
+          {transaction.asset_expense_category && ASSET_EXPENSE_CATEGORIES[transaction.asset_expense_category as AssetExpenseCategory] && (
+            <Badge
+              variant="outline"
+              className="text-[9px] px-1.5 py-0 gap-1 font-normal"
+              style={{
+                borderColor: ASSET_EXPENSE_CATEGORIES[transaction.asset_expense_category as AssetExpenseCategory].color + '40',
+                color: ASSET_EXPENSE_CATEGORIES[transaction.asset_expense_category as AssetExpenseCategory].color,
+              }}
+            >
+              <div
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: ASSET_EXPENSE_CATEGORIES[transaction.asset_expense_category as AssetExpenseCategory].color }}
+              />
+              {ASSET_EXPENSE_CATEGORIES[transaction.asset_expense_category as AssetExpenseCategory].label}
+            </Badge>
           )}
           {getStatusBadge()}
         </div>
