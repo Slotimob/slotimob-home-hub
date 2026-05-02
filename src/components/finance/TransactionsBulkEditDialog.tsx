@@ -120,7 +120,7 @@ export function TransactionsBulkEditDialog({
   const handlePrepareSubmit = () => {
     // Validate at least one field selected
     const hasAnyUpdate = updateType || updateDescription || updateCategory || updateIssueDate || 
-                         updateDueDate || updateAmount || updateStatus || updateBankAccount;
+                         updateDueDate || updateAmount || updateStatus || updateBankAccount || updateAssetExpenseCategory;
     
     if (!hasAnyUpdate) {
       toast({
