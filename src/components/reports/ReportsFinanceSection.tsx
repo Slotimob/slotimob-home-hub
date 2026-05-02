@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { ReportRow } from './ReportRow';
 import { ReportsTable } from './ReportsTable';
+import { CashflowReportConfigDialog, CashflowReportConfig } from './CashflowReportConfigDialog';
 import { 
   Wallet, 
   TrendingUp, 
@@ -12,6 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate, calculatePenaltyAndInterest } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
 import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiFormat';
+import { buildCashflowExport } from '@/lib/cashflow-export-data';
+import { generateCashflowPdf, generateCashflowDocx, generateCashflowExcel, generateCashflowCsv } from '@/utils/cashflowExportGenerators';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReportsFinanceSectionProps {
