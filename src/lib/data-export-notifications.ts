@@ -10,7 +10,6 @@ interface ExportRequest {
 
 export async function notifyExportCreated(request: ExportRequest) {
   try {
-    // Get owner info
     const { data: owner } = await supabase
       .from('profiles')
       .select('full_name, email')
@@ -21,10 +20,12 @@ export async function notifyExportCreated(request: ExportRequest) {
       const expectedDate = new Date(request.expected_by).toLocaleDateString('pt-BR');
       await supabase.from('email_notifications').insert({
         broker_id: request.organization_owner_id,
-        email_to: owner.email,
-        email_subject: 'Solicitação de exportação recebida',
-        email_body: `Olá ${owner.full_name || ''},\n\nSua solicitação de exportação de dados foi recebida com sucesso.\n\nPrazo previsto de entrega: ${expectedDate}\n\nVocê receberá um e-mail quando a exportação estiver pronta para download.\n\nEquipe SLOTIMOB`,
+        recipient_email: owner.email,
+        subject: 'Solicitação de exportação recebida',
         email_type: 'data_export_requested',
+        metadata: {
+          body: `Olá ${owner.full_name || ''},\n\nSua solicitação de exportação de dados foi recebida com sucesso.\n\nPrazo previsto de entrega: ${expectedDate}\n\nVocê receberá um e-mail quando a exportação estiver pronta para download.\n\nEquipe SLOTIMOB`,
+        },
       });
     }
 
@@ -38,10 +39,12 @@ export async function notifyExportCreated(request: ExportRequest) {
       if (admin.email) {
         await supabase.from('email_notifications').insert({
           broker_id: admin.id,
-          email_to: admin.email,
-          email_subject: `Nova solicitação de exportação — ${owner?.full_name || owner?.email || 'Cliente'}`,
-          email_body: `Nova solicitação de exportação de dados.\n\nCliente: ${owner?.full_name || ''} (${owner?.email || ''})\nMotivo: ${getReasonLabel(request.reason)}\n\nAcesse: https://slotimob.com.br/admin/data-requests`,
+          recipient_email: admin.email,
+          subject: `Nova solicitação de exportação — ${owner?.full_name || owner?.email || 'Cliente'}`,
           email_type: 'data_export_admin_notification',
+          metadata: {
+            body: `Nova solicitação de exportação de dados.\n\nCliente: ${owner?.full_name || ''} (${owner?.email || ''})\nMotivo: ${getReasonLabel(request.reason)}\n\nAcesse: https://slotimob.com.br/admin/data-requests`,
+          },
         });
       }
     }
@@ -62,10 +65,12 @@ export async function notifyPreparationStarted(request: ExportRequest) {
       const expectedDate = new Date(request.expected_by).toLocaleDateString('pt-BR');
       await supabase.from('email_notifications').insert({
         broker_id: request.organization_owner_id,
-        email_to: owner.email,
-        email_subject: 'Sua exportação está sendo processada',
-        email_body: `Olá ${owner.full_name || ''},\n\nSua solicitação de exportação de dados está sendo processada pela nossa equipe.\n\nPrazo previsto: ${expectedDate}\n\nVocê receberá um e-mail assim que estiver pronta.\n\nEquipe SLOTIMOB`,
+        recipient_email: owner.email,
+        subject: 'Sua exportação está sendo processada',
         email_type: 'data_export_in_preparation',
+        metadata: {
+          body: `Olá ${owner.full_name || ''},\n\nSua solicitação de exportação de dados está sendo processada pela nossa equipe.\n\nPrazo previsto: ${expectedDate}\n\nVocê receberá um e-mail assim que estiver pronta.\n\nEquipe SLOTIMOB`,
+        },
       });
     }
   } catch (err) {
@@ -84,10 +89,12 @@ export async function notifyExportRejected(request: ExportRequest) {
     if (owner?.email) {
       await supabase.from('email_notifications').insert({
         broker_id: request.organization_owner_id,
-        email_to: owner.email,
-        email_subject: 'Solicitação de exportação recusada',
-        email_body: `Olá ${owner.full_name || ''},\n\nSua solicitação de exportação de dados foi recusada.\n\nMotivo: ${request.admin_note || 'Não especificado'}\n\nSe precisar de mais informações, entre em contato com nosso suporte.\n\nEquipe SLOTIMOB`,
+        recipient_email: owner.email,
+        subject: 'Solicitação de exportação recusada',
         email_type: 'data_export_rejected',
+        metadata: {
+          body: `Olá ${owner.full_name || ''},\n\nSua solicitação de exportação de dados foi recusada.\n\nMotivo: ${request.admin_note || 'Não especificado'}\n\nSe precisar de mais informações, entre em contato com nosso suporte.\n\nEquipe SLOTIMOB`,
+        },
       });
     }
   } catch (err) {
