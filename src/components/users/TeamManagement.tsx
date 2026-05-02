@@ -176,7 +176,7 @@ export function TeamManagement() {
       ) : (
         <div className="space-y-3">
           {members.map((member: any) => (
-            <TeamMemberCard key={member.id} member={member} readOnly={false} />
+            <TeamMemberCard key={member.id} member={member} />
           ))}
         </div>
       )}
