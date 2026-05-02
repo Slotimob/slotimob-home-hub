@@ -37,6 +37,25 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
   const { toast } = useToast();
   const { user } = useAuth();
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>('');
+  const [raConfigOpen, setRaConfigOpen] = useState(false);
+  const [raFormat, setRaFormat] = useState<'pdf' | 'docx' | 'excel' | 'csv'>('pdf');
+
+  const handleRaGenerate = async (data: AssetReportData) => {
+    try {
+      if (raFormat === 'pdf') await generateAssetReportPdf(data);
+      else if (raFormat === 'docx') await generateAssetReportDocx(data);
+      else if (raFormat === 'excel') await generateAssetReportExcel(data);
+      else generateAssetReportCsv(data);
+      toast({ title: `${raFormat.toUpperCase()} gerado com sucesso!`, duration: 1000 });
+    } catch (e: any) {
+      toast({ title: 'Erro ao gerar relatório', description: e.message, variant: 'destructive', duration: 1000 });
+    }
+  };
+
+  const openRaConfig = (fmt: 'pdf' | 'docx' | 'excel' | 'csv') => {
+    setRaFormat(fmt);
+    setRaConfigOpen(true);
+  };
 
   const { data: activeLeases = [] } = useQuery({
     queryKey: ['active-leases-for-reports', user?.id],
