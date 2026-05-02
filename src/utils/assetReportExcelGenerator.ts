@@ -3,90 +3,118 @@
  */
 import type { AssetReportData } from '@/lib/asset-report-data';
 import { ASSET_EXPENSE_CATEGORIES } from '@/lib/asset-expense-categories';
+import ExcelJS from 'exceljs';
 
 function getCategoryLabel(cat: string | null): string {
   if (!cat) return 'Outros';
   return (ASSET_EXPENSE_CATEGORIES as any)[cat]?.label ?? 'Outros';
 }
 
+function pct(v: number | null | undefined): string {
+  if (v == null) return '—';
+  return `${v.toFixed(2)}%`;
+}
+
 export async function generateAssetReportExcel(report: AssetReportData) {
-  const XLSX = await import('xlsx');
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
+  const headerStyle: Partial<ExcelJS.Style> = {
+    font: { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 },
+    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A5F' } },
+    alignment: { horizontal: 'center' },
+  };
+
+  function addHeader(ws: ExcelJS.Worksheet, cols: string[]) {
+    const row = ws.addRow(cols);
+    row.eachCell(c => { c.style = headerStyle; });
+    return row;
+  }
 
   // Tab 1: Summary
-  const summaryData = [
-    ['Indicador', 'Valor'],
-    ['Total de imóveis', report.summary.total_assets],
-    ['Total investido', report.summary.total_invested],
-    ['Valor de mercado total', report.summary.total_market_value],
-    ['Valorização absoluta', report.summary.total_appreciation_abs ?? '—'],
-    ['Valorização %', report.summary.total_appreciation_pct != null ? `${report.summary.total_appreciation_pct.toFixed(2)}%` : '—'],
-    ['Receitas no período', report.summary.period_income],
-    ['Despesas no período', report.summary.period_expenses],
-    ['Resultado líquido', report.summary.period_net],
-    ['ROI no período', report.summary.period_roi_pct != null ? `${report.summary.period_roi_pct.toFixed(2)}%` : '—'],
-    ['Yield mensal médio', report.summary.monthly_yield_avg != null ? `${report.summary.monthly_yield_avg.toFixed(2)}%` : '—'],
-    ['Cap Rate médio', report.summary.cap_rate_avg != null ? `${report.summary.cap_rate_avg.toFixed(2)}%` : '—'],
-    [],
+  const wsSummary = wb.addWorksheet('Sumário');
+  wsSummary.columns = [{ width: 30 }, { width: 30 }];
+  addHeader(wsSummary, ['Indicador', 'Valor']);
+  const s = report.summary;
+  const kpis: [string, string | number][] = [
+    ['Total de imóveis', s.total_assets],
+    ['Total investido', s.total_invested],
+    ['Valor de mercado total', s.total_market_value],
+    ['Valorização absoluta', s.total_appreciation_abs ?? '—'],
+    ['Valorização %', pct(s.total_appreciation_pct)],
+    ['Receitas no período', s.period_income],
+    ['Despesas no período', s.period_expenses],
+    ['Resultado líquido', s.period_net],
+    ['ROI no período', pct(s.period_roi_pct)],
+    ['Yield mensal médio', pct(s.monthly_yield_avg)],
+    ['Cap Rate médio', pct(s.cap_rate_avg)],
+    ['', ''],
     ['Período', `${report.period.from} a ${report.period.to}`],
     ['Gerado em', new Date(report.generated_at).toLocaleString('pt-BR')],
   ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'Sumário');
+  for (const [k, v] of kpis) wsSummary.addRow([k, v]);
 
   // Tab 2: Acquisition
-  const acqRows = [['Nome', 'Tipo', 'Endereço', 'Valor Aquisição', 'Data Aquisição', 'Custos', 'Total Investido', 'Observações']];
+  const wsAcq = wb.addWorksheet('Aquisição');
+  wsAcq.columns = [{ width: 30 }, { width: 10 }, { width: 30 }, { width: 18 }, { width: 14 }, { width: 18 }, { width: 18 }, { width: 30 }];
+  addHeader(wsAcq, ['Nome', 'Tipo', 'Endereço', 'Valor Aquisição', 'Data', 'Custos', 'Total Investido', 'Observações']);
   for (const a of report.assets) {
-    acqRows.push([
+    wsAcq.addRow([
       a.name, a.type === 'property' ? 'Imóvel' : 'Unidade', a.address,
-      a.acquisition?.value as any ?? '', a.acquisition?.date ?? '', a.acquisition?.costs as any ?? '',
-      a.acquisition?.total_invested as any ?? '', a.acquisition?.notes ?? '',
+      a.acquisition?.value ?? '', a.acquisition?.date ?? '', a.acquisition?.costs ?? '',
+      a.acquisition?.total_invested ?? '', a.acquisition?.notes ?? '',
     ]);
   }
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(acqRows), 'Aquisição');
 
   // Tab 3: Market
-  const mktRows = [['Nome', 'Tipo', 'Valor Atual', 'Valorização Abs', 'Valorização %']];
+  const wsMkt = wb.addWorksheet('Mercado');
+  wsMkt.columns = [{ width: 30 }, { width: 10 }, { width: 18 }, { width: 18 }, { width: 14 }];
+  addHeader(wsMkt, ['Nome', 'Tipo', 'Valor Atual', 'Valorização Abs', 'Valorização %']);
   for (const a of report.assets) {
-    mktRows.push([
+    wsMkt.addRow([
       a.name, a.type === 'property' ? 'Imóvel' : 'Unidade',
-      a.market?.current_value as any ?? '',
-      a.market?.appreciation_abs as any ?? '',
-      a.market?.appreciation_pct != null ? `${a.market.appreciation_pct.toFixed(2)}%` : '',
+      a.market?.current_value ?? '', a.market?.appreciation_abs ?? '',
+      pct(a.market?.appreciation_pct),
     ]);
   }
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(mktRows), 'Mercado');
 
-  // Tab 4: Expenses (detailed)
-  const expRows = [['Imóvel', 'Descrição', 'Categoria', 'Valor', 'Data']];
+  // Tab 4: Expenses
+  const wsExp = wb.addWorksheet('Despesas');
+  wsExp.columns = [{ width: 30 }, { width: 35 }, { width: 20 }, { width: 15 }, { width: 14 }];
+  addHeader(wsExp, ['Imóvel', 'Descrição', 'Categoria', 'Valor', 'Data']);
   for (const a of report.assets) {
     for (const e of a.period?.top_expenses || []) {
-      expRows.push([a.name, e.description, getCategoryLabel(e.category), e.amount as any, e.date]);
+      wsExp.addRow([a.name, e.description, getCategoryLabel(e.category), e.amount, e.date]);
     }
   }
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expRows), 'Despesas');
 
   // Tab 5: Improvements
-  const impRows = [['Imóvel', 'Tipo', 'Descrição', 'Custo', 'Data', 'Afeta Valor Mercado']];
+  const wsImp = wb.addWorksheet('Benfeitorias');
+  wsImp.columns = [{ width: 30 }, { width: 18 }, { width: 30 }, { width: 15 }, { width: 14 }, { width: 18 }];
+  addHeader(wsImp, ['Imóvel', 'Tipo', 'Descrição', 'Custo', 'Data', 'Afeta Valor Mercado']);
   for (const a of report.assets) {
     for (const i of a.improvements?.items || []) {
-      impRows.push([a.name, i.type, i.description, i.cost as any, i.completed_at, i.affects_market_value ? 'Sim' : 'Não']);
+      wsImp.addRow([a.name, i.type, i.description, i.cost, i.completed_at, i.affects_market_value ? 'Sim' : 'Não']);
     }
   }
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(impRows), 'Benfeitorias');
 
-  // Tab 6: Activities (summary per asset)
-  const actRows = [['Imóvel', 'Tipo', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Atividades']];
+  // Tab 6: Activities
+  const wsAct = wb.addWorksheet('Atividades');
+  wsAct.columns = [{ width: 30 }, { width: 10 }, { width: 15 }, { width: 15 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }];
+  addHeader(wsAct, ['Imóvel', 'Tipo', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Atividades']);
   for (const a of report.assets) {
-    actRows.push([
+    wsAct.addRow([
       a.name, a.type === 'property' ? 'Imóvel' : 'Unidade',
-      a.period?.income_total as any ?? 0, a.period?.expenses_total as any ?? 0,
-      a.period?.roi_pct != null ? `${a.period.roi_pct.toFixed(2)}%` : '',
-      a.period?.monthly_yield != null ? `${a.period.monthly_yield.toFixed(2)}%` : '',
-      a.period?.cap_rate != null ? `${a.period.cap_rate.toFixed(2)}%` : '',
-      a.period?.activities_count ?? 0,
+      a.period?.income_total ?? 0, a.period?.expenses_total ?? 0,
+      pct(a.period?.roi_pct), pct(a.period?.monthly_yield),
+      pct(a.period?.cap_rate), a.period?.activities_count ?? 0,
     ]);
   }
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(actRows), 'Atividades');
 
-  XLSX.writeFile(wb, `relatorio-imovel-${report.period.from}-${report.period.to}.xlsx`);
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `relatorio-imovel-${report.period.from}-${report.period.to}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
