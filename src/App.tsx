@@ -65,6 +65,8 @@ import BlogPostPage from "./pages/BlogPost";
 import AIChat from "./pages/AIChat";
 import Proposals from "./pages/Proposals";
 import AdminApprovals from "./pages/AdminApprovals";
+import DataExport from "./pages/DataExport";
+import AdminDataRequests from "./pages/AdminDataRequests";
 
 const queryClient = new QueryClient();
 
@@ -141,12 +143,14 @@ const App = () => (
               <Route path="/users" element={guarded(<Users />)} />
               <Route path="/history" element={guarded(<ActivityHistory />)} />
               <Route path="/settings" element={guarded(<Settings />)} />
+              <Route path="/settings/data-export" element={guarded(<DataExport />)} />
               <Route path="/whatsapp" element={guarded(<WhatsApp />)} />
               
               <Route path="/admin/terms" element={guarded(<TermsAdmin />)} />
               <Route path="/admin/users" element={guarded(<UsersAdmin />)} />
               <Route path="/admin/cockpit" element={guarded(<AdminCockpit />)} />
               <Route path="/admin/approvals" element={guarded(<AdminApprovals />)} />
+              <Route path="/admin/data-requests" element={guarded(<AdminDataRequests />)} />
               <Route path="/ai-chat" element={guarded(<RequireFeature feature="ai_chat"><AIChat /></RequireFeature>)} />
 
               {/* Catch-all */}

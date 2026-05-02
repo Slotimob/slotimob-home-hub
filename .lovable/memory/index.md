@@ -106,4 +106,5 @@
 - [Property Standards](mem://features/property-management-standards) — Null property_id on deals, no dummy defaults
 - [PDF Styling](mem://tech/pdf-premium-styling) — html2canvas scaling, shadow overlays, jsPDF-autotable
 - [Realtime Deep Fetch](mem://tech/realtime-deep-fetch-strategy) — Avoiding UI Amnesia on nested joins
-- [Bulk Action Approvals](mem://features/bulk-action-approvals) — Gate system for bulk actions requiring owner approval
+- [Data Export](mem://features/data-export-requests) — Manual export workflow, admin delivers via Storage, signed URLs
+- [Bulk Approvals](mem://features/bulk-action-approvals) — Threshold-based approval system for bulk actions

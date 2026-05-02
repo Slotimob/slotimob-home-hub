@@ -35,13 +35,38 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { confirmation_text, reason } = await req.json();
+    const { confirmation_text, reason, skip_export_check } = await req.json();
 
     if (confirmation_text !== "EXCLUIR MINHA CONTA") {
       return new Response(
         JSON.stringify({ error: "Texto de confirmação inválido" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Service role client for export check
+    const supabaseCheck = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Export guard: require recent delivered export OR explicit skip
+    if (!skip_export_check) {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: recentExport } = await supabaseCheck
+        .from("data_export_requests")
+        .select("id")
+        .eq("organization_owner_id", user.id)
+        .eq("status", "delivered")
+        .gte("delivered_at", thirtyDaysAgo)
+        .limit(1);
+
+      if (!recentExport || recentExport.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Solicite uma exportação dos seus dados ou confirme explicitamente que não precisa." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Service role client for deletions
@@ -84,6 +109,7 @@ Deno.serve(async (req) => {
 
     // 2. Delete all user data from all tables (order matters for FK constraints)
     const tablesToClean = [
+      { table: "data_export_requests", column: "requested_by" },
       { table: "deal_activities", column: "broker_id" },
       { table: "deal_stage_history", column: "broker_id" },
       { table: "deal_tasks", column: "broker_id" },

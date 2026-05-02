@@ -30,6 +30,7 @@ export const TABLE_LABELS: Record<string, string> = {
   proposals: 'proposta',
   deal_activities: 'atividade do negócio',
   schedule_activities: 'agenda',
+  data_export_requests: 'exportação de dados',
 };
 
 export const TABLE_ICONS: Record<string, LucideIcon> = {
@@ -65,6 +66,12 @@ export const ACTION_LABELS: Record<string, string> = {
   lease_rent_adjusted: 'Reajustou aluguel',
   visit_completed: 'Visita realizada',
   billing_issued: 'Cobrança gerada',
+  data_export_requested: 'Solicitou exportação de dados',
+  data_export_in_preparation: 'Exportação em preparação',
+  data_export_delivered: 'Exportação entregue',
+  data_export_rejected: 'Exportação recusada',
+  data_export_cancelled: 'Exportação cancelada',
+  data_export_purged: 'Arquivo de exportação removido',
 };
 
 export const IGNORED_FIELDS = new Set([

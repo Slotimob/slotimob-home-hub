@@ -880,6 +880,29 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Data Export - Owner only */}
+        {!isMember && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Exportar meus dados
+              </CardTitle>
+              <CardDescription>Solicite uma cópia completa dos dados do seu workspace</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => navigate('/settings/data-export')}
+              >
+                <FileText className="h-4 w-4" />
+                Exportar meus dados
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Delete Account - Danger Zone (hidden for members) */}
         {!isMember && <DeleteAccountSection />}
       </div>
