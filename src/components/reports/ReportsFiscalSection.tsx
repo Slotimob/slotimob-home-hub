@@ -253,7 +253,7 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
           icon={<FileWarning className="h-4 w-4" />}
           onGeneratePDF={handleDimobPdf}
           onDownloadCSV={handleDimobCsv}
-          warningMessage={validationErrors.length > 0 ? `${validationErrors.length} pendência(s)` : undefined}
+          warningMessage={validationErrors.length > 0 ? `${validationErrors.length} pendência(s)` : 'Formato fixo exigido pela Receita Federal'}
         />
       </ReportsTable>
     </div>
