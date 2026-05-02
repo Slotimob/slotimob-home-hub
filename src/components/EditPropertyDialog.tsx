@@ -255,10 +255,14 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details" className="text-xs sm:text-sm">
                 <Settings2 className="h-4 w-4 mr-1.5" />
                 Detalhes
+              </TabsTrigger>
+              <TabsTrigger value="financial" className="text-xs sm:text-sm">
+                <DollarSign className="h-4 w-4 mr-1.5" />
+                Financeiro
               </TabsTrigger>
               <TabsTrigger value="activities" className="text-xs sm:text-sm">
                 <ClipboardList className="h-4 w-4 mr-1.5" />
