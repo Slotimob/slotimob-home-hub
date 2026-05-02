@@ -57,6 +57,7 @@ const FinanceTransactions = () => {
     bankAccountId: "",
     reconciled: "all",
     hideTransfers: false,
+    assetExpenseCategory: "all",
   });
 
   const [sortConfig, setSortConfig] = useState<SortConfig | undefined>(undefined);
