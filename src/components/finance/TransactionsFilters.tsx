@@ -162,7 +162,7 @@ export function TransactionsFilters({ filters, onFiltersChange }: TransactionsFi
           </div>
 
           {/* Category Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Category */}
             <Select
               value={filters.categoryId}
@@ -181,6 +181,31 @@ export function TransactionsFilters({ filters, onFiltersChange }: TransactionsFi
                         style={{ backgroundColor: cat.color || "#6366f1" }}
                       />
                       {cat.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Asset Expense Category */}
+            <Select
+              value={filters.assetExpenseCategory}
+              onValueChange={(v) => onFiltersChange({ ...filters, assetExpenseCategory: v })}
+            >
+              <SelectTrigger className="text-sm">
+                <SelectValue placeholder="Categoria patrimonial" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as cat. patrimoniais</SelectItem>
+                <SelectItem value="uncategorized">Sem categoria patrimonial</SelectItem>
+                {ASSET_EXPENSE_CATEGORY_LIST.map((cat) => (
+                  <SelectItem key={cat.key} value={cat.key}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: cat.color }}
+                      />
+                      {cat.label}
                     </div>
                   </SelectItem>
                 ))}
