@@ -473,6 +473,38 @@ export function CreateTransactionDialog({
                   </div>
                 )}
 
+                {/* Asset Expense Category - Shows when expense + unit selected */}
+                {type === 'expense' && formData.unitId && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Home className="h-4 w-4" />
+                      Categoria do imóvel
+                    </Label>
+                    <Select
+                      value={formData.assetExpenseCategory || '__none__'}
+                      onValueChange={(v) => setFormData({ ...formData, assetExpenseCategory: v === '__none__' ? '' : v })}
+                    >
+                      <SelectTrigger className="text-base">
+                        <SelectValue placeholder="Selecionar (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Nenhuma</SelectItem>
+                        {ASSET_EXPENSE_CATEGORY_LIST.map((cat) => (
+                          <SelectItem key={cat.key} value={cat.key}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                              {cat.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Classificação padronizada para relatórios patrimoniais.
+                    </p>
+                  </div>
+                )}
+
                 {/* Contact + Category - 2 col grid, aligned by input base */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                   <div className="space-y-2">
