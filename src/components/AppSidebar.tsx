@@ -334,12 +334,15 @@ export function AppSidebar() {
                             onClick={() => isMobile && setOpenMobile(false)}
                           >
                             <item.icon className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                            <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
+                            <span className={`flex items-center gap-1 transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
                               {item.title}
                               {item.trialVisible && isTrialActive && !collapsed && (
                                 <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/15 text-primary leading-none align-middle">
                                   PRO
                                 </span>
+                              )}
+                              {item.url === '/users' && !canEditPermissions && !collapsed && (
+                                <Lock className="h-3 w-3 text-muted-foreground ml-1" />
                               )}
                             </span>
                           </NavLink>
