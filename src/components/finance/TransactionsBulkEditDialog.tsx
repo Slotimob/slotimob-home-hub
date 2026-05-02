@@ -496,6 +496,37 @@ export function TransactionsBulkEditDialog({
                 </Select>
               )}
             </div>
+
+            {/* Asset Expense Category */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="update-asset-expense-category"
+                  checked={updateAssetExpenseCategory}
+                  onCheckedChange={(c) => setUpdateAssetExpenseCategory(c === true)}
+                />
+                <Label htmlFor="update-asset-expense-category" className="text-sm font-medium cursor-pointer">
+                  Categoria Patrimonial
+                </Label>
+              </div>
+              {updateAssetExpenseCategory && (
+                <Select value={assetExpenseCategory} onValueChange={setAssetExpenseCategory}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASSET_EXPENSE_CATEGORY_LIST.map((cat) => (
+                      <SelectItem key={cat.key} value={cat.key}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                          {cat.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
 
           <DialogFooter className="gap-2">
