@@ -22,11 +22,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { PropertyForm, PropertyPayload, PropertyFormData } from '@/components/properties/PropertyForm';
-import { Loader2, AlertCircle, ClipboardList, Settings2 } from 'lucide-react';
+import { Loader2, AlertCircle, ClipboardList, Settings2, DollarSign } from 'lucide-react';
 import { useFormDraft } from '@/hooks/useFormDraft';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
+import { AssetFinancialPanel } from '@/components/assets/AssetFinancialPanel';
 
 interface Property {
   id: string;
@@ -62,7 +63,7 @@ interface EditPropertyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  defaultTab?: 'details' | 'activities';
+  defaultTab?: 'details' | 'financial' | 'activities';
 }
 
 const propertyToFormData = (prop: Property): PropertyFormData => ({
@@ -254,10 +255,14 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details" className="text-xs sm:text-sm">
                 <Settings2 className="h-4 w-4 mr-1.5" />
                 Detalhes
+              </TabsTrigger>
+              <TabsTrigger value="financial" className="text-xs sm:text-sm">
+                <DollarSign className="h-4 w-4 mr-1.5" />
+                Financeiro
               </TabsTrigger>
               <TabsTrigger value="activities" className="text-xs sm:text-sm">
                 <ClipboardList className="h-4 w-4 mr-1.5" />
@@ -303,6 +308,15 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
                   disabled={!canEdit}
                 />
               )}
+            </TabsContent>
+
+            <TabsContent value="financial" className="mt-4">
+              <AssetFinancialPanel
+                assetType="property"
+                assetId={property.id}
+                currentMarketValue={currentProperty.market_value}
+                disabled={!canEdit}
+              />
             </TabsContent>
 
             <TabsContent value="activities" className="mt-4">

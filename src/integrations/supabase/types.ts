@@ -256,6 +256,76 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_improvements: {
+        Row: {
+          affects_market_value: boolean
+          asset_type: string
+          broker_id: string
+          completed_at: string
+          cost: number
+          created_at: string
+          description: string
+          id: string
+          improvement_type: string
+          invoice_doc_path: string | null
+          property_id: string | null
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          affects_market_value?: boolean
+          asset_type: string
+          broker_id: string
+          completed_at: string
+          cost: number
+          created_at?: string
+          description: string
+          id?: string
+          improvement_type: string
+          invoice_doc_path?: string | null
+          property_id?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          affects_market_value?: boolean
+          asset_type?: string
+          broker_id?: string
+          completed_at?: string
+          cost?: number
+          created_at?: string
+          description?: string
+          id?: string
+          improvement_type?: string
+          invoice_doc_path?: string | null
+          property_id?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_improvements_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_improvements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_improvements_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string | null
@@ -2405,6 +2475,73 @@ export type Database = {
           },
         ]
       }
+      market_value_history: {
+        Row: {
+          appraiser_name: string | null
+          asset_type: string
+          broker_id: string
+          effective_date: string
+          id: string
+          note: string | null
+          property_id: string | null
+          recorded_at: string
+          recorded_by: string | null
+          source: string
+          unit_id: string | null
+          value: number
+        }
+        Insert: {
+          appraiser_name?: string | null
+          asset_type: string
+          broker_id: string
+          effective_date?: string
+          id?: string
+          note?: string | null
+          property_id?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          source?: string
+          unit_id?: string | null
+          value: number
+        }
+        Update: {
+          appraiser_name?: string | null
+          asset_type?: string
+          broker_id?: string
+          effective_date?: string
+          id?: string
+          note?: string | null
+          property_id?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          source?: string
+          unit_id?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_value_history_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_value_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_value_history_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_logs: {
         Row: {
           broker_id: string
@@ -2843,6 +2980,10 @@ export type Database = {
       }
       properties: {
         Row: {
+          acquisition_costs: number | null
+          acquisition_date: string | null
+          acquisition_notes: string | null
+          acquisition_value: number | null
           address: string | null
           amenities: string[] | null
           broker_id: string
@@ -2878,6 +3019,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          acquisition_costs?: number | null
+          acquisition_date?: string | null
+          acquisition_notes?: string | null
+          acquisition_value?: number | null
           address?: string | null
           amenities?: string[] | null
           broker_id: string
@@ -2913,6 +3058,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          acquisition_costs?: number | null
+          acquisition_date?: string | null
+          acquisition_notes?: string | null
+          acquisition_value?: number | null
           address?: string | null
           amenities?: string[] | null
           broker_id?: string
@@ -3729,6 +3878,10 @@ export type Database = {
       }
       units: {
         Row: {
+          acquisition_costs: number | null
+          acquisition_date: string | null
+          acquisition_notes: string | null
+          acquisition_value: number | null
           address: string | null
           area: number | null
           assigned_user_id: string | null
@@ -3778,6 +3931,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          acquisition_costs?: number | null
+          acquisition_date?: string | null
+          acquisition_notes?: string | null
+          acquisition_value?: number | null
           address?: string | null
           area?: number | null
           assigned_user_id?: string | null
@@ -3827,6 +3984,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          acquisition_costs?: number | null
+          acquisition_date?: string | null
+          acquisition_notes?: string | null
+          acquisition_value?: number | null
           address?: string | null
           area?: number | null
           assigned_user_id?: string | null

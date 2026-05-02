@@ -23,8 +23,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { z } from 'zod';
-import { Info, Image, FileText, AlertCircle, Trash2, ClipboardList } from 'lucide-react';
+import { Info, Image, FileText, AlertCircle, Trash2, ClipboardList, DollarSign } from 'lucide-react';
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
+import { AssetFinancialPanel } from '@/components/assets/AssetFinancialPanel';
 import { UnitFormFields, UnitFormData, getInitialFormData } from '@/components/units/UnitFormFields';
 import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
 import { UnitDocuments } from '@/components/units/UnitDocuments';
@@ -376,11 +377,16 @@ export const EditUnitDialog = ({
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="info" className="text-xs sm:text-sm">
               <Info className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Informações</span>
               <span className="sm:hidden">Info</span>
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="text-xs sm:text-sm">
+              <DollarSign className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Financeiro</span>
+              <span className="sm:hidden">Fin.</span>
             </TabsTrigger>
             <TabsTrigger value="gallery" className="text-xs sm:text-sm">
               <Image className="h-4 w-4 mr-1 sm:mr-2" />
@@ -442,6 +448,16 @@ export const EditUnitDialog = ({
                 </div>
               </div>
             </form>
+          </TabsContent>
+
+          {/* Financial Tab */}
+          <TabsContent value="financial" className="mt-4">
+            <AssetFinancialPanel
+              assetType="unit"
+              assetId={unit.id}
+              currentMarketValue={unit.market_value}
+              disabled={!canEdit}
+            />
           </TabsContent>
 
           {/* Gallery Tab */}

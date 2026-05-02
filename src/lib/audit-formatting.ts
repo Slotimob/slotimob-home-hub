@@ -8,6 +8,8 @@ import {
   FileText,
   FileSignature,
   MessageSquare,
+  Hammer,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -31,6 +33,8 @@ export const TABLE_LABELS: Record<string, string> = {
   deal_activities: 'atividade do negócio',
   schedule_activities: 'agenda',
   data_export_requests: 'exportação de dados',
+  asset_improvements: 'benfeitoria',
+  market_value_history: 'avaliação de mercado',
 };
 
 export const TABLE_ICONS: Record<string, LucideIcon> = {
@@ -48,6 +52,8 @@ export const TABLE_ICONS: Record<string, LucideIcon> = {
   proposals: FileSignature,
   deal_activities: MessageSquare,
   schedule_activities: CalendarDays,
+  asset_improvements: Hammer,
+  market_value_history: TrendingUp,
 };
 
 export const ACTION_LABELS: Record<string, string> = {
@@ -72,6 +78,8 @@ export const ACTION_LABELS: Record<string, string> = {
   data_export_rejected: 'Exportação recusada',
   data_export_cancelled: 'Exportação cancelada',
   data_export_purged: 'Arquivo de exportação removido',
+  improvement_created: 'Registrou benfeitoria',
+  market_value_recorded: 'Reavaliou valor de mercado',
 };
 
 export const IGNORED_FIELDS = new Set([
