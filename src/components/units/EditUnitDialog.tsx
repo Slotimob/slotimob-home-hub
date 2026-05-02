@@ -450,6 +450,16 @@ export const EditUnitDialog = ({
             </form>
           </TabsContent>
 
+          {/* Financial Tab */}
+          <TabsContent value="financial" className="mt-4">
+            <AssetFinancialPanel
+              assetType="unit"
+              assetId={unit.id}
+              currentMarketValue={unit.market_value}
+              disabled={!canEdit}
+            />
+          </TabsContent>
+
           {/* Gallery Tab */}
           <TabsContent value="gallery" className="mt-4">
             {user && (
