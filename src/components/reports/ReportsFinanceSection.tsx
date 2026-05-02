@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { ReportRow } from './ReportRow';
 import { ReportsTable } from './ReportsTable';
+import { CashflowReportConfigDialog, CashflowReportConfig } from './CashflowReportConfigDialog';
 import { 
   Wallet, 
   TrendingUp, 
@@ -12,6 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate, calculatePenaltyAndInterest } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
 import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiFormat';
+import { buildCashflowExport } from '@/lib/cashflow-export-data';
+import { generateCashflowPdf, generateCashflowDocx, generateCashflowExcel, generateCashflowCsv } from '@/utils/cashflowExportGenerators';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReportsFinanceSectionProps {
@@ -21,6 +25,7 @@ interface ReportsFinanceSectionProps {
 }
 
 export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: ReportsFinanceSectionProps) => {
+  const [cashflowConfigOpen, setCashflowConfigOpen] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchTransactions = async (type?: 'income' | 'expense') => {
@@ -131,70 +136,42 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
     } catch (error: any) { toast({ title: 'Erro ao gerar Excel', description: error.message, variant: 'destructive' }); }
   };
 
-  // === Fluxo de Caixa helpers ===
-  const buildFluxoCaixaData = async () => {
-    const { data: transactions } = await fetchTransactions();
-    const byMonth: Record<string, { income: number; expense: number }> = {};
-    transactions.forEach(t => {
-      const month = (t.due_date || t.transaction_date).substring(0, 7);
-      if (!byMonth[month]) byMonth[month] = { income: 0, expense: 0 };
-      if (t.type === 'income') byMonth[month].income += t.amount;
-      else byMonth[month].expense += t.amount;
-    });
-    let totalIncome = 0, totalExpense = 0;
-    const tableData = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, { income, expense }]) => {
-      totalIncome += income; totalExpense += expense;
-      return [month, formatCurrency(income), formatCurrency(expense), formatCurrency(income - expense)];
-    });
-    const columns = ['Mês', 'Receitas (R$)', 'Despesas (R$)', 'Saldo (R$)'];
-    return { tableData, columns, totalIncome, totalExpense };
-  };
-
-  const handleFluxoCaixaPdf = async () => {
+  // === Fluxo de Caixa — uses config dialog ===
+  const handleCashflowGenerate = async (config: CashflowReportConfig, formatType: string) => {
     try {
-      const { tableData, columns, totalIncome, totalExpense } = await buildFluxoCaixaData();
-      await generateReportPdf({
-        title: 'Fluxo de Caixa', subtitle: 'Receitas e despesas consolidadas por mês', userName, dateRange, columns, data: tableData,
-        filename: 'fluxo-caixa', footerTotals: ['TOTAIS', formatCurrency(totalIncome), formatCurrency(totalExpense), formatCurrency(totalIncome - totalExpense)],
+      const data = await buildCashflowExport({
+        from: config.dateRange.from,
+        to: config.dateRange.to,
+        accountIds: config.accountIds,
+        mode: config.mode,
       });
-      toast({ title: 'PDF gerado com sucesso!' });
-    } catch (error: any) { toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' }); }
+      switch (formatType) {
+        case 'pdf':
+          await generateCashflowPdf(data, config.mode, userName);
+          toast({ title: 'PDF gerado com sucesso!' });
+          break;
+        case 'csv':
+          generateCashflowCsv(data, config.mode);
+          toast({ title: 'CSV baixado com sucesso!' });
+          break;
+        case 'docx':
+          await generateCashflowDocx(data, config.mode);
+          toast({ title: 'Word gerado com sucesso!' });
+          break;
+        case 'excel':
+          await generateCashflowExcel(data, config.mode);
+          toast({ title: 'Excel gerado com sucesso!' });
+          break;
+      }
+    } catch (error: any) {
+      toast({ title: 'Erro ao gerar relatório', description: error.message, variant: 'destructive' });
+    }
   };
 
-  const handleFluxoCaixaCsv = async () => {
-    try {
-      const { data: transactions } = await fetchTransactions();
-      const byMonth: Record<string, { income: number; expense: number }> = {};
-      transactions.forEach(t => {
-        const month = (t.due_date || t.transaction_date).substring(0, 7);
-        if (!byMonth[month]) byMonth[month] = { income: 0, expense: 0 };
-        if (t.type === 'income') byMonth[month].income += t.amount;
-        else byMonth[month].expense += t.amount;
-      });
-      generateReportCsv({
-        columns: ['Mês', 'Receitas', 'Despesas', 'Saldo'],
-        data: Object.entries(byMonth).map(([month, { income, expense }]) => [month, cleanNumericValue(income), cleanNumericValue(expense), cleanNumericValue(income - expense)]),
-        filename: 'fluxo-caixa',
-      });
-      toast({ title: 'CSV baixado com sucesso!' });
-    } catch (error: any) { toast({ title: 'Erro ao baixar CSV', description: error.message, variant: 'destructive' }); }
-  };
-
-  const handleFluxoCaixaDocx = async () => {
-    try {
-      const { tableData, columns } = await buildFluxoCaixaData();
-      await downloadReportDocx({ title: 'Fluxo de Caixa', reportKey: 'fluxo-caixa', dateRange, columnLabels: columns, data: tableData });
-      toast({ title: 'Word gerado com sucesso!' });
-    } catch (error: any) { toast({ title: 'Erro ao gerar Word', description: error.message, variant: 'destructive' }); }
-  };
-
-  const handleFluxoCaixaExcel = async () => {
-    try {
-      const { tableData, columns } = await buildFluxoCaixaData();
-      await downloadReportExcel({ title: 'Fluxo de Caixa', reportKey: 'fluxo-caixa', dateRange, columnLabels: columns, data: tableData });
-      toast({ title: 'Excel gerado com sucesso!' });
-    } catch (error: any) { toast({ title: 'Erro ao gerar Excel', description: error.message, variant: 'destructive' }); }
-  };
+  const handleFluxoCaixaPdf = async () => setCashflowConfigOpen('pdf');
+  const handleFluxoCaixaCsv = async () => setCashflowConfigOpen('csv');
+  const handleFluxoCaixaDocx = async () => setCashflowConfigOpen('docx');
+  const handleFluxoCaixaExcel = async () => setCashflowConfigOpen('excel');
 
   // === Inadimplência helpers ===
   const buildInadimplenciaData = async () => {
@@ -414,6 +391,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
   };
 
   return (
+    <>
     <ReportsTable
       title="Relatórios Financeiros"
       icon={<BarChart3 className="h-5 w-5" />}
@@ -465,5 +443,15 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
         onDownloadExcel={handleConciliacaoExcel}
       />
     </ReportsTable>
+
+    {cashflowConfigOpen && (
+      <CashflowReportConfigDialog
+        open={!!cashflowConfigOpen}
+        onOpenChange={(open) => !open && setCashflowConfigOpen(null)}
+        formatLabel={cashflowConfigOpen === 'pdf' ? 'PDF' : cashflowConfigOpen === 'csv' ? 'CSV' : cashflowConfigOpen === 'docx' ? 'Word' : 'Excel'}
+        onGenerate={(config) => handleCashflowGenerate(config, cashflowConfigOpen)}
+      />
+    )}
+    </>
   );
 };
