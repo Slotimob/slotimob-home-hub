@@ -5,9 +5,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useCanEditPermissions } from '@/hooks/useCanEditPermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, UserPlus, UsersRound, ShieldCheck } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, UserPlus, UsersRound, ShieldCheck, ShieldAlert, Eye } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { TeamMemberCard } from './TeamMemberCard';
 import { InviteMemberDialog } from './InviteMemberDialog';
@@ -19,16 +21,17 @@ export function TeamManagement() {
   const { effectiveBrokerId, isMember } = useWorkspace();
   const [showInvite, setShowInvite] = useState(false);
   const { features, checkLimit } = useSubscriptionLimits();
+  const { canEdit, scope } = useCanEditPermissions();
 
   const { data: members, isLoading } = useQuery({
-    queryKey: ['organization-members', user?.id],
+    queryKey: ['organization-members', effectiveBrokerId],
     queryFn: async () => {
-      if (!user?.id || !isOwner) return [];
+      if (!effectiveBrokerId) return [];
 
       const { data, error } = await supabase
         .from('organization_members')
         .select('*')
-        .eq('organization_owner_id', user.id)
+        .eq('organization_owner_id', effectiveBrokerId)
         .order('created_at', { ascending: false });
       if (error) throw error;
 
@@ -58,7 +61,7 @@ export function TeamManagement() {
         };
       });
     },
-    enabled: !!user?.id && isOwner,
+    enabled: !!effectiveBrokerId,
   });
 
   const { data: ownerProfile, isLoading: isOwnerProfileLoading } = useQuery({
@@ -77,7 +80,7 @@ export function TeamManagement() {
 
   // Seat math: owner counts as 1 + active/pending members
   const memberCount = members?.length ?? 0;
-  const occupiedSeats = 1 + memberCount; // 1 = the owner
+  const occupiedSeats = 1 + memberCount;
   const usersLimit = features?.users_limit ?? 1;
   const limitInfo = checkLimit('users_limit', occupiedSeats);
   const isAtLimit = usersLimit !== -1 && !limitInfo.allowed;
@@ -90,7 +93,8 @@ export function TeamManagement() {
     );
   }
 
-  if (isMember) {
+  // Member view — show owner info only (no edit capability here)
+  if (isMember && !canEdit) {
     const ownerName = ownerProfile?.full_name?.trim() || ownerProfile?.email?.trim() || (isOwnerProfileLoading ? 'A carregar...' : 'Proprietário do Workspace');
     const ownerEmail = ownerProfile?.email?.trim() || (isOwnerProfileLoading ? 'A carregar...' : 'Email não disponível');
     const ownerInitials = ownerName
@@ -113,6 +117,13 @@ export function TeamManagement() {
           </div>
         </div>
 
+        <Alert variant="default" className="border-muted">
+          <Eye className="h-4 w-4" />
+          <AlertDescription>
+            Você está visualizando a equipe em modo somente leitura.
+          </AlertDescription>
+        </Alert>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Proprietário do Workspace</CardTitle>
@@ -130,12 +141,47 @@ export function TeamManagement() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Show members list in read-only mode */}
+        {members && members.length > 0 && (
+          <div className="space-y-3">
+            {members.map((member: any) => (
+              <TeamMemberCard key={member.id} member={member} />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Scope banners */}
+      {scope === 'super_admin' && (
+        <Alert variant="default" className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
+          <ShieldAlert className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700 dark:text-amber-400">
+            Modo suporte SLOTIMOB — você tem acesso administrativo completo.
+          </AlertDescription>
+        </Alert>
+      )}
+      {scope === 'delegate' && (
+        <Alert variant="default" className="border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20">
+          <ShieldCheck className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-700 dark:text-blue-400">
+            Modo delegado — você pode editar permissões de membros comuns, limitado aos módulos que você possui.
+          </AlertDescription>
+        </Alert>
+      )}
+      {!canEdit && (
+        <Alert variant="default" className="border-muted">
+          <Eye className="h-4 w-4" />
+          <AlertDescription>
+            Você está visualizando a equipe em modo somente leitura.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -150,10 +196,12 @@ export function TeamManagement() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={() => setShowInvite(true)} className="gap-2" disabled={isAtLimit}>
-            <UserPlus className="h-4 w-4" />
-            Convidar Membro
-          </Button>
+          {canEdit && (
+            <Button onClick={() => setShowInvite(true)} className="gap-2" disabled={isAtLimit}>
+              <UserPlus className="h-4 w-4" />
+              Convidar Membro
+            </Button>
+          )}
           {usersLimit !== -1 && (
             <span className="text-sm text-muted-foreground">
               {occupiedSeats}/{usersLimit} vagas
@@ -176,12 +224,12 @@ export function TeamManagement() {
       ) : (
         <div className="space-y-3">
           {members.map((member: any) => (
-            <TeamMemberCard key={member.id} member={member} readOnly={false} />
+            <TeamMemberCard key={member.id} member={member} />
           ))}
         </div>
       )}
 
-      <InviteMemberDialog open={showInvite} onOpenChange={setShowInvite} />
+      {canEdit && <InviteMemberDialog open={showInvite} onOpenChange={setShowInvite} />}
     </div>
   );
 }

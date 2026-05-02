@@ -14,14 +14,10 @@ const Users = () => {
   const { isAgent } = useUserRole();
   const [showUpgrade, setShowUpgrade] = useState(false);
 
-  // Agents on Business plan can see team page (read-only)
-  // Agents on non-business plans redirect to dashboard
-  if (isAgent && plan !== 'business') return <Navigate to="/dashboard" replace />;
-
   // Essencial plan: hidden from sidebar but redirect just in case
   if (plan === 'essencial') return <Navigate to="/dashboard" replace />;
 
-  // Business plan: full team management with permissions
+  // Business plan: full team management with permissions (both owners and members)
   if (plan === 'business') {
     return (
       <AppLayout title="Usuários">
@@ -29,6 +25,9 @@ const Users = () => {
       </AppLayout>
     );
   }
+
+  // Agents on non-business plans redirect to dashboard
+  if (isAgent) return <Navigate to="/dashboard" replace />;
 
   return (
     <AppLayout title="Usuários">

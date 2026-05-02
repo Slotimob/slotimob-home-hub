@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useCanEditPermissions } from '@/hooks/useCanEditPermissions';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Loader2, UserPlus, Mail } from 'lucide-react';
 import { PermissionsMatrix } from './PermissionsMatrix';
+import { ReauthPasswordDialog } from '@/components/auth/ReauthPasswordDialog';
 import type { Permissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 
@@ -28,6 +30,9 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
   const [email, setEmail] = useState('');
   const [roleLabel, setRoleLabel] = useState('Agente');
   const [permissions, setPermissions] = useState<Permissions>({});
+  const [showReauth, setShowReauth] = useState(false);
+
+  const { scope, grantableScope } = useCanEditPermissions();
 
   const invite = useMutation({
     mutationFn: async () => {
@@ -48,66 +53,89 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-members'] });
-      toast.success('Convite enviado com sucesso! O utilizador receberá um e-mail com o link de acesso.');
+      toast.success('Convite enviado com sucesso! O utilizador receberá um e-mail com o link de acesso.', { duration: 1000 });
       onOpenChange(false);
       setEmail('');
       setPermissions({});
       setRoleLabel('Agente');
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message, { duration: 1000 }),
   });
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto w-[calc(100%-2rem)] sm:w-full">
-        <DialogHeader>
-          <DialogTitle>Convidar Membro</DialogTitle>
-          <DialogDescription>
-            Um email será enviado com um link para o convidado criar sua conta e ingressar na equipe.
-          </DialogDescription>
-        </DialogHeader>
+  const handleInviteClick = () => {
+    setShowReauth(true);
+  };
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="invite-email">Email do convidado</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  const handleConfirmInvite = async () => {
+    await invite.mutateAsync();
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto w-[calc(100%-2rem)] sm:w-full">
+          <DialogHeader>
+            <DialogTitle>Convidar Membro</DialogTitle>
+            <DialogDescription>
+              Um email será enviado com um link para o convidado criar sua conta e ingressar na equipe.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">Email do convidado</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="email@exemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  style={{ fontSize: '16px' }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O convite expira em 48 horas. O convidado receberá um link para criar conta e será vinculado automaticamente.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="invite-role">Cargo / Função</Label>
               <Input
-                id="invite-email"
-                type="email"
-                placeholder="email@exemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
+                id="invite-role"
+                value={roleLabel}
+                onChange={(e) => setRoleLabel(e.target.value)}
+                placeholder="Ex: Corretor Sênior, Assistente..."
+                style={{ fontSize: '16px' }}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              O convite expira em 48 horas. O convidado receberá um link para criar conta e será vinculado automaticamente.
-            </p>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="invite-role">Cargo / Função</Label>
-            <Input
-              id="invite-role"
-              value={roleLabel}
-              onChange={(e) => setRoleLabel(e.target.value)}
-              placeholder="Ex: Corretor Sênior, Assistente..."
+            <PermissionsMatrix
+              permissions={permissions}
+              onChange={setPermissions}
+              grantableScope={scope === 'delegate' ? grantableScope : undefined}
             />
+
+            <Button
+              className="w-full gap-2"
+              onClick={handleInviteClick}
+              disabled={!email.trim() || invite.isPending}
+            >
+              {invite.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+              Enviar Convite por Email
+            </Button>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <PermissionsMatrix permissions={permissions} onChange={setPermissions} />
-
-          <Button
-            className="w-full gap-2"
-            onClick={() => invite.mutate()}
-            disabled={!email.trim() || invite.isPending}
-          >
-            {invite.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-            Enviar Convite por Email
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      <ReauthPasswordDialog
+        open={showReauth}
+        onClose={() => setShowReauth(false)}
+        onConfirm={handleConfirmInvite}
+        description="Confirme sua senha para enviar o convite com as permissões definidas."
+      />
+    </>
   );
 }

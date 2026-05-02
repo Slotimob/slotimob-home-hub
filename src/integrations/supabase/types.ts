@@ -4725,6 +4725,10 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      can_user_edit_member_permissions: {
+        Args: { p_editor: string; p_target: string }
+        Returns: boolean
+      }
       can_view_assigned_record: {
         Args: {
           _assigned_user_id: string
@@ -4796,6 +4800,10 @@ export type Database = {
       reset_ai_credits_for_user: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      validate_permissions_payload: {
+        Args: { p_editor: string; p_new: Json; p_old: Json; p_target: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -13,27 +13,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { HelpCircle } from 'lucide-react';
+import { AlertTriangle, Check, HelpCircle, Lock, X } from 'lucide-react';
 import type { Permissions, ModulePermission } from '@/hooks/usePermissions';
 import { EMPTY_MODULE_PERMISSION } from '@/hooks/usePermissions';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type ActionKey = keyof ModulePermission;
 
 export interface PermissionModuleDef {
   key: string;
   label: string;
-  /** Which actions are available for this module. Missing actions render as "—" */
   actions: ActionKey[];
-  /** If true, renders as a group header row */
   isGroupHeader?: boolean;
-  /** Indentation level for sub-items */
   indent?: boolean;
 }
 
-/**
- * Grouped permission modules for the enterprise RBAC matrix.
- * Group headers are non-interactive label rows.
- */
 export const PERMISSION_MODULES: PermissionModuleDef[] = [
   // Dashboard
   { key: 'dashboard', label: 'Dashboard', actions: ['view', 'edit'] },
@@ -74,14 +68,18 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   { key: 'reports', label: 'Relatórios', actions: ['view'] },
   { key: 'documents', label: 'Documentos', actions: ['view', 'create', 'edit', 'delete'] },
   { key: 'integrations', label: 'Integrações', actions: ['view'] },
+
+  // Admin — always last
+  { key: '_group_admin', label: 'Administração', actions: [], isGroupHeader: true },
+  { key: 'manage_team_permissions', label: 'Gerenciar Permissões da Equipe', actions: ['edit'], indent: true },
 ];
 
-/** Alert tooltips for specific modules to warn the Master about data exposure */
 const MODULE_TOOLTIPS: Record<string, string> = {
   dashboard: 'Ao liberar a visualização, o utilizador poderá ver movimentos financeiros e métricas de CRM globais.',
   crm_admin: 'Ao ativar, o membro verá TODAS as negociações e atividades da equipa, não apenas as que lhe foram atribuídas.',
   reports: 'Ao liberar a visualização, o utilizador poderá exportar todos os relatórios da imobiliária, incluindo dados financeiros.',
   integrations: 'Ao liberar, o utilizador terá a opção de conectar o seu próprio WhatsApp no módulo CRM.',
+  manage_team_permissions: 'Conceda com cautela. Permite delegar edição parcial de permissões a outros membros, limitada aos módulos que o próprio delegado possui.',
 };
 
 const ACTION_COLUMNS: { key: ActionKey; label: string }[] = [
@@ -95,9 +93,11 @@ interface PermissionsMatrixProps {
   permissions: Permissions;
   onChange: (permissions: Permissions) => void;
   disabled?: boolean;
+  readOnly?: boolean;
+  grantableScope?: Permissions;
 }
 
-export function PermissionsMatrix({ permissions, onChange, disabled }: PermissionsMatrixProps) {
+export function PermissionsMatrix({ permissions, onChange, disabled, readOnly, grantableScope }: PermissionsMatrixProps) {
   const getModulePerms = (moduleKey: string): ModulePermission => {
     const raw = permissions[moduleKey];
     if (!raw) return { ...EMPTY_MODULE_PERMISSION };
@@ -109,11 +109,16 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
     };
   };
 
+  const isActionGrantable = (moduleKey: string, action: ActionKey): boolean => {
+    if (!grantableScope) return true; // no scope restriction
+    return grantableScope[moduleKey]?.[action] === true;
+  };
+
   const toggle = (moduleKey: string, action: ActionKey, checked: boolean) => {
+    if (readOnly) return;
     const current = getModulePerms(moduleKey);
 
     if (action === 'view' && !checked) {
-      // Unchecking view disables all other actions
       onChange({
         ...permissions,
         [moduleKey]: { view: false, create: false, edit: false, delete: false },
@@ -128,82 +133,133 @@ export function PermissionsMatrix({ permissions, onChange, disabled }: Permissio
 
   return (
     <TooltipProvider>
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[160px]">Módulo</TableHead>
-            {ACTION_COLUMNS.map((col) => (
-              <TableHead key={col.key} className="text-center w-[90px]">
-                {col.label}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {PERMISSION_MODULES.map((mod) => {
-            // Group header row
-            if (mod.isGroupHeader) {
-              return (
-                <TableRow key={mod.key} className="bg-muted/50">
-                  <TableCell colSpan={5} className="font-semibold text-sm py-2">
-                    {mod.label}
-                  </TableCell>
-                </TableRow>
-              );
-            }
-
-            const perms = getModulePerms(mod.key);
-            const viewEnabled = perms.view;
-
-            return (
-              <TableRow key={mod.key}>
-                <TableCell className={`font-medium text-sm ${mod.indent ? 'pl-6' : ''}`}>
-                  <span className="inline-flex items-center gap-1">
-                    {mod.label}
-                    {MODULE_TOOLTIPS[mod.key] && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>{MODULE_TOOLTIPS[mod.key]}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </span>
-                </TableCell>
-                {ACTION_COLUMNS.map((col) => {
-                  const hasAction = mod.actions.includes(col.key);
-
-                  if (!hasAction) {
-                    return (
-                      <TableCell key={col.key} className="text-center">
-                        <span className="text-muted-foreground text-xs">—</span>
-                      </TableCell>
-                    );
-                  }
-
-                  const isView = col.key === 'view';
-                  const isDisabled = disabled || (!isView && !viewEnabled);
-                  const checked = perms[col.key];
-
-                  return (
-                    <TableCell key={col.key} className="text-center">
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={(v) => toggle(mod.key, col.key, v === true)}
-                        disabled={isDisabled}
-                      />
-                    </TableCell>
-                  );
-                })}
+      <div className="space-y-3">
+        {readOnly && (
+          <Alert variant="default" className="border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-700 dark:text-yellow-400 text-sm">
+              Você não tem permissão para alterar permissões da equipe. Solicite ao administrador da conta.
+            </AlertDescription>
+          </Alert>
+        )}
+        {!readOnly && grantableScope && (
+          <Alert variant="default" className="border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20">
+            <Lock className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-700 dark:text-blue-400 text-sm">
+              Você está editando como delegado. Pode conceder somente permissões que você mesmo possui.
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[160px]">Módulo</TableHead>
+                {ACTION_COLUMNS.map((col) => (
+                  <TableHead key={col.key} className="text-center w-[90px]">
+                    {col.label}
+                  </TableHead>
+                ))}
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+            </TableHeader>
+            <TableBody>
+              {PERMISSION_MODULES.map((mod) => {
+                if (mod.isGroupHeader) {
+                  return (
+                    <TableRow key={mod.key} className="bg-muted/50">
+                      <TableCell colSpan={5} className="font-semibold text-sm py-2">
+                        {mod.label}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+
+                const perms = getModulePerms(mod.key);
+                const viewEnabled = perms.view;
+                const isAdminModule = mod.key === 'manage_team_permissions';
+
+                return (
+                  <TableRow key={mod.key} className={isAdminModule ? 'bg-amber-50/30 dark:bg-amber-950/10' : undefined}>
+                    <TableCell className={`font-medium text-sm ${mod.indent ? 'pl-6' : ''}`}>
+                      <span className="inline-flex items-center gap-1">
+                        {isAdminModule && <Lock className="h-3.5 w-3.5 text-amber-600" />}
+                        {mod.label}
+                        {MODULE_TOOLTIPS[mod.key] && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-[260px]">
+                              <p>{MODULE_TOOLTIPS[mod.key]}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </span>
+                    </TableCell>
+                    {ACTION_COLUMNS.map((col) => {
+                      const hasAction = mod.actions.includes(col.key);
+
+                      if (!hasAction) {
+                        return (
+                          <TableCell key={col.key} className="text-center">
+                            <span className="text-muted-foreground text-xs">—</span>
+                          </TableCell>
+                        );
+                      }
+
+                      const checked = perms[col.key];
+
+                      // Read-only mode: show static icons
+                      if (readOnly) {
+                        return (
+                          <TableCell key={col.key} className="text-center">
+                            {checked ? (
+                              <Check className="h-4 w-4 text-emerald-600 mx-auto" />
+                            ) : (
+                              <X className="h-4 w-4 text-muted-foreground/50 mx-auto" />
+                            )}
+                          </TableCell>
+                        );
+                      }
+
+                      const isView = col.key === 'view';
+                      const grantable = isActionGrantable(mod.key, col.key);
+                      const isDisabled = disabled || (!isView && !viewEnabled) || !grantable;
+
+                      return (
+                        <TableCell key={col.key} className="text-center">
+                          {!grantable ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex">
+                                  <Checkbox
+                                    checked={checked}
+                                    disabled
+                                    className="opacity-40"
+                                  />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{isAdminModule ? 'Delegados não podem conceder este módulo.' : 'Você não tem essa permissão para conceder.'}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) => toggle(mod.key, col.key, v === true)}
+                              disabled={isDisabled}
+                            />
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </TooltipProvider>
   );
 }
