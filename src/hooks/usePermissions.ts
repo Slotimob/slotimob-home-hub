@@ -61,6 +61,8 @@ export const PERMISSION_MODULES_KEYS = [
   'documents',
   'integrations',
   'chat',
+  // Admin
+  'manage_team_permissions',
 ] as const;
 
 export type PermissionModuleKey = (typeof PERMISSION_MODULES_KEYS)[number];
