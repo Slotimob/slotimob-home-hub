@@ -113,6 +113,7 @@ export function TransactionsBulkEditDialog({
       setAmount("");
       setStatus("");
       setBankAccountId("");
+      setAssetExpenseCategory("");
     }
   }, [open, user?.id]);
 
