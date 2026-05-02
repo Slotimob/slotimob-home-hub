@@ -11,14 +11,17 @@ import { ReconciliationPendingListGrouped } from "./ReconciliationPendingListGro
 import { ReconciliationHistoryTable } from "./ReconciliationHistoryTable";
 import { ReconciliationMismatchDialog } from "./ReconciliationMismatchDialog";
 import { BalanceAuditPanel } from "./balance-checker";
+import { format } from "date-fns";
 
 interface ReconciliationPanelProps {
   bankAccountId: string;
   bankAccountName?: string;
   initialBalance?: number;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
-export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBalance = 0 }: ReconciliationPanelProps) {
+export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBalance = 0, dateFrom, dateTo }: ReconciliationPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isOwner, hasPermission } = usePermissions();
@@ -32,16 +35,21 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
     transactionValue: number;
   }>({ open: false, entryValue: 0, transactionValue: 0 });
 
-  // Fetch unreconciled statement entries
+  // Fetch unreconciled statement entries with optional date filter
   const { data: entries = [], isLoading: entriesLoading, refetch: refetchEntries } = useQuery({
-    queryKey: ["bank-statement-entries", bankAccountId],
+    queryKey: ["bank-statement-entries", bankAccountId, dateFrom, dateTo],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("bank_statement_entries")
         .select("*")
         .eq("bank_account_id", bankAccountId)
         .eq("is_reconciled", false)
         .order("entry_date", { ascending: false });
+
+      if (dateFrom) query = query.gte("entry_date", dateFrom);
+      if (dateTo) query = query.lte("entry_date", dateTo);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -63,11 +71,11 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
     },
   });
 
-  // Fetch reconciled entries with transaction details
+  // Fetch reconciled entries with transaction details and optional date filter
   const { data: reconciledEntries = [], isLoading: reconciledLoading } = useQuery({
-    queryKey: ["reconciled-entries", bankAccountId],
+    queryKey: ["reconciled-entries", bankAccountId, dateFrom, dateTo],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("bank_statement_entries")
         .select(`
           *,
@@ -81,6 +89,11 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
         .eq("bank_account_id", bankAccountId)
         .eq("is_reconciled", true)
         .order("entry_date", { ascending: false });
+
+      if (dateFrom) query = query.gte("entry_date", dateFrom);
+      if (dateTo) query = query.lte("entry_date", dateTo);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
