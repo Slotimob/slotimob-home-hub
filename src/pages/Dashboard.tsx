@@ -22,6 +22,10 @@ import {
   FinancialWidget,
   PipelineWidget,
   PortfolioWidget,
+  AppointmentsWidget,
+  RentReceivablesWidget,
+  OpenRentalsWidget,
+  DelinquencyWidget,
   DatePreset,
   DateRange,
 } from '@/components/dashboard';
