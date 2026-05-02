@@ -54,6 +54,7 @@ export function TransactionsFilters({ filters, onFiltersChange }: TransactionsFi
       bankAccountId: "",
       reconciled: "all",
       hideTransfers: false,
+      assetExpenseCategory: "all",
     });
   };
 
