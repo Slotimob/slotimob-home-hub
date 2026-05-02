@@ -265,6 +265,7 @@ export function CreateTransactionDialog({
         contact_id: formData.contactId || null,
         obligation_type: selectedObligationType || obligationType || null,
         competency_period: selectedCompetencyPeriod || competencyPeriod || null,
+        asset_expense_category: (type === 'expense' && formData.unitId && formData.assetExpenseCategory) ? formData.assetExpenseCategory : null,
       };
 
       if (editTransaction) {
