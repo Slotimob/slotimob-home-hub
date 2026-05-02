@@ -57,6 +57,7 @@ export function TransactionsBulkEditDialog({
   const [updateAmount, setUpdateAmount] = useState(false);
   const [updateStatus, setUpdateStatus] = useState(false);
   const [updateBankAccount, setUpdateBankAccount] = useState(false);
+  const [updateAssetExpenseCategory, setUpdateAssetExpenseCategory] = useState(false);
 
   // Field values
   const [type, setType] = useState<string>("");
