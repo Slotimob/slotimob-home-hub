@@ -55,6 +55,7 @@ export const TABLE_ICONS: Record<string, LucideIcon> = {
   schedule_activities: CalendarDays,
   asset_improvements: Hammer,
   market_value_history: TrendingUp,
+  organization_members: Users,
 };
 
 export const ACTION_LABELS: Record<string, string> = {
