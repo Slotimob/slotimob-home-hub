@@ -35,6 +35,7 @@ export const TABLE_LABELS: Record<string, string> = {
   data_export_requests: 'exportação de dados',
   asset_improvements: 'benfeitoria',
   market_value_history: 'avaliação de mercado',
+  organization_members: 'membro da equipe',
 };
 
 export const TABLE_ICONS: Record<string, LucideIcon> = {
