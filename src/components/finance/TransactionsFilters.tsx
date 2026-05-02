@@ -37,7 +37,8 @@ export function TransactionsFilters({ filters, onFiltersChange }: TransactionsFi
     filters.dueDateFrom ||
     filters.dueDateTo ||
     filters.search ||
-    filters.reconciled !== "all";
+    filters.reconciled !== "all" ||
+    filters.assetExpenseCategory !== "all";
 
   const clearFilters = () => {
     onFiltersChange({
