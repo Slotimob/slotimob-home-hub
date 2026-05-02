@@ -8,17 +8,14 @@ import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/re
 import { translateUnitStatus } from '@/utils/reportTranslations';
 import { generateOwnerReportPDF, formatCurrency as formatCurrencyReport } from '@/utils/leaseReportGenerator';
 import { generateTenantStatementPDF } from '@/utils/tenantStatementPdf';
+import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiFormat';
 import { useToast } from '@/hooks/use-toast';
-import { differenceInDays, format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { differenceInDays, format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -35,123 +32,64 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
   const { user } = useAuth();
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>('');
 
-  // Fetch active leases with unit/tenant info for the lease selector
   const { data: activeLeases = [] } = useQuery({
     queryKey: ['active-leases-for-reports', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from('leases')
-        .select(`
-          id,
-          unit_id,
-          rent_amount,
-          admin_fee_percentage,
-          due_day,
-          start_date,
-          end_date,
-          status,
-          is_dimob_deductible,
-          cib,
-          adjustment_index,
-          next_adjustment_date,
-          unit:units(id, unit_number, address, property:properties(name, address)),
-          tenant:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, document_number),
-          owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone)
-        `)
-        .eq('broker_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('leases').select(`
+        id, unit_id, rent_amount, admin_fee_percentage, due_day, start_date, end_date, status,
+        is_dimob_deductible, cib, adjustment_index, next_adjustment_date,
+        unit:units(id, unit_number, address, property:properties(name, address)),
+        tenant:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, document_number),
+        owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone)
+      `).eq('broker_id', user.id).eq('status', 'active').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
     enabled: !!user,
   });
 
-  // Filter leases by selected unit if applicable
-  const filteredLeases = selectedUnitId
-    ? activeLeases.filter(l => l.unit_id === selectedUnitId)
-    : activeLeases;
-
+  const filteredLeases = selectedUnitId ? activeLeases.filter(l => l.unit_id === selectedUnitId) : activeLeases;
   const selectedLease = activeLeases.find(l => l.id === selectedLeaseId) || null;
 
-  // === Owner Report ===
+  // === Owner Report (PDF only) ===
   const handleOwnerReportPdf = async () => {
-    if (!selectedLease) {
-      toast({ title: 'Selecione um contrato', description: 'Escolha um contrato ativo no seletor acima.', variant: 'destructive' });
-      return;
-    }
+    if (!selectedLease) { toast({ title: 'Selecione um contrato', variant: 'destructive' }); return; }
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('Usuário não autenticado');
-
-      // Fetch income transactions
-      const { data: income } = await supabase
-        .from('financial_transactions')
-        .select('*')
-        .eq('unit_id', selectedLease.unit_id)
-        .eq('type', 'income')
-        .eq('status', 'paid')
-        .gte('paid_date', format(dateRange.from, 'yyyy-MM-dd'))
-        .lte('paid_date', format(dateRange.to, 'yyyy-MM-dd'));
-
-      // Fetch expense transactions
-      const { data: expenses } = await supabase
-        .from('financial_transactions')
-        .select('*')
-        .eq('unit_id', selectedLease.unit_id)
-        .eq('type', 'expense')
-        .eq('status', 'paid')
-        .gte('paid_date', format(dateRange.from, 'yyyy-MM-dd'))
-        .lte('paid_date', format(dateRange.to, 'yyyy-MM-dd'));
-
+      const { data: income } = await supabase.from('financial_transactions').select('*')
+        .eq('unit_id', selectedLease.unit_id).eq('type', 'income').eq('status', 'paid')
+        .gte('paid_date', format(dateRange.from, 'yyyy-MM-dd')).lte('paid_date', format(dateRange.to, 'yyyy-MM-dd'));
+      const { data: expenses } = await supabase.from('financial_transactions').select('*')
+        .eq('unit_id', selectedLease.unit_id).eq('type', 'expense').eq('status', 'paid')
+        .gte('paid_date', format(dateRange.from, 'yyyy-MM-dd')).lte('paid_date', format(dateRange.to, 'yyyy-MM-dd'));
       const rentReceived = (income || []).reduce((s, t) => s + Number(t.amount), 0);
       const adminFee = rentReceived * (selectedLease.admin_fee_percentage / 100);
-      const maintenanceExpenses = (expenses || [])
-        .filter(t => t.obligation_type === 'maintenance' || t.description.toLowerCase().includes('manutenção'))
+      const maintenanceExpenses = (expenses || []).filter(t => t.obligation_type === 'maintenance' || t.description.toLowerCase().includes('manutenção'))
         .map(t => ({ description: t.description, amount: Number(t.amount), date: t.paid_date || t.transaction_date }));
-      const otherDeductions = (expenses || [])
-        .filter(t => t.obligation_type !== 'maintenance' && !t.description.toLowerCase().includes('manutenção'))
+      const otherDeductions = (expenses || []).filter(t => t.obligation_type !== 'maintenance' && !t.description.toLowerCase().includes('manutenção'))
         .map(t => ({ description: t.description, amount: Number(t.amount) }));
       const totalExpenses = (expenses || []).reduce((s, t) => s + Number(t.amount), 0);
       const netTransfer = rentReceived - adminFee - totalExpenses;
-
       generateOwnerReportPDF({
         lease: selectedLease as any,
         period: { start: format(dateRange.from, 'dd/MM/yyyy'), end: format(dateRange.to, 'dd/MM/yyyy') },
-        rentReceived,
-        adminFee,
-        maintenanceExpenses,
-        otherDeductions,
-        netTransfer,
+        rentReceived, adminFee, maintenanceExpenses, otherDeductions, netTransfer,
       });
-
       toast({ title: 'PDF gerado com sucesso!' });
-    } catch (error: any) {
-      toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' });
-    }
+    } catch (error: any) { toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' }); }
   };
 
-  // === Tenant Statement ===
+  // === Tenant Statement (PDF only) ===
   const handleTenantStatementPdf = async () => {
-    if (!selectedLease) {
-      toast({ title: 'Selecione um contrato', description: 'Escolha um contrato ativo no seletor acima.', variant: 'destructive' });
-      return;
-    }
+    if (!selectedLease) { toast({ title: 'Selecione um contrato', variant: 'destructive' }); return; }
     try {
       const months = Math.max(1, Math.round(differenceInDays(dateRange.to, dateRange.from) / 30));
-
-      // Fetch transactions
-      const { data: transactions } = await supabase
-        .from('financial_transactions')
-        .select('*')
-        .eq('unit_id', selectedLease.unit_id)
-        .eq('type', 'income')
-        .gte('due_date', format(dateRange.from, 'yyyy-MM-dd'))
-        .lte('due_date', format(dateRange.to, 'yyyy-MM-dd'))
+      const { data: transactions } = await supabase.from('financial_transactions').select('*')
+        .eq('unit_id', selectedLease.unit_id).eq('type', 'income')
+        .gte('due_date', format(dateRange.from, 'yyyy-MM-dd')).lte('due_date', format(dateRange.to, 'yyyy-MM-dd'))
         .order('due_date', { ascending: true });
-
-      // Build payment history
       const payments: PaymentHistoryItem[] = [];
       for (let i = months - 1; i >= 0; i--) {
         const monthDate = subMonths(new Date(), i);
@@ -166,223 +104,163 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
         const isPaid = transaction?.status === 'paid';
         const isOverdue = !isPaid && dueDate < new Date();
         payments.push({
-          month: monthStr.charAt(0).toUpperCase() + monthStr.slice(1),
-          reference: format(monthDate, 'MM/yyyy'),
-          dueDate: format(dueDate, 'yyyy-MM-dd'),
-          paidDate: transaction?.paid_date || null,
-          amount: selectedLease.rent_amount,
-          lateFee: 0,
+          month: monthStr.charAt(0).toUpperCase() + monthStr.slice(1), reference: format(monthDate, 'MM/yyyy'),
+          dueDate: format(dueDate, 'yyyy-MM-dd'), paidDate: transaction?.paid_date || null,
+          amount: selectedLease.rent_amount, lateFee: 0,
           totalPaid: isPaid ? (transaction?.amount || selectedLease.rent_amount) : 0,
           status: isPaid ? 'paid' : isOverdue ? 'overdue' : 'pending',
         });
       }
-
       generateTenantStatementPDF({
-        lease: selectedLease as any,
-        payments,
+        lease: selectedLease as any, payments,
         period: { start: format(dateRange.from, 'dd/MM/yyyy'), end: format(dateRange.to, 'dd/MM/yyyy') },
       });
-
       toast({ title: 'PDF gerado com sucesso!' });
-    } catch (error: any) {
-      toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' });
-    }
+    } catch (error: any) { toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' }); }
   };
 
-  // Vacância
+  // === Vacância ===
+  const buildVacanciaData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuario nao autenticado');
+    let query = supabase.from('units').select(`*, property:properties(name, address), owner:contacts!units_owner_contact_id_fkey(name)`)
+      .eq('broker_id', user.id);
+    if (selectedUnitId) query = query.eq('id', selectedUnitId);
+    const { data: units } = await query;
+    const periodDays = differenceInDays(dateRange.to, dateRange.from);
+    let totalOpportunityCost = 0;
+    const tableData = (units || []).map(u => {
+      const isVacant = u.status === 'available';
+      const estimatedRent = u.rent_price || 0;
+      const dailyRate = estimatedRent / 30;
+      let daysVacantInPeriod = 0, opportunityCost = 0;
+      if (isVacant) { daysVacantInPeriod = periodDays; opportunityCost = dailyRate * daysVacantInPeriod; totalOpportunityCost += opportunityCost; }
+      const address = u.address || u.property?.address || '';
+      const shortAddress = address.length > 30 ? address.substring(0, 30) + '...' : address;
+      return [u.unit_number || u.id.substring(0, 8), u.property?.name || 'Imovel Avulso', u.owner?.name || '-', shortAddress || '-', translateUnitStatus(u.status), formatCurrency(estimatedRent), isVacant ? daysVacantInPeriod.toString() : '-', isVacant ? formatCurrency(opportunityCost) : '-'];
+    });
+    const vacant = (units || []).filter(u => u.status === 'available');
+    const occupied = (units || []).filter(u => u.status === 'rented');
+    const vacancyRate = units?.length ? (vacant.length / units.length) * 100 : 0;
+    const columns = ['Unidade', 'Empreendimento', 'Proprietario', 'Endereco', 'Status', 'Aluguel', 'Dias Vago', 'Perda Acumulada'];
+    const summary = [
+      { label: 'Total de Unidades', value: (units || []).length.toString() },
+      { label: 'Unidades Vagas', value: vacant.length.toString() },
+      { label: 'Unidades Ocupadas', value: occupied.length.toString() },
+      { label: 'Taxa de Vacancia', value: `${vacancyRate.toFixed(1)}%` },
+    ];
+    return { tableData, columns, summary, totalOpportunityCost };
+  };
+
   const handleVacanciaPdf = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario nao autenticado');
-
-      let query = supabase
-        .from('units')
-        .select(`
-          *,
-          property:properties(name, address),
-          owner:contacts!units_owner_contact_id_fkey(name)
-        `)
-        .eq('broker_id', user.id);
-
-      if (selectedUnitId) {
-        query = query.eq('id', selectedUnitId);
-      }
-
-      const { data: units } = await query;
-
-      const periodDays = differenceInDays(dateRange.to, dateRange.from);
-      let totalOpportunityCost = 0;
-
-      const tableData = (units || []).map(u => {
-        const isVacant = u.status === 'available';
-        const estimatedRent = u.rent_price || 0;
-        const dailyRate = estimatedRent / 30;
-        let daysVacantInPeriod = 0;
-        let opportunityCost = 0;
-        if (isVacant) {
-          daysVacantInPeriod = periodDays;
-          opportunityCost = dailyRate * daysVacantInPeriod;
-          totalOpportunityCost += opportunityCost;
-        }
-        const address = u.address || u.property?.address || '';
-        const shortAddress = address.length > 30 ? address.substring(0, 30) + '...' : address;
-        return [
-          u.unit_number || u.id.substring(0, 8),
-          u.property?.name || 'Imovel Avulso',
-          u.owner?.name || '-',
-          shortAddress || '-',
-          translateUnitStatus(u.status),
-          formatCurrency(estimatedRent),
-          isVacant ? daysVacantInPeriod.toString() : '-',
-          isVacant ? formatCurrency(opportunityCost) : '-',
-        ];
-      });
-
-      const vacant = (units || []).filter(u => u.status === 'available');
-      const occupied = (units || []).filter(u => u.status === 'rented');
-      const vacancyRate = units?.length ? (vacant.length / units.length) * 100 : 0;
-
+      const { tableData, columns, summary, totalOpportunityCost } = await buildVacanciaData();
       await generateReportPdf({
-        title: 'Relatorio de Vacancia',
-        subtitle: 'Analise de ocupacao com custo de oportunidade',
-        userName,
-        dateRange,
-        columns: ['Unidade', 'Empreendimento', 'Proprietario', 'Endereco', 'Status', 'Aluguel', 'Dias Vago', 'Perda Acumulada'],
-        data: tableData,
-        filename: 'relatorio-vacancia',
-        landscape: true,
-        summary: [
-          { label: 'Total de Unidades', value: (units || []).length.toString() },
-          { label: 'Unidades Vagas', value: vacant.length.toString() },
-          { label: 'Unidades Ocupadas', value: occupied.length.toString() },
-          { label: 'Taxa de Vacancia', value: `${vacancyRate.toFixed(1)}%` },
-        ],
-        insights: totalOpportunityCost > 0
-          ? [`Neste periodo, voce deixou de arrecadar ${formatCurrency(totalOpportunityCost)} devido a vacancia.`]
-          : undefined,
+        title: 'Relatorio de Vacancia', subtitle: 'Analise de ocupacao com custo de oportunidade',
+        userName, dateRange, columns, data: tableData, filename: 'relatorio-vacancia', landscape: true, summary,
+        insights: totalOpportunityCost > 0 ? [`Neste periodo, voce deixou de arrecadar ${formatCurrency(totalOpportunityCost)} devido a vacancia.`] : undefined,
       });
       toast({ title: 'PDF gerado com sucesso!' });
-    } catch (error: any) {
-      toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' });
-    }
+    } catch (error: any) { toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' }); }
   };
 
   const handleVacanciaCsv = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
-      let query = supabase
-        .from('units')
-        .select(`*, property:properties(name)`)
-        .eq('broker_id', user.id);
-      if (selectedUnitId) {
-        query = query.eq('id', selectedUnitId);
-      }
+      let query = supabase.from('units').select(`*, property:properties(name)`).eq('broker_id', user.id);
+      if (selectedUnitId) query = query.eq('id', selectedUnitId);
       const { data: units } = await query;
       generateReportCsv({
         columns: ['Unidade', 'Empreendimento', 'Tipo', 'Status', 'Valor Aluguel', 'Área'],
-        data: (units || []).map(u => [
-          u.unit_number || u.id.substring(0, 8),
-          u.property?.name || '',
-          u.property_type || '',
-          u.status,
-          cleanNumericValue(u.rent_price || 0),
-          cleanNumericValue(u.area || 0),
-        ]),
+        data: (units || []).map(u => [u.unit_number || u.id.substring(0, 8), u.property?.name || '', u.property_type || '', u.status, cleanNumericValue(u.rent_price || 0), cleanNumericValue(u.area || 0)]),
         filename: 'relatorio-vacancia',
       });
       toast({ title: 'CSV baixado com sucesso!' });
-    } catch (error: any) {
-      toast({ title: 'Erro ao baixar CSV', description: error.message, variant: 'destructive' });
-    }
+    } catch (error: any) { toast({ title: 'Erro ao baixar CSV', description: error.message, variant: 'destructive' }); }
   };
 
-  // Reajustes
+  const handleVacanciaDocx = async () => {
+    try {
+      const { tableData, columns, summary } = await buildVacanciaData();
+      await downloadReportDocx({ title: 'Relatório de Vacância', reportKey: 'relatorio-vacancia', dateRange, columnLabels: columns, data: tableData, summary });
+      toast({ title: 'Word gerado com sucesso!' });
+    } catch (error: any) { toast({ title: 'Erro ao gerar Word', description: error.message, variant: 'destructive' }); }
+  };
+
+  const handleVacanciaExcel = async () => {
+    try {
+      const { tableData, columns, summary } = await buildVacanciaData();
+      await downloadReportExcel({ title: 'Relatório de Vacância', reportKey: 'relatorio-vacancia', dateRange, columnLabels: columns, data: tableData, summary });
+      toast({ title: 'Excel gerado com sucesso!' });
+    } catch (error: any) { toast({ title: 'Erro ao gerar Excel', description: error.message, variant: 'destructive' }); }
+  };
+
+  // === Reajustes ===
+  const buildReajustesData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+    let query = supabase.from('leases').select(`*, unit:units(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
+      .eq('broker_id', user.id).eq('status', 'active')
+      .gte('next_adjustment_date', dateRange.from.toISOString().split('T')[0]).lte('next_adjustment_date', dateRange.to.toISOString().split('T')[0]);
+    if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
+    const { data: leases } = await query;
+    const columns = ['Data Reajuste', 'Unidade', 'Inquilino', 'Índice', 'Valor Atual', 'Valor Projetado'];
+    const tableData = (leases || []).map(l => {
+      const projectedValue = l.rent_amount * 1.05;
+      return [formatDate(l.next_adjustment_date || ''), l.unit?.unit_number || '-', l.tenant?.name || '-', l.adjustment_index || 'IGPM', formatCurrency(l.rent_amount), formatCurrency(projectedValue)];
+    });
+    const summary = [{ label: 'Total de Contratos', value: (leases || []).length.toString() }];
+    return { tableData, columns, summary };
+  };
+
   const handleReajustesPdf = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-      let query = supabase
-        .from('leases')
-        .select(`*, unit:units(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
-        .eq('broker_id', user.id)
-        .eq('status', 'active')
-        .gte('next_adjustment_date', dateRange.from.toISOString().split('T')[0])
-        .lte('next_adjustment_date', dateRange.to.toISOString().split('T')[0]);
-      if (selectedUnitId) {
-        query = query.eq('unit_id', selectedUnitId);
-      }
-      const { data: leases } = await query;
-      const tableData = (leases || []).map(l => {
-        const projectedValue = l.rent_amount * 1.05;
-        return [
-          formatDate(l.next_adjustment_date || ''),
-          l.unit?.unit_number || '-',
-          l.tenant?.name || '-',
-          l.adjustment_index || 'IGPM',
-          formatCurrency(l.rent_amount),
-          formatCurrency(projectedValue),
-        ];
-      });
-      await generateReportPdf({
-        title: 'Projeção de Reajustes',
-        subtitle: 'Contratos com reajuste previsto no período (projeção estimada de 5%)',
-        userName,
-        dateRange,
-        columns: ['Data Reajuste', 'Unidade', 'Inquilino', 'Índice', 'Valor Atual', 'Valor Projetado'],
-        data: tableData,
-        filename: 'projecao-reajustes',
-        summary: [{ label: 'Total de Contratos', value: (leases || []).length.toString() }],
-      });
+      const { tableData, columns, summary } = await buildReajustesData();
+      await generateReportPdf({ title: 'Projeção de Reajustes', subtitle: 'Contratos com reajuste previsto no período (projeção estimada de 5%)', userName, dateRange, columns, data: tableData, filename: 'projecao-reajustes', summary });
       toast({ title: 'PDF gerado com sucesso!' });
-    } catch (error: any) {
-      toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' });
-    }
+    } catch (error: any) { toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' }); }
   };
 
   const handleReajustesCsv = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
-      let query = supabase
-        .from('leases')
-        .select(`*, unit:units(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
-        .eq('broker_id', user.id)
-        .eq('status', 'active')
-        .gte('next_adjustment_date', dateRange.from.toISOString().split('T')[0])
-        .lte('next_adjustment_date', dateRange.to.toISOString().split('T')[0]);
-      if (selectedUnitId) {
-        query = query.eq('unit_id', selectedUnitId);
-      }
+      let query = supabase.from('leases').select(`*, unit:units(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
+        .eq('broker_id', user.id).eq('status', 'active')
+        .gte('next_adjustment_date', dateRange.from.toISOString().split('T')[0]).lte('next_adjustment_date', dateRange.to.toISOString().split('T')[0]);
+      if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
       const { data: leases } = await query;
       generateReportCsv({
         columns: ['Data Reajuste', 'Unidade', 'Inquilino', 'Aluguel Atual', 'Índice', 'Início Contrato'],
-        data: (leases || []).map(l => [
-          cleanDateValue(l.next_adjustment_date),
-          l.unit?.unit_number || '',
-          l.tenant?.name || '',
-          cleanNumericValue(l.rent_amount),
-          l.adjustment_index || 'IGPM',
-          cleanDateValue(l.start_date),
-        ]),
+        data: (leases || []).map(l => [cleanDateValue(l.next_adjustment_date), l.unit?.unit_number || '', l.tenant?.name || '', cleanNumericValue(l.rent_amount), l.adjustment_index || 'IGPM', cleanDateValue(l.start_date)]),
         filename: 'projecao-reajustes',
       });
       toast({ title: 'CSV baixado com sucesso!' });
-    } catch (error: any) {
-      toast({ title: 'Erro ao baixar CSV', description: error.message, variant: 'destructive' });
-    }
+    } catch (error: any) { toast({ title: 'Erro ao baixar CSV', description: error.message, variant: 'destructive' }); }
   };
 
-  const handleSegurosPdf = async () => {
-    toast({ title: 'Em desenvolvimento', description: 'O módulo de seguros será implementado em breve.' });
+  const handleReajustesDocx = async () => {
+    try {
+      const { tableData, columns, summary } = await buildReajustesData();
+      await downloadReportDocx({ title: 'Projeção de Reajustes', reportKey: 'projecao-reajustes', dateRange, columnLabels: columns, data: tableData, summary });
+      toast({ title: 'Word gerado com sucesso!' });
+    } catch (error: any) { toast({ title: 'Erro ao gerar Word', description: error.message, variant: 'destructive' }); }
   };
-  const handleSegurosCsv = async () => {
-    toast({ title: 'Em desenvolvimento', description: 'O módulo de seguros será implementado em breve.' });
+
+  const handleReajustesExcel = async () => {
+    try {
+      const { tableData, columns, summary } = await buildReajustesData();
+      await downloadReportExcel({ title: 'Projeção de Reajustes', reportKey: 'projecao-reajustes', dateRange, columnLabels: columns, data: tableData, summary });
+      toast({ title: 'Excel gerado com sucesso!' });
+    } catch (error: any) { toast({ title: 'Erro ao gerar Excel', description: error.message, variant: 'destructive' }); }
   };
+
+  const handleSegurosPdf = async () => { toast({ title: 'Em desenvolvimento', description: 'O módulo de seguros será implementado em breve.' }); };
+  const handleSegurosCsv = async () => { toast({ title: 'Em desenvolvimento', description: 'O módulo de seguros será implementado em breve.' }); };
 
   return (
     <div className="space-y-6">
-      {/* Lease selector for Owner Report and Tenant Statement */}
       {filteredLeases.length > 0 && (
         <div className="rounded-lg border bg-card p-4 shadow-sm space-y-3">
           <div className="flex items-center gap-2">
@@ -439,6 +317,8 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
           icon={<Building2 className="h-4 w-4" />}
           onGeneratePDF={handleVacanciaPdf}
           onDownloadCSV={handleVacanciaCsv}
+          onDownloadDocx={handleVacanciaDocx}
+          onDownloadExcel={handleVacanciaExcel}
         />
         <ReportRow
           title="Projeção de Reajustes"
@@ -446,6 +326,8 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
           icon={<TrendingUp className="h-4 w-4" />}
           onGeneratePDF={handleReajustesPdf}
           onDownloadCSV={handleReajustesCsv}
+          onDownloadDocx={handleReajustesDocx}
+          onDownloadExcel={handleReajustesExcel}
         />
         <ReportRow
           title="Vigência de Seguros"
