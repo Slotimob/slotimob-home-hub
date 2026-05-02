@@ -66,7 +66,7 @@ const Reports = () => {
       <div className="space-y-4">
         {/* Description */}
         <p className="text-muted-foreground text-sm">
-          Gere relatórios profissionais em PDF ou exporte dados brutos em CSV.
+          Gere relatórios profissionais em PDF, Word, Excel ou CSV.
         </p>
 
         {/* Header: Filters Bar */}
