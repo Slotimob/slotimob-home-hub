@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TransactionFilters } from "@/pages/FinanceTransactions";
 import { UnitSelector } from "./UnitSelector";
+import { ASSET_EXPENSE_CATEGORY_LIST } from "@/lib/asset-expense-categories";
 
 interface TransactionsFiltersProps {
   filters: TransactionFilters;
