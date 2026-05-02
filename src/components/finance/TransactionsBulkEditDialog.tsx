@@ -104,6 +104,7 @@ export function TransactionsBulkEditDialog({
       setUpdateAmount(false);
       setUpdateStatus(false);
       setUpdateBankAccount(false);
+      setUpdateAssetExpenseCategory(false);
       setType("");
       setDescription("");
       setCategoryId("");
