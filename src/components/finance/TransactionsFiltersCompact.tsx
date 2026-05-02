@@ -59,6 +59,7 @@ export function TransactionsFiltersCompact({ filters, onFiltersChange }: Transac
     filters.dueDateTo !== "",
     filters.reconciled !== "all",
     filters.hideTransfers === true,
+    filters.assetExpenseCategory !== "all",
   ].filter(Boolean).length;
 
   const hasAnyFilters = activeFiltersCount > 0 || filters.search !== "";
