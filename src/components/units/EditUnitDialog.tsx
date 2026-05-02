@@ -377,11 +377,16 @@ export const EditUnitDialog = ({
         )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="info" className="text-xs sm:text-sm">
               <Info className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Informações</span>
               <span className="sm:hidden">Info</span>
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="text-xs sm:text-sm">
+              <DollarSign className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Financeiro</span>
+              <span className="sm:hidden">Fin.</span>
             </TabsTrigger>
             <TabsTrigger value="gallery" className="text-xs sm:text-sm">
               <Image className="h-4 w-4 mr-1 sm:mr-2" />
