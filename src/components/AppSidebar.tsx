@@ -92,6 +92,7 @@ export function AppSidebar() {
   const { hasCockpitAccess } = useCockpitAccess();
   const { isMember } = useWorkspace();
   const { isOwner: isPermOwner, hasPermission } = usePermissions();
+  const { canEdit: canEditPermissions } = useCanEditPermissions();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
