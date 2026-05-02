@@ -32,10 +32,15 @@ import {
   AlertCircle,
   RefreshCw,
   ChevronDown,
+  BarChart3,
 } from 'lucide-react';
 import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { RAReportConfigDialog } from '@/components/reports/RAReportConfigDialog';
+import { generateAssetReportPdf } from '@/utils/assetReportPdfGenerator';
+import type { AssetReportData } from '@/lib/asset-report-data';
+import { useToast } from '@/hooks/use-toast';
 
 import {
   TABLE_LABELS,
@@ -165,10 +170,12 @@ export const AssetActivityTimeline = ({
   brokerId,
   pageSize = 25,
 }: AssetActivityTimelineProps) => {
+  const { toast } = useToast();
   const [eventFilter, setEventFilter] = useState('all');
   const [periodFilter, setPeriodFilter] = useState('30');
   const [userFilter, setUserFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [raConfigOpen, setRaConfigOpen] = useState(false);
 
   // Build date filter
   const periodStartDate = useMemo(() => {
@@ -435,30 +442,43 @@ export const AssetActivityTimeline = ({
         </div>
 
         {/* Export buttons */}
-        {filteredLogs.length > 0 && (
-          <div className="flex gap-1.5">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportCSV}>
-                    <Download className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Exportar CSV</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportPDF}>
-                    <FileDown className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Exportar PDF</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
+        <div className="flex gap-1.5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setRaConfigOpen(true)}>
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  Relatório completo
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Gerar relatório completo deste imóvel</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          {filteredLogs.length > 0 && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportCSV}>
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Exportar CSV</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportPDF}>
+                      <FileDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Exportar PDF</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Count */}
@@ -569,6 +589,24 @@ export const AssetActivityTimeline = ({
           </Button>
         </div>
       )}
+      <RAReportConfigDialog
+        open={raConfigOpen}
+        onOpenChange={setRaConfigOpen}
+        dateRange={{
+          from: periodStartDate || subDays(new Date(), 30),
+          to: new Date(),
+        }}
+        onGenerate={async (data) => {
+          try {
+            await generateAssetReportPdf(data);
+            toast({ title: 'PDF gerado com sucesso!', duration: 1000 });
+          } catch (e: any) {
+            toast({ title: 'Erro ao gerar relatório', description: e.message, variant: 'destructive', duration: 1000 });
+          }
+        }}
+        preSelectedAssetIds={[assetId]}
+        formatLabel="PDF"
+      />
     </div>
   );
 };

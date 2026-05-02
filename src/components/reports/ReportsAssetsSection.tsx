@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ReportRow } from './ReportRow';
 import { ReportsTable } from './ReportsTable';
-import { Building2, TrendingUp, Shield, Receipt, FileText } from 'lucide-react';
+import { RAReportConfigDialog } from './RAReportConfigDialog';
+import { Building2, TrendingUp, Shield, Receipt, FileText, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
@@ -9,6 +10,11 @@ import { translateUnitStatus } from '@/utils/reportTranslations';
 import { generateOwnerReportPDF, formatCurrency as formatCurrencyReport } from '@/utils/leaseReportGenerator';
 import { generateTenantStatementPDF } from '@/utils/tenantStatementPdf';
 import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiFormat';
+import { generateAssetReportPdf } from '@/utils/assetReportPdfGenerator';
+import { generateAssetReportDocx } from '@/utils/assetReportDocxGenerator';
+import { generateAssetReportExcel } from '@/utils/assetReportExcelGenerator';
+import { generateAssetReportCsv } from '@/utils/assetReportCsvGenerator';
+import type { AssetReportData } from '@/lib/asset-report-data';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInDays, format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -31,6 +37,25 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
   const { toast } = useToast();
   const { user } = useAuth();
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>('');
+  const [raConfigOpen, setRaConfigOpen] = useState(false);
+  const [raFormat, setRaFormat] = useState<'pdf' | 'docx' | 'excel' | 'csv'>('pdf');
+
+  const handleRaGenerate = async (data: AssetReportData) => {
+    try {
+      if (raFormat === 'pdf') await generateAssetReportPdf(data);
+      else if (raFormat === 'docx') await generateAssetReportDocx(data);
+      else if (raFormat === 'excel') await generateAssetReportExcel(data);
+      else generateAssetReportCsv(data);
+      toast({ title: `${raFormat.toUpperCase()} gerado com sucesso!`, duration: 1000 });
+    } catch (e: any) {
+      toast({ title: 'Erro ao gerar relatório', description: e.message, variant: 'destructive', duration: 1000 });
+    }
+  };
+
+  const openRaConfig = (fmt: 'pdf' | 'docx' | 'excel' | 'csv') => {
+    setRaFormat(fmt);
+    setRaConfigOpen(true);
+  };
 
   const { data: activeLeases = [] } = useQuery({
     queryKey: ['active-leases-for-reports', user?.id],
@@ -312,6 +337,18 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
         <Separator />
 
         <ReportRow
+          title="Relatório Completo do Imóvel"
+          description="Aquisição, valor de mercado, despesas e atividades em período selecionável."
+          icon={<BarChart3 className="h-4 w-4" />}
+          onGeneratePDF={async () => openRaConfig('pdf')}
+          onDownloadCSV={async () => openRaConfig('csv')}
+          onDownloadDocx={async () => openRaConfig('docx')}
+          onDownloadExcel={async () => openRaConfig('excel')}
+        />
+
+        <Separator />
+
+        <ReportRow
           title="Relatório de Vacância"
           description="Ocupação do portfólio com dias vagos e custo de oportunidade calculado."
           icon={<Building2 className="h-4 w-4" />}
@@ -338,6 +375,14 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
           warningMessage="Em desenvolvimento"
         />
       </ReportsTable>
+
+      <RAReportConfigDialog
+        open={raConfigOpen}
+        onOpenChange={setRaConfigOpen}
+        dateRange={dateRange}
+        onGenerate={handleRaGenerate}
+        formatLabel={raFormat.toUpperCase()}
+      />
     </div>
   );
 };
