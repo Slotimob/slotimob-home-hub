@@ -589,6 +589,24 @@ export const AssetActivityTimeline = ({
           </Button>
         </div>
       )}
+      <RAReportConfigDialog
+        open={raConfigOpen}
+        onOpenChange={setRaConfigOpen}
+        dateRange={{
+          from: periodStartDate || subDays(new Date(), 30),
+          to: new Date(),
+        }}
+        onGenerate={async (data) => {
+          try {
+            await generateAssetReportPdf(data);
+            toast({ title: 'PDF gerado com sucesso!', duration: 1000 });
+          } catch (e: any) {
+            toast({ title: 'Erro ao gerar relatório', description: e.message, variant: 'destructive', duration: 1000 });
+          }
+        }}
+        preSelectedAssetIds={[assetId]}
+        formatLabel="PDF"
+      />
     </div>
   );
 };
