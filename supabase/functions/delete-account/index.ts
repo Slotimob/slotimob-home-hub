@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
 
     // 2. Delete all user data from all tables (order matters for FK constraints)
     const tablesToClean = [
+      { table: "data_export_requests", column: "requested_by" },
       { table: "deal_activities", column: "broker_id" },
       { table: "deal_stage_history", column: "broker_id" },
       { table: "deal_tasks", column: "broker_id" },
