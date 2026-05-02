@@ -442,5 +442,15 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
         onDownloadExcel={handleConciliacaoExcel}
       />
     </ReportsTable>
+
+    {cashflowConfigOpen && (
+      <CashflowReportConfigDialog
+        open={!!cashflowConfigOpen}
+        onOpenChange={(open) => !open && setCashflowConfigOpen(null)}
+        formatLabel={cashflowConfigOpen === 'pdf' ? 'PDF' : cashflowConfigOpen === 'csv' ? 'CSV' : cashflowConfigOpen === 'docx' ? 'Word' : 'Excel'}
+        onGenerate={(config) => handleCashflowGenerate(config, cashflowConfigOpen)}
+      />
+    )}
+    </>
   );
 };
