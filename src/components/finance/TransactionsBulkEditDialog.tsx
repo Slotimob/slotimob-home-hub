@@ -241,6 +241,7 @@ export function TransactionsBulkEditDialog({
     if (updateAmount) updates.push("Valor");
     if (updateStatus) updates.push("Status");
     if (updateBankAccount) updates.push("Conta Bancária");
+    if (updateAssetExpenseCategory) updates.push("Categoria Patrimonial");
     return updates;
   };
 
