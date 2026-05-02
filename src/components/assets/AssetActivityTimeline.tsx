@@ -32,10 +32,15 @@ import {
   AlertCircle,
   RefreshCw,
   ChevronDown,
+  BarChart3,
 } from 'lucide-react';
 import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { RAReportConfigDialog } from '@/components/reports/RAReportConfigDialog';
+import { generateAssetReportPdf } from '@/utils/assetReportPdfGenerator';
+import type { AssetReportData } from '@/lib/asset-report-data';
+import { useToast } from '@/hooks/use-toast';
 
 import {
   TABLE_LABELS,
