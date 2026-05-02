@@ -65,20 +65,23 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
 
       const { data: activities, count } = await supabase
         .from('schedule_activities')
-        .select('id, title, activity_type, start_at, end_at, property_id, unit_id, lead_id, contact_id, broker_id', { count: 'exact' })
+        .select('id, title, activity_type, scheduled_at, property_id, unit_id, lead_id, broker_id, is_completed', { count: 'exact' })
         .in('broker_id', brokerIds)
-        .gte('start_at', queryRange.from.toISOString())
-        .lte('start_at', queryRange.to.toISOString())
-        .in('status', ['scheduled', 'confirmed', 'in_progress'])
-        .order('start_at', { ascending: true })
+        .gte('scheduled_at', queryRange.from.toISOString())
+        .lte('scheduled_at', queryRange.to.toISOString())
+        .or('is_completed.is.null,is_completed.eq.false')
+        .order('scheduled_at', { ascending: true })
         .limit(50);
 
-      const items = activities || [];
+      const items = (activities || []) as Array<{
+        id: string; title: string; activity_type: string; scheduled_at: string;
+        property_id: string | null; unit_id: string | null; lead_id: string | null; broker_id: string;
+      }>;
 
       // Lookup names for property/unit/contact
       const propIds = [...new Set(items.map(i => i.property_id).filter(Boolean))] as string[];
       const unitIds = [...new Set(items.map(i => i.unit_id).filter(Boolean))] as string[];
-      const contactIds = [...new Set([...items.map(i => i.lead_id), ...items.map(i => i.contact_id)].filter(Boolean))] as string[];
+      const leadIds = [...new Set(items.map(i => i.lead_id).filter(Boolean))] as string[];
 
       const nameMap: Record<string, string> = {};
 
@@ -90,8 +93,8 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
         const { data } = await supabase.from('units').select('id, unit_number').in('id', unitIds);
         for (const u of data || []) nameMap[`unit_${u.id}`] = u.unit_number || 'Unidade';
       }
-      if (contactIds.length > 0) {
-        const { data } = await supabase.from('contacts').select('id, name').in('id', contactIds);
+      if (leadIds.length > 0) {
+        const { data } = await supabase.from('contacts').select('id, name').in('id', leadIds);
         for (const c of data || []) nameMap[`contact_${c.id}`] = c.name || 'Contato';
       }
 
@@ -100,7 +103,6 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
           ...i,
           subtitle: i.unit_id ? nameMap[`unit_${i.unit_id}`] :
                     i.property_id ? nameMap[`prop_${i.property_id}`] :
-                    i.contact_id ? nameMap[`contact_${i.contact_id}`] :
                     i.lead_id ? nameMap[`contact_${i.lead_id}`] : null,
         })),
         total: count || 0,
