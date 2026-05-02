@@ -27,6 +27,7 @@ export interface TransactionFilters {
   bankAccountId: string;
   reconciled: string; // "all" | "reconciled" | "not_reconciled"
   hideTransfers: boolean;
+  assetExpenseCategory: string; // "all" | specific category | "uncategorized"
 }
 
 const FinanceTransactions = () => {
