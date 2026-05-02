@@ -337,6 +337,7 @@ export function CreateTransactionDialog({
       notes: "",
       unitId: "",
       contactId: "",
+      assetExpenseCategory: "",
     });
     setTransferData({
       amount: "",
