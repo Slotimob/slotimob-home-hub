@@ -77,6 +77,7 @@ export function TransactionsFiltersCompact({ filters, onFiltersChange }: Transac
       bankAccountId: "",
       reconciled: "all",
       hideTransfers: false,
+      assetExpenseCategory: "all",
     });
     setIsOpen(false);
   };
@@ -130,6 +131,7 @@ export function TransactionsFiltersCompact({ filters, onFiltersChange }: Transac
                       dueDateTo: "",
                       reconciled: "all",
                       hideTransfers: false,
+                      assetExpenseCategory: "all",
                     });
                   }}
                 >
