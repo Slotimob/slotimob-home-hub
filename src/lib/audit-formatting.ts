@@ -80,6 +80,7 @@ export const ACTION_LABELS: Record<string, string> = {
   data_export_purged: 'Arquivo de exportação removido',
   improvement_created: 'Registrou benfeitoria',
   market_value_recorded: 'Reavaliou valor de mercado',
+  member_permissions_changed: 'Alterou permissões de membro',
 };
 
 export const IGNORED_FIELDS = new Set([
