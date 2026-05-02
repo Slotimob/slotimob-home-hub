@@ -92,6 +92,12 @@ export function useInfiniteTransactions(
       if (filters.hideTransfers) {
         query = query.not("obligation_type", "eq", "transfer");
       }
+      // Asset expense category filter
+      if (filters.assetExpenseCategory === "uncategorized") {
+        query = query.is("asset_expense_category", null).not("unit_id", "is", null);
+      } else if (filters.assetExpenseCategory && filters.assetExpenseCategory !== "all") {
+        query = query.eq("asset_expense_category", filters.assetExpenseCategory);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
