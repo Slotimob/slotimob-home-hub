@@ -337,6 +337,18 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
         <Separator />
 
         <ReportRow
+          title="Relatório Completo do Imóvel"
+          description="Aquisição, valor de mercado, despesas e atividades em período selecionável."
+          icon={<BarChart3 className="h-4 w-4" />}
+          onGeneratePDF={async () => openRaConfig('pdf')}
+          onDownloadCSV={async () => openRaConfig('csv')}
+          onDownloadDocx={async () => openRaConfig('docx')}
+          onDownloadExcel={async () => openRaConfig('excel')}
+        />
+
+        <Separator />
+
+        <ReportRow
           title="Relatório de Vacância"
           description="Ocupação do portfólio com dias vagos e custo de oportunidade calculado."
           icon={<Building2 className="h-4 w-4" />}
@@ -363,6 +375,14 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
           warningMessage="Em desenvolvimento"
         />
       </ReportsTable>
+
+      <RAReportConfigDialog
+        open={raConfigOpen}
+        onOpenChange={setRaConfigOpen}
+        dateRange={dateRange}
+        onGenerate={handleRaGenerate}
+        formatLabel={raFormat.toUpperCase()}
+      />
     </div>
   );
 };
