@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { WhatsAppBillingButton } from "./WhatsAppBillingButton";
+import { ASSET_EXPENSE_CATEGORIES, type AssetExpenseCategory } from "@/lib/asset-expense-categories";
 
 interface TransactionCardProps {
   transaction: any;
