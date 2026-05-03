@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Button } from "@/components/ui/button";
 import { Plus, Building2, ArrowRight, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
