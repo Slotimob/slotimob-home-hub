@@ -132,6 +132,9 @@ const Pipeline = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { pipelines: customPipelines, createPipeline } = useCustomPipelines();
+  const [isCreatePipelineOpen, setIsCreatePipelineOpen] = useState(false);
+  const [newPipelineName, setNewPipelineName] = useState('');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(true);
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
