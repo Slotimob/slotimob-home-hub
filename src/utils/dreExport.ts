@@ -52,7 +52,7 @@ interface DRELineConfig {
 }
 
 export function exportDREtoPDF(dre: DREData, periodLabel: string, unitName?: string): void {
-  const fullPeriodLabel = unitName ? `${periodLabel} - ${unitName}` : periodLabel;
+  const fullPeriodLabel = unitName ? `${periodLabel} - ${pdfSafeLabel(unitName)}` : periodLabel;
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
