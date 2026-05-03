@@ -21,7 +21,7 @@ const Users = () => {
   // Business plan: full team management with permissions (both owners and members)
   if (plan === 'business') {
     return (
-      <AppLayout title="Usuários">
+      <AppLayout title="Usuários" titleExtra={<HelpTooltip featureKey="settings.team" />}>
         <TeamManagement />
       </AppLayout>
     );
@@ -31,7 +31,7 @@ const Users = () => {
   if (isAgent) return <Navigate to="/dashboard" replace />;
 
   return (
-    <AppLayout title="Usuários">
+    <AppLayout title="Usuários" titleExtra={<HelpTooltip featureKey="settings.team" />}>
       <Card className="max-w-2xl mx-auto">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
