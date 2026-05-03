@@ -274,6 +274,90 @@ export function ManageContentDialog({
               )}
             />
 
+            {/* Feature Key Combobox */}
+            <FormField
+              control={form.control}
+              name="feature_key"
+              render={({ field }) => {
+                const featureEntries = Object.entries(HELP_FEATURES) as [FeatureKey, string][];
+                const selectedLabel = field.value ? HELP_FEATURES[field.value as FeatureKey] || field.value : '';
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Funcionalidade vinculada</FormLabel>
+                    <Popover open={featureKeyOpen} onOpenChange={setFeatureKeyOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button variant="outline" role="combobox" className={cn('justify-between font-normal', !field.value && 'text-muted-foreground')}>
+                            {field.value ? `${field.value} — ${selectedLabel}` : 'Nenhuma (opcional)'}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar funcionalidade..." />
+                          <CommandList>
+                            <CommandEmpty>Nenhuma encontrada.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem value="__none__" onSelect={() => { field.onChange(''); setFeatureKeyOpen(false); }}>
+                                Nenhuma
+                              </CommandItem>
+                              {featureEntries.map(([key, label]) => {
+                                const existing = existingKeys?.find(e => e.feature_key === key && e.is_published && e.id !== content?.id);
+                                return (
+                                  <CommandItem key={key} value={key} onSelect={() => { field.onChange(key); setFeatureKeyOpen(false); }}>
+                                    <span className="font-mono text-xs mr-2">{key}</span>
+                                    <span className="text-sm">{label}</span>
+                                    {existing && <Check className="ml-auto h-3 w-3 text-muted-foreground" />}
+                                    {field.value === key && <Check className="ml-auto h-4 w-4 text-primary" />}
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            {/* Short Description */}
+            <FormField
+              control={form.control}
+              name="short_description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição curta (tooltip)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input placeholder="Texto exibido no ícone de ajuda (?)" maxLength={200} {...field} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                        {(field.value || '').length}/200
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Body Markdown */}
+            <FormField
+              control={form.control}
+              name="body_markdown"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Texto completo (markdown)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Conteúdo detalhado em markdown (opcional)..." rows={4} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
