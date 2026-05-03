@@ -104,8 +104,6 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
 
   const PIPELINE_OPTIONS = [
     { value: 'sale', label: '🏷️ Vendas' },
-    { value: 'rental', label: '🏠 Locações' },
-    { value: 'acquisition', label: '📋 Captações' },
   ];
 
   const [formData, setFormData] = useState({
