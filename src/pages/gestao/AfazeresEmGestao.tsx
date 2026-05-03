@@ -128,7 +128,7 @@ const AfazeresEmGestao = () => {
         path="/gestao/afazeres"
         noIndex={true}
       />
-      <AppLayout title="Afazeres">
+      <AppLayout title="Afazeres" titleExtra={<HelpTooltip featureKey="management.tasks" />}>
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Afazeres</h1>
