@@ -4,6 +4,7 @@
  */
 import type { AssetReportData, AssetReportAsset } from '@/lib/asset-report-data';
 import { ASSET_EXPENSE_CATEGORIES } from '@/lib/asset-expense-categories';
+import { pdfSafeText, pdfSafeRow, pdfSafeLabel } from '@/utils/pdfSafeText';
 
 function fmtCurrency(v: number | null | undefined): string {
   if (v == null) return '—';
