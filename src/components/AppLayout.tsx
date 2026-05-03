@@ -10,6 +10,7 @@ import { ApprovalStatusBanner } from '@/components/approvals/ApprovalStatusBanne
 interface AppLayoutProps {
   children: ReactNode;
   title?: string;
+  titleExtra?: ReactNode;
   headerActions?: ReactNode;
 }
 
