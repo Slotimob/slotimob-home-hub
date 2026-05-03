@@ -257,6 +257,11 @@ export function AppSidebar() {
   const isActive = (path: string) => {
     if (path === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/';
     if (path.startsWith('/finance')) return location.pathname === path;
+    // Pipeline with query params: match pathname + search
+    if (path.startsWith('/pipeline?')) {
+      const [pathname, search] = path.split('?');
+      return location.pathname === pathname && location.search === `?${search}`;
+    }
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
