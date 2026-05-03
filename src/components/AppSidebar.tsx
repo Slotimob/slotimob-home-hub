@@ -54,6 +54,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCanEditPermissions } from '@/hooks/useCanEditPermissions';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
+import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 
 
 
