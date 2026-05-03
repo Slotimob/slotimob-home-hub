@@ -184,6 +184,9 @@ const DataExport = () => {
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
+  // Early return AFTER all hooks have been called
+  if (isMember) return null;
+
   return (
     <AppLayout>
       <div className="max-w-4xl mx-auto space-y-6 p-4 md:p-6">
