@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,12 +41,13 @@ const DataExport = () => {
   const [deleteReason, setDeleteReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Redirect members
-  if (isMember) {
-    toast.error('Apenas o administrador da conta pode solicitar exportações.', { duration: 1000 });
-    navigate('/settings');
-    return null;
-  }
+  // Redirect members — useEffect to avoid hooks-order violation
+  useEffect(() => {
+    if (isMember) {
+      toast.error('Apenas o administrador da conta pode solicitar exportações.', { duration: 1000 });
+      navigate('/settings', { replace: true });
+    }
+  }, [isMember, navigate]);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['data-export-requests', user?.id],
