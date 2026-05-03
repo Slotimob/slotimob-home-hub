@@ -50,6 +50,9 @@ const formSchema = z.object({
   is_premium: z.boolean().default(false),
   price: z.coerce.number().optional(),
   is_published: z.boolean().default(true),
+  feature_key: z.string().optional(),
+  short_description: z.string().max(200, 'Máximo 200 caracteres').optional(),
+  body_markdown: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
