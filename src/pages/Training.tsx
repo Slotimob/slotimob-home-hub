@@ -114,6 +114,33 @@ const Training = () => {
     }
   };
 
+  // Deep-link: ?feature=xxx
+  useEffect(() => {
+    if (isLoading || deepLinkHandled.current || content.length === 0) return;
+    const featureParam = searchParams.get('feature');
+    if (!featureParam) return;
+    deepLinkHandled.current = true;
+
+    const target = content.find((c) => c.feature_key === featureParam);
+    if (!target) {
+      toast('Conteúdo solicitado não encontrado.', { duration: 1000 });
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    setTimeout(() => {
+      const el = document.querySelector(`[data-feature-key="${featureParam}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightedId(target.id);
+        setTimeout(() => setHighlightedId(null), 2000);
+      }
+      setTimeout(() => setSelectedVideo(target), 500);
+    }, 100);
+
+    setSearchParams({}, { replace: true });
+  }, [isLoading, content, searchParams, setSearchParams]);
+
   const markAsCompleted = async (contentId: string) => {
     if (!user) return;
     
