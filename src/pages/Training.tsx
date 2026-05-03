@@ -30,6 +30,9 @@ interface TrainingContent {
   price?: number | null;
   checkout_url?: string | null;
   is_published?: boolean;
+  feature_key?: string | null;
+  short_description?: string | null;
+  body_markdown?: string | null;
 }
 
 interface TrainingProgress {
