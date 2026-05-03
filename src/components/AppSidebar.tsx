@@ -181,7 +181,16 @@ export function AppSidebar() {
       icon: Users,
       items: [
         { title: 'Mensagens', url: '/whatsapp', moduleKey: 'integrations' },
-        { title: 'Pipeline', url: '/pipeline', moduleKey: 'crm_pipeline' },
+        { 
+          title: 'Pipeline', 
+          url: '/pipeline',
+          moduleKey: 'crm_pipeline',
+          nestedItems: customPipelines.map(p => ({
+            title: p.name,
+            url: `/pipeline?type=${p.pipeline_key}`,
+            moduleKey: 'crm_pipeline',
+          })),
+        },
         { title: 'Contatos', url: '/contacts', moduleKey: 'crm_contacts' },
         { title: 'Agenda', url: '/schedule', moduleKey: 'crm_schedule' },
       ]
