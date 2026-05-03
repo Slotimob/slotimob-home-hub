@@ -37,13 +37,11 @@ export const useCustomPipelines = () => {
 
       if (error) throw error;
 
-      // Always include default "Vendas" pipeline at position 0
       const defaultPipeline: CustomPipeline = {
         ...DEFAULT_PIPELINE,
         broker_id: effectiveBrokerId,
       };
 
-      // Filter out any DB entry with key 'sale' (we handle it as built-in)
       const custom = (data || []).filter((p: any) => p.pipeline_key !== 'sale');
       setPipelines([defaultPipeline, ...custom]);
     } catch (error) {
@@ -84,8 +82,30 @@ export const useCustomPipelines = () => {
     }
   };
 
+  const renamePipeline = async (pipelineKey: string, newName: string) => {
+    if (pipelineKey === 'sale') return;
+
+    // Optimistic update
+    setPipelines(prev => prev.map(p => p.pipeline_key === pipelineKey ? { ...p, name: newName } : p));
+
+    try {
+      const { error } = await supabase
+        .from('custom_pipelines')
+        .update({ name: newName })
+        .eq('pipeline_key', pipelineKey);
+
+      if (error) throw error;
+
+      toast({ title: 'Pipeline renomeado!' });
+      await loadPipelines();
+    } catch (error: any) {
+      toast({ title: 'Erro ao renomear pipeline', description: error.message, variant: 'destructive' });
+      await loadPipelines(); // revert
+    }
+  };
+
   const deletePipeline = async (pipelineKey: string) => {
-    if (pipelineKey === 'sale') return; // Can't delete default
+    if (pipelineKey === 'sale') return;
 
     try {
       const { error } = await supabase
@@ -102,5 +122,42 @@ export const useCustomPipelines = () => {
     }
   };
 
-  return { pipelines, loading, createPipeline, deletePipeline, reload: loadPipelines };
+  const reorderPipelines = async (orderedKeys: string[]) => {
+    // Only reorder custom pipelines (skip 'sale')
+    const customKeys = orderedKeys.filter(k => k !== 'sale');
+
+    // Optimistic update
+    const defaultP = pipelines.find(p => p.pipeline_key === 'sale');
+    const reordered = customKeys
+      .map(key => pipelines.find(p => p.pipeline_key === key))
+      .filter(Boolean) as CustomPipeline[];
+    const reorderedWithOrder = reordered.map((p, i) => ({ ...p, display_order: i }));
+    setPipelines(defaultP ? [defaultP, ...reorderedWithOrder] : reorderedWithOrder);
+
+    try {
+      for (let i = 0; i < customKeys.length; i++) {
+        const pipeline = pipelines.find(p => p.pipeline_key === customKeys[i]);
+        if (pipeline && pipeline.id !== 'default_sale') {
+          await supabase
+            .from('custom_pipelines')
+            .update({ display_order: i })
+            .eq('id', pipeline.id);
+        }
+      }
+      toast({ title: 'Ordem salva!' });
+    } catch (error: any) {
+      toast({ title: 'Erro ao reordenar', description: error.message, variant: 'destructive' });
+      await loadPipelines(); // revert
+    }
+  };
+
+  return {
+    pipelines,
+    loading,
+    createPipeline,
+    renamePipeline,
+    deletePipeline,
+    reorderPipelines,
+    reload: loadPipelines,
+  };
 };
