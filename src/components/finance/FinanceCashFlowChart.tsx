@@ -271,7 +271,7 @@ export function FinanceCashFlowChart({ unitId, dateFrom, dateTo, bankAccountId, 
       <CardHeader className="pb-2 px-3 lg:px-6 pt-3 lg:pt-6">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-sm lg:text-base">Fluxo de Caixa Analítico</CardTitle>
+            <CardTitle className="text-sm lg:text-base flex items-center gap-1.5">Fluxo de Caixa Analítico <HelpTooltip featureKey="finance.cash_flow" /></CardTitle>
             <CardDescription className="text-[10px] lg:text-xs">
               Baseado em Data de Vencimento • Análise Operacional e Movimentação Real
             </CardDescription>
