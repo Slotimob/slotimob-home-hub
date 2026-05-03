@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,12 +41,13 @@ const DataExport = () => {
   const [deleteReason, setDeleteReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Redirect members
-  if (isMember) {
-    toast.error('Apenas o administrador da conta pode solicitar exportações.', { duration: 1000 });
-    navigate('/settings');
-    return null;
-  }
+  // Redirect members — useEffect to avoid hooks-order violation
+  useEffect(() => {
+    if (isMember) {
+      toast.error('Apenas o administrador da conta pode solicitar exportações.', { duration: 1000 });
+      navigate('/settings', { replace: true });
+    }
+  }, [isMember, navigate]);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['data-export-requests', user?.id],
@@ -58,7 +59,7 @@ const DataExport = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isMember,
   });
 
   const activeRequest = requests.find(r =>
@@ -182,6 +183,9 @@ const DataExport = () => {
     if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
+
+  // Early return AFTER all hooks have been called
+  if (isMember) return null;
 
   return (
     <AppLayout>
