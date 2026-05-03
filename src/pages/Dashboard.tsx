@@ -30,6 +30,7 @@ import {
   DateRange,
 } from '@/components/dashboard';
 import { TrialBanner } from '@/components/dashboard/TrialBanner';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -155,7 +156,7 @@ const Dashboard = () => {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 {/* Title Section */}
                 <div>
-                  <h2 className="mb-1 text-2xl lg:text-3xl font-bold">Dashboard</h2>
+                  <h2 className="mb-1 text-2xl lg:text-3xl font-bold flex items-center gap-2">Dashboard <HelpTooltip featureKey="dashboard.overview" /></h2>
                   <p className="text-sm text-muted-foreground">
                     Visão geral do seu negócio imobiliário
                   </p>

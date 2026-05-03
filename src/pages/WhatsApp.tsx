@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -351,7 +352,7 @@ export default function WhatsApp() {
           <main className="flex-1 p-6">
             <div className="flex items-center gap-4 mb-6">
               <SidebarTrigger />
-              <h1 className="text-2xl font-bold">WhatsApp</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-1.5">WhatsApp <HelpTooltip featureKey="whatsapp.overview" /></h1>
             </div>
             {canManage ? (
               <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
