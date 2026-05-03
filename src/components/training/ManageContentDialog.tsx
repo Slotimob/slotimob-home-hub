@@ -99,7 +99,21 @@ export function ManageContentDialog({
   onSuccess,
 }: ManageContentDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [featureKeyOpen, setFeatureKeyOpen] = useState(false);
   const isEditing = !!content;
+
+  // Fetch existing feature_key assignments
+  const { data: existingKeys } = useQuery({
+    queryKey: ['training-feature-keys'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('training_content')
+        .select('id, feature_key, title, is_published')
+        .not('feature_key', 'is', null);
+      return (data || []) as { id: string; feature_key: string; title: string; is_published: boolean }[];
+    },
+    staleTime: 30_000,
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -116,6 +130,9 @@ export function ManageContentDialog({
       is_premium: false,
       price: undefined,
       is_published: true,
+      feature_key: '',
+      short_description: '',
+      body_markdown: '',
     },
   });
 
