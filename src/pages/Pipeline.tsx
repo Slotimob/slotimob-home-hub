@@ -1308,8 +1308,27 @@ const Pipeline = () => {
           <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
         </div>
 
+        {/* Empty state */}
+        {deals.length === 0 && !loadingDeals && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="rounded-full bg-muted p-4 mb-4">
+              <Filter className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhuma negociação</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+              Este pipeline ainda não possui negociações. Crie a primeira para começar a acompanhar seus deals.
+            </p>
+            <PermissionGate permission="crm_pipeline.create">
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Negociação
+              </Button>
+            </PermissionGate>
+          </div>
+        )}
+
         {/* Pipeline Kanban */}
-        <div className="relative group">
+        <div className={`relative group ${deals.length === 0 ? 'hidden' : ''}`}>
           {/* Left navigation button - discrete, hidden on mobile */}
           <button
             onClick={() => scrollKanban('left')}
