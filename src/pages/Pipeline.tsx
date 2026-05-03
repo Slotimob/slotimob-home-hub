@@ -126,6 +126,7 @@ const Pipeline = () => {
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(true);
@@ -297,7 +298,7 @@ const Pipeline = () => {
   }, []);
 
 
-  const [activePipeline, setActivePipeline] = useState<string>('sale');
+  const activePipeline = searchParams.get('type') || 'sale';
   const [teamFilter, setTeamFilter] = useState<string>('all');
 
   const [filters, setFilters] = useState<PipelineFiltersState>({
