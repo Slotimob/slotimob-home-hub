@@ -54,12 +54,14 @@ const CATEGORIES = [
 const Training = () => {
   const { user, loading: authLoading } = useAuth();
   const { isModerator: isAdmin, isLoading: adminLoading } = useCockpitAccess();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [content, setContent] = useState<TrainingContent[]>([]);
   const [progress, setProgress] = useState<TrainingProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('todos');
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const deepLinkHandled = useRef(false);
   
   // Dialog states
   const [selectedVideo, setSelectedVideo] = useState<TrainingContent | null>(null);
