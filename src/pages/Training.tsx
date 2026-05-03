@@ -54,6 +54,7 @@ const CATEGORIES = [
 const Training = () => {
   const { user, loading: authLoading } = useAuth();
   const { isModerator: isAdmin, isLoading: adminLoading } = useCockpitAccess();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [content, setContent] = useState<TrainingContent[]>([]);
