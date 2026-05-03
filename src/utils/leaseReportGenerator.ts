@@ -3,6 +3,7 @@ import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Lease } from '@/hooks/useLeases';
+import { pdfSafeText, pdfSafeRow, pdfSafeLabel } from '@/utils/pdfSafeText';
 
 const normalizeText = (text: string): string => {
   return text.normalize('NFC');

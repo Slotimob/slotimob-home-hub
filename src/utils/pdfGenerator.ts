@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { DocumentTemplate, TemplateField } from './documentTemplates';
+import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
 // Extend jsPDF type for autoTable
 declare module 'jspdf' {

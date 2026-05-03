@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { AssetHealth, ObligationHealth } from "@/hooks/useAssetHealth";
+import { pdfSafeText, pdfSafeRow } from "@/utils/pdfSafeText";
 
 interface OverdueItem {
   unitNumber: string;

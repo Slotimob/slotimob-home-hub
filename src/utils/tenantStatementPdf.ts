@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Lease } from '@/hooks/useLeases';
+import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
 const normalizeText = (text: string): string => text.normalize('NFC');
 

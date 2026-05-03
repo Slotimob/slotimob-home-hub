@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { pdfSafeLabel } from '@/utils/pdfSafeText';
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartamento: 'Apartamento', casa: 'Casa', terreno: 'Terreno',

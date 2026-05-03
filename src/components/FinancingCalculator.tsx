@@ -18,6 +18,7 @@ import { FileDown, Calculator, TrendingDown, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { pdfSafeLabel } from '@/utils/pdfSafeText';
 
 interface ScheduleRow {
   month: number;
