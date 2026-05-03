@@ -1328,7 +1328,7 @@ const Pipeline = () => {
         )}
 
         {/* Pipeline Kanban */}
-        <div className={`relative group ${deals.length === 0 ? 'hidden' : ''}`}>
+        <div className="relative group">
           {/* Left navigation button - discrete, hidden on mobile */}
           <button
             onClick={() => scrollKanban('left')}
