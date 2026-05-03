@@ -385,6 +385,7 @@ export default function Schedule() {
   return (
     <AppLayout
       title="Agenda"
+      titleExtra={<HelpTooltip featureKey="crm.schedule" />}
       headerActions={
         <>
           <CalendarSyncDialog />
