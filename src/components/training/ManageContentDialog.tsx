@@ -195,6 +195,9 @@ export function ManageContentDialog({
         is_premium: values.is_premium,
         price: values.price || null,
         is_published: values.is_published,
+        feature_key: values.feature_key || null,
+        short_description: values.short_description || null,
+        body_markdown: values.body_markdown || null,
       };
 
       if (isEditing && content) {
