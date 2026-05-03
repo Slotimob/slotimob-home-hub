@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 import { useAuth } from '@/hooks/useAuth';
 import { AgentSelector } from '@/components/shared/AgentSelector';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -88,6 +89,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
+  const { pipelines } = useCustomPipelines();
   const [saving, setSaving] = useState(false);
   const [savingLead, setSavingLead] = useState(false);
   const [leads, setLeads] = useState<{ id: string; name: string; email?: string | null; phone?: string | null; origin?: string | null }[]>([]);
@@ -102,9 +104,10 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const [assignedUserId, setAssignedUserId] = useState<string>('');
   const [selectedPipeline, setSelectedPipeline] = useState(pipelineType);
 
-  const PIPELINE_OPTIONS = [
-    { value: 'sale', label: '🏷️ Vendas' },
-  ];
+  const PIPELINE_OPTIONS = pipelines.map(p => ({
+    value: p.pipeline_key,
+    label: p.name,
+  }));
 
   const [formData, setFormData] = useState({
     lead_id: '',
