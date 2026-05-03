@@ -1166,14 +1166,7 @@ const Pipeline = () => {
     setSelectionMode(false);
   };
 
-  if (loading || loadingDeals) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    );
-  }
-
+  const isCurrentPipelineCustom = activePipeline !== 'sale';
   const currentPipelineName = customPipelines.find(p => p.pipeline_key === activePipeline)?.name || 'Pipeline';
 
   const handleCreatePipeline = async () => {
@@ -1186,12 +1179,54 @@ const Pipeline = () => {
     }
   };
 
-  return (
-    <AppLayout
-      title={currentPipelineName}
-      titleExtra={<HelpTooltip featureKey="crm.pipeline" />}
-      headerActions={
-        <>
+  const handleRenamePipeline = async () => {
+    if (!renamePipelineValue.trim()) return;
+    await renamePipeline(renamePipelineKey, renamePipelineValue.trim());
+    setIsRenamePipelineOpen(false);
+  };
+
+  const handleDeletePipeline = async () => {
+    await deleteCustomPipeline(deletePipelineKey);
+    setIsDeletePipelineOpen(false);
+    if (activePipeline === deletePipelineKey) {
+      navigate('/pipeline?type=sale');
+    }
+  };
+
+  const openRenameDialog = () => {
+    setRenamePipelineKey(activePipeline);
+    setRenamePipelineValue(currentPipelineName);
+    setIsRenamePipelineOpen(true);
+  };
+
+  const openDeleteDialog = () => {
+    setDeletePipelineKey(activePipeline);
+    setIsDeletePipelineOpen(true);
+  };
+
+  // Skeleton loading state
+  if (loading || loadingDeals) {
+    return (
+      <AppLayout title="Pipeline" titleExtra={<HelpTooltip featureKey="crm.pipeline" />}>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="flex gap-4 overflow-hidden">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="w-[320px] flex-shrink-0 space-y-3">
+                <Skeleton className="h-10 w-full rounded-lg" />
+                {Array.from({ length: 3 - i % 2 }).map((_, j) => (
+                  <Skeleton key={j} className="h-28 w-full rounded-lg" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
           <PermissionGate permission="crm_pipeline.create">
             <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
               Nova Negociação
