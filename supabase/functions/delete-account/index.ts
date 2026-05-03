@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -156,7 +157,7 @@ Deno.serve(async (req) => {
         .eq(column, userId);
 
       if (error) {
-        console.warn(`Warning: failed to delete from ${table}: ${error.message}`);
+        safeWarn('Warning: failed to delete from %s: %s', table, error.message);
       }
     }
 

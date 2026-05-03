@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,7 +42,7 @@ Deno.serve(async (req) => {
     }
 
     const brokerId = user.id;
-    console.log(`Exporting all data for broker: ${brokerId}`);
+    safeLog('Exporting all data for broker: %s', brokerId);
 
     // Fetch all tables data in parallel
     const [

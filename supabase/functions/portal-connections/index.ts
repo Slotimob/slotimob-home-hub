@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { encrypt, decrypt, isEncrypted } from '../_shared/encryption.ts';
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -268,7 +269,7 @@ Deno.serve(async (req) => {
           }
         } else if (connection.api_key || connection.credentials) {
           // Legacy plain text - return but log warning
-          console.warn(`[SECURITY] Plain text credentials accessed for connection ${id}`);
+          safeWarn('[SECURITY] Plain text credentials accessed for connection %s', id);
           decryptedCredentials = connection.credentials || connection.api_key;
         }
 

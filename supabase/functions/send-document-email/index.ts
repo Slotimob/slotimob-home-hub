@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -71,7 +72,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log(`Sending document email to: ${to}, subject: ${subject}`);
+    safeLog('Sending document email to: %s, subject: %s', to, subject);
 
     // Convert base64 to buffer
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));

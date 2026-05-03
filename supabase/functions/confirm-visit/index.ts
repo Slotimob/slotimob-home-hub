@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -92,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     if (!rateLimitResult.allowed) {
-      console.log(`Rate limit exceeded for IP ${clientIP}`);
+      safeLog('Rate limit exceeded for IP %s', clientIP);
       return new Response(
         `
         <!DOCTYPE html>

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,7 +55,7 @@ serve(async (req) => {
     const event = rawEvent ? normalizeEventName(rawEvent) : null;
     const eventData = body.data || body;
 
-    console.log(`Webhook: rawEvent=${rawEvent} normalized=${event} instance=${instanceName}`);
+    safeLog('Webhook: rawEvent=%s normalized=%s instance=%s', rawEvent, event, instanceName);
 
     if (!event || !instanceName) {
       console.log('Missing event or instance, ignoring');
@@ -85,7 +86,7 @@ serve(async (req) => {
 async function processEvent(supabaseAdmin: any, event: string, instanceName: string, data: any) {
   const anyQr = extractQrBase64(data);
   if (anyQr) {
-    console.log(`QR DETECTADO event=${event} instance=${instanceName}`);
+    safeLog('QR DETECTADO event=%s instance=%s', event, instanceName);
   }
 
   switch (event) {
@@ -113,7 +114,7 @@ async function processEvent(supabaseAdmin: any, event: string, instanceName: str
       await handleQrCodeUpdate(supabaseAdmin, instanceName, data);
       break;
     default:
-      console.log(`Unhandled event: ${event}`);
+      safeLog('Unhandled event: %s', event);
   }
 }
 
@@ -125,12 +126,12 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
     return;
   }
 
-  console.log(`Connection update: instance=${instanceName} state=${state}`);
+  safeLog('Connection update: instance=%s state=%s', instanceName, state);
 
   if (state !== 'open') {
     const qrBase64 = extractQrBase64(data);
     if (qrBase64) {
-      console.log(`QR capturado via connection.update state=${state}`);
+      safeLog('QR capturado via connection.update state=%s', state);
       const { error } = await supabaseAdmin
         .from('whatsapp_connections')
         .update({
@@ -155,7 +156,7 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
       })
       .eq('instance_name', instanceName);
     if (error) console.error('Erro update open:', error);
-    else console.log(`✅ ${instanceName} → connected`);
+    else safeLog('✅ %s → connected', instanceName);
   } else if (state === 'close') {
     const { error } = await supabaseAdmin
       .from('whatsapp_connections')
@@ -166,7 +167,7 @@ async function handleConnectionUpdate(supabaseAdmin: any, instanceName: string, 
       })
       .eq('instance_name', instanceName);
     if (error) console.error('Erro update close:', error);
-    else console.log(`${instanceName} → disconnected`);
+    else safeLog('%s → disconnected', instanceName);
   } else if (state === 'connecting') {
     await supabaseAdmin
       .from('whatsapp_connections')
@@ -184,7 +185,7 @@ async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data
     return;
   }
 
-  console.log(`QR code recebido para ${instanceName}`);
+  safeLog('QR code recebido para %s', instanceName);
 
   const { error } = await supabaseAdmin
     .from('whatsapp_connections')
@@ -196,7 +197,7 @@ async function handleQrCodeUpdate(supabaseAdmin: any, instanceName: string, data
     .eq('instance_name', instanceName);
 
   if (error) console.error('Erro update QR:', error);
-  else console.log(`QR armazenado para ${instanceName}`);
+  else safeLog('QR armazenado para %s', instanceName);
 }
 
 // ─── SEND MESSAGE (outgoing confirmation) ───
@@ -214,7 +215,7 @@ async function handleSendMessage(supabaseAdmin: any, instanceName: string, data:
       .eq('message_id', waMessageId);
 
     if (error) console.error('Erro update send status:', error);
-    else console.log(`Mensagem ${waMessageId} confirmada como enviada`);
+    else safeLog('Mensagem %s confirmada como enviada', waMessageId);
 
     // Update conversation last_message preview for sidebar sync
     if (remoteJid) {
@@ -255,7 +256,7 @@ async function handleSendMessage(supabaseAdmin: any, instanceName: string, data:
           .eq('connection_id', connection.id)
           .eq('remote_jid', remoteJid);
 
-        console.log(`Conversa atualizada com last_message para ${remoteJid}`);
+        safeLog('Conversa atualizada com last_message para %s', remoteJid);
       }
     }
   } catch (e) {
@@ -290,8 +291,8 @@ async function handleMessagesUpdate(supabaseAdmin: any, instanceName: string, da
         .update({ status: newStatus })
         .eq('message_id', keyId);
       
-      if (error) console.error(`Erro update message status ${keyId}:`, error);
-      else console.log(`Mensagem ${keyId} → ${newStatus}`);
+      if (error) safeError('Erro update message status %s:', keyId, error);
+      else safeLog('Mensagem %s → %s', keyId, newStatus);
     }
   } catch (e) {
     console.error('handleMessagesUpdate error:', e);
@@ -312,7 +313,7 @@ async function handleMessagesSet(supabaseAdmin: any, instanceName: string, data:
   }
 
   const messages = Array.isArray(data) ? data : (data?.messages || []);
-  console.log(`messages.set: received ${messages.length} messages for ${instanceName}`);
+  safeLog('messages.set: received %s messages for %s', messages.length, instanceName);
 
   const byJid: Record<string, any[]> = {};
   for (const msgData of messages) {
@@ -325,7 +326,7 @@ async function handleMessagesSet(supabaseAdmin: any, instanceName: string, data:
   }
 
   const jids = Object.keys(byJid);
-  console.log(`messages.set: ${jids.length} individual conversations to process`);
+  safeLog('messages.set: %s individual conversations to process', jids.length);
 
   let totalProcessed = 0;
 
@@ -348,7 +349,7 @@ async function handleMessagesSet(supabaseAdmin: any, instanceName: string, data:
     }
   }
 
-  console.log(`messages.set: processed ${totalProcessed} messages across ${Math.min(jids.length, 30)} conversations`);
+  safeLog('messages.set: processed %s messages across %s conversations', totalProcessed, Math.min(jids.length, 30));
 }
 
 // ─── MESSAGES UPSERT ───
@@ -419,7 +420,7 @@ async function getNextAgentRoundRobin(supabaseAdmin: any, brokerId: string): Pro
       }
     }
 
-    console.log(`Round Robin: assigned to ${nextAgent} (${minCount} active convs, ${agentIds.length} agents available)`);
+    safeLog('Round Robin: assigned to %s (%s active convs, %s agents available)', nextAgent, minCount, agentIds.length);
     return nextAgent;
   } catch (err) {
     console.error('Round Robin error:', err);
@@ -529,7 +530,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     const bestMatch = exactMatch || suffixMatch;
     if (bestMatch) {
       contactId = bestMatch.id;
-      console.log(`✅ Contact matched: ${contactId} (exact=${!!exactMatch})`);
+      safeLog('✅ Contact matched: %s (exact=%s)', contactId, !!exactMatch);
     }
   }
 
@@ -561,7 +562,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     if (!contactError && newContact) {
       contactId = newContact.id;
       isNewContact = true;
-      console.log(`Novo contato ${contactId} para ${cleanPhone} (assigned: ${effectiveAssignee})`);
+      safeLog('Novo contato %s para %s (assigned: %s)', contactId, cleanPhone, effectiveAssignee);
 
       // ─── AUTO-LEAD: Create a lead + deal assigned to the agent ───
       try {
@@ -592,7 +593,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
             .single();
 
           if (!dealError && newDeal) {
-            console.log(`✅ Auto-deal ${newDeal.id} criado → agente ${effectiveAssignee}`);
+            safeLog('✅ Auto-deal %s criado → agente %s', newDeal.id, effectiveAssignee);
             (connection as any)._autoDealId = newDeal.id;
 
             // ─── NOTIFICATION: Insert a notification record for the assigned agent ───
@@ -607,7 +608,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
                     type: 'whatsapp_lead',
                     metadata: { deal_id: newDeal.id, contact_id: contactId },
                   });
-                console.log(`📢 Notificação enviada para agente ${effectiveAssignee}`);
+                safeLog('📢 Notificação enviada para agente %s', effectiveAssignee);
               } catch (notifErr) {
                 console.error('Notification insert error (non-critical):', notifErr);
               }
@@ -682,7 +683,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     // ALWAYS update contact_id if we matched one (self-healing)
     if (contactId && !conversation.contact_id) {
       updatePayload.contact_id = contactId;
-      console.log(`🔗 Self-healing: linked contact ${contactId} to conversation ${conversation.id}`);
+      safeLog('🔗 Self-healing: linked contact %s to conversation %s', contactId, conversation.id);
     }
     if (direction === 'incoming') {
       updatePayload.unread_count = (conversation.unread_count || 0) + 1;
@@ -694,7 +695,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
         updatePayload.status = 'pending';
         updatePayload.assigned_user_id = null;
         updatePayload.assigned_at = null;
-        console.log(`Conversa ${conversation.id} reaberta (era closed, agora pending)`);
+        safeLog('Conversa %s reaberta (era closed, agora pending)', conversation.id);
       }
     }
     await supabaseAdmin
@@ -710,7 +711,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     // Ensure contact_name is never null — use pushName with phone fallback
     const safeContactName = pushName || senderPhone || remoteJid.split('@')[0] || 'Desconhecido';
 
-    console.log(`Auto-criando conversa para ${remoteJid} status=${convStatus} assignee=${effectiveAssignee} name=${safeContactName}`);
+    safeLog('Auto-criando conversa para %s status=%s assignee=%s name=%s', remoteJid, convStatus, effectiveAssignee, safeContactName);
 
     try {
       const { data: newConv, error: createError } = await supabaseAdmin
@@ -738,7 +739,7 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
         return;
       }
       conversation = newConv;
-      console.log(`✅ Conversa ${conversation.id} auto-criada para ${cleanPhone}`);
+      safeLog('✅ Conversa %s auto-criada para %s', conversation.id, cleanPhone);
     } catch (convCreateErr) {
       console.error('Exception ao criar conversa:', convCreateErr);
       return;
@@ -767,6 +768,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
   if (msgError) {
     console.error('Erro upsert mensagem:', msgError);
   } else {
-    console.log(`Mensagem ${waMessageId} [${direction}] salva (conversa ${conversation.id})`);
+    safeLog('Mensagem %s [%s] salva (conversa %s)', waMessageId, direction, conversation.id);
   }
 }

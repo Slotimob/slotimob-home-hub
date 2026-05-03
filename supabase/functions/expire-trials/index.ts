@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,7 +39,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Found ${expiredTrials.length} expired trial(s) to downgrade.`);
+    safeLog('Found %s expired trial(s) to downgrade.', expiredTrials.length);
 
     let processed = 0;
 
@@ -54,7 +55,7 @@ Deno.serve(async (req) => {
         .eq("id", sub.id);
 
       if (updateError) {
-        console.error(`Error downgrading subscription ${sub.id}:`, updateError);
+        safeError('Error downgrading subscription %s:', sub.id, updateError);
         continue;
       }
 
@@ -73,7 +74,7 @@ Deno.serve(async (req) => {
       });
 
       processed++;
-      console.log(`Downgraded user ${sub.user_id} from trial to start plan.`);
+      safeLog('Downgraded user %s from trial to start plan.', sub.user_id);
     }
 
     return new Response(JSON.stringify({ processed }), {

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -217,7 +218,7 @@ serve(async (req: Request): Promise<Response> => {
         });
     }
 
-    console.log(`Sending ${template} email to: ${to}`);
+    safeLog('Sending %s email to: %s', template, to);
 
     const emailResponse = await resend.emails.send({
       from: FROM_DEFAULT,

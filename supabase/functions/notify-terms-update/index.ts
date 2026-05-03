@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -53,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const userId = claimsData.claims.sub;
-    console.log(`Authenticated user: ${userId}`);
+    safeLog('Authenticated user: %s', userId);
 
     // Server-side admin role check using service role client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -66,18 +67,18 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (!roleData) {
-      console.error(`Access denied for user ${userId}: no admin role`);
+      safeError('Access denied for user %s: no admin role', userId);
       return new Response(JSON.stringify({ error: "Admin access required" }), {
         status: 403,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    console.log(`Admin role verified: ${roleData.role}`);
+    safeLog('Admin role verified: %s', roleData.role);
 
     // Parse request body
     const { version, title, summary }: NotifyTermsUpdateRequest = await req.json();
-    console.log(`Notifying users about terms update - Version: ${version}`);
+    safeLog('Notifying users about terms update - Version: %s', version);
 
     // Get all users with email
     const { data: profiles, error: profilesError } = await supabase
@@ -90,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw profilesError;
     }
 
-    console.log(`Found ${profiles?.length || 0} users to notify`);
+    safeLog('Found %s users to notify', profiles?.length || 0);
 
     if (!profiles || profiles.length === 0) {
       return new Response(
@@ -163,10 +164,10 @@ const handler = async (req: Request): Promise<Response> => {
             `,
           });
 
-          console.log(`Email sent to ${profile.email}:`, emailResponse);
+          safeLog('Email sent to %s:', profile.email, emailResponse);
           return { success: true, email: profile.email };
         } catch (error) {
-          console.error(`Failed to send email to ${profile.email}:`, error);
+          safeError('Failed to send email to %s:', profile.email, error);
           return { success: false, email: profile.email, error };
         }
       });
@@ -176,7 +177,7 @@ const handler = async (req: Request): Promise<Response> => {
       errorCount += results.filter(r => !r.success).length;
     }
 
-    console.log(`Notification complete. Notified: ${notifiedCount}, Errors: ${errorCount}`);
+    safeLog('Notification complete. Notified: %s, Errors: %s', notifiedCount, errorCount);
 
     return new Response(
       JSON.stringify({ 

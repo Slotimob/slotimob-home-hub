@@ -6,6 +6,20 @@ import { supabase } from '@/integrations/supabase/client';
 const ENV_GTM_ID = import.meta.env.VITE_GTM_ID || 'GTM-PPNZLQM5';
 const ENV_PIXEL_ID = import.meta.env.VITE_PIXEL_ID;
 
+// Strict format validation for each tracking provider.
+// Any character outside the pattern (including quotes, parentheses,
+// HTML tags, scripts) causes the ID to be rejected and silently ignored.
+const isValidGtmId = (id: string): boolean =>
+  /^GTM-[A-Z0-9]{4,12}$/.test(id);
+
+// GA4 starts with G-, Universal Analytics with UA-, Google Ads with AW-
+const isValidGaId = (id: string): boolean =>
+  /^(G|UA|AW)-[A-Z0-9-]{6,20}$/.test(id);
+
+// Facebook Pixel ID: 15 or 16 digits
+const isValidPixelId = (id: string): boolean =>
+  /^[0-9]{15,16}$/.test(id);
+
 // Extend window for tracking globals
 declare global {
   interface Window {
@@ -16,7 +30,8 @@ declare global {
 }
 
 function injectGTM(id: string) {
-  if (!id || document.getElementById('gtm-script')) return;
+  if (!isValidGtmId(id)) return;
+  if (document.getElementById('gtm-script')) return;
 
   const script = document.createElement('script');
   script.id = 'gtm-script';
@@ -35,7 +50,8 @@ function injectGTM(id: string) {
 }
 
 function injectPixel(id: string) {
-  if (!id || document.getElementById('fb-pixel-script')) return;
+  if (!isValidPixelId(id)) return;
+  if (document.getElementById('fb-pixel-script')) return;
 
   const script = document.createElement('script');
   script.id = 'fb-pixel-script';
@@ -56,7 +72,8 @@ function injectPixel(id: string) {
 }
 
 function injectGA(id: string) {
-  if (!id || document.getElementById('ga-script')) return;
+  if (!isValidGaId(id)) return;
+  if (document.getElementById('ga-script')) return;
 
   const script = document.createElement('script');
   script.id = 'ga-script';
@@ -134,9 +151,23 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
     const pixelId = settings.pixel_id || ENV_PIXEL_ID || '';
     const gaId = settings.ga_id || '';
 
-    if (gtmId) injectGTM(gtmId);
-    if (pixelId) injectPixel(pixelId);
-    if (gaId) injectGA(gaId);
+    if (gtmId && isValidGtmId(gtmId)) {
+      injectGTM(gtmId);
+    } else if (gtmId) {
+      console.warn('[Tracking] GTM ID inválido, ignorado por segurança.');
+    }
+
+    if (pixelId && isValidPixelId(pixelId)) {
+      injectPixel(pixelId);
+    } else if (pixelId) {
+      console.warn('[Tracking] Pixel ID inválido, ignorado por segurança.');
+    }
+
+    if (gaId && isValidGaId(gaId)) {
+      injectGA(gaId);
+    } else if (gaId) {
+      console.warn('[Tracking] GA ID inválido, ignorado por segurança.');
+    }
 
     setInjected(true);
   }, [dbSettings, isError, isFetched, injected]);
