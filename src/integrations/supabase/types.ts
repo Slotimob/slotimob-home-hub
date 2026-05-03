@@ -1215,6 +1215,44 @@ export type Database = {
           },
         ]
       }
+      custom_pipelines: {
+        Row: {
+          broker_id: string
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          pipeline_key: string
+          updated_at: string
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          pipeline_key: string
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          pipeline_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_pipelines_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_export_requests: {
         Row: {
           admin_note: string | null
