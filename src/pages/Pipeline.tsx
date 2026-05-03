@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { TeamFilter } from '@/components/shared/TeamFilter';
 import { Button } from '@/components/ui/button';
-import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
+import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown, FolderPlus, Trash2, Pencil, MoreVertical, Filter } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { HeaderButton } from "@/components/ui/header-button";
 import { useToast } from '@/hooks/use-toast';
@@ -40,8 +40,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import type { Database } from '@/integrations/supabase/types';
 import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { FolderPlus } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type PipelineStage = Database['public']['Enums']['pipeline_stage'];
 
@@ -132,9 +135,14 @@ const Pipeline = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { pipelines: customPipelines, createPipeline } = useCustomPipelines();
+  const { pipelines: customPipelines, createPipeline, renamePipeline, deletePipeline: deleteCustomPipeline, loading: pipelinesLoading } = useCustomPipelines();
   const [isCreatePipelineOpen, setIsCreatePipelineOpen] = useState(false);
   const [newPipelineName, setNewPipelineName] = useState('');
+  const [isRenamePipelineOpen, setIsRenamePipelineOpen] = useState(false);
+  const [renamePipelineKey, setRenamePipelineKey] = useState('');
+  const [renamePipelineValue, setRenamePipelineValue] = useState('');
+  const [isDeletePipelineOpen, setIsDeletePipelineOpen] = useState(false);
+  const [deletePipelineKey, setDeletePipelineKey] = useState('');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(true);
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
@@ -1158,14 +1166,7 @@ const Pipeline = () => {
     setSelectionMode(false);
   };
 
-  if (loading || loadingDeals) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    );
-  }
-
+  const isCurrentPipelineCustom = activePipeline !== 'sale';
   const currentPipelineName = customPipelines.find(p => p.pipeline_key === activePipeline)?.name || 'Pipeline';
 
   const handleCreatePipeline = async () => {
@@ -1178,6 +1179,54 @@ const Pipeline = () => {
     }
   };
 
+  const handleRenamePipeline = async () => {
+    if (!renamePipelineValue.trim()) return;
+    await renamePipeline(renamePipelineKey, renamePipelineValue.trim());
+    setIsRenamePipelineOpen(false);
+  };
+
+  const handleDeletePipeline = async () => {
+    await deleteCustomPipeline(deletePipelineKey);
+    setIsDeletePipelineOpen(false);
+    if (activePipeline === deletePipelineKey) {
+      navigate('/pipeline?type=sale');
+    }
+  };
+
+  const openRenameDialog = () => {
+    setRenamePipelineKey(activePipeline);
+    setRenamePipelineValue(currentPipelineName);
+    setIsRenamePipelineOpen(true);
+  };
+
+  const openDeleteDialog = () => {
+    setDeletePipelineKey(activePipeline);
+    setIsDeletePipelineOpen(true);
+  };
+
+  // Skeleton loading state
+  if (loading || loadingDeals) {
+    return (
+      <AppLayout title="Pipeline" titleExtra={<HelpTooltip featureKey="crm.pipeline" />}>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="flex gap-4 overflow-hidden">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="w-[320px] flex-shrink-0 space-y-3">
+                <Skeleton className="h-10 w-full rounded-lg" />
+                {Array.from({ length: 3 - i % 2 }).map((_, j) => (
+                  <Skeleton key={j} className="h-28 w-full rounded-lg" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
   return (
     <AppLayout
       title={currentPipelineName}
@@ -1198,6 +1247,25 @@ const Pipeline = () => {
           >
             Novo Pipeline
           </HeaderButton>
+          {isCurrentPipelineCustom && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <HeaderButton variant="ghost" iconOnly icon={<MoreVertical className="h-4 w-4" />}>
+                  Opções
+                </HeaderButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={openRenameDialog}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Renomear Pipeline
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={openDeleteDialog} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir Pipeline
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <HeaderButton
             variant={showMetrics ? 'secondary' : 'outline'}
             iconOnly
@@ -1239,6 +1307,25 @@ const Pipeline = () => {
           </div>
           <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
         </div>
+
+        {/* Empty state */}
+        {deals.length === 0 && !loadingDeals && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="rounded-full bg-muted p-4 mb-4">
+              <Filter className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhuma negociação</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+              Este pipeline ainda não possui negociações. Crie a primeira para começar a acompanhar seus deals.
+            </p>
+            <PermissionGate permission="crm_pipeline.create">
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Negociação
+              </Button>
+            </PermissionGate>
+          </div>
+        )}
 
         {/* Pipeline Kanban */}
         <div className="relative group">
@@ -1500,6 +1587,48 @@ const Pipeline = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Rename Pipeline Dialog */}
+      <Dialog open={isRenamePipelineOpen} onOpenChange={setIsRenamePipelineOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Renomear Pipeline</DialogTitle>
+            <DialogDescription>Altere o nome do pipeline. A chave interna será preservada.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Input
+              placeholder="Novo nome"
+              value={renamePipelineValue}
+              onChange={(e) => setRenamePipelineValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleRenamePipeline()}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenamePipelineOpen(false)}>Cancelar</Button>
+            <Button onClick={handleRenamePipeline} disabled={!renamePipelineValue.trim()}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Pipeline Confirmation */}
+      <AlertDialog open={isDeletePipelineOpen} onOpenChange={setIsDeletePipelineOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Pipeline</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o pipeline "{customPipelines.find(p => p.pipeline_key === deletePipelineKey)?.name}"?
+              As negociações associadas permanecerão no banco mas não serão exibidas em nenhum pipeline.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePipeline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 };
