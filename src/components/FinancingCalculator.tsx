@@ -18,6 +18,7 @@ import { FileDown, Calculator, TrendingDown, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { pdfSafeLabel } from '@/utils/pdfSafeText';
 
 interface ScheduleRow {
   month: number;
@@ -209,7 +210,7 @@ export const FinancingCalculator = () => {
       margin: { left: 14, right: 14 },
     });
 
-    doc.save(`memorial-financiamento-${formData.financingType.toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`memorial-financiamento-${pdfSafeLabel(formData.financingType).toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`);
     
     toast({
       title: 'PDF exportado',

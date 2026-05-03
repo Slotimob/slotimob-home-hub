@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
 // Extend jsPDF type for autoTable
 declare module 'jspdf' {
@@ -546,7 +547,7 @@ export const generateLegalContractPDF = (data: LegalContractData, fileName?: str
   // =========================================================================
 
   // LOCADOR
-  let locadorQualificacao = `LOCADOR: **${data.locador.nome.toUpperCase()}**, ${safeField(data.locador.nacionalidade, '_______________')}, ${safeField(data.locador.estadoCivil, '_______________')}, ${safeField(data.locador.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.locador.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.locador.cpf || '')}`;
+  let locadorQualificacao = `LOCADOR: **${pdfSafeText(data.locador.nome).toUpperCase()}**, ${safeField(data.locador.nacionalidade, '_______________')}, ${safeField(data.locador.estadoCivil, '_______________')}, ${safeField(data.locador.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.locador.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.locador.cpf || '')}`;
   
   if (data.locador.endereco) {
     locadorQualificacao += `, residente e domiciliado(a) em ${data.locador.endereco}${data.locador.cidade ? `, ${data.locador.cidade}` : ''}${data.locador.estado ? `/${data.locador.estado}` : ''}${data.locador.cep ? `, CEP ${data.locador.cep}` : ''}`;
@@ -563,7 +564,7 @@ export const generateLegalContractPDF = (data: LegalContractData, fileName?: str
   currentY += calculateTextHeight(doc, locadorQualificacao, contentWidth, fonts.body.size) + 4;
 
   // LOCATÁRIO
-  let locatarioQualificacao = `LOCATÁRIO: **${data.locatario.nome.toUpperCase()}**, ${safeField(data.locatario.nacionalidade, '_______________')}, ${safeField(data.locatario.estadoCivil, '_______________')}, ${safeField(data.locatario.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.locatario.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.locatario.cpf || '')}`;
+  let locatarioQualificacao = `LOCATÁRIO: **${pdfSafeText(data.locatario.nome).toUpperCase()}**, ${safeField(data.locatario.nacionalidade, '_______________')}, ${safeField(data.locatario.estadoCivil, '_______________')}, ${safeField(data.locatario.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.locatario.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.locatario.cpf || '')}`;
   
   if (data.locatario.endereco) {
     locatarioQualificacao += `, residente e domiciliado(a) em ${data.locatario.endereco}${data.locatario.cidade ? `, ${data.locatario.cidade}` : ''}${data.locatario.estado ? `/${data.locatario.estado}` : ''}${data.locatario.cep ? `, CEP ${data.locatario.cep}` : ''}`;
@@ -581,7 +582,7 @@ export const generateLegalContractPDF = (data: LegalContractData, fileName?: str
 
   // FIADOR (se aplicável)
   if (data.contrato.garantia === 'fiador' && data.fiador?.nome) {
-    let fiadorQualificacao = `FIADOR: **${data.fiador.nome.toUpperCase()}**, ${safeField(data.fiador.nacionalidade, '_______________')}, ${safeField(data.fiador.estadoCivil, '_______________')}, ${safeField(data.fiador.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.fiador.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.fiador.cpf || '')}`;
+    let fiadorQualificacao = `FIADOR: **${pdfSafeText(data.fiador.nome).toUpperCase()}**, ${safeField(data.fiador.nacionalidade, '_______________')}, ${safeField(data.fiador.estadoCivil, '_______________')}, ${safeField(data.fiador.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.fiador.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.fiador.cpf || '')}`;
     
     if (data.fiador.endereco) {
       fiadorQualificacao += `, residente e domiciliado(a) em ${data.fiador.endereco}${data.fiador.cidade ? `, ${data.fiador.cidade}` : ''}${data.fiador.estado ? `/${data.fiador.estado}` : ''}${data.fiador.cep ? `, CEP ${data.fiador.cep}` : ''}`;
@@ -737,7 +738,7 @@ export const generateLegalContractPDF = (data: LegalContractData, fileName?: str
   }
 
   // SALVA O DOCUMENTO
-  const finalFileName = fileName || `Contrato_Locacao_${data.locatario.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const finalFileName = fileName || `Contrato_Locacao_${pdfSafeLabel(data.locatario.nome).replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(finalFileName);
 };
 

@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { pdfSafeText, pdfSafeRow, pdfSafeLabel } from '@/utils/pdfSafeText';
 
 interface PdfOptions {
   title: string;
@@ -66,7 +67,7 @@ export const generateReportPdf = async (options: PdfOptions) => {
   
   // Report Title - centered
   doc.setFontSize(14);
-  doc.text(normalizeText(title.toUpperCase()), pageWidth / 2, 26, { align: 'center' });
+  doc.text(pdfSafeLabel(title.toUpperCase()), pageWidth / 2, 26, { align: 'center' });
   
   // Period and Unit - centered
   doc.setFontSize(9);
@@ -76,13 +77,13 @@ export const generateReportPdf = async (options: PdfOptions) => {
   
   // Show selected unit if provided
   if (selectedUnit) {
-    doc.text(normalizeText(`Unidade: ${selectedUnit}`), pageWidth / 2, 42, { align: 'center' });
+    doc.text(pdfSafeText(`Unidade: ${selectedUnit}`), pageWidth / 2, 42, { align: 'center' });
   }
   
   // User name on right
   if (userName) {
     doc.setFontSize(8);
-    doc.text(normalizeText(`Gerado por: ${userName}`), pageWidth - 14, 42, { align: 'right' });
+    doc.text(pdfSafeText(`Gerado por: ${userName}`), pageWidth - 14, 42, { align: 'right' });
   }
   
   // Reset text color
@@ -95,7 +96,7 @@ export const generateReportPdf = async (options: PdfOptions) => {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(100, 100, 100);
-    doc.text(subtitle, 14, yPos);
+    doc.text(pdfSafeText(subtitle), 14, yPos);
     yPos += 10;
   }
   
@@ -137,7 +138,7 @@ export const generateReportPdf = async (options: PdfOptions) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     insights.forEach((insight, idx) => {
-      const cleanInsight = normalizeText(insight);
+      const cleanInsight = pdfSafeText(insight);
       const splitInsight = doc.splitTextToSize(cleanInsight, pageWidth - 40);
       splitInsight.forEach((line: string, lineIdx: number) => {
         doc.text(lineIdx === 0 ? `- ${line}` : `  ${line}`, 18, yPos + 14 + idx * 7 + lineIdx * 5);
