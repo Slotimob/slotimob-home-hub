@@ -1166,6 +1166,7 @@ const Pipeline = () => {
   return (
     <AppLayout
       title="Pipeline"
+      titleExtra={<HelpTooltip featureKey="crm.pipeline" />}
       headerActions={
         <>
           <PermissionGate permission="crm_pipeline.create">
