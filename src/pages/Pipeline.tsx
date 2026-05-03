@@ -1479,6 +1479,27 @@ const Pipeline = () => {
         }}
         dealContext={proposalDealContext}
       />
+
+      <Dialog open={isCreatePipelineOpen} onOpenChange={setIsCreatePipelineOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Novo Pipeline</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Input
+              placeholder="Nome do pipeline (ex: Locações, Captações)"
+              value={newPipelineName}
+              onChange={(e) => setNewPipelineName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreatePipeline()}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreatePipelineOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreatePipeline} disabled={!newPipelineName.trim()}>Criar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
