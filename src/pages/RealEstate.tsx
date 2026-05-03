@@ -353,7 +353,6 @@ const RealEstate = () => {
     <>
       <SEOHead
         title="Imóveis Avulsos"
-      titleExtra={<HelpTooltip featureKey="assets.standalone" />}
         description={seoDescription}
         path="/real-estate"
         noIndex={true}
