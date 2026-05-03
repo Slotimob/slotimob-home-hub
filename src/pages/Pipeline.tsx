@@ -1568,6 +1568,48 @@ const Pipeline = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Rename Pipeline Dialog */}
+      <Dialog open={isRenamePipelineOpen} onOpenChange={setIsRenamePipelineOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Renomear Pipeline</DialogTitle>
+            <DialogDescription>Altere o nome do pipeline. A chave interna será preservada.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Input
+              placeholder="Novo nome"
+              value={renamePipelineValue}
+              onChange={(e) => setRenamePipelineValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleRenamePipeline()}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenamePipelineOpen(false)}>Cancelar</Button>
+            <Button onClick={handleRenamePipeline} disabled={!renamePipelineValue.trim()}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Pipeline Confirmation */}
+      <AlertDialog open={isDeletePipelineOpen} onOpenChange={setIsDeletePipelineOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Pipeline</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o pipeline "{customPipelines.find(p => p.pipeline_key === deletePipelineKey)?.name}"?
+              As negociações associadas permanecerão no banco mas não serão exibidas em nenhum pipeline.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePipeline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 };
