@@ -59,7 +59,7 @@ const DataExport = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isMember,
   });
 
   const activeRequest = requests.find(r =>
