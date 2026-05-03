@@ -31,6 +31,11 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { HELP_FEATURES, type FeatureKey } from '@/lib/help-features';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useQuery } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
