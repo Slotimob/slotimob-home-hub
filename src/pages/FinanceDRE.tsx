@@ -287,7 +287,7 @@ export default function FinanceDRE() {
           <div className="flex items-center gap-3">
             <FileSpreadsheet className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold">DRE</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-1.5">DRE <HelpTooltip featureKey="finance.dre" /></h1>
               <p className="text-muted-foreground">
                 Demonstrativo do Resultado do Exercício
               </p>
