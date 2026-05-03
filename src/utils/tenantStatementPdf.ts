@@ -93,10 +93,10 @@ export const generateTenantStatementPDF = (data: TenantStatementData): void => {
   doc.setFontSize(8);
   doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'normal');
-  doc.text(normalizeText(`Nome: ${lease.tenant?.name || 'N/A'}`), margin + 6, y + 17);
-  doc.text(normalizeText(`CPF/CNPJ: ${(lease.tenant as any)?.document_number || '-'}`), margin + 6, y + 24);
-  doc.text(normalizeText(`Telefone: ${lease.tenant?.phone || '-'}`), margin + 6, y + 31);
-  doc.text(normalizeText(`E-mail: ${(lease.tenant?.email || '-').substring(0, 30)}`), margin + 6, y + 38);
+  doc.text(pdfSafeText(`Nome: ${lease.tenant?.name || 'N/A'}`), margin + 6, y + 17);
+  doc.text(pdfSafeText(`CPF/CNPJ: ${(lease.tenant as any)?.document_number || '-'}`), margin + 6, y + 24);
+  doc.text(pdfSafeText(`Telefone: ${lease.tenant?.phone || '-'}`), margin + 6, y + 31);
+  doc.text(pdfSafeText(`E-mail: ${(lease.tenant?.email || '-').substring(0, 30)}`), margin + 6, y + 38);
 
   // Right - Imovel
   const rx = margin + colW + 6;
@@ -110,9 +110,9 @@ export const generateTenantStatementPDF = (data: TenantStatementData): void => {
   doc.setFontSize(8);
   doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'normal');
-  doc.text(normalizeText(`Unidade: ${lease.unit?.unit_number || 'N/A'}`), rx + 6, y + 17);
-  doc.text(normalizeText(`Condominio: ${(lease.unit?.property?.name || 'Imovel Avulso').substring(0, 28)}`), rx + 6, y + 24);
-  doc.text(normalizeText(`Endereco: ${(lease.unit?.address || '-').substring(0, 28)}`), rx + 6, y + 31);
+  doc.text(pdfSafeText(`Unidade: ${lease.unit?.unit_number || 'N/A'}`), rx + 6, y + 17);
+  doc.text(pdfSafeText(`Condominio: ${(lease.unit?.property?.name || 'Imovel Avulso').substring(0, 28)}`), rx + 6, y + 24);
+  doc.text(pdfSafeText(`Endereco: ${(lease.unit?.address || '-').substring(0, 28)}`), rx + 6, y + 31);
   doc.text(normalizeText(`Vencimento: Dia ${lease.due_day}`), rx + 6, y + 38);
 
   y += 48;

@@ -253,7 +253,7 @@ export async function generatePropertyPDF(
     return doc.output('blob');
   }
 
-  const safeName = (_data.title || 'proposta').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+  const safeName = pdfSafeLabel(_data.title || 'proposta').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
   doc.save(`Proposta_${safeName}_${new Date().toISOString().split('T')[0]}.pdf`);
 }
 

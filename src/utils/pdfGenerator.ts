@@ -383,7 +383,7 @@ export const generateDocumentPDF = (
   doc.setTextColor(...COLORS.white);
   doc.setFont('helvetica', 'bold');
   
-  const headerTitle = normalizeText(template.name.toUpperCase());
+  const headerTitle = pdfSafeLabel(template.name.toUpperCase());
   doc.text(headerTitle, 30, 12);
   
   // Subtítulo
@@ -470,8 +470,8 @@ export const generateDocumentPDF = (
   
   // Salva o PDF
   const fileName = blank
-    ? `${template.name} - Modelo.pdf`
-    : `${template.name} - ${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
+    ? `${pdfSafeLabel(template.name)} - Modelo.pdf`
+    : `${pdfSafeLabel(template.name)} - ${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
   
   doc.save(fileName);
 };
@@ -628,7 +628,7 @@ export const generateDocumentPDFBlob = async (
   doc.setFontSize(12);
   doc.setTextColor(...COLORS.white);
   doc.setFont('helvetica', 'bold');
-  doc.text(normalizeText(template.name.toUpperCase()), 30, 12);
+  doc.text(pdfSafeLabel(template.name.toUpperCase()), 30, 12);
   
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');

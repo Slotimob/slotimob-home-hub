@@ -91,11 +91,11 @@ export async function generateAssetReportPdf(report: AssetReportData) {
     // Header
     doc.setTextColor(30, 58, 95);
     doc.setFontSize(14);
-    doc.text(asset.name, margin, y);
+    doc.text(pdfSafeLabel(asset.name), margin, y);
     y += 5;
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    if (asset.address) { doc.text(asset.address, margin, y); y += 4; }
+    if (asset.address) { doc.text(pdfSafeText(asset.address), margin, y); y += 4; }
     doc.text(`Tipo: ${asset.type === 'property' ? 'Imóvel' : 'Unidade'}`, margin, y);
     y += 6;
     doc.setDrawColor(30, 58, 95);
@@ -115,7 +115,7 @@ export async function generateAssetReportPdf(report: AssetReportData) {
           ['Data de aquisição', fmtDate(asset.acquisition.date)],
           ['Custos (ITBI, cartório)', fmtCurrency(asset.acquisition.costs)],
           ['Total investido', fmtCurrency(asset.acquisition.total_invested)],
-          ...(asset.acquisition.notes ? [['Observações', asset.acquisition.notes]] : []),
+          ...(asset.acquisition.notes ? [['Observações', pdfSafeText(asset.acquisition.notes)]] : []),
         ],
         theme: 'plain',
         styles: { fontSize: 9, cellPadding: 2 },
@@ -159,7 +159,7 @@ export async function generateAssetReportPdf(report: AssetReportData) {
         startY: y,
         head: [['Tipo', 'Descrição', 'Custo', 'Data']],
         body: asset.improvements.items.map(i => [
-          i.type, i.description.slice(0, 40), fmtCurrency(i.cost), fmtDate(i.completed_at),
+          pdfSafeText(i.type), pdfSafeText(i.description).slice(0, 40), fmtCurrency(i.cost), fmtDate(i.completed_at),
         ]),
         foot: [['', 'Total', fmtCurrency(asset.improvements.total), '']],
         theme: 'striped',
@@ -210,7 +210,7 @@ export async function generateAssetReportPdf(report: AssetReportData) {
           startY: y,
           head: [['Descrição', 'Categoria', 'Valor', 'Data']],
           body: asset.period.top_expenses.map(e => [
-            e.description.slice(0, 35),
+            pdfSafeText(e.description).slice(0, 35),
             getCategoryLabel(e.category),
             fmtCurrency(e.amount),
             fmtDate(e.date),
