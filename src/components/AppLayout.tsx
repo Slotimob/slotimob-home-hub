@@ -73,6 +73,7 @@ export function AppLayout({ children, title, titleExtra, headerActions }: AppLay
                     {title}
                   </h1>
                 )}
+                {titleExtra}
               </div>
               <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0">
                 <OfflineIndicator />
