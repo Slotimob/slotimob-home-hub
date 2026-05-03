@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { TeamFilter } from '@/components/shared/TeamFilter';
 import { Button } from '@/components/ui/button';
-import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
+import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown, FolderPlus, Trash2, Pencil, MoreVertical } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { HeaderButton } from "@/components/ui/header-button";
 import { useToast } from '@/hooks/use-toast';
@@ -40,8 +40,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import type { Database } from '@/integrations/supabase/types';
 import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { FolderPlus } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type PipelineStage = Database['public']['Enums']['pipeline_stage'];
 
