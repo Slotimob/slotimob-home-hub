@@ -14,7 +14,7 @@ interface AppLayoutProps {
   headerActions?: ReactNode;
 }
 
-export function AppLayout({ children, title, headerActions }: AppLayoutProps) {
+export function AppLayout({ children, title, titleExtra, headerActions }: AppLayoutProps) {
   useWhatsAppGlobalListener();
 
   // Sync theme from user profile — only inside authenticated pages
