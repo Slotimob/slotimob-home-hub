@@ -184,11 +184,11 @@ export function exportOverdueToPdf(assets: AssetHealth[]): void {
   }
 
   // Table
-  const tableData = overdueItems.map((item) => [
-    normalizeText(item.unitNumber),
-    normalizeText(item.propertyName || "-"),
-    normalizeText(item.ownerName || "-"),
-    normalizeText(item.obligationLabel),
+  const tableData = overdueItems.map((item) => pdfSafeRow([
+    item.unitNumber,
+    item.propertyName || "-",
+    item.ownerName || "-",
+    item.obligationLabel,
     item.dueDay ? `Dia ${item.dueDay}` : "-",
     item.amount
       ? new Intl.NumberFormat("pt-BR", {
@@ -196,7 +196,7 @@ export function exportOverdueToPdf(assets: AssetHealth[]): void {
           currency: "BRL",
         }).format(item.amount)
       : "-",
-  ]);
+  ]));
 
   autoTable(doc, {
     startY: totalAmount > 0 ? 64 : 58,
