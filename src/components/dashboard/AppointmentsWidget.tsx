@@ -122,7 +122,7 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Compromissos
+            Compromissos <HelpTooltip featureKey="dashboard.appointments" />
             {scope === 'workspace' && (
               <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
             )}
