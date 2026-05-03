@@ -7,8 +7,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import {
   Building2, 
-  Phone, 
-  GripVertical, 
   AlertTriangle, 
   CheckSquare, 
   Clock, 
@@ -129,13 +127,16 @@ export const DealCard = ({
       data-deal-card
       ref={setNodeRef}
       style={style}
+      {...listeners}
+      {...attributes}
       className={cn(
-        "transition-all shadow-sm hover:shadow-md border bg-card",
+        "transition-all shadow-sm hover:shadow-md border bg-card cursor-grab active:cursor-grabbing touch-manipulation",
         isDragging && 'opacity-50 rotate-2',
         isRotting && 'border-amber-500/60',
         isUnitUnavailable && 'border-destructive/40 bg-destructive/5',
         overdueTasksCount > 0 && !isUnitUnavailable && 'border-destructive/40',
         isSelected && 'ring-2 ring-primary bg-primary/5',
+        selectionMode && 'cursor-pointer',
       )}
     >
       <CardContent className="p-2 sm:p-2.5 space-y-1.5">
@@ -147,29 +148,27 @@ export const DealCard = ({
           </div>
         )}
 
-        {/* Header: drag handle + name + temp badge */}
+        {/* Header: name + temp badge */}
         <div className="flex items-start gap-1.5">
-          {selectionMode ? (
+          {selectionMode && (
             <div className="flex-shrink-0 mt-0.5 p-0.5">
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={(checked) => onSelectionChange?.(!!checked)}
               />
             </div>
-          ) : (
-            <div
-              data-dnd-handle
-              {...listeners}
-              {...attributes}
-              className="cursor-move flex-shrink-0 mt-0.5 p-0.5 hover:bg-muted rounded"
-            >
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </div>
           )}
           
           <div 
             className="flex-1 min-w-0 cursor-pointer"
-            onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (selectionMode) {
+                onSelectionChange?.(!isSelected);
+              } else {
+                onClick?.();
+              }
+            }}
           >
             <div className="flex items-start justify-between gap-1">
               <div className="flex-1 min-w-0">

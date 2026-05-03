@@ -6,7 +6,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { TeamFilter } from '@/components/shared/TeamFilter';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { HeaderButton } from "@/components/ui/header-button";
@@ -76,11 +75,7 @@ export interface Deal {
   } | null;
 }
 
-const PIPELINE_TYPES = [
-  { value: 'sale', label: 'Vendas' },
-  { value: 'rental', label: 'Locações' },
-  { value: 'acquisition', label: 'Captações' },
-] as const;
+// Only "Vendas" pipeline is kept as default; users can create custom pipelines via DB
 
 interface TaskCount {
   deal_id: string;
@@ -354,13 +349,13 @@ const Pipeline = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 4,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250,
-        tolerance: 5,
+        delay: 150,
+        tolerance: 8,
       },
     })
   );
@@ -1196,16 +1191,6 @@ const Pipeline = () => {
       }
     >
       <div className="space-y-4">
-        {/* Pipeline type tabs */}
-        <Tabs value={activePipeline} onValueChange={setActivePipeline} className="w-full">
-          <TabsList>
-            {PIPELINE_TYPES.map((pt) => (
-              <TabsTrigger key={pt.value} value={pt.value}>
-                {pt.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
 
         {/* Metrics Section */}
         <Collapsible open={showMetrics} onOpenChange={setShowMetrics}>
