@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { FinanceOverviewCards } from "@/components/finance/FinanceOverviewCards";
 import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { FinanceCashFlowChart } from "@/components/finance/FinanceCashFlowChart";
