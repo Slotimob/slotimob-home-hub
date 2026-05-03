@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -38,6 +38,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Database } from '@/integrations/supabase/types';
+import { useCustomPipelines } from '@/hooks/useCustomPipelines';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { FolderPlus } from 'lucide-react';
 
 type PipelineStage = Database['public']['Enums']['pipeline_stage'];
 
@@ -126,7 +130,11 @@ const Pipeline = () => {
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { pipelines: customPipelines, createPipeline } = useCustomPipelines();
+  const [isCreatePipelineOpen, setIsCreatePipelineOpen] = useState(false);
+  const [newPipelineName, setNewPipelineName] = useState('');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(true);
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
@@ -297,7 +305,7 @@ const Pipeline = () => {
   }, []);
 
 
-  const [activePipeline, setActivePipeline] = useState<string>('sale');
+  const activePipeline = searchParams.get('type') || 'sale';
   const [teamFilter, setTeamFilter] = useState<string>('all');
 
   const [filters, setFilters] = useState<PipelineFiltersState>({
@@ -1158,9 +1166,21 @@ const Pipeline = () => {
     );
   }
 
+  const currentPipelineName = customPipelines.find(p => p.pipeline_key === activePipeline)?.name || 'Pipeline';
+
+  const handleCreatePipeline = async () => {
+    if (!newPipelineName.trim()) return;
+    const key = await createPipeline(newPipelineName.trim());
+    if (key) {
+      setNewPipelineName('');
+      setIsCreatePipelineOpen(false);
+      navigate(`/pipeline?type=${key}`);
+    }
+  };
+
   return (
     <AppLayout
-      title="Pipeline"
+      title={currentPipelineName}
       titleExtra={<HelpTooltip featureKey="crm.pipeline" />}
       headerActions={
         <>
@@ -1169,6 +1189,15 @@ const Pipeline = () => {
               Nova Negociação
             </HeaderButton>
           </PermissionGate>
+          <HeaderButton
+            variant="outline"
+            iconOnly
+            showTextAt="lg"
+            icon={<FolderPlus className="h-4 w-4" />}
+            onClick={() => setIsCreatePipelineOpen(true)}
+          >
+            Novo Pipeline
+          </HeaderButton>
           <HeaderButton
             variant={showMetrics ? 'secondary' : 'outline'}
             iconOnly
@@ -1450,6 +1479,27 @@ const Pipeline = () => {
         }}
         dealContext={proposalDealContext}
       />
+
+      <Dialog open={isCreatePipelineOpen} onOpenChange={setIsCreatePipelineOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Novo Pipeline</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Input
+              placeholder="Nome do pipeline (ex: Locações, Captações)"
+              value={newPipelineName}
+              onChange={(e) => setNewPipelineName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreatePipeline()}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreatePipelineOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreatePipeline} disabled={!newPipelineName.trim()}>Criar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };

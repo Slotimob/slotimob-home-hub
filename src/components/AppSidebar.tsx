@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Building2, 
   Users, 
@@ -54,6 +54,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCanEditPermissions } from '@/hooks/useCanEditPermissions';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
+import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 
 
 
@@ -97,6 +98,7 @@ export function AppSidebar() {
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
 
+  const { pipelines: customPipelines } = useCustomPipelines();
   const isPlanProOrAbove = plan === 'pro' || plan === 'business';
 
   // Determine which sub-items are locked
@@ -179,7 +181,16 @@ export function AppSidebar() {
       icon: Users,
       items: [
         { title: 'Mensagens', url: '/whatsapp', moduleKey: 'integrations' },
-        { title: 'Pipeline', url: '/pipeline', moduleKey: 'crm_pipeline' },
+        { 
+          title: 'Pipeline', 
+          url: '/pipeline',
+          moduleKey: 'crm_pipeline',
+          nestedItems: customPipelines.map(p => ({
+            title: p.name,
+            url: `/pipeline?type=${p.pipeline_key}`,
+            moduleKey: 'crm_pipeline',
+          })),
+        },
         { title: 'Contatos', url: '/contacts', moduleKey: 'crm_contacts' },
         { title: 'Agenda', url: '/schedule', moduleKey: 'crm_schedule' },
       ]
@@ -246,6 +257,11 @@ export function AppSidebar() {
   const isActive = (path: string) => {
     if (path === '/dashboard') return location.pathname === '/dashboard' || location.pathname === '/';
     if (path.startsWith('/finance')) return location.pathname === path;
+    // Pipeline with query params: match pathname + search
+    if (path.startsWith('/pipeline?')) {
+      const [pathname, search] = path.split('?');
+      return location.pathname === pathname && location.search === `?${search}`;
+    }
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
