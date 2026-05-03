@@ -36,7 +36,7 @@ const ContratosEmGestao = () => {
         path="/gestao/contratos"
         noIndex={true}
       />
-      <AppLayout title="Contratos">
+      <AppLayout title="Contratos" titleExtra={<HelpTooltip featureKey="management.contracts" />}>
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Contratos</h1>
