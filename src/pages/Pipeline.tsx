@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { TeamFilter } from '@/components/shared/TeamFilter';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
 import { Plus, BarChart3, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { HeaderButton } from "@/components/ui/header-button";
