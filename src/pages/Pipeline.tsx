@@ -1227,6 +1227,12 @@ const Pipeline = () => {
       </AppLayout>
     );
   }
+  return (
+    <AppLayout
+      title={currentPipelineName}
+      titleExtra={<HelpTooltip featureKey="crm.pipeline" />}
+      headerActions={
+        <>
           <PermissionGate permission="crm_pipeline.create">
             <HeaderButton icon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateDialogOpen(true)}>
               Nova Negociação
@@ -1241,6 +1247,25 @@ const Pipeline = () => {
           >
             Novo Pipeline
           </HeaderButton>
+          {isCurrentPipelineCustom && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <HeaderButton variant="ghost" iconOnly icon={<MoreVertical className="h-4 w-4" />}>
+                  Opções
+                </HeaderButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={openRenameDialog}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Renomear Pipeline
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={openDeleteDialog} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir Pipeline
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <HeaderButton
             variant={showMetrics ? 'secondary' : 'outline'}
             iconOnly
