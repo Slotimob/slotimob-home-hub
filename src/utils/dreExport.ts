@@ -138,7 +138,7 @@ export function exportDREtoPDF(dre: DREData, periodLabel: string, unitName?: str
       doc.setTextColor(100, 100, 100);
       
       line.items.forEach((item) => {
-        doc.text(`• ${item.categoryName}`, 32, currentY);
+        doc.text(`• ${pdfSafeText(item.categoryName)}`, 32, currentY);
         doc.text(formatCurrency(item.total), pageWidth - 15, currentY, { align: 'right' });
         currentY += 5;
       });

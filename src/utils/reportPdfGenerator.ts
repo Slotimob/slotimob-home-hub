@@ -96,7 +96,7 @@ export const generateReportPdf = async (options: PdfOptions) => {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(100, 100, 100);
-    doc.text(subtitle, 14, yPos);
+    doc.text(pdfSafeText(subtitle), 14, yPos);
     yPos += 10;
   }
   

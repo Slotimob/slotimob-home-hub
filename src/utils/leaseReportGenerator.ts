@@ -92,13 +92,13 @@ export const generateOwnerReportPDF = (data: OwnerReportData): void => {
   doc.setFontSize(8);
   doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'normal');
-  const unit = lease.unit?.unit_number || 'N/A';
-  const prop = lease.unit?.property?.name || 'Imovel Avulso';
-  const addr = lease.unit?.address || '-';
+  const unit = pdfSafeText(lease.unit?.unit_number || 'N/A');
+  const prop = pdfSafeText(lease.unit?.property?.name || 'Imovel Avulso');
+  const addr = pdfSafeText(lease.unit?.address || '-');
   doc.text(normalizeText(`Unidade: ${unit}`), margin + 6, y + 17);
   doc.text(normalizeText(`Condominio: ${prop.length > 30 ? prop.substring(0, 30) + '...' : prop}`), margin + 6, y + 24);
   doc.text(normalizeText(`Endereco: ${addr.length > 30 ? addr.substring(0, 30) + '...' : addr}`), margin + 6, y + 31);
-  doc.text(normalizeText(`Inquilino: ${(lease.tenant?.name || 'N/A').substring(0, 30)}`), margin + 6, y + 38);
+  doc.text(normalizeText(`Inquilino: ${pdfSafeText((lease.tenant?.name || 'N/A')).substring(0, 30)}`), margin + 6, y + 38);
 
   // Right card - Contrato
   const rightX = margin + colW + 6;
@@ -170,11 +170,11 @@ export const generateOwnerReportPDF = (data: OwnerReportData): void => {
   rows.push([normalizeText(`Taxa de Administracao (${lease.admin_fee_percentage}%)`), '', `-${formatCurrency(adminFee)}`, normalizeText('Deducao')]);
 
   maintenanceExpenses.forEach((e) => {
-    rows.push([normalizeText(`Manutencao: ${e.description.substring(0, 40)}`), formatDateBR(e.date), `-${formatCurrency(e.amount)}`, normalizeText('Deducao')]);
+    rows.push([normalizeText(`Manutencao: ${pdfSafeText(e.description).substring(0, 40)}`), formatDateBR(e.date), `-${formatCurrency(e.amount)}`, normalizeText('Deducao')]);
   });
 
   otherDeductions.forEach((d) => {
-    rows.push([normalizeText(d.description.substring(0, 40)), '', `-${formatCurrency(d.amount)}`, normalizeText('Deducao')]);
+    rows.push([normalizeText(pdfSafeText(d.description).substring(0, 40)), '', `-${formatCurrency(d.amount)}`, normalizeText('Deducao')]);
   });
 
   if (rows.length === 2 && maintenanceExpenses.length === 0 && otherDeductions.length === 0) {
@@ -246,7 +246,7 @@ export const generateOwnerReportPDF = (data: OwnerReportData): void => {
     doc.setFont('helvetica', 'bold');
     doc.text('DIMOB', margin + 6, y + 6);
     doc.setFont('helvetica', 'normal');
-    doc.text(normalizeText(`Imovel deducivel para declaracao DIMOB. CIB: ${lease.cib || 'Nao informado'}`), margin + 30, y + 6);
+    doc.text(normalizeText(`Imovel deducivel para declaracao DIMOB. CIB: ${pdfSafeText(lease.cib || 'Nao informado')}`), margin + 30, y + 6);
     y += 20;
   }
 
@@ -261,8 +261,8 @@ export const generateOwnerReportPDF = (data: OwnerReportData): void => {
     doc.text(normalizeText('PROPRIETARIO'), margin + 6, y + 7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(30, 41, 59);
-    doc.text(normalizeText(`Nome: ${owner.name || '-'}`), margin + 6, y + 14);
-    doc.text(normalizeText(`Contato: ${owner.phone || owner.email || '-'}`), pageWidth / 2, y + 14);
+    doc.text(normalizeText(`Nome: ${pdfSafeText(owner.name || '-')}`), margin + 6, y + 14);
+    doc.text(normalizeText(`Contato: ${pdfSafeText(owner.phone || owner.email || '-')}`), pageWidth / 2, y + 14);
   }
 
   // === FOOTER ===
