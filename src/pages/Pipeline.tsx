@@ -38,6 +38,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Database } from '@/integrations/supabase/types';
+import { useCustomPipelines } from '@/hooks/useCustomPipelines';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { FolderPlus } from 'lucide-react';
 
 type PipelineStage = Database['public']['Enums']['pipeline_stage'];
 
