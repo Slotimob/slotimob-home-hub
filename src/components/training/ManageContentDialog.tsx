@@ -154,6 +154,9 @@ export function ManageContentDialog({
         is_premium: content.is_premium || false,
         price: content.price || undefined,
         is_published: content.is_published !== false,
+        feature_key: content.feature_key || '',
+        short_description: content.short_description || '',
+        body_markdown: content.body_markdown || '',
       });
     } else {
       form.reset({
@@ -169,6 +172,9 @@ export function ManageContentDialog({
         is_premium: false,
         price: undefined,
         is_published: true,
+        feature_key: '',
+        short_description: '',
+        body_markdown: '',
       });
     }
   }, [content, form]);
