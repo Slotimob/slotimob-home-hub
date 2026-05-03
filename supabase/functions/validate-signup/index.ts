@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,7 @@ const MAX_SIGNUPS_PER_WINDOW = 3;
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[VALIDATE-SIGNUP] ${step}${detailsStr}`);
+  safeLog('[VALIDATE-SIGNUP] %s%s', step, detailsStr);
 };
 
 serve(async (req) => {

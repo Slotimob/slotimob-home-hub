@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -157,7 +158,7 @@ serve(async (req) => {
 
     // Send via Evolution API
     const evoUrl = `${evolutionApiUrl}/message/sendText/${connection.instance_name}`;
-    console.log(`Billing message to ${sanitizedPhone} via ${connection.instance_name}`);
+    safeLog('Billing message to %s via %s', sanitizedPhone, connection.instance_name);
 
     const evoRes = await fetch(evoUrl, {
       method: 'POST',

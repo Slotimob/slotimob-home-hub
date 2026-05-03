@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { encrypt, decrypt, isEncrypted } from '../_shared/encryption.ts';
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -273,7 +274,7 @@ Deno.serve(async (req) => {
         if (integration.encrypted_api_key) {
           decryptedApiKey = await decrypt(integration.encrypted_api_key);
         } else if (integration.api_key) {
-          console.warn(`[SECURITY] Plain text API key accessed for integration ${id}`);
+          safeWarn('[SECURITY] Plain text API key accessed for integration %s', id);
           decryptedApiKey = integration.api_key;
         }
 
@@ -285,7 +286,7 @@ Deno.serve(async (req) => {
             decryptedConfig = decrypted;
           }
         } else if (integration.config) {
-          console.warn(`[SECURITY] Plain text config accessed for integration ${id}`);
+          safeWarn('[SECURITY] Plain text config accessed for integration %s', id);
           decryptedConfig = integration.config;
         }
 

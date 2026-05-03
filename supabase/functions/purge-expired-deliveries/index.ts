@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,7 +42,7 @@ Deno.serve(async (req) => {
         .remove([req.delivery_file_path]);
 
       if (removeError) {
-        console.warn(`Failed to remove ${req.delivery_file_path}:`, removeError.message);
+        safeWarn('Failed to remove %s:', req.delivery_file_path, removeError.message);
         continue;
       }
 

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +9,7 @@ const corsHeaders = {
 
 // Force-delete instance from Evolution API (ignore errors if not found)
 async function forceDeleteInstance(evolutionApiUrl: string, evolutionApiKey: string, instanceName: string) {
-  console.log(`forceDelete: Limpeza profunda para ${instanceName}...`);
+  safeLog('forceDelete: Limpeza profunda para %s...', instanceName);
   try {
     await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, {
       method: 'DELETE',
@@ -84,7 +85,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const { action } = body;
-    console.log(`whatsapp-instance action=${action} user=${userId}`);
+    safeLog('whatsapp-instance action=%s user=%s', action, userId);
 
     // ─── CREATE INSTANCE ───
     if (action === 'create') {
@@ -98,7 +99,7 @@ serve(async (req) => {
         .maybeSingle();
 
       if (oldConn?.instance_name) {
-        console.log(`Limpando instância antiga: ${oldConn.instance_name}`);
+        safeLog('Limpando instância antiga: %s', oldConn.instance_name);
         await forceDeleteInstance(evolutionApiUrl, evolutionApiKey, oldConn.instance_name);
       }
       await supabaseAdmin.from('whatsapp_connections').delete().eq('broker_id', userId);
@@ -143,7 +144,7 @@ serve(async (req) => {
           },
         };
 
-        console.log(`Registrando webhook em ${evolutionApiUrl}/webhook/set/${instanceName}`, JSON.stringify(webhookSetPayload));
+        safeLog('Registrando webhook em %s/webhook/set/%s', evolutionApiUrl, instanceName, JSON.stringify(webhookSetPayload));
         const webhookRes = await fetch(`${evolutionApiUrl}/webhook/set/${instanceName}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -152,7 +153,7 @@ serve(async (req) => {
         const webhookText = await webhookRes.text();
         console.log('Webhook set response:', webhookRes.status, webhookText.slice(0, 500));
         if (!webhookRes.ok) {
-          console.error(`❌ Webhook set FAILED (${webhookRes.status}): ${webhookText}`);
+          safeError('❌ Webhook set FAILED (%s): %s', webhookRes.status, webhookText);
         }
       } catch (e) {
         console.error('Erro ao registrar webhook (não-bloqueante):', e.message);
@@ -163,7 +164,7 @@ serve(async (req) => {
         console.log('⚠️ QR Code não veio na criação. Polling (máx 5x, 5s delay)...');
 
         for (let attempt = 1; attempt <= 5; attempt++) {
-          console.log(`⏳ Polling tentativa ${attempt}/5 — aguardando 5s...`);
+          safeLog('⏳ Polling tentativa %s/5 — aguardando 5s...', attempt);
           await new Promise(r => setTimeout(r, 5000));
 
           try {
@@ -172,15 +173,15 @@ serve(async (req) => {
               headers: { 'apikey': evolutionApiKey },
             });
             const connectData = await connectRes.json();
-            console.log(`Polling ${attempt}/5 status: ${connectRes.status}`);
+            safeLog('Polling %s/5 status: %s', attempt, connectRes.status);
             finalQrCode = extractQrBase64(connectData);
 
             if (finalQrCode) {
-              console.log(`✅ QR Code capturado na tentativa ${attempt}/5!`);
+              safeLog('✅ QR Code capturado na tentativa %s/5!', attempt);
               break;
             }
           } catch (e) {
-            console.log(`Polling ${attempt}/5 erro: ${e.message}`);
+            safeLog('Polling %s/5 erro: %s', attempt, e.message);
           }
         }
       } else {
@@ -277,7 +278,7 @@ serve(async (req) => {
       });
       const statusData = await statusRes.json();
       const apiState = statusData?.instance?.state || statusData?.state;
-      console.log(`Status check: apiState=${apiState} dbStatus=${conn.status}`);
+      safeLog('Status check: apiState=%s dbStatus=%s', apiState, conn.status);
 
       // Se a API diz "open" mas o DB ainda não reflete, sincronizar agora
       if ((apiState === 'open' || apiState === 'connected') && conn.status !== 'connected') {
@@ -342,7 +343,7 @@ serve(async (req) => {
           body: JSON.stringify({ where: { id: { not: null } } }),
         });
         const chats = await chatsRes.json();
-        console.log(`sync_recent: ${Array.isArray(chats) ? chats.length : 0} chats found`);
+        safeLog('sync_recent: %s chats found', Array.isArray(chats) ? chats.length : 0);
 
         return new Response(JSON.stringify({ 
           success: true, 
@@ -420,16 +421,16 @@ serve(async (req) => {
                 ],
               },
             };
-            console.log(`sync_history: Force-registering webhook for ${conn.instance_name}`, JSON.stringify(webhookSetPayload));
+            safeLog('sync_history: Force-registering webhook for %s', conn.instance_name, JSON.stringify(webhookSetPayload));
             const wRes = await fetch(`${evolutionApiUrl}/webhook/set/${conn.instance_name}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
               body: JSON.stringify(webhookSetPayload),
             });
             const wText = await wRes.text();
-            console.log(`sync_history: Webhook registration status=${wRes.status} body=${wText.slice(0, 500)}`);
+            safeLog('sync_history: Webhook registration status=%s body=%s', wRes.status, wText.slice(0, 500));
             if (!wRes.ok) {
-              console.error(`sync_history: ❌ Webhook set FAILED: ${wText}`);
+              safeError('sync_history: ❌ Webhook set FAILED: %s', wText);
             }
           } catch (wErr) {
             console.error('sync_history: Webhook registration failed (non-blocking):', wErr.message);
@@ -437,7 +438,7 @@ serve(async (req) => {
 
           // Try multiple Evolution API endpoints/methods to fetch chats
           const fetchUrl = `${evolutionApiUrl}/chat/findChats/${conn.instance_name}`;
-          console.log(`sync_history: Fetching chats from: ${fetchUrl}`);
+          safeLog('sync_history: Fetching chats from: %s', fetchUrl);
 
           let chatsRes = await fetch(fetchUrl, {
             method: 'POST',
@@ -448,7 +449,7 @@ serve(async (req) => {
           // If POST with empty body fails, try GET
           if (!chatsRes.ok) {
             const errText = await chatsRes.text();
-            console.log(`sync_history: POST returned ${chatsRes.status}: ${errText.slice(0, 300)}. Trying GET...`);
+            safeLog('sync_history: POST returned %s: %s. Trying GET...', chatsRes.status, errText.slice(0, 300));
             chatsRes = await fetch(fetchUrl, {
               method: 'GET',
               headers: { 'apikey': evolutionApiKey },
@@ -457,7 +458,7 @@ serve(async (req) => {
 
           if (!chatsRes.ok) {
             const errText = await chatsRes.text();
-            console.error(`sync_history: Evolution API error ${chatsRes.status}: ${errText.slice(0, 500)}`);
+            safeError('sync_history: Evolution API error %s: %s', chatsRes.status, errText.slice(0, 500));
             throw new Error(`Evolution API returned ${chatsRes.status}`);
           }
 
@@ -472,18 +473,18 @@ serve(async (req) => {
                 ? rawData.chats 
                 : [];
 
-          console.log(`sync_history: Raw response type=${typeof rawData}, isArray=${Array.isArray(rawData)}, keys=${rawData && typeof rawData === 'object' ? Object.keys(rawData).slice(0, 10).join(',') : 'N/A'}, extracted=${chatList.length} items`);
+          safeLog('sync_history: Raw response type=%s, isArray=%s, keys=%s, extracted=%s items', typeof rawData, Array.isArray(rawData), rawData && typeof rawData === 'object' ? Object.keys(rawData).slice(0, 10).join(',') : 'N/A', chatList.length);
           if (chatList.length > 0) {
-            console.log(`sync_history: First chat sample: ${JSON.stringify(chatList[0]).slice(0, 500)}`);
+            safeLog('sync_history: First chat sample: %s', JSON.stringify(chatList[0]).slice(0, 500));
           } else {
-            console.log(`sync_history: Raw data sample: ${JSON.stringify(rawData).slice(0, 500)}`);
+            safeLog('sync_history: Raw data sample: %s', JSON.stringify(rawData).slice(0, 500));
           }
 
           const personalChats = chatList.filter((chat: any) => {
             const jid = chat.remoteJid || chat.id || '';
             return jid.endsWith('@s.whatsapp.net') && jid !== 'status@broadcast';
           });
-          console.log(`sync_history: ${chatList.length} total chats -> ${personalChats.length} personal chats after filter`);
+          safeLog('sync_history: %s total chats -> %s personal chats after filter', chatList.length, personalChats.length);
 
           // Update total count
           await supabaseAdmin.from('whatsapp_sync_jobs').update({ total_chats: personalChats.length }).eq('id', jobId);
@@ -518,7 +519,7 @@ serve(async (req) => {
               .upsert(batch, { onConflict: 'connection_id,remote_jid' });
 
             if (upsertErr) {
-              console.error(`sync_history batch error (offset ${i}):`, upsertErr.message);
+              safeError('sync_history batch error (offset %s):', i, upsertErr.message);
             }
 
             processed = Math.min(i + BATCH_SIZE, conversationRows.length);
@@ -576,9 +577,9 @@ serve(async (req) => {
             completed_at: new Date().toISOString(),
           }).eq('id', jobId);
 
-          console.log(`sync_history job ${jobId}: completed (${personalChats.length} chats)`);
+          safeLog('sync_history job %s: completed (%s chats)', jobId, personalChats.length);
         } catch (e) {
-          console.error(`sync_history job ${jobId} failed:`, e);
+          safeError('sync_history job %s failed:', jobId, e);
           await supabaseAdmin.from('whatsapp_sync_jobs').update({
             status: 'failed',
             error_message: e.message || 'Unknown error',
@@ -633,7 +634,7 @@ serve(async (req) => {
         // Fetch messages from Evolution API (POST with JSON body for v2.x)
         const messagesUrl = `${evolutionApiUrl}/chat/findMessages/${conn.instance_name}`;
         const fetchBody = { where: { key: { remoteJid } }, limit: 30 };
-        console.log(`fetch_messages: POST ${messagesUrl}`, JSON.stringify(fetchBody));
+        safeLog('fetch_messages: POST %s', messagesUrl, JSON.stringify(fetchBody));
 
         let msgRes = await fetch(messagesUrl, {
           method: 'POST',
@@ -644,7 +645,7 @@ serve(async (req) => {
         // Fallback: try alternative payload format if first attempt fails
         if (!msgRes.ok) {
           const errText1 = await msgRes.text();
-          console.log(`fetch_messages: First attempt failed (${msgRes.status}): ${errText1.slice(0, 300)}`);
+          safeLog('fetch_messages: First attempt failed (%s): %s', msgRes.status, errText1.slice(0, 300));
           
           // Try flat remoteJid format
           const altBody = { remoteJid, limit: 30 };
@@ -659,10 +660,10 @@ serve(async (req) => {
         // Final fallback: try with query param approach via POST with empty body
         if (!msgRes.ok) {
           const errText2 = await msgRes.text();
-          console.log(`fetch_messages: Second attempt failed (${msgRes.status}): ${errText2.slice(0, 300)}`);
+          safeLog('fetch_messages: Second attempt failed (%s): %s', msgRes.status, errText2.slice(0, 300));
           
           const qpUrl = `${messagesUrl}?remoteJid=${encodeURIComponent(remoteJid)}&limit=30`;
-          console.log(`fetch_messages: Trying query param URL: ${qpUrl}`);
+          safeLog('fetch_messages: Trying query param URL: %s', qpUrl);
           msgRes = await fetch(qpUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
@@ -672,19 +673,19 @@ serve(async (req) => {
 
         if (!msgRes.ok) {
           const errText = await msgRes.text();
-          console.error(`fetch_messages: All attempts failed. Last: ${msgRes.status}: ${errText.slice(0, 500)}`);
+          safeError('fetch_messages: All attempts failed. Last: %s: %s', msgRes.status, errText.slice(0, 500));
           throw new Error(`Evolution API returned ${msgRes.status}`);
         }
 
         const rawMessages = await msgRes.json();
-        console.log(`fetch_messages: Raw response type=${typeof rawMessages}, isArray=${Array.isArray(rawMessages)}, keys=${typeof rawMessages === 'object' && rawMessages ? Object.keys(rawMessages).join(',') : 'N/A'}`);
+        safeLog('fetch_messages: Raw response type=%s, isArray=%s, keys=%s', typeof rawMessages, Array.isArray(rawMessages), typeof rawMessages === 'object' && rawMessages ? Object.keys(rawMessages).join(',') : 'N/A');
         const msgList = Array.isArray(rawMessages) ? rawMessages
           : Array.isArray(rawMessages?.data) ? rawMessages.data
           : Array.isArray(rawMessages?.messages) ? rawMessages.messages
           : Array.isArray(rawMessages?.records) ? rawMessages.records
           : [];
 
-        console.log(`fetch_messages: Got ${msgList.length} messages from Evolution API`);
+        safeLog('fetch_messages: Got %s messages from Evolution API', msgList.length);
 
         if (msgList.length === 0) {
           return new Response(JSON.stringify({ success: true, count: 0 }), {

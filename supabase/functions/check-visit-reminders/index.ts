@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -112,7 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (error24h) {
       console.error("Error fetching 24h visits:", error24h);
     } else if (visits24h && visits24h.length > 0) {
-      console.log(`Found ${visits24h.length} visits for 24h reminders`);
+      safeLog('Found %s visits for 24h reminders', visits24h.length);
       
       for (const visit of visits24h) {
         try {
@@ -122,9 +123,9 @@ const handler = async (req: Request): Promise<Response> => {
               reminderType: "24h",
             },
           });
-          console.log(`Sent 24h reminder for visit ${visit.id}`);
+          safeLog('Sent 24h reminder for visit %s', visit.id);
         } catch (err) {
-          console.error(`Failed to send 24h reminder for visit ${visit.id}:`, err);
+          safeError('Failed to send 24h reminder for visit %s:', visit.id, err);
         }
       }
     }
@@ -145,7 +146,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (error2h) {
       console.error("Error fetching 2h visits:", error2h);
     } else if (visits2h && visits2h.length > 0) {
-      console.log(`Found ${visits2h.length} visits for 2h reminders`);
+      safeLog('Found %s visits for 2h reminders', visits2h.length);
       
       for (const visit of visits2h) {
         try {
@@ -155,9 +156,9 @@ const handler = async (req: Request): Promise<Response> => {
               reminderType: "2h",
             },
           });
-          console.log(`Sent 2h reminder for visit ${visit.id}`);
+          safeLog('Sent 2h reminder for visit %s', visit.id);
         } catch (err) {
-          console.error(`Failed to send 2h reminder for visit ${visit.id}:`, err);
+          safeError('Failed to send 2h reminder for visit %s:', visit.id, err);
         }
       }
     }

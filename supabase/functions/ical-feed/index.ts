@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -86,7 +87,7 @@ serve(async (req) => {
     }
 
     const userId = profile.id;
-    console.log(`Generating iCal feed for user: ${userId}`);
+    safeLog('Generating iCal feed for user: %s', userId);
 
     // Fetch visits
     const { data: visits, error: visitsError } = await supabase
@@ -226,7 +227,7 @@ serve(async (req) => {
     // Filter out empty lines and join
     const icalOutput = icalContent.filter(line => line).join('\r\n');
 
-    console.log(`Generated iCal with ${(visits?.length || 0) + (activities?.length || 0)} events`);
+    safeLog('Generated iCal with %s events', (visits?.length || 0) + (activities?.length || 0));
 
     return new Response(icalOutput, {
       status: 200,

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -141,7 +142,7 @@ serve(async (req) => {
     const recipientPhone = sanitizePhoneNumber(conversation.contact_phone || '');
     const sanitizedContent = (content || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
-    console.log(`Enviando para ${recipientPhone} via ${instanceName}`);
+    safeLog('Enviando para %s via %s', recipientPhone, instanceName);
 
     // Send via Evolution API v2.3.7
     const validatedType = messageType || 'text';
@@ -165,7 +166,7 @@ serve(async (req) => {
       evoBody = { number: recipientPhone, text: sanitizedContent };
     }
 
-    console.log(`Evolution API: POST ${evoUrl}`);
+    safeLog('Evolution API: POST %s', evoUrl);
 
     const evoRes = await fetch(evoUrl, {
       method: 'POST',

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -219,7 +220,7 @@ serve(async (req) => {
               continue;
             }
 
-            console.log(`Found ${activeIntegrations?.length || 0} active Facebook integrations`);
+            safeLog('Found %s active Facebook integrations', activeIntegrations?.length || 0);
 
             // Create lead for each active integration (or first one)
             for (const integration of activeIntegrations || []) {

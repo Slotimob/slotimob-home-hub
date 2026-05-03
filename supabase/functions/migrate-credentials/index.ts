@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { encrypt, isEncrypted } from '../_shared/encryption.ts';
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -102,13 +103,13 @@ Deno.serve(async (req) => {
               .eq('id', conn.id);
 
             if (updateError) {
-              console.error(`[migrate] Portal connection ${conn.id} update error:`, updateError);
+              safeError('[migrate] Portal connection %s update error:', conn.id, updateError);
               results.portal_connections.errors++;
             } else {
               results.portal_connections.migrated++;
             }
           } catch (err) {
-            console.error(`[migrate] Portal connection ${conn.id} error:`, err);
+            safeError('[migrate] Portal connection %s error:', conn.id, err);
             results.portal_connections.errors++;
           }
         }
@@ -152,13 +153,13 @@ Deno.serve(async (req) => {
               .eq('id', int.id);
 
             if (updateError) {
-              console.error(`[migrate] Integration ${int.id} update error:`, updateError);
+              safeError('[migrate] Integration %s update error:', int.id, updateError);
               results.integrations.errors++;
             } else {
               results.integrations.migrated++;
             }
           } catch (err) {
-            console.error(`[migrate] Integration ${int.id} error:`, err);
+            safeError('[migrate] Integration %s error:', int.id, err);
             results.integrations.errors++;
           }
         }
@@ -196,13 +197,13 @@ Deno.serve(async (req) => {
               .eq('id', conn.id);
 
             if (updateError) {
-              console.error(`[migrate] WhatsApp connection ${conn.id} update error:`, updateError);
+              safeError('[migrate] WhatsApp connection %s update error:', conn.id, updateError);
               results.whatsapp_connections.errors++;
             } else {
               results.whatsapp_connections.migrated++;
             }
           } catch (err) {
-            console.error(`[migrate] WhatsApp connection ${conn.id} error:`, err);
+            safeError('[migrate] WhatsApp connection %s error:', conn.id, err);
             results.whatsapp_connections.errors++;
           }
         }

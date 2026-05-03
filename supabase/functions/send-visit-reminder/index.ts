@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -102,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { visitId, reminderType }: VisitReminderRequest = await req.json();
 
-    console.log(`Processing ${reminderType} reminder for visit ${visitId}`);
+    safeLog('Processing %s reminder for visit %s', reminderType, visitId);
 
     // Get visit details with related data
     const { data: visit, error: visitError } = await supabase
