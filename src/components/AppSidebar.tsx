@@ -99,6 +99,7 @@ export function AppSidebar() {
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
 
   const { pipelines: customPipelines } = useCustomPipelines();
+  const isPlanProOrAbove = plan === 'pro' || plan === 'business';
 
   // Determine which sub-items are locked
   const isSubItemLocked = (url: string, title: string): boolean => {
