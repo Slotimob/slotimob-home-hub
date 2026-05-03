@@ -327,15 +327,23 @@ const Training = () => {
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredContent.map(item => (
-                  <TrainingContentCard
+                  <div
                     key={item.id}
-                    content={item}
-                    isAdmin={isAdmin}
-                    isCompleted={isContentCompleted(item.id)}
-                    onWatch={() => setSelectedVideo(item)}
-                    onEdit={() => handleEdit(item)}
-                    onDelete={() => handleDelete(item)}
-                  />
+                    data-feature-key={item.feature_key || undefined}
+                    className={highlightedId === item.id ? 'ring-2 ring-primary rounded-lg transition-all duration-500' : ''}
+                  >
+                    <TrainingContentCard
+                      content={item}
+                      isAdmin={isAdmin}
+                      isCompleted={isContentCompleted(item.id)}
+                      onWatch={() => setSelectedVideo(item)}
+                      onEdit={() => handleEdit(item)}
+                      onDelete={() => handleDelete(item)}
+                    />
+                    {isAdmin && item.feature_key && (
+                      <p className="mt-1 text-[10px] font-mono text-muted-foreground px-1">{item.feature_key}</p>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
