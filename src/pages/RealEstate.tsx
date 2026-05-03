@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Button } from '@/components/ui/button';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { Card, CardContent } from '@/components/ui/card';
@@ -352,12 +353,14 @@ const RealEstate = () => {
     <>
       <SEOHead
         title="Imóveis Avulsos"
+      titleExtra={<HelpTooltip featureKey="assets.standalone" />}
         description={seoDescription}
         path="/real-estate"
         noIndex={true}
       />
       <AppLayout 
         title="Imóveis Avulsos"
+      titleExtra={<HelpTooltip featureKey="assets.standalone" />}
         headerActions={
           <div className="flex items-center gap-1 sm:gap-1.5">
             {/* Primary: Novo Imóvel Avulso */}

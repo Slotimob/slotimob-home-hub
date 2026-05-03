@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -409,7 +410,8 @@ const ContactsUnified = () => {
   }
 
   return (
-    <AppLayout title="Contatos">
+    <AppLayout title="Contatos"
+      titleExtra={<HelpTooltip featureKey="crm.contacts" />}>
       <div className="space-y-6">
         {/* Category Filter */}
         <ContactCategoryFilter
