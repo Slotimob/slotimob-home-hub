@@ -16,6 +16,7 @@ import { format, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, ad
 import { ptBR } from "date-fns/locale";
 import { CreateVisitDialog } from "@/components/CreateVisitDialog";
 import { AppLayout } from "@/components/AppLayout";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { ActivityPalette, ACTIVITY_TYPES } from "@/components/schedule/ActivityPalette";
 import { DayScheduleGrid } from "@/components/schedule/DayScheduleGrid";
