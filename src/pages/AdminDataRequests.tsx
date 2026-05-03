@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -249,8 +249,15 @@ const AdminDataRequests = () => {
     },
   });
 
+  useEffect(() => {
+    if (!checkingAdmin && !isSuperAdmin) {
+      toast.error('Acesso restrito à equipe SLOTIMOB.', { duration: 1000 });
+      navigate('/', { replace: true });
+    }
+  }, [checkingAdmin, isSuperAdmin, navigate]);
+
   if (checkingAdmin) return <AppLayout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div></AppLayout>;
-  if (!isSuperAdmin) { navigate('/dashboard'); return null; }
+  if (!isSuperAdmin) return null;
 
   const formatSize = (bytes: number | null) => {
     if (!bytes) return '—';
