@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAccess } from '@/hooks/useCockpitAccess';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +30,9 @@ interface TrainingContent {
   price?: number | null;
   checkout_url?: string | null;
   is_published?: boolean;
+  feature_key?: string | null;
+  short_description?: string | null;
+  body_markdown?: string | null;
 }
 
 interface TrainingProgress {
@@ -52,11 +55,14 @@ const Training = () => {
   const { user, loading: authLoading } = useAuth();
   const { isModerator: isAdmin, isLoading: adminLoading } = useCockpitAccess();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [content, setContent] = useState<TrainingContent[]>([]);
   const [progress, setProgress] = useState<TrainingProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('todos');
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const deepLinkHandled = useRef(false);
   
   // Dialog states
   const [selectedVideo, setSelectedVideo] = useState<TrainingContent | null>(null);
@@ -107,6 +113,33 @@ const Training = () => {
       setIsLoading(false);
     }
   };
+
+  // Deep-link: ?feature=xxx
+  useEffect(() => {
+    if (isLoading || deepLinkHandled.current || content.length === 0) return;
+    const featureParam = searchParams.get('feature');
+    if (!featureParam) return;
+    deepLinkHandled.current = true;
+
+    const target = content.find((c) => c.feature_key === featureParam);
+    if (!target) {
+      toast('Conteúdo solicitado não encontrado.', { duration: 1000 });
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    setTimeout(() => {
+      const el = document.querySelector(`[data-feature-key="${featureParam}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightedId(target.id);
+        setTimeout(() => setHighlightedId(null), 2000);
+      }
+      setTimeout(() => setSelectedVideo(target), 500);
+    }, 100);
+
+    setSearchParams({}, { replace: true });
+  }, [isLoading, content, searchParams, setSearchParams]);
 
   const markAsCompleted = async (contentId: string) => {
     if (!user) return;
@@ -294,15 +327,23 @@ const Training = () => {
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredContent.map(item => (
-                  <TrainingContentCard
+                  <div
                     key={item.id}
-                    content={item}
-                    isAdmin={isAdmin}
-                    isCompleted={isContentCompleted(item.id)}
-                    onWatch={() => setSelectedVideo(item)}
-                    onEdit={() => handleEdit(item)}
-                    onDelete={() => handleDelete(item)}
-                  />
+                    data-feature-key={item.feature_key || undefined}
+                    className={highlightedId === item.id ? 'ring-2 ring-primary rounded-lg transition-all duration-500' : ''}
+                  >
+                    <TrainingContentCard
+                      content={item}
+                      isAdmin={isAdmin}
+                      isCompleted={isContentCompleted(item.id)}
+                      onWatch={() => setSelectedVideo(item)}
+                      onEdit={() => handleEdit(item)}
+                      onDelete={() => handleDelete(item)}
+                    />
+                    {isAdmin && item.feature_key && (
+                      <p className="mt-1 text-[10px] font-mono text-muted-foreground px-1">{item.feature_key}</p>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { TasksTab } from "@/components/assets/TasksTab";
 import { SEOHead } from "@/components/SEOHead";
 import { useProposals } from "@/hooks/useProposals";
@@ -127,7 +128,7 @@ const AfazeresEmGestao = () => {
         path="/gestao/afazeres"
         noIndex={true}
       />
-      <AppLayout title="Afazeres">
+      <AppLayout title="Afazeres" titleExtra={<HelpTooltip featureKey="management.tasks" />}>
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Afazeres</h1>

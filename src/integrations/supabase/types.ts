@@ -3794,40 +3794,49 @@ export type Database = {
       }
       training_content: {
         Row: {
+          body_markdown: string | null
           category: string | null
           content_type: string
           created_at: string
           description: string | null
           display_order: number | null
           duration_minutes: number | null
+          feature_key: string | null
           id: string
           is_published: boolean | null
+          short_description: string | null
           thumbnail_url: string | null
           title: string
           video_url: string | null
         }
         Insert: {
+          body_markdown?: string | null
           category?: string | null
           content_type: string
           created_at?: string
           description?: string | null
           display_order?: number | null
           duration_minutes?: number | null
+          feature_key?: string | null
           id?: string
           is_published?: boolean | null
+          short_description?: string | null
           thumbnail_url?: string | null
           title: string
           video_url?: string | null
         }
         Update: {
+          body_markdown?: string | null
           category?: string | null
           content_type?: string
           created_at?: string
           description?: string | null
           display_order?: number | null
           duration_minutes?: number | null
+          feature_key?: string | null
           id?: string
           is_published?: boolean | null
+          short_description?: string | null
           thumbnail_url?: string | null
           title?: string
           video_url?: string | null

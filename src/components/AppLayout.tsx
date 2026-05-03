@@ -10,10 +10,11 @@ import { ApprovalStatusBanner } from '@/components/approvals/ApprovalStatusBanne
 interface AppLayoutProps {
   children: ReactNode;
   title?: string;
+  titleExtra?: ReactNode;
   headerActions?: ReactNode;
 }
 
-export function AppLayout({ children, title, headerActions }: AppLayoutProps) {
+export function AppLayout({ children, title, titleExtra, headerActions }: AppLayoutProps) {
   useWhatsAppGlobalListener();
 
   // Sync theme from user profile — only inside authenticated pages
@@ -72,6 +73,7 @@ export function AppLayout({ children, title, headerActions }: AppLayoutProps) {
                     {title}
                   </h1>
                 )}
+                {titleExtra}
               </div>
               <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0">
                 <OfflineIndicator />

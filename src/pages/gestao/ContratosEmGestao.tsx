@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { ContractsTab } from "@/components/assets/ContractsTab";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -35,7 +36,7 @@ const ContratosEmGestao = () => {
         path="/gestao/contratos"
         noIndex={true}
       />
-      <AppLayout title="Contratos">
+      <AppLayout title="Contratos" titleExtra={<HelpTooltip featureKey="management.contracts" />}>
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Contratos</h1>

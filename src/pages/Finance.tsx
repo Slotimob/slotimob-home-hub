@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { FinanceOverviewCards } from "@/components/finance/FinanceOverviewCards";
 import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { FinanceCashFlowChart } from "@/components/finance/FinanceCashFlowChart";
@@ -57,7 +58,7 @@ const Finance = () => {
       <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="px-1">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Visão Geral Financeira</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-1.5">Visão Geral Financeira <HelpTooltip featureKey="finance.overview" /></h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Acompanhe suas receitas, despesas e fluxo de caixa</p>
         </div>
 

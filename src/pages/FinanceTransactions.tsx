@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { TransactionsTableInfinite } from "@/components/finance/TransactionsTableInfinite";
 import { TransactionsFiltersCompact } from "@/components/finance/TransactionsFiltersCompact";
 import { CreateTransactionDialog } from "@/components/finance/CreateTransactionDialog";
@@ -176,7 +177,7 @@ const FinanceTransactions = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Lançamentos</h1>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-1.5">Lançamentos <HelpTooltip featureKey="finance.transactions" /></h1>
             <p className="text-muted-foreground">Gerencie suas receitas e despesas</p>
           </div>
           <div className="flex flex-wrap gap-2">

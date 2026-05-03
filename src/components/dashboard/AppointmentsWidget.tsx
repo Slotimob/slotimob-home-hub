@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Calendar, Phone, Users, Eye, ClipboardCheck, ArrowRight } from 'lucide-react';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { format, startOfDay, endOfDay, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -121,7 +122,7 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Compromissos
+            Compromissos <HelpTooltip featureKey="dashboard.appointments" />
             {scope === 'workspace' && (
               <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
             )}

@@ -4,6 +4,7 @@ import { startOfMonth, subMonths } from 'date-fns';
 import { Building2, FileText, MessageSquare, ShieldAlert, Users, Wallet } from 'lucide-react';
 
 import { AppLayout } from '@/components/AppLayout';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
@@ -62,7 +63,8 @@ const Reports = () => {
   const unitIdForChildren = selectedUnitId || null;
 
   return (
-    <AppLayout title="Relatórios Gerenciais">
+    <AppLayout title="Relatórios Gerenciais"
+      titleExtra={<HelpTooltip featureKey="reports.overview" />}>
       <div className="space-y-4">
         {/* Description */}
         <p className="text-muted-foreground text-sm">

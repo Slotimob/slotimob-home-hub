@@ -16,6 +16,7 @@ import { UnitsBulkActionsBar } from '@/components/UnitsBulkActionsBar';
 import { UnitsKanbanView } from '@/components/UnitsKanbanView';
 import { UnitsTableView } from '@/components/units/UnitsTableView';
 import { AppLayout } from '@/components/AppLayout';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Badge } from '@/components/ui/badge';
 import { ViewModeTabs, type ViewMode } from '@/components/ui/view-mode-tabs';
 import { UnitsFilters, type UnitsFiltersState, type ManagementFilter } from '@/components/UnitsFilters';
@@ -409,6 +410,7 @@ const Units = () => {
   return (
     <AppLayout
       title={isAllUnitsView ? 'Unidades' : property?.name || 'Unidades'}
+      titleExtra={<HelpTooltip featureKey="assets.units" />}
       headerActions={
         <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Primary: Nova Unidade */}

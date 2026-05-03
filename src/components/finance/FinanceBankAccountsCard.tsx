@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Button } from "@/components/ui/button";
 import { Plus, Building2, ArrowRight, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,7 +50,7 @@ export function FinanceBankAccountsCard() {
         <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 lg:px-6 pt-3 lg:pt-6">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm lg:text-base truncate">Contas Bancárias</CardTitle>
+              <CardTitle className="text-sm lg:text-base truncate flex items-center gap-1.5">Contas Bancárias <HelpTooltip featureKey="finance.bank_accounts" /></CardTitle>
               {totals.hasCashFlowRisk && (
                 <Tooltip>
                   <TooltipTrigger asChild>

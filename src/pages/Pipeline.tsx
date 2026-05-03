@@ -33,6 +33,7 @@ import { ReorderStagesDialog } from '@/components/crm/ReorderStagesDialog';
 
 import { PipelineScrollHint } from '@/components/crm/PipelineScrollHint';
 import { AppLayout } from '@/components/AppLayout';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { isPast, isToday } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
@@ -1165,6 +1166,7 @@ const Pipeline = () => {
   return (
     <AppLayout
       title="Pipeline"
+      titleExtra={<HelpTooltip featureKey="crm.pipeline" />}
       headerActions={
         <>
           <PermissionGate permission="crm_pipeline.create">

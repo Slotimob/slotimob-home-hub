@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { AppLayout } from "@/components/AppLayout";
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { ReconciliationPanel } from "@/components/finance/ReconciliationPanel";
 import { ReconciliationSummaryCards } from "@/components/finance/ReconciliationSummaryCards";
 import { ImportStatementDialog } from "@/components/finance/ImportStatementDialog";
@@ -154,7 +155,7 @@ const FinanceReconciliation = () => {
           <div className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h1 className="text-lg sm:text-xl font-bold tracking-tight">Conciliação Bancária</h1>
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight flex items-center gap-1.5">Conciliação Bancária <HelpTooltip featureKey="finance.reconciliation" /></h1>
                 <p className="text-xs text-muted-foreground">Vincule extratos aos lançamentos</p>
               </div>
 

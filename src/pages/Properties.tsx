@@ -9,6 +9,7 @@ import { Building2, Plus, MapPin, Package, Upload, Percent, Flame } from 'lucide
 import { useToast } from '@/hooks/use-toast';
 import { EditPropertyDialog } from '@/components/EditPropertyDialog';
 import { AppLayout } from '@/components/AppLayout';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { CreatePropertyDialog } from '@/components/CreatePropertyDialog';
 import { ImportUnitsDialog } from '@/components/ImportUnitsDialog';
 import { ActionToolbar } from '@/components/ActionToolbar';
@@ -127,6 +128,7 @@ const Properties = () => {
   return (
     <AppLayout
       title="Empreendimentos"
+      titleExtra={<HelpTooltip featureKey="assets.properties" />}
       headerActions={
         <div className="flex items-center gap-1 sm:gap-1.5">
           {canCreate && (

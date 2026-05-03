@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, ArrowRight } from 'lucide-react';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Link } from 'react-router-dom';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
 import { useDashboardScope } from '@/hooks/useDashboardScope';
@@ -31,7 +32,7 @@ export function RentReceivablesWidget({ dateRange, refreshKey }: RentReceivables
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <DollarSign className="h-4 w-4" />
-          Aluguéis no período
+          Aluguéis no período <HelpTooltip featureKey="dashboard.rent_receivables" />
           {scope === 'workspace' && (
             <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
           )}
