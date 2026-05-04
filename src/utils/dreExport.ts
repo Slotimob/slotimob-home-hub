@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import type jsPDF from 'jspdf';
 import { DREData } from '@/hooks/useDREReport';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -51,7 +51,8 @@ interface DRELineConfig {
   operator?: '+' | '-' | '=';
 }
 
-export function exportDREtoPDF(dre: DREData, periodLabel: string, unitName?: string): void {
+export async function exportDREtoPDF(dre: DREData, periodLabel: string, unitName?: string): Promise<void> {
+  const { default: jsPDF } = await import('jspdf');
   const fullPeriodLabel = unitName ? `${periodLabel} - ${pdfSafeLabel(unitName)}` : periodLabel;
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();

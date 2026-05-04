@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDF from 'jspdf';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Lease } from '@/hooks/useLeases';
@@ -51,7 +50,9 @@ const addFooter = (doc: jsPDF, pageNumber: number, totalPages: number): void => 
   doc.text(normalizeText(`Pagina ${pageNumber} de ${totalPages}`), pw - 15, fy, { align: 'right' });
 };
 
-export const generateTenantStatementPDF = (data: TenantStatementData): void => {
+export const generateTenantStatementPDF = async (data: TenantStatementData): Promise<void> => {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF({ putOnlyUsedFonts: true, compress: true });
   const pw = doc.internal.pageSize.getWidth();
   const margin = 15;

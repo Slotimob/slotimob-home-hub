@@ -120,7 +120,7 @@ export const CustomTemplateEditorDialog = ({
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const docTemplate: DocumentTemplate = {
       id: template?.id || 'custom',
       name,
@@ -135,7 +135,7 @@ export const CustomTemplateEditorDialog = ({
       templateContent: content,
     };
 
-    generateDocumentPDF(docTemplate, {});
+    await generateDocumentPDF(docTemplate, {});
     toast.success('PDF gerado com sucesso');
   };
 

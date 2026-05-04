@@ -97,7 +97,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
         .map(t => ({ description: t.description, amount: Number(t.amount) }));
       const totalExpenses = (expenses || []).reduce((s, t) => s + Number(t.amount), 0);
       const netTransfer = rentReceived - adminFee - totalExpenses;
-      generateOwnerReportPDF({
+      await generateOwnerReportPDF({
         lease: selectedLease as any,
         period: { start: format(dateRange.from, 'dd/MM/yyyy'), end: format(dateRange.to, 'dd/MM/yyyy') },
         rentReceived, adminFee, maintenanceExpenses, otherDeductions, netTransfer,

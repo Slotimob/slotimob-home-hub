@@ -11,8 +11,6 @@ import { Download, Mail, FileText, TrendingUp, TrendingDown, Users, DollarSign, 
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { createWorkbook, addAoaSheet, addJsonSheet, downloadWorkbook } from '@/utils/excelUtils';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 interface MonthlyData {
   period: string;
@@ -202,9 +200,11 @@ export const MonthlySummaryReport = () => {
     }
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!currentMonth || !comparison) return;
 
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
@@ -390,7 +390,7 @@ export const MonthlySummaryReport = () => {
             <CardDescription>{currentMonth.period} (comparado ao mês anterior)</CardDescription>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={downloadPDF}>
+            <Button variant="outline" size="sm" onClick={async () => await downloadPDF()}>
               <Download className="h-4 w-4 mr-2" />
               PDF
             </Button>

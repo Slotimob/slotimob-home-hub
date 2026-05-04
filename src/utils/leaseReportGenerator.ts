@@ -1,7 +1,6 @@
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDF from 'jspdf';
 import type { Lease } from '@/hooks/useLeases';
 import { pdfSafeText, pdfSafeRow, pdfSafeLabel } from '@/utils/pdfSafeText';
 
@@ -49,7 +48,9 @@ const addFooter = (doc: jsPDF, pageNumber: number, totalPages: number): void => 
   doc.text(normalizeText(`Pagina ${pageNumber} de ${totalPages}`), pageWidth - 15, footerY, { align: 'right' });
 };
 
-export const generateOwnerReportPDF = (data: OwnerReportData): void => {
+export const generateOwnerReportPDF = async (data: OwnerReportData): Promise<void> => {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF({ putOnlyUsedFonts: true, compress: true });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;

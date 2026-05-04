@@ -263,9 +263,9 @@ export default function FinanceDRE() {
     return `${first?.label} a ${last?.label}`;
   }, [selectedMonths, months]);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (dre) {
-      exportDREtoPDF(dre, periodLabel, unitDisplayName);
+      await exportDREtoPDF(dre, periodLabel, unitDisplayName);
     }
   };
 

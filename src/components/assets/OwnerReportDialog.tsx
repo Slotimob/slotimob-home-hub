@@ -105,7 +105,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
         otherDeductions: reportData.otherDeductions,
         netTransfer: reportData.netTransfer,
       };
-      generateOwnerReportPDF(data);
+      await generateOwnerReportPDF(data);
       toast({ title: "PDF gerado com sucesso!" });
     } finally {
       setIsGenerating(false);

@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import type jsPDF from 'jspdf';
 import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
 // Extend jsPDF type for autoTable
@@ -217,7 +216,9 @@ export interface LegalContractData {
 // GERADOR DE PDF DE CONTRATO JURÍDICO
 // ============================================================================
 
-export const generateLegalContractPDF = (data: LegalContractData, fileName?: string): void => {
+export const generateLegalContractPDF = async (data: LegalContractData, fileName?: string): Promise<void> => {
+  const { default: jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
   const doc = new jsPDF({
     putOnlyUsedFonts: true,
     compress: true,
@@ -843,7 +844,7 @@ function currencyToWords(value: number): string {
 }
 
 // Exportação para uso com contratos existentes
-export const generateLegalContractFromLease = (lease: any): void => {
+export const generateLegalContractFromLease = async (lease: any): Promise<void> => {
   const guarantorData = typeof lease.guarantor_data === 'string' 
     ? JSON.parse(lease.guarantor_data || '{}') 
     : (lease.guarantor_data || {});
@@ -916,7 +917,7 @@ export const generateLegalContractFromLease = (lease: any): void => {
     } : undefined,
   };
 
-  generateLegalContractPDF(data);
+  await generateLegalContractPDF(data);
 };
 
 function calculateMonthsDiff(startDate: string, endDate: string): number {

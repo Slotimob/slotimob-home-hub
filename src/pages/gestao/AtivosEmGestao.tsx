@@ -185,14 +185,14 @@ const AtivosEmGestao = () => {
     return getOverdueAssets(assets).length;
   }, [assets]);
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     if (!assets) return;
     const overdueItems = getOverdueAssets(assets);
     if (overdueItems.length === 0) {
       toast({ title: "Nenhuma pendência", description: "Não há obrigações em atraso para exportar." });
       return;
     }
-    exportOverdueToPdf(assets);
+    await exportOverdueToPdf(assets);
     toast({ title: "PDF gerado!", description: `Relatório com ${overdueItems.length} pendência(s) exportado.` });
   };
 

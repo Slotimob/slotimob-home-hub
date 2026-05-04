@@ -101,7 +101,7 @@ export const CustomTemplatesTab = () => {
     }
   };
 
-  const handleDownload = (template: ContractTemplate) => {
+  const handleDownload = async (template: ContractTemplate) => {
     const docTemplate: DocumentTemplate = {
       id: template.id,
       name: template.name,
@@ -111,7 +111,7 @@ export const CustomTemplatesTab = () => {
       templateContent: template.content,
     };
 
-    generateDocumentPDF(docTemplate, {});
+    await generateDocumentPDF(docTemplate, {});
     toast.success('PDF gerado com sucesso');
   };
 

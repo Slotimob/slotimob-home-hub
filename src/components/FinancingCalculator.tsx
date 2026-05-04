@@ -16,8 +16,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileDown, Calculator, TrendingDown, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { pdfSafeLabel } from '@/utils/pdfSafeText';
 
 interface ScheduleRow {
@@ -134,8 +132,11 @@ export const FinancingCalculator = () => {
     });
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (!result) return;
+
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
 
     const doc = new jsPDF();
     const value = parseFloat(formData.propertyValue);
@@ -376,7 +377,7 @@ export const FinancingCalculator = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Tabela de Amortização</CardTitle>
-                <Button onClick={exportToPDF} variant="outline" size="sm">
+                <Button onClick={async () => await exportToPDF()} variant="outline" size="sm">
                   <FileDown className="mr-2 h-4 w-4" />
                   Exportar PDF
                 </Button>

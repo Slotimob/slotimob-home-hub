@@ -1,5 +1,4 @@
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import type jsPDF from 'jspdf';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { AssetHealth, ObligationHealth } from "@/hooks/useAssetHealth";
@@ -102,13 +101,15 @@ export function exportOverdueToCsv(assets: AssetHealth[]): void {
   document.body.removeChild(link);
 }
 
-export function exportOverdueToPdf(assets: AssetHealth[]): void {
+export async function exportOverdueToPdf(assets: AssetHealth[]): Promise<void> {
   const overdueItems = getOverdueAssets(assets);
 
   if (overdueItems.length === 0) {
     return;
   }
 
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const now = new Date();
   const monthYear = format(now, "MMMM/yyyy", { locale: ptBR });
   const capitalizedMonthYear =

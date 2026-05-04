@@ -170,7 +170,7 @@ export function PropertyDetailsSheet({
     toast({ title: 'Link copiado!', description: 'Link do imóvel copiado para a área de transferência.' });
   };
 
-  const handleGeneratePDF = () => {
+  const handleGeneratePDF = async () => {
     if (!property) return;
     
     const pdfData: PDFAssetData = {
@@ -205,7 +205,7 @@ export function PropertyDetailsSheet({
       financingSimulation: financingSimulation,
     };
     
-    generatePropertyPDF(pdfData);
+    await generatePropertyPDF(pdfData);
     toast({ title: 'PDF gerado!', description: 'A apresentação do imóvel foi baixada.' });
   };
 
