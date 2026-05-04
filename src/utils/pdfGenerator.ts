@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import type jsPDF from 'jspdf';
 import { DocumentTemplate, TemplateField } from './documentTemplates';
 import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
@@ -357,11 +356,13 @@ const addWatermarkAndFooter = (doc: jsPDF, pageNumber: number, totalPages: numbe
 // GERADOR DE PDF PRINCIPAL
 // ============================================================================
 
-export const generateDocumentPDF = (
+export const generateDocumentPDF = async (
   template: DocumentTemplate,
   filledFields: Record<string, string>,
   blank: boolean = false
-): void => {
+): Promise<void> => {
+  const { default: jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
   const doc = new jsPDF({
     putOnlyUsedFonts: true,
     compress: true,
@@ -476,15 +477,17 @@ export const generateDocumentPDF = (
   doc.save(fileName);
 };
 
-export const generateBlankTemplatePDF = (template: DocumentTemplate): void => {
-  generateDocumentPDF(template, {}, true);
+export const generateBlankTemplatePDF = async (template: DocumentTemplate): Promise<void> => {
+  await generateDocumentPDF(template, {}, true);
 };
 
 // ============================================================================
 // GERADOR DE PDF PARA CONTRATOS COMPLETOS
 // ============================================================================
 
-export const generateFullContractPDF = (contractContent: string, fileName?: string): void => {
+export const generateFullContractPDF = async (contractContent: string, fileName?: string): Promise<void> => {
+  const { default: jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
   const doc = new jsPDF({
     putOnlyUsedFonts: true,
     compress: true,

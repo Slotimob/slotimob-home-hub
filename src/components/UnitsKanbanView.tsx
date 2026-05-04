@@ -382,7 +382,7 @@ export const UnitsKanbanView = ({
       }
       
       const pdfData = buildPDFDataFromUnit(unit, parentProperty);
-      generatePropertyPDF(pdfData);
+      await generatePropertyPDF(pdfData);
       
       toast({
         title: 'PDF gerado com sucesso!',

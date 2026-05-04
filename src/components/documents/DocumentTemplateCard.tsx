@@ -25,8 +25,8 @@ export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardP
   const canEditDoc = isOwner || hasPermission('documents', 'edit');
   const canUse = canCreate || canEditDoc;
 
-  const handleDownloadBlank = () => {
-    generateBlankTemplatePDF(template);
+  const handleDownloadBlank = async () => {
+    await generateBlankTemplatePDF(template);
   };
 
   return (
@@ -58,9 +58,9 @@ export const DocumentTemplateCard = ({ template, onEdit }: DocumentTemplateCardP
             variant="outline"
             size="sm"
             className="flex-1 text-xs"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              handleDownloadBlank();
+              await handleDownloadBlank();
             }}
           >
             <Download className="mr-1 h-3 w-3" />

@@ -1,8 +1,3 @@
-import {
-  Document, Packer, Paragraph, Table, TableRow, TableCell,
-  HeadingLevel, AlignmentType, WidthType, BorderStyle, TextRun,
-  Header, Footer, PageNumber,
-} from 'docx';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -24,18 +19,36 @@ export interface ReportDocxOptions {
   fileName: string;
 }
 
-const BORDER = { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
-const CELL_BORDERS = { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER };
-const CELL_MARGINS = { top: 60, bottom: 60, left: 80, right: 80 };
 const TABLE_WIDTH = 9360; // US Letter 1" margins
 
 function getAlignment(align?: string) {
-  if (align === 'right') return AlignmentType.RIGHT;
-  if (align === 'center') return AlignmentType.CENTER;
-  return AlignmentType.LEFT;
+  if (align === 'right') return 'right';
+  if (align === 'center') return 'center';
+  return 'left';
 }
 
 export async function generateReportDocx(options: ReportDocxOptions): Promise<void> {
+  const docx = await import('docx');
+  const {
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableRow,
+    TableCell,
+    HeadingLevel,
+    AlignmentType,
+    WidthType,
+    BorderStyle,
+    TextRun,
+    Header,
+    Footer,
+    PageNumber,
+  } = docx;
+
+  const BORDER = { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
+  const CELL_BORDERS = { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER };
+  const CELL_MARGINS = { top: 60, bottom: 60, left: 80, right: 80 };
   const {
     title, subtitle, generatedAt = new Date(), summary, columns, rows, footer, fileName,
   } = options;

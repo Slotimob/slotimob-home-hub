@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import type jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { pdfSafeLabel } from '@/utils/pdfSafeText';
 
@@ -203,6 +203,7 @@ export async function generatePropertyPDF(
   _agent?: AgentInfo,
   options?: { returnBlob?: boolean; templateElement?: HTMLElement }
 ): Promise<Blob | void> {
+  const { default: jsPDF } = await import('jspdf');
   const element = options?.templateElement;
   if (!element) {
     console.error('ProposalPdfTemplate element ref is required for PDF generation');

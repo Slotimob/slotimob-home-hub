@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { pdfSafeText, pdfSafeRow, pdfSafeLabel } from '@/utils/pdfSafeText';
@@ -32,6 +31,8 @@ const normalizeText = (text: string): string => {
 };
 
 export const generateReportPdf = async (options: PdfOptions) => {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const { 
     title, 
     subtitle, 

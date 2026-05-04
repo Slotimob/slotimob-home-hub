@@ -11,8 +11,6 @@ import { Download, Mail, FileText, TrendingUp, Users, DollarSign, Calendar, Targ
 import { format, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { createWorkbook, addAoaSheet, addJsonSheet, downloadWorkbook } from '@/utils/excelUtils';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 interface WeeklyData {
   period: string;
@@ -168,9 +166,11 @@ export const WeeklySummaryReport = () => {
     }
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!weeklyData) return;
 
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
@@ -380,7 +380,7 @@ export const WeeklySummaryReport = () => {
             <CardDescription className="whitespace-nowrap">{weeklyData.period}</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={downloadPDF} className="flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={async () => await downloadPDF()} className="flex-shrink-0">
               <Download className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">PDF</span>
             </Button>

@@ -183,7 +183,7 @@ export const DocumentEditorDialog = ({
       templateContent: contentToUse,
     };
 
-    generateDocumentPDF(templateToGenerate, filledFields);
+    await generateDocumentPDF(templateToGenerate, filledFields);
 
     toast.success('PDF gerado com sucesso!', {
       description: 'O documento foi baixado e salvo nos rascunhos.',
