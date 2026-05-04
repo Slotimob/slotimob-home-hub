@@ -53,7 +53,7 @@ export async function generateReportDocx(options: ReportDocxOptions): Promise<vo
     title, subtitle, generatedAt = new Date(), summary, columns, rows, footer, fileName,
   } = options;
 
-  const children: (Paragraph | Table)[] = [];
+  const children: (InstanceType<typeof Paragraph> | InstanceType<typeof Table>)[] = [];
 
   // Title
   children.push(new Paragraph({

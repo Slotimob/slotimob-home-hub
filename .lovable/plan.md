@@ -1,14 +1,18 @@
+## Changes
 
-## Diagnóstico
+### 1. Remove "Exportações de Dados" from sidebar
+**File**: `src/components/AppSidebar.tsx` (lines 540-554)
 
-Verifiquei a aplicação pelo browser e a landing page (`/`) está funcionando normalmente. O dev server não mostra erros de runtime.
+Remove the `isSuperAdmin` conditional block that renders the "Exportações de Dados" menu item. The page remains accessible via `/admin/data-requests` route and the redirect in account settings — it just won't clutter the sidebar.
 
-Existe um **erro de build no TypeScript** no arquivo `src/components/PropertyDocuments.test.tsx`:
-- `screen` e `waitFor` não são encontrados como exports de `@testing-library/react`
-- Isso pode estar interferindo com o hot-reload do Vite e causando telas brancas em certas condições
+Also remove the `Package` icon import (line 22) if no longer used.
 
-## Plano
+### 2. Fix build error in `pdfGenerator.ts`
+**File**: `src/utils/pdfGenerator.ts` (line 1)
 
-1. **Corrigir o arquivo de teste** `src/components/PropertyDocuments.test.tsx` -- atualizar os imports de `@testing-library/react` para serem compatíveis com a versão instalada, ou ajustar a versão do pacote.
+Change `import type jsPDF from 'jspdf'` to `import jsPDF from 'jspdf'` — the `type` keyword prevents using it as a constructor at lines 617 and 699.
 
-Se o problema de tela branca persistir após a correção, investigaremos mais a fundo as rotas autenticadas (`/dashboard`, `/pipeline`, etc.).
+### 3. Fix build error in `reportDocxGenerator.ts`
+**File**: `src/utils/reportDocxGenerator.ts` (line 56)
+
+Change `const children: (Paragraph | Table)[] = []` to use `InstanceType<typeof Paragraph> | InstanceType<typeof Table>` or simply type it as `any[]`, since `Paragraph` and `Table` are runtime values from a dynamic import, not type-level constructs in this scope.
