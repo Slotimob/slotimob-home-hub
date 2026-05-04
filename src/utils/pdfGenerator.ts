@@ -1,4 +1,4 @@
-import type jsPDF from 'jspdf';
+import jsPDF from 'jspdf';
 import { DocumentTemplate, TemplateField } from './documentTemplates';
 import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
