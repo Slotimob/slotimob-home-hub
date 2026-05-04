@@ -19,7 +19,7 @@ import {
   Lock,
   ClipboardList,
   ShieldCheck,
-  Package,
+  
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
