@@ -90,7 +90,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed' && !isMobile;
   const { isAgent } = useUserRole();
   const { plan, isTrialActive, canUse, features } = useSubscriptionLimits();
-  const { hasCockpitAccess, isSuperAdmin } = useCockpitAccess();
+  const { hasCockpitAccess } = useCockpitAccess();
   const { isMember } = useWorkspace();
   const { isOwner: isPermOwner, hasPermission } = usePermissions();
   const { canEdit: canEditPermissions } = useCanEditPermissions();
