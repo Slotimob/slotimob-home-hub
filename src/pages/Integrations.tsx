@@ -237,7 +237,7 @@ const Integrations = () => {
   };
 
   const xmlFeedUrl = feedToken
-    ? `https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/xml-feed?token=${feedToken}`
+    ? `${ENV.SUPABASE_URL}/functions/v1/xml-feed?token=${feedToken}`
     : '';
 
 
