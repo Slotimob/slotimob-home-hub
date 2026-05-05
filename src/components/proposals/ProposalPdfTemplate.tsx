@@ -57,18 +57,18 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#2fc9af' }}>
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-white font-bold text-xl tracking-wider" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>SLOTIMOB</span>
+                <span className="text-white font-bold text-xl tracking-wider filter drop-shadow-md">SLOTIMOB</span>
               </div>
               <div className="flex items-center gap-3">
               {typeLabel && (
-                  <span className="px-4 py-1.5 rounded-full text-[12px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none text-white" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}>
+                  <span className="px-4 py-1.5 rounded-full text-[12px] font-bold uppercase tracking-widest inline-flex items-center justify-center text-center leading-none text-white" style={{ background: 'rgba(255,255,255,0.25)' }}>
                     {typeLabel}
                   </span>
                 )}
                 {agent?.name && (
                   <div className="text-right">
-                    <p className="font-semibold text-sm text-white" style={{ textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>{agent.name}</p>
-                    {agent.phone && <p className="text-xs text-white/80" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{agent.phone}</p>}
+                    <p className="font-semibold text-sm text-white filter drop-shadow-md">{agent.name}</p>
+                    {agent.phone && <p className="text-xs text-white/80 filter drop-shadow-md">{agent.phone}</p>}
                   </div>
                 )}
               </div>
@@ -77,17 +77,17 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
             {/* Bottom content */}
             <div>
               {data.leadName && (
-                <p className="text-sm mb-3 font-medium" style={{ color: '#2fc9af', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+                <p className="text-sm mb-3 font-medium filter drop-shadow-md" style={{ color: '#2fc9af' }}>
                   Proposta exclusiva para <span className="font-bold">{data.leadName}</span>
                 </p>
               )}
 
-              <h1 className="text-white font-bold text-4xl leading-tight mb-3" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+              <h1 className="text-white font-bold text-4xl leading-tight mb-3 filter drop-shadow-lg">
                 {title}
               </h1>
 
               {location && (
-                <div className="flex items-center gap-2 text-white/80 text-sm mb-6" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                <div className="flex items-center gap-2 text-white/80 text-sm mb-6 filter drop-shadow-md">
                   <MapPin className="w-4 h-4" />
                   <span>{location}</span>
                 </div>
@@ -98,7 +98,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                 <div>
                   {unit.price ? (
                     <>
-                      <p className="text-white text-4xl font-bold" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>{fmt(unit.price)}</p>
+                      <p className="text-white text-4xl font-bold filter drop-shadow-md">{fmt(unit.price)}</p>
                       {unit.area && unit.area > 0 && (
                         <p className="text-white/50 text-sm mt-1">{fmt(unit.price / unit.area)}/m²</p>
                       )}
@@ -276,10 +276,10 @@ function CTAFooter({ agent }: { agent?: AgentInfo }) {
   const phoneDisplay = agent?.whatsapp || agent?.phone || '';
   return (
     <div className="p-6 rounded-xl text-center mb-6" style={{ background: '#2fc9af' }}>
-      <p className="text-white text-xl font-bold mb-1" style={{ textShadow: '-1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3)' }}>Gostou? Agende sua visita agora!</p>
+      <p className="text-white text-xl font-bold mb-1">Gostou? Agende sua visita agora!</p>
       <p className="text-white/90 text-sm mb-3">Entre em contato e garanta essa oportunidade única.</p>
       {phoneDisplay && (
-        <p className="text-white font-black text-3xl mb-2" style={{ letterSpacing: '2px', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+        <p className="text-white font-black text-3xl mb-2 filter drop-shadow-md" style={{ letterSpacing: '2px' }}>
           {phoneDisplay}
         </p>
       )}
@@ -310,7 +310,7 @@ function PageFooter({ agent, date }: { agent?: AgentInfo; date: string }) {
 
 function FeaturePill({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(4px)' }}>
+    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.15)' }}>
       <div className="text-white/70">{icon}</div>
       <div>
         <p className="text-white font-bold text-base leading-none">{value}</p>

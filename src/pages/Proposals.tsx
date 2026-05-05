@@ -26,10 +26,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, CheckCircle2, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2, MessageCircle, Mail, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Não Enviada', variant: 'secondary' },
@@ -44,6 +52,7 @@ export default function Proposals() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const preSelectedUnitId = searchParams.get('unitId') || undefined;
 
@@ -78,6 +87,57 @@ export default function Proposals() {
         },
       }
     );
+  };
+
+  const markProposalAsSent = async (proposalId: string) => {
+    try {
+      await supabase
+        .from('proposals')
+        .update({ status: 'sent', updated_at: new Date().toISOString() } as any)
+        .eq('id', proposalId);
+      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+    } catch (err) {
+      console.error('Falha ao marcar proposta como enviada:', err);
+    }
+  };
+
+  const handleCopyLink = async (proposal: Proposal) => {
+    if (!proposal.pdf_url) {
+      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(proposal.pdf_url);
+      toast({ title: 'Link copiado', description: 'Cole onde quiser enviar a proposta.' });
+      if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
+    } catch {
+      toast({ title: 'Erro ao copiar', description: 'Tente novamente.', variant: 'destructive' });
+    }
+  };
+
+  const handleSendWhatsApp = async (proposal: Proposal) => {
+    if (!proposal.pdf_url) {
+      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
+      return;
+    }
+    const propertyTitle = proposal.property?.name || 'o imóvel';
+    const clientName = proposal.lead_name || '';
+    const greeting = clientName ? `Olá ${clientName}` : 'Olá';
+    const message = encodeURIComponent(`${greeting}, segue a proposta para ${propertyTitle}:\n\n${proposal.pdf_url}`);
+    window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener,noreferrer');
+    if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
+  };
+
+  const handleSendEmail = async (proposal: Proposal) => {
+    if (!proposal.pdf_url) {
+      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
+      return;
+    }
+    const propertyTitle = proposal.property?.name || 'o imóvel';
+    const subject = encodeURIComponent(`Proposta - ${propertyTitle}`);
+    const body = encodeURIComponent(`Olá,\n\nSegue a proposta para ${propertyTitle}:\n\n${proposal.pdf_url}\n\nQualquer dúvida, estou à disposição.`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
   };
 
   const draftCount = proposals.filter((p) => p.status === 'draft' || !p.status).length;
@@ -169,13 +229,12 @@ export default function Proposals() {
                           <TableHead>Opções</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Data</TableHead>
-                          <TableHead className="w-20"></TableHead>
+                          <TableHead className="w-28"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {proposals.map((proposal) => {
                           const status = statusLabels[proposal.status] || statusLabels.draft;
-                          const isDraft = proposal.status === 'draft' || !proposal.status;
                           return (
                             <TableRow key={proposal.id}>
                               <TableCell>
@@ -214,7 +273,16 @@ export default function Proposals() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Badge variant={status.variant}>{status.label}</Badge>
+                                <Badge
+                                  variant={status.variant}
+                                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => handleToggleStatus(proposal)}
+                                  title={proposal.status === 'draft' || !proposal.status
+                                    ? 'Marcar como enviada'
+                                    : 'Reverter para rascunho'}
+                                >
+                                  {status.label}
+                                </Badge>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">
                                 {format(new Date(proposal.created_at), "dd/MM/yy 'às' HH:mm", {
@@ -223,19 +291,33 @@ export default function Proposals() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    title={isDraft ? 'Marcar como enviada' : 'Reverter para rascunho'}
-                                    onClick={() => handleToggleStatus(proposal)}
-                                  >
-                                    {isDraft ? (
-                                      <Send className="h-3.5 w-3.5 text-muted-foreground" />
-                                    ) : (
-                                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                                    )}
-                                  </Button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        title="Enviar proposta"
+                                        disabled={!proposal.pdf_url}
+                                      >
+                                        <Send className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem onClick={() => handleSendWhatsApp(proposal)}>
+                                        <MessageCircle className="mr-2 h-4 w-4" />
+                                        WhatsApp
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleSendEmail(proposal)}>
+                                        <Mail className="mr-2 h-4 w-4" />
+                                        Email
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleCopyLink(proposal)}>
+                                        <LinkIcon className="mr-2 h-4 w-4" />
+                                        Copiar link
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                   <Button
                                     variant="ghost"
                                     size="icon"
