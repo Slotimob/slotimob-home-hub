@@ -42,7 +42,7 @@ import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -1230,7 +1230,31 @@ const Pipeline = () => {
   return (
     <AppLayout
       title={currentPipelineName}
-      titleExtra={<HelpTooltip featureKey="crm.pipeline" />}
+      titleExtra={
+        <div className="flex items-center gap-1">
+          {isCurrentPipelineCustom && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Opções do pipeline">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={openRenameDialog}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Renomear pipeline
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={openDeleteDialog} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir pipeline
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <HelpTooltip featureKey="crm.pipeline" />
+        </div>
+      }
       headerActions={
         <>
           <PermissionGate permission="crm_pipeline.create">
@@ -1247,25 +1271,6 @@ const Pipeline = () => {
           >
             Novo Pipeline
           </HeaderButton>
-          {isCurrentPipelineCustom && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <HeaderButton variant="ghost" iconOnly icon={<MoreVertical className="h-4 w-4" />}>
-                  Opções
-                </HeaderButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={openRenameDialog}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Renomear Pipeline
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={openDeleteDialog} className="text-destructive focus:text-destructive">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir Pipeline
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
           <HeaderButton
             variant={showMetrics ? 'secondary' : 'outline'}
             iconOnly
