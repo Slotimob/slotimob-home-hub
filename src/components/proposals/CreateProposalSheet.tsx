@@ -337,8 +337,14 @@ export function CreateProposalSheet({
             .from('proposals')
             .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
           if (!uploadErr) {
-            const { data: urlData } = supabase.storage.from('proposals').getPublicUrl(fileName);
-            pdfUrl = urlData?.publicUrl || null;
+            // Signed URL válida por 30 dias (corretor compartilha com cliente externo)
+            const { data: urlData, error: urlError } = await supabase.storage
+              .from('proposals')
+              .createSignedUrl(fileName, 60 * 60 * 24 * 30); // 30 dias
+            if (urlError) {
+              console.error('Erro ao gerar signed URL da proposta:', urlError);
+            }
+            pdfUrl = urlData?.signedUrl || null;
           }
         }
 
