@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface CustomPipeline {
   id: string;
@@ -21,15 +22,18 @@ const DEFAULT_PIPELINE: Omit<CustomPipeline, 'broker_id'> = {
   created_at: '',
 };
 
+export const CUSTOM_PIPELINES_QUERY_KEY = ['custom-pipelines'] as const;
+
 export const useCustomPipelines = () => {
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
-  const [pipelines, setPipelines] = useState<CustomPipeline[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const loadPipelines = useCallback(async () => {
-    if (!effectiveBrokerId) return;
-    try {
+  const { data: pipelines = [], isLoading: loading } = useQuery({
+    queryKey: [...CUSTOM_PIPELINES_QUERY_KEY, effectiveBrokerId],
+    queryFn: async () => {
+      if (!effectiveBrokerId) return [{ ...DEFAULT_PIPELINE, broker_id: '' } as CustomPipeline];
+
       const { data, error } = await supabase
         .from('custom_pipelines')
         .select('*')
@@ -43,18 +47,15 @@ export const useCustomPipelines = () => {
       };
 
       const custom = (data || []).filter((p: any) => p.pipeline_key !== 'sale');
-      setPipelines([defaultPipeline, ...custom]);
-    } catch (error) {
-      console.error('Error loading pipelines:', error);
-      setPipelines([{ ...DEFAULT_PIPELINE, broker_id: effectiveBrokerId || '' }]);
-    } finally {
-      setLoading(false);
-    }
-  }, [effectiveBrokerId]);
+      return [defaultPipeline, ...custom];
+    },
+    enabled: true,
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    loadPipelines();
-  }, [loadPipelines]);
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: CUSTOM_PIPELINES_QUERY_KEY });
+  }, [queryClient]);
 
   const createPipeline = async (name: string) => {
     if (!effectiveBrokerId) return;
@@ -75,7 +76,7 @@ export const useCustomPipelines = () => {
       if (error) throw error;
 
       toast({ title: 'Pipeline criado!', description: `"${name}" foi adicionado.` });
-      await loadPipelines();
+      invalidate();
       return key;
     } catch (error: any) {
       toast({ title: 'Erro ao criar pipeline', description: error.message, variant: 'destructive' });
@@ -86,7 +87,11 @@ export const useCustomPipelines = () => {
     if (pipelineKey === 'sale') return;
 
     // Optimistic update
-    setPipelines(prev => prev.map(p => p.pipeline_key === pipelineKey ? { ...p, name: newName } : p));
+    queryClient.setQueryData(
+      [...CUSTOM_PIPELINES_QUERY_KEY, effectiveBrokerId],
+      (old: CustomPipeline[] | undefined) =>
+        old?.map(p => p.pipeline_key === pipelineKey ? { ...p, name: newName } : p)
+    );
 
     try {
       const { error } = await supabase
@@ -97,10 +102,10 @@ export const useCustomPipelines = () => {
       if (error) throw error;
 
       toast({ title: 'Pipeline renomeado!' });
-      await loadPipelines();
+      invalidate();
     } catch (error: any) {
       toast({ title: 'Erro ao renomear pipeline', description: error.message, variant: 'destructive' });
-      await loadPipelines(); // revert
+      invalidate(); // revert
     }
   };
 
@@ -116,23 +121,28 @@ export const useCustomPipelines = () => {
       if (error) throw error;
 
       toast({ title: 'Pipeline excluído!' });
-      await loadPipelines();
+      invalidate();
     } catch (error: any) {
       toast({ title: 'Erro ao excluir pipeline', description: error.message, variant: 'destructive' });
     }
   };
 
   const reorderPipelines = async (orderedKeys: string[]) => {
-    // Only reorder custom pipelines (skip 'sale')
     const customKeys = orderedKeys.filter(k => k !== 'sale');
 
     // Optimistic update
-    const defaultP = pipelines.find(p => p.pipeline_key === 'sale');
-    const reordered = customKeys
-      .map(key => pipelines.find(p => p.pipeline_key === key))
-      .filter(Boolean) as CustomPipeline[];
-    const reorderedWithOrder = reordered.map((p, i) => ({ ...p, display_order: i }));
-    setPipelines(defaultP ? [defaultP, ...reorderedWithOrder] : reorderedWithOrder);
+    queryClient.setQueryData(
+      [...CUSTOM_PIPELINES_QUERY_KEY, effectiveBrokerId],
+      (old: CustomPipeline[] | undefined) => {
+        if (!old) return old;
+        const defaultP = old.find(p => p.pipeline_key === 'sale');
+        const reordered = customKeys
+          .map(key => old.find(p => p.pipeline_key === key))
+          .filter(Boolean) as CustomPipeline[];
+        const reorderedWithOrder = reordered.map((p, i) => ({ ...p, display_order: i }));
+        return defaultP ? [defaultP, ...reorderedWithOrder] : reorderedWithOrder;
+      }
+    );
 
     try {
       for (let i = 0; i < customKeys.length; i++) {
@@ -147,7 +157,7 @@ export const useCustomPipelines = () => {
       toast({ title: 'Ordem salva!' });
     } catch (error: any) {
       toast({ title: 'Erro ao reordenar', description: error.message, variant: 'destructive' });
-      await loadPipelines(); // revert
+      invalidate(); // revert
     }
   };
 
@@ -158,6 +168,6 @@ export const useCustomPipelines = () => {
     renamePipeline,
     deletePipeline,
     reorderPipelines,
-    reload: loadPipelines,
+    reload: invalidate,
   };
 };
