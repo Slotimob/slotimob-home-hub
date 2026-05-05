@@ -15,8 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CalendarSync, Copy, RefreshCw, AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
-
-const SUPABASE_PROJECT_REF = "nelmmrqdiycmdhhslxfz";
+import { ENV } from "@/config/env";
 
 export function CalendarSyncDialog() {
   const { user } = useAuth();
@@ -60,7 +59,7 @@ export function CalendarSyncDialog() {
   });
 
   const feedUrl = profile?.ical_token
-    ? `https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/ical-feed?token=${profile.ical_token}`
+    ? `${ENV.SUPABASE_URL}/functions/v1/ical-feed?token=${profile.ical_token}`
     : "";
 
   const handleCopy = async () => {

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { ENV } from '@/config/env';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -237,7 +238,7 @@ const Integrations = () => {
   };
 
   const xmlFeedUrl = feedToken
-    ? `https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/xml-feed?token=${feedToken}`
+    ? `${ENV.SUPABASE_URL}/functions/v1/xml-feed?token=${feedToken}`
     : '';
 
 
