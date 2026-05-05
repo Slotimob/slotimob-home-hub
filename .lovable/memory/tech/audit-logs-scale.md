@@ -10,9 +10,12 @@ type: feature
 - `audit_logs_default` catches historical data, `audit_logs_YYYY_MM` for months
 - PK is composite (id, created_at) — required for partitioning
 
-## RLS: Workspace-Aware
+## RLS: Workspace-Aware (Parent + Partitions)
 - `can_view_audit_log(viewer, broker_id)`: owner sees all workspace members' logs, members see only own
-- Old policy "Brokers can view their own" was replaced
+- **CRITICAL**: RLS on parent table does NOT propagate to partitions in Postgres
+- Every partition must have `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY`
+- Every partition must replicate parent policies ("System can insert audit logs" INSERT, "Workspace can view audit logs" SELECT)
+- `maintain_audit_partitions()` handles this automatically for new partitions
 
 ## Diff Optimization
 - `audit_diff(old, new)` returns only changed fields (excludes updated_at, search_vector)
@@ -26,6 +29,7 @@ type: feature
 
 ## Partition Maintenance
 - `maintain_audit_partitions()` RPC: creates next 3 months, drops partitions > 90 days
+- **Also applies RLS + replicates policies** on every run (idempotent)
 - Edge Function `audit-logs-retention` calls this RPC (verify_jwt=false for cron)
 - Grants SELECT/INSERT to authenticated/anon/service_role on new partitions
 
