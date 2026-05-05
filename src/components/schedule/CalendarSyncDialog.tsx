@@ -59,7 +59,7 @@ export function CalendarSyncDialog() {
   });
 
   const feedUrl = profile?.ical_token
-    ? `https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/ical-feed?token=${profile.ical_token}`
+    ? `${ENV.SUPABASE_URL}/functions/v1/ical-feed?token=${profile.ical_token}`
     : "";
 
   const handleCopy = async () => {
