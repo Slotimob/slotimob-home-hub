@@ -145,7 +145,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
       const filePath = `${userId}/${propertyId}/${timestamp}-${file.name}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('property-media')
+        .from('property-documents')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
