@@ -41,3 +41,17 @@ em produção para o usuário final.
 
 Monitoramento contínuo via Dependabot. Reavaliar quando upstream 
 publicar patches sem breaking changes.
+## Política de buckets de Storage
+
+- **proposals**: privado, signed URL 30 dias (corretor compartilha
+  com cliente externo).
+- **whatsapp-media**: privado, signed URL 1 hora (visualização
+  interna).
+- **property-documents**: privado, signed URL 1 hora (matrícula,
+  IPTU, contratos e demais documentos sensíveis vinculados a
+  imóveis).
+- **property-media**: semi-público (intencional). Armazena APENAS
+  fotos comerciais de imóveis (capa, galeria). URLs públicas para
+  suportar exibição em listas e futuro "Cardápio de Imóveis".
+  INSERT/UPDATE/DELETE restritos ao broker dono via RLS. Fotos NÃO
+  contêm dados sensíveis.
