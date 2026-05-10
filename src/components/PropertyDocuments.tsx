@@ -424,17 +424,23 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
                       ) : (
                         <>
                           {doc.file_path && (
-                            <Button size="icon" variant="ghost" asChild>
-                              <a href={getDownloadUrl(doc.file_path)} target="_blank" rel="noopener noreferrer">
-                                <Eye className="h-4 w-4" />
-                              </a>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openDocument(doc.file_path!, false)}
+                              title="Visualizar"
+                            >
+                              <Eye className="h-4 w-4" />
                             </Button>
                           )}
                           {doc.file_path && (
-                            <Button size="icon" variant="ghost" asChild>
-                              <a href={getDownloadUrl(doc.file_path)} download>
-                                <Download className="h-4 w-4" />
-                              </a>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openDocument(doc.file_path!, true)}
+                              title="Baixar"
+                            >
+                              <Download className="h-4 w-4" />
                             </Button>
                           )}
                         </>
