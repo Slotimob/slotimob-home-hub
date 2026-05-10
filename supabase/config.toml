@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.audit-logs-retention]
 verify_jwt = false
+
+[functions.migrate-property-documents]
+verify_jwt = true

@@ -145,7 +145,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
       const filePath = `${userId}/${propertyId}/${timestamp}-${file.name}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('property-media')
+        .from('property-documents')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
@@ -246,7 +246,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
       if (doc.source_type === 'upload' && doc.file_path) {
         const { error: storageError } = await supabase
           .storage
-          .from('property-media')
+          .from('property-documents')
           .remove([doc.file_path]);
 
         if (storageError) {
@@ -277,9 +277,38 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
     }
   };
 
-  const getDownloadUrl = (filePath: string) => {
-    const { data } = supabase.storage.from('property-media').getPublicUrl(filePath);
-    return data.publicUrl;
+  const getDownloadUrl = async (filePath: string): Promise<string | null> => {
+    const { data, error } = await supabase.storage
+      .from('property-documents')
+      .createSignedUrl(filePath, 60 * 60); // 1 hora
+
+    if (error) {
+      console.error('Erro ao gerar signed URL do documento:', error);
+      toast({
+        title: 'Erro ao gerar link',
+        description: 'Tente novamente.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
+    return data.signedUrl;
+  };
+
+  const openDocument = async (filePath: string, download = false) => {
+    const url = await getDownloadUrl(filePath);
+    if (!url) return;
+    if (download) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const formatFileSize = (bytes: number | null) => {
@@ -395,17 +424,23 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
                       ) : (
                         <>
                           {doc.file_path && (
-                            <Button size="icon" variant="ghost" asChild>
-                              <a href={getDownloadUrl(doc.file_path)} target="_blank" rel="noopener noreferrer">
-                                <Eye className="h-4 w-4" />
-                              </a>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openDocument(doc.file_path!, false)}
+                              title="Visualizar"
+                            >
+                              <Eye className="h-4 w-4" />
                             </Button>
                           )}
                           {doc.file_path && (
-                            <Button size="icon" variant="ghost" asChild>
-                              <a href={getDownloadUrl(doc.file_path)} download>
-                                <Download className="h-4 w-4" />
-                              </a>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openDocument(doc.file_path!, true)}
+                              title="Baixar"
+                            >
+                              <Download className="h-4 w-4" />
                             </Button>
                           )}
                         </>
