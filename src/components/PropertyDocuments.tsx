@@ -277,9 +277,38 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
     }
   };
 
-  const getDownloadUrl = (filePath: string) => {
-    const { data } = supabase.storage.from('property-media').getPublicUrl(filePath);
-    return data.publicUrl;
+  const getDownloadUrl = async (filePath: string): Promise<string | null> => {
+    const { data, error } = await supabase.storage
+      .from('property-documents')
+      .createSignedUrl(filePath, 60 * 60); // 1 hora
+
+    if (error) {
+      console.error('Erro ao gerar signed URL do documento:', error);
+      toast({
+        title: 'Erro ao gerar link',
+        description: 'Tente novamente.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
+    return data.signedUrl;
+  };
+
+  const openDocument = async (filePath: string, download = false) => {
+    const url = await getDownloadUrl(filePath);
+    if (!url) return;
+    if (download) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const formatFileSize = (bytes: number | null) => {
