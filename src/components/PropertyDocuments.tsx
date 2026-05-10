@@ -246,7 +246,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
       if (doc.source_type === 'upload' && doc.file_path) {
         const { error: storageError } = await supabase
           .storage
-          .from('property-media')
+          .from('property-documents')
           .remove([doc.file_path]);
 
         if (storageError) {
