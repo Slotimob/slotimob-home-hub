@@ -59,47 +59,14 @@ Deno.serve(async (req) => {
     });
 
 
-    // Require authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Admin client for migration
+    // Token gate already authorized this caller as super-admin.
+    // Admin client for migration.
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { action } = await req.json();
 
     if (action === 'migrate_all') {
-      // Only allow admins to run full migration
-      const { data: userRole } = await supabaseAdmin
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .single();
 
-      if (!userRole) {
-        return new Response(JSON.stringify({ error: 'Admin access required for full migration' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
 
       const results = {
         portal_connections: { migrated: 0, skipped: 0, errors: 0 },
