@@ -8,9 +8,12 @@ const corsHeaders = {
 };
 
 /**
- * Migration endpoint to encrypt all existing plain text credentials
- * This should be run once to migrate existing data, then the plain text columns can be dropped
+ * ⚠️ DEPRECATED — Endpoint de migração one-off.
+ * Protegido por MIGRATION_SECRET_TOKEN (header Authorization: Bearer <token>).
+ * Idempotente: bloqueia execuções duplicadas via audit_logs.
+ * Manter por 30 dias após execução em produção; depois remover.
  */
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -21,47 +24,52 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Require authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    // ---- Proteção: token secreto obrigatório para executar migração ----
+    const migrationToken = Deno.env.get('MIGRATION_SECRET_TOKEN');
+    if (!migrationToken) {
+      return new Response(JSON.stringify({ error: 'Migration token not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const providedToken = req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
+    if (providedToken !== migrationToken) {
+      safeWarn('Tentativa não autorizada de executar migrate-credentials. IP: %s', req.headers.get('x-forwarded-for'));
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+    // ---- Idempotência: bloqueia se já executada ----
+    const supabaseGuard = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: migrationLog } = await supabaseGuard
+      .from('audit_logs')
+      .select('id, created_at')
+      .eq('action', 'migration_migrate_credentials_completed')
+      .maybeSingle();
+    if (migrationLog) {
+      return new Response(JSON.stringify({
+        message: 'Migração já executada anteriormente',
+        executed_at: migrationLog.created_at,
+        skipped: true,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    await supabaseGuard.from('audit_logs').insert({
+      action: 'migration_migrate_credentials_started',
+      table_name: 'migrations',
+      metadata: { function_name: 'migrate-credentials', triggered_at: new Date().toISOString() },
     });
 
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
-    // Admin client for migration
+    // Token gate already authorized this caller as super-admin.
+    // Admin client for migration.
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { action } = await req.json();
 
     if (action === 'migrate_all') {
-      // Only allow admins to run full migration
-      const { data: userRole } = await supabaseAdmin
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .single();
 
-      if (!userRole) {
-        return new Response(JSON.stringify({ error: 'Admin access required for full migration' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
 
       const results = {
         portal_connections: { migrated: 0, skipped: 0, errors: 0 },
@@ -211,11 +219,11 @@ Deno.serve(async (req) => {
 
       // Audit log for migration
       await supabaseAdmin.from('audit_logs').insert({
-        broker_id: user.id,
-        action: 'credentials_migration_completed',
-        table_name: 'system',
-        metadata: results,
+        action: 'migration_migrate_credentials_completed',
+        table_name: 'migrations',
+        metadata: { ...results, function_name: 'migrate-credentials', completed_at: new Date().toISOString() },
       });
+
 
       console.log('[migrate] Migration completed:', results);
 
@@ -228,104 +236,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Migrate only user's own data
+    // migrate_my_data foi removido: endpoint agora é apenas para super-admin via token.
     if (action === 'migrate_my_data') {
-      const results = {
-        portal_connections: { migrated: 0, skipped: 0, errors: 0 },
-        integrations: { migrated: 0, skipped: 0, errors: 0 },
-      };
-
-      // Migrate user's portal_connections
-      const { data: portalConnections } = await supabaseAdmin
-        .from('portal_connections')
-        .select('id, api_key, credentials, encrypted_credentials')
-        .eq('broker_id', user.id);
-
-      for (const conn of portalConnections || []) {
-        try {
-          if (conn.encrypted_credentials && isEncrypted(conn.encrypted_credentials)) {
-            results.portal_connections.skipped++;
-            continue;
-          }
-
-          const dataToEncrypt = conn.api_key || (conn.credentials ? JSON.stringify(conn.credentials) : null);
-          if (!dataToEncrypt) {
-            results.portal_connections.skipped++;
-            continue;
-          }
-
-          const encrypted = await encrypt(dataToEncrypt);
-          
-          const { error } = await supabaseAdmin
-            .from('portal_connections')
-            .update({
-              encrypted_credentials: encrypted,
-              api_key: null,
-              credentials: null,
-            })
-            .eq('id', conn.id);
-
-          if (error) {
-            results.portal_connections.errors++;
-          } else {
-            results.portal_connections.migrated++;
-          }
-        } catch {
-          results.portal_connections.errors++;
-        }
-      }
-
-      // Migrate user's integrations
-      const { data: integrations } = await supabaseAdmin
-        .from('integrations')
-        .select('id, api_key, config, encrypted_api_key, encrypted_config')
-        .eq('broker_id', user.id);
-
-      for (const int of integrations || []) {
-        try {
-          let needsUpdate = false;
-          const updateData: Record<string, any> = {};
-
-          if (int.api_key && (!int.encrypted_api_key || !isEncrypted(int.encrypted_api_key))) {
-            updateData.encrypted_api_key = await encrypt(int.api_key);
-            updateData.api_key = null;
-            needsUpdate = true;
-          }
-
-          if (int.config && (!int.encrypted_config || !isEncrypted(int.encrypted_config))) {
-            updateData.encrypted_config = await encrypt(JSON.stringify(int.config));
-            updateData.config = null;
-            needsUpdate = true;
-          }
-
-          if (!needsUpdate) {
-            results.integrations.skipped++;
-            continue;
-          }
-
-          const { error } = await supabaseAdmin
-            .from('integrations')
-            .update(updateData)
-            .eq('id', int.id);
-
-          if (error) {
-            results.integrations.errors++;
-          } else {
-            results.integrations.migrated++;
-          }
-        } catch {
-          results.integrations.errors++;
-        }
-      }
-
-      return new Response(JSON.stringify({ 
-        success: true,
-        message: 'Your credentials have been encrypted',
-        results,
-      }), {
+      return new Response(JSON.stringify({ error: 'migrate_my_data is no longer supported. Use migrate_all.' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     return new Response(JSON.stringify({ error: 'Invalid action. Use migrate_all or migrate_my_data' }), {
       status: 400,
