@@ -233,104 +233,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Migrate only user's own data
+    // migrate_my_data foi removido: endpoint agora é apenas para super-admin via token.
     if (action === 'migrate_my_data') {
-      const results = {
-        portal_connections: { migrated: 0, skipped: 0, errors: 0 },
-        integrations: { migrated: 0, skipped: 0, errors: 0 },
-      };
-
-      // Migrate user's portal_connections
-      const { data: portalConnections } = await supabaseAdmin
-        .from('portal_connections')
-        .select('id, api_key, credentials, encrypted_credentials')
-        .eq('broker_id', user.id);
-
-      for (const conn of portalConnections || []) {
-        try {
-          if (conn.encrypted_credentials && isEncrypted(conn.encrypted_credentials)) {
-            results.portal_connections.skipped++;
-            continue;
-          }
-
-          const dataToEncrypt = conn.api_key || (conn.credentials ? JSON.stringify(conn.credentials) : null);
-          if (!dataToEncrypt) {
-            results.portal_connections.skipped++;
-            continue;
-          }
-
-          const encrypted = await encrypt(dataToEncrypt);
-          
-          const { error } = await supabaseAdmin
-            .from('portal_connections')
-            .update({
-              encrypted_credentials: encrypted,
-              api_key: null,
-              credentials: null,
-            })
-            .eq('id', conn.id);
-
-          if (error) {
-            results.portal_connections.errors++;
-          } else {
-            results.portal_connections.migrated++;
-          }
-        } catch {
-          results.portal_connections.errors++;
-        }
-      }
-
-      // Migrate user's integrations
-      const { data: integrations } = await supabaseAdmin
-        .from('integrations')
-        .select('id, api_key, config, encrypted_api_key, encrypted_config')
-        .eq('broker_id', user.id);
-
-      for (const int of integrations || []) {
-        try {
-          let needsUpdate = false;
-          const updateData: Record<string, any> = {};
-
-          if (int.api_key && (!int.encrypted_api_key || !isEncrypted(int.encrypted_api_key))) {
-            updateData.encrypted_api_key = await encrypt(int.api_key);
-            updateData.api_key = null;
-            needsUpdate = true;
-          }
-
-          if (int.config && (!int.encrypted_config || !isEncrypted(int.encrypted_config))) {
-            updateData.encrypted_config = await encrypt(JSON.stringify(int.config));
-            updateData.config = null;
-            needsUpdate = true;
-          }
-
-          if (!needsUpdate) {
-            results.integrations.skipped++;
-            continue;
-          }
-
-          const { error } = await supabaseAdmin
-            .from('integrations')
-            .update(updateData)
-            .eq('id', int.id);
-
-          if (error) {
-            results.integrations.errors++;
-          } else {
-            results.integrations.migrated++;
-          }
-        } catch {
-          results.integrations.errors++;
-        }
-      }
-
-      return new Response(JSON.stringify({ 
-        success: true,
-        message: 'Your credentials have been encrypted',
-        results,
-      }), {
+      return new Response(JSON.stringify({ error: 'migrate_my_data is no longer supported. Use migrate_all.' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     return new Response(JSON.stringify({ error: 'Invalid action. Use migrate_all or migrate_my_data' }), {
       status: 400,
