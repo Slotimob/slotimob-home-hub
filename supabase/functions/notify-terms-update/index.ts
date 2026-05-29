@@ -146,7 +146,8 @@ const handler = async (req: Request): Promise<Response> => {
                   </p>
                   
                   <div style="text-align: center; margin: 30px 0;">
-                    <a href="https://slotimob.lovable.app/legal" style="background: #6366f1; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-block;">
+                    <a href="${Deno.env.get('SITE_URL') ?? 'https://app.slotimob.com.br'}/legal" style="background: #6366f1; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-block;">
+
                       Ver Termos Atualizados
                     </a>
                   </div>
