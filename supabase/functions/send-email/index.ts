@@ -180,7 +180,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       case "welcome": {
         const result = welcomeEmail(
           body.user_name || "Usuário",
-          body.dashboard_url || "https://slotimob.lovable.app/dashboard",
+          body.dashboard_url || `${SITE_URL}/dashboard`,
+
         );
         subject = result.subject;
         html = result.html;
