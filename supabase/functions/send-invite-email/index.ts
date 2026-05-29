@@ -123,7 +123,8 @@ Deno.serve(async (req) => {
             invited_by: user.id,
             role_label: role_label || "Agente",
           },
-          redirectTo: "https://slotimob.com.br/reset-password",
+          redirectTo: `${Deno.env.get('SITE_URL') ?? 'https://app.slotimob.com.br'}/reset-password`,
+
         }
       );
 
