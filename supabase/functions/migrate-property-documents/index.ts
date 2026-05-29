@@ -124,10 +124,17 @@ Deno.serve(async (req) => {
       }
     }
 
+    await supabase.from('audit_logs').insert({
+      action: 'migration_migrate_property_documents_completed',
+      table_name: 'migrations',
+      metadata: { ...results, function_name: 'migrate-property-documents', completed_at: new Date().toISOString() },
+    });
+
     return new Response(
       JSON.stringify(results),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (err: any) {
     safeError('Erro fatal na migração: %s', err.message);
     return new Response(
