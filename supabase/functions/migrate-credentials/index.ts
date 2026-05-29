@@ -8,9 +8,12 @@ const corsHeaders = {
 };
 
 /**
- * Migration endpoint to encrypt all existing plain text credentials
- * This should be run once to migrate existing data, then the plain text columns can be dropped
+ * ⚠️ DEPRECATED — Endpoint de migração one-off.
+ * Protegido por MIGRATION_SECRET_TOKEN (header Authorization: Bearer <token>).
+ * Idempotente: bloqueia execuções duplicadas via audit_logs.
+ * Manter por 30 dias após execução em produção; depois remover.
  */
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
