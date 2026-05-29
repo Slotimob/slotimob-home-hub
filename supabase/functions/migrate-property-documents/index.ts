@@ -2,7 +2,7 @@
 // documentos do bucket property-media para property-documents.
 // Remover após executar com sucesso.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.86.0';
 import { safeLog, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
@@ -10,7 +10,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-Deno.serve(async (req) => {
+Deno.Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

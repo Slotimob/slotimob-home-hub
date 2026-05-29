@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.86.0';
 import { encrypt, isEncrypted } from '../_shared/encryption.ts';
 import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
@@ -11,7 +11,7 @@ const corsHeaders = {
  * Migration endpoint to encrypt all existing plain text credentials
  * This should be run once to migrate existing data, then the plain text columns can be dropped
  */
-Deno.serve(async (req) => {
+Deno.Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
