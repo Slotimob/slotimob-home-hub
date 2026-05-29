@@ -1,9 +1,9 @@
-// Edge Function TEMPORÁRIA — usar apenas uma vez para migrar
-// documentos do bucket property-media para property-documents.
-// Remover após executar com sucesso.
+// ⚠️ DEPRECATED — Edge Function TEMPORÁRIA para migrar documentos do bucket
+// property-media para property-documents. Protegida por MIGRATION_SECRET_TOKEN
+// e idempotente via audit_logs. Remover após executar com sucesso.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.86.0';
-import { safeLog, safeError } from '../_shared/safe-log.ts';
+import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,38 +21,42 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    // ---- Proteção: token secreto obrigatório ----
+    const migrationToken = Deno.env.get('MIGRATION_SECRET_TOKEN');
+    if (!migrationToken) {
       return new Response(
-        JSON.stringify({ error: 'Não autenticado' }),
+        JSON.stringify({ error: 'Migration token not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const providedToken = req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
+    if (providedToken !== migrationToken) {
+      safeWarn('Tentativa não autorizada de executar migrate-property-documents. IP: %s', req.headers.get('x-forwarded-for'));
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { data: { user } } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Não autenticado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Verificar super_admin via user_roles
-    const { data: roleRow } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'super_admin')
+    // ---- Idempotência ----
+    const { data: migrationLog } = await supabase
+      .from('audit_logs')
+      .select('id, created_at')
+      .eq('action', 'migration_migrate_property_documents_completed')
       .maybeSingle();
-
-    if (!roleRow) {
-      return new Response(
-        JSON.stringify({ error: 'Apenas super_admin pode executar' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (migrationLog) {
+      return new Response(JSON.stringify({
+        message: 'Migração já executada anteriormente',
+        executed_at: migrationLog.created_at,
+        skipped: true,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+    await supabase.from('audit_logs').insert({
+      action: 'migration_migrate_property_documents_started',
+      table_name: 'migrations',
+      metadata: { function_name: 'migrate-property-documents', triggered_at: new Date().toISOString() },
+    });
+
 
     const { data: docs, error: fetchError } = await supabase
       .from('property_documents')
