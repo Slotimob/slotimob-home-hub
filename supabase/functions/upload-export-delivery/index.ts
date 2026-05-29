@@ -145,7 +145,8 @@ Deno.serve(async (req) => {
         broker_id: request.organization_owner_id,
         email_to: ownerProfile.email,
         email_subject: "Sua exportação de dados está pronta!",
-        email_body: `Olá ${ownerProfile.full_name || ""},\n\nSua solicitação de exportação de dados foi concluída e está disponível para download.\n\nAcesse o painel em: https://slotimob.com.br/settings/data-export\n\n${signedUrl ? `Como esta exportação é referente ao encerramento de conta, segue link direto de download válido por 30 dias:\n${signedUrl}\n\n` : ""}O arquivo ficará disponível por 30 dias.\n\nEquipe SLOTIMOB`,
+        email_body: `Olá ${ownerProfile.full_name || ""},\n\nSua solicitação de exportação de dados foi concluída e está disponível para download.\n\nAcesse o painel em: ${Deno.env.get('SITE_URL') ?? 'https://app.slotimob.com.br'}/settings/data-export\n\n${signedUrl ? `Como esta exportação é referente ao encerramento de conta, segue link direto de download válido por 30 dias:\n${signedUrl}\n\n` : ""}O arquivo ficará disponível por 30 dias.\n\nEquipe SLOTIMOB`,
+
         email_type: "data_export_delivered",
       });
     }

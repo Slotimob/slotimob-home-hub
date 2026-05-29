@@ -19,7 +19,9 @@ const BRAND = {
   radius: "8px",
 };
 
-const LOGO_URL = "https://slotimob.lovable.app/sloti-logo.png";
+const SITE_URL = Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
+const LOGO_URL = `${SITE_URL}/sloti-logo.png`;
+
 
 // ─── Shared layout wrapper ───────────────────────────────────────────────────
 function emailLayout(title: string, bodyHtml: string): string {
@@ -178,7 +180,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       case "welcome": {
         const result = welcomeEmail(
           body.user_name || "Usuário",
-          body.dashboard_url || "https://slotimob.lovable.app/dashboard",
+          body.dashboard_url || `${SITE_URL}/dashboard`,
+
         );
         subject = result.subject;
         html = result.html;
@@ -188,8 +191,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
         const result = leadAssignedEmail(
           body.agent_name || "Agente",
           body.lead_name || "Novo Lead",
-          body.lead_phone || "",
-          body.chat_url || "https://slotimob.lovable.app/whatsapp",
+          body.chat_url || `${SITE_URL}/whatsapp`,
+
+          body.chat_url || `${SITE_URL}/whatsapp`,
+
         );
         subject = result.subject;
         html = result.html;

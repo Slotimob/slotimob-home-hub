@@ -159,7 +159,8 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- CTA -->
           <tr>
             <td style="padding: 24px 32px; text-align: center;">
-              <a href="https://slotimob.lovable.app/reports" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+              <a href="${Deno.env.get('SITE_URL') ?? 'https://app.slotimob.com.br'}/reports" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+
                 Ver Relatório Completo
               </a>
             </td>
