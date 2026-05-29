@@ -191,8 +191,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         const result = leadAssignedEmail(
           body.agent_name || "Agente",
           body.lead_name || "Novo Lead",
-          body.chat_url || `${SITE_URL}/whatsapp`,
-
+          body.lead_phone || "",
           body.chat_url || `${SITE_URL}/whatsapp`,
 
         );
