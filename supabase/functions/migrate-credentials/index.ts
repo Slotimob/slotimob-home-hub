@@ -216,11 +216,11 @@ Deno.serve(async (req) => {
 
       // Audit log for migration
       await supabaseAdmin.from('audit_logs').insert({
-        broker_id: user.id,
-        action: 'credentials_migration_completed',
-        table_name: 'system',
-        metadata: results,
+        action: 'migration_migrate_credentials_completed',
+        table_name: 'migrations',
+        metadata: { ...results, function_name: 'migrate-credentials', completed_at: new Date().toISOString() },
       });
+
 
       console.log('[migrate] Migration completed:', results);
 
