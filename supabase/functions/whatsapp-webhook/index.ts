@@ -1,10 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
 import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
+import { corsHeadersWebhook as corsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 function normalizeEventName(event: string): string {
   return event.toLowerCase().replace(/_/g, '.');
@@ -26,9 +23,6 @@ function extractQrBase64(data: any): string | null {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
 
   if (req.method === 'GET') {
     return new Response('OK', { status: 200 });
