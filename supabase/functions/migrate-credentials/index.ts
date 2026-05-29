@@ -11,7 +11,7 @@ const corsHeaders = {
  * Migration endpoint to encrypt all existing plain text credentials
  * This should be run once to migrate existing data, then the plain text columns can be dropped
  */
-Deno.Deno.serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
