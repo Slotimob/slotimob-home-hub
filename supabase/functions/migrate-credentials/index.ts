@@ -21,6 +21,44 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+    // ---- Proteção: token secreto obrigatório para executar migração ----
+    const migrationToken = Deno.env.get('MIGRATION_SECRET_TOKEN');
+    if (!migrationToken) {
+      return new Response(JSON.stringify({ error: 'Migration token not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const providedToken = req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
+    if (providedToken !== migrationToken) {
+      safeWarn('Tentativa não autorizada de executar migrate-credentials. IP: %s', req.headers.get('x-forwarded-for'));
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ---- Idempotência: bloqueia se já executada ----
+    const supabaseGuard = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: migrationLog } = await supabaseGuard
+      .from('audit_logs')
+      .select('id, created_at')
+      .eq('action', 'migration_migrate_credentials_completed')
+      .maybeSingle();
+    if (migrationLog) {
+      return new Response(JSON.stringify({
+        message: 'Migração já executada anteriormente',
+        executed_at: migrationLog.created_at,
+        skipped: true,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    await supabaseGuard.from('audit_logs').insert({
+      action: 'migration_migrate_credentials_started',
+      table_name: 'migrations',
+      metadata: { function_name: 'migrate-credentials', triggered_at: new Date().toISOString() },
+    });
+
+
     // Require authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
