@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     logStep("Found Stripe customer", { customerId });
 
     // Create portal session
-    const origin = req.headers.get("origin") || "https://slotimob.lovable.app";
+    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/dashboard`,
