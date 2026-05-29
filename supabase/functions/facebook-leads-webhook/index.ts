@@ -201,22 +201,34 @@ Deno.serve(async (req) => {
               metaPlacement = "audience_network";
             }
 
-            // Find brokers with active Facebook integration
+            // Find brokers with active Facebook integration matching this page_id
+            const pageId = (change.value as any).page_id || entry.id;
             const { data: activeIntegrations, error: integrationError } = await supabase
               .from("integrations")
               .select("broker_id, config")
               .eq("integration_type", "facebook_leads")
-              .eq("is_active", true);
+              .eq("is_active", true)
+              .eq("config->>page_id", pageId);
 
             if (integrationError) {
               console.error("Error fetching integrations:", integrationError);
               continue;
             }
 
-            safeLog('Found %s active Facebook integrations', activeIntegrations?.length || 0);
+            if (!activeIntegrations || activeIntegrations.length === 0) {
+              safeWarn('Nenhuma integração ativa encontrada para page_id: %s', pageId);
+              results.push({ success: true, reason: 'no_integration_for_page', page_id: pageId, leadgen_id: leadData.leadgen_id });
+              continue;
+            }
 
-            // Create lead for each active integration (or first one)
-            for (const integration of activeIntegrations || []) {
+            safeLog('Found %s active Facebook integrations for page', activeIntegrations.length);
+
+            // Create lead for each matching integration (defense in depth: re-check page_id)
+            for (const integration of activeIntegrations) {
+              if ((integration.config as any)?.page_id !== pageId) {
+                safeWarn('Skipping integration with mismatched page_id for broker %s', integration.broker_id);
+                continue;
+              }
               const leadInsert = {
                 broker_id: integration.broker_id,
                 name: leadName,
