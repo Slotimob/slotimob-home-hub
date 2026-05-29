@@ -193,7 +193,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
           body.lead_name || "Novo Lead",
           body.chat_url || `${SITE_URL}/whatsapp`,
 
-          body.chat_url || "https://slotimob.lovable.app/whatsapp",
+          body.chat_url || `${SITE_URL}/whatsapp`,
+
         );
         subject = result.subject;
         html = result.html;
