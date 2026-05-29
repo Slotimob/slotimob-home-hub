@@ -92,12 +92,14 @@ async function resolveUserId(
 
   logStep("New user created via guest checkout", { userId: newUser.user.id, email: customerEmail });
 
+  const siteUrl = Deno.env.get('SITE_URL') ?? 'https://app.slotimob.com.br';
+
   // Send password reset email so the user can set their password
   const { error: resetError } = await supabase.auth.admin.generateLink({
     type: 'recovery',
     email: customerEmail,
     options: {
-      redirectTo: 'https://slotimob.com.br/reset-password',
+      redirectTo: `${siteUrl}/reset-password`,
     },
   });
 
@@ -121,10 +123,11 @@ async function resolveUserId(
         template: 'welcome',
         to: customerEmail,
         user_name: userName,
-        dashboard_url: 'https://slotimob.lovable.app/dashboard',
+        dashboard_url: `${siteUrl}/dashboard`,
         broker_id: newUser.user.id,
       }),
     });
+
     
     logStep("Welcome email sent to guest", { email: customerEmail, status: emailRes.status });
   } catch (emailErr) {
