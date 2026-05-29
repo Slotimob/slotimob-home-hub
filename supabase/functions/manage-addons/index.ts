@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     }
 
     const addonConfig = ADDON_PRODUCTS[addon_type];
-    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
+    const origin = req.headers.get("origin") || (Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br");
 
     // Get the first active price for this product
     const prices = await stripe.prices.list({

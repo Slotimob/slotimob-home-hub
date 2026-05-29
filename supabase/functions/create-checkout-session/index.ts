@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { type = 'plan', priceId: directPriceId, plan_id, billing_cycle = 'monthly', mode = 'trial', customer_email, quantity = 1 } = body;
 
-    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
+    const origin = req.headers.get("origin") || (Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br");
 
     // ==========================================
     // TYPE: CREDIT (one-time payment)
