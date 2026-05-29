@@ -19,7 +19,9 @@ const BRAND = {
   radius: "8px",
 };
 
-const LOGO_URL = "https://slotimob.lovable.app/sloti-logo.png";
+const SITE_URL = Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
+const LOGO_URL = `${SITE_URL}/sloti-logo.png`;
+
 
 // ─── Shared layout wrapper ───────────────────────────────────────────────────
 function emailLayout(title: string, bodyHtml: string): string {
