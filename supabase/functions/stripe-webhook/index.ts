@@ -348,6 +348,43 @@ function syncAddonsFromSubscription(subscription: Stripe.Subscription) {
   return { extraUsers, extraUnitPacks };
 }
 
+async function resolvePlanIdFromSubscription(
+  subscription: Stripe.Subscription,
+  supabase: ReturnType<typeof createClient>
+): Promise<string | null> {
+  const candidatePriceIds: string[] = [];
+  for (const item of subscription.items.data) {
+    const priceId = item.price?.id || '';
+    const productId = typeof item.price?.product === 'string' ? item.price.product : '';
+    const isAddon =
+      priceId === ADDON_PRICE_IDS.extra_user ||
+      priceId === ADDON_PRICE_IDS.extra_units ||
+      productId === ADDON_PRODUCT_IDS.extra_user ||
+      productId === ADDON_PRODUCT_IDS.extra_units;
+    if (!isAddon && priceId) candidatePriceIds.push(priceId);
+  }
+  if (candidatePriceIds.length === 0) return null;
+
+  const { data: plans, error } = await supabase
+    .from('subscription_plans')
+    .select('id, stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter, stripe_price_id_annual_early_adopter');
+  if (error || !plans) {
+    logStep('Warning: could not load subscription_plans to resolve plan_id', { error: error?.message });
+    return null;
+  }
+
+  for (const priceId of candidatePriceIds) {
+    const match = plans.find((p: any) =>
+      p.stripe_price_id_monthly === priceId ||
+      p.stripe_price_id_yearly === priceId ||
+      p.stripe_price_id_early_adopter === priceId ||
+      p.stripe_price_id_annual_early_adopter === priceId
+    );
+    if (match) return match.id as string;
+  }
+  return null;
+}
+
 async function handleSubscriptionUpdated(
   event: Stripe.Event,
   stripe: Stripe,
@@ -357,6 +394,13 @@ async function handleSubscriptionUpdated(
   logStep("Processing subscription updated", { subscriptionId: subscription.id });
 
   const { extraUsers, extraUnitPacks } = syncAddonsFromSubscription(subscription);
+
+  const resolvedPlanId = await resolvePlanIdFromSubscription(subscription, supabase);
+  if (resolvedPlanId) {
+    logStep('Resolved plan_id from subscription items', { resolvedPlanId });
+  } else {
+    logStep('Warning: could not resolve plan_id — plan_id NOT updated');
+  }
 
   const status = subscription.status === "active" ? "active"
     : subscription.status === "past_due" ? "past_due"
@@ -385,6 +429,10 @@ async function handleSubscriptionUpdated(
     updatePayload.trial_ends_at = null;
   }
 
+  if (resolvedPlanId) {
+    updatePayload.plan_id = resolvedPlanId;
+  }
+
   const { error } = await supabase
     .from("subscriptions")
     .update(updatePayload)
@@ -393,7 +441,7 @@ async function handleSubscriptionUpdated(
   if (error) {
     logStep("Error updating subscription", { error: error.message });
   } else {
-    logStep("Subscription updated", { status, extraUsers, extraUnitPacks });
+    logStep("Subscription updated", { status, extraUsers, extraUnitPacks, plan_id: resolvedPlanId ?? '(unchanged)' });
   }
 }
 
