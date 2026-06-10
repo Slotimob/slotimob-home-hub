@@ -26,25 +26,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Admin client for database operations + JWT validation
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Validate JWT using getClaims
+    // Validate JWT using getUser
     const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      console.error('JWT validation error:', claimsError);
+    const { data: { user: authUser }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !authUser) {
+      safeWarn('JWT inválido ou expirado: %s', userError?.message);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const user = { id: claimsData.claims.sub as string, email: claimsData.claims.email as string };
-
-    // Admin client for database operations
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const user = { id: authUser.id, email: authUser.email as string };
+    if (!user.id || typeof user.id !== 'string' || user.id.trim() === '') {
+      return new Response(JSON.stringify({ error: 'Invalid user context' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const { action, ...params } = await req.json();
 

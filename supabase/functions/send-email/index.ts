@@ -154,14 +154,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
       global: { headers: { Authorization: authHeader } },
     });
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
+    if (userError || !user) {
+      safeWarn('JWT inválido ou expirado: %s', userError?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      return new Response(JSON.stringify({ error: "Invalid user context" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const body: SendEmailRequest = await req.json();
     const { template, to } = body;

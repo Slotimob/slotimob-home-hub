@@ -27,17 +27,20 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const supabaseAdmin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !user) {
+      safeWarn('JWT inválido ou expirado: %s', userError?.message);
       throw new Error("Unauthorized");
     }
 
-    const userEmail = claimsData.claims.email as string;
+    const userId = user.id;
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      throw new Error("Invalid user context");
+    }
+    const userEmail = user.email as string;
     logStep("User authenticated", { email: userEmail });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });

@@ -38,21 +38,25 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     // Validate JWT and extract user identity
-    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const adminAuth = createClient(supabaseUrl, supabaseServiceKey);
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await userSupabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      console.error("Invalid JWT:", claimsError);
+    const { data: { user }, error: userError } = await adminAuth.auth.getUser(token);
+    if (userError || !user) {
+      safeWarn('JWT inválido ou expirado: %s', userError?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = user.id;
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      return new Response(JSON.stringify({ error: "Invalid user context" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
     safeLog('Authenticated user: %s', userId);
 
     // Server-side admin role check using service role client

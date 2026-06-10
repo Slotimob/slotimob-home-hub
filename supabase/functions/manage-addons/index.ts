@@ -35,15 +35,20 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const supabaseAuthAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) throw new Error("Unauthorized");
+    const { data: { user }, error: userError } = await supabaseAuthAdmin.auth.getUser(token);
+    if (userError || !user) {
+      safeWarn('JWT inválido ou expirado: %s', userError?.message);
+      throw new Error("Unauthorized");
+    }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      throw new Error("Invalid user context");
+    }
+    const userEmail = user.email as string;
     const userEmail = claimsData.claims.email as string;
     logStep("User authenticated", { userId });
 
