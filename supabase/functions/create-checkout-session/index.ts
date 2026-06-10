@@ -37,15 +37,15 @@ Deno.serve(async (req) => {
     let userEmail: string | null = null;
 
     if (authHeader && authHeader !== `Bearer ${supabaseAnonKey}`) {
-      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } }
-      });
+      const supabaseAuthAdmin = createClient(supabaseUrl, supabaseServiceKey);
       const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-      if (!claimsError && claimsData?.claims) {
-        userId = claimsData.claims.sub as string;
-        userEmail = claimsData.claims.email as string;
+      const { data: { user }, error: userError } = await supabaseAuthAdmin.auth.getUser(token);
+      if (!userError && user) {
+        userId = user.id;
+        userEmail = user.email ?? null;
         logStep("User authenticated", { userId, email: userEmail });
+      } else {
+        safeWarn('JWT inválido em checkout (seguindo como guest): %s', userError?.message);
       }
     }
 
