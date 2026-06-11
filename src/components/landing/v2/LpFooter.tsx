@@ -38,14 +38,17 @@ export function LpFooter() {
   };
 
   return (
-    <footer className="py-16 md:py-24" style={{ borderTop: '1px solid var(--lp-line)' }}>
+    <footer className="lp-dark py-16 md:py-24">
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
         <div className="grid grid-cols-12 gap-10">
           <div className="col-span-12 md:col-span-5">
-            <Link to="/" className="lp-serif text-3xl">
-              slotimob<span style={{ color: 'var(--lp-accent)' }}>.</span>
+            <Link to="/" className="inline-flex items-center gap-2.5">
+              <SlotiSymbol size={32} />
+              <span className="lp-display text-[28px]" style={{ color: 'var(--lp-bg)' }}>
+                slotimob<span style={{ color: 'var(--lp-accent)' }}>.</span>
+              </span>
             </Link>
-            <p className="mt-4 text-[14px] max-w-[36ch]" style={{ color: 'var(--lp-ink-soft)' }}>
+            <p className="mt-4 text-[14px] max-w-[36ch]" style={{ color: 'rgba(255,255,255,0.7)' }}>
               A gestão imobiliária inteira em um só sistema. Para corretores e imobiliárias.
             </p>
           </div>
@@ -57,7 +60,7 @@ export function LpFooter() {
                 {c.links.map((lk) => (
                   <li key={lk.l}>
                     {lk.ext ? (
-                      <Link to={lk.h} className="lp-link text-[13px]" style={{ color: 'var(--lp-ink-soft)' }}>
+                      <Link to={lk.h} className="lp-link text-[13px]" style={{ color: 'rgba(255,255,255,0.75)' }}>
                         {lk.l}
                       </Link>
                     ) : (
@@ -65,7 +68,7 @@ export function LpFooter() {
                         href={lk.h}
                         onClick={(e) => onAnchor(e, lk.h)}
                         className="lp-link text-[13px]"
-                        style={{ color: 'var(--lp-ink-soft)' }}
+                        style={{ color: 'rgba(255,255,255,0.75)' }}
                       >
                         {lk.l}
                       </a>
@@ -79,7 +82,7 @@ export function LpFooter() {
 
         <div
           className="mt-16 pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-[12px]"
-          style={{ borderTop: '1px solid var(--lp-line)', color: 'var(--lp-mute)' }}
+          style={{ borderTop: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.55)' }}
         >
           <p>© {year} slotimob — todos os direitos reservados.</p>
           <p>feito no brasil · 🇧🇷</p>
