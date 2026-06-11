@@ -84,8 +84,6 @@ import { TableErrorBoundary } from "@/components/shared/TableErrorBoundary";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LeaseManagementSheet } from "./LeaseManagementSheet";
-import { AssetHealth } from "@/hooks/useAssetHealth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -243,9 +241,6 @@ export function ContractsTab() {
   const [unitSelectionOpen, setUnitSelectionOpen] = useState(false);
   const [unitSearchTerm, setUnitSearchTerm] = useState("");
   
-  // Lease management sheet state
-  const [leaseSheetOpen, setLeaseSheetOpen] = useState(false);
-  const [selectedLeaseForSheet, setSelectedLeaseForSheet] = useState<LeaseWithDetails | null>(null);
 
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -456,10 +451,9 @@ export function ContractsTab() {
       });
   };
 
-  // Handle create new contract - opens unit selection dialog
+  // Handle create new contract - navigate to dedicated page
   const handleCreateContract = () => {
-    setUnitSearchTerm("");
-    setUnitSelectionOpen(true);
+    navigate("/gestao/contratos/novo");
   };
   
   // Handle unit selection for new contract
@@ -614,31 +608,13 @@ export function ContractsTab() {
     }
   };
 
-  // Handle row click to open LeaseManagementSheet
+  // Handle row click → navigate to contract detail page
   const handleRowClick = (lease: LeaseWithDetails, e: React.MouseEvent) => {
-    // Don't open if clicking on buttons or dropdown
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[data-radix-collection-item]')) {
       return;
     }
-    
-    setSelectedLeaseForSheet(lease);
-    setLeaseSheetOpen(true);
-  };
-
-  // Convert lease to AssetHealth format for the sheet
-  const getAssetFromLease = (lease: LeaseWithDetails | null): AssetHealth | null => {
-    if (!lease) return null;
-    return {
-      unitId: lease.unit_id,
-      unitNumber: lease.unit?.unit_number || "—",
-      propertyName: null,
-      propertyType: null,
-      ownerName: null,
-      coverImage: null,
-      overallStatus: "healthy",
-      obligations: [],
-    };
+    navigate(`/gestao/contratos/${lease.id}`);
   };
 
   // Handle view financial details
@@ -847,11 +823,8 @@ export function ContractsTab() {
                   onUploadContractClick={handleUploadContract}
                   onToggleSignatureClick={handleToggleSignature}
                   onEditAdjustmentDateClick={handleEditAdjustmentDate}
-                  // UNIFIED UX: Click anywhere on card opens management sheet (same as desktop row click)
-                  onCardClick={(lease) => {
-                    setSelectedLeaseForSheet(lease);
-                    setLeaseSheetOpen(true);
-                  }}
+                  // UNIFIED UX: Click anywhere on card navigates to contract detail page
+                  onCardClick={(lease) => navigate(`/gestao/contratos/${lease.id}`)}
                 />
               ))}
             </div>
@@ -983,72 +956,122 @@ export function ContractsTab() {
                             )}
                           </TableCell>
                           <TableCell className="text-center">
-                            <div className="flex flex-col items-center gap-1">
-                            <Badge 
-                              variant={statusConfig.variant} 
-                              className={cn(
-                                "text-[10px] whitespace-nowrap",
-                                lease.status === "terminated" && "bg-muted text-muted-foreground"
-                              )}
-                            >
-                              {statusConfig.label}
-                            </Badge>
-                            {/* Signature Status Badge */}
-                            {lease.status !== "terminated" && (
-                              <Badge 
-                                variant="outline" 
-                                className={`text-[10px] whitespace-nowrap ${
-                                  lease.signature_status === "signed" 
-                                    ? "border-green-500 text-green-600 bg-green-50 dark:bg-green-950/30" 
-                                    : "border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30"
-                                }`}
-                              >
-                                {lease.signature_status === "signed" ? (
-                                  <>
-                                    <Check className="h-2.5 w-2.5 mr-0.5" />
-                                    Assinado
-                                  </>
-                                ) : (
-                                  <>
+                            {(() => {
+                              const awaitingSignature =
+                                lease.status === "active" && lease.signature_status !== "signed";
+                              if (awaitingSignature) {
+                                return (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] whitespace-nowrap border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30"
+                                  >
                                     <Clock className="h-2.5 w-2.5 mr-0.5" />
-                                    Pendente
-                                  </>
-                                )}
-                              </Badge>
-                            )}
-                            </div>
+                                    Aguardando Assinatura
+                                  </Badge>
+                                );
+                              }
+                              return (
+                                <Badge
+                                  variant={statusConfig.variant}
+                                  className={cn(
+                                    "text-[10px] whitespace-nowrap",
+                                    lease.status === "terminated" && "bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {statusConfig.label}
+                                </Badge>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
-                              {needsAction ? (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  className="h-8 gap-1.5"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenAdjustment(lease, true);
-                                  }}
-                                >
-                                  <TrendingUp className="h-3.5 w-3.5" />
-                                  <span className="hidden lg:inline">Reajustar</span>
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Open sheet directly - don't call handleRowClick which filters out button clicks
-                                    setSelectedLeaseForSheet(lease);
-                                    setLeaseSheetOpen(true);
-                                  }}
-                                  title="Gerenciar Contrato"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              )}
+                            <div className="flex items-center justify-center">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="Ações"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-52">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/gestao/contratos/${lease.id}`);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Ver Detalhes
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {needsAction && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenAdjustment(lease, true);
+                                      }}
+                                    >
+                                      <TrendingUp className="h-4 w-4 mr-2 text-destructive" />
+                                      Reajustar
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickTransaction(lease);
+                                    }}
+                                  >
+                                    <Receipt className="h-4 w-4 mr-2" />
+                                    Registrar Pagamento
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleGenerateContract(lease.unit_id);
+                                    }}
+                                  >
+                                    <FileSignature className="h-4 w-4 mr-2" />
+                                    Gerar Contrato
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUploadContract(lease);
+                                    }}
+                                  >
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Upload Assinado
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {(isOwner || hasPermission('management_contracts', 'edit')) && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleTerminateContract(lease);
+                                      }}
+                                    >
+                                      <XCircle className="h-4 w-4 mr-2" />
+                                      Encerrar
+                                    </DropdownMenuItem>
+                                  )}
+                                  {(isOwner || hasPermission('management_contracts', 'delete')) && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteLease(lease);
+                                      }}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1292,96 +1315,6 @@ export function ContractsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Lease Management Sheet */}
-      <LeaseManagementSheet
-        open={leaseSheetOpen}
-        onOpenChange={(open) => {
-          setLeaseSheetOpen(open);
-          if (!open) setSelectedLeaseForSheet(null);
-        }}
-        asset={getAssetFromLease(selectedLeaseForSheet)}
-        leaseData={selectedLeaseForSheet ? {
-          id: selectedLeaseForSheet.id,
-          broker_id: effectiveBrokerId || user?.id || "",
-          unit_id: selectedLeaseForSheet.unit_id,
-          tenant_contact_id: selectedLeaseForSheet.tenant_contact_id,
-          owner_contact_id: selectedLeaseForSheet.owner_contact_id || null,
-          rent_amount: selectedLeaseForSheet.rent_amount,
-          admin_fee_percentage: selectedLeaseForSheet.admin_fee_percentage || 10,
-          due_day: selectedLeaseForSheet.due_day || 10,
-          deposit_amount: selectedLeaseForSheet.deposit_amount || 0,
-          start_date: selectedLeaseForSheet.start_date,
-          end_date: selectedLeaseForSheet.end_date,
-          status: selectedLeaseForSheet.status as any,
-          cib: selectedLeaseForSheet.cib || null,
-          is_dimob_deductible: selectedLeaseForSheet.is_dimob_deductible ?? true,
-          billing_automation: selectedLeaseForSheet.billing_automation || {
-            reminder_5_days: true,
-            reminder_due_day: true,
-            reminder_3_days_late: true,
-            send_method: "whatsapp",
-          },
-          billing_logs: [],
-          notes: selectedLeaseForSheet.notes || null,
-          metadata: selectedLeaseForSheet.metadata || {},
-          created_at: "",
-          updated_at: "",
-          // CRITICAL: Pass adjustment fields for "Próximo Reajuste" display
-          next_adjustment_date: selectedLeaseForSheet.next_adjustment_date,
-          adjustment_index: selectedLeaseForSheet.adjustment_index,
-          signature_status: selectedLeaseForSheet.signature_status as any,
-          signed_contract_path: selectedLeaseForSheet.signed_contract_path,
-          termination_date: selectedLeaseForSheet.termination_date,
-          termination_reason: selectedLeaseForSheet.termination_reason,
-          guarantee_type: selectedLeaseForSheet.guarantee_type as any,
-          guarantor_data: selectedLeaseForSheet.guarantor_data || null,
-          payment_info: selectedLeaseForSheet.payment_info || null,
-          tenant: selectedLeaseForSheet.tenant_contact ? {
-            id: selectedLeaseForSheet.tenant_contact.id,
-            name: selectedLeaseForSheet.tenant_contact.name,
-            email: selectedLeaseForSheet.tenant_contact.email || null,
-            phone: selectedLeaseForSheet.tenant_contact.phone || null,
-            whatsapp: selectedLeaseForSheet.tenant_contact.whatsapp || null,
-          } : undefined,
-          unit: selectedLeaseForSheet.unit ? {
-            id: selectedLeaseForSheet.unit.id,
-            unit_number: selectedLeaseForSheet.unit.unit_number,
-            address: selectedLeaseForSheet.unit.address,
-          } : undefined,
-        } : null}
-        onCreateLease={() => {
-          if (selectedLeaseForSheet?.unit_id) {
-            setCreateUnitId(selectedLeaseForSheet.unit_id);
-            setCreateUnitName(selectedLeaseForSheet.unit?.unit_number || "");
-            setCreateWizardOpen(true);
-            setLeaseSheetOpen(false);
-          }
-        }}
-        onEditUnit={() => {
-          if (selectedLeaseForSheet?.unit_id) {
-            navigate(`/units?edit=${selectedLeaseForSheet.unit_id}`);
-            setLeaseSheetOpen(false);
-          }
-        }}
-        onEditLease={() => {
-          if (selectedLeaseForSheet) {
-            handleEditContract(selectedLeaseForSheet);
-            setLeaseSheetOpen(false);
-          }
-        }}
-        onDeleteLease={(isOwner || hasPermission('management_contracts', 'delete')) ? () => {
-          if (selectedLeaseForSheet) {
-            handleDeleteLease(selectedLeaseForSheet);
-            setLeaseSheetOpen(false);
-          }
-        } : undefined}
-        onTerminateLease={(isOwner || hasPermission('management_contracts', 'edit')) ? () => {
-          if (selectedLeaseForSheet) {
-            setTerminatingLease(selectedLeaseForSheet);
-            setTerminateDialogOpen(true);
-          }
-        } : undefined}
-      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
