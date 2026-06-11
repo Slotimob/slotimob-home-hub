@@ -213,7 +213,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        subject = body.subject;
+        // SECURITY: the 'custom' template lets the caller fully control subject/html sent
+        // from the platform's official address. Restrict the recipient to the authenticated
+        // caller's own email address to prevent phishing/email-reputation abuse.
+        const callerEmail = (user.email || "").toLowerCase();
+        if (!callerEmail || callerEmail !== String(to).toLowerCase()) {
+          return new Response(
+            JSON.stringify({ error: "Custom emails can only be sent to your own account email" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        subject = String(body.subject).slice(0, 200);
         html = body.html;
         break;
       }
