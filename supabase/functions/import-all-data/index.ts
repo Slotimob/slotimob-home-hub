@@ -175,11 +175,19 @@ Deno.serve(async (req) => {
     await upsertTable('lease_adjustments', tables.lease_adjustments);
     await upsertTable('notification_logs', tables.notification_logs);
     await upsertTable('generated_documents', tables.generated_documents);
-    await upsertTable('audit_logs', tables.audit_logs);
 
-    // User-owned tables (use user_id instead of broker_id)
-    await upsertUserTable('subscriptions', tables.subscriptions);
-    await upsertUserTable('early_adopter_claims', tables.early_adopter_claims);
+    // SECURITY: audit_logs are append-only and created by triggers/service code only.
+    // Subscriptions and early_adopter_claims contain billing state managed exclusively
+    // by Stripe webhooks. None of these tables may be written via user-driven import.
+    if (tables.audit_logs?.length) {
+      results['audit_logs'] = { inserted: 0, errors: ['skipped: audit_logs are not importable'] };
+    }
+    if (tables.subscriptions?.length) {
+      results['subscriptions'] = { inserted: 0, errors: ['skipped: subscriptions are managed by Stripe and cannot be imported'] };
+    }
+    if (tables.early_adopter_claims?.length) {
+      results['early_adopter_claims'] = { inserted: 0, errors: ['skipped: early_adopter_claims are not importable'] };
+    }
 
     // Calculate statistics
     const statistics = {
