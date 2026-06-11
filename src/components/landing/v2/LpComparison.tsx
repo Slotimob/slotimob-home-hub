@@ -49,9 +49,9 @@ export function LpComparison() {
                 <tr style={{ borderTop: '1px solid var(--lp-line)', borderBottom: '1px solid var(--lp-line)' }}>
                   <th className="text-left lp-eyebrow py-5 w-[42%]">recurso</th>
                   <th
-                    className="lp-serif text-lg py-5 px-4 w-[19.33%]"
+                    className="lp-display text-lg py-5 px-4 w-[19.33%]"
                     style={{
-                      color: 'var(--lp-bg)',
+                      color: 'var(--lp-ink)',
                       background: 'var(--lp-accent)',
                       borderLeft: '1px solid var(--lp-accent)',
                       borderRight: '1px solid var(--lp-accent)',
