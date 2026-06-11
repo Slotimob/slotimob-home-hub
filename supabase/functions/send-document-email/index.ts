@@ -77,15 +77,66 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    safeLog('Sending document email to: %s, subject: %s', to, subject);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      return new Response(JSON.stringify({ error: 'Invalid recipient email' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    // Convert base64 to buffer
+    // Escape HTML to prevent injection in branded emails
+    const escapeHtml = (s: string) =>
+      String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const plainMessage = String(message ?? '').replace(/<[^>]*>/g, '').slice(0, 5000);
+    const safeMessage = escapeHtml(plainMessage).replace(/\n/g, '<br>');
+    const safeDocumentName = escapeHtml(String(documentName ?? 'documento').slice(0, 200));
+    const safeSubject = String(subject).slice(0, 200);
+
+    // Verify the recipient belongs to the caller's contacts/leads or is the caller's own email
+    let recipientAllowed = false;
+    if (profile?.email && profile.email.toLowerCase() === to.toLowerCase()) {
+      recipientAllowed = true;
+    }
+    if (!recipientAllowed) {
+      const { data: contactMatch } = await supabaseClient
+        .from('contacts')
+        .select('id')
+        .eq('email', to)
+        .limit(1)
+        .maybeSingle();
+      if (contactMatch) recipientAllowed = true;
+    }
+    if (!recipientAllowed) {
+      const { data: leadMatch } = await supabaseClient
+        .from('leads')
+        .select('id')
+        .eq('email', to)
+        .limit(1)
+        .maybeSingle();
+      if (leadMatch) recipientAllowed = true;
+    }
+    if (!recipientAllowed) {
+      return new Response(
+        JSON.stringify({ error: 'Recipient must be one of your contacts/leads or your own email' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    safeLog('Sending document email, subject length=%d', safeSubject.length);
+
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
 
     const emailResponse = await resend.emails.send({
       from: `${senderName} via SlotiMob <contato@slotimob.com.br>`,
       to: [to],
-      subject: subject,
+      subject: safeSubject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 20px; text-align: center;">
@@ -93,11 +144,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
           </div>
           <div style="padding: 30px; background: #f9fafb;">
             <p style="white-space: pre-line; color: #374151; line-height: 1.6;">
-              ${message.replace(/\n/g, '<br>')}
+              ${safeMessage}
             </p>
             <div style="margin-top: 30px; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
               <p style="margin: 0; color: #6b7280; font-size: 14px;">
-                📎 Documento anexado: <strong>${documentName}.pdf</strong>
+                📎 Documento anexado: <strong>${safeDocumentName}.pdf</strong>
               </p>
             </div>
           </div>
@@ -108,7 +159,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       `,
       attachments: [
         {
-          filename: `${documentName}.pdf`,
+          filename: `${safeDocumentName}.pdf`,
           content: pdfBuffer,
         },
       ],

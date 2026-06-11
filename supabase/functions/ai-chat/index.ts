@@ -193,7 +193,8 @@ Deno.serve(async (req) => {
           const { data: propData } = await serviceClient
             .from("properties")
             .select("id, name, city, state, address, total_units, status, amenities, description")
-            .in("id", propertyIds);
+            .in("id", propertyIds)
+            .eq("broker_id", billingUserId);
 
           if (propData) {
             unitsData.push(...propData.map((p: any) => ({
@@ -217,9 +218,10 @@ Deno.serve(async (req) => {
             .select(`
               id, unit_number, price, bedrooms, bathrooms, area, city, neighborhood,
               status, is_standalone, address, market_value, rent_price, description,
-              intent_type, property:properties(name)
+              intent_type, property:properties(name), broker_id
             `)
-            .in("id", unitIds);
+            .in("id", unitIds)
+            .eq("broker_id", billingUserId);
 
           if (unitData) {
             unitsData.push(...unitData.map((u: any) => ({
