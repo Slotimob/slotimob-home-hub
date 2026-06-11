@@ -1,54 +1,59 @@
 /* ============================================================
-   Editorial Landing Page v2 — scoped theme
-   Tokens are scoped under [data-lp="v2"] so the rest of the
-   app theme is untouched.
+   SLOTI brand — Landing Page v2 — scoped theme
+   Palette: #0B0073 (azul-escuro), #6024B4 (roxo),
+            #2FC9AF (turquesa, destaque pontual).
+   Type: Sofia Sans (Google Fonts).
    ============================================================ */
 
 [data-lp="v2"] {
-  --lp-bg: #FAF8F4;
-  --lp-bg-alt: #F2EFE8;
-  --lp-ink: #161513;
-  --lp-ink-soft: #4A4742;
-  --lp-mute: #8A857D;
-  --lp-line: #E2DED5;
-  --lp-accent: #1E4D3B;
-  --lp-accent-soft: #DCE8E1;
+  --lp-bg: #FFFFFF;
+  --lp-bg-alt: #F5F4FB;
+  --lp-ink: #0B0073;            /* azul-escuro: cor base */
+  --lp-ink-soft: #2E2B7A;
+  --lp-mute: #6F6CA0;
+  --lp-line: #E6E5F2;
+  --lp-accent: #2FC9AF;         /* turquesa: destaque pontual */
+  --lp-accent-soft: #D6F4ED;
+  --lp-purple: #6024B4;         /* roxo: secundária */
+  --lp-gradient-dark: linear-gradient(135deg, #0B0073 0%, #1A0D8A 60%, #2A148C 100%);
 
   background: var(--lp-bg);
   color: var(--lp-ink);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-feature-settings: 'ss01', 'cv11';
+  font-family: 'Sofia Sans', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'ss01';
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+/* "lp-serif" historically tagged italic emphasis spans across the LP.
+   In the rebrand all type uses Sofia Sans; keep the class so existing
+   markup still renders correctly. */
 [data-lp="v2"] .lp-serif {
-  font-family: 'Fraunces', 'Instrument Serif', Georgia, serif;
-  font-feature-settings: 'ss01';
-  letter-spacing: -0.02em;
-  font-weight: 400;
+  font-family: 'Sofia Sans', sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 [data-lp="v2"] .lp-display {
-  font-family: 'Fraunces', 'Instrument Serif', Georgia, serif;
-  font-weight: 300;
-  letter-spacing: -0.035em;
-  line-height: 0.95;
+  font-family: 'Sofia Sans', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
   text-transform: lowercase;
 }
 
 [data-lp="v2"] .lp-eyebrow {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Sofia Sans Condensed', 'Sofia Sans', sans-serif;
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--lp-mute);
 }
 
 [data-lp="v2"] .lp-num {
-  font-family: 'Fraunces', serif;
-  font-weight: 300;
+  font-family: 'Sofia Sans', sans-serif;
+  font-weight: 700;
   font-feature-settings: 'tnum';
 }
 
@@ -62,13 +67,13 @@
   position: relative;
 }
 
+/* Dark surfaces use the brand azul-escuro */
 [data-lp="v2"] .lp-dark {
-  background: var(--lp-ink);
+  background: var(--lp-gradient-dark);
   color: var(--lp-bg);
 }
-
 [data-lp="v2"] .lp-dark .lp-eyebrow {
-  color: rgba(250, 248, 244, 0.55);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 [data-lp="v2"] .lp-link {
@@ -94,20 +99,25 @@
   display: inline-flex;
   align-items: center;
   gap: .5rem;
-  padding: .9rem 1.4rem;
-  font-size: .9rem;
-  font-weight: 500;
+  padding: .95rem 1.5rem;
+  font-size: .92rem;
+  font-weight: 700;
   border-radius: 999px;
   transition: all .25s ease;
   border: 1px solid transparent;
   white-space: nowrap;
+  font-family: 'Sofia Sans', sans-serif;
+  letter-spacing: -0.005em;
 }
+/* CTA principal: turquesa com texto azul-escuro (regra do manual: nunca
+   branco sobre turquesa). */
 [data-lp="v2"] .lp-btn-primary {
   background: var(--lp-accent);
-  color: var(--lp-bg);
+  color: var(--lp-ink);
 }
 [data-lp="v2"] .lp-btn-primary:hover {
-  background: var(--lp-ink);
+  background: #27B49C;
+  transform: translateY(-1px);
 }
 [data-lp="v2"] .lp-btn-ghost {
   background: transparent;
@@ -119,7 +129,7 @@
 }
 [data-lp="v2"] .lp-dark .lp-btn-ghost {
   color: var(--lp-bg);
-  border-color: rgba(250,248,244,0.25);
+  border-color: rgba(255,255,255,0.3);
 }
 [data-lp="v2"] .lp-dark .lp-btn-ghost:hover {
   border-color: var(--lp-bg);
@@ -128,7 +138,47 @@
 [data-lp="v2"] .lp-card {
   border: 1px solid var(--lp-line);
   background: var(--lp-bg);
-  border-radius: 4px;
+  border-radius: 6px;
+}
+
+/* Wordmark: dot of the "i" rendered in turquesa */
+[data-lp="v2"] .lp-wordmark {
+  font-family: 'Sofia Sans', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: lowercase;
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+}
+[data-lp="v2"] .lp-wordmark .lp-wm-i {
+  position: relative;
+  color: inherit;
+}
+[data-lp="v2"] .lp-wordmark .lp-wm-i::after {
+  /* repaints the dot of the i in turquesa */
+  content: '';
+  position: absolute;
+  top: -0.06em;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.22em;
+  height: 0.22em;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 0.02em currentColor;
+}
+[data-lp="v2"] .lp-wordmark .lp-wm-i > span {
+  /* hide the original dot of the i so only the colored one shows */
+  display: inline-block;
+  color: transparent;
+  background: currentColor;
+  -webkit-background-clip: text;
+  background-clip: text;
+  position: relative;
+}
+[data-lp="v2"] .lp-wordmark .lp-wm-i > span::first-letter {
+  color: currentColor;
 }
 
 [data-lp="v2"] :focus-visible {
@@ -152,4 +202,14 @@
 }
 [data-lp="v2"] .lp-scroll-x::-webkit-scrollbar {
   display: none;
+}
+
+/* Decorative blob (símbolo) — used as subtle background accents */
+[data-lp="v2"] .lp-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
 }
