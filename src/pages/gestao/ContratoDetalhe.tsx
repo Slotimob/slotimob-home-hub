@@ -1,0 +1,925 @@
+import { useState, useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { format, addDays, addMonths, isBefore, isToday } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  Home,
+  Building2,
+  ArrowLeft,
+  FileSignature,
+  Receipt,
+  Edit3,
+  MoreVertical,
+  XCircle,
+  Trash2,
+  Loader2,
+  User,
+  Mail,
+  MessageSquare,
+  ExternalLink,
+  Calendar,
+  Plus,
+  Phone,
+  Users,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  FileText,
+  Download,
+  Pencil,
+  Route as RouteIcon,
+  Scale,
+} from "lucide-react";
+
+import { AppLayout } from "@/components/AppLayout";
+import { SEOHead } from "@/components/SEOHead";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+import { LeaseJourneyTab } from "@/components/assets/LeaseJourneyTab";
+import { DimobStatusCard } from "@/components/assets/DimobStatusCard";
+import { TenantStatementDialog } from "@/components/assets/TenantStatementDialog";
+import { OwnerReportDialog } from "@/components/assets/OwnerReportDialog";
+import { ConfigureObligationsDialog } from "@/components/assets/ConfigureObligationsDialog";
+import { ContractGeneratorDialog } from "@/components/assets/ContractGeneratorDialog";
+import { TerminateContractDialog } from "@/components/assets/TerminateContractDialog";
+import { EditStartDateDialog } from "@/components/assets/EditStartDateDialog";
+
+import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useUpdateLease, generateBillingMessage, type BillingLog } from "@/hooks/useLeases";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { cn, formatPhoneForWhatsApp } from "@/lib/utils";
+import { toast as sonnerToast } from "sonner";
+
+const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  active: { label: "Ativo", variant: "default" },
+  pending_signature: { label: "Aguardando Assinatura", variant: "secondary" },
+  expired: { label: "Expirado", variant: "destructive" },
+  cancelled: { label: "Cancelado", variant: "outline" },
+  terminated: { label: "Encerrado", variant: "outline" },
+  pending: { label: "Pendente", variant: "secondary" },
+};
+
+export default function ContratoDetalhe() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateLease = useUpdateLease();
+
+  const [activeTab, setActiveTab] = useState("journey");
+  const [showTenantStatement, setShowTenantStatement] = useState(false);
+  const [showOwnerReport, setShowOwnerReport] = useState(false);
+  const [showObligationsDialog, setShowObligationsDialog] = useState(false);
+  const [showContractDialog, setShowContractDialog] = useState(false);
+  const [showEditStartDateDialog, setShowEditStartDateDialog] = useState(false);
+  const [terminateDialogOpen, setTerminateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [showBillingLogForm, setShowBillingLogForm] = useState(false);
+  const [billingLogForm, setBillingLogForm] = useState({
+    sent_by: "",
+    method: "whatsapp" as "whatsapp" | "email" | "phone" | "in_person" | "other",
+    notes: "",
+  });
+
+  const [isEditingCib, setIsEditingCib] = useState(false);
+  const [editedCib, setEditedCib] = useState("");
+
+  const { data: lease, isLoading, refetch } = useQuery({
+    queryKey: ["lease-detail", id, effectiveBrokerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leases")
+        .select(
+          `id, unit_id, broker_id, rent_amount, admin_fee_percentage, due_day,
+           deposit_amount, adjustment_index, next_adjustment_date, start_date,
+           end_date, contract_status, status, tenant_contact_id, owner_contact_id,
+           cib, is_dimob_deductible, notes, billing_automation, billing_logs,
+           metadata, signature_status, signed_contract_path, termination_date,
+           termination_reason, guarantee_type, guarantor_data, payment_info,
+           tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
+           unit:units!leases_unit_id_fkey(id, unit_number, address)`
+        )
+        .eq("id", id!)
+        .eq("broker_id", effectiveBrokerId || user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!user && !!id,
+  });
+
+  const nextDueDate = useMemo(() => {
+    if (!lease) return null;
+    const today = new Date();
+    const current = new Date(today.getFullYear(), today.getMonth(), lease.due_day);
+    return isBefore(current, today) ? addMonths(current, 1) : current;
+  }, [lease]);
+
+  const billingStatus = useMemo(() => {
+    if (!lease || !nextDueDate) return { reminder5: false, dueDay: false, overdue: false };
+    const today = new Date();
+    const reminder5Date = addDays(nextDueDate, -5);
+    return {
+      reminder5: isBefore(reminder5Date, today) || isToday(reminder5Date),
+      dueDay: isToday(nextDueDate),
+      overdue: isBefore(nextDueDate, today),
+    };
+  }, [lease, nextDueDate]);
+
+  const capitalizedMonth = useMemo(() => {
+    const m = format(new Date(), "MMMM/yyyy", { locale: ptBR });
+    return m.charAt(0).toUpperCase() + m.slice(1);
+  }, []);
+
+  const handleAutomationToggle = async (key: string, value: boolean) => {
+    if (!lease) return;
+    try {
+      await updateLease.mutateAsync({
+        id: lease.id,
+        data: {
+          billing_automation: { ...(lease.billing_automation || {}), [key]: value },
+        } as any,
+      });
+      toast({ title: "Configuração atualizada!" });
+    } catch {
+      toast({ title: "Erro ao atualizar", variant: "destructive" });
+    }
+  };
+
+  const handleSaveCib = async () => {
+    if (!lease) return;
+    try {
+      const { error } = await supabase.from("units").update({ cib: editedCib || null }).eq("id", lease.unit_id);
+      if (error) throw error;
+      toast({ title: "CIB atualizado com sucesso!" });
+      setIsEditingCib(false);
+      queryClient.invalidateQueries({ queryKey: ["units"] });
+    } catch {
+      toast({ title: "Erro ao salvar", variant: "destructive" });
+    }
+  };
+
+  const confirmDeleteLease = async () => {
+    if (!lease || !user) return;
+    setIsDeleting(true);
+    try {
+      await supabase
+        .from("financial_transactions")
+        .delete()
+        .eq("broker_id", effectiveBrokerId || user.id)
+        .eq("reference", `lease:${lease.id}`);
+
+      await supabase
+        .from("units")
+        .update({ is_occupied: false, tenant_contact_id: null })
+        .eq("id", lease.unit_id);
+
+      const { error } = await supabase
+        .from("leases")
+        .delete()
+        .eq("id", lease.id)
+        .eq("broker_id", effectiveBrokerId || user.id);
+      if (error) throw error;
+
+      sonnerToast.success("Contrato excluído com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["leases"] });
+      queryClient.invalidateQueries({ queryKey: ["units"] });
+      queryClient.invalidateQueries({ queryKey: ["asset-health"] });
+      navigate("/gestao/contratos");
+    } catch {
+      sonnerToast.error("Erro ao excluir contrato");
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  // Not authenticated guard
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <AppLayout title="Detalhe do Contrato">
+        <SEOHead title="Detalhe do Contrato" description="Detalhes do contrato" path={`/gestao/contratos/${id}`} noIndex />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!lease) {
+    return (
+      <AppLayout title="Detalhe do Contrato">
+        <SEOHead title="Contrato não encontrado" description="Contrato não encontrado" path={`/gestao/contratos/${id}`} noIndex />
+        <Card className="max-w-md mx-auto mt-12">
+          <CardContent className="py-10 text-center space-y-4">
+            <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto" />
+            <p className="text-sm text-muted-foreground">Contrato não encontrado.</p>
+            <Button variant="outline" onClick={() => navigate("/gestao/contratos")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para contratos
+            </Button>
+          </CardContent>
+        </Card>
+      </AppLayout>
+    );
+  }
+
+  const statusConfig = STATUS_LABELS[lease.status] || STATUS_LABELS.active;
+  const tenant = lease.tenant_contact;
+  const unit = lease.unit;
+  const isSigned = lease.signature_status === "signed";
+
+  return (
+    <AppLayout title="Detalhe do Contrato">
+      <SEOHead title="Detalhe do Contrato" description={`Contrato ${unit?.unit_number ?? ""}`} path={`/gestao/contratos/${id}`} noIndex />
+
+      {/* Header */}
+      <Card className="mb-4">
+        <CardContent className="p-4 space-y-3">
+          <Button variant="ghost" size="sm" className="-ml-2 h-8 text-muted-foreground" onClick={() => navigate("/gestao/contratos")}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Contratos
+          </Button>
+
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-md bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                {unit?.address ? <Building2 className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold truncate">{unit?.unit_number ?? "Unidade"}</h2>
+                {unit?.address && <p className="text-sm text-muted-foreground truncate">{unit.address}</p>}
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs",
+                      isSigned
+                        ? "border-green-500/30 text-green-700 bg-green-500/10"
+                        : "border-amber-500/30 text-amber-700 bg-amber-500/10"
+                    )}
+                  >
+                    {isSigned ? "Assinado" : "Pendente assinatura"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => setShowContractDialog(true)}>
+                <FileSignature className="h-4 w-4 mr-1.5" />
+                Gerar PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/finance/transactions?unitId=${lease.unit_id}&action=new`)}
+              >
+                <Receipt className="h-4 w-4 mr-1.5" />
+                Registrar Pagamento
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}>
+                <Edit3 className="h-4 w-4 mr-1.5" />
+                Editar
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    disabled={lease.status === "terminated"}
+                    onClick={() => setTerminateDialogOpen(true)}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Encerrar Locação
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir Contrato
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="journey" className="gap-1 text-xs px-1">
+            <RouteIcon className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Jornada</span>
+          </TabsTrigger>
+          <TabsTrigger value="overview" className="text-xs px-1">Visão Geral</TabsTrigger>
+          <TabsTrigger value="fiscal" className="gap-1 text-xs px-1">
+            <Scale className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Fiscal</span>
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="text-xs px-1">Cobrança</TabsTrigger>
+          <TabsTrigger value="reports" className="text-xs px-1">Relatórios</TabsTrigger>
+        </TabsList>
+
+        {/* Journey */}
+        <TabsContent value="journey" className="mt-4">
+          <LeaseJourneyTab
+            lease={{
+              id: lease.id,
+              unit_id: lease.unit_id,
+              status: lease.status,
+              signature_status: lease.signature_status,
+              signed_contract_path: lease.signed_contract_path,
+              metadata: lease.metadata as any,
+              termination_date: lease.termination_date,
+            }}
+            unitId={lease.unit_id}
+            fullLeaseData={{
+              id: lease.id,
+              start_date: lease.start_date,
+              rent_amount: lease.rent_amount,
+              next_adjustment_date: lease.next_adjustment_date,
+              adjustment_index: lease.adjustment_index,
+              unit: unit,
+              tenant: tenant,
+            }}
+            onEditContract={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}
+            onConfigureObligations={() => setShowObligationsDialog(true)}
+            onDownloadPdf={() => setShowContractDialog(true)}
+            onTerminate={() => setTerminateDialogOpen(true)}
+          />
+        </TabsContent>
+
+        {/* Overview */}
+        <TabsContent value="overview" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">Status de Ocupação</CardTitle>
+                <Badge
+                  variant="default"
+                  className="bg-green-500/15 text-green-600 border-green-500/30"
+                >
+                  Ocupado
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="py-2 px-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{tenant?.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{tenant?.email}</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center justify-between col-span-2 pb-2">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Início do Contrato</p>
+                    <p className="font-semibold text-sm">{format(new Date(lease.start_date), "dd/MM/yyyy")}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowEditStartDateDialog(true)}>
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Aluguel</p>
+                  <p className="font-semibold">
+                    {Number(lease.rent_amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Vencimento</p>
+                  <p className="font-semibold">Dia {lease.due_day}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Taxa Adm.</p>
+                  <p className="font-semibold">{lease.admin_fee_percentage}%</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Próximo Venc.</p>
+                  <p className="font-semibold">{nextDueDate ? format(nextDueDate, "dd/MM/yyyy") : "-"}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* CIB */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="py-3 px-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium">CIB - Cadastro Imobiliário</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <AlertCircle className="h-3.5 w-3.5 text-primary" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p><strong>IMPORTANTE:</strong> O CIB é o identificador único do imóvel na Receita Federal. Obrigatório para a declaração DIMOB.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    if (isEditingCib) handleSaveCib();
+                    else {
+                      setEditedCib(lease.cib || "");
+                      setIsEditingCib(true);
+                    }
+                  }}
+                >
+                  {isEditingCib ? "Salvar" : "Editar"}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              {isEditingCib ? (
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Número CIB</Label>
+                  <Input
+                    value={editedCib}
+                    onChange={(e) => setEditedCib(e.target.value)}
+                    placeholder="Ex: 12345678901234567890"
+                    className="h-8 font-mono"
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">CIB: {lease.cib || "-"}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Payment health (estimated by overdue) */}
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm font-medium">Saúde do Pagamento</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              <div className="flex items-center gap-2">
+                {billingStatus.overdue ? (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                    <span className="text-sm text-red-600 font-medium">Em atraso</span>
+                  </>
+                ) : billingStatus.dueDay ? (
+                  <>
+                    <Clock className="h-5 w-5 text-yellow-500" />
+                    <span className="text-sm text-yellow-600 font-medium">Vence hoje</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <span className="text-sm text-green-600 font-medium">Em dia</span>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Fiscal */}
+        <TabsContent value="fiscal" className="space-y-4 mt-4">
+          <DimobStatusCard
+            unitId={lease.unit_id}
+            onEditUnit={() => navigate(`/units?edit=${lease.unit_id}`)}
+            onCreateLease={() => {}}
+          />
+        </TabsContent>
+
+        {/* Billing */}
+        <TabsContent value="billing" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm font-medium">Enviar Cobrança - {capitalizedMonth}</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-4 space-y-2">
+              {(() => {
+                const leaseForMessage = { ...lease, tenant } as any;
+                const { whatsappPhone, emailLink, message } = generateBillingMessage(
+                  leaseForMessage,
+                  billingStatus.overdue ? "overdue" : billingStatus.dueDay ? "due" : "reminder",
+                  capitalizedMonth
+                );
+                return (
+                  <div className="flex gap-2">
+                    {whatsappPhone && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          const encoded = encodeURIComponent(message);
+                          navigate(`/whatsapp?phone=${formatPhoneForWhatsApp(whatsappPhone)}&text=${encoded}`);
+                        }}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-1.5 text-green-600" />
+                        WhatsApp
+                      </Button>
+                    )}
+                    {emailLink && (
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <a href={emailLink}>
+                          <Mail className="h-4 w-4 mr-1.5 text-blue-600" />
+                          E-mail
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm font-medium">Régua de Cobrança</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Ao ativar uma etapa, ela também passa a ser acompanhada em Afazeres conforme a data de vencimento do contrato.
+              </p>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("h-2.5 w-2.5 rounded-full", billingStatus.reminder5 ? "bg-green-500" : "bg-muted")} />
+                    <span className="text-sm">5 dias antes - Lembrete</span>
+                  </div>
+                  <Switch
+                    checked={!!lease.billing_automation?.reminder_5_days}
+                    onCheckedChange={(v) => handleAutomationToggle("reminder_5_days", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("h-2.5 w-2.5 rounded-full", billingStatus.dueDay ? "bg-yellow-500" : "bg-muted")} />
+                    <span className="text-sm">Dia do vencimento - Cobrança</span>
+                  </div>
+                  <Switch
+                    checked={!!lease.billing_automation?.reminder_due_day}
+                    onCheckedChange={(v) => handleAutomationToggle("reminder_due_day", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("h-2.5 w-2.5 rounded-full", billingStatus.overdue ? "bg-red-500" : "bg-muted")} />
+                    <span className="text-sm">3 dias após - Inadimplência</span>
+                  </div>
+                  <Switch
+                    checked={!!lease.billing_automation?.reminder_3_days_late}
+                    onCheckedChange={(v) => handleAutomationToggle("reminder_3_days_late", v)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-medium">Histórico de Envios</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                onClick={() => setShowBillingLogForm(!showBillingLogForm)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Registrar
+              </Button>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              {showBillingLogForm && (
+                <div className="mb-4 p-3 border rounded-lg bg-muted/30 space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Quem entrou em contato</Label>
+                    <Input
+                      placeholder="Nome do responsável"
+                      value={billingLogForm.sent_by}
+                      onChange={(e) => setBillingLogForm({ ...billingLogForm, sent_by: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Canal de contato</Label>
+                    <Select
+                      value={billingLogForm.method}
+                      onValueChange={(v) => setBillingLogForm({ ...billingLogForm, method: v as typeof billingLogForm.method })}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="whatsapp">
+                          <div className="flex items-center gap-2"><MessageSquare className="h-3.5 w-3.5 text-green-600" /> WhatsApp</div>
+                        </SelectItem>
+                        <SelectItem value="phone">
+                          <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-blue-600" /> Ligação</div>
+                        </SelectItem>
+                        <SelectItem value="email">
+                          <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-violet-600" /> E-mail</div>
+                        </SelectItem>
+                        <SelectItem value="in_person">
+                          <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5 text-amber-600" /> Presencial</div>
+                        </SelectItem>
+                        <SelectItem value="other">
+                          <div className="flex items-center gap-2"><MessageSquare className="h-3.5 w-3.5" /> Outro</div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Observações (opcional)</Label>
+                    <Input
+                      placeholder="Ex: Inquilino prometeu pagar até sexta"
+                      value={billingLogForm.notes}
+                      onChange={(e) => setBillingLogForm({ ...billingLogForm, notes: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="flex-1 h-8"
+                      onClick={async () => {
+                        if (!billingLogForm.sent_by.trim()) {
+                          toast({ title: "Informe quem fez o contato", variant: "destructive" });
+                          return;
+                        }
+                        try {
+                          const newLog: BillingLog = {
+                            type: "manual",
+                            sent_at: new Date().toISOString(),
+                            method: billingLogForm.method,
+                            success: true,
+                            sent_by: billingLogForm.sent_by.trim(),
+                            notes: billingLogForm.notes.trim() || undefined,
+                          };
+                          const updatedLogs = [...((lease.billing_logs as BillingLog[]) || []), newLog];
+                          await updateLease.mutateAsync({
+                            id: lease.id,
+                            data: { billing_logs: updatedLogs } as any,
+                          });
+                          toast({ title: "Contato registrado!" });
+                          setShowBillingLogForm(false);
+                          setBillingLogForm({ sent_by: "", method: "whatsapp", notes: "" });
+                          refetch();
+                        } catch {
+                          toast({ title: "Erro ao registrar", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      Salvar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => {
+                        setShowBillingLogForm(false);
+                        setBillingLogForm({ sent_by: "", method: "whatsapp", notes: "" });
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {!lease.billing_logs || (lease.billing_logs as BillingLog[]).length === 0 ? (
+                !showBillingLogForm && (
+                  <p className="text-sm text-muted-foreground text-center py-4">Nenhum envio registrado ainda</p>
+                )
+              ) : (
+                <div className="space-y-2">
+                  {((lease.billing_logs as BillingLog[]) || [])
+                    .slice()
+                    .reverse()
+                    .slice(0, 10)
+                    .map((log, index) => (
+                      <div key={index} className="flex items-center justify-between text-sm py-1 border-b border-border/50 last:border-0">
+                        <div className="flex items-center gap-2">
+                          {log.method === "whatsapp" && <MessageSquare className="h-3.5 w-3.5 text-green-600" />}
+                          {log.method === "phone" && <Phone className="h-3.5 w-3.5 text-blue-600" />}
+                          {log.method === "email" && <Mail className="h-3.5 w-3.5 text-violet-600" />}
+                          {log.method === "in_person" && <Users className="h-3.5 w-3.5 text-amber-600" />}
+                          {log.method === "other" && <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />}
+                          <div className="flex flex-col">
+                            <span className="text-xs">
+                              {log.type === "manual" ? "Contato manual" : log.type.replace(/_/g, " ")}
+                            </span>
+                            {log.sent_by && (
+                              <span className="text-[10px] text-muted-foreground">por {log.sent_by}</span>
+                            )}
+                            {log.notes && (
+                              <span className="text-[10px] text-muted-foreground italic truncate max-w-[150px]">{log.notes}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground text-xs">
+                            {format(new Date(log.sent_at), "dd/MM HH:mm")}
+                          </span>
+                          {log.success ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                          ) : (
+                            <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Reports */}
+        <TabsContent value="reports" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-emerald-500" />
+                Relatório do Proprietário
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Aluguel Recebido</span>
+                  <span className="font-medium">
+                    {Number(lease.rent_amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Taxa Administração ({lease.admin_fee_percentage}%)</span>
+                  <span className="font-medium text-destructive">
+                    -{(Number(lease.rent_amount) * Number(lease.admin_fee_percentage) / 100).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="font-medium">Repasse Líquido</span>
+                  <span className="font-bold text-emerald-600">
+                    {(Number(lease.rent_amount) * (1 - Number(lease.admin_fee_percentage) / 100)).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </span>
+                </div>
+              </div>
+              <Button className="w-full mt-3" variant="outline" size="sm" onClick={() => setShowOwnerReport(true)}>
+                <Download className="h-4 w-4 mr-2" />
+                Gerar Relatório Completo
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                Extrato do Inquilino
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              <p className="text-xs text-muted-foreground mb-3">
+                Gere um extrato detalhado com histórico de pagamentos para enviar ao inquilino.
+              </p>
+              <Button className="w-full" size="sm" onClick={() => setShowTenantStatement(true)}>
+                <Download className="h-4 w-4 mr-2" />
+                Gerar Extrato PDF
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Overlay dialogs */}
+      <TenantStatementDialog open={showTenantStatement} onOpenChange={setShowTenantStatement} lease={{ ...lease, tenant } as any} />
+      <OwnerReportDialog open={showOwnerReport} onOpenChange={setShowOwnerReport} lease={{ ...lease, tenant } as any} />
+      <ConfigureObligationsDialog
+        open={showObligationsDialog}
+        onOpenChange={setShowObligationsDialog}
+        unitId={lease.unit_id}
+        unitName={unit?.unit_number ?? ""}
+      />
+      <ContractGeneratorDialog open={showContractDialog} onOpenChange={setShowContractDialog} unitId={lease.unit_id} />
+      <EditStartDateDialog
+        open={showEditStartDateDialog}
+        onOpenChange={setShowEditStartDateDialog}
+        lease={{ id: lease.id, start_date: lease.start_date, unit: unit, tenant: tenant } as any}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["leases"] });
+          refetch();
+        }}
+      />
+      <TerminateContractDialog
+        open={terminateDialogOpen}
+        onOpenChange={setTerminateDialogOpen}
+        lease={{ id: lease.id, unit_id: lease.unit_id, unit: unit, tenant_contact: tenant } as any}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["leases"] });
+          refetch();
+        }}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Excluir Contrato Permanentemente?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                Você está prestes a excluir o contrato do imóvel{" "}
+                <strong>{unit?.unit_number}</strong> com o inquilino <strong>{tenant?.name}</strong>.
+              </span>
+              <span className="block p-3 bg-destructive/10 border border-destructive/30 rounded-md">
+                <span className="block text-sm font-medium text-destructive">
+                  ⚠️ Atenção: Esta ação é irreversível!
+                </span>
+                <span className="block text-sm text-muted-foreground mt-2">
+                  • O registro será excluído permanentemente do banco de dados<br />
+                  • Todas as transações financeiras vinculadas serão removidas<br />
+                  • O imóvel será liberado para novas locações<br />
+                  • Os dados não poderão ser recuperados
+                </span>
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteLease}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Excluindo...</>
+              ) : (
+                <><Trash2 className="h-4 w-4 mr-2" /> Sim, Excluir Permanentemente</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AppLayout>
+  );
+}
