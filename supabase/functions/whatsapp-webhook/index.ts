@@ -32,6 +32,42 @@ Deno.serve(async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
+  // SECURITY: authenticate the webhook caller. Evolution API can be configured to
+  // forward an `apikey` header (the EVOLUTION_API_KEY) and/or a custom token.
+  // When WHATSAPP_WEBHOOK_TOKEN is set in the function secrets we require it on
+  // every incoming request as `x-webhook-token` or `apikey` header — invalid or
+  // missing tokens are rejected with 401. We also accept EVOLUTION_API_KEY for
+  // backwards compatibility with the existing Evolution deployment.
+  const expectedWebhookToken = Deno.env.get('WHATSAPP_WEBHOOK_TOKEN') ?? '';
+  const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY') ?? '';
+  const providedToken =
+    req.headers.get('x-webhook-token') ||
+    req.headers.get('apikey') ||
+    req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+    '';
+
+  const tokenMatches = (a: string, b: string) => {
+    if (!a || !b || a.length !== b.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    return mismatch === 0;
+  };
+
+  const acceptedByWebhookToken = expectedWebhookToken && tokenMatches(providedToken, expectedWebhookToken);
+  const acceptedByEvolutionKey = evolutionApiKey && tokenMatches(providedToken, evolutionApiKey);
+
+  if (expectedWebhookToken || evolutionApiKey) {
+    if (!acceptedByWebhookToken && !acceptedByEvolutionKey) {
+      safeWarn('whatsapp-webhook: rejected request with invalid/missing auth token');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  } else {
+    safeWarn('whatsapp-webhook: no WHATSAPP_WEBHOOK_TOKEN or EVOLUTION_API_KEY configured — accepting unauthenticated request. Configure one of these secrets to enforce webhook authentication.');
+  }
+
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
