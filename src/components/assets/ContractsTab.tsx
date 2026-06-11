@@ -84,8 +84,6 @@ import { TableErrorBoundary } from "@/components/shared/TableErrorBoundary";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LeaseManagementSheet } from "./LeaseManagementSheet";
-import { AssetHealth } from "@/hooks/useAssetHealth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -243,9 +241,6 @@ export function ContractsTab() {
   const [unitSelectionOpen, setUnitSelectionOpen] = useState(false);
   const [unitSearchTerm, setUnitSearchTerm] = useState("");
   
-  // Lease management sheet state
-  const [leaseSheetOpen, setLeaseSheetOpen] = useState(false);
-  const [selectedLeaseForSheet, setSelectedLeaseForSheet] = useState<LeaseWithDetails | null>(null);
 
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -456,10 +451,9 @@ export function ContractsTab() {
       });
   };
 
-  // Handle create new contract - opens unit selection dialog
+  // Handle create new contract - navigate to dedicated page
   const handleCreateContract = () => {
-    setUnitSearchTerm("");
-    setUnitSelectionOpen(true);
+    navigate("/gestao/contratos/novo");
   };
   
   // Handle unit selection for new contract
@@ -614,31 +608,13 @@ export function ContractsTab() {
     }
   };
 
-  // Handle row click to open LeaseManagementSheet
+  // Handle row click → navigate to contract detail page
   const handleRowClick = (lease: LeaseWithDetails, e: React.MouseEvent) => {
-    // Don't open if clicking on buttons or dropdown
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[data-radix-collection-item]')) {
       return;
     }
-    
-    setSelectedLeaseForSheet(lease);
-    setLeaseSheetOpen(true);
-  };
-
-  // Convert lease to AssetHealth format for the sheet
-  const getAssetFromLease = (lease: LeaseWithDetails | null): AssetHealth | null => {
-    if (!lease) return null;
-    return {
-      unitId: lease.unit_id,
-      unitNumber: lease.unit?.unit_number || "—",
-      propertyName: null,
-      propertyType: null,
-      ownerName: null,
-      coverImage: null,
-      overallStatus: "healthy",
-      obligations: [],
-    };
+    navigate(`/gestao/contratos/${lease.id}`);
   };
 
   // Handle view financial details
