@@ -102,7 +102,7 @@ export function LpHero() {
           <div className="mt-20 md:mt-28 relative">
             <div className="absolute -top-4 left-0 lp-eyebrow">fig. 01 — painel slotimob</div>
             <div
-              className="lp-card overflow-hidden shadow-[0_30px_80px_-40px_rgba(22,21,19,0.35)]"
+              className="lp-card overflow-hidden shadow-[0_30px_80px_-40px_rgba(11,0,115,0.35)]"
               style={{ transform: 'rotate(-0.4deg)' }}
             >
               <HeroMock />
@@ -136,7 +136,7 @@ function HeroMock() {
               <div key={l} className={`text-[11px] py-1.5 px-2 rounded ${i === 0 ? 'font-medium' : ''}`}
                 style={{
                   color: i === 0 ? 'var(--lp-ink)' : 'var(--lp-ink-soft)',
-                  background: i === 0 ? 'rgba(30,77,59,0.08)' : 'transparent',
+                  background: i === 0 ? 'rgba(47,201,175,0.08)' : 'transparent',
                 }}>
                 {l}
               </div>

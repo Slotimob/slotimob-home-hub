@@ -70,7 +70,7 @@ export function LpComparison() {
                     <td
                       className="py-4 px-4 text-center"
                       style={{
-                        background: 'rgba(30,77,59,0.04)',
+                        background: 'rgba(47,201,175,0.04)',
                         borderLeft: '1px solid var(--lp-accent)',
                         borderRight: '1px solid var(--lp-accent)',
                         ...(i === ROWS.length - 1 ? { borderBottom: '1px solid var(--lp-accent)' } : {}),

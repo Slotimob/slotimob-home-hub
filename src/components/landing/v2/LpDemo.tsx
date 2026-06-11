@@ -45,11 +45,11 @@ export default function LpDemo() {
               <h2 className="lp-display text-[40px] md:text-[80px]">
                 sinta o produto
                 <br />
-                <em className="lp-serif" style={{ fontStyle: 'italic', color: '#7BC4A3' }}>antes</em> de assinar.
+                <em className="lp-serif" style={{ fontStyle: 'italic', color: '#2FC9AF' }}>antes</em> de assinar.
               </h2>
             </Reveal>
             <Reveal delay={140}>
-              <p className="mt-6 max-w-[55ch] text-[15px] md:text-[16px]" style={{ color: 'rgba(250,248,244,0.7)' }}>
+              <p className="mt-6 max-w-[55ch] text-[15px] md:text-[16px]" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 Uma amostra interativa do sistema. Tudo abaixo roda no seu navegador,
                 com dados fictícios — arraste, troque de abas, marque transações.
               </p>
@@ -58,15 +58,15 @@ export default function LpDemo() {
         </div>
 
         <Reveal delay={200}>
-          <div className="lp-card" style={{ background: '#1F1E1B', borderColor: 'rgba(250,248,244,0.12)' }}>
+          <div className="lp-card" style={{ background: '#1F1E1B', borderColor: 'rgba(255,255,255,0.12)' }}>
             {/* Window chrome */}
-            <div className="flex items-center px-4 py-3 border-b" style={{ borderColor: 'rgba(250,248,244,0.08)' }}>
+            <div className="flex items-center px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
               <div className="flex gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(250,248,244,0.2)' }} />
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(250,248,244,0.2)' }} />
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(250,248,244,0.2)' }} />
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
               </div>
-              <span className="ml-auto text-[10px] tracking-widest uppercase" style={{ color: 'rgba(250,248,244,0.45)' }}>
+              <span className="ml-auto text-[10px] tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 demonstração · dados fictícios
               </span>
             </div>
@@ -76,7 +76,7 @@ export default function LpDemo() {
               role="tablist"
               aria-label="Demonstração do sistema"
               className="flex overflow-x-auto lp-scroll-x border-b"
-              style={{ borderColor: 'rgba(250,248,244,0.08)' }}
+              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
             >
               {TABS.map((t) => {
                 const isActive = active === t.id;
@@ -93,14 +93,14 @@ export default function LpDemo() {
                     onKeyDown={onTabKey}
                     className="px-5 md:px-7 py-4 text-[13px] tracking-wide whitespace-nowrap transition-colors relative"
                     style={{
-                      color: isActive ? '#FAF8F4' : 'rgba(250,248,244,0.5)',
+                      color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.5)',
                     }}
                   >
                     {t.label}
                     {isActive && (
                       <span
                         className="absolute bottom-0 left-0 right-0 h-px"
-                        style={{ background: '#7BC4A3' }}
+                        style={{ background: '#2FC9AF' }}
                       />
                     )}
                   </button>
@@ -119,10 +119,10 @@ export default function LpDemo() {
 
         <Reveal delay={260}>
           <div className="mt-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-            <p className="text-[13px]" style={{ color: 'rgba(250,248,244,0.55)' }}>
+            <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
               isso é só uma amostra. teste o sistema completo grátis por 14 dias.
             </p>
-            <Link to="/auth?trial=pro" className="lp-btn lp-btn-primary" style={{ background: '#FAF8F4', color: '#161513' }}>
+            <Link to="/auth?trial=pro" className="lp-btn lp-btn-primary" style={{ background: '#FFFFFF', color: '#0B0073' }}>
               começar trial pro <ArrowUpRight className="w-4 h-4" />
             </Link>
           </div>
@@ -149,18 +149,18 @@ function DemoDashboard() {
           { l: 'receita mês', v: 'R$ 62k', d: '+8%' },
           { l: 'visitas', v: '24', d: '+11' },
         ].map((k) => (
-          <div key={k.l} className="border-t pt-3" style={{ borderColor: 'rgba(250,248,244,0.15)' }}>
+          <div key={k.l} className="border-t pt-3" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
             <p className="lp-eyebrow mb-1.5">{k.l}</p>
-            <p className="lp-serif text-2xl md:text-3xl" style={{ color: '#FAF8F4' }}>{k.v}</p>
-            <p className="text-[11px] mt-1" style={{ color: '#7BC4A3' }}>{k.d}</p>
+            <p className="lp-serif text-2xl md:text-3xl" style={{ color: '#FFFFFF' }}>{k.v}</p>
+            <p className="text-[11px] mt-1" style={{ color: '#2FC9AF' }}>{k.d}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 md:col-span-8 p-5 rounded" style={{ background: 'rgba(250,248,244,0.04)' }}>
+        <div className="col-span-12 md:col-span-8 p-5 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
           <div className="flex justify-between items-baseline mb-4">
-            <p className="text-[13px] font-medium" style={{ color: '#FAF8F4' }}>receita por mês</p>
+            <p className="text-[13px] font-medium" style={{ color: '#FFFFFF' }}>receita por mês</p>
             <span className="lp-eyebrow">últimos 6 meses</span>
           </div>
           <div className="flex items-end gap-3 h-44">
@@ -168,27 +168,27 @@ function DemoDashboard() {
               <div key={i} className="flex-1 flex flex-col items-center gap-2">
                 <div
                   className="w-full rounded-t transition-all duration-700"
-                  style={{ height: `${h}%`, background: i === 5 ? '#7BC4A3' : 'rgba(250,248,244,0.18)' }}
+                  style={{ height: `${h}%`, background: i === 5 ? '#2FC9AF' : 'rgba(255,255,255,0.18)' }}
                 />
-                <span className="text-[10px]" style={{ color: 'rgba(250,248,244,0.4)' }}>
+                <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   {['out', 'nov', 'dez', 'jan', 'fev', 'mar'][i]}
                 </span>
               </div>
             ))}
           </div>
         </div>
-        <div className="col-span-12 md:col-span-4 p-5 rounded" style={{ background: 'rgba(250,248,244,0.04)' }}>
-          <p className="text-[13px] font-medium mb-3" style={{ color: '#FAF8F4' }}>próximas visitas</p>
+        <div className="col-span-12 md:col-span-4 p-5 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <p className="text-[13px] font-medium mb-3" style={{ color: '#FFFFFF' }}>próximas visitas</p>
           {[
             { h: '10:30', n: 'Marina Souza', i: 'Apto 401 · Vila Madalena' },
             { h: '14:00', n: 'Roberto Castro', i: 'Casa · Pinheiros' },
             { h: '17:15', n: 'Ana Lima', i: 'Studio · Itaim' },
           ].map((v) => (
-            <div key={v.h} className="flex gap-3 py-3 border-b text-[12px]" style={{ borderColor: 'rgba(250,248,244,0.1)' }}>
-              <span className="lp-num lp-serif text-lg" style={{ color: '#7BC4A3' }}>{v.h}</span>
+            <div key={v.h} className="flex gap-3 py-3 border-b text-[12px]" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+              <span className="lp-num lp-serif text-lg" style={{ color: '#2FC9AF' }}>{v.h}</span>
               <div>
-                <p style={{ color: '#FAF8F4' }}>{v.n}</p>
-                <p style={{ color: 'rgba(250,248,244,0.5)', fontSize: 11 }}>{v.i}</p>
+                <p style={{ color: '#FFFFFF' }}>{v.n}</p>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{v.i}</p>
               </div>
             </div>
           ))}
@@ -250,7 +250,7 @@ function DemoPipeline() {
 
   return (
     <div id="panel-pipeline" role="tabpanel" aria-labelledby="tab-pipeline">
-      <p className="text-[12px] mb-5" style={{ color: 'rgba(250,248,244,0.55)' }}>
+      <p className="text-[12px] mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
         arraste os cartões entre as colunas →
       </p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lp-scroll-x">
@@ -260,12 +260,12 @@ function DemoPipeline() {
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => onDrop(key)}
             className="p-3 rounded min-h-[280px]"
-            style={{ background: 'rgba(250,248,244,0.04)' }}
+            style={{ background: 'rgba(255,255,255,0.04)' }}
             aria-label={`Coluna ${col.title}`}
           >
             <div className="flex justify-between items-baseline mb-3">
               <span className="lp-eyebrow">{col.title}</span>
-              <span className="text-[11px]" style={{ color: 'rgba(250,248,244,0.5)' }}>{col.cards.length}</span>
+              <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{col.cards.length}</span>
             </div>
             <div className="space-y-2">
               {col.cards.map((c) => (
@@ -274,7 +274,7 @@ function DemoPipeline() {
                   draggable
                   onDragStart={() => onDragStart(c.id, key)}
                   className="p-3 rounded text-[12px] cursor-grab active:cursor-grabbing transition-all hover:translate-x-0.5"
-                  style={{ background: '#FAF8F4', color: '#161513' }}
+                  style={{ background: '#FFFFFF', color: '#0B0073' }}
                   aria-grabbed={dragId.current === c.id}
                 >
                   <p className="font-medium">{c.name}</p>
@@ -313,24 +313,24 @@ function DemoFinance() {
     <div id="panel-financeiro" role="tabpanel" aria-labelledby="tab-financeiro" className="grid grid-cols-12 gap-4">
       <div className="col-span-12 md:col-span-7">
         <p className="lp-eyebrow mb-3">transações · março</p>
-        <div className="rounded overflow-hidden" style={{ background: 'rgba(250,248,244,0.04)' }}>
+        <div className="rounded overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
           {txs.map((t) => (
             <div key={t.id} className="flex items-center gap-3 px-4 py-3 border-b text-[12px]"
-              style={{ borderColor: 'rgba(250,248,244,0.08)' }}>
+              style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
               <button
                 onClick={() => toggle(t.id)}
                 className="w-4 h-4 rounded-sm flex items-center justify-center transition-all"
                 style={{
-                  background: t.ok ? '#7BC4A3' : 'transparent',
-                  border: `1px solid ${t.ok ? '#7BC4A3' : 'rgba(250,248,244,0.3)'}`,
+                  background: t.ok ? '#2FC9AF' : 'transparent',
+                  border: `1px solid ${t.ok ? '#2FC9AF' : 'rgba(255,255,255,0.3)'}`,
                 }}
                 aria-label={t.ok ? `Desmarcar ${t.desc}` : `Conciliar ${t.desc}`}
               >
-                {t.ok && <Check className="w-3 h-3" style={{ color: '#161513' }} />}
+                {t.ok && <Check className="w-3 h-3" style={{ color: '#0B0073' }} />}
               </button>
-              <span className="lp-num w-12" style={{ color: 'rgba(250,248,244,0.55)' }}>{t.d}</span>
-              <span className="flex-1" style={{ color: '#FAF8F4' }}>{t.desc}</span>
-              <span className="lp-num" style={{ color: t.v > 0 ? '#7BC4A3' : 'rgba(250,248,244,0.7)' }}>
+              <span className="lp-num w-12" style={{ color: 'rgba(255,255,255,0.55)' }}>{t.d}</span>
+              <span className="flex-1" style={{ color: '#FFFFFF' }}>{t.desc}</span>
+              <span className="lp-num" style={{ color: t.v > 0 ? '#2FC9AF' : 'rgba(255,255,255,0.7)' }}>
                 {t.v > 0 ? '+' : ''}R$ {Math.abs(t.v).toLocaleString('pt-BR')}
               </span>
             </div>
@@ -340,13 +340,13 @@ function DemoFinance() {
 
       <div className="col-span-12 md:col-span-5">
         <p className="lp-eyebrow mb-3">mini dre</p>
-        <div className="space-y-4 p-5 rounded" style={{ background: 'rgba(250,248,244,0.04)' }}>
-          <BarRow label="receitas" value={receita} max={Math.max(receita, despesa)} color="#7BC4A3" />
-          <BarRow label="despesas" value={despesa} max={Math.max(receita, despesa)} color="rgba(250,248,244,0.4)" />
+        <div className="space-y-4 p-5 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <BarRow label="receitas" value={receita} max={Math.max(receita, despesa)} color="#2FC9AF" />
+          <BarRow label="despesas" value={despesa} max={Math.max(receita, despesa)} color="rgba(255,255,255,0.4)" />
           <div className="pt-4 border-t flex items-baseline justify-between"
-            style={{ borderColor: 'rgba(250,248,244,0.15)' }}>
+            style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
             <span className="lp-eyebrow">resultado</span>
-            <span className="lp-serif text-2xl" style={{ color: result >= 0 ? '#7BC4A3' : '#E07A5F' }}>
+            <span className="lp-serif text-2xl" style={{ color: result >= 0 ? '#2FC9AF' : '#E07A5F' }}>
               {result >= 0 ? '+' : ''}R$ {result.toLocaleString('pt-BR')}
             </span>
           </div>
@@ -361,10 +361,10 @@ function BarRow({ label, value, max, color }: { label: string; value: number; ma
   return (
     <div>
       <div className="flex justify-between text-[12px] mb-1.5">
-        <span style={{ color: 'rgba(250,248,244,0.7)' }}>{label}</span>
-        <span className="lp-num" style={{ color: '#FAF8F4' }}>R$ {value.toLocaleString('pt-BR')}</span>
+        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</span>
+        <span className="lp-num" style={{ color: '#FFFFFF' }}>R$ {value.toLocaleString('pt-BR')}</span>
       </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(250,248,244,0.08)' }}>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
         <div className="h-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
@@ -377,30 +377,30 @@ function DemoWhatsApp() {
   return (
     <div id="panel-whatsapp" role="tabpanel" aria-labelledby="tab-whatsapp" className="grid grid-cols-12 gap-4 min-h-[440px]">
       {/* Conv list */}
-      <aside className="col-span-12 md:col-span-3 rounded p-2" style={{ background: 'rgba(250,248,244,0.04)' }}>
+      <aside className="col-span-12 md:col-span-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.04)' }}>
         {[
           { n: 'Marina Souza', l: 'Topo, vou agendar', t: '10:42', a: true },
           { n: 'Roberto Castro', l: 'Recebi a proposta', t: '09:15', a: false },
           { n: 'Ana Lima', l: 'Posso ver hoje?', t: 'ontem', a: false },
         ].map((c) => (
           <div key={c.n} className={`p-2.5 rounded text-[11px] mb-1 ${c.a ? 'ring-1' : ''}`}
-            style={{ background: c.a ? 'rgba(123,196,163,0.1)' : 'transparent' }}>
+            style={{ background: c.a ? 'rgba(47,201,175,0.1)' : 'transparent' }}>
             <div className="flex justify-between mb-0.5">
-              <span style={{ color: '#FAF8F4' }}>{c.n}</span>
-              <span style={{ color: 'rgba(250,248,244,0.45)' }}>{c.t}</span>
+              <span style={{ color: '#FFFFFF' }}>{c.n}</span>
+              <span style={{ color: 'rgba(255,255,255,0.45)' }}>{c.t}</span>
             </div>
-            <p style={{ color: 'rgba(250,248,244,0.6)' }}>{c.l}</p>
+            <p style={{ color: 'rgba(255,255,255,0.6)' }}>{c.l}</p>
           </div>
         ))}
       </aside>
 
       {/* Chat */}
-      <div className="col-span-12 md:col-span-6 rounded flex flex-col" style={{ background: 'rgba(250,248,244,0.04)' }}>
-        <div className="px-4 py-3 border-b flex items-center gap-3" style={{ borderColor: 'rgba(250,248,244,0.08)' }}>
-          <div className="w-8 h-8 rounded-full" style={{ background: '#7BC4A3' }} />
+      <div className="col-span-12 md:col-span-6 rounded flex flex-col" style={{ background: 'rgba(255,255,255,0.04)' }}>
+        <div className="px-4 py-3 border-b flex items-center gap-3" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="w-8 h-8 rounded-full" style={{ background: '#2FC9AF' }} />
           <div>
-            <p className="text-[12px]" style={{ color: '#FAF8F4' }}>Marina Souza</p>
-            <p className="text-[10px]" style={{ color: 'rgba(250,248,244,0.5)' }}>+55 11 9 8765-4321</p>
+            <p className="text-[12px]" style={{ color: '#FFFFFF' }}>Marina Souza</p>
+            <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>+55 11 9 8765-4321</p>
           </div>
         </div>
         <div className="flex-1 p-4 space-y-3 text-[12px]">
@@ -408,21 +408,21 @@ function DemoWhatsApp() {
           <Bubble side="me">Olá Marina! Tenho às 10h30 amanhã. Funciona?</Bubble>
           <Bubble side="them">Topo, vou agendar 🙂</Bubble>
         </div>
-        <div className="px-4 py-3 border-t flex gap-2 items-center" style={{ borderColor: 'rgba(250,248,244,0.08)' }}>
-          <div className="flex-1 px-3 py-2 rounded text-[11px]" style={{ background: 'rgba(250,248,244,0.06)', color: 'rgba(250,248,244,0.4)' }}>
+        <div className="px-4 py-3 border-t flex gap-2 items-center" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="flex-1 px-3 py-2 rounded text-[11px]" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>
             digite uma mensagem...
           </div>
-          <button className="p-2 rounded" style={{ background: '#7BC4A3' }} aria-label="Enviar mensagem">
-            <Send className="w-4 h-4" style={{ color: '#161513' }} />
+          <button className="p-2 rounded" style={{ background: '#2FC9AF' }} aria-label="Enviar mensagem">
+            <Send className="w-4 h-4" style={{ color: '#0B0073' }} />
           </button>
         </div>
       </div>
 
       {/* Contact panel */}
-      <aside className="col-span-12 md:col-span-3 rounded p-4" style={{ background: 'rgba(250,248,244,0.04)' }}>
+      <aside className="col-span-12 md:col-span-3 rounded p-4" style={{ background: 'rgba(255,255,255,0.04)' }}>
         <p className="lp-eyebrow mb-3">contato</p>
-        <p className="lp-serif text-lg mb-1" style={{ color: '#FAF8F4' }}>Marina Souza</p>
-        <p className="text-[11px] mb-4" style={{ color: 'rgba(250,248,244,0.55)' }}>Lead · WhatsApp</p>
+        <p className="lp-serif text-lg mb-1" style={{ color: '#FFFFFF' }}>Marina Souza</p>
+        <p className="text-[11px] mb-4" style={{ color: 'rgba(255,255,255,0.55)' }}>Lead · WhatsApp</p>
         <div className="space-y-2 text-[11px]">
           {[
             ['origem', 'Instagram Ads'],
@@ -430,9 +430,9 @@ function DemoWhatsApp() {
             ['estágio', 'visita agendada'],
             ['temperatura', 'quente'],
           ].map(([k, v]) => (
-            <div key={k} className="flex justify-between border-b pb-1.5" style={{ borderColor: 'rgba(250,248,244,0.08)' }}>
-              <span style={{ color: 'rgba(250,248,244,0.5)' }}>{k}</span>
-              <span style={{ color: '#FAF8F4' }}>{v}</span>
+            <div key={k} className="flex justify-between border-b pb-1.5" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>{k}</span>
+              <span style={{ color: '#FFFFFF' }}>{v}</span>
             </div>
           ))}
         </div>
@@ -447,8 +447,8 @@ function Bubble({ side, children }: { side: 'me' | 'them'; children: React.React
     <div className={`flex ${me ? 'justify-end' : 'justify-start'}`}>
       <div className="px-3 py-2 rounded-2xl max-w-[80%]"
         style={{
-          background: me ? '#7BC4A3' : 'rgba(250,248,244,0.1)',
-          color: me ? '#161513' : '#FAF8F4',
+          background: me ? '#2FC9AF' : 'rgba(255,255,255,0.1)',
+          color: me ? '#0B0073' : '#FFFFFF',
           borderBottomRightRadius: me ? 4 : 16,
           borderBottomLeftRadius: me ? 16 : 4,
         }}>

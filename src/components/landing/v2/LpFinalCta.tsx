@@ -17,7 +17,7 @@ export function LpFinalCta() {
             pare de gerenciar sua
             <br />
             carteira em{' '}
-            <em className="lp-serif" style={{ fontStyle: 'italic', color: '#7BC4A3' }}>
+            <em className="lp-serif" style={{ fontStyle: 'italic', color: '#2FC9AF' }}>
               dez lugares.
             </em>
           </h2>
@@ -27,7 +27,7 @@ export function LpFinalCta() {
             <Link
               to="/auth?trial=pro"
               className="lp-btn lp-btn-primary"
-              style={{ background: '#FAF8F4', color: '#161513' }}
+              style={{ background: '#FFFFFF', color: '#0B0073' }}
             >
               testar 14 dias de pro grátis
               <ArrowUpRight className="w-4 h-4" />
@@ -38,7 +38,7 @@ export function LpFinalCta() {
           </div>
         </Reveal>
         <Reveal delay={260}>
-          <p className="mt-8 text-[13px]" style={{ color: 'rgba(250,248,244,0.55)' }}>
+          <p className="mt-8 text-[13px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
             sem cartão de crédito · cancele quando quiser
           </p>
         </Reveal>
