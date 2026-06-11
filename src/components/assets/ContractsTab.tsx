@@ -956,72 +956,122 @@ export function ContractsTab() {
                             )}
                           </TableCell>
                           <TableCell className="text-center">
-                            <div className="flex flex-col items-center gap-1">
-                            <Badge 
-                              variant={statusConfig.variant} 
-                              className={cn(
-                                "text-[10px] whitespace-nowrap",
-                                lease.status === "terminated" && "bg-muted text-muted-foreground"
-                              )}
-                            >
-                              {statusConfig.label}
-                            </Badge>
-                            {/* Signature Status Badge */}
-                            {lease.status !== "terminated" && (
-                              <Badge 
-                                variant="outline" 
-                                className={`text-[10px] whitespace-nowrap ${
-                                  lease.signature_status === "signed" 
-                                    ? "border-green-500 text-green-600 bg-green-50 dark:bg-green-950/30" 
-                                    : "border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30"
-                                }`}
-                              >
-                                {lease.signature_status === "signed" ? (
-                                  <>
-                                    <Check className="h-2.5 w-2.5 mr-0.5" />
-                                    Assinado
-                                  </>
-                                ) : (
-                                  <>
+                            {(() => {
+                              const awaitingSignature =
+                                lease.status === "active" && lease.signature_status !== "signed";
+                              if (awaitingSignature) {
+                                return (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] whitespace-nowrap border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30"
+                                  >
                                     <Clock className="h-2.5 w-2.5 mr-0.5" />
-                                    Pendente
-                                  </>
-                                )}
-                              </Badge>
-                            )}
-                            </div>
+                                    Aguardando Assinatura
+                                  </Badge>
+                                );
+                              }
+                              return (
+                                <Badge
+                                  variant={statusConfig.variant}
+                                  className={cn(
+                                    "text-[10px] whitespace-nowrap",
+                                    lease.status === "terminated" && "bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {statusConfig.label}
+                                </Badge>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
-                              {needsAction ? (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  className="h-8 gap-1.5"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenAdjustment(lease, true);
-                                  }}
-                                >
-                                  <TrendingUp className="h-3.5 w-3.5" />
-                                  <span className="hidden lg:inline">Reajustar</span>
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Open sheet directly - don't call handleRowClick which filters out button clicks
-                                    setSelectedLeaseForSheet(lease);
-                                    setLeaseSheetOpen(true);
-                                  }}
-                                  title="Gerenciar Contrato"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              )}
+                            <div className="flex items-center justify-center">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="Ações"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-52">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/gestao/contratos/${lease.id}`);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Ver Detalhes
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {needsAction && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenAdjustment(lease, true);
+                                      }}
+                                    >
+                                      <TrendingUp className="h-4 w-4 mr-2 text-destructive" />
+                                      Reajustar
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickTransaction(lease);
+                                    }}
+                                  >
+                                    <Receipt className="h-4 w-4 mr-2" />
+                                    Registrar Pagamento
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleGenerateContract(lease.unit_id);
+                                    }}
+                                  >
+                                    <FileSignature className="h-4 w-4 mr-2" />
+                                    Gerar Contrato
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUploadContract(lease);
+                                    }}
+                                  >
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Upload Assinado
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {(isOwner || hasPermission('management_contracts', 'edit')) && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleTerminateContract(lease);
+                                      }}
+                                    >
+                                      <XCircle className="h-4 w-4 mr-2" />
+                                      Encerrar
+                                    </DropdownMenuItem>
+                                  )}
+                                  {(isOwner || hasPermission('management_contracts', 'delete')) && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteLease(lease);
+                                      }}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>
