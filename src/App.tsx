@@ -53,6 +53,7 @@ import FinanceDRE from "./pages/FinanceDRE";
 
 import AtivosEmGestao from "./pages/gestao/AtivosEmGestao";
 import ContratosEmGestao from "./pages/gestao/ContratosEmGestao";
+import ContratoDetalhe from "./pages/gestao/ContratoDetalhe";
 import AfazeresEmGestao from "./pages/gestao/AfazeresEmGestao";
 import GerencialGestao from "./pages/gestao/GerencialGestao";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
@@ -132,6 +133,7 @@ const App = () => (
               
               <Route path="/gestao/alugueis" element={guarded(<RequireFeature feature="asset_management"><AtivosEmGestao /></RequireFeature>)} />
               <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosEmGestao /></RequireFeature>)} />
+              <Route path="/gestao/contratos/:id" element={guarded(<RequireFeature feature="asset_management"><ContratoDetalhe /></RequireFeature>)} />
               <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
               <Route path="/gestao/gerencial" element={guarded(<RequireFeature feature="asset_management"><GerencialGestao /></RequireFeature>)} />
               <Route path="/gestao/propostas" element={guarded(<Proposals />)} />
