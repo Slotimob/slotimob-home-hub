@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { SlotiSymbol } from './SlotiSymbol';
 
 const NAV = [
   { label: 'produto', href: '#modulos' },
