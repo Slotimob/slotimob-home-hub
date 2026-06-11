@@ -823,11 +823,8 @@ export function ContractsTab() {
                   onUploadContractClick={handleUploadContract}
                   onToggleSignatureClick={handleToggleSignature}
                   onEditAdjustmentDateClick={handleEditAdjustmentDate}
-                  // UNIFIED UX: Click anywhere on card opens management sheet (same as desktop row click)
-                  onCardClick={(lease) => {
-                    setSelectedLeaseForSheet(lease);
-                    setLeaseSheetOpen(true);
-                  }}
+                  // UNIFIED UX: Click anywhere on card navigates to contract detail page
+                  onCardClick={(lease) => navigate(`/gestao/contratos/${lease.id}`)}
                 />
               ))}
             </div>
