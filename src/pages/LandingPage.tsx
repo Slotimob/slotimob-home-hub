@@ -16,7 +16,7 @@ import '@/components/landing/v2/lp.css';
 const LpDemo = lazy(() => import('@/components/landing/v2/LpDemo'));
 
 const FONTS_HREF =
-  'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500;600&display=swap';
+  'https://fonts.googleapis.com/css2?family=Sofia+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,500;1,700&family=Sofia+Sans+Condensed:wght@500;600;700&display=swap';
 
 function injectFontsOnce() {
   if (document.getElementById('lp-v2-fonts')) return;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { SlotiSymbol } from './SlotiSymbol';
 
 const NAV = [
   { label: 'produto', href: '#modulos' },
@@ -43,8 +44,9 @@ export function LpHeader() {
       }}
     >
       <div className="max-w-[1280px] mx-auto px-5 md:px-10 h-16 md:h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2" aria-label="Slotimob, ir para o início">
-          <span className="lp-serif text-[22px] md:text-[24px]" style={{ color: 'var(--lp-ink)' }}>
+        <Link to="/" className="flex items-center gap-2.5" aria-label="Slotimob, ir para o início">
+          <SlotiSymbol size={30} />
+          <span className="lp-display text-[24px] md:text-[26px] leading-none" style={{ color: 'var(--lp-ink)' }}>
             slotimob<span style={{ color: 'var(--lp-accent)' }}>.</span>
           </span>
         </Link>
