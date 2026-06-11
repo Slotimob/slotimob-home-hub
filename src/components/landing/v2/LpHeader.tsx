@@ -38,42 +38,47 @@ export function LpHeader() {
     <header
       className="fixed inset-x-0 top-0 z-50 transition-all duration-300"
       style={{
-        background: scrolled ? 'rgba(250, 248, 244, 0.92)' : 'transparent',
+        background: scrolled ? 'rgba(250, 248, 244, 0.65)' : 'transparent',
         backdropFilter: scrolled ? 'saturate(140%) blur(10px)' : 'none',
-        borderBottom: scrolled ? '1px solid var(--lp-line)' : '1px solid transparent',
+        WebkitBackdropFilter: scrolled ? 'saturate(140%) blur(10px)' : 'none',
       }}
     >
       <div className="max-w-[1280px] mx-auto px-5 md:px-10 h-16 md:h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="Slotimob, ir para o início">
+        {/* Logo — isolated, no background */}
+        <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Slotimob, ir para o início">
           <SlotiSymbol size={30} />
           <span className="lp-display text-[24px] md:text-[26px] leading-none" style={{ color: 'var(--lp-ink)' }}>
             slotimob<span style={{ color: 'var(--lp-accent)' }}>.</span>
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-9" aria-label="Navegação principal">
-          {NAV.map((n) => (
-            <a
-              key={n.href}
-              href={n.href}
-              onClick={(e) => onAnchor(e, n.href)}
-              className="lp-link text-[13px] tracking-wide"
-              style={{ color: 'var(--lp-ink-soft)' }}
-            >
-              {n.label}
-            </a>
-          ))}
-        </nav>
+        {/* Desktop — floating pill */}
+        <div className="hidden md:flex items-center">
+          <nav className="lp-pill" aria-label="Navegação principal">
+            {NAV.map((n) => (
+              <a
+                key={n.href}
+                href={n.href}
+                onClick={(e) => onAnchor(e, n.href)}
+                className="lp-pill-link"
+              >
+                {n.label}
+              </a>
+            ))}
 
-        <div className="hidden md:flex items-center gap-3">
-          <Link to="/auth" className="lp-link text-[13px]" style={{ color: 'var(--lp-ink-soft)' }}>
-            entrar
-          </Link>
-          <Link to="/auth?trial=pro" className="lp-btn lp-btn-primary">
-            começar grátis
-          </Link>
+            <span className="lp-pill-divider" aria-hidden="true" />
+
+            <Link to="/auth" className="lp-pill-link">
+              entrar
+            </Link>
+
+            <Link to="/auth?trial=pro" className="lp-btn lp-btn-primary">
+              começar grátis
+            </Link>
+          </nav>
         </div>
 
+        {/* Mobile hamburger */}
         <button
           className="md:hidden p-2 -mr-2"
           onClick={() => setOpen(!open)}
