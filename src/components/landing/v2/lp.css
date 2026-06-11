@@ -196,6 +196,49 @@
   }
 }
 
+/* ── Floating pill nav (LpHeader) ── */
+[data-lp="v2"] .lp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 9999px;
+  background: rgba(250, 248, 244, 0.92);
+  backdrop-filter: saturate(140%) blur(12px);
+  -webkit-backdrop-filter: saturate(140%) blur(12px);
+  border: 1px solid var(--lp-line);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.07);
+}
+[data-lp="v2"] .lp-pill-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--lp-ink-soft);
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+[data-lp="v2"] .lp-pill-link:hover {
+  background-color: rgba(11, 0, 115, 0.06);
+  color: var(--lp-ink);
+}
+[data-lp="v2"] .lp-pill-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--lp-line);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+[data-lp="v2"] .lp-pill .lp-btn-primary {
+  padding: 6px 16px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
 /* Hide scrollbars for horizontal scroll regions */
 [data-lp="v2"] .lp-scroll-x {
   scrollbar-width: none;
