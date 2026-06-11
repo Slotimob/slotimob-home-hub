@@ -54,6 +54,7 @@ import FinanceDRE from "./pages/FinanceDRE";
 import AtivosEmGestao from "./pages/gestao/AtivosEmGestao";
 import ContratosEmGestao from "./pages/gestao/ContratosEmGestao";
 import ContratoDetalhe from "./pages/gestao/ContratoDetalhe";
+import NovoContrato from "./pages/gestao/NovoContrato";
 import AfazeresEmGestao from "./pages/gestao/AfazeresEmGestao";
 import GerencialGestao from "./pages/gestao/GerencialGestao";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
