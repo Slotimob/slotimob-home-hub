@@ -1,41 +1,106 @@
+import { lazy, Suspense, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { SEOHead } from '@/components/SEOHead';
-import { LandingThemeProvider } from '@/components/LandingThemeProvider';
-import { LandingHeader } from '@/components/landing/LandingHeader';
-import { HeroSection } from '@/components/landing/HeroSection';
-import { IntegrationsStrip } from '@/components/landing/IntegrationsStrip';
-import { FeatureTabsSection } from '@/components/landing/FeatureTabsSection';
-import { AudienceSegments } from '@/components/landing/AudienceSegments';
-import { InfrastructureBenefits } from '@/components/landing/InfrastructureBenefits';
-import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
-import { PricingSection } from '@/components/landing/PricingSection';
-import { CTASection } from '@/components/landing/CTASection';
-import { FooterSection } from '@/components/landing/FooterSection';
 import { getSegment } from '@/config/landingSegments';
+import { LpHeader } from '@/components/landing/v2/LpHeader';
+import { LpHero } from '@/components/landing/v2/LpHero';
+import { LpStats } from '@/components/landing/v2/LpStats';
+import { LpModules } from '@/components/landing/v2/LpModules';
+import { LpComparison } from '@/components/landing/v2/LpComparison';
+import { LpPricing } from '@/components/landing/v2/LpPricing';
+import { LpFaq } from '@/components/landing/v2/LpFaq';
+import { LpFinalCta } from '@/components/landing/v2/LpFinalCta';
+import { LpFooter } from '@/components/landing/v2/LpFooter';
+import '@/components/landing/v2/lp.css';
+
+const LpDemo = lazy(() => import('@/components/landing/v2/LpDemo'));
+
+const FONTS_HREF =
+  'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500;600&display=swap';
+
+function injectFontsOnce() {
+  if (document.getElementById('lp-v2-fonts')) return;
+  const pc1 = document.createElement('link');
+  pc1.rel = 'preconnect';
+  pc1.href = 'https://fonts.googleapis.com';
+  document.head.appendChild(pc1);
+
+  const pc2 = document.createElement('link');
+  pc2.rel = 'preconnect';
+  pc2.href = 'https://fonts.gstatic.com';
+  pc2.crossOrigin = 'anonymous';
+  document.head.appendChild(pc2);
+
+  const link = document.createElement('link');
+  link.id = 'lp-v2-fonts';
+  link.rel = 'stylesheet';
+  link.href = FONTS_HREF;
+  document.head.appendChild(link);
+}
+
+function injectJsonLdOnce() {
+  if (document.getElementById('lp-v2-jsonld')) return;
+  const script = document.createElement('script');
+  script.id = 'lp-v2-jsonld';
+  script.type = 'application/ld+json';
+  script.text = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Slotimob',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    description:
+      'Plataforma de gestão imobiliária para corretores e imobiliárias: CRM, financeiro, contratos, WhatsApp e IA em um único sistema.',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'BRL',
+      url: 'https://slotimob.com.br/',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      reviewCount: '200',
+    },
+  });
+  document.head.appendChild(script);
+}
 
 export default function LandingPage() {
   const { segment: segmentSlug } = useParams<{ segment?: string }>();
   const segment = getSegment(segmentSlug);
 
+  useEffect(() => {
+    injectFontsOnce();
+    injectJsonLdOnce();
+    document.documentElement.setAttribute('data-theme', 'light');
+    return () => {
+      const el = document.getElementById('lp-v2-jsonld');
+      if (el) el.remove();
+    };
+  }, []);
+
   return (
-    <LandingThemeProvider>
+    <div data-lp="v2">
       <SEOHead
-        title={segment.seo.title}
-        description={segment.seo.description}
+        title="Gestão imobiliária para corretores e imobiliárias"
+        description="CRM, financeiro, contratos, WhatsApp e IA em um único sistema. Trial PRO de 14 dias, sem cartão. Para corretores autônomos e imobiliárias."
         path={segment.slug ? `/lp/${segment.slug}` : '/'}
       />
-      <LandingHeader />
-      <main className="min-h-screen scroll-smooth bg-background">
-        <HeroSection segment={segment} />
-        <IntegrationsStrip />
-        <FeatureTabsSection />
-        <AudienceSegments />
-        <InfrastructureBenefits />
-        <TestimonialsSection />
-        <PricingSection />
-        <CTASection utmSource={segment.utmSource} />
-        <FooterSection />
+      <LpHeader />
+      <main className="scroll-smooth">
+        <LpHero />
+        <LpStats />
+        <LpModules />
+        <Suspense fallback={<div style={{ minHeight: 600 }} aria-hidden />}>
+          <LpDemo />
+        </Suspense>
+        <LpComparison />
+        <LpPricing />
+        <LpFaq />
+        <LpFinalCta />
       </main>
-    </LandingThemeProvider>
+      <LpFooter />
+    </div>
   );
 }
