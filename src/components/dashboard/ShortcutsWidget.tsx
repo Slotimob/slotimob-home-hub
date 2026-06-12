@@ -115,8 +115,8 @@ export function ShortcutsWidget({ shortcuts, isLoading }: ShortcutsWidgetProps) 
             <CardTitle className="text-sm lg:text-base font-semibold">Acessos Rápidos</CardTitle>
           </CardHeader>
           <CardContent className="px-3 lg:px-6 pb-3 lg:pb-6">
-            {/* Flex layout - all in one row on desktop, wraps on mobile */}
-            <div className="flex flex-wrap gap-2 lg:gap-3">
+            {/* Grid responsivo - sem overflow em nenhum breakpoint */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-[repeat(auto-fill,minmax(95px,1fr))] gap-2 lg:gap-3">
               {enabledShortcuts.map((shortcut) => {
                 const Icon = ICON_MAP[shortcut.icon] || Building2;
                 return (
@@ -124,12 +124,12 @@ export function ShortcutsWidget({ shortcuts, isLoading }: ShortcutsWidgetProps) 
                     <TooltipTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-auto py-2 lg:py-3 px-3 lg:px-4 flex flex-col items-center gap-1 lg:gap-1.5 hover:bg-primary/10 hover:border-primary/40 hover:text-foreground transition-all group flex-1 min-w-[80px] max-w-[140px]"
+                        className="h-auto py-2 lg:py-3 px-2 lg:px-3 flex flex-col items-center gap-1 lg:gap-1.5 hover:bg-primary/10 hover:border-primary/40 hover:text-foreground transition-all group w-full"
                         onClick={() => handleShortcutClick(shortcut)}
                       >
                         <Icon className="h-4 w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 group-hover:text-primary" />
                         <span 
-                          className="text-xs text-center leading-tight w-full text-foreground break-words"
+                          className="text-xs text-center leading-tight w-full text-foreground break-words hyphens-auto"
                         >
                           {shortcut.label}
                         </span>
