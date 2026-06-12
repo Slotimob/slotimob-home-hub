@@ -614,7 +614,7 @@ export function ContractsTab() {
     if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[data-radix-collection-item]')) {
       return;
     }
-    navigate(`/gestao/contratos/${lease.id}`);
+    navigate(`/gestao/contratos?id=${lease.id}`);
   };
 
   // Handle view financial details
@@ -824,7 +824,7 @@ export function ContractsTab() {
                   onToggleSignatureClick={handleToggleSignature}
                   onEditAdjustmentDateClick={handleEditAdjustmentDate}
                   // UNIFIED UX: Click anywhere on card navigates to contract detail page
-                  onCardClick={(lease) => navigate(`/gestao/contratos/${lease.id}`)}
+                  onCardClick={(lease) => navigate(`/gestao/contratos?id=${lease.id}`)}
                 />
               ))}
             </div>
@@ -1001,7 +1001,7 @@ export function ContractsTab() {
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      navigate(`/gestao/contratos/${lease.id}`);
+                                      navigate(`/gestao/contratos?id=${lease.id}`);
                                     }}
                                   >
                                     <Eye className="h-4 w-4 mr-2" />

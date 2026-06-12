@@ -53,6 +53,7 @@ import FinanceDRE from "./pages/FinanceDRE";
 
 import AtivosEmGestao from "./pages/gestao/AtivosEmGestao";
 import ContratosEmGestao from "./pages/gestao/ContratosEmGestao";
+import { useSearchParams } from "react-router-dom";
 import ContratoDetalhe from "./pages/gestao/ContratoDetalhe";
 import NovoContrato from "./pages/gestao/NovoContrato";
 import AfazeresEmGestao from "./pages/gestao/AfazeresEmGestao";
@@ -74,6 +75,12 @@ const queryClient = new QueryClient();
 
 /** Wrap a page element with AuthGuard */
 const guarded = (element: React.ReactNode) => <AuthGuard>{element}</AuthGuard>;
+
+/** Renders contract detail when ?id= is present, otherwise the list page */
+const ContratosRoute = () => {
+  const [searchParams] = useSearchParams();
+  return searchParams.get("id") ? <ContratoDetalhe /> : <ContratosEmGestao />;
+};
 
 const App = () => (
   <SEOProvider>
@@ -133,9 +140,8 @@ const App = () => (
               <Route path="/finance/categories" element={guarded(<FinanceCategories />)} />
               
               <Route path="/gestao/alugueis" element={guarded(<RequireFeature feature="asset_management"><AtivosEmGestao /></RequireFeature>)} />
-              <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosEmGestao /></RequireFeature>)} />
+              <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosRoute /></RequireFeature>)} />
               <Route path="/gestao/contratos/novo" element={guarded(<RequireFeature feature="asset_management"><NovoContrato /></RequireFeature>)} />
-              <Route path="/gestao/contratos/:id" element={guarded(<RequireFeature feature="asset_management"><ContratoDetalhe /></RequireFeature>)} />
               <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
               <Route path="/gestao/gerencial" element={guarded(<RequireFeature feature="asset_management"><GerencialGestao /></RequireFeature>)} />
               <Route path="/gestao/propostas" element={guarded(<Proposals />)} />
