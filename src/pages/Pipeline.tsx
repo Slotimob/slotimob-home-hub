@@ -417,62 +417,6 @@ const Pipeline = () => {
 
 
 
-  const loadCustomStages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('pipeline_stages')
-        .select('*')
-        .eq('pipeline_type', activePipeline)
-        .order('display_order', { ascending: true });
-
-      if (error) throw error;
-      setCustomStages(data || []);
-    } catch (error) {
-      console.error('Error loading custom stages:', error);
-    }
-  };
-
-  const loadStageOrder = async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('pipeline_stage_order')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      if (data?.pipeline_stage_order) {
-        setStageOrder(data.pipeline_stage_order as string[]);
-      }
-    } catch (error) {
-      console.error('Error loading stage order:', error);
-    }
-  };
-
-  const saveStageOrder = async (orderedIds: string[]) => {
-    if (!user) return;
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ pipeline_stage_order: orderedIds })
-        .eq('id', user.id);
-
-      if (error) throw error;
-      setStageOrder(orderedIds);
-      toast({
-        title: 'Ordem salva!',
-        description: 'A ordem dos estágios foi atualizada com sucesso.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar ordem',
-        description: error.message,
-        variant: 'destructive',
-      });
-      throw error;
-    }
-  };
 
   const loadTaskCounts = async () => {
     try {
