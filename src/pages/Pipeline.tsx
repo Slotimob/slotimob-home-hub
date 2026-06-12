@@ -39,6 +39,8 @@ import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Database } from '@/integrations/supabase/types';
 import { useCustomPipelines } from '@/hooks/useCustomPipelines';
+import { usePipelineDeals } from '@/hooks/usePipelineDeals';
+import type { Deal } from '@/hooks/usePipelineDeals';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -48,39 +50,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 type PipelineStage = Database['public']['Enums']['pipeline_stage'];
 
-export interface Deal {
-  id: string;
-  stage: PipelineStage;
-  custom_stage_id?: string | null;
-  estimated_value: number | null;
-  estimated_commission: number | null;
-  notes: string | null;
-  created_at: string;
-  updated_at?: string;
-  priority?: string;
-  probability?: number;
-  expected_close_date?: string | null;
-  loss_reason?: string | null;
-  temperature?: 'hot' | 'warm' | 'cold';
-  business_type?: 'sale' | 'rental';
-  pipeline_type?: string;
-  lead: {
-    id: string;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    origin?: string | null;
-  };
-  property: {
-    id: string;
-    name: string;
-  } | null;
-  unit: {
-    id: string;
-    unit_number: string;
-    status?: string;
-  } | null;
-}
+export type { Deal } from '@/hooks/usePipelineDeals';
 
 // Only "Vendas" pipeline is kept as default; users can create custom pipelines via DB
 
@@ -143,8 +113,13 @@ const Pipeline = () => {
   const [renamePipelineValue, setRenamePipelineValue] = useState('');
   const [isDeletePipelineOpen, setIsDeletePipelineOpen] = useState(false);
   const [deletePipelineKey, setDeletePipelineKey] = useState('');
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loadingDeals, setLoadingDeals] = useState(true);
+  const activePipeline = searchParams.get('type') || 'sale';
+  const [teamFilter, setTeamFilter] = useState<string>('all');
+  const { deals, loadingDeals, invalidateDeals, setDealsOptimistic } = usePipelineDeals({
+    activePipeline,
+    teamFilter,
+    userId: user?.id,
+  });
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
@@ -313,8 +288,8 @@ const Pipeline = () => {
   }, []);
 
 
-  const activePipeline = searchParams.get('type') || 'sale';
-  const [teamFilter, setTeamFilter] = useState<string>('all');
+
+
 
   const [filters, setFilters] = useState<PipelineFiltersState>({
     search: '',
@@ -422,7 +397,6 @@ const Pipeline = () => {
 
   useEffect(() => {
     if (user) {
-      loadDeals();
       loadTaskCounts();
       loadStageHistory();
       loadProperties();
@@ -438,41 +412,7 @@ const Pipeline = () => {
     }
   }, [selectionMode]);
 
-  const loadDeals = async () => {
-    try {
-      let query = supabase
-        .from('deals')
-        .select(`
-          *,
-          lead:leads(id, name, email, phone, origin),
-          property:properties(id, name),
-          unit:units(id, unit_number, status)
-        `)
-        .eq('pipeline_type', activePipeline)
-        .order('created_at', { ascending: false });
 
-      // Apply team filter via query (not JS filter)
-      if (teamFilter === 'mine') {
-        query = query.eq('assigned_user_id', user?.id);
-      } else if (teamFilter !== 'all') {
-        // Specific team member selected
-        query = query.eq('assigned_user_id', teamFilter);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setDeals(data as Deal[]);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar negociações',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoadingDeals(false);
-    }
-  };
 
   const loadCustomStages = async () => {
     try {
@@ -684,7 +624,7 @@ const Pipeline = () => {
       });
 
       loadCustomStages();
-      loadDeals();
+      invalidateDeals();
     } catch (error: any) {
       toast({
         title: 'Erro ao excluir estágio',
@@ -863,7 +803,7 @@ const Pipeline = () => {
     lossNotes?: string | null
   ) => {
     // Optimistic update
-    setDeals((prev) =>
+    setDealsOptimistic((prev) =>
       prev.map((d) =>
         d.id === dealId
           ? {
@@ -915,7 +855,7 @@ const Pipeline = () => {
       loadStageHistory();
     } catch (error: any) {
       // Revert on error
-      loadDeals();
+      invalidateDeals();
       toast({
         title: 'Erro ao atualizar negociação',
         description: error.message,
@@ -1044,7 +984,7 @@ const Pipeline = () => {
   };
 
   const handleDealUpdate = () => {
-    loadDeals();
+    invalidateDeals();
     loadTaskCounts();
     loadStageHistory();
   };
@@ -1106,7 +1046,7 @@ const Pipeline = () => {
     const typedTargetStage = targetStage as PipelineStage;
     
     // Optimistic update
-    setDeals((prev) =>
+    setDealsOptimistic((prev) =>
       prev.map((d) =>
         selectedDeals.has(d.id)
           ? { ...d, stage: typedTargetStage, custom_stage_id: null }
@@ -1152,7 +1092,7 @@ const Pipeline = () => {
       loadStageHistory();
     } catch (error: any) {
       // Revert on error
-      loadDeals();
+      invalidateDeals();
       toast({
         title: 'Erro ao atualizar negociações',
         description: error.message,
@@ -1503,7 +1443,7 @@ const Pipeline = () => {
       <CreateDealDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onSuccess={loadDeals}
+        onSuccess={invalidateDeals}
         pipelineType={activePipeline}
       />
 
@@ -1555,7 +1495,7 @@ const Pipeline = () => {
         }}
         onSuccess={() => {
           setPendingWonDeal(null);
-          loadDeals(); // Reload deals to reflect updated unit status
+          invalidateDeals(); // Reload deals to reflect updated unit status
         }}
       />
 
@@ -1567,7 +1507,7 @@ const Pipeline = () => {
         }}
         onSuccess={() => {
           setProposalDealContext(null);
-          loadDeals();
+          invalidateDeals();
         }}
         dealContext={proposalDealContext}
       />
