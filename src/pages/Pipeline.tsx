@@ -571,8 +571,6 @@ const Pipeline = () => {
 
   const handleDealUpdate = () => {
     invalidateDeals();
-    loadTaskCounts();
-    loadStageHistory();
   };
 
   // Selection handlers
