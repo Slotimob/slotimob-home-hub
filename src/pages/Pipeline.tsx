@@ -397,7 +397,6 @@ const Pipeline = () => {
 
   useEffect(() => {
     if (user) {
-      loadDeals();
       loadTaskCounts();
       loadStageHistory();
       loadProperties();
@@ -413,41 +412,7 @@ const Pipeline = () => {
     }
   }, [selectionMode]);
 
-  const loadDeals = async () => {
-    try {
-      let query = supabase
-        .from('deals')
-        .select(`
-          *,
-          lead:leads(id, name, email, phone, origin),
-          property:properties(id, name),
-          unit:units(id, unit_number, status)
-        `)
-        .eq('pipeline_type', activePipeline)
-        .order('created_at', { ascending: false });
 
-      // Apply team filter via query (not JS filter)
-      if (teamFilter === 'mine') {
-        query = query.eq('assigned_user_id', user?.id);
-      } else if (teamFilter !== 'all') {
-        // Specific team member selected
-        query = query.eq('assigned_user_id', teamFilter);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setDeals(data as Deal[]);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar negociações',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoadingDeals(false);
-    }
-  };
 
   const loadCustomStages = async () => {
     try {
