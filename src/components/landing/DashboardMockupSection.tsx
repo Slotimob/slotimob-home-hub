@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, DollarSign, Users, Home, BarChart3, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, Wallet, Users, Home, BarChart3, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import dashboardImg from '@/assets/dashboard-mockup.png';
 
 const metrics = [
-  { label: 'Comissões', value: 'R$ 47.200', change: '+18%', icon: DollarSign },
+  { label: 'Comissões', value: 'R$ 47.200', change: '+18%', icon: Wallet },
   { label: 'Clientes Novos', value: '142', change: '+32%', icon: Users },
   { label: 'Imóveis Ativos', value: '87', change: '+5', icon: Home },
   { label: 'Taxa de Fechamento', value: '23%', change: '+4.2pp', icon: BarChart3 },

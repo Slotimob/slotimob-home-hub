@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Clock, DollarSign, Target, ArrowRight } from 'lucide-react';
+import { TrendingUp, Clock, Wallet, Target, ArrowRight } from 'lucide-react';
 import type { Deal } from '@/pages/Pipeline';
 import { differenceInDays } from 'date-fns';
 
@@ -100,7 +100,7 @@ export const PipelineMetrics = ({ deals, stageHistory }: PipelineMetricsProps) =
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+              <Wallet className="h-4 w-4" />
               Valor no Pipeline
             </CardTitle>
           </CardHeader>

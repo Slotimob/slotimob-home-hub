@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Mail, FileText, TrendingUp, Users, DollarSign, Calendar, Target, Building2, Loader2 } from 'lucide-react';
+import { Download, Mail, FileText, TrendingUp, Users, Wallet, Calendar, Target, Building2, Loader2 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { createWorkbook, addAoaSheet, addJsonSheet, downloadWorkbook } from '@/utils/excelUtils';
@@ -432,7 +432,7 @@ export const WeeklySummaryReport = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border bg-card p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <DollarSign className="h-4 w-4" />
+              <Wallet className="h-4 w-4" />
               Vendas
             </div>
             <p className="mt-2 text-2xl font-bold">

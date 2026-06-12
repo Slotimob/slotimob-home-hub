@@ -16,7 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { 
   CalendarDays, 
-  DollarSign, 
+  Wallet, 
   CheckCircle, 
   Percent, 
   Home, 
@@ -293,7 +293,7 @@ export const DealClosingDialog = ({
                 {/* Sale Value */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1 text-sm">
-                    <DollarSign className="h-3 w-3" />
+                    <Wallet className="h-3 w-3" />
                     Valor da {businessType === 'rental' ? 'Locação' : 'Venda'}
                   </Label>
                   <Input

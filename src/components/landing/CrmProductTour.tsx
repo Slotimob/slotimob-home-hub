@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   Zap,
   Globe,
-  DollarSign,
+  Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -281,7 +281,7 @@ export function CrmProductTour() {
 
           <FeatureDetail
             index={5}
-            icon={DollarSign}
+            icon={Wallet}
             title="Comissões calculadas na hora"
             description="Fechou o negócio? O sistema já calcula a comissão. Perdeu uma venda? Registre o motivo e aprenda com cada oportunidade."
             highlights={[

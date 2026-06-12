@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { z } from 'zod';
-import { Info, Image, FileText, AlertCircle, Trash2, ClipboardList, DollarSign } from 'lucide-react';
+import { Info, Image, FileText, AlertCircle, Trash2, ClipboardList, Wallet } from 'lucide-react';
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 import { AssetFinancialPanel } from '@/components/assets/AssetFinancialPanel';
 import { UnitFormFields, UnitFormData, getInitialFormData } from '@/components/units/UnitFormFields';
@@ -384,7 +384,7 @@ export const EditUnitDialog = ({
               <span className="sm:hidden">Info</span>
             </TabsTrigger>
             <TabsTrigger value="financial" className="text-xs sm:text-sm">
-              <DollarSign className="h-4 w-4 mr-1 sm:mr-2" />
+              <Wallet className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Financeiro</span>
               <span className="sm:hidden">Fin.</span>
             </TabsTrigger>

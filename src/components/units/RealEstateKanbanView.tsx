@@ -19,7 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Home, GripVertical, DollarSign, MapPin, Square } from 'lucide-react';
+import { Home, GripVertical, Wallet, MapPin, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
@@ -264,7 +264,7 @@ const KanbanColumn = ({
             {/* Value Counter */}
             {totalValue > 0 && (
               <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground font-normal">
-                <DollarSign className="h-3 w-3" />
+                <Wallet className="h-3 w-3" />
                 <span>{formatCurrency(totalValue)}</span>
                 <span className="opacity-70">valor total</span>
               </div>

@@ -22,7 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { PropertyForm, PropertyPayload, PropertyFormData } from '@/components/properties/PropertyForm';
-import { Loader2, AlertCircle, ClipboardList, Settings2, DollarSign } from 'lucide-react';
+import { Loader2, AlertCircle, ClipboardList, Settings2, Wallet } from 'lucide-react';
 import { useFormDraft } from '@/hooks/useFormDraft';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -261,7 +261,7 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
                 Detalhes
               </TabsTrigger>
               <TabsTrigger value="financial" className="text-xs sm:text-sm">
-                <DollarSign className="h-4 w-4 mr-1.5" />
+                <Wallet className="h-4 w-4 mr-1.5" />
                 Financeiro
               </TabsTrigger>
               <TabsTrigger value="activities" className="text-xs sm:text-sm">

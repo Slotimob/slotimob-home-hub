@@ -5,7 +5,7 @@ import {
   TrendingUp, 
   TrendingDown, 
   ArrowRight,
-  DollarSign,
+  Wallet,
   Receipt,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -219,7 +219,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
             <div className="rounded-lg border p-3 lg:p-4 bg-primary/5 border-primary/20">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="h-4 w-4 text-primary" />
+                  <Wallet className="h-4 w-4 text-primary" />
                 </div>
                 <span className="text-xs text-muted-foreground">Saldo</span>
               </div>
@@ -246,7 +246,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
             {/* Contas a Receber */}
             <div className="rounded-lg border">
               <div className="px-2 lg:px-3 py-1.5 lg:py-2 border-b flex items-center gap-1.5">
-                <DollarSign className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                <TrendingUp className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
                 <span className="text-[11px] lg:text-sm font-medium truncate">A Receber</span>
                 <Badge variant="secondary" className="ml-auto text-[10px] px-1.5">
                   {data.receivables.length}

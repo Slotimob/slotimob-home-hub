@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, FileText, Briefcase, DollarSign, ScrollText, Loader2 } from 'lucide-react';
+import { Building2, FileText, Briefcase, Wallet, ScrollText, Loader2 } from 'lucide-react';
 import type { LinkedResources } from '@/hooks/useContactLinkedResources';
 
 interface ContactLinkedResourcesProps {
@@ -115,7 +115,7 @@ export const ContactLinkedResources = ({ resources, isLoading }: ContactLinkedRe
         {resources.transactions.length > 0 && (
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+              <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
               Transações ({resources.transactions.length})
             </div>
             <div className="flex flex-wrap gap-1 ml-5">

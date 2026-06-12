@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
-import { TrendingUp, Users, Target, DollarSign, Percent, Facebook, Search, Instagram, MessageCircle, Globe, User, CalendarIcon, TrendingDown } from 'lucide-react';
+import { TrendingUp, Users, Target, Wallet, Percent, Facebook, Search, Instagram, MessageCircle, Globe, User, CalendarIcon, TrendingDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format, subMonths, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
@@ -422,7 +422,7 @@ export const ChannelPerformanceDashboard = () => {
             size="sm"
             onClick={() => setShowCostEditor(!showCostEditor)}
           >
-            <DollarSign className="h-4 w-4 mr-1" />
+            <Wallet className="h-4 w-4 mr-1" />
             Custos
           </Button>
         </div>
@@ -514,7 +514,7 @@ export const ChannelPerformanceDashboard = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+              <Wallet className="h-4 w-4" />
               Receita
             </CardTitle>
           </CardHeader>

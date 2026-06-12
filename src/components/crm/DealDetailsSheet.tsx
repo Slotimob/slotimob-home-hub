@@ -14,7 +14,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Building2, User, Phone, Mail, DollarSign, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2, Pencil, MapPin } from 'lucide-react';
+import { Building2, User, Phone, Mail, Wallet, CalendarDays, Percent, Save, MessageSquare, CheckSquare, History, Link2, Flame, Thermometer, Snowflake, Trash2, Pencil, MapPin } from 'lucide-react';
 import { ContactSelector } from '@/components/ContactSelector';
 import { UnitSelector } from '@/components/finance/UnitSelector';
 import { format } from 'date-fns';
@@ -543,7 +543,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
+                    <Wallet className="h-3 w-3" />
                     Valor Estimado
                   </Label>
                   <Input
