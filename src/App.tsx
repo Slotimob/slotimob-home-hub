@@ -134,9 +134,8 @@ const App = () => (
               <Route path="/finance/categories" element={guarded(<FinanceCategories />)} />
               
               <Route path="/gestao/alugueis" element={guarded(<RequireFeature feature="asset_management"><AtivosEmGestao /></RequireFeature>)} />
-              <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosEmGestao /></RequireFeature>)} />
+              <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosRoute /></RequireFeature>)} />
               <Route path="/gestao/contratos/novo" element={guarded(<RequireFeature feature="asset_management"><NovoContrato /></RequireFeature>)} />
-              <Route path="/gestao/contratos/:id" element={guarded(<RequireFeature feature="asset_management"><ContratoDetalhe /></RequireFeature>)} />
               <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
               <Route path="/gestao/gerencial" element={guarded(<RequireFeature feature="asset_management"><GerencialGestao /></RequireFeature>)} />
               <Route path="/gestao/propostas" element={guarded(<Proposals />)} />
