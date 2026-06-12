@@ -134,6 +134,7 @@ const Pipeline = () => {
     handleSaveStage,
     handleReorderStages,
   } = usePipelineStages(activePipeline);
+  const { updateDealPlacement, bulkMoveDeals, confirmLossReason } = useDealMutations();
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
 
   const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
