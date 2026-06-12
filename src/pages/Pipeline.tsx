@@ -103,10 +103,8 @@ const Pipeline = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [taskCounts, setTaskCounts] = useState<Record<string, { pending: number; overdue: number }>>({});
   const [showMetrics, setShowMetrics] = useState(false);
-  const [stageHistory, setStageHistory] = useState<StageHistoryEntry[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
+  const { taskCounts, stageHistory, properties } = usePipelineAuxData();
   const {
     customStages,
     stageOrder,
