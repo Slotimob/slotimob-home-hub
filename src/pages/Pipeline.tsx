@@ -39,6 +39,8 @@ import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Database } from '@/integrations/supabase/types';
 import { useCustomPipelines } from '@/hooks/useCustomPipelines';
+import { usePipelineDeals } from '@/hooks/usePipelineDeals';
+import type { Deal } from '@/hooks/usePipelineDeals';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
