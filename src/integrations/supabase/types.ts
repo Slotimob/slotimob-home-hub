@@ -2140,6 +2140,7 @@ export type Database = {
           integration_type: string
           is_active: boolean | null
           last_sync_at: string | null
+          page_id: string | null
           sync_status: string | null
           updated_at: string
           webhook_url: string | null
@@ -2153,6 +2154,7 @@ export type Database = {
           integration_type: string
           is_active?: boolean | null
           last_sync_at?: string | null
+          page_id?: string | null
           sync_status?: string | null
           updated_at?: string
           webhook_url?: string | null
@@ -2166,6 +2168,7 @@ export type Database = {
           integration_type?: string
           is_active?: boolean | null
           last_sync_at?: string | null
+          page_id?: string | null
           sync_status?: string | null
           updated_at?: string
           webhook_url?: string | null
