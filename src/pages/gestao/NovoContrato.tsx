@@ -423,7 +423,7 @@ export default function NovoContrato() {
       sessionStorage.removeItem(DRAFT_KEY);
 
       if (resultId) {
-        navigate(`/gestao/contratos/${resultId}`);
+        navigate(`/gestao/contratos?id=${resultId}`);
       } else {
         navigate("/gestao/contratos");
       }
