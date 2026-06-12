@@ -237,7 +237,7 @@ export default function ContratoDetalhe() {
   if (isLoading) {
     return (
       <AppLayout title="Detalhe do Contrato">
-        <SEOHead title="Detalhe do Contrato" description="Detalhes do contrato" path={`/gestao/contratos/${id}`} noIndex />
+        <SEOHead title="Detalhe do Contrato" description="Detalhes do contrato" path={`/gestao/contratos?id=${id}`} noIndex />
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -248,7 +248,7 @@ export default function ContratoDetalhe() {
   if (!lease) {
     return (
       <AppLayout title="Detalhe do Contrato">
-        <SEOHead title="Contrato não encontrado" description="Contrato não encontrado" path={`/gestao/contratos/${id}`} noIndex />
+        <SEOHead title="Contrato não encontrado" description="Contrato não encontrado" path={`/gestao/contratos?id=${id}`} noIndex />
         <Card className="max-w-md mx-auto mt-12">
           <CardContent className="py-10 text-center space-y-4">
             <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto" />
@@ -270,7 +270,7 @@ export default function ContratoDetalhe() {
 
   return (
     <AppLayout title="Detalhe do Contrato">
-      <SEOHead title="Detalhe do Contrato" description={`Contrato ${unit?.unit_number ?? ""}`} path={`/gestao/contratos/${id}`} noIndex />
+      <SEOHead title="Detalhe do Contrato" description={`Contrato ${unit?.unit_number ?? ""}`} path={`/gestao/contratos?id=${id}`} noIndex />
 
       {/* Header */}
       <Card className="mb-4">
