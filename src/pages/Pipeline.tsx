@@ -124,8 +124,15 @@ const Pipeline = () => {
   const [showMetrics, setShowMetrics] = useState(false);
   const [stageHistory, setStageHistory] = useState<StageHistoryEntry[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [customStages, setCustomStages] = useState<CustomStage[]>([]);
-  const [stageOrder, setStageOrder] = useState<string[] | null>(null);
+  const {
+    customStages,
+    stageOrder,
+    saveStageOrder,
+    handleAddStage,
+    handleDeleteStage,
+    handleSaveStage,
+    handleReorderStages,
+  } = usePipelineStages(activePipeline);
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
 
   const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
