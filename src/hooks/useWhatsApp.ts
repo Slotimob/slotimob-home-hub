@@ -486,6 +486,7 @@ export function useMessages(conversationId: string | null, remoteJid?: string | 
 
 export function useSendMessage() {
   const [sending, setSending] = useState(false);
+  const queryClient = useQueryClient();
 
   const sendMessage = useCallback(
     async (conversationId: string, content: string) => {
@@ -507,6 +508,9 @@ export function useSendMessage() {
           return null;
         }
 
+        // Refresh connection status — backend marks it as 'connected' after a successful send
+        queryClient.invalidateQueries({ queryKey: ['whatsapp-connections'] });
+
         return data;
       } catch (err: any) {
         console.error('Send message exception:', err);
@@ -516,11 +520,12 @@ export function useSendMessage() {
         setSending(false);
       }
     },
-    []
+    [queryClient]
   );
 
   return { sendMessage, sending };
 }
+
 
 // ─── useContactDeals ────────────────────────────────────────────────
 
