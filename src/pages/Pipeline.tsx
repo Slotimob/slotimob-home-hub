@@ -637,16 +637,15 @@ const Pipeline = () => {
 
   const handleLossReasonConfirm = async (reason: string, notes: string) => {
     if (!pendingLossDeal) return;
-
-    setIsLossDialogOpen(false);
-    await updateDealPlacement(
+    await confirmLossReason(
       pendingLossDeal.dealId,
       pendingLossDeal.oldVisibleStageId,
-      'lost',
-      { stage: 'lost', custom_stage_id: null, loss_reason: reason },
-      notes
+      reason,
+      notes,
+      deals,
     );
     setPendingLossDeal(null);
+    setIsLossDialogOpen(false);
   };
 
   const handleLossReasonCancel = () => {
