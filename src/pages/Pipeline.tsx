@@ -565,78 +565,8 @@ const Pipeline = () => {
     return deal.custom_stage_id ? `custom_${deal.custom_stage_id}` : deal.stage;
   };
 
-  const updateDealPlacement = async (
-    dealId: string,
-    oldVisibleStageId: string,
-    newVisibleStageId: string,
-    updates: {
-      stage: PipelineStage;
-      custom_stage_id: string | null;
-      loss_reason?: string | null;
-    },
-    lossNotes?: string | null
-  ) => {
-    // Optimistic update
-    setDealsOptimistic((prev) =>
-      prev.map((d) =>
-        d.id === dealId
-          ? {
-              ...d,
-              stage: updates.stage,
-              custom_stage_id: updates.custom_stage_id,
-              loss_reason: updates.loss_reason ?? d.loss_reason,
-            }
-          : d
-      )
-    );
+  // updateDealPlacement now provided by useDealMutations hook
 
-    try {
-      const updateData: Record<string, any> = {
-        stage: updates.stage,
-        custom_stage_id: updates.custom_stage_id,
-      };
-
-      if (typeof updates.loss_reason === 'string') {
-        updateData.loss_reason = updates.loss_reason;
-      }
-
-      const { error: updateError } = await supabase
-        .from('deals')
-        .update(updateData)
-        .eq('id', dealId);
-
-      if (updateError) throw updateError;
-
-      // Log stage change history using VISIBLE stage ids (default enum OR custom_*)
-      if (user) {
-        await supabase.from('deal_stage_history').insert({
-          deal_id: dealId,
-          broker_id: effectiveBrokerId,
-          from_stage: oldVisibleStageId,
-          to_stage: newVisibleStageId,
-          notes: lossNotes || null,
-        });
-      }
-
-      toast({
-        title: 'Negociação atualizada!',
-        description:
-          updates.stage === 'lost'
-            ? 'Negociação marcada como perdida com motivo registrado.'
-            : 'A etapa da negociação foi alterada com sucesso.',
-      });
-
-      loadStageHistory();
-    } catch (error: any) {
-      // Revert on error
-      invalidateDeals();
-      toast({
-        title: 'Erro ao atualizar negociação',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
