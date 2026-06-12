@@ -288,13 +288,8 @@ const Pipeline = () => {
   }, []);
 
 
-  const activePipeline = searchParams.get('type') || 'sale';
-  const [teamFilter, setTeamFilter] = useState<string>('all');
-  const { deals, loadingDeals, invalidateDeals, setDealsOptimistic } = usePipelineDeals({
-    activePipeline,
-    teamFilter,
-    userId: user?.id,
-  });
+
+
 
   const [filters, setFilters] = useState<PipelineFiltersState>({
     search: '',
