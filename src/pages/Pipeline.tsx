@@ -604,44 +604,23 @@ const Pipeline = () => {
 
     if (oldVisibleStageId === newVisibleStageId) return;
 
-    // If moving to lost, show loss reason dialog first
-    if (newVisibleStageId === 'lost') {
-      setPendingLossDeal({ dealId, oldStage: deal.stage, oldVisibleStageId });
-      setIsLossDialogOpen(true);
-      return;
-    }
+    await updateDealPlacement(
+      dealId,
+      newVisibleStageId,
+      customStages,
+      deals,
+      (id, oldStage, oldVisibleStageId) => {
+        setPendingLossDeal({ dealId: id, oldStage, oldVisibleStageId });
+        setIsLossDialogOpen(true);
+      },
+      (movedDeal) => {
+        setPendingWonDeal(movedDeal);
+        setIsCommissionDialogOpen(true);
+      },
+    );
 
-    // If moving to won, update first then show commission dialog
-    if (newVisibleStageId === 'won') {
-      await updateDealPlacement(
-        dealId,
-        oldVisibleStageId,
-        'won',
-        { stage: 'won', custom_stage_id: null }
-      );
-
-      setPendingWonDeal({ ...deal, stage: 'won', custom_stage_id: null });
-      setIsCommissionDialogOpen(true);
-      return;
-    }
-
-    // Custom stage target (droppable ids are like: custom_<uuid>)
-    if (newVisibleStageId.startsWith('custom_')) {
-      const customStageDbId = newVisibleStageId.replace('custom_', '');
-      await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
-        stage: deal.stage,
-        custom_stage_id: customStageDbId,
-      });
-      return;
-    }
-
-    // If moving to proposal stage, trigger proposal creation
+    // Preserve proposal dialog side-effect
     if (newVisibleStageId === 'proposal') {
-      await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
-        stage: newVisibleStageId as PipelineStage,
-        custom_stage_id: null,
-      });
-
       setProposalDealContext({
         deal_id: dealId,
         lead_id: deal.lead?.id || '',
@@ -653,14 +632,7 @@ const Pipeline = () => {
         estimated_value: deal.estimated_value,
       });
       setIsProposalDialogOpen(true);
-      return;
     }
-
-    // Default stage target
-    await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
-      stage: newVisibleStageId as PipelineStage,
-      custom_stage_id: null,
-    });
   };
 
   const handleLossReasonConfirm = async (reason: string, notes: string) => {
