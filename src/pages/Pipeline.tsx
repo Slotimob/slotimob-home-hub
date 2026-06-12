@@ -41,6 +41,8 @@ import type { Database } from '@/integrations/supabase/types';
 import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 import { usePipelineDeals } from '@/hooks/usePipelineDeals';
 import type { Deal } from '@/hooks/usePipelineDeals';
+import { usePipelineStages } from '@/hooks/usePipelineStages';
+import type { CustomStage } from '@/hooks/usePipelineStages';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -72,14 +74,8 @@ interface Property {
   name: string;
 }
 
-interface CustomStage {
-  id: string;
-  name: string;
-  display_order: number;
-  color: string;
-  is_won_stage: boolean;
-  is_lost_stage: boolean;
-}
+// CustomStage moved to usePipelineStages hook
+
 
 interface DisplayStage {
   id: string;
@@ -128,8 +124,15 @@ const Pipeline = () => {
   const [showMetrics, setShowMetrics] = useState(false);
   const [stageHistory, setStageHistory] = useState<StageHistoryEntry[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [customStages, setCustomStages] = useState<CustomStage[]>([]);
-  const [stageOrder, setStageOrder] = useState<string[] | null>(null);
+  const {
+    customStages,
+    stageOrder,
+    saveStageOrder,
+    handleAddStage,
+    handleDeleteStage,
+    handleSaveStage,
+    handleReorderStages,
+  } = usePipelineStages(activePipeline);
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
 
   const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
@@ -400,8 +403,6 @@ const Pipeline = () => {
       loadTaskCounts();
       loadStageHistory();
       loadProperties();
-      loadCustomStages();
-      loadStageOrder();
     }
   }, [user, teamFilter, activePipeline]);
 
@@ -414,62 +415,6 @@ const Pipeline = () => {
 
 
 
-  const loadCustomStages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('pipeline_stages')
-        .select('*')
-        .eq('pipeline_type', activePipeline)
-        .order('display_order', { ascending: true });
-
-      if (error) throw error;
-      setCustomStages(data || []);
-    } catch (error) {
-      console.error('Error loading custom stages:', error);
-    }
-  };
-
-  const loadStageOrder = async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('pipeline_stage_order')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      if (data?.pipeline_stage_order) {
-        setStageOrder(data.pipeline_stage_order as string[]);
-      }
-    } catch (error) {
-      console.error('Error loading stage order:', error);
-    }
-  };
-
-  const saveStageOrder = async (orderedIds: string[]) => {
-    if (!user) return;
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ pipeline_stage_order: orderedIds })
-        .eq('id', user.id);
-
-      if (error) throw error;
-      setStageOrder(orderedIds);
-      toast({
-        title: 'Ordem salva!',
-        description: 'A ordem dos estágios foi atualizada com sucesso.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar ordem',
-        description: error.message,
-        variant: 'destructive',
-      });
-      throw error;
-    }
-  };
 
   const loadTaskCounts = async () => {
     try {
@@ -529,185 +474,12 @@ const Pipeline = () => {
     }
   };
 
-  const handleAddStage = async (name: string, color: string, isWonStage?: boolean, isLostStage?: boolean, insertAfterStageId?: string | null) => {
-    if (!user) return;
-
-    try {
-      let newDisplayOrder = customStages.length;
-
-      if (insertAfterStageId) {
-        const targetStage = customStages.find(s => s.id === insertAfterStageId);
-        if (targetStage) {
-          newDisplayOrder = targetStage.display_order + 1;
-          
-          // Incrementar display_order dos estágios subsequentes
-          const stagesToUpdate = customStages.filter(s => s.display_order >= newDisplayOrder);
-          for (const stage of stagesToUpdate) {
-            await supabase
-              .from('pipeline_stages')
-              .update({ display_order: stage.display_order + 1 })
-              .eq('id', stage.id);
-          }
-        }
-      }
-
-      const { error } = await supabase
-        .from('pipeline_stages')
-        .insert({
-          broker_id: effectiveBrokerId,
-          name,
-          color,
-          display_order: newDisplayOrder,
-          is_won_stage: isWonStage || false,
-          is_lost_stage: isLostStage || false,
-          pipeline_type: activePipeline,
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Estágio criado!',
-        description: `O estágio "${name}" foi adicionado ao pipeline.`,
-      });
-
-      loadCustomStages();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao criar estágio',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteStage = async (stageId: string) => {
-    console.debug('[pipeline] handleDeleteStage called', { stageId });
-
-    // Check if there are deals associated with this stage
-    const dealsInStage = deals.filter(d => d.custom_stage_id === stageId);
-    
-    if (dealsInStage.length > 0) {
-      const confirmed = window.confirm(
-        `Este estágio possui ${dealsInStage.length} negociação${dealsInStage.length > 1 ? 'ões' : ''} associada${dealsInStage.length > 1 ? 's' : ''}. As negociações serão movidas para "Novo Lead". Deseja continuar?`
-      );
-      if (!confirmed) return;
-
-      // Move deals to new_lead stage before deleting
-      try {
-        const { error: moveError } = await supabase
-          .from('deals')
-          .update({ custom_stage_id: null, stage: 'new_lead' as PipelineStage })
-          .eq('custom_stage_id', stageId);
-
-        if (moveError) throw moveError;
-      } catch (error: any) {
-        toast({
-          title: 'Erro ao mover negociações',
-          description: error.message,
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-
-    try {
-      const { error } = await supabase
-        .from('pipeline_stages')
-        .delete()
-        .eq('id', stageId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Estágio excluído!',
-        description: 'O estágio foi removido do pipeline.',
-      });
-
-      loadCustomStages();
-      invalidateDeals();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao excluir estágio',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleEditStage = (stage: CustomStage) => {
     console.debug('[pipeline] handleEditStage called', { stage });
     setEditingStage(stage);
     setIsEditStageDialogOpen(true);
   };
 
-  const handleSaveStage = async (id: string, name: string, color: string, isWonStage: boolean, isLostStage: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('pipeline_stages')
-        .update({
-          name,
-          color,
-          is_won_stage: isWonStage,
-          is_lost_stage: isLostStage,
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Estágio atualizado!',
-        description: `O estágio "${name}" foi atualizado com sucesso.`,
-      });
-
-      loadCustomStages();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao atualizar estágio',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleReorderStages = async (activeId: string, overId: string) => {
-    const activeIndex = customStages.findIndex(s => `stage_${s.id}` === activeId);
-    const overIndex = customStages.findIndex(s => `stage_${s.id}` === overId);
-
-    if (activeIndex === -1 || overIndex === -1) return;
-
-    const newStages = arrayMove(customStages, activeIndex, overIndex);
-    
-    // Optimistic update
-    setCustomStages(newStages);
-
-    try {
-      // Update display_order for all affected stages
-      const updates = newStages.map((stage, index) => ({
-        id: stage.id,
-        display_order: index,
-      }));
-
-      for (const update of updates) {
-        await supabase
-          .from('pipeline_stages')
-          .update({ display_order: update.display_order })
-          .eq('id', update.id);
-      }
-
-      toast({
-        title: 'Estágios reordenados!',
-        description: 'A ordem dos estágios foi atualizada.',
-      });
-    } catch (error: any) {
-      // Revert on error
-      loadCustomStages();
-      toast({
-        title: 'Erro ao reordenar estágios',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
 
   // Filter deals
   const filteredDeals = useMemo(() => {
@@ -886,7 +658,7 @@ const Pipeline = () => {
 
     // Check if reordering stages
     if (activeId.startsWith('stage_') && overId.startsWith('stage_')) {
-      await handleReorderStages(activeId, overId);
+      await handleReorderStages(activeId, overId, allStages.map(s => s.id));
       return;
     }
 
