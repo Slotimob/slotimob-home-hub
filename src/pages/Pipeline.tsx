@@ -72,14 +72,8 @@ interface Property {
   name: string;
 }
 
-interface CustomStage {
-  id: string;
-  name: string;
-  display_order: number;
-  color: string;
-  is_won_stage: boolean;
-  is_lost_stage: boolean;
-}
+// CustomStage moved to usePipelineStages hook
+
 
 interface DisplayStage {
   id: string;
