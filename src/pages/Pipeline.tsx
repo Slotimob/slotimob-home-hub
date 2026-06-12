@@ -624,7 +624,7 @@ const Pipeline = () => {
       });
 
       loadCustomStages();
-      loadDeals();
+      invalidateDeals();
     } catch (error: any) {
       toast({
         title: 'Erro ao excluir estágio',
@@ -803,7 +803,7 @@ const Pipeline = () => {
     lossNotes?: string | null
   ) => {
     // Optimistic update
-    setDeals((prev) =>
+    setDealsOptimistic((prev) =>
       prev.map((d) =>
         d.id === dealId
           ? {
@@ -855,7 +855,7 @@ const Pipeline = () => {
       loadStageHistory();
     } catch (error: any) {
       // Revert on error
-      loadDeals();
+      invalidateDeals();
       toast({
         title: 'Erro ao atualizar negociação',
         description: error.message,
@@ -984,7 +984,7 @@ const Pipeline = () => {
   };
 
   const handleDealUpdate = () => {
-    loadDeals();
+    invalidateDeals();
     loadTaskCounts();
     loadStageHistory();
   };
@@ -1046,7 +1046,7 @@ const Pipeline = () => {
     const typedTargetStage = targetStage as PipelineStage;
     
     // Optimistic update
-    setDeals((prev) =>
+    setDealsOptimistic((prev) =>
       prev.map((d) =>
         selectedDeals.has(d.id)
           ? { ...d, stage: typedTargetStage, custom_stage_id: null }
@@ -1092,7 +1092,7 @@ const Pipeline = () => {
       loadStageHistory();
     } catch (error: any) {
       // Revert on error
-      loadDeals();
+      invalidateDeals();
       toast({
         title: 'Erro ao atualizar negociações',
         description: error.message,
@@ -1443,7 +1443,7 @@ const Pipeline = () => {
       <CreateDealDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onSuccess={loadDeals}
+        onSuccess={invalidateDeals}
         pipelineType={activePipeline}
       />
 
@@ -1495,7 +1495,7 @@ const Pipeline = () => {
         }}
         onSuccess={() => {
           setPendingWonDeal(null);
-          loadDeals(); // Reload deals to reflect updated unit status
+          invalidateDeals(); // Reload deals to reflect updated unit status
         }}
       />
 
@@ -1507,7 +1507,7 @@ const Pipeline = () => {
         }}
         onSuccess={() => {
           setProposalDealContext(null);
-          loadDeals();
+          invalidateDeals();
         }}
         dealContext={proposalDealContext}
       />
