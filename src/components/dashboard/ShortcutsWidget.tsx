@@ -129,7 +129,7 @@ export function ShortcutsWidget({ shortcuts, isLoading }: ShortcutsWidgetProps) 
                       >
                         <Icon className="h-4 w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 group-hover:text-primary" />
                         <span 
-                          className="text-xs text-center leading-tight w-full text-foreground whitespace-nowrap"
+                          className="text-xs text-center leading-tight w-full text-foreground break-words"
                         >
                           {shortcut.label}
                         </span>
