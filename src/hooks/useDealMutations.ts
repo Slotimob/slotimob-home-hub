@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { PIPELINE_DEALS_QUERY_KEY } from '@/hooks/usePipelineDeals';
 import type { Deal } from '@/hooks/usePipelineDeals';
 import type { Database } from '@/integrations/supabase/types';
@@ -10,6 +11,7 @@ type PipelineStage = Database['public']['Enums']['pipeline_stage'];
 export const useDealMutations = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { effectiveBrokerId } = useWorkspace();
 
   const invalidateDeals = () => {
     queryClient.invalidateQueries({ queryKey: PIPELINE_DEALS_QUERY_KEY });
