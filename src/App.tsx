@@ -76,6 +76,12 @@ const queryClient = new QueryClient();
 /** Wrap a page element with AuthGuard */
 const guarded = (element: React.ReactNode) => <AuthGuard>{element}</AuthGuard>;
 
+/** Renders contract detail when ?id= is present, otherwise the list page */
+const ContratosRoute = () => {
+  const [searchParams] = useSearchParams();
+  return searchParams.get("id") ? <ContratoDetalhe /> : <ContratosEmGestao />;
+};
+
 const App = () => (
   <SEOProvider>
     <JsonLdSchema />
