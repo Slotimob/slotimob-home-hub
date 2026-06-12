@@ -1,7 +1,8 @@
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GlowInitializer } from "@/components/GlowInitializer";
 import { TrackingProvider } from "@/components/TrackingProvider";
@@ -12,64 +13,61 @@ import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
 import { RequireFeature } from "@/components/subscription/RequireFeature";
-import Index from "./pages/Index";
-import LandingPage from "./pages/LandingPage";
 import { LandingThemeProvider } from "@/components/LandingThemeProvider";
-import Dashboard from "./pages/Dashboard";
-import Auth from "./pages/Auth";
-import AuthCallback from "./pages/AuthCallback";
-import ResetPassword from "./pages/ResetPassword";
-import Properties from "./pages/Properties";
-import Pipeline from "./pages/Pipeline";
+import { SuspenseFallback } from "@/components/SuspenseFallback";
 
-import Units from "./pages/Units";
-import Documents from "./pages/Documents";
-import Simulator from "./pages/Simulator";
-import Schedule from "./pages/Schedule";
-
-import ActivityHistory from "./pages/ActivityHistory";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import Legal from "./pages/Legal";
-import RefundPolicy from "./pages/RefundPolicy";
-import TermsAdmin from "./pages/TermsAdmin";
-import UsersAdmin from "./pages/UsersAdmin";
-import Presentation from "./pages/Presentation";
-import WhatsApp from "./pages/WhatsApp";
-
-import RealEstate from "./pages/RealEstate";
-import ContactsUnified from "./pages/ContactsUnified";
-import Portals from "./pages/Portals";
-import Reports from "./pages/Reports";
-import Integrations from "./pages/Integrations";
-import Training from "./pages/Training";
-import Rentability from "./pages/Rentability";
-import ProductDemo from "./pages/ProductDemo";
-import Finance from "./pages/Finance";
-import FinanceTransactions from "./pages/FinanceTransactions";
-import FinanceReconciliation from "./pages/FinanceReconciliation";
-import FinanceCategories from "./pages/FinanceCategories";
-import FinanceDRE from "./pages/FinanceDRE";
-
-import AtivosEmGestao from "./pages/gestao/AtivosEmGestao";
-import ContratosEmGestao from "./pages/gestao/ContratosEmGestao";
-import { useSearchParams } from "react-router-dom";
-import ContratoDetalhe from "./pages/gestao/ContratoDetalhe";
-import NovoContrato from "./pages/gestao/NovoContrato";
-import AfazeresEmGestao from "./pages/gestao/AfazeresEmGestao";
-import GerencialGestao from "./pages/gestao/GerencialGestao";
-import CheckoutSuccess from "./pages/CheckoutSuccess";
-import CheckoutCancel from "./pages/CheckoutCancel";
-import Checkout from "./pages/Checkout";
-import Users from "./pages/Users";
-import AdminCockpit from "./pages/AdminCockpit";
-import Blog from "./pages/Blog";
-import BlogPostPage from "./pages/BlogPost";
-import AIChat from "./pages/AIChat";
-import Proposals from "./pages/Proposals";
-import AdminApprovals from "./pages/AdminApprovals";
-import DataExport from "./pages/DataExport";
-import AdminDataRequests from "./pages/AdminDataRequests";
+const Index = React.lazy(() => import("./pages/Index"));
+const LandingPage = React.lazy(() => import("./pages/LandingPage"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Auth = React.lazy(() => import("./pages/Auth"));
+const AuthCallback = React.lazy(() => import("./pages/AuthCallback"));
+const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
+const Properties = React.lazy(() => import("./pages/Properties"));
+const Pipeline = React.lazy(() => import("./pages/Pipeline"));
+const Units = React.lazy(() => import("./pages/Units"));
+const Documents = React.lazy(() => import("./pages/Documents"));
+const Simulator = React.lazy(() => import("./pages/Simulator"));
+const Schedule = React.lazy(() => import("./pages/Schedule"));
+const ActivityHistory = React.lazy(() => import("./pages/ActivityHistory"));
+const Settings = React.lazy(() => import("./pages/Settings"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+const Legal = React.lazy(() => import("./pages/Legal"));
+const RefundPolicy = React.lazy(() => import("./pages/RefundPolicy"));
+const TermsAdmin = React.lazy(() => import("./pages/TermsAdmin"));
+const UsersAdmin = React.lazy(() => import("./pages/UsersAdmin"));
+const Presentation = React.lazy(() => import("./pages/Presentation"));
+const WhatsApp = React.lazy(() => import("./pages/WhatsApp"));
+const RealEstate = React.lazy(() => import("./pages/RealEstate"));
+const ContactsUnified = React.lazy(() => import("./pages/ContactsUnified"));
+const Portals = React.lazy(() => import("./pages/Portals"));
+const Reports = React.lazy(() => import("./pages/Reports"));
+const Integrations = React.lazy(() => import("./pages/Integrations"));
+const Training = React.lazy(() => import("./pages/Training"));
+const Rentability = React.lazy(() => import("./pages/Rentability"));
+const ProductDemo = React.lazy(() => import("./pages/ProductDemo"));
+const Finance = React.lazy(() => import("./pages/Finance"));
+const FinanceTransactions = React.lazy(() => import("./pages/FinanceTransactions"));
+const FinanceReconciliation = React.lazy(() => import("./pages/FinanceReconciliation"));
+const FinanceCategories = React.lazy(() => import("./pages/FinanceCategories"));
+const FinanceDRE = React.lazy(() => import("./pages/FinanceDRE"));
+const AtivosEmGestao = React.lazy(() => import("./pages/gestao/AtivosEmGestao"));
+const ContratosEmGestao = React.lazy(() => import("./pages/gestao/ContratosEmGestao"));
+const ContratoDetalhe = React.lazy(() => import("./pages/gestao/ContratoDetalhe"));
+const NovoContrato = React.lazy(() => import("./pages/gestao/NovoContrato"));
+const AfazeresEmGestao = React.lazy(() => import("./pages/gestao/AfazeresEmGestao"));
+const GerencialGestao = React.lazy(() => import("./pages/gestao/GerencialGestao"));
+const CheckoutSuccess = React.lazy(() => import("./pages/CheckoutSuccess"));
+const CheckoutCancel = React.lazy(() => import("./pages/CheckoutCancel"));
+const Checkout = React.lazy(() => import("./pages/Checkout"));
+const Users = React.lazy(() => import("./pages/Users"));
+const AdminCockpit = React.lazy(() => import("./pages/AdminCockpit"));
+const Blog = React.lazy(() => import("./pages/Blog"));
+const BlogPostPage = React.lazy(() => import("./pages/BlogPost"));
+const AIChat = React.lazy(() => import("./pages/AIChat"));
+const Proposals = React.lazy(() => import("./pages/Proposals"));
+const AdminApprovals = React.lazy(() => import("./pages/AdminApprovals"));
+const DataExport = React.lazy(() => import("./pages/DataExport"));
+const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
 
 const queryClient = new QueryClient();
 
@@ -93,6 +91,7 @@ const App = () => (
             <TrackingProvider>
             <GlowInitializer />
             <UtmCaptureProvider />
+            <Suspense fallback={<SuspenseFallback />}>
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
@@ -166,6 +165,7 @@ const App = () => (
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </TrackingProvider>
           </AuthProvider>
         </BrowserRouter>

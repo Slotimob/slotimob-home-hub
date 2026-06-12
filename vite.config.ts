@@ -94,6 +94,32 @@ export default defineConfig(({ mode }) => ({
       },
     }),
   ].filter(Boolean),
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-radix': [
+            '@radix-ui/react-accordion', '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-avatar', '@radix-ui/react-checkbox',
+            '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover', '@radix-ui/react-select',
+            '@radix-ui/react-tabs', '@radix-ui/react-toast',
+          ],
+          'vendor-icons': ['lucide-react'],
+          'vendor-charts': ['recharts'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-docs': ['jspdf', 'jspdf-autotable', 'docx'],
+          'vendor-excel': ['exceljs', 'papaparse'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+          'vendor-date': ['date-fns'],
+          'vendor-stripe': ['@stripe/react-stripe-js', '@stripe/stripe-js'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -105,3 +131,4 @@ export default defineConfig(({ mode }) => ({
     force: true,
   },
 }));
+
