@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { toast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
+
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
