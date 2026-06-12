@@ -658,7 +658,7 @@ const Pipeline = () => {
 
     // Check if reordering stages
     if (activeId.startsWith('stage_') && overId.startsWith('stage_')) {
-      await handleReorderStages(activeId, overId);
+      await handleReorderStages(activeId, overId, allStages.map(s => s.id));
       return;
     }
 
