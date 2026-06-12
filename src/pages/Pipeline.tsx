@@ -380,81 +380,12 @@ const Pipeline = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      loadTaskCounts();
-      loadStageHistory();
-      loadProperties();
-    }
-  }, [user, teamFilter, activePipeline]);
-
   // Clear selection when exiting selection mode
   useEffect(() => {
     if (!selectionMode) {
       setSelectedDeals(new Set());
     }
   }, [selectionMode]);
-
-
-
-
-  const loadTaskCounts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('deal_tasks')
-        .select('deal_id, is_completed, due_date');
-
-      if (error) throw error;
-
-      const counts: Record<string, { pending: number; overdue: number }> = {};
-      
-      (data as TaskCount[])?.forEach((task) => {
-        if (!counts[task.deal_id]) {
-          counts[task.deal_id] = { pending: 0, overdue: 0 };
-        }
-        
-        if (!task.is_completed) {
-          counts[task.deal_id].pending++;
-          
-          if (task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date))) {
-            counts[task.deal_id].overdue++;
-          }
-        }
-      });
-
-      setTaskCounts(counts);
-    } catch (error) {
-      console.error('Error loading task counts:', error);
-    }
-  };
-
-  const loadStageHistory = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('deal_stage_history')
-        .select('deal_id, from_stage, to_stage, changed_at')
-        .order('changed_at', { ascending: false });
-
-      if (error) throw error;
-      setStageHistory(data || []);
-    } catch (error) {
-      console.error('Error loading stage history:', error);
-    }
-  };
-
-  const loadProperties = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setProperties(data || []);
-    } catch (error) {
-      console.error('Error loading properties:', error);
-    }
-  };
 
   const handleEditStage = (stage: CustomStage) => {
     console.debug('[pipeline] handleEditStage called', { stage });
