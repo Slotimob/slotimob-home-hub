@@ -62,6 +62,7 @@ export const useDealMutations = () => {
     }
 
     await supabase.from('deal_stage_history').insert({
+      broker_id: effectiveBrokerId!,
       deal_id: dealId,
       from_stage: deal.stage,
       to_stage: isCustomTarget ? `custom_${realCustomId}` : targetStage,
@@ -136,6 +137,7 @@ export const useDealMutations = () => {
     }
 
     await supabase.from('deal_stage_history').insert({
+      broker_id: effectiveBrokerId!,
       deal_id: dealId,
       from_stage: deal?.stage ?? 'new_lead',
       to_stage: targetStage,
