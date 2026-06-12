@@ -2,12 +2,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, TrendingDown, Home, Building2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { useRecentTransactions } from "@/hooks/useFinanceData";
 
 interface FinanceRecentTransactionsProps {
   unitId?: string;
@@ -16,29 +15,8 @@ interface FinanceRecentTransactionsProps {
 export function FinanceRecentTransactions({ unitId }: FinanceRecentTransactionsProps) {
   const navigate = useNavigate();
 
-  const { data: transactions, isLoading } = useQuery({
-    queryKey: ["finance-recent-transactions", unitId],
-    queryFn: async () => {
-      let query = supabase
-        .from("financial_transactions")
-        .select(`
-          *,
-          category:financial_categories(id, name, color),
-          unit:units(id, unit_number, is_standalone, property:properties(name))
-        `)
-        .order("transaction_date", { ascending: false })
-        .limit(5);
+  const { data: transactions, isLoading } = useRecentTransactions(unitId, 5);
 
-      if (unitId) {
-        query = query.eq("unit_id", unitId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
