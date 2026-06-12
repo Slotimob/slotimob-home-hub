@@ -79,6 +79,9 @@ async function verifyFacebookSignature(
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
   // Get secrets for verification
   const verifyToken = Deno.env.get("FACEBOOK_WEBHOOK_VERIFY_TOKEN");
