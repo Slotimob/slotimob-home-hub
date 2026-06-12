@@ -50,39 +50,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 type PipelineStage = Database['public']['Enums']['pipeline_stage'];
 
-export interface Deal {
-  id: string;
-  stage: PipelineStage;
-  custom_stage_id?: string | null;
-  estimated_value: number | null;
-  estimated_commission: number | null;
-  notes: string | null;
-  created_at: string;
-  updated_at?: string;
-  priority?: string;
-  probability?: number;
-  expected_close_date?: string | null;
-  loss_reason?: string | null;
-  temperature?: 'hot' | 'warm' | 'cold';
-  business_type?: 'sale' | 'rental';
-  pipeline_type?: string;
-  lead: {
-    id: string;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    origin?: string | null;
-  };
-  property: {
-    id: string;
-    name: string;
-  } | null;
-  unit: {
-    id: string;
-    unit_number: string;
-    status?: string;
-  } | null;
-}
+export type { Deal } from '@/hooks/usePipelineDeals';
 
 // Only "Vendas" pipeline is kept as default; users can create custom pipelines via DB
 
