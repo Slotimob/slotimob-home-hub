@@ -57,24 +57,6 @@ export type { Deal } from '@/hooks/usePipelineDeals';
 
 // Only "Vendas" pipeline is kept as default; users can create custom pipelines via DB
 
-interface TaskCount {
-  deal_id: string;
-  is_completed: boolean;
-  due_date: string | null;
-}
-
-interface StageHistoryEntry {
-  deal_id: string;
-  from_stage: string | null;
-  to_stage: string;
-  changed_at: string;
-}
-
-interface Property {
-  id: string;
-  name: string;
-}
-
 // CustomStage moved to usePipelineStages hook
 
 
