@@ -218,6 +218,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Update connection status to 'connected' after successful send
+    await supabaseAdmin
+      .from('whatsapp_connections')
+      .update({
+        connection_status: 'connected',
+        connected_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('broker_id', brokerId)
+      .eq('instance_name', instanceName);
+
     return new Response(JSON.stringify({ success: true, message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
