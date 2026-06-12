@@ -718,63 +718,11 @@ const Pipeline = () => {
       return;
     }
 
-    const typedTargetStage = targetStage as PipelineStage;
-    
-    // Optimistic update
-    setDealsOptimistic((prev) =>
-      prev.map((d) =>
-        selectedDeals.has(d.id)
-          ? { ...d, stage: typedTargetStage, custom_stage_id: null }
-          : d
-      )
-    );
-
-    try {
-      // Update all selected deals
-      const { error: updateError } = await supabase
-        .from('deals')
-        .update({ stage: typedTargetStage, custom_stage_id: null })
-        .in('id', dealIds);
-
-      if (updateError) throw updateError;
-
-      // Log stage change history for each deal
-      if (user) {
-        const historyEntries = dealIds.map((dealId) => {
-          const deal = deals.find((d) => d.id === dealId);
-          return {
-            deal_id: dealId,
-            broker_id: effectiveBrokerId,
-            from_stage: deal ? getDealVisibleStageId(deal) : 'new_lead',
-            to_stage: targetStage,
-            notes: 'Movimentação em massa',
-          };
-        });
-
-        await supabase.from('deal_stage_history').insert(historyEntries);
-      }
-
-      toast({
-        title: 'Negociações atualizadas!',
-        description: `${dealIds.length} negociação${dealIds.length > 1 ? 'ões' : ''} movida${dealIds.length > 1 ? 's' : ''} para ${allStages.find(s => s.id === targetStage)?.label}.`,
-      });
-
-      // Clear selection and exit selection mode
-      setSelectedDeals(new Set());
-      setSelectionMode(false);
-
-      // Reload stage history
-      loadStageHistory();
-    } catch (error: any) {
-      // Revert on error
-      invalidateDeals();
-      toast({
-        title: 'Erro ao atualizar negociações',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
+    await bulkMoveDeals(dealIds, targetStage, deals);
+    setSelectionMode(false);
+    setSelectedDeals(new Set());
   };
+
 
   const handleCancelSelection = () => {
     setSelectedDeals(new Set());
