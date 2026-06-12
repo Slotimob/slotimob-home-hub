@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, CreditCard, Sparkles, DollarSign, TrendingUp } from 'lucide-react';
+import { Users, CreditCard, Sparkles, Wallet, TrendingUp } from 'lucide-react';
 
 interface Organization {
   user_id: string;
@@ -100,7 +100,7 @@ export function CockpitOverviewTab({ organizations }: CockpitOverviewTabProps) {
                   Baseado em {activeOrgs} assinatura{activeOrgs !== 1 ? 's' : ''} ativa{activeOrgs !== 1 ? 's' : ''}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-muted-foreground/30" />
+              <Wallet className="h-8 w-8 text-muted-foreground/30" />
             </div>
           </CardContent>
         </Card>

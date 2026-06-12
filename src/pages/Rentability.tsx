@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, DollarSign, Calendar, PiggyBank, BarChart3, Calculator } from 'lucide-react';
+import { TrendingUp, Wallet, Calendar, PiggyBank, BarChart3, Calculator } from 'lucide-react';
 
 // Map routes to tab values - order: yield, payback, comparison
 const getTabFromPath = (pathname: string): string => {
@@ -172,7 +172,7 @@ const Rentability = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
+                    <Wallet className="h-5 w-5" />
                     Calculadora de Yield
                   </CardTitle>
                   <CardDescription>

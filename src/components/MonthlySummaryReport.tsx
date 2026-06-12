@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Mail, FileText, TrendingUp, TrendingDown, Users, DollarSign, Calendar, Target, Loader2, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { Download, Mail, FileText, TrendingUp, TrendingDown, Users, Wallet, Calendar, Target, Loader2, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { createWorkbook, addAoaSheet, addJsonSheet, downloadWorkbook } from '@/utils/excelUtils';
@@ -442,7 +442,7 @@ export const MonthlySummaryReport = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded-lg border bg-card p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <DollarSign className="h-4 w-4" />
+              <Wallet className="h-4 w-4" />
               Vendas
             </div>
             <p className="mt-2 text-2xl font-bold">

@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Home, GripVertical, Building2, DollarSign, TrendingUp, Share2, Download, Copy } from 'lucide-react';
+import { Home, GripVertical, Building2, Wallet, TrendingUp, Share2, Download, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -254,7 +254,7 @@ const KanbanColumn = ({
             {/* Value Counters */}
             <div className="space-y-1 mt-2">
               <div className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
-                <DollarSign className="h-3 w-3" />
+                <Wallet className="h-3 w-3" />
                 <span>{formatCurrency(totalValue)}</span>
                 <span className="opacity-70">valor total</span>
               </div>

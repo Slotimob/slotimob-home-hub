@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileDown, Calculator, TrendingDown, DollarSign } from 'lucide-react';
+import { FileDown, Calculator, TrendingDown, Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { pdfSafeLabel } from '@/utils/pdfSafeText';
 
@@ -324,7 +324,7 @@ export const FinancingCalculator = () => {
             <Card>
               <CardContent className="pt-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                  <DollarSign className="h-4 w-4" />
+                  <Wallet className="h-4 w-4" />
                   Entrada
                 </div>
                 <p className="text-xl font-bold">

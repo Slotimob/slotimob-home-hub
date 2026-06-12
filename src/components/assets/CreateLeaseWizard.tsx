@@ -31,7 +31,7 @@ import {
 import {
   User,
   Calendar,
-  DollarSign,
+  Wallet,
   FileText,
   ChevronRight,
   ChevronLeft,
@@ -85,7 +85,7 @@ type GuaranteeType = "fiador" | "caucao" | "seguro_fianca" | "none";
 
 const STEPS: { id: WizardStep; title: string; icon: React.ReactNode; optional?: boolean }[] = [
   { id: "tenant", title: "Inquilino", icon: <User className="h-4 w-4" /> },
-  { id: "financial", title: "Financeiro", icon: <DollarSign className="h-4 w-4" /> },
+  { id: "financial", title: "Financeiro", icon: <Wallet className="h-4 w-4" /> },
   { id: "guarantee", title: "Garantia", icon: <Shield className="h-4 w-4" /> },
   { id: "payment", title: "Pagamento", icon: <CreditCard className="h-4 w-4" /> },
   { id: "compliance", title: "DIMOB", icon: <FileText className="h-4 w-4" /> },

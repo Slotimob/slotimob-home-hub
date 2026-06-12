@@ -13,7 +13,7 @@ import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarDays, DollarSign, CheckCircle, XCircle, Percent } from 'lucide-react';
+import { CalendarDays, Wallet, CheckCircle, XCircle, Percent } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -123,7 +123,7 @@ export const CreateCommissionDialog = ({
           {/* Sale Value */}
           <div className="space-y-2">
             <Label className="flex items-center gap-1">
-              <DollarSign className="h-3 w-3" />
+              <Wallet className="h-3 w-3" />
               Valor da Venda
             </Label>
             <CurrencyInput
@@ -193,7 +193,7 @@ export const CreateCommissionDialog = ({
             Pular
           </Button>
           <Button onClick={handleCreate} disabled={isCreating || saleValue <= 0} className="w-full sm:w-auto">
-            <DollarSign className="mr-2 h-4 w-4" />
+            <Wallet className="mr-2 h-4 w-4" />
             {isCreating ? 'Lançando...' : 'Lançar Comissão'}
           </Button>
         </DialogFooter>

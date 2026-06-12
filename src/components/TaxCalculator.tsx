@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CurrencyInput } from '@/components/ui/currency-input';
-import { Calculator, TrendingUp, TrendingDown, DollarSign, Percent, AlertCircle } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, Wallet, Percent, AlertCircle } from 'lucide-react';
 
 export const TaxCalculator = () => {
   const [iptuData, setIptuData] = useState({
@@ -242,7 +242,7 @@ export const TaxCalculator = () => {
               <Card className="border-green-500/50 bg-green-500/5">
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                    <DollarSign className="h-4 w-4" />
+                    <Wallet className="h-4 w-4" />
                     Fluxo Líquido/Mês
                   </div>
                   <p className={`text-2xl font-bold ${rentalResult.monthlyNetIncome >= 0 ? 'text-green-600' : 'text-destructive'}`}>

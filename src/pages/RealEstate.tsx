@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Home, DollarSign, Bed, Bath, Car, Square, Upload, Share2, Eye, RefreshCw } from 'lucide-react';
+import { Home, Wallet, Bed, Bath, Car, Square, Upload, Share2, Eye, RefreshCw } from 'lucide-react';
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
 import { ImportUnitsDialog } from '@/components/ImportUnitsDialog';

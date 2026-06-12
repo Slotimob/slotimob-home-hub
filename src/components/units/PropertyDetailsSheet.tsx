@@ -28,7 +28,7 @@ import {
   Home,
   Sun,
   Sofa,
-  DollarSign,
+  Wallet,
   Calculator,
   Share2,
   FileText,
