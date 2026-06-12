@@ -43,6 +43,7 @@ import { usePipelineDeals } from '@/hooks/usePipelineDeals';
 import type { Deal } from '@/hooks/usePipelineDeals';
 import { usePipelineStages } from '@/hooks/usePipelineStages';
 import type { CustomStage } from '@/hooks/usePipelineStages';
+import { useDealMutations } from '@/hooks/useDealMutations';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
