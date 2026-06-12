@@ -219,7 +219,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
             <div className="rounded-lg border p-3 lg:p-4 bg-primary/5 border-primary/20">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="h-4 w-4 text-primary" />
+                  <Wallet className="h-4 w-4 text-primary" />
                 </div>
                 <span className="text-xs text-muted-foreground">Saldo</span>
               </div>
