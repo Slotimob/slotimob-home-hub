@@ -98,6 +98,7 @@ export const useDealMutations = () => {
     const historyEntries = dealIds.map(id => {
       const deal = deals.find(d => d.id === id);
       return {
+        broker_id: effectiveBrokerId!,
         deal_id: id,
         from_stage: deal?.stage ?? 'new_lead',
         to_stage: targetStage,
