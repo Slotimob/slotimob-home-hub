@@ -33,7 +33,7 @@ import { ReorderStagesDialog } from '@/components/crm/ReorderStagesDialog';
 import { PipelineScrollHint } from '@/components/crm/PipelineScrollHint';
 import { AppLayout } from '@/components/AppLayout';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
-import { isPast, isToday } from 'date-fns';
+import { usePipelineAuxData } from '@/hooks/usePipelineAuxData';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -56,24 +56,6 @@ type PipelineStage = Database['public']['Enums']['pipeline_stage'];
 export type { Deal } from '@/hooks/usePipelineDeals';
 
 // Only "Vendas" pipeline is kept as default; users can create custom pipelines via DB
-
-interface TaskCount {
-  deal_id: string;
-  is_completed: boolean;
-  due_date: string | null;
-}
-
-interface StageHistoryEntry {
-  deal_id: string;
-  from_stage: string | null;
-  to_stage: string;
-  changed_at: string;
-}
-
-interface Property {
-  id: string;
-  name: string;
-}
 
 // CustomStage moved to usePipelineStages hook
 
@@ -121,10 +103,8 @@ const Pipeline = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [taskCounts, setTaskCounts] = useState<Record<string, { pending: number; overdue: number }>>({});
   const [showMetrics, setShowMetrics] = useState(false);
-  const [stageHistory, setStageHistory] = useState<StageHistoryEntry[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
+  const { taskCounts, stageHistory, properties } = usePipelineAuxData();
   const {
     customStages,
     stageOrder,
@@ -400,81 +380,12 @@ const Pipeline = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      loadTaskCounts();
-      loadStageHistory();
-      loadProperties();
-    }
-  }, [user, teamFilter, activePipeline]);
-
   // Clear selection when exiting selection mode
   useEffect(() => {
     if (!selectionMode) {
       setSelectedDeals(new Set());
     }
   }, [selectionMode]);
-
-
-
-
-  const loadTaskCounts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('deal_tasks')
-        .select('deal_id, is_completed, due_date');
-
-      if (error) throw error;
-
-      const counts: Record<string, { pending: number; overdue: number }> = {};
-      
-      (data as TaskCount[])?.forEach((task) => {
-        if (!counts[task.deal_id]) {
-          counts[task.deal_id] = { pending: 0, overdue: 0 };
-        }
-        
-        if (!task.is_completed) {
-          counts[task.deal_id].pending++;
-          
-          if (task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date))) {
-            counts[task.deal_id].overdue++;
-          }
-        }
-      });
-
-      setTaskCounts(counts);
-    } catch (error) {
-      console.error('Error loading task counts:', error);
-    }
-  };
-
-  const loadStageHistory = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('deal_stage_history')
-        .select('deal_id, from_stage, to_stage, changed_at')
-        .order('changed_at', { ascending: false });
-
-      if (error) throw error;
-      setStageHistory(data || []);
-    } catch (error) {
-      console.error('Error loading stage history:', error);
-    }
-  };
-
-  const loadProperties = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setProperties(data || []);
-    } catch (error) {
-      console.error('Error loading properties:', error);
-    }
-  };
 
   const handleEditStage = (stage: CustomStage) => {
     console.debug('[pipeline] handleEditStage called', { stage });
@@ -660,8 +571,6 @@ const Pipeline = () => {
 
   const handleDealUpdate = () => {
     invalidateDeals();
-    loadTaskCounts();
-    loadStageHistory();
   };
 
   // Selection handlers
