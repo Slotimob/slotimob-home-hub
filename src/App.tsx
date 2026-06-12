@@ -53,6 +53,7 @@ import FinanceDRE from "./pages/FinanceDRE";
 
 import AtivosEmGestao from "./pages/gestao/AtivosEmGestao";
 import ContratosEmGestao from "./pages/gestao/ContratosEmGestao";
+import { useSearchParams } from "react-router-dom";
 import ContratoDetalhe from "./pages/gestao/ContratoDetalhe";
 import NovoContrato from "./pages/gestao/NovoContrato";
 import AfazeresEmGestao from "./pages/gestao/AfazeresEmGestao";
