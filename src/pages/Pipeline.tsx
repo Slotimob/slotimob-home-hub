@@ -43,6 +43,7 @@ import { usePipelineDeals } from '@/hooks/usePipelineDeals';
 import type { Deal } from '@/hooks/usePipelineDeals';
 import { usePipelineStages } from '@/hooks/usePipelineStages';
 import type { CustomStage } from '@/hooks/usePipelineStages';
+import { useDealMutations } from '@/hooks/useDealMutations';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -133,6 +134,7 @@ const Pipeline = () => {
     handleSaveStage,
     handleReorderStages,
   } = usePipelineStages(activePipeline);
+  const { updateDealPlacement, bulkMoveDeals, confirmLossReason } = useDealMutations();
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
 
   const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
@@ -563,78 +565,8 @@ const Pipeline = () => {
     return deal.custom_stage_id ? `custom_${deal.custom_stage_id}` : deal.stage;
   };
 
-  const updateDealPlacement = async (
-    dealId: string,
-    oldVisibleStageId: string,
-    newVisibleStageId: string,
-    updates: {
-      stage: PipelineStage;
-      custom_stage_id: string | null;
-      loss_reason?: string | null;
-    },
-    lossNotes?: string | null
-  ) => {
-    // Optimistic update
-    setDealsOptimistic((prev) =>
-      prev.map((d) =>
-        d.id === dealId
-          ? {
-              ...d,
-              stage: updates.stage,
-              custom_stage_id: updates.custom_stage_id,
-              loss_reason: updates.loss_reason ?? d.loss_reason,
-            }
-          : d
-      )
-    );
+  // updateDealPlacement now provided by useDealMutations hook
 
-    try {
-      const updateData: Record<string, any> = {
-        stage: updates.stage,
-        custom_stage_id: updates.custom_stage_id,
-      };
-
-      if (typeof updates.loss_reason === 'string') {
-        updateData.loss_reason = updates.loss_reason;
-      }
-
-      const { error: updateError } = await supabase
-        .from('deals')
-        .update(updateData)
-        .eq('id', dealId);
-
-      if (updateError) throw updateError;
-
-      // Log stage change history using VISIBLE stage ids (default enum OR custom_*)
-      if (user) {
-        await supabase.from('deal_stage_history').insert({
-          deal_id: dealId,
-          broker_id: effectiveBrokerId,
-          from_stage: oldVisibleStageId,
-          to_stage: newVisibleStageId,
-          notes: lossNotes || null,
-        });
-      }
-
-      toast({
-        title: 'Negociação atualizada!',
-        description:
-          updates.stage === 'lost'
-            ? 'Negociação marcada como perdida com motivo registrado.'
-            : 'A etapa da negociação foi alterada com sucesso.',
-      });
-
-      loadStageHistory();
-    } catch (error: any) {
-      // Revert on error
-      invalidateDeals();
-      toast({
-        title: 'Erro ao atualizar negociação',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -672,44 +604,23 @@ const Pipeline = () => {
 
     if (oldVisibleStageId === newVisibleStageId) return;
 
-    // If moving to lost, show loss reason dialog first
-    if (newVisibleStageId === 'lost') {
-      setPendingLossDeal({ dealId, oldStage: deal.stage, oldVisibleStageId });
-      setIsLossDialogOpen(true);
-      return;
-    }
+    await updateDealPlacement(
+      dealId,
+      newVisibleStageId,
+      customStages,
+      deals,
+      (id, oldStage, oldVisibleStageId) => {
+        setPendingLossDeal({ dealId: id, oldStage, oldVisibleStageId });
+        setIsLossDialogOpen(true);
+      },
+      (movedDeal) => {
+        setPendingWonDeal(movedDeal);
+        setIsCommissionDialogOpen(true);
+      },
+    );
 
-    // If moving to won, update first then show commission dialog
-    if (newVisibleStageId === 'won') {
-      await updateDealPlacement(
-        dealId,
-        oldVisibleStageId,
-        'won',
-        { stage: 'won', custom_stage_id: null }
-      );
-
-      setPendingWonDeal({ ...deal, stage: 'won', custom_stage_id: null });
-      setIsCommissionDialogOpen(true);
-      return;
-    }
-
-    // Custom stage target (droppable ids are like: custom_<uuid>)
-    if (newVisibleStageId.startsWith('custom_')) {
-      const customStageDbId = newVisibleStageId.replace('custom_', '');
-      await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
-        stage: deal.stage,
-        custom_stage_id: customStageDbId,
-      });
-      return;
-    }
-
-    // If moving to proposal stage, trigger proposal creation
+    // Preserve proposal dialog side-effect
     if (newVisibleStageId === 'proposal') {
-      await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
-        stage: newVisibleStageId as PipelineStage,
-        custom_stage_id: null,
-      });
-
       setProposalDealContext({
         deal_id: dealId,
         lead_id: deal.lead?.id || '',
@@ -721,28 +632,20 @@ const Pipeline = () => {
         estimated_value: deal.estimated_value,
       });
       setIsProposalDialogOpen(true);
-      return;
     }
-
-    // Default stage target
-    await updateDealPlacement(dealId, oldVisibleStageId, newVisibleStageId, {
-      stage: newVisibleStageId as PipelineStage,
-      custom_stage_id: null,
-    });
   };
 
   const handleLossReasonConfirm = async (reason: string, notes: string) => {
     if (!pendingLossDeal) return;
-
-    setIsLossDialogOpen(false);
-    await updateDealPlacement(
+    await confirmLossReason(
       pendingLossDeal.dealId,
       pendingLossDeal.oldVisibleStageId,
-      'lost',
-      { stage: 'lost', custom_stage_id: null, loss_reason: reason },
-      notes
+      reason,
+      notes,
+      deals,
     );
     setPendingLossDeal(null);
+    setIsLossDialogOpen(false);
   };
 
   const handleLossReasonCancel = () => {
@@ -815,63 +718,11 @@ const Pipeline = () => {
       return;
     }
 
-    const typedTargetStage = targetStage as PipelineStage;
-    
-    // Optimistic update
-    setDealsOptimistic((prev) =>
-      prev.map((d) =>
-        selectedDeals.has(d.id)
-          ? { ...d, stage: typedTargetStage, custom_stage_id: null }
-          : d
-      )
-    );
-
-    try {
-      // Update all selected deals
-      const { error: updateError } = await supabase
-        .from('deals')
-        .update({ stage: typedTargetStage, custom_stage_id: null })
-        .in('id', dealIds);
-
-      if (updateError) throw updateError;
-
-      // Log stage change history for each deal
-      if (user) {
-        const historyEntries = dealIds.map((dealId) => {
-          const deal = deals.find((d) => d.id === dealId);
-          return {
-            deal_id: dealId,
-            broker_id: effectiveBrokerId,
-            from_stage: deal ? getDealVisibleStageId(deal) : 'new_lead',
-            to_stage: targetStage,
-            notes: 'Movimentação em massa',
-          };
-        });
-
-        await supabase.from('deal_stage_history').insert(historyEntries);
-      }
-
-      toast({
-        title: 'Negociações atualizadas!',
-        description: `${dealIds.length} negociação${dealIds.length > 1 ? 'ões' : ''} movida${dealIds.length > 1 ? 's' : ''} para ${allStages.find(s => s.id === targetStage)?.label}.`,
-      });
-
-      // Clear selection and exit selection mode
-      setSelectedDeals(new Set());
-      setSelectionMode(false);
-
-      // Reload stage history
-      loadStageHistory();
-    } catch (error: any) {
-      // Revert on error
-      invalidateDeals();
-      toast({
-        title: 'Erro ao atualizar negociações',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
+    await bulkMoveDeals(dealIds, targetStage, deals);
+    setSelectionMode(false);
+    setSelectedDeals(new Set());
   };
+
 
   const handleCancelSelection = () => {
     setSelectedDeals(new Set());
