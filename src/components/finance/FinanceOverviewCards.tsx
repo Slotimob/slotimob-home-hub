@@ -1,7 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Wallet, Clock, AlertTriangle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -10,8 +8,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { format, startOfMonth, endOfMonth } from "date-fns";
 import { SmartCurrency, formatCurrencyFull } from "@/hooks/useSmartCurrency";
+import { useFinanceOverview } from "@/hooks/useFinanceData";
 
 interface FinanceOverviewCardsProps {
   unitId?: string;
@@ -20,84 +18,8 @@ interface FinanceOverviewCardsProps {
 }
 
 export function FinanceOverviewCards({ unitId, dateFrom, dateTo }: FinanceOverviewCardsProps) {
-  const currentDate = new Date();
-  const monthStart = dateFrom || format(startOfMonth(currentDate), "yyyy-MM-dd");
-  const monthEnd = dateTo || format(endOfMonth(currentDate), "yyyy-MM-dd");
+  const { data: overview, isLoading } = useFinanceOverview(dateFrom, dateTo, unitId);
 
-  const { data: overview, isLoading } = useQuery({
-    queryKey: ["finance-overview", monthStart, monthEnd, unitId],
-    queryFn: async () => {
-      // Fetch all transactions for the period with status and reconciliation info
-      // Using due_date for Cash Flow perspective (Fluxo de Caixa)
-      let allTransactionsQuery = supabase
-        .from("financial_transactions")
-        .select("amount, type, status, is_reconciled")
-        .gte("due_date", monthStart)
-        .lte("due_date", monthEnd);
-
-      if (unitId) {
-        allTransactionsQuery = allTransactionsQuery.eq("unit_id", unitId);
-      }
-
-      const { data: allTransactions } = await allTransactionsQuery;
-
-      // Master rule: if is_reconciled is true, treat as "paid" regardless of original status
-      const isEffectivelyPaid = (t: { status: string; is_reconciled: boolean | null }) => 
-        t.status === "paid" || t.is_reconciled === true;
-      
-      const isEffectivelyPending = (t: { status: string; is_reconciled: boolean | null }) => 
-        t.status !== "paid" && t.is_reconciled !== true;
-
-      // Calculate incomes (paid or reconciled)
-      const incomes = allTransactions?.filter(t => t.type === "income" && isEffectivelyPaid(t)) || [];
-      
-      // Calculate expenses (paid or reconciled)
-      const expenses = allTransactions?.filter(t => t.type === "expense" && isEffectivelyPaid(t)) || [];
-
-      // Pending transactions (not paid AND not reconciled)
-      const pendingIncomes = allTransactions?.filter(t => t.type === "income" && isEffectivelyPending(t)) || [];
-      const pendingExpenses = allTransactions?.filter(t => t.type === "expense" && isEffectivelyPending(t)) || [];
-
-      // Query for pending "Repasse a Proprietário" transactions
-      let repasseQuery = supabase
-        .from("financial_transactions")
-        .select(`
-          amount,
-          financial_categories!inner(name)
-        `)
-        .eq("type", "expense")
-        .eq("status", "pending")
-        .gte("due_date", monthStart)
-        .lte("due_date", monthEnd);
-
-      if (unitId) {
-        repasseQuery = repasseQuery.eq("unit_id", unitId);
-      }
-
-      const { data: repasseData } = await repasseQuery;
-      
-      // Filter for repasse categories
-      const pendingRepasses = repasseData?.filter((t: any) => 
-        t.financial_categories?.name?.toLowerCase().includes("repasse")
-      ) || [];
-      const totalPendingRepasse = pendingRepasses.reduce((sum: number, t: any) => sum + Number(t.amount), 0);
-
-      const totalIncome = incomes.reduce((sum, t) => sum + Number(t.amount), 0);
-      const totalExpense = expenses.reduce((sum, t) => sum + Number(t.amount), 0);
-      const pendingIncome = pendingIncomes.reduce((sum, t) => sum + Number(t.amount), 0);
-      const pendingExpense = pendingExpenses.reduce((sum, t) => sum + Number(t.amount), 0);
-
-      return {
-        income: totalIncome,
-        expense: totalExpense,
-        balance: totalIncome - totalExpense,
-        pendingIncome,
-        pendingExpense,
-        pendingRepasse: totalPendingRepasse,
-        repasseCount: pendingRepasses.length,
-      };
-    },
-  });
 
   if (isLoading) {
     return (
