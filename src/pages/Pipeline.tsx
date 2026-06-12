@@ -113,7 +113,13 @@ const Pipeline = () => {
   const [renamePipelineValue, setRenamePipelineValue] = useState('');
   const [isDeletePipelineOpen, setIsDeletePipelineOpen] = useState(false);
   const [deletePipelineKey, setDeletePipelineKey] = useState('');
-  // deals + loadingDeals now provided by usePipelineDeals hook (declared after activePipeline/teamFilter)
+  const activePipeline = searchParams.get('type') || 'sale';
+  const [teamFilter, setTeamFilter] = useState<string>('all');
+  const { deals, loadingDeals, invalidateDeals, setDealsOptimistic } = usePipelineDeals({
+    activePipeline,
+    teamFilter,
+    userId: user?.id,
+  });
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
