@@ -89,7 +89,8 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 };
 
 export default function ContratoDetalhe() {
-  const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get("id") ?? undefined;
   const navigate = useNavigate();
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
