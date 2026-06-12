@@ -102,6 +102,7 @@ export const usePipelineStages = (activePipeline: string) => {
         : 0;
 
       const { error } = await supabase.from('pipeline_stages').insert({
+        broker_id: effectiveBrokerId!,
         pipeline_type: activePipeline,
         name,
         color,
