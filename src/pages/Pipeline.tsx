@@ -403,8 +403,6 @@ const Pipeline = () => {
       loadTaskCounts();
       loadStageHistory();
       loadProperties();
-      loadCustomStages();
-      loadStageOrder();
     }
   }, [user, teamFilter, activePipeline]);
 
