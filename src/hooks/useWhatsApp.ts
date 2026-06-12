@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { toast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
+
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
@@ -484,6 +486,7 @@ export function useMessages(conversationId: string | null, remoteJid?: string | 
 
 export function useSendMessage() {
   const [sending, setSending] = useState(false);
+  const queryClient = useQueryClient();
 
   const sendMessage = useCallback(
     async (conversationId: string, content: string) => {
@@ -505,6 +508,9 @@ export function useSendMessage() {
           return null;
         }
 
+        // Refresh connection status — backend marks it as 'connected' after a successful send
+        queryClient.invalidateQueries({ queryKey: ['whatsapp-connections'] });
+
         return data;
       } catch (err: any) {
         console.error('Send message exception:', err);
@@ -514,11 +520,12 @@ export function useSendMessage() {
         setSending(false);
       }
     },
-    []
+    [queryClient]
   );
 
   return { sendMessage, sending };
 }
+
 
 // ─── useContactDeals ────────────────────────────────────────────────
 

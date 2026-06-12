@@ -137,6 +137,61 @@ async function resolveUserId(
   return newUser.user.id;
 }
 
+async function insertAiCreditsIdempotent(
+  supabase: ReturnType<typeof createClient>,
+  brokerId: string,
+  credits: number,
+  pricePaid: number,
+  stripePaymentId: string
+): Promise<void> {
+  const { data: existing } = await supabase
+    .from('ai_credits')
+    .select('id')
+    .eq('stripe_payment_id', stripePaymentId)
+    .maybeSingle();
+  if (existing) {
+    logStep('AI credits já processados para este payment (idempotência)', { stripePaymentId });
+    return;
+  }
+  const { error } = await supabase.from('ai_credits').insert({
+    broker_id: brokerId,
+    credits_purchased: credits,
+    credits_remaining: credits,
+    price_paid: pricePaid,
+    stripe_payment_id: stripePaymentId,
+  });
+  if (error) logStep('Erro ao inserir créditos IA', { error: error.message });
+  else logStep('Créditos IA adicionados (idempotente)', { brokerId, credits, stripePaymentId });
+}
+
+async function insertWhatsappCreditsIdempotent(
+  supabase: ReturnType<typeof createClient>,
+  brokerId: string,
+  credits: number,
+  pricePaid: number,
+  stripePaymentId: string
+): Promise<void> {
+  const { data: existing } = await supabase
+    .from('whatsapp_message_credits')
+    .select('id')
+    .eq('stripe_payment_id', stripePaymentId)
+    .maybeSingle();
+  if (existing) {
+    logStep('Créditos WhatsApp já processados (idempotência)', { stripePaymentId });
+    return;
+  }
+  const { error } = await supabase.from('whatsapp_message_credits').insert({
+    broker_id: brokerId,
+    credits_purchased: credits,
+    credits_remaining: credits,
+    price_paid: pricePaid,
+    stripe_payment_id: stripePaymentId,
+    credit_type: 'whatsapp',
+  });
+  if (error) logStep('Erro ao inserir créditos WhatsApp', { error: error.message });
+  else logStep('Créditos WhatsApp adicionados (idempotente)', { brokerId, credits, stripePaymentId });
+}
+
 async function handleCheckoutCompleted(
   event: Stripe.Event,
   stripe: Stripe,
@@ -161,15 +216,13 @@ async function handleCheckoutCompleted(
       const totalCredits = parseInt(metaCredits, 10);
       logStep("New-style credit purchase detected", { creditPriceId, totalCredits });
 
-      const { error } = await supabase.from('ai_credits').insert({
-        broker_id: userId,
-        credits_purchased: totalCredits,
-        credits_remaining: totalCredits,
-        price_paid: (session.amount_total || 0) / 100,
-        stripe_payment_id: session.payment_intent as string,
-      });
-      if (error) logStep("Error inserting AI credits", { error: error.message });
-      else logStep("AI credits added", { userId, credits: totalCredits });
+      await insertAiCreditsIdempotent(
+        supabase,
+        userId,
+        totalCredits,
+        (session.amount_total || 0) / 100,
+        session.payment_intent as string,
+      );
       return;
     }
 
@@ -184,15 +237,13 @@ async function handleCheckoutCompleted(
       const creditByPrice = CREDIT_PRICE_IDS[priceId];
       if (creditByPrice) {
         const totalCredits = creditByPrice.credits * (item.quantity || 1);
-        const { error } = await supabase.from('ai_credits').insert({
-          broker_id: userId,
-          credits_purchased: totalCredits,
-          credits_remaining: totalCredits,
-          price_paid: (item.amount_total || 0) / 100,
-          stripe_payment_id: session.payment_intent as string,
-        });
-        if (error) logStep("Error inserting AI credits", { error: error.message });
-        else logStep("AI credits added (by price)", { userId, credits: totalCredits });
+        await insertAiCreditsIdempotent(
+          supabase,
+          userId,
+          totalCredits,
+          (item.amount_total || 0) / 100,
+          session.payment_intent as string,
+        );
         continue;
       }
 
@@ -202,31 +253,27 @@ async function handleCheckoutCompleted(
         const totalCredits = creditConfig.credits * (item.quantity || 1);
         
         if (creditConfig.type === 'whatsapp') {
-          const { error } = await supabase.from('whatsapp_message_credits').insert({
-            broker_id: userId,
-            credits_purchased: totalCredits,
-            credits_remaining: totalCredits,
-            price_paid: (item.amount_total || 0) / 100,
-            stripe_payment_id: session.payment_intent as string,
-            credit_type: 'whatsapp',
-          });
-          if (error) logStep("Error inserting WhatsApp credits", { error: error.message });
-          else logStep("WhatsApp credits added", { userId, credits: totalCredits });
+          await insertWhatsappCreditsIdempotent(
+            supabase,
+            userId,
+            totalCredits,
+            (item.amount_total || 0) / 100,
+            session.payment_intent as string,
+          );
         } else {
-          const { error } = await supabase.from('ai_credits').insert({
-            broker_id: userId,
-            credits_purchased: totalCredits,
-            credits_remaining: totalCredits,
-            price_paid: (item.amount_total || 0) / 100,
-            stripe_payment_id: session.payment_intent as string,
-          });
-          if (error) logStep("Error inserting AI credits", { error: error.message });
-          else logStep("AI credits added", { userId, credits: totalCredits });
+          await insertAiCreditsIdempotent(
+            supabase,
+            userId,
+            totalCredits,
+            (item.amount_total || 0) / 100,
+            session.payment_intent as string,
+          );
         }
       }
     }
     return;
   }
+
 
   // --- Handle subscription checkout ---
   const planId = session.metadata?.plan_id;
