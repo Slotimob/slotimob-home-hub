@@ -246,7 +246,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
             {/* Contas a Receber */}
             <div className="rounded-lg border">
               <div className="px-2 lg:px-3 py-1.5 lg:py-2 border-b flex items-center gap-1.5">
-                <DollarSign className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                <TrendingUp className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
                 <span className="text-[11px] lg:text-sm font-medium truncate">A Receber</span>
                 <Badge variant="secondary" className="ml-auto text-[10px] px-1.5">
                   {data.receivables.length}
