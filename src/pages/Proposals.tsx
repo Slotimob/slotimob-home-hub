@@ -160,60 +160,7 @@ export default function Proposals() {
     );
   };
 
-  const markProposalAsSent = async (proposalId: string) => {
-    try {
-      await supabase
-        .from('proposals')
-        .update({ status: 'sent', updated_at: new Date().toISOString() } as any)
-        .eq('id', proposalId);
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
-    } catch (err) {
-      console.error('Falha ao marcar proposta como enviada:', err);
-    }
-  };
-
-  const handleCopyLink = async (proposal: Proposal) => {
-    if (!proposal.pdf_url) {
-      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(proposal.pdf_url);
-      toast({ title: 'Link copiado', description: 'Cole onde quiser enviar a proposta.' });
-      if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
-    } catch {
-      toast({ title: 'Erro ao copiar', description: 'Tente novamente.', variant: 'destructive' });
-    }
-  };
-
-  const handleSendWhatsApp = async (proposal: Proposal) => {
-    if (!proposal.pdf_url) {
-      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
-      return;
-    }
-    const propertyTitle = proposal.property?.name || 'o imóvel';
-    const clientName = proposal.lead_name || '';
-    const greeting = clientName ? `Olá ${clientName}` : 'Olá';
-    const message = encodeURIComponent(`${greeting}, segue a proposta para ${propertyTitle}:\n\n${proposal.pdf_url}`);
-    window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener,noreferrer');
-    if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
-  };
-
-  const handleSendEmail = async (proposal: Proposal) => {
-    if (!proposal.pdf_url) {
-      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
-      return;
-    }
-    const propertyTitle = proposal.property?.name || 'o imóvel';
-    const subject = encodeURIComponent(`Proposta - ${propertyTitle}`);
-    const body = encodeURIComponent(`Olá,\n\nSegue a proposta para ${propertyTitle}:\n\n${proposal.pdf_url}\n\nQualquer dúvida, estou à disposição.`);
-    const a = document.createElement('a');
-    a.href = `mailto:?subject=${subject}&body=${body}`;
-    a.click();
-    if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
-  };
-
-  const handleOpenPdf = async (proposal: Proposal) => {
+  const handleDownloadPdf = async (proposal: Proposal) => {
     if (!proposal.pdf_url) {
       toast({ title: 'PDF não disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
       return;
@@ -234,27 +181,28 @@ export default function Proposals() {
       if (error || !data) throw error ?? new Error('Download falhou');
 
       const blobUrl = URL.createObjectURL(data);
-      const newTab = window.open(blobUrl, '_blank', 'noopener,noreferrer');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 120_000);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      const filename = storagePath.split('/').pop() || 'proposta.pdf';
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
 
-      if (!newTab) {
-        toast({
-          title: 'Popup bloqueado',
-          description: 'Permita popups para este site e tente novamente.',
-          variant: 'destructive',
-        });
-      }
+      toast({ title: 'PDF baixado', description: 'Verifique sua pasta de downloads.' });
     } catch (err) {
       console.error('Erro ao baixar PDF:', err);
       toast({
-        title: 'Erro ao abrir PDF',
-        description: 'Não foi possível carregar o arquivo. Tente novamente.',
+        title: 'Erro ao baixar PDF',
+        description: 'Não foi possível baixar o arquivo. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
       setPdfDownloading(null);
     }
   };
+
 
   const propertyLabel = (p: Proposal) =>
     p.property?.name
