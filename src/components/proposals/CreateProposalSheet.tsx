@@ -39,6 +39,9 @@ import {
   Zap,
   Percent,
   Briefcase,
+  Search,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   generatePropertyPDF,
