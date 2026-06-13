@@ -114,7 +114,7 @@ export default function Proposals() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+
 
   const preSelectedUnitId = searchParams.get('unitId') || undefined;
 
