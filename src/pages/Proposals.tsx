@@ -379,8 +379,9 @@ export default function Proposals() {
                                       </button>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      {proposal.pdf_url ? 'Abrir PDF da proposta' : 'PDF não disponível ainda'}
+                                      {proposal.pdf_url ? 'Baixar PDF da proposta' : 'PDF não disponível ainda'}
                                     </TooltipContent>
+
                                   </Tooltip>
                                 </TableCell>
                                 <TableCell>
