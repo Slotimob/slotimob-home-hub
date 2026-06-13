@@ -223,7 +223,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
 
         {/* ══════ PAGE 4: FINANCIAL (conditional) ══════ */}
         {hasFinancial && (
-          <div style={{ width: '794px', minHeight: '1123px', pageBreakBefore: 'always' }} className="px-10 py-10 flex flex-col">
+          <div style={{ width: '794px', height: '1123px', pageBreakBefore: 'always', boxSizing: 'border-box' }} className="px-10 py-10 flex flex-col">
             {/* Condo / IPTU */}
             {(unit.condo_fee || unit.iptu) && (
               <div className="mb-8">
