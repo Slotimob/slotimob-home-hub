@@ -305,7 +305,7 @@ function SectionTitle({ title, accent }: { title: string; accent?: boolean }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <div className="w-1 h-6 rounded-full" style={{ background: accent ? '#2fc9af' : '#0b0073' }} />
-      <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>{title}</h2>
+      <h2 className="text-lg font-bold uppercase" style={{ color: '#0b0073', letterSpacing: '0.04em' }}>{title}</h2>
     </div>
   );
 }
