@@ -205,11 +205,17 @@ export function CreateProposalSheet({
       setIntroMessage(editingProposal.introduction_message || '');
       setIncludeFinancing(editingProposal.include_financing);
       setIncludeCover(editingProposal.include_cover);
+    } else if (duplicatingProposal) {
+      setSelectedUnitId(duplicatingProposal.unit_id || '');
+      setLeadName(duplicatingProposal.lead_name || '');
+      setIntroMessage(duplicatingProposal.introduction_message || '');
+      setIncludeFinancing(duplicatingProposal.include_financing);
+      setIncludeCover(duplicatingProposal.include_cover);
     } else {
       if (preSelectedUnitId) setSelectedUnitId(preSelectedUnitId);
       if (initialLeadName) setLeadName(initialLeadName);
     }
-  }, [open, preSelectedUnitId, initialLeadName, editingProposal]);
+  }, [open, preSelectedUnitId, initialLeadName, editingProposal, duplicatingProposal]);
 
   // Reset on close
   useEffect(() => {
@@ -229,6 +235,9 @@ export function CreateProposalSheet({
       setIncludeAgentWhatsApp(false);
       setPdfData(null);
       setReadyToCapture(false);
+      setStep(1);
+      setUnitSearch('');
+      setShowAdvanced(false);
     }
   }, [open]);
 
