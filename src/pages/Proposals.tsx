@@ -315,8 +315,8 @@ export default function Proposals() {
                             <div className="flex justify-between items-start gap-2">
                               <button
                                 className="font-medium text-sm text-left hover:underline cursor-pointer"
-                                onClick={() => handleOpenPdf(proposal)}
-                                title={proposal.pdf_url ? 'Abrir PDF' : 'PDF não disponível'}
+                                onClick={() => handleDownloadPdf(proposal)}
+                                title={proposal.pdf_url ? 'Baixar PDF' : 'PDF não disponível'}
                               >
                                 {propertyLabel(proposal)}
                               </button>
@@ -339,15 +339,13 @@ export default function Proposals() {
                             </div>
                             <RowActions
                               proposal={proposal}
-                              onSendWhatsApp={handleSendWhatsApp}
-                              onSendEmail={handleSendEmail}
-                              onCopyLink={handleCopyLink}
                               onEdit={handleEdit}
                               onDuplicate={handleDuplicate}
                               onDelete={(id) => setDeletingId(id)}
-                              onOpenPdf={handleOpenPdf}
+                              onDownloadPdf={handleDownloadPdf}
                               pdfDownloading={pdfDownloading}
                             />
+
                           </div>
                         ))}
                       </div>
