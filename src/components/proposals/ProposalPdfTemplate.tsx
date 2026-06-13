@@ -442,7 +442,7 @@ function InvestmentTable({ price, rate: customRate }: { price: number; rate?: nu
         <div
           key={s.pct}
           className="grid grid-cols-5 text-center py-3 px-2 text-sm items-center"
-          style={{ background: i % 2 === 0 ? '#f8f8fc' : '#ffffff' }}
+          style={{ background: i % 2 === 0 ? '#f8f8fc' : '#ffffff', fontFeatureSettings: '"tnum"' }}
         >
           <span className="font-bold" style={{ color: '#0b0073' }}>{s.pct}%</span>
           <span style={{ color: '#444' }}>{fmt(s.dp)}</span>
@@ -453,6 +453,7 @@ function InvestmentTable({ price, rate: customRate }: { price: number; rate?: nu
           <span className="text-sm" style={{ color: '#888' }}>{fmt(s.income)}</span>
         </div>
       ))}
+
     </div>
   );
 }
