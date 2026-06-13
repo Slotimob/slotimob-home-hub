@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/tooltip';
 import {
   FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2,
-  MessageCircle, Mail, Link as LinkIcon, Eye, Copy, ExternalLink, Search,
+  MessageCircle, Mail, Link as LinkIcon, Eye, Copy, ExternalLink, Search, Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
