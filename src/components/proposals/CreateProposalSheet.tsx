@@ -97,6 +97,10 @@ export function CreateProposalSheet({
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
+  const [unitSearch, setUnitSearch] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
 
   const [selectedUnitId, setSelectedUnitId] = useState('');
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
