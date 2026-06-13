@@ -546,290 +546,347 @@ export function CreateProposalSheet({
             </SheetDescription>
           </SheetHeader>
 
+          {/* Step indicator */}
+          <div className="px-6 py-3 border-b bg-muted/30 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-1.5 text-xs font-medium ${step === 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/30 text-muted-foreground'}`}>1</div>
+                Imóvel e Cliente
+              </div>
+              <div className="flex-1 h-px bg-border" />
+              <div className={`flex items-center gap-1.5 text-xs font-medium ${step === 2 ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/30 text-muted-foreground'}`}>2</div>
+                Personalizar
+              </div>
+            </div>
+          </div>
+
           <ScrollArea className="flex-1">
             <div className="px-6 py-5 space-y-6">
-              {/* Unit Selection */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  Imóvel *
-                </Label>
-                <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={loadingUnits ? 'Carregando...' : 'Selecione o imóvel'} />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="max-h-[300px] overflow-y-auto">
-                    {units.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        <span className="flex items-center gap-2">
-                          {u.property_name
-                            ? `${u.property_name} - ${u.unit_number}`
-                            : u.unit_number}
-                          {u.price && (
-                            <span className="text-muted-foreground text-xs">
-                              {formatPrice(u.price)}
-                            </span>
-                          )}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedUnit && (
-                  <div className="p-3 rounded-lg bg-muted/50 border">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        {selectedUnit.property_name
-                          ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}`
-                          : selectedUnit.unit_number}
-                      </span>
-                      {selectedUnit.price && (
-                        <Badge variant="secondary">{formatPrice(selectedUnit.price)}</Badge>
-                      )}
-                    </div>
-                    {selectedUnit.cover_image_url && (
-                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                        <ImageIcon className="h-3 w-3" />
-                        Imagem de capa disponível
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Contact Selector */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
-                  Cliente / Contato
-                </Label>
-                <ContactSelector
-                  value={selectedContactId}
-                  onChange={(id) => {
-                    setSelectedContactId(id);
-                    setSelectedDealId(null);
-                  }}
-                  placeholder="Selecione um contato..."
-                />
-              </div>
-
-              {/* Deal Selector — only show when contact has deals */}
-              {selectedContactId && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    Vincular a uma Negociação? (opcional)
-                  </Label>
-                  {contactDeals && contactDeals.length > 0 ? (
-                    <Select value={selectedDealId || 'none'} onValueChange={(v) => setSelectedDealId(v === 'none' ? null : v)}>
+              {step === 1 && (
+                <>
+                  {/* Unit Selection */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      Imóvel *
+                    </Label>
+                    <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Nenhuma negociação selecionada" />
+                        <SelectValue placeholder={loadingUnits ? 'Carregando...' : 'Selecione o imóvel'} />
                       </SelectTrigger>
-                      <SelectContent position="popper" sideOffset={5} className="max-h-[300px] overflow-y-auto z-[100]">
-                        <SelectItem value="none">Nenhuma</SelectItem>
-                        {contactDeals.map((deal: any) => {
-                          const pipelineLabels: Record<string, string> = { sale: 'Venda', rental: 'Locação', acquisition: 'Captação' };
-                          const pipelineLabel = pipelineLabels[deal.pipeline_type] || deal.pipeline_type || 'Venda';
-                          const dealTitle = (deal.lead as any)?.name || 'Negociação';
-                          return (
-                            <SelectItem key={deal.id} value={deal.id}>
-                              [{pipelineLabel}] {dealTitle}
+                      <SelectContent position="popper" className="max-h-[320px] overflow-y-auto">
+                        {units.length > 10 && (
+                          <div
+                            className="sticky top-0 z-10 bg-popover p-2 border-b"
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            <div className="relative">
+                              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input
+                                placeholder="Buscar imóvel..."
+                                value={unitSearch}
+                                onChange={(e) => setUnitSearch(e.target.value)}
+                                className="h-8 pl-7 text-sm"
+                                onKeyDown={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {units
+                          .filter((u) => {
+                            const term = unitSearch.trim().toLowerCase();
+                            if (!term) return true;
+                            return `${u.property_name || ''} ${u.unit_number}`.toLowerCase().includes(term);
+                          })
+                          .map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              <span className="flex items-center gap-2">
+                                {u.property_name ? `${u.property_name} - ${u.unit_number}` : u.unit_number}
+                                {u.price && (
+                                  <span className="text-muted-foreground text-xs">{formatPrice(u.price)}</span>
+                                )}
+                              </span>
                             </SelectItem>
-                          );
-                        })}
+                          ))}
                       </SelectContent>
                     </Select>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic py-2">Nenhuma negociação encontrada para este contato.</p>
+
+                    {selectedUnit && (
+                      <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 space-y-2">
+                        {selectedUnit.cover_image_url && (
+                          <img
+                            src={selectedUnit.cover_image_url}
+                            className="w-full h-28 object-cover rounded-lg"
+                            alt="Capa do imóvel"
+                          />
+                        )}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold truncate">
+                              {selectedUnit.property_name
+                                ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}`
+                                : selectedUnit.unit_number}
+                            </p>
+                            {!selectedUnit.cover_image_url && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <ImageIcon className="h-3 w-3" />
+                                Sem imagem de capa
+                              </p>
+                            )}
+                          </div>
+                          {selectedUnit.price && (
+                            <Badge variant="secondary" className="text-sm font-bold shrink-0">
+                              {formatPrice(selectedUnit.price)}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Contact Selector */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      Cliente / Contato
+                    </Label>
+                    <ContactSelector
+                      value={selectedContactId}
+                      onChange={(id) => {
+                        setSelectedContactId(id);
+                        setSelectedDealId(null);
+                      }}
+                      placeholder="Selecione um contato..."
+                    />
+                  </div>
+
+                  {selectedContactId && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        Vincular a uma Negociação? (opcional)
+                      </Label>
+                      {contactDeals && contactDeals.length > 0 ? (
+                        <Select value={selectedDealId || 'none'} onValueChange={(v) => setSelectedDealId(v === 'none' ? null : v)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Nenhuma negociação selecionada" />
+                          </SelectTrigger>
+                          <SelectContent position="popper" sideOffset={5} className="max-h-[300px] overflow-y-auto z-[100]">
+                            <SelectItem value="none">Nenhuma</SelectItem>
+                            {contactDeals.map((deal: any) => {
+                              const pipelineLabels: Record<string, string> = { sale: 'Venda', rental: 'Locação', acquisition: 'Captação' };
+                              const pipelineLabel = pipelineLabels[deal.pipeline_type] || deal.pipeline_type || 'Venda';
+                              const dealTitle = (deal.lead as any)?.name || 'Negociação';
+                              return (
+                                <SelectItem key={deal.id} value={deal.id}>
+                                  [{pipelineLabel}] {dealTitle}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic py-2">Nenhuma negociação encontrada para este contato.</p>
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
-              {/* Introduction Message + AI Button */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="intro-msg" className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-muted-foreground" />
-                    Mensagem de Introdução
-                  </Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs h-7"
-                    disabled={generatingAI || !selectedUnit}
-                    onClick={handleGenerateAI}
-                  >
-                    {generatingAI ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Wand2 className="h-3 w-3" />
-                    )}
-                    Gerar com IA
-                  </Button>
-                </div>
-                <Textarea
-                  id="intro-msg"
-                  placeholder="Escreva uma mensagem personalizada para o cliente..."
-                  value={introMessage}
-                  onChange={(e) => setIntroMessage(e.target.value)}
-                  rows={4}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Será incluída na proposta. Use o botão de IA para gerar automaticamente.
-                </p>
-              </div>
-
-              <Separator />
-
-              {/* Options */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold">Opções da Proposta</h4>
-
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <Calculator className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Simulação de Financiamento</p>
-                      <p className="text-xs text-muted-foreground">
-                        Inclui tabela com cenários de entrada e parcelas
-                      </p>
-                    </div>
-                  </div>
-                  <Switch checked={includeFinancing} onCheckedChange={setIncludeFinancing} />
-                </div>
-
-                {/* Interest Rate — only visible when financing is on */}
-                {includeFinancing && (
-                  <div className="pl-3 space-y-1.5">
-                    <Label htmlFor="interest-rate" className="flex items-center gap-2 text-xs">
-                      <Percent className="h-3.5 w-3.5 text-muted-foreground" />
-                      Taxa de Juros Anual (%)
-                    </Label>
-                    <Input
-                      id="interest-rate"
-                      type="number"
-                      step="0.1"
-                      min="1"
-                      max="30"
-                      placeholder="10.5"
-                      value={interestRate}
-                      onChange={(e) => setInterestRate(e.target.value)}
-                      className="h-8 w-32 text-sm"
-                    />
-                    <p className="text-[10px] text-muted-foreground">Padrão: 10,5% a.a. (média de mercado)</p>
-                  </div>
-                )}
-
-                {/* Custom Simulation */}
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <Calculator className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Simulação Personalizada</p>
-                      <p className="text-xs text-muted-foreground">
-                        Valores customizados de entrada, taxa e parcela
-                      </p>
-                    </div>
-                  </div>
-                  <Switch checked={includeCustomSim} onCheckedChange={setIncludeCustomSim} />
-                </div>
-
-                {includeCustomSim && (
-                  <div className="pl-3 space-y-3 p-3 rounded-lg bg-muted/30 border">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Valor Base do Imóvel (R$)</Label>
-                      <Input
-                        type="number"
-                        placeholder={selectedUnit?.price?.toString() || '0'}
-                        value={customBasePrice}
-                        onChange={(e) => setCustomBasePrice(e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">% de Entrada</Label>
-                        <Input
-                          type="number"
-                          step="1"
-                          min="5"
-                          max="90"
-                          placeholder="20"
-                          value={customDownPercent}
-                          onChange={(e) => setCustomDownPercent(e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Taxa de Juros (% a.a.)</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          min="1"
-                          max="30"
-                          placeholder="10.5"
-                          value={customRate}
-                          onChange={(e) => setCustomRate(e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <ImageIcon className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Capa com Imagem</p>
-                      <p className="text-xs text-muted-foreground">
-                        Exibe a foto principal do imóvel na primeira página
-                      </p>
-                    </div>
-                  </div>
-                  <Switch checked={includeCover} onCheckedChange={setIncludeCover} />
-                </div>
-
-                {/* Agent WhatsApp CTA */}
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <svg className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.616l4.584-1.47A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.24 0-4.317-.727-6.002-1.96l-.42-.317-2.716.871.893-2.647-.345-.44A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
-                    <div>
-                      <p className="text-sm font-medium">Incluir meu WhatsApp</p>
-                      <p className="text-xs text-muted-foreground">
-                        Adiciona seu número como CTA no final da proposta
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                        Número cadastrado neste usuário (configurações).
-                      </p>
-                    </div>
-                  </div>
-                  <Switch checked={includeAgentWhatsApp} onCheckedChange={setIncludeAgentWhatsApp} />
-                </div>
-              </div>
-
-              {/* Preview Summary */}
-              {selectedUnit && (
+              {step === 2 && (
                 <>
-                  <Separator />
-                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
-                    <h4 className="text-sm font-semibold text-primary">Resumo da Proposta</h4>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>
-                        📄 Imóvel:{' '}
-                        {selectedUnit.property_name
-                          ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}`
-                          : selectedUnit.unit_number}
-                      </li>
-                      {leadName && <li>👤 Cliente: {leadName}</li>}
-                      {includeFinancing && <li>💰 Com simulação de financiamento ({interestRate}% a.a.)</li>}
-                      {includeCover && <li>🖼️ Com capa visual</li>}
-                      {introMessage && <li>✍️ Com mensagem personalizada</li>}
-                      {dealId && <li>🤝 Vinculada a negociação do CRM</li>}
-                    </ul>
+                  {/* Introduction Message + AI Button */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="intro-msg" className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-muted-foreground" />
+                        Mensagem de Introdução
+                      </Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-xs h-7"
+                        disabled={generatingAI || !selectedUnit}
+                        onClick={handleGenerateAI}
+                      >
+                        {generatingAI ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                        Gerar com IA
+                      </Button>
+                    </div>
+                    <Textarea
+                      id="intro-msg"
+                      placeholder="Escreva uma mensagem personalizada para o cliente..."
+                      value={introMessage}
+                      onChange={(e) => setIntroMessage(e.target.value)}
+                      rows={4}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Será incluída na proposta. Use o botão de IA para gerar automaticamente.
+                    </p>
                   </div>
+
+                  <Separator />
+
+                  {/* Basic Options */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold">Opções da Proposta</h4>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <Calculator className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium">Simulação de Financiamento</p>
+                          <p className="text-xs text-muted-foreground">
+                            Inclui tabela com cenários de entrada e parcelas
+                          </p>
+                        </div>
+                      </div>
+                      <Switch checked={includeFinancing} onCheckedChange={setIncludeFinancing} />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <ImageIcon className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium">Capa com Imagem</p>
+                          <p className="text-xs text-muted-foreground">
+                            Exibe a foto principal do imóvel na primeira página
+                          </p>
+                        </div>
+                      </div>
+                      <Switch checked={includeCover} onCheckedChange={setIncludeCover} />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <svg className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.616l4.584-1.47A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.24 0-4.317-.727-6.002-1.96l-.42-.317-2.716.871.893-2.647-.345-.44A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+                        <div>
+                          <p className="text-sm font-medium">Incluir meu WhatsApp</p>
+                          <p className="text-xs text-muted-foreground">
+                            Adiciona seu número como CTA no final da proposta
+                          </p>
+                        </div>
+                      </div>
+                      <Switch checked={includeAgentWhatsApp} onCheckedChange={setIncludeAgentWhatsApp} />
+                    </div>
+
+                    {/* Advanced toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvanced((v) => !v)}
+                      className="flex items-center gap-1 text-xs text-muted-foreground underline cursor-pointer hover:text-foreground transition-colors"
+                    >
+                      Configurações avançadas
+                      {showAdvanced ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </button>
+
+                    {showAdvanced && (
+                      <div className="space-y-4 pt-2">
+                        {includeFinancing && (
+                          <div className="pl-3 space-y-1.5">
+                            <Label htmlFor="interest-rate" className="flex items-center gap-2 text-xs">
+                              <Percent className="h-3.5 w-3.5 text-muted-foreground" />
+                              Taxa de Juros Anual (%)
+                            </Label>
+                            <Input
+                              id="interest-rate"
+                              type="number"
+                              step="0.1"
+                              min="1"
+                              max="30"
+                              placeholder="10.5"
+                              value={interestRate}
+                              onChange={(e) => setInterestRate(e.target.value)}
+                              className="h-8 w-32 text-sm"
+                            />
+                            <p className="text-[10px] text-muted-foreground">Padrão: 10,5% a.a. (média de mercado)</p>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between p-3 rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <Calculator className="h-5 w-5 text-primary" />
+                            <div>
+                              <p className="text-sm font-medium">Simulação Personalizada</p>
+                              <p className="text-xs text-muted-foreground">
+                                Valores customizados de entrada, taxa e parcela
+                              </p>
+                            </div>
+                          </div>
+                          <Switch checked={includeCustomSim} onCheckedChange={setIncludeCustomSim} />
+                        </div>
+
+                        {includeCustomSim && (
+                          <div className="pl-3 space-y-3 p-3 rounded-lg bg-muted/30 border">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Valor Base do Imóvel (R$)</Label>
+                              <Input
+                                type="number"
+                                placeholder={selectedUnit?.price?.toString() || '0'}
+                                value={customBasePrice}
+                                onChange={(e) => setCustomBasePrice(e.target.value)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">% de Entrada</Label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="5"
+                                  max="90"
+                                  placeholder="20"
+                                  value={customDownPercent}
+                                  onChange={(e) => setCustomDownPercent(e.target.value)}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Taxa de Juros (% a.a.)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  min="1"
+                                  max="30"
+                                  placeholder="10.5"
+                                  value={customRate}
+                                  onChange={(e) => setCustomRate(e.target.value)}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Preview Summary */}
+                  {selectedUnit && (
+                    <>
+                      <Separator />
+                      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+                        <h4 className="text-sm font-semibold text-primary">Resumo da Proposta</h4>
+                        <ul className="text-xs text-muted-foreground space-y-1">
+                          <li>
+                            📄 Imóvel:{' '}
+                            {selectedUnit.property_name
+                              ? `${selectedUnit.property_name} - ${selectedUnit.unit_number}`
+                              : selectedUnit.unit_number}
+                          </li>
+                          {leadName && <li>👤 Cliente: {leadName}</li>}
+                          {includeFinancing && <li>💰 Com simulação de financiamento ({interestRate}% a.a.)</li>}
+                          {includeCover && <li>🖼️ Com capa visual</li>}
+                          {introMessage && <li>✍️ Com mensagem personalizada</li>}
+                          {(selectedDealId || dealId) && <li>🤝 Vinculada a negociação do CRM</li>}
+                        </ul>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -837,35 +894,49 @@ export function CreateProposalSheet({
 
           {/* Footer */}
           <div className="px-6 py-4 border-t flex-shrink-0 space-y-2">
-            {/* AI Credits display */}
-            {credits && (
+            {credits && step === 2 && (
               <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                 <Zap className="h-3 w-3 text-amber-500" />
                 <span>Saldo: {credits.total_available} tokens IA</span>
               </div>
             )}
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button
-                className="flex-1"
-                disabled={!selectedUnit || generating}
-                onClick={handleGenerate}
-              >
-                {generating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando magia...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="mr-2 h-4 w-4" />
-                    {isEditing ? 'Atualizar Proposta' : 'Gerar Proposta'}
-                  </>
-                )}
-              </Button>
-            </div>
+            {step === 1 ? (
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1"
+                  disabled={!selectedUnitId}
+                  onClick={() => setStep(2)}
+                >
+                  Próximo: Personalizar →
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setStep(1)}>
+                  ← Voltar
+                </Button>
+                <Button
+                  className="flex-1"
+                  disabled={!selectedUnit || generating}
+                  onClick={handleGenerate}
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="mr-2 h-4 w-4" />
+                      {isEditing ? 'Atualizar Proposta' : 'Gerar Proposta'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
