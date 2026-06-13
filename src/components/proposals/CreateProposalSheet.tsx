@@ -83,6 +83,7 @@ export function CreateProposalSheet({
   dealId,
   contactId,
   editingProposal,
+  duplicatingProposal,
   onProposalGenerated,
 }: CreateProposalSheetProps) {
   const { user } = useAuth();
