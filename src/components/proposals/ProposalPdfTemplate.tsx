@@ -7,10 +7,18 @@ interface ProposalPdfTemplateProps {
   agent?: AgentInfo;
 }
 
+function stripEmoji(text: string): string {
+  return text
+    .replace(/(\p{Emoji_Presentation}|\p{Extended_Pictographic})\uFE0F?/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 const fmt = (v: number | null | undefined): string => {
   if (!v) return '—';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
 };
+
 
 const FURNISHED_LABELS: Record<string, string> = {
   sim: 'Mobiliado', semimobiliado: 'Semimobiliado', nao: 'Sem mobília',
