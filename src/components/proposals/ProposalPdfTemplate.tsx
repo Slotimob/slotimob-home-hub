@@ -360,7 +360,15 @@ function FeaturePill({ icon, value, label }: { icon: React.ReactNode; value: str
 
 function SpecCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="p-4 rounded-xl text-center" style={{ background: '#f5f5fa' }}>
+    <div
+      className="p-4 rounded-xl text-center"
+      style={{
+        background: '#f5f5fa',
+        border: '1px solid rgba(11,0,115,0.08)',
+        boxShadow: '0 2px 8px rgba(11,0,115,0.06)',
+      }}
+    >
+
       <div className="flex justify-center mb-2" style={{ color: '#0b0073' }}>{icon}</div>
       <p className="text-xl font-bold mb-0.5" style={{ color: '#0b0073' }}>{value}</p>
       <p className="text-[10px] uppercase tracking-wider" style={{ color: '#888' }}>{label}</p>
