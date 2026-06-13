@@ -424,15 +424,13 @@ export default function Proposals() {
                                 <TableCell>
                                   <RowActions
                                     proposal={proposal}
-                                    onSendWhatsApp={handleSendWhatsApp}
-                                    onSendEmail={handleSendEmail}
-                                    onCopyLink={handleCopyLink}
                                     onEdit={handleEdit}
                                     onDuplicate={handleDuplicate}
                                     onDelete={(id) => setDeletingId(id)}
-                                    onOpenPdf={handleOpenPdf}
+                                    onDownloadPdf={handleDownloadPdf}
                                     pdfDownloading={pdfDownloading}
                                   />
+
                                 </TableCell>
                               </TableRow>
                             ))}
