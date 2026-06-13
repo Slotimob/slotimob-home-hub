@@ -61,6 +61,16 @@ const formatBRL = (v: number | null | undefined) =>
     ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
     : '—';
 
+// Extrai o caminho dentro do bucket 'proposals' a partir da signed URL
+function extractProposalStoragePath(pdfUrl: string): string | null {
+  try {
+    const match = pdfUrl.match(/\/sign\/proposals\/([^?]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
 type StatusKey = 'draft' | 'sent' | 'viewed' | 'expired';
 
 const statusConfig: Record<string, { label: string; className: string; icon: typeof Clock }> = {
