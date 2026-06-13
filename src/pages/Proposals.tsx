@@ -404,6 +404,7 @@ export default function Proposals() {
                               onDuplicate={handleDuplicate}
                               onDelete={(id) => setDeletingId(id)}
                               onOpenPdf={handleOpenPdf}
+                              pdfDownloading={pdfDownloading}
                             />
                           </div>
                         ))}
