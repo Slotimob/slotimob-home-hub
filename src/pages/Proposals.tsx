@@ -516,59 +516,23 @@ function StatCard({
 
 function RowActions({
   proposal,
-  onSendWhatsApp,
-  onSendEmail,
-  onCopyLink,
   onEdit,
   onDuplicate,
   onDelete,
-  onOpenPdf,
+  onDownloadPdf,
   pdfDownloading,
 }: {
   proposal: Proposal;
-  onSendWhatsApp: (p: Proposal) => void;
-  onSendEmail: (p: Proposal) => void;
-  onCopyLink: (p: Proposal) => void;
   onEdit: (p: Proposal) => void;
   onDuplicate: (p: Proposal) => void;
   onDelete: (id: string) => void;
-  onOpenPdf: (p: Proposal) => void;
+  onDownloadPdf: (p: Proposal) => void;
   pdfDownloading: string | null;
 }) {
   const hasPdf = !!proposal.pdf_url;
   const isDownloading = pdfDownloading === proposal.id;
   return (
     <div className="flex items-center justify-end gap-1 flex-wrap">
-      <DropdownMenu>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 text-green-700 hover:text-green-800 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
-                disabled={!hasPdf}
-              >
-                <Send className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline text-xs">Enviar</span>
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          {!hasPdf && <TooltipContent>PDF não gerado ainda</TooltipContent>}
-        </Tooltip>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => onSendWhatsApp(proposal)}>
-            <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onSendEmail(proposal)}>
-            <Mail className="mr-2 h-4 w-4" /> Email
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onCopyLink(proposal)}>
-            <LinkIcon className="mr-2 h-4 w-4" /> Copiar link
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
       {hasPdf && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -577,16 +541,17 @@ function RowActions({
               size="icon"
               className="h-8 w-8"
               disabled={isDownloading}
-              onClick={() => onOpenPdf(proposal)}
+              onClick={() => onDownloadPdf(proposal)}
             >
               {isDownloading
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                : <ExternalLink className="h-3.5 w-3.5" />}
+                : <Download className="h-3.5 w-3.5" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{isDownloading ? 'Carregando...' : 'Abrir PDF'}</TooltipContent>
+          <TooltipContent>{isDownloading ? 'Baixando...' : 'Baixar PDF'}</TooltipContent>
         </Tooltip>
       )}
+
 
 
       <Tooltip>
