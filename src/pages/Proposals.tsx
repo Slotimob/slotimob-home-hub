@@ -105,6 +105,7 @@ export default function Proposals() {
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [duplicatingProposal, setDuplicatingProposal] = useState<Proposal | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pdfDownloading, setPdfDownloading] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchParams, setSearchParams] = useSearchParams();
