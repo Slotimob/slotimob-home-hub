@@ -135,9 +135,10 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
             <div className="mb-8">
               <SectionTitle title="Apresentação" />
               <div className="p-6 rounded-xl border-l-4" style={{ background: '#f5f8ff', borderColor: '#0b0073' }}>
-                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#444' }}>
-                  {data.introductionMessage}
+                <p className="whitespace-pre-line" style={{ color: '#444', fontSize: '14px', lineHeight: 1.6 }}>
+                  {stripEmoji(data.introductionMessage)}
                 </p>
+
               </div>
             </div>
           )}
