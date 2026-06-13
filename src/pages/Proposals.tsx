@@ -35,12 +35,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -48,13 +42,13 @@ import {
 } from '@/components/ui/tooltip';
 import {
   FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2,
-  MessageCircle, Mail, Link as LinkIcon, Eye, Copy, ExternalLink, Search, Loader2,
+  Eye, Copy, Search, Loader2, Download,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+
 
 const formatBRL = (v: number | null | undefined) =>
   typeof v === 'number'
@@ -120,7 +114,7 @@ export default function Proposals() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+
 
   const preSelectedUnitId = searchParams.get('unitId') || undefined;
 
@@ -166,60 +160,7 @@ export default function Proposals() {
     );
   };
 
-  const markProposalAsSent = async (proposalId: string) => {
-    try {
-      await supabase
-        .from('proposals')
-        .update({ status: 'sent', updated_at: new Date().toISOString() } as any)
-        .eq('id', proposalId);
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
-    } catch (err) {
-      console.error('Falha ao marcar proposta como enviada:', err);
-    }
-  };
-
-  const handleCopyLink = async (proposal: Proposal) => {
-    if (!proposal.pdf_url) {
-      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(proposal.pdf_url);
-      toast({ title: 'Link copiado', description: 'Cole onde quiser enviar a proposta.' });
-      if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
-    } catch {
-      toast({ title: 'Erro ao copiar', description: 'Tente novamente.', variant: 'destructive' });
-    }
-  };
-
-  const handleSendWhatsApp = async (proposal: Proposal) => {
-    if (!proposal.pdf_url) {
-      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
-      return;
-    }
-    const propertyTitle = proposal.property?.name || 'o imóvel';
-    const clientName = proposal.lead_name || '';
-    const greeting = clientName ? `Olá ${clientName}` : 'Olá';
-    const message = encodeURIComponent(`${greeting}, segue a proposta para ${propertyTitle}:\n\n${proposal.pdf_url}`);
-    window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener,noreferrer');
-    if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
-  };
-
-  const handleSendEmail = async (proposal: Proposal) => {
-    if (!proposal.pdf_url) {
-      toast({ title: 'Sem link disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
-      return;
-    }
-    const propertyTitle = proposal.property?.name || 'o imóvel';
-    const subject = encodeURIComponent(`Proposta - ${propertyTitle}`);
-    const body = encodeURIComponent(`Olá,\n\nSegue a proposta para ${propertyTitle}:\n\n${proposal.pdf_url}\n\nQualquer dúvida, estou à disposição.`);
-    const a = document.createElement('a');
-    a.href = `mailto:?subject=${subject}&body=${body}`;
-    a.click();
-    if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
-  };
-
-  const handleOpenPdf = async (proposal: Proposal) => {
+  const handleDownloadPdf = async (proposal: Proposal) => {
     if (!proposal.pdf_url) {
       toast({ title: 'PDF não disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
       return;
@@ -240,27 +181,28 @@ export default function Proposals() {
       if (error || !data) throw error ?? new Error('Download falhou');
 
       const blobUrl = URL.createObjectURL(data);
-      const newTab = window.open(blobUrl, '_blank', 'noopener,noreferrer');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 120_000);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      const filename = storagePath.split('/').pop() || 'proposta.pdf';
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
 
-      if (!newTab) {
-        toast({
-          title: 'Popup bloqueado',
-          description: 'Permita popups para este site e tente novamente.',
-          variant: 'destructive',
-        });
-      }
+      toast({ title: 'PDF baixado', description: 'Verifique sua pasta de downloads.' });
     } catch (err) {
       console.error('Erro ao baixar PDF:', err);
       toast({
-        title: 'Erro ao abrir PDF',
-        description: 'Não foi possível carregar o arquivo. Tente novamente.',
+        title: 'Erro ao baixar PDF',
+        description: 'Não foi possível baixar o arquivo. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
       setPdfDownloading(null);
     }
   };
+
 
   const propertyLabel = (p: Proposal) =>
     p.property?.name
@@ -373,8 +315,8 @@ export default function Proposals() {
                             <div className="flex justify-between items-start gap-2">
                               <button
                                 className="font-medium text-sm text-left hover:underline cursor-pointer"
-                                onClick={() => handleOpenPdf(proposal)}
-                                title={proposal.pdf_url ? 'Abrir PDF' : 'PDF não disponível'}
+                                onClick={() => handleDownloadPdf(proposal)}
+                                title={proposal.pdf_url ? 'Baixar PDF' : 'PDF não disponível'}
                               >
                                 {propertyLabel(proposal)}
                               </button>
@@ -397,15 +339,13 @@ export default function Proposals() {
                             </div>
                             <RowActions
                               proposal={proposal}
-                              onSendWhatsApp={handleSendWhatsApp}
-                              onSendEmail={handleSendEmail}
-                              onCopyLink={handleCopyLink}
                               onEdit={handleEdit}
                               onDuplicate={handleDuplicate}
                               onDelete={(id) => setDeletingId(id)}
-                              onOpenPdf={handleOpenPdf}
+                              onDownloadPdf={handleDownloadPdf}
                               pdfDownloading={pdfDownloading}
                             />
+
                           </div>
                         ))}
                       </div>
@@ -431,7 +371,7 @@ export default function Proposals() {
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <button
-                                        onClick={() => handleOpenPdf(proposal)}
+                                        onClick={() => handleDownloadPdf(proposal)}
                                         className="flex items-center gap-2 text-left hover:underline cursor-pointer"
                                       >
                                         <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -439,8 +379,9 @@ export default function Proposals() {
                                       </button>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      {proposal.pdf_url ? 'Abrir PDF da proposta' : 'PDF não disponível ainda'}
+                                      {proposal.pdf_url ? 'Baixar PDF da proposta' : 'PDF não disponível ainda'}
                                     </TooltipContent>
+
                                   </Tooltip>
                                 </TableCell>
                                 <TableCell>
@@ -483,15 +424,13 @@ export default function Proposals() {
                                 <TableCell>
                                   <RowActions
                                     proposal={proposal}
-                                    onSendWhatsApp={handleSendWhatsApp}
-                                    onSendEmail={handleSendEmail}
-                                    onCopyLink={handleCopyLink}
                                     onEdit={handleEdit}
                                     onDuplicate={handleDuplicate}
                                     onDelete={(id) => setDeletingId(id)}
-                                    onOpenPdf={handleOpenPdf}
+                                    onDownloadPdf={handleDownloadPdf}
                                     pdfDownloading={pdfDownloading}
                                   />
+
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -577,59 +516,23 @@ function StatCard({
 
 function RowActions({
   proposal,
-  onSendWhatsApp,
-  onSendEmail,
-  onCopyLink,
   onEdit,
   onDuplicate,
   onDelete,
-  onOpenPdf,
+  onDownloadPdf,
   pdfDownloading,
 }: {
   proposal: Proposal;
-  onSendWhatsApp: (p: Proposal) => void;
-  onSendEmail: (p: Proposal) => void;
-  onCopyLink: (p: Proposal) => void;
   onEdit: (p: Proposal) => void;
   onDuplicate: (p: Proposal) => void;
   onDelete: (id: string) => void;
-  onOpenPdf: (p: Proposal) => void;
+  onDownloadPdf: (p: Proposal) => void;
   pdfDownloading: string | null;
 }) {
   const hasPdf = !!proposal.pdf_url;
   const isDownloading = pdfDownloading === proposal.id;
   return (
     <div className="flex items-center justify-end gap-1 flex-wrap">
-      <DropdownMenu>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 text-green-700 hover:text-green-800 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
-                disabled={!hasPdf}
-              >
-                <Send className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline text-xs">Enviar</span>
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          {!hasPdf && <TooltipContent>PDF não gerado ainda</TooltipContent>}
-        </Tooltip>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => onSendWhatsApp(proposal)}>
-            <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onSendEmail(proposal)}>
-            <Mail className="mr-2 h-4 w-4" /> Email
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onCopyLink(proposal)}>
-            <LinkIcon className="mr-2 h-4 w-4" /> Copiar link
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
       {hasPdf && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -638,16 +541,17 @@ function RowActions({
               size="icon"
               className="h-8 w-8"
               disabled={isDownloading}
-              onClick={() => onOpenPdf(proposal)}
+              onClick={() => onDownloadPdf(proposal)}
             >
               {isDownloading
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                : <ExternalLink className="h-3.5 w-3.5" />}
+                : <Download className="h-3.5 w-3.5" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{isDownloading ? 'Carregando...' : 'Abrir PDF'}</TooltipContent>
+          <TooltipContent>{isDownloading ? 'Baixando...' : 'Baixar PDF'}</TooltipContent>
         </Tooltip>
       )}
+
 
 
       <Tooltip>
