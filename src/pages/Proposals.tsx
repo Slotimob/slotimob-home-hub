@@ -203,16 +203,53 @@ export default function Proposals() {
     const propertyTitle = proposal.property?.name || 'o imóvel';
     const subject = encodeURIComponent(`Proposta - ${propertyTitle}`);
     const body = encodeURIComponent(`Olá,\n\nSegue a proposta para ${propertyTitle}:\n\n${proposal.pdf_url}\n\nQualquer dúvida, estou à disposição.`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    const a = document.createElement('a');
+    a.href = `mailto:?subject=${subject}&body=${body}`;
+    a.click();
     if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
   };
 
-  const handleOpenPdf = (proposal: Proposal) => {
+  const handleOpenPdf = async (proposal: Proposal) => {
     if (!proposal.pdf_url) {
       toast({ title: 'PDF não disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
       return;
     }
-    window.open(proposal.pdf_url, '_blank', 'noopener,noreferrer');
+
+    const storagePath = extractProposalStoragePath(proposal.pdf_url);
+    if (!storagePath) {
+      window.open(proposal.pdf_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    setPdfDownloading(proposal.id);
+    try {
+      const { data, error } = await supabase.storage
+        .from('proposals')
+        .download(storagePath);
+
+      if (error || !data) throw error ?? new Error('Download falhou');
+
+      const blobUrl = URL.createObjectURL(data);
+      const newTab = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 120_000);
+
+      if (!newTab) {
+        toast({
+          title: 'Popup bloqueado',
+          description: 'Permita popups para este site e tente novamente.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao baixar PDF:', err);
+      toast({
+        title: 'Erro ao abrir PDF',
+        description: 'Não foi possível carregar o arquivo. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setPdfDownloading(null);
+    }
   };
 
   const propertyLabel = (p: Proposal) =>
