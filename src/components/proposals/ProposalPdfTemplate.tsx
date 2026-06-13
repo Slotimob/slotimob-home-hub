@@ -7,10 +7,18 @@ interface ProposalPdfTemplateProps {
   agent?: AgentInfo;
 }
 
+function stripEmoji(text: string): string {
+  return text
+    .replace(/(\p{Emoji_Presentation}|\p{Extended_Pictographic})\uFE0F?/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 const fmt = (v: number | null | undefined): string => {
   if (!v) return '—';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
 };
+
 
 const FURNISHED_LABELS: Record<string, string> = {
   sim: 'Mobiliado', semimobiliado: 'Semimobiliado', nao: 'Sem mobília',
@@ -127,9 +135,10 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
             <div className="mb-8">
               <SectionTitle title="Apresentação" />
               <div className="p-6 rounded-xl border-l-4" style={{ background: '#f5f8ff', borderColor: '#0b0073' }}>
-                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#444' }}>
-                  {data.introductionMessage}
+                <p className="whitespace-pre-line" style={{ color: '#444', fontSize: '14px', lineHeight: 1.6 }}>
+                  {stripEmoji(data.introductionMessage)}
                 </p>
+
               </div>
             </div>
           )}
@@ -164,28 +173,57 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
 
         {/* ══════ PAGE 3: GALLERY (up to 8 photos) ══════ */}
         {gallery.length > 0 && (
-          <div style={{ width: '794px', minHeight: '1123px', pageBreakBefore: 'always', pageBreakInside: 'avoid' }} className="px-10 py-10 flex flex-col">
+          <div
+            style={{
+              width: '794px',
+              height: '1123px',
+              pageBreakBefore: 'always',
+              pageBreakInside: 'avoid',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '40px',
+              boxSizing: 'border-box',
+            }}
+          >
             <SectionTitle title="Galeria de Fotos" />
-            <div className="grid grid-cols-2 gap-4 flex-1">
+            <div
+              style={{
+                flex: 1,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gridAutoRows: '1fr',
+                gap: '16px',
+                minHeight: 0,
+              }}
+            >
               {gallery.map((img, i) => (
                 <div
                   key={i}
-                  className={`rounded-xl overflow-hidden ${gallery.length % 2 !== 0 && i === gallery.length - 1 ? 'col-span-2' : ''}`}
-                  style={{ height: gallery.length <= 4 ? '240px' : '200px' }}
+                  style={{
+                    overflow: 'hidden',
+                    borderRadius: '12px',
+                    ...(gallery.length % 2 !== 0 && i === gallery.length - 1
+                      ? { gridColumn: '1 / -1' }
+                      : {}),
+                  }}
                 >
-                  <img src={img} alt={`Foto ${i + 1}`} crossOrigin="anonymous" className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt={`Foto ${i + 1}`}
+                    crossOrigin="anonymous"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
                 </div>
               ))}
             </div>
-            <div className="mt-auto">
-              <PageFooter agent={agent} date={generatedDate} />
-            </div>
+            <PageFooter agent={agent} date={generatedDate} />
           </div>
         )}
 
+
         {/* ══════ PAGE 4: FINANCIAL (conditional) ══════ */}
         {hasFinancial && (
-          <div style={{ width: '794px', minHeight: '1123px', pageBreakBefore: 'always' }} className="px-10 py-10 flex flex-col">
+          <div style={{ width: '794px', height: '1123px', pageBreakBefore: 'always', boxSizing: 'border-box' }} className="px-10 py-10 flex flex-col">
             {/* Condo / IPTU */}
             {(unit.condo_fee || unit.iptu) && (
               <div className="mb-8">
@@ -267,7 +305,7 @@ function SectionTitle({ title, accent }: { title: string; accent?: boolean }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <div className="w-1 h-6 rounded-full" style={{ background: accent ? '#2fc9af' : '#0b0073' }} />
-      <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: '#0b0073' }}>{title}</h2>
+      <h2 className="text-lg font-bold uppercase" style={{ color: '#0b0073', letterSpacing: '0.04em' }}>{title}</h2>
     </div>
   );
 }
@@ -322,7 +360,15 @@ function FeaturePill({ icon, value, label }: { icon: React.ReactNode; value: str
 
 function SpecCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="p-4 rounded-xl text-center" style={{ background: '#f5f5fa' }}>
+    <div
+      className="p-4 rounded-xl text-center"
+      style={{
+        background: '#f5f5fa',
+        border: '1px solid rgba(11,0,115,0.08)',
+        boxShadow: '0 2px 8px rgba(11,0,115,0.06)',
+      }}
+    >
+
       <div className="flex justify-center mb-2" style={{ color: '#0b0073' }}>{icon}</div>
       <p className="text-xl font-bold mb-0.5" style={{ color: '#0b0073' }}>{value}</p>
       <p className="text-[10px] uppercase tracking-wider" style={{ color: '#888' }}>{label}</p>
@@ -396,7 +442,7 @@ function InvestmentTable({ price, rate: customRate }: { price: number; rate?: nu
         <div
           key={s.pct}
           className="grid grid-cols-5 text-center py-3 px-2 text-sm items-center"
-          style={{ background: i % 2 === 0 ? '#f8f8fc' : '#ffffff' }}
+          style={{ background: i % 2 === 0 ? '#f8f8fc' : '#ffffff', fontFeatureSettings: '"tnum"' }}
         >
           <span className="font-bold" style={{ color: '#0b0073' }}>{s.pct}%</span>
           <span style={{ color: '#444' }}>{fmt(s.dp)}</span>
@@ -407,6 +453,7 @@ function InvestmentTable({ price, rate: customRate }: { price: number; rate?: nu
           <span className="text-sm" style={{ color: '#888' }}>{fmt(s.income)}</span>
         </div>
       ))}
+
     </div>
   );
 }
