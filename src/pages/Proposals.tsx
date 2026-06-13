@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/tooltip';
 import {
   FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2,
-  MessageCircle, Mail, Link as LinkIcon, Eye, Copy, ExternalLink, Search,
+  MessageCircle, Mail, Link as LinkIcon, Eye, Copy, ExternalLink, Search, Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -60,6 +60,16 @@ const formatBRL = (v: number | null | undefined) =>
   typeof v === 'number'
     ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
     : '—';
+
+// Extrai o caminho dentro do bucket 'proposals' a partir da signed URL
+function extractProposalStoragePath(pdfUrl: string): string | null {
+  try {
+    const match = pdfUrl.match(/\/sign\/proposals\/([^?]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
 
 type StatusKey = 'draft' | 'sent' | 'viewed' | 'expired';
 
@@ -105,6 +115,7 @@ export default function Proposals() {
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [duplicatingProposal, setDuplicatingProposal] = useState<Proposal | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pdfDownloading, setPdfDownloading] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -202,16 +213,53 @@ export default function Proposals() {
     const propertyTitle = proposal.property?.name || 'o imóvel';
     const subject = encodeURIComponent(`Proposta - ${propertyTitle}`);
     const body = encodeURIComponent(`Olá,\n\nSegue a proposta para ${propertyTitle}:\n\n${proposal.pdf_url}\n\nQualquer dúvida, estou à disposição.`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    const a = document.createElement('a');
+    a.href = `mailto:?subject=${subject}&body=${body}`;
+    a.click();
     if (proposal.status === 'draft') await markProposalAsSent(proposal.id);
   };
 
-  const handleOpenPdf = (proposal: Proposal) => {
+  const handleOpenPdf = async (proposal: Proposal) => {
     if (!proposal.pdf_url) {
       toast({ title: 'PDF não disponível', description: 'Esta proposta ainda não tem PDF gerado.', variant: 'destructive' });
       return;
     }
-    window.open(proposal.pdf_url, '_blank', 'noopener,noreferrer');
+
+    const storagePath = extractProposalStoragePath(proposal.pdf_url);
+    if (!storagePath) {
+      window.open(proposal.pdf_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    setPdfDownloading(proposal.id);
+    try {
+      const { data, error } = await supabase.storage
+        .from('proposals')
+        .download(storagePath);
+
+      if (error || !data) throw error ?? new Error('Download falhou');
+
+      const blobUrl = URL.createObjectURL(data);
+      const newTab = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 120_000);
+
+      if (!newTab) {
+        toast({
+          title: 'Popup bloqueado',
+          description: 'Permita popups para este site e tente novamente.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao baixar PDF:', err);
+      toast({
+        title: 'Erro ao abrir PDF',
+        description: 'Não foi possível carregar o arquivo. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setPdfDownloading(null);
+    }
   };
 
   const propertyLabel = (p: Proposal) =>
@@ -356,6 +404,7 @@ export default function Proposals() {
                               onDuplicate={handleDuplicate}
                               onDelete={(id) => setDeletingId(id)}
                               onOpenPdf={handleOpenPdf}
+                              pdfDownloading={pdfDownloading}
                             />
                           </div>
                         ))}
@@ -441,6 +490,7 @@ export default function Proposals() {
                                     onDuplicate={handleDuplicate}
                                     onDelete={(id) => setDeletingId(id)}
                                     onOpenPdf={handleOpenPdf}
+                                    pdfDownloading={pdfDownloading}
                                   />
                                 </TableCell>
                               </TableRow>
@@ -534,6 +584,7 @@ function RowActions({
   onDuplicate,
   onDelete,
   onOpenPdf,
+  pdfDownloading,
 }: {
   proposal: Proposal;
   onSendWhatsApp: (p: Proposal) => void;
@@ -543,14 +594,16 @@ function RowActions({
   onDuplicate: (p: Proposal) => void;
   onDelete: (id: string) => void;
   onOpenPdf: (p: Proposal) => void;
+  pdfDownloading: string | null;
 }) {
   const hasPdf = !!proposal.pdf_url;
+  const isDownloading = pdfDownloading === proposal.id;
   return (
     <div className="flex items-center justify-end gap-1 flex-wrap">
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Tooltip>
-            <TooltipTrigger asChild>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
@@ -560,10 +613,10 @@ function RowActions({
                 <Send className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline text-xs">Enviar</span>
               </Button>
-            </TooltipTrigger>
-            {!hasPdf && <TooltipContent>PDF não gerado ainda</TooltipContent>}
-          </Tooltip>
-        </DropdownMenuTrigger>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          {!hasPdf && <TooltipContent>PDF não gerado ainda</TooltipContent>}
+        </Tooltip>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={() => onSendWhatsApp(proposal)}>
             <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
@@ -580,13 +633,22 @@ function RowActions({
       {hasPdf && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenPdf(proposal)}>
-              <ExternalLink className="h-3.5 w-3.5" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              disabled={isDownloading}
+              onClick={() => onOpenPdf(proposal)}
+            >
+              {isDownloading
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <ExternalLink className="h-3.5 w-3.5" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Abrir PDF</TooltipContent>
+          <TooltipContent>{isDownloading ? 'Carregando...' : 'Abrir PDF'}</TooltipContent>
         </Tooltip>
       )}
+
 
       <Tooltip>
         <TooltipTrigger asChild>
