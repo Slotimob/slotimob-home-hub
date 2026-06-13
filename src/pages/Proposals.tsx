@@ -371,7 +371,7 @@ export default function Proposals() {
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <button
-                                        onClick={() => handleOpenPdf(proposal)}
+                                        onClick={() => handleDownloadPdf(proposal)}
                                         className="flex items-center gap-2 text-left hover:underline cursor-pointer"
                                       >
                                         <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
