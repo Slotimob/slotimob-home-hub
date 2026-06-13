@@ -173,24 +173,53 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
 
         {/* ══════ PAGE 3: GALLERY (up to 8 photos) ══════ */}
         {gallery.length > 0 && (
-          <div style={{ width: '794px', minHeight: '1123px', pageBreakBefore: 'always', pageBreakInside: 'avoid' }} className="px-10 py-10 flex flex-col">
+          <div
+            style={{
+              width: '794px',
+              height: '1123px',
+              pageBreakBefore: 'always',
+              pageBreakInside: 'avoid',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '40px',
+              boxSizing: 'border-box',
+            }}
+          >
             <SectionTitle title="Galeria de Fotos" />
-            <div className="grid grid-cols-2 gap-4 flex-1">
+            <div
+              style={{
+                flex: 1,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gridAutoRows: '1fr',
+                gap: '16px',
+                minHeight: 0,
+              }}
+            >
               {gallery.map((img, i) => (
                 <div
                   key={i}
-                  className={`rounded-xl overflow-hidden ${gallery.length % 2 !== 0 && i === gallery.length - 1 ? 'col-span-2' : ''}`}
-                  style={{ height: gallery.length <= 4 ? '240px' : '200px' }}
+                  style={{
+                    overflow: 'hidden',
+                    borderRadius: '12px',
+                    ...(gallery.length % 2 !== 0 && i === gallery.length - 1
+                      ? { gridColumn: '1 / -1' }
+                      : {}),
+                  }}
                 >
-                  <img src={img} alt={`Foto ${i + 1}`} crossOrigin="anonymous" className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt={`Foto ${i + 1}`}
+                    crossOrigin="anonymous"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
                 </div>
               ))}
             </div>
-            <div className="mt-auto">
-              <PageFooter agent={agent} date={generatedDate} />
-            </div>
+            <PageFooter agent={agent} date={generatedDate} />
           </div>
         )}
+
 
         {/* ══════ PAGE 4: FINANCIAL (conditional) ══════ */}
         {hasFinancial && (
