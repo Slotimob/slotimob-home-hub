@@ -49,6 +49,8 @@ export interface BillingAutomation {
   email_destination?: string;
   whatsapp_enabled?: boolean;
   // sem whatsapp_destination: número vem de lease.tenant?.whatsapp || lease.tenant?.phone
+  // outros campos existentes no JSONB
+  legal_notification_7_days?: boolean;
 }
 
 export interface BillingLog {
