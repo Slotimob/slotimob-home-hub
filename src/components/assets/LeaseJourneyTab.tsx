@@ -565,57 +565,104 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          </div>
        )}
 
-       {/* Adjustment Controls Card */}
-       {fullLeaseData && (
-         <div className="rounded-lg border bg-card p-3 space-y-3">
-           <div className="flex items-center justify-between">
-             <div className="flex items-center gap-2">
-               <TrendingUp className="h-4 w-4 text-primary" />
-               <span className="text-sm font-medium">Controle de Reajuste</span>
-             </div>
-           </div>
-           
-           <div className="grid grid-cols-2 gap-3">
-             <div>
-               <p className="text-xs text-muted-foreground">Próximo Reajuste</p>
-               <p className="text-sm font-medium">
-                 {fullLeaseData.next_adjustment_date
-                   ? format(parseISO(fullLeaseData.next_adjustment_date), "dd/MM/yyyy")
-                   : "Não definido"}
-               </p>
-             </div>
-             <div>
-               <p className="text-xs text-muted-foreground">Valor Atual</p>
-               <p className="text-sm font-medium">
-                 {fullLeaseData.rent_amount.toLocaleString("pt-BR", {
-                   style: "currency",
-                   currency: "BRL",
-                 })}
-               </p>
-             </div>
-           </div>
+        {/* Adjustment Controls Card */}
+        {fullLeaseData && (() => {
+          const today = new Date();
+          const adjustmentDate = fullLeaseData.next_adjustment_date ? parseISO(fullLeaseData.next_adjustment_date) : null;
+          const daysUntilAdjustment = adjustmentDate ? differenceInDays(adjustmentDate, today) : null;
+          const isOverdue = daysUntilAdjustment !== null && daysUntilAdjustment < 0;
+          const isComingSoon = daysUntilAdjustment !== null && daysUntilAdjustment >= 0 && daysUntilAdjustment <= 30;
+          const isOnTrack = daysUntilAdjustment !== null && daysUntilAdjustment > 30;
 
-           <div className="flex gap-2">
-             <Button
-               variant="outline"
-               size="sm"
-               className="flex-1 h-8 text-xs"
-               onClick={() => setShowEditAdjustmentDate(true)}
-             >
-               <Calendar className="h-3 w-3 mr-1" />
-               Alterar Data
-             </Button>
-             <Button
-               size="sm"
-               className="flex-1 h-8 text-xs"
-              onClick={() => setShowAdjustmentCalculator(true)}
-             >
-               <TrendingUp className="h-3 w-3 mr-1" />
-               Aplicar Reajuste
-             </Button>
-           </div>
-         </div>
-       )}
+          return (
+            <div className={cn(
+              "rounded-lg border bg-card p-3 space-y-3",
+              isOverdue && "border-red-500/40"
+            )}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Controle de Reajuste</span>
+                </div>
+                {isOverdue && (
+                  <Badge className="bg-red-500 text-white hover:bg-red-500 text-[10px]">Reajuste Vencido</Badge>
+                )}
+                {isComingSoon && !isOverdue && (
+                  <Badge className="bg-amber-500 text-white hover:bg-amber-500 text-[10px]">Atenção</Badge>
+                )}
+                {isOnTrack && (
+                  <Badge className="bg-emerald-500 text-white hover:bg-emerald-500 text-[10px]">Em dia</Badge>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Próximo Reajuste</p>
+                  <p className="text-sm font-medium">
+                    {fullLeaseData.next_adjustment_date
+                      ? format(parseISO(fullLeaseData.next_adjustment_date), "dd/MM/yyyy")
+                      : "Não definido"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Valor Atual</p>
+                  <p className="text-sm font-medium">
+                    {fullLeaseData.rent_amount.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </p>
+                </div>
+                {fullLeaseData.adjustment_index && (
+                  <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground">Índice</p>
+                    <p className="text-sm font-medium">{fullLeaseData.adjustment_index}</p>
+                  </div>
+                )}
+              </div>
+
+              {isOverdue && adjustmentDate && (
+                <div className="p-2.5 rounded-md bg-red-500/10 border border-red-500/20 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-700">
+                    Reajuste vencido em {format(adjustmentDate, "dd/MM/yyyy", { locale: ptBR })}. Aplique o reajuste para manter o contrato atualizado.
+                  </p>
+                </div>
+              )}
+              {isComingSoon && !isOverdue && adjustmentDate && (
+                <div className="p-2.5 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    Reajuste em {daysUntilAdjustment} dias ({format(adjustmentDate, "dd/MM/yyyy")}).
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                  onClick={() => setShowEditAdjustmentDate(true)}
+                >
+                  <Calendar className="h-3 w-3 mr-1" />
+                  Alterar Data
+                </Button>
+                <Button
+                  size="sm"
+                  className={cn(
+                    "flex-1 h-8 text-xs",
+                    isOverdue && "bg-red-500 hover:bg-red-600 text-white"
+                  )}
+                  onClick={() => setShowAdjustmentCalculator(true)}
+                >
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  {isOverdue ? "Aplicar Reajuste (Vencido!)" : "Aplicar Reajuste"}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
  
        {/* Rent Evolution Timeline */}
        {fullLeaseData && (
