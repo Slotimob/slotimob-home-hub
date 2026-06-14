@@ -161,6 +161,7 @@ export function AssetDetailDialog({
   const [transactionPrefill, setTransactionPrefill] = useState<TransactionPrefill | undefined>();
   const [selectedObligationType, setSelectedObligationType] = useState<ObligationType | null>(null);
   const [linkingTransactionFor, setLinkingTransactionFor] = useState<ObligationType | null>(null);
+  const [obligationsView, setObligationsView] = useState<"config" | "status">("config");
   
   // New state for in-place editing
   const [editDialogOpen, setEditDialogOpen] = useState(false);
