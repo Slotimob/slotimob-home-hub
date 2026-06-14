@@ -272,10 +272,37 @@ export default function NovoContrato() {
 
   const selectedTenant = tenants?.find((t) => t.id === formData.tenant_contact_id);
 
+  // Managed units list (used in the "unit" step)
+  const { data: managedUnits, isLoading: loadingManagedUnits } = useQuery({
+    queryKey: ["managed-units-for-lease", effectiveBrokerId, user?.id, unitSearchTerm],
+    queryFn: async () => {
+      if (!user) return [];
+      let query = supabase
+        .from("units")
+        .select("id, unit_number, address, owner_contact_id, is_occupied, is_managed")
+        .eq("broker_id", effectiveBrokerId || user.id)
+        .eq("is_managed", true)
+        .order("unit_number");
+      if (unitSearchTerm) {
+        query = query.or(
+          `unit_number.ilike.%${unitSearchTerm}%,address.ilike.%${unitSearchTerm}%`
+        );
+      }
+      const { data, error } = await query.limit(50);
+      if (error) throw error;
+      const all = data || [];
+      const free = all.filter((u: any) => !u.is_occupied);
+      return free.length > 0 ? free : all;
+    },
+    enabled: !!user && !isEditMode && !unitIdParam,
+  });
+
   const currentIndex = STEPS.findIndex((s) => s.id === step);
 
   const canProceed = () => {
     switch (step) {
+      case "unit":
+        return !!effectiveUnitId;
       case "tenant":
         return !!formData.tenant_contact_id;
       case "financial":
