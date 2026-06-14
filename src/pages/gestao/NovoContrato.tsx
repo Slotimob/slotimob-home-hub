@@ -118,8 +118,11 @@ export default function NovoContrato() {
   const updateLease = useUpdateLease();
   const { isLoadingCep, handleCepBlur, formatCep } = useCepSearch();
 
-  const [step, setStep] = useState<WizardStep>("tenant");
+  const [step, setStep] = useState<WizardStep>(unitIdParam || editLeaseId ? "tenant" : "unit");
   const [searchTerm, setSearchTerm] = useState("");
+  const [unitSearchTerm, setUnitSearchTerm] = useState("");
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedUnitInfo, setSelectedUnitInfo] = useState<any>(null);
   const [formData, setFormData] = useState(getInitialFormData);
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
   const [selectedGuarantorContactId, setSelectedGuarantorContactId] = useState<string | null>(null);
