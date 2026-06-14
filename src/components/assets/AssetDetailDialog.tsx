@@ -2,11 +2,11 @@ import { useState, useMemo } from "react";
 import { format, addMonths, startOfMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Drawer,
   DrawerContent,
