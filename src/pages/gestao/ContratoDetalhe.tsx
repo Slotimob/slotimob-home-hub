@@ -75,7 +75,7 @@ import { EditStartDateDialog } from "@/components/assets/EditStartDateDialog";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useUpdateLease, generateBillingMessage, type BillingLog } from "@/hooks/useLeases";
+import { useUpdateLease, generateBillingMessage, type BillingLog, type BillingAutomation } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn, formatPhoneForWhatsApp } from "@/lib/utils";
