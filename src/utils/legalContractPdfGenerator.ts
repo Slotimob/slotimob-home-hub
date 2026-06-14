@@ -732,16 +732,16 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   addSubClause('12.2', 'As benfeitorias necessárias, desde que autorizadas previamente pelo LOCADOR, serão indenizáveis, podendo o LOCATÁRIO exercer o direito de retenção.');
 
-  // CLÁUSULA DÉCIMA SEGUNDA - DISPOSIÇÕES GERAIS
-  addClauseHeader('DÉCIMA SEGUNDA', 'DAS DISPOSIÇÕES GERAIS');
-  
-  addSubClause('12.1', 'O LOCATÁRIO declara ter examinado o imóvel, achando-o em perfeitas condições de uso e habitabilidade, recebendo-o neste ato com todos os acessórios e pertences em pleno funcionamento.');
-  
-  addSubClause('12.2', 'Este contrato obriga as partes e seus herdeiros e sucessores a qualquer título.');
-  
-  addSubClause('12.3', 'A tolerância de uma parte para com a outra quanto ao cumprimento das obrigações aqui assumidas não implicará novação, renúncia ou modificação do pactuado.');
-  
-  addSubClause('12.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
+  // CLÁUSULA DÉCIMA TERCEIRA - DISPOSIÇÕES GERAIS
+  addClauseHeader('DÉCIMA TERCEIRA', 'DAS DISPOSIÇÕES GERAIS');
+
+  addSubClause('13.1', 'O LOCATÁRIO declara ter examinado o imóvel, achando-o em perfeitas condições de uso e habitabilidade, recebendo-o neste ato com todos os acessórios e pertences em pleno funcionamento.');
+
+  addSubClause('13.2', 'Este contrato obriga as partes e seus herdeiros e sucessores a qualquer título.');
+
+  addSubClause('13.3', 'A tolerância de uma parte para com a outra quanto ao cumprimento das obrigações aqui assumidas não implicará novação, renúncia ou modificação do pactuado.');
+
+  addSubClause('13.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
 
   // CLÁUSULA DÉCIMA TERCEIRA - SEGURO INCÊNDIO
   addClauseHeader('DÉCIMA TERCEIRA', 'DO SEGURO CONTRA INCÊNDIO');
