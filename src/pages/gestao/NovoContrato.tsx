@@ -149,9 +149,9 @@ export default function NovoContrato() {
   });
 
   // Resolve which unit we'll create the lease for
-  const effectiveUnitId = editLease?.unit_id || unitIdParam || "";
+  const effectiveUnitId = editLease?.unit_id || unitIdParam || selectedUnitId || "";
 
-  // Fetch unit info for header (when not in edit mode)
+  // Fetch unit info for header (when not in edit mode and no selectedUnitInfo)
   const { data: unitInfo } = useQuery({
     queryKey: ["unit-name", effectiveUnitId, effectiveBrokerId],
     queryFn: async () => {
@@ -163,11 +163,13 @@ export default function NovoContrato() {
         .maybeSingle();
       return data as any;
     },
-    enabled: !!user && !!effectiveUnitId && !isEditMode,
+    enabled: !!user && !!effectiveUnitId && !isEditMode && !selectedUnitInfo,
   });
 
-  const ownerContactId = editLease?.owner_contact_id || unitInfo?.owner_contact_id || null;
-  const unitName = editLease?.unit?.unit_number || unitInfo?.unit_number || "";
+  const ownerContactId =
+    editLease?.owner_contact_id || selectedUnitInfo?.owner_contact_id || unitInfo?.owner_contact_id || null;
+  const unitName =
+    editLease?.unit?.unit_number || selectedUnitInfo?.unit_number || unitInfo?.unit_number || "";
 
   // Load draft from sessionStorage (only for new contracts)
   useEffect(() => {
