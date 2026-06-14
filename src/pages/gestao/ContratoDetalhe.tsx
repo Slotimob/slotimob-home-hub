@@ -30,6 +30,9 @@ import {
   Pencil,
   Route as RouteIcon,
   Scale,
+  Zap,
+  Save,
+  Scale as ScaleIcon,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
