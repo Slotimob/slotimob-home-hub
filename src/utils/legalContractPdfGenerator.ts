@@ -689,10 +689,10 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addRomanItem('V', 'Fornecer recibo discriminado das importâncias pagas;');
   addRomanItem('VI', 'Pagar os impostos e taxas que incidam sobre o imóvel, salvo disposição expressa em contrário.');
 
-  // CLÁUSULA SÉTIMA - DAS OBRIGAÇÕES DO LOCATÁRIO
-  addClauseHeader('SÉTIMA', 'DAS OBRIGAÇÕES DO LOCATÁRIO');
-  
-  addSubClause('7.1', 'Constituem obrigações do LOCATÁRIO:');
+  // CLÁUSULA OITAVA - DAS OBRIGAÇÕES DO LOCATÁRIO
+  addClauseHeader('OITAVA', 'DAS OBRIGAÇÕES DO LOCATÁRIO');
+
+  addSubClause('8.1', 'Constituem obrigações do LOCATÁRIO:');
   addRomanItem('I', 'Pagar pontualmente o aluguel e encargos da locação;');
   addRomanItem('II', 'Servir-se do imóvel para o uso convencionado, compatível com a natureza deste e com o fim a que se destina;');
   addRomanItem('III', 'Restituir o imóvel, ao final da locação, no estado em que o recebeu, salvo deteriorações decorrentes do uso normal;');
