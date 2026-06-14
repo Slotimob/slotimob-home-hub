@@ -900,11 +900,24 @@ export function AssetDetailDialog({
       <div className="p-4 flex gap-2">
         <Button
           variant="outline"
-          className="flex-1"
+          size="sm"
+          className="flex-1 gap-1.5"
           onClick={() => window.open(`/finance/transactions?unitId=${asset?.unitId}`, "_self")}
         >
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Ver Todos os Lançamentos
+          <ExternalLink className="h-4 w-4" />
+          Ver Lançamentos
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 gap-1.5"
+          onClick={() => {
+            setActiveTab("obligations");
+            setObligationsView("status");
+          }}
+        >
+          <Receipt className="h-4 w-4" />
+          Status do Mês
         </Button>
       </div>
 
