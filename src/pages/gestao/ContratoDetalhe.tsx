@@ -227,14 +227,15 @@ export default function ContratoDetalhe() {
     return m.charAt(0).toUpperCase() + m.slice(1);
   }, []);
 
-  const handleAutomationToggle = async (key: string, value: boolean) => {
+  const handleAutomationToggle = async (key: keyof BillingAutomation, value: boolean) => {
     if (!lease) return;
     try {
+      const currentAutomation = { ...(lease.billing_automation || {}) };
       await updateLease.mutateAsync({
         id: lease.id,
         data: {
-          billing_automation: { ...(lease.billing_automation || {}), [key]: value },
-        } as any,
+          billing_automation: { ...currentAutomation, [key]: value } as BillingAutomation,
+        },
       });
       toast({ title: "Configuração atualizada!" });
     } catch {
