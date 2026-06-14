@@ -837,7 +837,7 @@ export default function ContratoDetalhe() {
               {(() => {
                 const channels: string[] = [];
                 if (automationForm.email_enabled && automationForm.email_destination) channels.push("e-mail");
-                if (automationForm.whatsapp_enabled && automationForm.whatsapp_destination) channels.push("WhatsApp");
+                if (automationForm.whatsapp_enabled && (tenant?.whatsapp || tenant?.phone)) channels.push("WhatsApp");
                 const automationReady = channels.length > 0;
 
                 const renderHint = (icon?: React.ReactNode) =>
