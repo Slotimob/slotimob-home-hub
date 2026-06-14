@@ -210,6 +210,11 @@ export interface LegalContractData {
     pix?: string;
     beneficiario?: string;
   };
+  billingContact?: {
+    name?: string;
+    email?: string;
+    whatsapp?: string;
+  };
 }
 
 // ============================================================================
