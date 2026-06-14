@@ -91,6 +91,18 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
         resolveType: 'registration',
       });
 
+      // Check complete address
+      const hasFullAddress = !!(unit.address && unit.city && unit.state && unit.neighborhood);
+      checks.push({
+        id: 'address',
+        label: 'Endereço Completo',
+        status: hasFullAddress ? 'ok' : 'pending',
+        message: hasFullAddress
+          ? `${unit.address}, ${unit.neighborhood} - ${unit.city}/${unit.state}`
+          : 'Endereço incompleto (logradouro, bairro, cidade e UF obrigatórios)',
+        resolveType: 'cib',
+      });
+
       // 2. Check owner document
       if (unit.owner_contact_id) {
         const { data: owner } = await supabase
