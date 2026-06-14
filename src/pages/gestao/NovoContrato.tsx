@@ -39,10 +39,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { supabase } from "@/integrations/supabase/client";
 
-type WizardStep = "tenant" | "financial" | "guarantee" | "payment" | "compliance";
+type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "compliance";
 type GuaranteeType = "fiador" | "caucao" | "seguro_fianca" | "none";
 
 const STEPS: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
+  { id: "unit", title: "Imóvel", icon: <Building2 className="h-4 w-4" /> },
   { id: "tenant", title: "Inquilino", icon: <User className="h-4 w-4" /> },
   { id: "financial", title: "Financeiro", icon: <Wallet className="h-4 w-4" /> },
   { id: "guarantee", title: "Garantia", icon: <Shield className="h-4 w-4" /> },
