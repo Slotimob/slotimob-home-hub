@@ -146,7 +146,9 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
           gross_rent_value,
           administration_fee_value,
           is_dimob_eligible,
-          tenant_contact_id
+          tenant_contact_id,
+          start_date,
+          end_date
         `)
         .eq('unit_id', unitId)
         .eq('status', 'active')
@@ -186,6 +188,17 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
           message: hasValues 
             ? `Aluguel: R$ ${(activeLease.gross_rent_value || activeLease.rent_amount || 0).toLocaleString('pt-BR')}` 
             : 'Valores do contrato não definidos',
+          resolveType: 'lease',
+        });
+
+        // Check lease period
+        checks.push({
+          id: 'lease_period',
+          label: 'Período da Locação',
+          status: activeLease.start_date ? 'ok' : 'pending',
+          message: activeLease.start_date
+            ? `Início: ${new Date(activeLease.start_date).toLocaleDateString('pt-BR')}${activeLease.end_date ? ` • Fim: ${new Date(activeLease.end_date).toLocaleDateString('pt-BR')}` : ''}`
+            : 'Data de início do contrato não definida',
           resolveType: 'lease',
         });
 
