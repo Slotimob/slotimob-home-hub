@@ -53,7 +53,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
       // 1. Fetch unit data with CIB
       const { data: unit, error: unitError } = await supabase
         .from('units')
-        .select('id, cib, owner_contact_id, tenant_contact_id, registration_number, iptu_number, address, number, neighborhood, city, state, zip_code')
+        .select('id, cib, owner_contact_id, tenant_contact_id, registration_number, iptu_number, address, neighborhood, city, state, unit_number')
         .eq('id', unitId)
         .single();
 
