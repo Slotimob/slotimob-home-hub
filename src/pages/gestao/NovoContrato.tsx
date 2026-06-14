@@ -488,32 +488,6 @@ export default function NovoContrato() {
     );
   }
 
-  // No unit selected: ask user to come from a unit
-  if (!effectiveUnitId) {
-    return (
-      <AppLayout title="Novo Contrato">
-        <SEOHead title="Novo Contrato" description="Criação de novo contrato de locação" path="/gestao/contratos/novo" noIndex />
-        <Card className="max-w-lg mx-auto mt-10">
-          <CardContent className="py-10 text-center space-y-4">
-            <Building2 className="h-10 w-10 text-muted-foreground mx-auto" />
-            <div>
-              <p className="text-sm font-medium">Selecione um imóvel para criar o contrato</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Acesse a unidade desejada em "Ativos em Gestão" e clique em <strong>Novo Contrato</strong>.
-              </p>
-            </div>
-            <div className="flex gap-2 justify-center">
-              <Button variant="outline" onClick={() => navigate("/gestao/contratos")}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Contratos
-              </Button>
-              <Button onClick={() => navigate("/gestao/alugueis")}>Ativos em Gestão</Button>
-            </div>
-          </CardContent>
-        </Card>
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout title={isEditMode ? "Editar Contrato" : "Novo Contrato"}>
