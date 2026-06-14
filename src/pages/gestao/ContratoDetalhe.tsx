@@ -659,6 +659,21 @@ export default function ContratoDetalhe() {
               </p>
             </CardHeader>
             <CardContent className="py-2 px-4 space-y-4">
+              {billingContactConfig && (
+                <div className="p-2.5 rounded-md bg-muted/40 border mb-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">{billingContactConfig.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {billingContactConfig.email || "sem email"} · {billingContactConfig.whatsapp || "sem WhatsApp"}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs h-7 px-2 shrink-0" asChild>
+                    <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
+                      Editar
+                    </a>
+                  </Button>
+                </div>
+              )}
               {/* Email panel */}
               <div className="rounded-lg border p-3 space-y-3">
                 <div className="flex items-start justify-between gap-3">
