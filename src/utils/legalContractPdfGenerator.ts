@@ -210,6 +210,11 @@ export interface LegalContractData {
     pix?: string;
     beneficiario?: string;
   };
+  billingContact?: {
+    name?: string;
+    email?: string;
+    whatsapp?: string;
+  };
 }
 
 // ============================================================================
@@ -645,22 +650,38 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addRomanItem('II', 'Juros de mora de 1% (um por cento) ao mês, calculados pro rata die;');
   addRomanItem('III', 'Correção monetária pelo mesmo índice de reajuste do aluguel.');
 
-  // CLÁUSULA QUINTA - DA GARANTIA
-  addClauseHeader('QUINTA', 'DA GARANTIA LOCATÍCIA');
-  
-  const garantiaTexto = getGarantiaTexto(data);
-  addSubClause('5.1', garantiaTexto);
-  
-  if (data.contrato.garantia === 'fiador') {
-    addSubClause('5.2', 'O(s) FIADOR(es) responde(m) solidariamente por todas as obrigações do LOCATÁRIO, incluindo aluguel, encargos, multas, reparos, pinturas e quaisquer outras despesas ou indenizações devidas ao LOCADOR, permanecendo a fiança em vigor até a efetiva entrega das chaves e quitação integral de todas as obrigações.');
-    
-    addSubClause('5.3', 'A fiança permanece válida mesmo em caso de prorrogação da locação, seja por prazo determinado ou indeterminado, renunciando o(s) FIADOR(es) expressamente ao direito de exoneração previsto no art. 835 do Código Civil.');
+  // CLÁUSULA QUINTA - DAS NOTIFICAÇÕES E COMUNICAÇÕES DIGITAIS
+  addClauseHeader('QUINTA', 'DAS NOTIFICAÇÕES E COMUNICAÇÕES DIGITAIS');
+
+  addSubClause('5.1', 'As partes convencionam que as comunicações relativas a avisos de vencimento, cobranças e notificações extrajudiciais poderão ser realizadas por meio eletrônico, incluindo correio eletrônico (e-mail) e mensagem instantânea via WhatsApp, para os dados de contato fornecidos pelo LOCATÁRIO no momento da celebração deste contrato.');
+
+  if (data.billingContact?.email || data.billingContact?.whatsapp) {
+    const contato = data.billingContact;
+    addSubClause('5.2', `O LOCATÁRIO declara que os dados de contato fornecidos (${contato.name || 'nome não informado'}, e-mail: ${contato.email || 'não informado'}, WhatsApp: ${contato.whatsapp || 'não informado'}) são válidos e de sua responsabilidade, comprometendo-se a comunicar imediatamente qualquer alteração.`);
+  } else {
+    addSubClause('5.2', 'O LOCATÁRIO declara que os dados de contato fornecidos (e-mail e número de WhatsApp) são válidos e de sua responsabilidade, comprometendo-se a comunicar imediatamente qualquer alteração.');
   }
 
-  // CLÁUSULA SEXTA - DAS OBRIGAÇÕES DO LOCADOR
-  addClauseHeader('SEXTA', 'DAS OBRIGAÇÕES DO LOCADOR');
-  
-  addSubClause('6.1', 'Constituem obrigações do LOCADOR:');
+  addSubClause('5.3', 'As notificações enviadas aos dados cadastrados serão consideradas recebidas, para todos os efeitos legais, independentemente de confirmação de leitura, após o envio.');
+
+  addSubClause('5.4', 'Este canal de comunicação não substitui a notificação judicial, quando esta for expressamente exigida por lei ou por cláusula contratual específica.');
+
+  // CLÁUSULA SEXTA - DA GARANTIA
+  addClauseHeader('SEXTA', 'DA GARANTIA LOCATÍCIA');
+
+  const garantiaTexto = getGarantiaTexto(data);
+  addSubClause('6.1', garantiaTexto);
+
+  if (data.contrato.garantia === 'fiador') {
+    addSubClause('6.2', 'O(s) FIADOR(es) responde(m) solidariamente por todas as obrigações do LOCATÁRIO, incluindo aluguel, encargos, multas, reparos, pinturas e quaisquer outras despesas ou indenizações devidas ao LOCADOR, permanecendo a fiança em vigor até a efetiva entrega das chaves e quitação integral de todas as obrigações.');
+
+    addSubClause('6.3', 'A fiança permanece válida mesmo em caso de prorrogação da locação, seja por prazo determinado ou indeterminado, renunciando o(s) FIADOR(es) expressamente ao direito de exoneração previsto no art. 835 do Código Civil.');
+  }
+
+  // CLÁUSULA SÉTIMA - DAS OBRIGAÇÕES DO LOCADOR
+  addClauseHeader('SÉTIMA', 'DAS OBRIGAÇÕES DO LOCADOR');
+
+  addSubClause('7.1', 'Constituem obrigações do LOCADOR:');
   addRomanItem('I', 'Entregar o imóvel em estado de servir ao uso a que se destina;');
   addRomanItem('II', 'Garantir o uso pacífico do imóvel durante a locação;');
   addRomanItem('III', 'Manter a forma e o destino do bem locado;');
@@ -668,10 +689,10 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addRomanItem('V', 'Fornecer recibo discriminado das importâncias pagas;');
   addRomanItem('VI', 'Pagar os impostos e taxas que incidam sobre o imóvel, salvo disposição expressa em contrário.');
 
-  // CLÁUSULA SÉTIMA - DAS OBRIGAÇÕES DO LOCATÁRIO
-  addClauseHeader('SÉTIMA', 'DAS OBRIGAÇÕES DO LOCATÁRIO');
-  
-  addSubClause('7.1', 'Constituem obrigações do LOCATÁRIO:');
+  // CLÁUSULA OITAVA - DAS OBRIGAÇÕES DO LOCATÁRIO
+  addClauseHeader('OITAVA', 'DAS OBRIGAÇÕES DO LOCATÁRIO');
+
+  addSubClause('8.1', 'Constituem obrigações do LOCATÁRIO:');
   addRomanItem('I', 'Pagar pontualmente o aluguel e encargos da locação;');
   addRomanItem('II', 'Servir-se do imóvel para o uso convencionado, compatível com a natureza deste e com o fim a que se destina;');
   addRomanItem('III', 'Restituir o imóvel, ao final da locação, no estado em que o recebeu, salvo deteriorações decorrentes do uso normal;');
@@ -681,62 +702,62 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addRomanItem('VII', 'Pagar as despesas de consumo (água, luz, gás, telefone, internet, etc.) e taxas condominiais ordinárias;');
   addRomanItem('VIII', 'Permitir a vistoria do imóvel pelo LOCADOR ou seu procurador, mediante prévio agendamento.');
 
-  // CLÁUSULA OITAVA - DA RESCISÃO E MULTA
-  addClauseHeader('OITAVA', 'DA RESCISÃO ANTECIPADA');
-  
-  addSubClause('8.1', 'Caso o LOCATÁRIO devolva o imóvel antes do término do prazo contratual, pagará multa compensatória equivalente a 3 (três) meses de aluguel, calculada proporcionalmente ao período de cumprimento do contrato, nos termos do art. 4º da Lei 8.245/91.');
-  
-  addSubClause('8.2', 'A multa será calculada da seguinte forma: valor da multa = (meses restantes / prazo total) × (3 × valor do aluguel vigente).');
-  
-  addSubClause('8.3', 'O LOCATÁRIO ficará dispensado da multa se a devolução decorrer de transferência de emprego para localidade diversa, desde que notifique o LOCADOR com antecedência mínima de 30 (trinta) dias, nos termos do art. 4º, parágrafo único, da Lei 8.245/91.');
+  // CLÁUSULA NONA - DA RESCISÃO E MULTA
+  addClauseHeader('NONA', 'DA RESCISÃO ANTECIPADA');
 
-  // CLÁUSULA NONA - DA VISTORIA E ENTREGA
-  addClauseHeader('NONA', 'DA VISTORIA E ENTREGA');
-  
-  addSubClause('9.1', 'No início da locação, as partes realizarão vistoria detalhada do imóvel, formalizando o estado de conservação em laudo próprio, que fará parte integrante deste contrato.');
-  
-  addSubClause('9.2', 'Ao término da locação, o LOCATÁRIO deverá entregar o imóvel nas mesmas condições em que o recebeu, conforme laudo de vistoria inicial, procedendo às reparações necessárias, inclusive pintura, se houver alteração de cor ou danos às paredes.');
-  
-  addSubClause('9.3', 'As chaves somente serão consideradas entregues após vistoria final e aceitação do LOCADOR quanto ao estado do imóvel e quitação integral de todos os valores devidos.');
+  addSubClause('9.1', 'Caso o LOCATÁRIO devolva o imóvel antes do término do prazo contratual, pagará multa compensatória equivalente a 3 (três) meses de aluguel, calculada proporcionalmente ao período de cumprimento do contrato, nos termos do art. 4º da Lei 8.245/91.');
 
-  // CLÁUSULA DÉCIMA - DA SUBLOCAÇÃO E CESSÃO
-  addClauseHeader('DÉCIMA', 'DA SUBLOCAÇÃO E CESSÃO');
-  
-  addSubClause('10.1', 'É vedado ao LOCATÁRIO sublocar, ceder ou emprestar o imóvel, total ou parcialmente, sem prévia autorização por escrito do LOCADOR, sob pena de rescisão imediata do contrato e despejo.');
+  addSubClause('9.2', 'A multa será calculada da seguinte forma: valor da multa = (meses restantes / prazo total) × (3 × valor do aluguel vigente).');
 
-  // CLÁUSULA DÉCIMA PRIMEIRA - DAS BENFEITORIAS
-  addClauseHeader('DÉCIMA PRIMEIRA', 'DAS BENFEITORIAS');
-  
-  addSubClause('11.1', 'As benfeitorias úteis e voluptuárias realizadas pelo LOCATÁRIO, ainda que autorizadas, não serão indenizáveis e ficarão incorporadas ao imóvel, salvo acordo em contrário firmado por escrito.');
-  
-  addSubClause('11.2', 'As benfeitorias necessárias, desde que autorizadas previamente pelo LOCADOR, serão indenizáveis, podendo o LOCATÁRIO exercer o direito de retenção.');
+  addSubClause('9.3', 'O LOCATÁRIO ficará dispensado da multa se a devolução decorrer de transferência de emprego para localidade diversa, desde que notifique o LOCADOR com antecedência mínima de 30 (trinta) dias, nos termos do art. 4º, parágrafo único, da Lei 8.245/91.');
 
-  // CLÁUSULA DÉCIMA SEGUNDA - DISPOSIÇÕES GERAIS
-  addClauseHeader('DÉCIMA SEGUNDA', 'DAS DISPOSIÇÕES GERAIS');
-  
-  addSubClause('12.1', 'O LOCATÁRIO declara ter examinado o imóvel, achando-o em perfeitas condições de uso e habitabilidade, recebendo-o neste ato com todos os acessórios e pertences em pleno funcionamento.');
-  
-  addSubClause('12.2', 'Este contrato obriga as partes e seus herdeiros e sucessores a qualquer título.');
-  
-  addSubClause('12.3', 'A tolerância de uma parte para com a outra quanto ao cumprimento das obrigações aqui assumidas não implicará novação, renúncia ou modificação do pactuado.');
-  
-  addSubClause('12.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
+  // CLÁUSULA DÉCIMA - DA VISTORIA E ENTREGA
+  addClauseHeader('DÉCIMA', 'DA VISTORIA E ENTREGA');
 
-  // CLÁUSULA DÉCIMA TERCEIRA - SEGURO INCÊNDIO
-  addClauseHeader('DÉCIMA TERCEIRA', 'DO SEGURO CONTRA INCÊNDIO');
-  addSubClause('13.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
-  addSubClause('13.2', `O LOCATÁRIO deverá zelar pelo imóvel de forma a não comprometer a vigência ou as condições da apólice de seguro, sendo-lhe vedado armazenar ou manusear materiais inflamáveis ou substâncias que aumentem o risco de sinistro.`);
+  addSubClause('10.1', 'No início da locação, as partes realizarão vistoria detalhada do imóvel, formalizando o estado de conservação em laudo próprio, que fará parte integrante deste contrato.');
 
-  // CLÁUSULA DÉCIMA QUARTA - IPTU E ENCARGOS MUNICIPAIS
-  addClauseHeader('DÉCIMA QUARTA', 'DO IPTU E ENCARGOS MUNICIPAIS');
-  addSubClause('14.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel serão de responsabilidade do LOCADOR, salvo disposição expressa em contrário firmada por escrito entre as partes.`);
-  addSubClause('14.2', `As taxas de condomínio ordinárias são de responsabilidade do LOCATÁRIO. As taxas extraordinárias de condomínio, destinadas à realização de obras nas partes comuns e fachada, são de responsabilidade do LOCADOR.`);
+  addSubClause('10.2', 'Ao término da locação, o LOCATÁRIO deverá entregar o imóvel nas mesmas condições em que o recebeu, conforme laudo de vistoria inicial, procedendo às reparações necessárias, inclusive pintura, se houver alteração de cor ou danos às paredes.');
 
-  // CLÁUSULA DÉCIMA QUINTA - RENOVAÇÃO E REVISÃO
-  addClauseHeader('DÉCIMA QUINTA', 'DA RENOVAÇÃO E REVISÃO DO CONTRATO');
-  addSubClause('15.1', `Qualquer das partes poderá propor a renovação deste contrato mediante notificação por escrito com antecedência mínima de 30 (trinta) dias do término do prazo.`);
-  addSubClause('15.2', `Na ausência de comunicação de não renovação, o contrato prorroga-se automaticamente por prazo indeterminado, nos termos do art. 46 da Lei 8.245/91, com todos os encargos e condições vigentes, sujeitos ao reajuste previsto na Cláusula Terceira.`);
-  addSubClause('15.3', `O LOCATÁRIO poderá requerer revisão judicial do aluguel após 3 (três) anos de vigência do contrato ou de acordo da última revisão, conforme art. 68 da Lei 8.245/91.`);
+  addSubClause('10.3', 'As chaves somente serão consideradas entregues após vistoria final e aceitação do LOCADOR quanto ao estado do imóvel e quitação integral de todos os valores devidos.');
+
+  // CLÁUSULA DÉCIMA PRIMEIRA - DA SUBLOCAÇÃO E CESSÃO
+  addClauseHeader('DÉCIMA PRIMEIRA', 'DA SUBLOCAÇÃO E CESSÃO');
+
+  addSubClause('11.1', 'É vedado ao LOCATÁRIO sublocar, ceder ou emprestar o imóvel, total ou parcialmente, sem prévia autorização por escrito do LOCADOR, sob pena de rescisão imediata do contrato e despejo.');
+
+  // CLÁUSULA DÉCIMA SEGUNDA - DAS BENFEITORIAS
+  addClauseHeader('DÉCIMA SEGUNDA', 'DAS BENFEITORIAS');
+
+  addSubClause('12.1', 'As benfeitorias úteis e voluptuárias realizadas pelo LOCATÁRIO, ainda que autorizadas, não serão indenizáveis e ficarão incorporadas ao imóvel, salvo acordo em contrário firmado por escrito.');
+
+  addSubClause('12.2', 'As benfeitorias necessárias, desde que autorizadas previamente pelo LOCADOR, serão indenizáveis, podendo o LOCATÁRIO exercer o direito de retenção.');
+
+  // CLÁUSULA DÉCIMA TERCEIRA - DISPOSIÇÕES GERAIS
+  addClauseHeader('DÉCIMA TERCEIRA', 'DAS DISPOSIÇÕES GERAIS');
+
+  addSubClause('13.1', 'O LOCATÁRIO declara ter examinado o imóvel, achando-o em perfeitas condições de uso e habitabilidade, recebendo-o neste ato com todos os acessórios e pertences em pleno funcionamento.');
+
+  addSubClause('13.2', 'Este contrato obriga as partes e seus herdeiros e sucessores a qualquer título.');
+
+  addSubClause('13.3', 'A tolerância de uma parte para com a outra quanto ao cumprimento das obrigações aqui assumidas não implicará novação, renúncia ou modificação do pactuado.');
+
+  addSubClause('13.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
+
+  // CLÁUSULA DÉCIMA QUARTA - SEGURO INCÊNDIO
+  addClauseHeader('DÉCIMA QUARTA', 'DO SEGURO CONTRA INCÊNDIO');
+  addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
+  addSubClause('14.2', `O LOCATÁRIO deverá zelar pelo imóvel de forma a não comprometer a vigência ou as condições da apólice de seguro, sendo-lhe vedado armazenar ou manusear materiais inflamáveis ou substâncias que aumentem o risco de sinistro.`);
+
+  // CLÁUSULA DÉCIMA QUINTA - IPTU E ENCARGOS MUNICIPAIS
+  addClauseHeader('DÉCIMA QUINTA', 'DO IPTU E ENCARGOS MUNICIPAIS');
+  addSubClause('15.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel serão de responsabilidade do LOCADOR, salvo disposição expressa em contrário firmada por escrito entre as partes.`);
+  addSubClause('15.2', `As taxas de condomínio ordinárias são de responsabilidade do LOCATÁRIO. As taxas extraordinárias de condomínio, destinadas à realização de obras nas partes comuns e fachada, são de responsabilidade do LOCADOR.`);
+
+  // CLÁUSULA DÉCIMA SEXTA - RENOVAÇÃO E REVISÃO
+  addClauseHeader('DÉCIMA SEXTA', 'DA RENOVAÇÃO E REVISÃO DO CONTRATO');
+  addSubClause('16.1', `Qualquer das partes poderá propor a renovação deste contrato mediante notificação por escrito com antecedência mínima de 30 (trinta) dias do término do prazo.`);
+  addSubClause('16.2', `Na ausência de comunicação de não renovação, o contrato prorroga-se automaticamente por prazo indeterminado, nos termos do art. 46 da Lei 8.245/91, com todos os encargos e condições vigentes, sujeitos ao reajuste previsto na Cláusula Terceira.`);
+  addSubClause('16.3', `O LOCATÁRIO poderá requerer revisão judicial do aluguel após 3 (três) anos de vigência do contrato ou de acordo da última revisão, conforme art. 68 da Lei 8.245/91.`);
 
   currentY += 8;
   addParagraph('E, por estarem assim justos e contratados, as partes firmam este instrumento em 2 (duas) vias de igual teor e forma, na presença de 2 (duas) testemunhas, para que produza seus jurídicos e legais efeitos.');
@@ -861,13 +882,19 @@ function currencyToWords(value: number): string {
 
 // Exportação para uso com contratos existentes
 export const generateLegalContractFromLease = async (lease: any): Promise<void> => {
-  const guarantorData = typeof lease.guarantor_data === 'string' 
-    ? JSON.parse(lease.guarantor_data || '{}') 
+  const guarantorData = typeof lease.guarantor_data === 'string'
+    ? JSON.parse(lease.guarantor_data || '{}')
     : (lease.guarantor_data || {});
-  
+
   const paymentInfo = typeof lease.payment_info === 'string'
     ? JSON.parse(lease.payment_info || '{}')
     : (lease.payment_info || {});
+
+  const billingAutomation = typeof lease.billing_automation === 'string'
+    ? JSON.parse(lease.billing_automation || '{}')
+    : (lease.billing_automation || {});
+
+  const billingContact = billingAutomation.billing_contact || {};
 
   const data: LegalContractData = {
     locador: {
@@ -930,6 +957,11 @@ export const generateLegalContractFromLease = async (lease: any): Promise<void> 
       conta: paymentInfo.conta,
       tipoConta: paymentInfo.tipoConta,
       beneficiario: paymentInfo.beneficiario,
+    } : undefined,
+    billingContact: billingContact.name || billingContact.email || billingContact.whatsapp ? {
+      name: billingContact.name,
+      email: billingContact.email,
+      whatsapp: billingContact.whatsapp,
     } : undefined,
   };
 
