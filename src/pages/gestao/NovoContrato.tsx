@@ -41,7 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { supabase } from "@/integrations/supabase/client";
 
-type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "compliance";
+type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "billing" | "compliance";
 type GuaranteeType = "fiador" | "caucao" | "seguro_fianca" | "none";
 
 const STEPS: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
@@ -50,8 +50,10 @@ const STEPS: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
   { id: "financial", title: "Financeiro", icon: <Wallet className="h-4 w-4" /> },
   { id: "guarantee", title: "Garantia", icon: <Shield className="h-4 w-4" /> },
   { id: "payment", title: "Pagamento", icon: <CreditCard className="h-4 w-4" /> },
+  { id: "billing", title: "Cobrança", icon: <BellRing className="h-4 w-4" /> },
   { id: "compliance", title: "DIMOB", icon: <FileText className="h-4 w-4" /> },
 ];
+
 
 const GUARANTEE_OPTIONS = [
   { value: "caucao" as GuaranteeType, label: "Caução em Dinheiro", description: "Depósito de até 3 meses de aluguel" },
