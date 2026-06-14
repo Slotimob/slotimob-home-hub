@@ -467,7 +467,7 @@ export function AssetDetailDialog({
   };
 
   const content = (
-    <div className="flex flex-col h-full max-h-[80vh]">
+    <div className="flex flex-col h-full">
       {/* Asset Header */}
       {asset && (
         <div className="px-4 pb-4 border-b">
