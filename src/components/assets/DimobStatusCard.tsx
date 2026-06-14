@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { DimobQuickResolveDialog, ResolveType } from './DimobQuickResolveDialog';
 
@@ -52,7 +53,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
       // 1. Fetch unit data with CIB
       const { data: unit, error: unitError } = await supabase
         .from('units')
-        .select('id, cib, owner_contact_id, tenant_contact_id, registration_number, iptu_number')
+        .select('id, cib, owner_contact_id, tenant_contact_id, registration_number, iptu_number, address, neighborhood, city, state, unit_number')
         .eq('id', unitId)
         .single();
 
@@ -88,6 +89,18 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
           ? `Matrícula: ${unit.registration_number}` 
           : 'Número de matrícula não informado',
         resolveType: 'registration',
+      });
+
+      // Check complete address
+      const hasFullAddress = !!(unit.address && unit.city && unit.state && unit.neighborhood);
+      checks.push({
+        id: 'address',
+        label: 'Endereço Completo',
+        status: hasFullAddress ? 'ok' : 'pending',
+        message: hasFullAddress
+          ? `${unit.address}, ${unit.neighborhood} - ${unit.city}/${unit.state}`
+          : 'Endereço incompleto (logradouro, bairro, cidade e UF obrigatórios)',
+        resolveType: 'cib',
       });
 
       // 2. Check owner document
@@ -133,7 +146,9 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
           gross_rent_value,
           administration_fee_value,
           is_dimob_eligible,
-          tenant_contact_id
+          tenant_contact_id,
+          start_date,
+          end_date
         `)
         .eq('unit_id', unitId)
         .eq('status', 'active')
@@ -173,6 +188,17 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
           message: hasValues 
             ? `Aluguel: R$ ${(activeLease.gross_rent_value || activeLease.rent_amount || 0).toLocaleString('pt-BR')}` 
             : 'Valores do contrato não definidos',
+          resolveType: 'lease',
+        });
+
+        // Check lease period
+        checks.push({
+          id: 'lease_period',
+          label: 'Período da Locação',
+          status: activeLease.start_date ? 'ok' : 'pending',
+          message: activeLease.start_date
+            ? `Início: ${new Date(activeLease.start_date).toLocaleDateString('pt-BR')}${activeLease.end_date ? ` • Fim: ${new Date(activeLease.end_date).toLocaleDateString('pt-BR')}` : ''}`
+            : 'Data de início do contrato não definida',
           resolveType: 'lease',
         });
 
@@ -330,16 +356,22 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
             ))}
           </div>
 
-          <div className="pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
-            <span>{okCount} de {validations.length} requisitos atendidos</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={checkDimobCompliance}
-              className="text-xs h-7"
-            >
-              Atualizar
-            </Button>
+          <div className="pt-3 border-t space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{okCount} de {validations.length} requisitos atendidos</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={checkDimobCompliance}
+                className="text-xs h-7"
+              >
+                Atualizar
+              </Button>
+            </div>
+            <Progress
+              value={validations.length > 0 ? (okCount / validations.length) * 100 : 0}
+              className="h-1.5"
+            />
           </div>
         </CardContent>
       </Card>
