@@ -791,31 +791,16 @@ export default function ContratoDetalhe() {
                       </Badge>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Para (número WhatsApp destino)</Label>
-                      <Input
-                        type="tel"
-                        placeholder="(11) 99999-9999"
-                        value={automationForm.whatsapp_destination}
-                        onChange={(e) =>
-                          setAutomationForm((p) => ({ ...p, whatsapp_destination: e.target.value }))
-                        }
-                        className="h-9 text-sm"
-                      />
-                      {(tenant?.whatsapp || tenant?.phone) && !automationForm.whatsapp_destination && (
-                        <button
-                          type="button"
-                          className="text-[11px] text-primary hover:underline"
-                          onClick={() =>
-                            setAutomationForm((p) => ({
-                              ...p,
-                              whatsapp_destination: tenant.whatsapp || tenant.phone || "",
-                            }))
-                          }
-                        >
-                          Usar contato do inquilino: {tenant.whatsapp || tenant.phone}
-                        </button>
-                      )}
+                    <div className="rounded-md bg-muted/40 border px-3 py-2 flex items-start gap-2">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">
+                          {tenant?.whatsapp || tenant?.phone || "Nenhum contato disponível"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Número do inquilino será usado automaticamente
+                        </p>
+                      </div>
                     </div>
                   </>
                 )}
