@@ -494,24 +494,26 @@ export function AssetDetailDialog({
                 </div>
               )}
             </div>
-            {/* Action buttons */}
-            <div className="flex gap-2 shrink-0">
-              <Button
+            {asset.overallStatus && OVERALL_STATUS_CONFIG[asset.overallStatus] && (
+              <Badge
                 variant="outline"
-                size="sm"
-                onClick={() => setEditDialogOpen(true)}
+                className={cn("text-xs shrink-0 self-start mt-0.5", OVERALL_STATUS_CONFIG[asset.overallStatus].className)}
               >
-                <Pencil className="h-4 w-4 mr-1" />
-                Editar
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setContractDialogOpen(true)}
-              >
-                <FileText className="h-4 w-4 mr-1" />
-                Contrato
-              </Button>
+                {OVERALL_STATUS_CONFIG[asset.overallStatus].label}
+              </Badge>
+            )}
+            {/* Action buttons */}
+            <div className="flex gap-2 shrink-0 flex-col items-end">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Editar
+                </Button>
+                <Button variant="default" size="sm" onClick={() => setContractDialogOpen(true)}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  Contrato
+                </Button>
+              </div>
             </div>
           </div>
         </div>
