@@ -254,62 +254,62 @@ const AtivosEmGestao = () => {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
-            <Card
-              className={cn("cursor-pointer transition-all", statusFilter === "all" && "ring-2 ring-primary")}
-              onClick={() => setStatusFilter("all")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total</p>
-                    <p className="text-2xl font-bold">{stats.total}</p>
+            {[
+              {
+                key: "all" as StatusFilter,
+                label: "Total",
+                value: stats.total,
+                icon: <Building2 className="h-5 w-5 text-muted-foreground" />,
+                valueClass: "text-foreground",
+                ringClass: "ring-primary",
+                bgClass: "",
+              },
+              {
+                key: "healthy" as StatusFilter,
+                label: "Saudáveis",
+                value: stats.healthy,
+                icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+                valueClass: "text-green-600",
+                ringClass: "ring-green-500",
+                bgClass: "bg-green-500/5",
+              },
+              {
+                key: "attention" as StatusFilter,
+                label: "Atenção",
+                value: stats.attention,
+                icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
+                valueClass: "text-yellow-600",
+                ringClass: "ring-yellow-500",
+                bgClass: "bg-yellow-500/5",
+              },
+              {
+                key: "critical" as StatusFilter,
+                label: "Críticos",
+                value: stats.critical,
+                icon: <XCircle className="h-5 w-5 text-red-500" />,
+                valueClass: "text-red-600",
+                ringClass: "ring-red-500",
+                bgClass: "bg-red-500/5",
+              },
+            ].map(({ key, label, value, icon, valueClass, ringClass, bgClass }) => (
+              <Card
+                key={key}
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md",
+                  statusFilter === key && `ring-2 ${ringClass}`,
+                  bgClass
+                )}
+                onClick={() => setStatusFilter(key)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground font-medium">{label}</p>
+                    {icon}
                   </div>
-                  <Building2 className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card
-              className={cn("cursor-pointer transition-all", statusFilter === "healthy" && "ring-2 ring-green-500")}
-              onClick={() => setStatusFilter("healthy")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Saudáveis</p>
-                    <p className="text-2xl font-bold text-green-600">{stats.healthy}</p>
-                  </div>
-                  <CheckCircle2 className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card
-              className={cn("cursor-pointer transition-all", statusFilter === "attention" && "ring-2 ring-yellow-500")}
-              onClick={() => setStatusFilter("attention")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Atenção</p>
-                    <p className="text-2xl font-bold text-yellow-600">{stats.attention}</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-yellow-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card
-              className={cn("cursor-pointer transition-all", statusFilter === "critical" && "ring-2 ring-red-500")}
-              onClick={() => setStatusFilter("critical")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Críticos</p>
-                    <p className="text-2xl font-bold text-red-600">{stats.critical}</p>
-                  </div>
-                  <XCircle className="h-8 w-8 text-red-500" />
-                </div>
-              </CardContent>
-            </Card>
+                  <p className={cn("text-3xl font-bold", valueClass)}>{value}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           {/* Toolbar */}
