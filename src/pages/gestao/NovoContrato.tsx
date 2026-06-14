@@ -122,7 +122,12 @@ export default function NovoContrato() {
   const updateLease = useUpdateLease();
   const { isLoadingCep, handleCepBlur, formatCep } = useCepSearch();
 
-  const [step, setStep] = useState<WizardStep>(unitIdParam || editLeaseId ? "tenant" : "unit");
+  const stepParam = searchParams.get("step") as WizardStep | null;
+  const [step, setStep] = useState<WizardStep>(() => {
+    if (stepParam && STEPS.some((s) => s.id === stepParam)) return stepParam;
+    if (unitIdParam || editLeaseId) return "tenant";
+    return "unit";
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [unitSearchTerm, setUnitSearchTerm] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
@@ -131,7 +136,29 @@ export default function NovoContrato() {
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
   const [selectedGuarantorContactId, setSelectedGuarantorContactId] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>(getInitialPayment);
+  const [billingContact, setBillingContact] = useState({
+    name: "",
+    email: "",
+    whatsapp: "", // display format: "(11) 99999-9999"
+  });
   const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // Formata dígitos para exibição: "(11) 99999-9999"
+  const formatWhatsAppDisplay = (raw: string): string => {
+    const digits = raw.replace(/\D/g, "").replace(/^55/, "");
+    if (digits.length === 0) return "";
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  };
+
+  // Converte exibição para armazenamento: "+5511999999999"
+  const billingWhatsAppStored = (): string => {
+    const digits = billingContact.whatsapp.replace(/\D/g, "");
+    return digits ? `+55${digits}` : "";
+  };
+
 
   const isEditMode = !!editLeaseId;
 
