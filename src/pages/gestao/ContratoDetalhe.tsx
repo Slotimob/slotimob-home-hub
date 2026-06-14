@@ -741,12 +741,15 @@ export default function ContratoDetalhe() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">Enviar do número configurado na conta</p>
+                      <p className="text-xs text-muted-foreground">
+                        {hasWhatsappConnected ? "Integração Evolution API conectada" : "Requer integração WhatsApp"}
+                      </p>
                     </div>
                   </div>
                   <Switch
                     checked={automationForm.whatsapp_enabled}
                     onCheckedChange={(v) => setAutomationForm((p) => ({ ...p, whatsapp_enabled: v }))}
+                    disabled={!hasWhatsappConnected}
                   />
                 </div>
                 {automationForm.whatsapp_enabled && (
