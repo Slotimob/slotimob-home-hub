@@ -748,10 +748,10 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
   addSubClause('14.2', `O LOCATÁRIO deverá zelar pelo imóvel de forma a não comprometer a vigência ou as condições da apólice de seguro, sendo-lhe vedado armazenar ou manusear materiais inflamáveis ou substâncias que aumentem o risco de sinistro.`);
 
-  // CLÁUSULA DÉCIMA QUARTA - IPTU E ENCARGOS MUNICIPAIS
-  addClauseHeader('DÉCIMA QUARTA', 'DO IPTU E ENCARGOS MUNICIPAIS');
-  addSubClause('14.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel serão de responsabilidade do LOCADOR, salvo disposição expressa em contrário firmada por escrito entre as partes.`);
-  addSubClause('14.2', `As taxas de condomínio ordinárias são de responsabilidade do LOCATÁRIO. As taxas extraordinárias de condomínio, destinadas à realização de obras nas partes comuns e fachada, são de responsabilidade do LOCADOR.`);
+  // CLÁUSULA DÉCIMA QUINTA - IPTU E ENCARGOS MUNICIPAIS
+  addClauseHeader('DÉCIMA QUINTA', 'DO IPTU E ENCARGOS MUNICIPAIS');
+  addSubClause('15.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel serão de responsabilidade do LOCADOR, salvo disposição expressa em contrário firmada por escrito entre as partes.`);
+  addSubClause('15.2', `As taxas de condomínio ordinárias são de responsabilidade do LOCATÁRIO. As taxas extraordinárias de condomínio, destinadas à realização de obras nas partes comuns e fachada, são de responsabilidade do LOCADOR.`);
 
   // CLÁUSULA DÉCIMA QUINTA - RENOVAÇÃO E REVISÃO
   addClauseHeader('DÉCIMA QUINTA', 'DA RENOVAÇÃO E REVISÃO DO CONTRATO');
