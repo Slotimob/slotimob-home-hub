@@ -776,7 +776,7 @@ export default function ContratoDetalhe() {
                     {tenantWhatsApp ? (
                       <div className="flex items-center justify-between gap-2">
                         <div>
-                          <p className="font-medium">{lease?.tenant_contact?.name}</p>
+                          <p className="font-medium">{billingContactName}</p>
                           <p className="text-xs text-muted-foreground">{tenantWhatsApp}</p>
                         </div>
                         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
