@@ -371,8 +371,11 @@ export default function NovoContrato() {
         return true;
       case "payment":
         return true;
+      case "billing":
+        return true;
       case "compliance":
         return true;
+
       default:
         return false;
     }
