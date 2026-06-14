@@ -126,6 +126,12 @@ const STATUS_CONFIG: Record<ObligationStatus, {
   },
 };
 
+const OVERALL_STATUS_CONFIG = {
+  healthy: { label: "Saudável", className: "bg-green-500/15 text-green-600 border-green-500/30" },
+  attention: { label: "Atenção", className: "bg-yellow-500/15 text-yellow-600 border-yellow-500/30" },
+  critical: { label: "Crítico", className: "bg-red-500/15 text-red-600 border-red-500/30" },
+} as const;
+
 interface MonthlyObligation {
   type: ObligationType;
   label: string;
