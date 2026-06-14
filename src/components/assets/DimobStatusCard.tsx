@@ -356,16 +356,22 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
             ))}
           </div>
 
-          <div className="pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
-            <span>{okCount} de {validations.length} requisitos atendidos</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={checkDimobCompliance}
-              className="text-xs h-7"
-            >
-              Atualizar
-            </Button>
+          <div className="pt-3 border-t space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{okCount} de {validations.length} requisitos atendidos</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={checkDimobCompliance}
+                className="text-xs h-7"
+              >
+                Atualizar
+              </Button>
+            </div>
+            <Progress
+              value={validations.length > 0 ? (okCount / validations.length) * 100 : 0}
+              className="h-1.5"
+            />
           </div>
         </CardContent>
       </Card>
