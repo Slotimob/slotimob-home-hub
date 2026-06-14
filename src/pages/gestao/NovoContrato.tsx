@@ -313,6 +313,18 @@ export default function NovoContrato() {
 
   const selectedTenant = tenants?.find((t) => t.id === formData.tenant_contact_id);
 
+  // Auto-populate billing contact when tenant changes (only if fields are still empty)
+  useEffect(() => {
+    if (!selectedTenant) return;
+    setBillingContact((prev) => ({
+      name: prev.name || selectedTenant.name || "",
+      email: prev.email || selectedTenant.email || "",
+      whatsapp: prev.whatsapp || formatWhatsAppDisplay(selectedTenant.whatsapp || selectedTenant.phone || ""),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTenant?.id]);
+
+
   // Managed units list (used in the "unit" step)
   const { data: managedUnits, isLoading: loadingManagedUnits } = useQuery({
     queryKey: ["managed-units-for-lease", effectiveBrokerId, user?.id, unitSearchTerm],
