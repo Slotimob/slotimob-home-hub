@@ -752,33 +752,70 @@ export default function ContratoDetalhe() {
                     disabled={!hasWhatsappConnected}
                   />
                 </div>
-                {automationForm.whatsapp_enabled && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Para (número WhatsApp destino)</Label>
-                    <Input
-                      type="tel"
-                      placeholder="(11) 99999-9999"
-                      value={automationForm.whatsapp_destination}
-                      onChange={(e) =>
-                        setAutomationForm((p) => ({ ...p, whatsapp_destination: e.target.value }))
-                      }
-                      className="h-9 text-sm"
-                    />
-                    {(tenant?.whatsapp || tenant?.phone) && !automationForm.whatsapp_destination && (
-                      <button
-                        type="button"
-                        className="text-[11px] text-primary hover:underline"
-                        onClick={() =>
-                          setAutomationForm((p) => ({
-                            ...p,
-                            whatsapp_destination: tenant.whatsapp || tenant.phone || "",
-                          }))
-                        }
-                      >
-                        Usar contato do inquilino: {tenant.whatsapp || tenant.phone}
-                      </button>
-                    )}
+                {!hasWhatsappConnected && (
+                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 space-y-1.5">
+                    <p className="text-xs font-medium text-amber-700 flex items-center gap-1.5">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      WhatsApp não conectado
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Conecte seu número via Evolution API para habilitar o envio automático de cobranças.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs border-amber-500/40 text-amber-700 hover:bg-amber-500/10 gap-1.5 mt-1"
+                      onClick={() => navigate("/whatsapp")}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Conectar WhatsApp
+                    </Button>
                   </div>
+                )}
+                {hasWhatsappConnected && automationForm.whatsapp_enabled && (
+                  <>
+                    <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 flex items-start gap-2">
+                      <MessageSquare className="h-3.5 w-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-green-700">
+                          {whatsappConnection!.phone_number || whatsappConnection!.instance_name || "Número conectado"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Enviado via Evolution API · instância {whatsappConnection!.instance_name || "configurada"}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="ml-auto text-[10px] border-green-500/30 text-green-700 bg-green-500/10 flex-shrink-0">
+                        Conectado
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Para (número WhatsApp destino)</Label>
+                      <Input
+                        type="tel"
+                        placeholder="(11) 99999-9999"
+                        value={automationForm.whatsapp_destination}
+                        onChange={(e) =>
+                          setAutomationForm((p) => ({ ...p, whatsapp_destination: e.target.value }))
+                        }
+                        className="h-9 text-sm"
+                      />
+                      {(tenant?.whatsapp || tenant?.phone) && !automationForm.whatsapp_destination && (
+                        <button
+                          type="button"
+                          className="text-[11px] text-primary hover:underline"
+                          onClick={() =>
+                            setAutomationForm((p) => ({
+                              ...p,
+                              whatsapp_destination: tenant.whatsapp || tenant.phone || "",
+                            }))
+                          }
+                        >
+                          Usar contato do inquilino: {tenant.whatsapp || tenant.phone}
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
 
