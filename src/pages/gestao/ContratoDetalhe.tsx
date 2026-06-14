@@ -192,6 +192,37 @@ export default function ContratoDetalhe() {
     enabled: !!user && !!lease,
   });
 
+  const { data: brokerProfile } = useQuery({
+    queryKey: ["broker-profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", effectiveBrokerId || user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: whatsappConnection } = useQuery({
+    queryKey: ["whatsapp-connection", effectiveBrokerId, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("whatsapp_connections")
+        .select("id, phone_number, status, instance_name, evolution_api_url")
+        .eq("broker_id", effectiveBrokerId || user!.id)
+        .eq("status", "connected")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const hasWhatsappConnected = !!whatsappConnection;
+
   const capitalizedMonth = useMemo(() => {
     const m = format(new Date(), "MMMM/yyyy", { locale: ptBR });
     return m.charAt(0).toUpperCase() + m.slice(1);
