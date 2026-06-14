@@ -213,6 +213,7 @@ export default function NovoContrato() {
           if (draft.formData) setFormData((prev) => ({ ...prev, ...draft.formData }));
           if (draft.guarantorData) setGuarantorData(draft.guarantorData);
           if (draft.paymentInfo) setPaymentInfo(draft.paymentInfo);
+          if (draft.billingContact) setBillingContact(draft.billingContact);
         }
       }
     } catch {
@@ -227,12 +228,12 @@ export default function NovoContrato() {
     try {
       sessionStorage.setItem(
         DRAFT_KEY,
-        JSON.stringify({ unitId: unitIdParam, formData, guarantorData, paymentInfo })
+        JSON.stringify({ unitId: unitIdParam, formData, guarantorData, paymentInfo, billingContact })
       );
     } catch {
       /* ignore */
     }
-  }, [isEditMode, draftLoaded, unitIdParam, formData, guarantorData, paymentInfo]);
+  }, [isEditMode, draftLoaded, unitIdParam, formData, guarantorData, paymentInfo, billingContact]);
 
   // Hydrate from editLease when fetched
   useEffect(() => {
@@ -253,7 +254,16 @@ export default function NovoContrato() {
     });
     if (editLease.guarantor_data) setGuarantorData(editLease.guarantor_data);
     if (editLease.payment_info) setPaymentInfo(editLease.payment_info);
+    if (editLease.billing_automation?.billing_contact) {
+      const bc = editLease.billing_automation.billing_contact;
+      setBillingContact({
+        name: bc.name || "",
+        email: bc.email || "",
+        whatsapp: formatWhatsAppDisplay(bc.whatsapp || ""),
+      });
+    }
   }, [editLease]);
+
 
   const needsSpouseData =
     guarantorData.estadoCivil === "Casado(a)" || guarantorData.estadoCivil === "União Estável";
