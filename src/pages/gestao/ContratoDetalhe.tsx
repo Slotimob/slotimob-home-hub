@@ -252,7 +252,7 @@ export default function ContratoDetalhe() {
     if (auto) {
       setAutomationForm({
         email_enabled: !!auto.email_enabled,
-        email_destination: auto.email_destination || lease?.tenant_contact?.email || "",
+        email_destination: auto.email_destination ?? auto.billing_contact?.email ?? lease?.tenant_contact?.email ?? "",
         whatsapp_enabled: !!auto.whatsapp_enabled,
       });
     }
