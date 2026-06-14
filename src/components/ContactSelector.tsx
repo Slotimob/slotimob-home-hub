@@ -234,7 +234,8 @@ export function ContactSelector({
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {contact.phone && <span>{contact.phone}</span>}
-                      {contact.phone && contact.email && <span>•</span>}
+                      {!contact.phone && contact.whatsapp && <span>{contact.whatsapp} (WA)</span>}
+                      {(contact.phone || contact.whatsapp) && contact.email && <span>•</span>}
                       {contact.email && <span className="truncate">{contact.email}</span>}
                     </div>
                   </div>
