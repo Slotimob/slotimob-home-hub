@@ -126,7 +126,6 @@ export default function ContratoDetalhe() {
     email_enabled: false,
     email_destination: "",
     whatsapp_enabled: false,
-    whatsapp_destination: "",
   });
   const [savingAutomation, setSavingAutomation] = useState(false);
 
