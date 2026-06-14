@@ -243,18 +243,20 @@ export default function ContratoDetalhe() {
     }
   };
 
+  // Calcular fora do useEffect para ser usado como dependência estável
+  const billingAutomationKey = JSON.stringify(lease?.billing_automation);
+
   // Hydrate automation form when lease loads
   useEffect(() => {
     const auto: any = (lease as any)?.billing_automation;
     if (auto) {
       setAutomationForm({
         email_enabled: !!auto.email_enabled,
-        email_destination: auto.email_destination || "",
+        email_destination: auto.email_destination || lease?.tenant_contact?.email || "",
         whatsapp_enabled: !!auto.whatsapp_enabled,
-        whatsapp_destination: auto.whatsapp_destination || "",
       });
     }
-  }, [(lease as any)?.billing_automation]);
+  }, [billingAutomationKey, lease?.tenant_contact?.email]);
 
   const handleSaveAutomation = async () => {
     if (!lease) return;
