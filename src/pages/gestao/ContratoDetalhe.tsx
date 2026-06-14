@@ -367,6 +367,7 @@ export default function ContratoDetalhe() {
 
   const statusConfig = STATUS_LABELS[lease.status] || STATUS_LABELS.active;
   const tenant = lease.tenant_contact;
+  const tenantWhatsApp = tenant?.whatsapp || tenant?.phone || null;
   const unit = lease.unit;
   const isSigned = lease.signature_status === "signed";
 
