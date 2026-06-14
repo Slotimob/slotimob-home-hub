@@ -678,10 +678,10 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
     addSubClause('6.3', 'A fiança permanece válida mesmo em caso de prorrogação da locação, seja por prazo determinado ou indeterminado, renunciando o(s) FIADOR(es) expressamente ao direito de exoneração previsto no art. 835 do Código Civil.');
   }
 
-  // CLÁUSULA SEXTA - DAS OBRIGAÇÕES DO LOCADOR
-  addClauseHeader('SEXTA', 'DAS OBRIGAÇÕES DO LOCADOR');
-  
-  addSubClause('6.1', 'Constituem obrigações do LOCADOR:');
+  // CLÁUSULA SÉTIMA - DAS OBRIGAÇÕES DO LOCADOR
+  addClauseHeader('SÉTIMA', 'DAS OBRIGAÇÕES DO LOCADOR');
+
+  addSubClause('7.1', 'Constituem obrigações do LOCADOR:');
   addRomanItem('I', 'Entregar o imóvel em estado de servir ao uso a que se destina;');
   addRomanItem('II', 'Garantir o uso pacífico do imóvel durante a locação;');
   addRomanItem('III', 'Manter a forma e o destino do bem locado;');
