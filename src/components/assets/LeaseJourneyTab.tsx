@@ -1,5 +1,5 @@
  import { useState, useRef } from "react";
- import { format, parseISO } from "date-fns";
+ import { format, parseISO, differenceInDays } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { Button } from "@/components/ui/button";
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
