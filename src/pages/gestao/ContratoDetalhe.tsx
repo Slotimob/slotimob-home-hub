@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, addDays, addMonths, isBefore, isToday } from "date-fns";
@@ -30,6 +30,8 @@ import {
   Pencil,
   Route as RouteIcon,
   Scale,
+  Zap,
+  Save,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -113,10 +115,20 @@ export default function ContratoDetalhe() {
     sent_by: "",
     method: "whatsapp" as "whatsapp" | "email" | "phone" | "in_person" | "other",
     notes: "",
+    sent_to: "",
   });
+  const [logsLimit, setLogsLimit] = useState(20);
 
   const [isEditingCib, setIsEditingCib] = useState(false);
   const [editedCib, setEditedCib] = useState("");
+
+  const [automationForm, setAutomationForm] = useState({
+    email_enabled: false,
+    email_destination: "",
+    whatsapp_enabled: false,
+    whatsapp_destination: "",
+  });
+  const [savingAutomation, setSavingAutomation] = useState(false);
 
   const { data: lease, isLoading, refetch } = useQuery({
     queryKey: ["lease-detail", id, effectiveBrokerId],
@@ -177,6 +189,43 @@ export default function ContratoDetalhe() {
       toast({ title: "Configuração atualizada!" });
     } catch {
       toast({ title: "Erro ao atualizar", variant: "destructive" });
+    }
+  };
+
+  // Hydrate automation form when lease loads
+  useEffect(() => {
+    const auto: any = (lease as any)?.billing_automation;
+    if (auto) {
+      setAutomationForm({
+        email_enabled: !!auto.email_enabled,
+        email_destination: auto.email_destination || "",
+        whatsapp_enabled: !!auto.whatsapp_enabled,
+        whatsapp_destination: auto.whatsapp_destination || "",
+      });
+    }
+  }, [(lease as any)?.billing_automation]);
+
+  const handleSaveAutomation = async () => {
+    if (!lease) return;
+    setSavingAutomation(true);
+    try {
+      await updateLease.mutateAsync({
+        id: lease.id,
+        data: {
+          billing_automation: {
+            ...((lease as any).billing_automation || {}),
+            email_enabled: automationForm.email_enabled,
+            email_destination: automationForm.email_destination,
+            whatsapp_enabled: automationForm.whatsapp_enabled,
+            whatsapp_destination: automationForm.whatsapp_destination,
+          },
+        } as any,
+      });
+      toast({ title: "Automação configurada com sucesso!" });
+    } catch {
+      toast({ title: "Erro ao salvar", variant: "destructive" });
+    } finally {
+      setSavingAutomation(false);
     }
   };
 
@@ -542,49 +591,137 @@ export default function ContratoDetalhe() {
 
         {/* Billing */}
         <TabsContent value="billing" className="space-y-4 mt-4">
+          {/* Card 1: Automação de Cobrança */}
           <Card>
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm font-medium">Enviar Cobrança - {capitalizedMonth}</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Zap className="h-4 w-4 text-amber-500" />
+                Automação de Cobrança
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Configure os canais e destinatários para envio automático das cobranças.
+              </p>
             </CardHeader>
-            <CardContent className="py-2 px-4 space-y-2">
-              {(() => {
-                const leaseForMessage = { ...lease, tenant } as any;
-                const { whatsappPhone, emailLink, message } = generateBillingMessage(
-                  leaseForMessage,
-                  billingStatus.overdue ? "overdue" : billingStatus.dueDay ? "due" : "reminder",
-                  capitalizedMonth
-                );
-                return (
-                  <div className="flex gap-2">
-                    {whatsappPhone && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          const encoded = encodeURIComponent(message);
-                          navigate(`/whatsapp?phone=${formatPhoneForWhatsApp(whatsappPhone)}&text=${encoded}`);
-                        }}
+            <CardContent className="py-2 px-4 space-y-4">
+              {/* Email panel */}
+              <div className="rounded-lg border p-3 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <div className="h-8 w-8 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                      <Mail className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium">E-mail</p>
+                        {automationForm.email_enabled && automationForm.email_destination && (
+                          <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-700 bg-green-500/10">
+                            Configurado
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Enviar do seu e-mail configurado</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={automationForm.email_enabled}
+                    onCheckedChange={(v) => setAutomationForm((p) => ({ ...p, email_enabled: v }))}
+                  />
+                </div>
+                {automationForm.email_enabled && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Para (e-mail destino)</Label>
+                    <Input
+                      type="email"
+                      placeholder="inquilino@exemplo.com"
+                      value={automationForm.email_destination}
+                      onChange={(e) =>
+                        setAutomationForm((p) => ({ ...p, email_destination: e.target.value }))
+                      }
+                      className="h-9 text-sm"
+                    />
+                    {tenant?.email && !automationForm.email_destination && (
+                      <button
+                        type="button"
+                        className="text-[11px] text-primary hover:underline"
+                        onClick={() =>
+                          setAutomationForm((p) => ({ ...p, email_destination: tenant.email || "" }))
+                        }
                       >
-                        <MessageSquare className="h-4 w-4 mr-1.5 text-green-600" />
-                        WhatsApp
-                      </Button>
-                    )}
-                    {emailLink && (
-                      <Button variant="outline" size="sm" className="flex-1" asChild>
-                        <a href={emailLink}>
-                          <Mail className="h-4 w-4 mr-1.5 text-blue-600" />
-                          E-mail
-                          <ExternalLink className="h-3 w-3 ml-1" />
-                        </a>
-                      </Button>
+                        Usar e-mail do inquilino: {tenant.email}
+                      </button>
                     )}
                   </div>
-                );
-              })()}
+                )}
+              </div>
+
+              {/* WhatsApp panel */}
+              <div className="rounded-lg border p-3 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <div className="h-8 w-8 rounded-md bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium">WhatsApp</p>
+                        {automationForm.whatsapp_enabled && automationForm.whatsapp_destination && (
+                          <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-700 bg-green-500/10">
+                            Configurado
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Enviar do número configurado na conta</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={automationForm.whatsapp_enabled}
+                    onCheckedChange={(v) => setAutomationForm((p) => ({ ...p, whatsapp_enabled: v }))}
+                  />
+                </div>
+                {automationForm.whatsapp_enabled && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Para (número WhatsApp destino)</Label>
+                    <Input
+                      type="tel"
+                      placeholder="(11) 99999-9999"
+                      value={automationForm.whatsapp_destination}
+                      onChange={(e) =>
+                        setAutomationForm((p) => ({ ...p, whatsapp_destination: e.target.value }))
+                      }
+                      className="h-9 text-sm"
+                    />
+                    {(tenant?.whatsapp || tenant?.phone) && !automationForm.whatsapp_destination && (
+                      <button
+                        type="button"
+                        className="text-[11px] text-primary hover:underline"
+                        onClick={() =>
+                          setAutomationForm((p) => ({
+                            ...p,
+                            whatsapp_destination: tenant.whatsapp || tenant.phone || "",
+                          }))
+                        }
+                      >
+                        Usar contato do inquilino: {tenant.whatsapp || tenant.phone}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button size="sm" onClick={handleSaveAutomation} disabled={savingAutomation}>
+                  {savingAutomation ? (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-1.5" />
+                  )}
+                  Salvar configuração
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
+          {/* Card 2: Régua de Cobrança */}
           <Card>
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm font-medium">Régua de Cobrança</CardTitle>
@@ -593,41 +730,100 @@ export default function ContratoDetalhe() {
               </p>
             </CardHeader>
             <CardContent className="py-2 px-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={cn("h-2.5 w-2.5 rounded-full", billingStatus.reminder5 ? "bg-green-500" : "bg-muted")} />
-                    <span className="text-sm">5 dias antes - Lembrete</span>
+              {(() => {
+                const channels: string[] = [];
+                if (automationForm.email_enabled && automationForm.email_destination) channels.push("e-mail");
+                if (automationForm.whatsapp_enabled && automationForm.whatsapp_destination) channels.push("WhatsApp");
+                const automationReady = channels.length > 0;
+
+                const renderHint = (icon?: React.ReactNode) =>
+                  automationReady ? (
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      {icon}
+                      Enviará via {channels.join(" e ")}
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-amber-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Configure a automação acima para envio automático
+                    </p>
+                  );
+
+                const items = [
+                  {
+                    key: "reminder_5_days",
+                    color: billingStatus.reminder5 ? "bg-green-500" : "bg-muted",
+                    title: "5 dias antes",
+                    subtitle: "Lembrete de vencimento próximo",
+                  },
+                  {
+                    key: "reminder_due_day",
+                    color: billingStatus.dueDay ? "bg-yellow-500" : "bg-muted",
+                    title: "Dia do vencimento",
+                    subtitle: "Cobrança no dia D",
+                  },
+                  {
+                    key: "reminder_3_days_late",
+                    color: billingStatus.overdue ? "bg-red-500" : "bg-muted",
+                    title: "3 dias após",
+                    subtitle: "Aviso de inadimplência",
+                  },
+                ];
+
+                return (
+                  <div className="space-y-4">
+                    {items.map((item) => (
+                      <div key={item.key} className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <div className={cn("h-2.5 w-2.5 rounded-full mt-1.5 flex-shrink-0", item.color)} />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium">{item.title}</p>
+                            <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                            {renderHint()}
+                          </div>
+                        </div>
+                        <Switch
+                          checked={!!(lease as any).billing_automation?.[item.key]}
+                          onCheckedChange={(v) => handleAutomationToggle(item.key, v)}
+                        />
+                      </div>
+                    ))}
+
+                    {/* 4th item - Legal notification */}
+                    <div className="flex items-start justify-between gap-3 pt-3 border-t">
+                      <div className="flex items-start gap-2 min-w-0">
+                        <div className={cn(
+                          "h-2.5 w-2.5 rounded-full mt-1.5 flex-shrink-0",
+                          (lease as any).billing_automation?.legal_notification_7_days ? "bg-purple-600" : "bg-muted"
+                        )} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-medium">7 dias após</p>
+                            {(lease as any).billing_automation?.legal_notification_7_days && (
+                              <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-700 bg-purple-500/10 gap-1">
+                                <Scale className="h-2.5 w-2.5" />
+                                Jurídico
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">Notificação formal de inadimplência</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Marca a intenção de notificação formal — registro interno
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={!!(lease as any).billing_automation?.legal_notification_7_days}
+                        onCheckedChange={(v) => handleAutomationToggle("legal_notification_7_days", v)}
+                      />
+                    </div>
                   </div>
-                  <Switch
-                    checked={!!lease.billing_automation?.reminder_5_days}
-                    onCheckedChange={(v) => handleAutomationToggle("reminder_5_days", v)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={cn("h-2.5 w-2.5 rounded-full", billingStatus.dueDay ? "bg-yellow-500" : "bg-muted")} />
-                    <span className="text-sm">Dia do vencimento - Cobrança</span>
-                  </div>
-                  <Switch
-                    checked={!!lease.billing_automation?.reminder_due_day}
-                    onCheckedChange={(v) => handleAutomationToggle("reminder_due_day", v)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={cn("h-2.5 w-2.5 rounded-full", billingStatus.overdue ? "bg-red-500" : "bg-muted")} />
-                    <span className="text-sm">3 dias após - Inadimplência</span>
-                  </div>
-                  <Switch
-                    checked={!!lease.billing_automation?.reminder_3_days_late}
-                    onCheckedChange={(v) => handleAutomationToggle("reminder_3_days_late", v)}
-                  />
-                </div>
-              </div>
+                );
+              })()}
             </CardContent>
           </Card>
 
+          {/* Card 3: Histórico de Envios */}
           <Card>
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-medium">Histórico de Envios</CardTitle>
@@ -657,7 +853,9 @@ export default function ContratoDetalhe() {
                     <Label className="text-xs">Canal de contato</Label>
                     <Select
                       value={billingLogForm.method}
-                      onValueChange={(v) => setBillingLogForm({ ...billingLogForm, method: v as typeof billingLogForm.method })}
+                      onValueChange={(v) =>
+                        setBillingLogForm({ ...billingLogForm, method: v as typeof billingLogForm.method })
+                      }
                     >
                       <SelectTrigger className="h-8 text-sm">
                         <SelectValue />
@@ -680,6 +878,15 @@ export default function ContratoDetalhe() {
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Para (destinatário — opcional)</Label>
+                    <Input
+                      placeholder="E-mail ou número usado"
+                      value={billingLogForm.sent_to}
+                      onChange={(e) => setBillingLogForm({ ...billingLogForm, sent_to: e.target.value })}
+                      className="h-8 text-sm"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs">Observações (opcional)</Label>
@@ -706,6 +913,7 @@ export default function ContratoDetalhe() {
                             method: billingLogForm.method,
                             success: true,
                             sent_by: billingLogForm.sent_by.trim(),
+                            sent_to: billingLogForm.sent_to.trim() || undefined,
                             notes: billingLogForm.notes.trim() || undefined,
                           };
                           const updatedLogs = [...((lease.billing_logs as BillingLog[]) || []), newLog];
@@ -715,7 +923,7 @@ export default function ContratoDetalhe() {
                           });
                           toast({ title: "Contato registrado!" });
                           setShowBillingLogForm(false);
-                          setBillingLogForm({ sent_by: "", method: "whatsapp", notes: "" });
+                          setBillingLogForm({ sent_by: "", method: "whatsapp", notes: "", sent_to: "" });
                           refetch();
                         } catch {
                           toast({ title: "Erro ao registrar", variant: "destructive" });
@@ -730,7 +938,7 @@ export default function ContratoDetalhe() {
                       className="h-8"
                       onClick={() => {
                         setShowBillingLogForm(false);
-                        setBillingLogForm({ sent_by: "", method: "whatsapp", notes: "" });
+                        setBillingLogForm({ sent_by: "", method: "whatsapp", notes: "", sent_to: "" });
                       }}
                     >
                       Cancelar
@@ -739,50 +947,78 @@ export default function ContratoDetalhe() {
                 </div>
               )}
 
-              {!lease.billing_logs || (lease.billing_logs as BillingLog[]).length === 0 ? (
-                !showBillingLogForm && (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nenhum envio registrado ainda</p>
-                )
-              ) : (
-                <div className="space-y-2">
-                  {((lease.billing_logs as BillingLog[]) || [])
-                    .slice()
-                    .reverse()
-                    .slice(0, 10)
-                    .map((log, index) => (
-                      <div key={index} className="flex items-center justify-between text-sm py-1 border-b border-border/50 last:border-0">
-                        <div className="flex items-center gap-2">
-                          {log.method === "whatsapp" && <MessageSquare className="h-3.5 w-3.5 text-green-600" />}
-                          {log.method === "phone" && <Phone className="h-3.5 w-3.5 text-blue-600" />}
-                          {log.method === "email" && <Mail className="h-3.5 w-3.5 text-violet-600" />}
-                          {log.method === "in_person" && <Users className="h-3.5 w-3.5 text-amber-600" />}
-                          {log.method === "other" && <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />}
-                          <div className="flex flex-col">
-                            <span className="text-xs">
-                              {log.type === "manual" ? "Contato manual" : log.type.replace(/_/g, " ")}
+              {(() => {
+                const allLogs = ((lease.billing_logs as BillingLog[]) || []).slice().reverse();
+                if (allLogs.length === 0) {
+                  return !showBillingLogForm ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum envio registrado ainda</p>
+                  ) : null;
+                }
+                const visible = allLogs.slice(0, logsLimit);
+                const hasMore = allLogs.length > visible.length;
+                return (
+                  <>
+                    <div className="space-y-2">
+                      {visible.map((log, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start justify-between text-sm py-2 border-b border-border/50 last:border-0 gap-3"
+                        >
+                          <div className="flex items-start gap-2 min-w-0">
+                            <div className="mt-0.5">
+                              {log.method === "whatsapp" && <MessageSquare className="h-3.5 w-3.5 text-green-600" />}
+                              {log.method === "phone" && <Phone className="h-3.5 w-3.5 text-blue-600" />}
+                              {log.method === "email" && <Mail className="h-3.5 w-3.5 text-violet-600" />}
+                              {log.method === "in_person" && <Users className="h-3.5 w-3.5 text-amber-600" />}
+                              {log.method === "other" && <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-xs font-medium capitalize">
+                                {log.type === "manual" ? "Contato manual" : log.type.replace(/_/g, " ")}
+                              </span>
+                              {log.sent_by && (
+                                <span className="text-[10px] text-muted-foreground">por {log.sent_by}</span>
+                              )}
+                              {log.sent_to && (
+                                <span className="text-[10px] text-muted-foreground truncate">
+                                  Para: {log.sent_to}
+                                </span>
+                              )}
+                              {log.notes && (
+                                <span className="text-[10px] text-muted-foreground italic truncate max-w-[220px]">
+                                  {log.notes}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-muted-foreground text-xs whitespace-nowrap">
+                              {format(new Date(log.sent_at), "dd/MM HH:mm")}
                             </span>
-                            {log.sent_by && (
-                              <span className="text-[10px] text-muted-foreground">por {log.sent_by}</span>
-                            )}
-                            {log.notes && (
-                              <span className="text-[10px] text-muted-foreground italic truncate max-w-[150px]">{log.notes}</span>
+                            {log.success ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                            ) : (
+                              <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground text-xs">
-                            {format(new Date(log.sent_at), "dd/MM HH:mm")}
-                          </span>
-                          {log.success ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                          ) : (
-                            <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                          )}
-                        </div>
+                      ))}
+                    </div>
+                    {hasMore && (
+                      <div className="flex justify-center mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={() => setLogsLimit((prev) => prev + 20)}
+                        >
+                          Ver mais ({allLogs.length - visible.length} restantes)
+                        </Button>
                       </div>
-                    ))}
-                </div>
-              )}
+                    )}
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
