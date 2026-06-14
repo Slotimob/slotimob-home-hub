@@ -172,6 +172,26 @@ export default function ContratoDetalhe() {
     };
   }, [lease, nextDueDate]);
 
+  // Recent transactions for the "Situação dos Últimos 3 Meses" card
+  const { data: recentTransactions } = useQuery({
+    queryKey: ["recent-lease-transactions", lease?.id, effectiveBrokerId],
+    queryFn: async () => {
+      if (!lease) return [];
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const { data } = await supabase
+        .from("financial_transactions")
+        .select("id, amount, due_date, payment_date, status, description, type")
+        .eq("broker_id", effectiveBrokerId || user!.id)
+        .like("reference", `lease:${lease.id}%`)
+        .gte("due_date", threeMonthsAgo.toISOString().split("T")[0])
+        .order("due_date", { ascending: false })
+        .limit(6);
+      return data || [];
+    },
+    enabled: !!user && !!lease,
+  });
+
   const capitalizedMonth = useMemo(() => {
     const m = format(new Date(), "MMMM/yyyy", { locale: ptBR });
     return m.charAt(0).toUpperCase() + m.slice(1);
