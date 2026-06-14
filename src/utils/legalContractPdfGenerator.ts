@@ -702,14 +702,14 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addRomanItem('VII', 'Pagar as despesas de consumo (água, luz, gás, telefone, internet, etc.) e taxas condominiais ordinárias;');
   addRomanItem('VIII', 'Permitir a vistoria do imóvel pelo LOCADOR ou seu procurador, mediante prévio agendamento.');
 
-  // CLÁUSULA OITAVA - DA RESCISÃO E MULTA
-  addClauseHeader('OITAVA', 'DA RESCISÃO ANTECIPADA');
-  
-  addSubClause('8.1', 'Caso o LOCATÁRIO devolva o imóvel antes do término do prazo contratual, pagará multa compensatória equivalente a 3 (três) meses de aluguel, calculada proporcionalmente ao período de cumprimento do contrato, nos termos do art. 4º da Lei 8.245/91.');
-  
-  addSubClause('8.2', 'A multa será calculada da seguinte forma: valor da multa = (meses restantes / prazo total) × (3 × valor do aluguel vigente).');
-  
-  addSubClause('8.3', 'O LOCATÁRIO ficará dispensado da multa se a devolução decorrer de transferência de emprego para localidade diversa, desde que notifique o LOCADOR com antecedência mínima de 30 (trinta) dias, nos termos do art. 4º, parágrafo único, da Lei 8.245/91.');
+  // CLÁUSULA NONA - DA RESCISÃO E MULTA
+  addClauseHeader('NONA', 'DA RESCISÃO ANTECIPADA');
+
+  addSubClause('9.1', 'Caso o LOCATÁRIO devolva o imóvel antes do término do prazo contratual, pagará multa compensatória equivalente a 3 (três) meses de aluguel, calculada proporcionalmente ao período de cumprimento do contrato, nos termos do art. 4º da Lei 8.245/91.');
+
+  addSubClause('9.2', 'A multa será calculada da seguinte forma: valor da multa = (meses restantes / prazo total) × (3 × valor do aluguel vigente).');
+
+  addSubClause('9.3', 'O LOCATÁRIO ficará dispensado da multa se a devolução decorrer de transferência de emprego para localidade diversa, desde que notifique o LOCADOR com antecedência mínima de 30 (trinta) dias, nos termos do art. 4º, parágrafo único, da Lei 8.245/91.');
 
   // CLÁUSULA NONA - DA VISTORIA E ENTREGA
   addClauseHeader('NONA', 'DA VISTORIA E ENTREGA');
