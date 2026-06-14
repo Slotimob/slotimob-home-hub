@@ -958,6 +958,11 @@ export const generateLegalContractFromLease = async (lease: any): Promise<void> 
       tipoConta: paymentInfo.tipoConta,
       beneficiario: paymentInfo.beneficiario,
     } : undefined,
+    billingContact: billingContact.name || billingContact.email || billingContact.whatsapp ? {
+      name: billingContact.name,
+      email: billingContact.email,
+      whatsapp: billingContact.whatsapp,
+    } : undefined,
   };
 
   await generateLegalContractPDF(data);
