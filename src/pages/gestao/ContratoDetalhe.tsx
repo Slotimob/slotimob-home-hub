@@ -262,21 +262,21 @@ export default function ContratoDetalhe() {
     if (!lease) return;
     setSavingAutomation(true);
     try {
+      const currentAutomation = { ...(lease.billing_automation || {}) };
       await updateLease.mutateAsync({
         id: lease.id,
         data: {
           billing_automation: {
-            ...((lease as any).billing_automation || {}),
+            ...currentAutomation,
             email_enabled: automationForm.email_enabled,
             email_destination: automationForm.email_destination,
             whatsapp_enabled: automationForm.whatsapp_enabled,
-            whatsapp_destination: automationForm.whatsapp_destination,
-          },
-        } as any,
+          } as BillingAutomation,
+        },
       });
-      toast({ title: "Automação configurada com sucesso!" });
+      toast({ title: "Configurações salvas com sucesso" });
     } catch {
-      toast({ title: "Erro ao salvar", variant: "destructive" });
+      toast({ title: "Erro ao salvar configurações", variant: "destructive" });
     } finally {
       setSavingAutomation(false);
     }
