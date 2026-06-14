@@ -888,7 +888,7 @@ export default function ContratoDetalhe() {
                         </div>
                         <Switch
                           checked={!!(lease as any).billing_automation?.[item.key]}
-                          onCheckedChange={(v) => handleAutomationToggle(item.key, v)}
+                          onCheckedChange={(v) => handleAutomationToggle(item.key as keyof BillingAutomation, v)}
                         />
                       </div>
                     ))}
