@@ -720,10 +720,10 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   addSubClause('10.3', 'As chaves somente serão consideradas entregues após vistoria final e aceitação do LOCADOR quanto ao estado do imóvel e quitação integral de todos os valores devidos.');
 
-  // CLÁUSULA DÉCIMA - DA SUBLOCAÇÃO E CESSÃO
-  addClauseHeader('DÉCIMA', 'DA SUBLOCAÇÃO E CESSÃO');
-  
-  addSubClause('10.1', 'É vedado ao LOCATÁRIO sublocar, ceder ou emprestar o imóvel, total ou parcialmente, sem prévia autorização por escrito do LOCADOR, sob pena de rescisão imediata do contrato e despejo.');
+  // CLÁUSULA DÉCIMA PRIMEIRA - DA SUBLOCAÇÃO E CESSÃO
+  addClauseHeader('DÉCIMA PRIMEIRA', 'DA SUBLOCAÇÃO E CESSÃO');
+
+  addSubClause('11.1', 'É vedado ao LOCATÁRIO sublocar, ceder ou emprestar o imóvel, total ou parcialmente, sem prévia autorização por escrito do LOCADOR, sob pena de rescisão imediata do contrato e despejo.');
 
   // CLÁUSULA DÉCIMA PRIMEIRA - DAS BENFEITORIAS
   addClauseHeader('DÉCIMA PRIMEIRA', 'DAS BENFEITORIAS');
