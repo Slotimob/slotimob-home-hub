@@ -485,6 +485,26 @@ export default function NovoContrato() {
         guarantee_type: formData.guarantee_type,
         guarantor_data: finalGuarantorData,
         payment_info: finalPaymentInfo,
+        billing_automation: (isEditMode && editLease
+          ? {
+              ...(editLease.billing_automation || {}),
+              billing_contact: {
+                name: billingContact.name,
+                email: billingContact.email,
+                whatsapp: billingWhatsAppStored(),
+              },
+            }
+          : {
+              reminder_5_days: true,
+              reminder_due_day: true,
+              reminder_3_days_late: true,
+              send_method: "whatsapp" as const,
+              billing_contact: {
+                name: billingContact.name,
+                email: billingContact.email,
+                whatsapp: billingWhatsAppStored(),
+              },
+            }) as any,
       };
 
       let resultId = editLeaseId || "";
@@ -495,6 +515,7 @@ export default function NovoContrato() {
         resultId = editLease.id;
       } else {
         const result = await createLease.mutateAsync(leaseData);
+
         const projectionsCount = (result as any).projectionsGenerated || 0;
         toast({
           title:
