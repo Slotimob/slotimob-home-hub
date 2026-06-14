@@ -767,35 +767,34 @@ export default function ContratoDetalhe() {
                     </Button>
                   </div>
                 )}
-                {hasWhatsappConnected && automationForm.whatsapp_enabled && (
-                  <>
-                    <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 flex items-start gap-2">
-                      <MessageSquare className="h-3.5 w-3.5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-green-700">
-                          {whatsappConnection!.phone_number || whatsappConnection!.instance_name || "Número conectado"}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          Enviado via Evolution API · instância {whatsappConnection!.instance_name || "configurada"}
-                        </p>
+                {/* Destino WhatsApp: read-only, número do inquilino */}
+                {automationForm.whatsapp_enabled && hasWhatsappConnected && (
+                  <div className="mt-2 p-3 rounded-md bg-muted/50 border text-sm">
+                    <p className="text-xs text-muted-foreground mb-1.5">Será enviado para o inquilino:</p>
+                    {tenantWhatsApp ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="font-medium">{lease?.tenant_contact?.name}</p>
+                          <p className="text-xs text-muted-foreground">{tenantWhatsApp}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
+                          <a href="/crm/contatos">Editar contato</a>
+                        </Button>
                       </div>
-                      <Badge variant="outline" className="ml-auto text-[10px] border-green-500/30 text-green-700 bg-green-500/10 flex-shrink-0">
-                        Conectado
-                      </Badge>
-                    </div>
-
-                    <div className="rounded-md bg-muted/40 border px-3 py-2 flex items-start gap-2">
-                      <Phone className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium">
-                          {tenant?.whatsapp || tenant?.phone || "Nenhum contato disponível"}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          Número do inquilino será usado automaticamente
-                        </p>
+                    ) : (
+                      <div className="flex items-start gap-2 text-amber-700">
+                        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
+                        <div>
+                          <p className="font-medium text-sm">Inquilino sem número cadastrado</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Adicione um WhatsApp ou telefone no{" "}
+                            <a href="/crm/contatos" className="underline">contato do inquilino</a>{" "}
+                            para ativar este canal.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </>
+                    )}
+                  </div>
                 )}
               </div>
 
