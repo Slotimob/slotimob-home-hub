@@ -12,6 +12,7 @@ interface ConfigureObligationsDialogProps {
   onOpenChange: (open: boolean) => void;
   unitId: string | null;
   unitName: string;
+  onSaved?: () => void;
 }
 
 export function ConfigureObligationsDialog({
@@ -19,6 +20,7 @@ export function ConfigureObligationsDialog({
   onOpenChange,
   unitId,
   unitName,
+  onSaved,
 }: ConfigureObligationsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,7 +37,10 @@ export function ConfigureObligationsDialog({
           <ObligationsConfigForm
             unitId={unitId}
             unitName={unitName}
-            onSaved={() => onOpenChange(false)}
+            onSaved={() => {
+              onSaved?.();
+              onOpenChange(false);
+            }}
           />
         </div>
       </DialogContent>

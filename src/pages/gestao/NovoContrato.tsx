@@ -39,10 +39,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { supabase } from "@/integrations/supabase/client";
 
-type WizardStep = "tenant" | "financial" | "guarantee" | "payment" | "compliance";
+type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "compliance";
 type GuaranteeType = "fiador" | "caucao" | "seguro_fianca" | "none";
 
 const STEPS: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
+  { id: "unit", title: "Imóvel", icon: <Building2 className="h-4 w-4" /> },
   { id: "tenant", title: "Inquilino", icon: <User className="h-4 w-4" /> },
   { id: "financial", title: "Financeiro", icon: <Wallet className="h-4 w-4" /> },
   { id: "guarantee", title: "Garantia", icon: <Shield className="h-4 w-4" /> },
@@ -117,8 +118,11 @@ export default function NovoContrato() {
   const updateLease = useUpdateLease();
   const { isLoadingCep, handleCepBlur, formatCep } = useCepSearch();
 
-  const [step, setStep] = useState<WizardStep>("tenant");
+  const [step, setStep] = useState<WizardStep>(unitIdParam || editLeaseId ? "tenant" : "unit");
   const [searchTerm, setSearchTerm] = useState("");
+  const [unitSearchTerm, setUnitSearchTerm] = useState("");
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedUnitInfo, setSelectedUnitInfo] = useState<any>(null);
   const [formData, setFormData] = useState(getInitialFormData);
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
   const [selectedGuarantorContactId, setSelectedGuarantorContactId] = useState<string | null>(null);
@@ -145,9 +149,9 @@ export default function NovoContrato() {
   });
 
   // Resolve which unit we'll create the lease for
-  const effectiveUnitId = editLease?.unit_id || unitIdParam || "";
+  const effectiveUnitId = editLease?.unit_id || unitIdParam || selectedUnitId || "";
 
-  // Fetch unit info for header (when not in edit mode)
+  // Fetch unit info for header (when not in edit mode and no selectedUnitInfo)
   const { data: unitInfo } = useQuery({
     queryKey: ["unit-name", effectiveUnitId, effectiveBrokerId],
     queryFn: async () => {
@@ -159,11 +163,13 @@ export default function NovoContrato() {
         .maybeSingle();
       return data as any;
     },
-    enabled: !!user && !!effectiveUnitId && !isEditMode,
+    enabled: !!user && !!effectiveUnitId && !isEditMode && !selectedUnitInfo,
   });
 
-  const ownerContactId = editLease?.owner_contact_id || unitInfo?.owner_contact_id || null;
-  const unitName = editLease?.unit?.unit_number || unitInfo?.unit_number || "";
+  const ownerContactId =
+    editLease?.owner_contact_id || selectedUnitInfo?.owner_contact_id || unitInfo?.owner_contact_id || null;
+  const unitName =
+    editLease?.unit?.unit_number || selectedUnitInfo?.unit_number || unitInfo?.unit_number || "";
 
   // Load draft from sessionStorage (only for new contracts)
   useEffect(() => {
@@ -266,10 +272,37 @@ export default function NovoContrato() {
 
   const selectedTenant = tenants?.find((t) => t.id === formData.tenant_contact_id);
 
+  // Managed units list (used in the "unit" step)
+  const { data: managedUnits, isLoading: loadingManagedUnits } = useQuery({
+    queryKey: ["managed-units-for-lease", effectiveBrokerId, user?.id, unitSearchTerm],
+    queryFn: async () => {
+      if (!user) return [];
+      let query = supabase
+        .from("units")
+        .select("id, unit_number, address, owner_contact_id, is_occupied, is_managed")
+        .eq("broker_id", effectiveBrokerId || user.id)
+        .eq("is_managed", true)
+        .order("unit_number");
+      if (unitSearchTerm) {
+        query = query.or(
+          `unit_number.ilike.%${unitSearchTerm}%,address.ilike.%${unitSearchTerm}%`
+        );
+      }
+      const { data, error } = await query.limit(50);
+      if (error) throw error;
+      const all = data || [];
+      const free = all.filter((u: any) => !u.is_occupied);
+      return free.length > 0 ? free : all;
+    },
+    enabled: !!user && !isEditMode && !unitIdParam,
+  });
+
   const currentIndex = STEPS.findIndex((s) => s.id === step);
 
   const canProceed = () => {
     switch (step) {
+      case "unit":
+        return !!effectiveUnitId;
       case "tenant":
         return !!formData.tenant_contact_id;
       case "financial":
@@ -455,32 +488,6 @@ export default function NovoContrato() {
     );
   }
 
-  // No unit selected: ask user to come from a unit
-  if (!effectiveUnitId) {
-    return (
-      <AppLayout title="Novo Contrato">
-        <SEOHead title="Novo Contrato" description="Criação de novo contrato de locação" path="/gestao/contratos/novo" noIndex />
-        <Card className="max-w-lg mx-auto mt-10">
-          <CardContent className="py-10 text-center space-y-4">
-            <Building2 className="h-10 w-10 text-muted-foreground mx-auto" />
-            <div>
-              <p className="text-sm font-medium">Selecione um imóvel para criar o contrato</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Acesse a unidade desejada em "Ativos em Gestão" e clique em <strong>Novo Contrato</strong>.
-              </p>
-            </div>
-            <div className="flex gap-2 justify-center">
-              <Button variant="outline" onClick={() => navigate("/gestao/contratos")}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Contratos
-              </Button>
-              <Button onClick={() => navigate("/gestao/alugueis")}>Ativos em Gestão</Button>
-            </div>
-          </CardContent>
-        </Card>
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout title={isEditMode ? "Editar Contrato" : "Novo Contrato"}>
@@ -550,6 +557,83 @@ export default function NovoContrato() {
       {/* Step content */}
       <Card>
         <CardContent className="p-4 sm:p-6 pb-24">
+          {/* Unit selection */}
+          {step === "unit" && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground">
+                Para que um imóvel apareça aqui, ative <strong>"Habilitar Gestão de Ativo"</strong> nas configurações da unidade.
+              </div>
+
+              <div className="space-y-2">
+                <Label>Buscar Imóvel</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Nome ou endereço..."
+                    value={unitSearchTerm}
+                    onChange={(e) => setUnitSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Selecionar Imóvel *</Label>
+                {loadingManagedUnits ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : managedUnits && managedUnits.length > 0 ? (
+                  <div className="max-h-80 overflow-y-auto space-y-2 border rounded-lg p-2">
+                    {managedUnits.map((unit: any) => (
+                      <div
+                        key={unit.id}
+                        onClick={() => {
+                          setSelectedUnitId(unit.id);
+                          setSelectedUnitInfo(unit);
+                        }}
+                        className={cn(
+                          "flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors",
+                          selectedUnitId === unit.id
+                            ? "bg-primary/10 border border-primary"
+                            : "hover:bg-muted border border-transparent"
+                        )}
+                      >
+                        <div className="h-9 w-9 rounded-md bg-primary/15 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{unit.unit_number || "Sem identificação"}</p>
+                          {unit.address && (
+                            <p className="text-xs text-muted-foreground truncate">{unit.address}</p>
+                          )}
+                        </div>
+                        {unit.is_occupied && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700">
+                            Ocupado
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border rounded-lg">
+                    <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Nenhum imóvel com gestão ativa encontrado.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 px-4">
+                      Acesse as configurações da unidade e ative "Habilitar Gestão de Ativo".
+                    </p>
+                    <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate("/gestao/alugueis")}>
+                      Ir para Ativos em Gestão
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Tenant */}
           {step === "tenant" && (
             <div className="space-y-4">
