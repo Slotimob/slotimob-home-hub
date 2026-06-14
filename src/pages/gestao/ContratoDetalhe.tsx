@@ -829,6 +829,12 @@ export default function ContratoDetalhe() {
                   Salvar configuração
                 </Button>
               </div>
+              <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-muted/40 rounded-md px-3 py-2 mt-1">
+                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                <span>
+                  Os envios automáticos são processados nos horários da régua de cobrança configurada abaixo. Para funcionar, é necessário ativar pelo menos um canal e configurar o destinatário.
+                </span>
+              </div>
             </CardContent>
           </Card>
 
