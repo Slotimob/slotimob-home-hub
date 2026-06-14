@@ -23,6 +23,7 @@ interface Contact {
   name: string;
   email: string | null;
   phone: string | null;
+  whatsapp: string | null;
   categories: string[];
 }
 
@@ -65,7 +66,7 @@ export function ContactSelector({
     try {
       const { data, error } = await supabase
         .from('contacts')
-        .select('id, name, email, phone, categories')
+        .select('id, name, email, phone, whatsapp, categories')
         .order('name');
 
       if (error) throw error;
@@ -79,11 +80,12 @@ export function ContactSelector({
 
   // Filter contacts based on search and optional category filter
   const filteredContacts = contacts.filter((contact) => {
-    const matchesSearch = 
+    const matchesSearch =
       contact.name.toLowerCase().includes(search.toLowerCase()) ||
       contact.email?.toLowerCase().includes(search.toLowerCase()) ||
-      contact.phone?.includes(search);
-    
+      contact.phone?.includes(search) ||
+      contact.whatsapp?.includes(search);
+
     if (!matchesSearch) return false;
     
     // If no category filter, show all
@@ -232,7 +234,8 @@ export function ContactSelector({
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {contact.phone && <span>{contact.phone}</span>}
-                      {contact.phone && contact.email && <span>•</span>}
+                      {!contact.phone && contact.whatsapp && <span>{contact.whatsapp} (WA)</span>}
+                      {(contact.phone || contact.whatsapp) && contact.email && <span>•</span>}
                       {contact.email && <span className="truncate">{contact.email}</span>}
                     </div>
                   </div>
