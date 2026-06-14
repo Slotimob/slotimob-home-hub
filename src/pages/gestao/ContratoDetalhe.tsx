@@ -252,7 +252,7 @@ export default function ContratoDetalhe() {
     if (auto) {
       setAutomationForm({
         email_enabled: !!auto.email_enabled,
-        email_destination: auto.email_destination || lease?.tenant_contact?.email || "",
+        email_destination: auto.email_destination ?? auto.billing_contact?.email ?? lease?.tenant_contact?.email ?? "",
         whatsapp_enabled: !!auto.whatsapp_enabled,
       });
     }
@@ -367,7 +367,9 @@ export default function ContratoDetalhe() {
 
   const statusConfig = STATUS_LABELS[lease.status] || STATUS_LABELS.active;
   const tenant = lease.tenant_contact;
-  const tenantWhatsApp = tenant?.whatsapp || tenant?.phone || null;
+  const billingContactConfig = (lease as any)?.billing_automation?.billing_contact;
+  const tenantWhatsApp = billingContactConfig?.whatsapp || tenant?.whatsapp || tenant?.phone || null;
+  const billingContactName = billingContactConfig?.name || tenant?.name || "";
   const unit = lease.unit;
   const isSigned = lease.signature_status === "signed";
 
@@ -657,6 +659,21 @@ export default function ContratoDetalhe() {
               </p>
             </CardHeader>
             <CardContent className="py-2 px-4 space-y-4">
+              {billingContactConfig && (
+                <div className="p-2.5 rounded-md bg-muted/40 border mb-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">{billingContactConfig.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {billingContactConfig.email || "sem email"} · {billingContactConfig.whatsapp || "sem WhatsApp"}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs h-7 px-2 shrink-0" asChild>
+                    <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
+                      Editar
+                    </a>
+                  </Button>
+                </div>
+              )}
               {/* Email panel */}
               <div className="rounded-lg border p-3 space-y-3">
                 <div className="flex items-start justify-between gap-3">
@@ -774,7 +791,7 @@ export default function ContratoDetalhe() {
                     {tenantWhatsApp ? (
                       <div className="flex items-center justify-between gap-2">
                         <div>
-                          <p className="font-medium">{lease?.tenant_contact?.name}</p>
+                          <p className="font-medium">{billingContactName}</p>
                           <p className="text-xs text-muted-foreground">{tenantWhatsApp}</p>
                         </div>
                         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
@@ -798,7 +815,13 @@ export default function ContratoDetalhe() {
                 )}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                  <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
+                    <Pencil className="h-3.5 w-3.5" />
+                    Editar contato de cobrança
+                  </a>
+                </Button>
                 <Button size="sm" onClick={handleSaveAutomation} disabled={savingAutomation}>
                   {savingAutomation ? (
                     <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
