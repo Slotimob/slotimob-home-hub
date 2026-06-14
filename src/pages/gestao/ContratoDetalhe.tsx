@@ -856,9 +856,32 @@ export default function ContratoDetalhe() {
       <OwnerReportDialog open={showOwnerReport} onOpenChange={setShowOwnerReport} lease={{ ...lease, tenant } as any} />
       <ConfigureObligationsDialog
         open={showObligationsDialog}
-        onOpenChange={setShowObligationsDialog}
+        onOpenChange={(open) => {
+          setShowObligationsDialog(open);
+          if (!open) {
+            queryClient.invalidateQueries({ queryKey: ["lease-detail", id, effectiveBrokerId] });
+            refetch();
+          }
+        }}
         unitId={lease.unit_id}
         unitName={unit?.unit_number ?? ""}
+        onSaved={async () => {
+          try {
+            await supabase
+              .from("leases")
+              .update({
+                metadata: {
+                  ...(lease.metadata || {}),
+                  obligations_configured: true,
+                },
+              })
+              .eq("id", lease.id);
+            queryClient.invalidateQueries({ queryKey: ["lease-detail", id, effectiveBrokerId] });
+            refetch();
+          } catch {
+            /* silently fail */
+          }
+        }}
       />
       <ContractGeneratorDialog open={showContractDialog} onOpenChange={setShowContractDialog} unitId={lease.unit_id} />
       <EditStartDateDialog
