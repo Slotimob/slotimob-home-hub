@@ -172,6 +172,26 @@ export default function ContratoDetalhe() {
     };
   }, [lease, nextDueDate]);
 
+  // Recent transactions for the "Situação dos Últimos 3 Meses" card
+  const { data: recentTransactions } = useQuery({
+    queryKey: ["recent-lease-transactions", lease?.id, effectiveBrokerId],
+    queryFn: async () => {
+      if (!lease) return [];
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const { data } = await supabase
+        .from("financial_transactions")
+        .select("id, amount, due_date, payment_date, status, description, type")
+        .eq("broker_id", effectiveBrokerId || user!.id)
+        .like("reference", `lease:${lease.id}%`)
+        .gte("due_date", threeMonthsAgo.toISOString().split("T")[0])
+        .order("due_date", { ascending: false })
+        .limit(6);
+      return data || [];
+    },
+    enabled: !!user && !!lease,
+  });
+
   const capitalizedMonth = useMemo(() => {
     const m = format(new Date(), "MMMM/yyyy", { locale: ptBR });
     return m.charAt(0).toUpperCase() + m.slice(1);
@@ -1029,41 +1049,112 @@ export default function ContratoDetalhe() {
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-emerald-500" />
-                Relatório do Proprietário
+                Relatório do Proprietário — {capitalizedMonth}
               </CardTitle>
             </CardHeader>
             <CardContent className="py-2 px-4">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Aluguel Recebido</span>
-                  <span className="font-medium">
-                    {Number(lease.rent_amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Taxa Administração ({lease.admin_fee_percentage}%)</span>
-                  <span className="font-medium text-destructive">
-                    -{(Number(lease.rent_amount) * Number(lease.admin_fee_percentage) / 100).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </span>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="font-medium">Repasse Líquido</span>
-                  <span className="font-bold text-emerald-600">
-                    {(Number(lease.rent_amount) * (1 - Number(lease.admin_fee_percentage) / 100)).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </span>
-                </div>
-              </div>
+              {(() => {
+                const rent = Number(lease.rent_amount) || 0;
+                const feePct = Number(lease.admin_fee_percentage) || 0;
+                const fee = rent * feePct / 100;
+                const lateFee = billingStatus.overdue ? rent * 0.1 : 0; // 10% multa padrão
+                const net = rent - fee;
+                return (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Aluguel Recebido</span>
+                      <span className="font-medium">
+                        {rent.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Taxa Administração ({feePct}%)</span>
+                      <span className="font-medium text-destructive">
+                        -{fee.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
+                    </div>
+                    {lateFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Multa por atraso (estimada)</span>
+                        <span className="font-medium text-amber-600">
+                          +{lateFee.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </span>
+                      </div>
+                    )}
+                    {nextDueDate && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Próximo vencimento</span>
+                        <span className="font-medium">
+                          {format(nextDueDate, "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="font-medium">Repasse Líquido Estimado</span>
+                      <span className="font-bold text-emerald-600 text-base">
+                        {net.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
               <Button className="w-full mt-3" variant="outline" size="sm" onClick={() => setShowOwnerReport(true)}>
                 <Download className="h-4 w-4 mr-2" />
                 Gerar Relatório Completo
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                Situação dos Últimos 3 Meses
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              {!recentTransactions || recentTransactions.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">
+                  Nenhum lançamento nos últimos 3 meses.
+                </p>
+              ) : (
+                <div className="divide-y">
+                  {recentTransactions.map((t: any) => {
+                    const due = t.due_date ? new Date(t.due_date + "T00:00:00") : null;
+                    const paid = t.payment_date ? new Date(t.payment_date + "T00:00:00") : null;
+                    const today = new Date();
+                    const isPaid = t.status === "paid" || !!paid;
+                    const isOverdue = !isPaid && due && due < today;
+                    const statusLabel = isPaid ? "Pago" : isOverdue ? "Atrasado" : "Pendente";
+                    const statusClass = isPaid
+                      ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+                      : isOverdue
+                      ? "bg-red-100 text-red-700 border-red-300"
+                      : "bg-amber-100 text-amber-700 border-amber-300";
+                    return (
+                      <div key={t.id} className="flex items-center justify-between py-2 text-xs">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium">
+                            {due ? format(due, "MMM/yyyy", { locale: ptBR }) : "—"}
+                          </p>
+                          <p className="text-muted-foreground truncate">
+                            {paid ? `Pago em ${format(paid, "dd/MM/yyyy")}` : due ? `Vence ${format(due, "dd/MM/yyyy")}` : ""}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0 mr-2">
+                          <p className="font-medium">
+                            {Number(t.amount || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className={cn("text-[10px]", statusClass)}>
+                          {statusLabel}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 

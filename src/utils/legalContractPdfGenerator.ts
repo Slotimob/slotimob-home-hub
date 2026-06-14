@@ -722,6 +722,22 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   
   addSubClause('12.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
 
+  // CLÁUSULA DÉCIMA TERCEIRA - SEGURO INCÊNDIO
+  addClauseHeader('DÉCIMA TERCEIRA', 'DO SEGURO CONTRA INCÊNDIO');
+  addSubClause('13.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
+  addSubClause('13.2', `O LOCATÁRIO deverá zelar pelo imóvel de forma a não comprometer a vigência ou as condições da apólice de seguro, sendo-lhe vedado armazenar ou manusear materiais inflamáveis ou substâncias que aumentem o risco de sinistro.`);
+
+  // CLÁUSULA DÉCIMA QUARTA - IPTU E ENCARGOS MUNICIPAIS
+  addClauseHeader('DÉCIMA QUARTA', 'DO IPTU E ENCARGOS MUNICIPAIS');
+  addSubClause('14.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel serão de responsabilidade do LOCADOR, salvo disposição expressa em contrário firmada por escrito entre as partes.`);
+  addSubClause('14.2', `As taxas de condomínio ordinárias são de responsabilidade do LOCATÁRIO. As taxas extraordinárias de condomínio, destinadas à realização de obras nas partes comuns e fachada, são de responsabilidade do LOCADOR.`);
+
+  // CLÁUSULA DÉCIMA QUINTA - RENOVAÇÃO E REVISÃO
+  addClauseHeader('DÉCIMA QUINTA', 'DA RENOVAÇÃO E REVISÃO DO CONTRATO');
+  addSubClause('15.1', `Qualquer das partes poderá propor a renovação deste contrato mediante notificação por escrito com antecedência mínima de 30 (trinta) dias do término do prazo.`);
+  addSubClause('15.2', `Na ausência de comunicação de não renovação, o contrato prorroga-se automaticamente por prazo indeterminado, nos termos do art. 46 da Lei 8.245/91, com todos os encargos e condições vigentes, sujeitos ao reajuste previsto na Cláusula Terceira.`);
+  addSubClause('15.3', `O LOCATÁRIO poderá requerer revisão judicial do aluguel após 3 (três) anos de vigência do contrato ou de acordo da última revisão, conforme art. 68 da Lei 8.245/91.`);
+
   currentY += 8;
   addParagraph('E, por estarem assim justos e contratados, as partes firmam este instrumento em 2 (duas) vias de igual teor e forma, na presença de 2 (duas) testemunhas, para que produza seus jurídicos e legais efeitos.');
 
