@@ -557,6 +557,83 @@ export default function NovoContrato() {
       {/* Step content */}
       <Card>
         <CardContent className="p-4 sm:p-6 pb-24">
+          {/* Unit selection */}
+          {step === "unit" && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground">
+                Para que um imóvel apareça aqui, ative <strong>"Habilitar Gestão de Ativo"</strong> nas configurações da unidade.
+              </div>
+
+              <div className="space-y-2">
+                <Label>Buscar Imóvel</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Nome ou endereço..."
+                    value={unitSearchTerm}
+                    onChange={(e) => setUnitSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Selecionar Imóvel *</Label>
+                {loadingManagedUnits ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : managedUnits && managedUnits.length > 0 ? (
+                  <div className="max-h-80 overflow-y-auto space-y-2 border rounded-lg p-2">
+                    {managedUnits.map((unit: any) => (
+                      <div
+                        key={unit.id}
+                        onClick={() => {
+                          setSelectedUnitId(unit.id);
+                          setSelectedUnitInfo(unit);
+                        }}
+                        className={cn(
+                          "flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors",
+                          selectedUnitId === unit.id
+                            ? "bg-primary/10 border border-primary"
+                            : "hover:bg-muted border border-transparent"
+                        )}
+                      >
+                        <div className="h-9 w-9 rounded-md bg-primary/15 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{unit.unit_number || "Sem identificação"}</p>
+                          {unit.address && (
+                            <p className="text-xs text-muted-foreground truncate">{unit.address}</p>
+                          )}
+                        </div>
+                        {unit.is_occupied && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700">
+                            Ocupado
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border rounded-lg">
+                    <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Nenhum imóvel com gestão ativa encontrado.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 px-4">
+                      Acesse as configurações da unidade e ative "Habilitar Gestão de Ativo".
+                    </p>
+                    <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate("/gestao/alugueis")}>
+                      Ir para Ativos em Gestão
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Tenant */}
           {step === "tenant" && (
             <div className="space-y-4">
