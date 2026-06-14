@@ -725,12 +725,12 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   addSubClause('11.1', 'É vedado ao LOCATÁRIO sublocar, ceder ou emprestar o imóvel, total ou parcialmente, sem prévia autorização por escrito do LOCADOR, sob pena de rescisão imediata do contrato e despejo.');
 
-  // CLÁUSULA DÉCIMA PRIMEIRA - DAS BENFEITORIAS
-  addClauseHeader('DÉCIMA PRIMEIRA', 'DAS BENFEITORIAS');
-  
-  addSubClause('11.1', 'As benfeitorias úteis e voluptuárias realizadas pelo LOCATÁRIO, ainda que autorizadas, não serão indenizáveis e ficarão incorporadas ao imóvel, salvo acordo em contrário firmado por escrito.');
-  
-  addSubClause('11.2', 'As benfeitorias necessárias, desde que autorizadas previamente pelo LOCADOR, serão indenizáveis, podendo o LOCATÁRIO exercer o direito de retenção.');
+  // CLÁUSULA DÉCIMA SEGUNDA - DAS BENFEITORIAS
+  addClauseHeader('DÉCIMA SEGUNDA', 'DAS BENFEITORIAS');
+
+  addSubClause('12.1', 'As benfeitorias úteis e voluptuárias realizadas pelo LOCATÁRIO, ainda que autorizadas, não serão indenizáveis e ficarão incorporadas ao imóvel, salvo acordo em contrário firmado por escrito.');
+
+  addSubClause('12.2', 'As benfeitorias necessárias, desde que autorizadas previamente pelo LOCADOR, serão indenizáveis, podendo o LOCATÁRIO exercer o direito de retenção.');
 
   // CLÁUSULA DÉCIMA SEGUNDA - DISPOSIÇÕES GERAIS
   addClauseHeader('DÉCIMA SEGUNDA', 'DAS DISPOSIÇÕES GERAIS');
