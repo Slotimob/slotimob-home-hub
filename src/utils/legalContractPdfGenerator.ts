@@ -650,8 +650,24 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addRomanItem('II', 'Juros de mora de 1% (um por cento) ao mês, calculados pro rata die;');
   addRomanItem('III', 'Correção monetária pelo mesmo índice de reajuste do aluguel.');
 
-  // CLÁUSULA QUINTA - DA GARANTIA
-  addClauseHeader('QUINTA', 'DA GARANTIA LOCATÍCIA');
+  // CLÁUSULA QUINTA - DAS NOTIFICAÇÕES E COMUNICAÇÕES DIGITAIS
+  addClauseHeader('QUINTA', 'DAS NOTIFICAÇÕES E COMUNICAÇÕES DIGITAIS');
+
+  addSubClause('5.1', 'As partes convencionam que as comunicações relativas a avisos de vencimento, cobranças e notificações extrajudiciais poderão ser realizadas por meio eletrônico, incluindo correio eletrônico (e-mail) e mensagem instantânea via WhatsApp, para os dados de contato fornecidos pelo LOCATÁRIO no momento da celebração deste contrato.');
+
+  if (data.billingContact?.email || data.billingContact?.whatsapp) {
+    const contato = data.billingContact;
+    addSubClause('5.2', `O LOCATÁRIO declara que os dados de contato fornecidos (${contato.name || 'nome não informado'}, e-mail: ${contato.email || 'não informado'}, WhatsApp: ${contato.whatsapp || 'não informado'}) são válidos e de sua responsabilidade, comprometendo-se a comunicar imediatamente qualquer alteração.`);
+  } else {
+    addSubClause('5.2', 'O LOCATÁRIO declara que os dados de contato fornecidos (e-mail e número de WhatsApp) são válidos e de sua responsabilidade, comprometendo-se a comunicar imediatamente qualquer alteração.');
+  }
+
+  addSubClause('5.3', 'As notificações enviadas aos dados cadastrados serão consideradas recebidas, para todos os efeitos legais, independentemente de confirmação de leitura, após o envio.');
+
+  addSubClause('5.4', 'Este canal de comunicação não substitui a notificação judicial, quando esta for expressamente exigida por lei ou por cláusula contratual específica.');
+
+  // CLÁUSULA SEXTA - DA GARANTIA
+  addClauseHeader('SEXTA', 'DA GARANTIA LOCATÍCIA');
   
   const garantiaTexto = getGarantiaTexto(data);
   addSubClause('5.1', garantiaTexto);
