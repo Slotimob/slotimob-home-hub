@@ -711,14 +711,14 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   addSubClause('9.3', 'O LOCATÁRIO ficará dispensado da multa se a devolução decorrer de transferência de emprego para localidade diversa, desde que notifique o LOCADOR com antecedência mínima de 30 (trinta) dias, nos termos do art. 4º, parágrafo único, da Lei 8.245/91.');
 
-  // CLÁUSULA NONA - DA VISTORIA E ENTREGA
-  addClauseHeader('NONA', 'DA VISTORIA E ENTREGA');
-  
-  addSubClause('9.1', 'No início da locação, as partes realizarão vistoria detalhada do imóvel, formalizando o estado de conservação em laudo próprio, que fará parte integrante deste contrato.');
-  
-  addSubClause('9.2', 'Ao término da locação, o LOCATÁRIO deverá entregar o imóvel nas mesmas condições em que o recebeu, conforme laudo de vistoria inicial, procedendo às reparações necessárias, inclusive pintura, se houver alteração de cor ou danos às paredes.');
-  
-  addSubClause('9.3', 'As chaves somente serão consideradas entregues após vistoria final e aceitação do LOCADOR quanto ao estado do imóvel e quitação integral de todos os valores devidos.');
+  // CLÁUSULA DÉCIMA - DA VISTORIA E ENTREGA
+  addClauseHeader('DÉCIMA', 'DA VISTORIA E ENTREGA');
+
+  addSubClause('10.1', 'No início da locação, as partes realizarão vistoria detalhada do imóvel, formalizando o estado de conservação em laudo próprio, que fará parte integrante deste contrato.');
+
+  addSubClause('10.2', 'Ao término da locação, o LOCATÁRIO deverá entregar o imóvel nas mesmas condições em que o recebeu, conforme laudo de vistoria inicial, procedendo às reparações necessárias, inclusive pintura, se houver alteração de cor ou danos às paredes.');
+
+  addSubClause('10.3', 'As chaves somente serão consideradas entregues após vistoria final e aceitação do LOCADOR quanto ao estado do imóvel e quitação integral de todos os valores devidos.');
 
   // CLÁUSULA DÉCIMA - DA SUBLOCAÇÃO E CESSÃO
   addClauseHeader('DÉCIMA', 'DA SUBLOCAÇÃO E CESSÃO');
