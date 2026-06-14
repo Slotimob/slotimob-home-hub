@@ -75,7 +75,7 @@ import { EditStartDateDialog } from "@/components/assets/EditStartDateDialog";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useUpdateLease, generateBillingMessage, type BillingLog } from "@/hooks/useLeases";
+import { useUpdateLease, generateBillingMessage, type BillingLog, type BillingAutomation } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn, formatPhoneForWhatsApp } from "@/lib/utils";
@@ -126,7 +126,6 @@ export default function ContratoDetalhe() {
     email_enabled: false,
     email_destination: "",
     whatsapp_enabled: false,
-    whatsapp_destination: "",
   });
   const [savingAutomation, setSavingAutomation] = useState(false);
 
@@ -228,14 +227,15 @@ export default function ContratoDetalhe() {
     return m.charAt(0).toUpperCase() + m.slice(1);
   }, []);
 
-  const handleAutomationToggle = async (key: string, value: boolean) => {
+  const handleAutomationToggle = async (key: keyof BillingAutomation, value: boolean) => {
     if (!lease) return;
     try {
+      const currentAutomation = { ...(lease.billing_automation || {}) };
       await updateLease.mutateAsync({
         id: lease.id,
         data: {
-          billing_automation: { ...(lease.billing_automation || {}), [key]: value },
-        } as any,
+          billing_automation: { ...currentAutomation, [key]: value } as BillingAutomation,
+        },
       });
       toast({ title: "Configuração atualizada!" });
     } catch {
@@ -243,38 +243,40 @@ export default function ContratoDetalhe() {
     }
   };
 
+  // Calcular fora do useEffect para ser usado como dependência estável
+  const billingAutomationKey = JSON.stringify(lease?.billing_automation);
+
   // Hydrate automation form when lease loads
   useEffect(() => {
     const auto: any = (lease as any)?.billing_automation;
     if (auto) {
       setAutomationForm({
         email_enabled: !!auto.email_enabled,
-        email_destination: auto.email_destination || "",
+        email_destination: auto.email_destination || lease?.tenant_contact?.email || "",
         whatsapp_enabled: !!auto.whatsapp_enabled,
-        whatsapp_destination: auto.whatsapp_destination || "",
       });
     }
-  }, [(lease as any)?.billing_automation]);
+  }, [billingAutomationKey, lease?.tenant_contact?.email]);
 
   const handleSaveAutomation = async () => {
     if (!lease) return;
     setSavingAutomation(true);
     try {
+      const currentAutomation = { ...(lease.billing_automation || {}) };
       await updateLease.mutateAsync({
         id: lease.id,
         data: {
           billing_automation: {
-            ...((lease as any).billing_automation || {}),
+            ...currentAutomation,
             email_enabled: automationForm.email_enabled,
             email_destination: automationForm.email_destination,
             whatsapp_enabled: automationForm.whatsapp_enabled,
-            whatsapp_destination: automationForm.whatsapp_destination,
-          },
-        } as any,
+          } as BillingAutomation,
+        },
       });
-      toast({ title: "Automação configurada com sucesso!" });
+      toast({ title: "Configurações salvas com sucesso" });
     } catch {
-      toast({ title: "Erro ao salvar", variant: "destructive" });
+      toast({ title: "Erro ao salvar configurações", variant: "destructive" });
     } finally {
       setSavingAutomation(false);
     }
@@ -735,7 +737,7 @@ export default function ContratoDetalhe() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium">WhatsApp</p>
-                        {automationForm.whatsapp_enabled && automationForm.whatsapp_destination && (
+                        {automationForm.whatsapp_enabled && (
                           <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-700 bg-green-500/10">
                             Configurado
                           </Badge>
@@ -789,31 +791,16 @@ export default function ContratoDetalhe() {
                       </Badge>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Para (número WhatsApp destino)</Label>
-                      <Input
-                        type="tel"
-                        placeholder="(11) 99999-9999"
-                        value={automationForm.whatsapp_destination}
-                        onChange={(e) =>
-                          setAutomationForm((p) => ({ ...p, whatsapp_destination: e.target.value }))
-                        }
-                        className="h-9 text-sm"
-                      />
-                      {(tenant?.whatsapp || tenant?.phone) && !automationForm.whatsapp_destination && (
-                        <button
-                          type="button"
-                          className="text-[11px] text-primary hover:underline"
-                          onClick={() =>
-                            setAutomationForm((p) => ({
-                              ...p,
-                              whatsapp_destination: tenant.whatsapp || tenant.phone || "",
-                            }))
-                          }
-                        >
-                          Usar contato do inquilino: {tenant.whatsapp || tenant.phone}
-                        </button>
-                      )}
+                    <div className="rounded-md bg-muted/40 border px-3 py-2 flex items-start gap-2">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">
+                          {tenant?.whatsapp || tenant?.phone || "Nenhum contato disponível"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Número do inquilino será usado automaticamente
+                        </p>
+                      </div>
                     </div>
                   </>
                 )}
@@ -850,7 +837,7 @@ export default function ContratoDetalhe() {
               {(() => {
                 const channels: string[] = [];
                 if (automationForm.email_enabled && automationForm.email_destination) channels.push("e-mail");
-                if (automationForm.whatsapp_enabled && automationForm.whatsapp_destination) channels.push("WhatsApp");
+                if (automationForm.whatsapp_enabled && (tenant?.whatsapp || tenant?.phone)) channels.push("WhatsApp");
                 const automationReady = channels.length > 0;
 
                 const renderHint = (icon?: React.ReactNode) =>
@@ -901,7 +888,7 @@ export default function ContratoDetalhe() {
                         </div>
                         <Switch
                           checked={!!(lease as any).billing_automation?.[item.key]}
-                          onCheckedChange={(v) => handleAutomationToggle(item.key, v)}
+                          onCheckedChange={(v) => handleAutomationToggle(item.key as keyof BillingAutomation, v)}
                         />
                       </div>
                     ))}
