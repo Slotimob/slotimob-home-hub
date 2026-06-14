@@ -737,7 +737,7 @@ export default function ContratoDetalhe() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium">WhatsApp</p>
-                        {automationForm.whatsapp_enabled && automationForm.whatsapp_destination && (
+                        {automationForm.whatsapp_enabled && (
                           <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-700 bg-green-500/10">
                             Configurado
                           </Badge>
