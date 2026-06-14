@@ -15,7 +15,9 @@ import {
   CreditCard,
   ArrowLeft,
   ArrowRight,
+  BellRing,
 } from "lucide-react";
+
 
 import { AppLayout } from "@/components/AppLayout";
 import { SEOHead } from "@/components/SEOHead";
@@ -39,7 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { supabase } from "@/integrations/supabase/client";
 
-type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "compliance";
+type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "billing" | "compliance";
 type GuaranteeType = "fiador" | "caucao" | "seguro_fianca" | "none";
 
 const STEPS: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
@@ -48,8 +50,10 @@ const STEPS: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
   { id: "financial", title: "Financeiro", icon: <Wallet className="h-4 w-4" /> },
   { id: "guarantee", title: "Garantia", icon: <Shield className="h-4 w-4" /> },
   { id: "payment", title: "Pagamento", icon: <CreditCard className="h-4 w-4" /> },
+  { id: "billing", title: "Cobrança", icon: <BellRing className="h-4 w-4" /> },
   { id: "compliance", title: "DIMOB", icon: <FileText className="h-4 w-4" /> },
 ];
+
 
 const GUARANTEE_OPTIONS = [
   { value: "caucao" as GuaranteeType, label: "Caução em Dinheiro", description: "Depósito de até 3 meses de aluguel" },
@@ -118,7 +122,12 @@ export default function NovoContrato() {
   const updateLease = useUpdateLease();
   const { isLoadingCep, handleCepBlur, formatCep } = useCepSearch();
 
-  const [step, setStep] = useState<WizardStep>(unitIdParam || editLeaseId ? "tenant" : "unit");
+  const stepParam = searchParams.get("step") as WizardStep | null;
+  const [step, setStep] = useState<WizardStep>(() => {
+    if (stepParam && STEPS.some((s) => s.id === stepParam)) return stepParam;
+    if (unitIdParam || editLeaseId) return "tenant";
+    return "unit";
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [unitSearchTerm, setUnitSearchTerm] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
@@ -127,7 +136,29 @@ export default function NovoContrato() {
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
   const [selectedGuarantorContactId, setSelectedGuarantorContactId] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>(getInitialPayment);
+  const [billingContact, setBillingContact] = useState({
+    name: "",
+    email: "",
+    whatsapp: "", // display format: "(11) 99999-9999"
+  });
   const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // Formata dígitos para exibição: "(11) 99999-9999"
+  const formatWhatsAppDisplay = (raw: string): string => {
+    const digits = raw.replace(/\D/g, "").replace(/^55/, "");
+    if (digits.length === 0) return "";
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  };
+
+  // Converte exibição para armazenamento: "+5511999999999"
+  const billingWhatsAppStored = (): string => {
+    const digits = billingContact.whatsapp.replace(/\D/g, "");
+    return digits ? `+55${digits}` : "";
+  };
+
 
   const isEditMode = !!editLeaseId;
 
@@ -182,6 +213,7 @@ export default function NovoContrato() {
           if (draft.formData) setFormData((prev) => ({ ...prev, ...draft.formData }));
           if (draft.guarantorData) setGuarantorData(draft.guarantorData);
           if (draft.paymentInfo) setPaymentInfo(draft.paymentInfo);
+          if (draft.billingContact) setBillingContact(draft.billingContact);
         }
       }
     } catch {
@@ -196,12 +228,12 @@ export default function NovoContrato() {
     try {
       sessionStorage.setItem(
         DRAFT_KEY,
-        JSON.stringify({ unitId: unitIdParam, formData, guarantorData, paymentInfo })
+        JSON.stringify({ unitId: unitIdParam, formData, guarantorData, paymentInfo, billingContact })
       );
     } catch {
       /* ignore */
     }
-  }, [isEditMode, draftLoaded, unitIdParam, formData, guarantorData, paymentInfo]);
+  }, [isEditMode, draftLoaded, unitIdParam, formData, guarantorData, paymentInfo, billingContact]);
 
   // Hydrate from editLease when fetched
   useEffect(() => {
@@ -222,7 +254,16 @@ export default function NovoContrato() {
     });
     if (editLease.guarantor_data) setGuarantorData(editLease.guarantor_data);
     if (editLease.payment_info) setPaymentInfo(editLease.payment_info);
+    if (editLease.billing_automation?.billing_contact) {
+      const bc = editLease.billing_automation.billing_contact;
+      setBillingContact({
+        name: bc.name || "",
+        email: bc.email || "",
+        whatsapp: formatWhatsAppDisplay(bc.whatsapp || ""),
+      });
+    }
   }, [editLease]);
+
 
   const needsSpouseData =
     guarantorData.estadoCivil === "Casado(a)" || guarantorData.estadoCivil === "União Estável";
@@ -272,6 +313,18 @@ export default function NovoContrato() {
 
   const selectedTenant = tenants?.find((t) => t.id === formData.tenant_contact_id);
 
+  // Auto-populate billing contact when tenant changes (only if fields are still empty)
+  useEffect(() => {
+    if (!selectedTenant) return;
+    setBillingContact((prev) => ({
+      name: prev.name || selectedTenant.name || "",
+      email: prev.email || selectedTenant.email || "",
+      whatsapp: prev.whatsapp || formatWhatsAppDisplay(selectedTenant.whatsapp || selectedTenant.phone || ""),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTenant?.id]);
+
+
   // Managed units list (used in the "unit" step)
   const { data: managedUnits, isLoading: loadingManagedUnits } = useQuery({
     queryKey: ["managed-units-for-lease", effectiveBrokerId, user?.id, unitSearchTerm],
@@ -318,8 +371,11 @@ export default function NovoContrato() {
         return true;
       case "payment":
         return true;
+      case "billing":
+        return true;
       case "compliance":
         return true;
+
       default:
         return false;
     }
@@ -429,6 +485,26 @@ export default function NovoContrato() {
         guarantee_type: formData.guarantee_type,
         guarantor_data: finalGuarantorData,
         payment_info: finalPaymentInfo,
+        billing_automation: (isEditMode && editLease
+          ? {
+              ...(editLease.billing_automation || {}),
+              billing_contact: {
+                name: billingContact.name,
+                email: billingContact.email,
+                whatsapp: billingWhatsAppStored(),
+              },
+            }
+          : {
+              reminder_5_days: true,
+              reminder_due_day: true,
+              reminder_3_days_late: true,
+              send_method: "whatsapp" as const,
+              billing_contact: {
+                name: billingContact.name,
+                email: billingContact.email,
+                whatsapp: billingWhatsAppStored(),
+              },
+            }) as any,
       };
 
       let resultId = editLeaseId || "";
@@ -439,6 +515,7 @@ export default function NovoContrato() {
         resultId = editLease.id;
       } else {
         const result = await createLease.mutateAsync(leaseData);
+
         const projectionsCount = (result as any).projectionsGenerated || 0;
         toast({
           title:
@@ -1208,7 +1285,73 @@ export default function NovoContrato() {
             </div>
           )}
 
+          {/* Billing contact */}
+          {step === "billing" && (
+            <div className="space-y-5">
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <p className="text-sm font-medium text-primary mb-1">Contato para Cobrança</p>
+                <p className="text-xs text-muted-foreground">
+                  Informe os dados de contato para envio automático de avisos de vencimento e cobranças.
+                  A automação será ativada após a criação do contrato, na aba <strong>Cobrança</strong>.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Nome do Contato *</Label>
+                <Input
+                  value={billingContact.name}
+                  onChange={(e) => setBillingContact((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="Nome do responsável pelo pagamento"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Auto-preenchido com o nome do inquilino selecionado.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>E-mail para Cobrança</Label>
+                <Input
+                  type="email"
+                  value={billingContact.email}
+                  onChange={(e) => setBillingContact((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>WhatsApp para Cobrança</Label>
+                <div className="flex gap-2">
+                  <div className="flex items-center px-3 border rounded-md bg-muted text-sm text-muted-foreground select-none whitespace-nowrap">
+                    🇧🇷 +55
+                  </div>
+                  <Input
+                    value={billingContact.whatsapp}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                      let formatted: string = digits;
+                      if (digits.length > 2) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+                      if (digits.length > 7) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+                      setBillingContact((p) => ({ ...p, whatsapp: formatted }));
+                    }}
+                    placeholder="(11) 99999-9999"
+                    className="flex-1"
+                    inputMode="numeric"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  DDD + número com 9 dígitos. O código +55 (Brasil) é adicionado automaticamente.
+                </p>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                <strong>Importante:</strong> a automação de cobranças só será ativada após a criação do contrato,
+                na aba <strong>Cobrança</strong> do detalhe do contrato. Aqui você apenas pré-configura o contato.
+              </div>
+            </div>
+          )}
+
           {/* Compliance */}
+
           {step === "compliance" && (
             <div className="space-y-4">
               <div className="space-y-2">
