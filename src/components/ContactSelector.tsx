@@ -23,6 +23,7 @@ interface Contact {
   name: string;
   email: string | null;
   phone: string | null;
+  whatsapp: string | null;
   categories: string[];
 }
 
