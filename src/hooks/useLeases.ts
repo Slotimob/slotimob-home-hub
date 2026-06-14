@@ -53,6 +53,7 @@ export interface BillingLog {
   success: boolean;
   error?: string;
   sent_by?: string; // Name of the person who sent
+  sent_to?: string; // Destination (email or phone) used
   notes?: string;   // Optional notes about the contact
 }
 
