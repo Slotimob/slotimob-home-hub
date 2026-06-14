@@ -644,14 +644,34 @@ export function AssetDetailDialog({
         {/* Obligations Tab */}
         <TabsContent value="obligations" className="flex-1 overflow-hidden m-0">
           <ScrollArea className="h-full px-4 py-4">
-            <Tabs defaultValue="config" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="config" className="text-xs">Configurar</TabsTrigger>
-                <TabsTrigger value="status" className="text-xs">Status Mensal</TabsTrigger>
-              </TabsList>
+            <div className="space-y-6">
+              {/* Toggle de visualização */}
+              <div className="flex rounded-lg border overflow-hidden p-1 bg-muted/50">
+                <button
+                  className={cn(
+                    "flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-all",
+                    obligationsView === "config"
+                      ? "bg-background shadow-sm text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setObligationsView("config")}
+                >
+                  Configurar
+                </button>
+                <button
+                  className={cn(
+                    "flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-all",
+                    obligationsView === "status"
+                      ? "bg-background shadow-sm text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setObligationsView("status")}
+                >
+                  Status Mensal
+                </button>
+              </div>
 
-              {/* Configuration Sub-Tab */}
-              <TabsContent value="config" className="mt-0">
+              {obligationsView === "config" && (
                 <ObligationsConfigForm
                   unitId={asset?.unitId || null}
                   unitName={asset?.unitNumber}
@@ -660,26 +680,21 @@ export function AssetDetailDialog({
                     queryClient.invalidateQueries({ queryKey: ["asset-health"] });
                   }}
                 />
-              </TabsContent>
+              )}
 
-              {/* Monthly Status Sub-Tab */}
-              <TabsContent value="status" className="mt-0">
+              {obligationsView === "status" && (
                 <div className="space-y-4">
-                  {/* Month Navigation */}
                   <div className="flex items-center justify-center py-2">
-                    <MonthYearPicker
-                      value={currentMonth}
-                      onChange={setCurrentMonth}
-                      showNavigation={true}
-                    />
+                    <MonthYearPicker value={currentMonth} onChange={setCurrentMonth} showNavigation={true} />
                   </div>
-
-                  {/* Obligations List */}
                   <div className="space-y-3">
                     {monthlyObligations.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">Nenhuma obrigação configurada</p>
+                        <Button variant="outline" size="sm" className="mt-3" onClick={() => setObligationsView("config")}>
+                          Configurar obrigações
+                        </Button>
                       </div>
                     ) : (
                       monthlyObligations.map((obligation) => {
@@ -691,13 +706,9 @@ export function AssetDetailDialog({
                           <Card key={obligation.type} className="overflow-hidden">
                             <CardContent className="p-3">
                               <div className="flex items-start gap-3">
-                                <div className={cn(
-                                  "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                                  statusConfig.bgClassName
-                                )}>
+                                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", statusConfig.bgClassName)}>
                                   <Icon className="h-5 w-5" />
                                 </div>
-
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
                                     <span className="font-medium">{obligation.label}</span>
@@ -706,20 +717,14 @@ export function AssetDetailDialog({
                                       {statusConfig.label}
                                     </Badge>
                                   </div>
-
                                   {obligation.config?.due_day && (
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                      Vence dia {obligation.config.due_day}
-                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">Vence dia {obligation.config.due_day}</p>
                                   )}
-
                                   {obligation.transaction ? (
                                     <div className="mt-2 p-2 bg-muted/50 rounded-md">
                                       <div className="flex items-center justify-between">
                                         <span className="text-sm truncate">{obligation.transaction.description}</span>
-                                        <span className="text-sm font-medium">
-                                          R$ {obligation.transaction.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                                        </span>
+                                        <span className="text-sm font-medium">R$ {obligation.transaction.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                                       </div>
                                       <p className="text-xs text-muted-foreground mt-0.5">
                                         {format(parseISO(obligation.transaction.transaction_date), "dd/MM/yyyy")}
@@ -727,27 +732,14 @@ export function AssetDetailDialog({
                                     </div>
                                   ) : obligation.status !== "ignored" && (
                                     <div className="flex gap-2 mt-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 text-xs flex-1"
-                                        onClick={() => handleCreateTransaction(obligation.type)}
-                                      >
-                                        <Plus className="h-3 w-3 mr-1" />
-                                        Criar Lançamento
+                                      <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => handleCreateTransaction(obligation.type)}>
+                                        <Plus className="h-3 w-3 mr-1" /> Criar Lançamento
                                       </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        onClick={() => setLinkingTransactionFor(obligation.type)}
-                                      >
-                                        <Link2 className="h-3 w-3 mr-1" />
-                                        Vincular
+                                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setLinkingTransactionFor(obligation.type)}>
+                                        <Link2 className="h-3 w-3 mr-1" /> Vincular
                                       </Button>
                                     </div>
                                   )}
-
                                   {linkingTransactionFor === obligation.type && (
                                     <div className="mt-2 p-2 border rounded-md bg-background">
                                       <p className="text-xs font-medium mb-2">Selecione um lançamento:</p>
@@ -768,9 +760,7 @@ export function AssetDetailDialog({
                                                     <span className="text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-medium">Gerencial</span>
                                                   )}
                                                 </span>
-                                                <span className="font-medium">
-                                                  R$ {tx.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                                                </span>
+                                                <span className="font-medium">R$ {tx.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                                               </div>
                                               <span className="text-muted-foreground">
                                                 {tx.transaction_date ? format(parseISO(tx.transaction_date), "dd/MM/yyyy") : "—"}
@@ -779,14 +769,7 @@ export function AssetDetailDialog({
                                           ))}
                                         </div>
                                       )}
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full h-6 text-xs mt-2"
-                                        onClick={() => setLinkingTransactionFor(null)}
-                                      >
-                                        Cancelar
-                                      </Button>
+                                      <Button variant="ghost" size="sm" className="w-full h-6 text-xs mt-2" onClick={() => setLinkingTransactionFor(null)}>Cancelar</Button>
                                     </div>
                                   )}
                                 </div>
@@ -798,8 +781,8 @@ export function AssetDetailDialog({
                     )}
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
+              )}
+            </div>
           </ScrollArea>
         </TabsContent>
 
