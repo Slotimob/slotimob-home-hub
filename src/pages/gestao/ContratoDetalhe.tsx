@@ -670,7 +670,7 @@ export default function ContratoDetalhe() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">Enviar do seu e-mail configurado</p>
+                      <p className="text-xs text-muted-foreground">Enviado em seu nome pela plataforma</p>
                     </div>
                   </div>
                   <Switch
@@ -679,28 +679,48 @@ export default function ContratoDetalhe() {
                   />
                 </div>
                 {automationForm.email_enabled && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Para (e-mail destino)</Label>
-                    <Input
-                      type="email"
-                      placeholder="inquilino@exemplo.com"
-                      value={automationForm.email_destination}
-                      onChange={(e) =>
-                        setAutomationForm((p) => ({ ...p, email_destination: e.target.value }))
-                      }
-                      className="h-9 text-sm"
-                    />
-                    {tenant?.email && !automationForm.email_destination && (
-                      <button
-                        type="button"
-                        className="text-[11px] text-primary hover:underline"
-                        onClick={() =>
-                          setAutomationForm((p) => ({ ...p, email_destination: tenant.email || "" }))
+                  <div className="space-y-3">
+                    <div className="rounded-md bg-muted/50 border border-border px-3 py-2 flex items-start gap-2">
+                      <Mail className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-foreground">
+                          {brokerProfile?.full_name || user?.email || "Seu nome"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Enviado pela plataforma Slotimob em seu nome.{" "}
+                          <button
+                            type="button"
+                            className="text-primary hover:underline"
+                            onClick={() => navigate("/settings")}
+                          >
+                            Atualizar perfil
+                          </button>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Para (e-mail destino)</Label>
+                      <Input
+                        type="email"
+                        placeholder="inquilino@exemplo.com"
+                        value={automationForm.email_destination}
+                        onChange={(e) =>
+                          setAutomationForm((p) => ({ ...p, email_destination: e.target.value }))
                         }
-                      >
-                        Usar e-mail do inquilino: {tenant.email}
-                      </button>
-                    )}
+                        className="h-9 text-sm"
+                      />
+                      {tenant?.email && !automationForm.email_destination && (
+                        <button
+                          type="button"
+                          className="text-[11px] text-primary hover:underline"
+                          onClick={() =>
+                            setAutomationForm((p) => ({ ...p, email_destination: tenant.email || "" }))
+                          }
+                        >
+                          Usar e-mail do inquilino: {tenant.email}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
