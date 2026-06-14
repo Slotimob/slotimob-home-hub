@@ -743,10 +743,10 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   addSubClause('13.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
 
-  // CLÁUSULA DÉCIMA TERCEIRA - SEGURO INCÊNDIO
-  addClauseHeader('DÉCIMA TERCEIRA', 'DO SEGURO CONTRA INCÊNDIO');
-  addSubClause('13.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
-  addSubClause('13.2', `O LOCATÁRIO deverá zelar pelo imóvel de forma a não comprometer a vigência ou as condições da apólice de seguro, sendo-lhe vedado armazenar ou manusear materiais inflamáveis ou substâncias que aumentem o risco de sinistro.`);
+  // CLÁUSULA DÉCIMA QUARTA - SEGURO INCÊNDIO
+  addClauseHeader('DÉCIMA QUARTA', 'DO SEGURO CONTRA INCÊNDIO');
+  addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
+  addSubClause('14.2', `O LOCATÁRIO deverá zelar pelo imóvel de forma a não comprometer a vigência ou as condições da apólice de seguro, sendo-lhe vedado armazenar ou manusear materiais inflamáveis ou substâncias que aumentem o risco de sinistro.`);
 
   // CLÁUSULA DÉCIMA QUARTA - IPTU E ENCARGOS MUNICIPAIS
   addClauseHeader('DÉCIMA QUARTA', 'DO IPTU E ENCARGOS MUNICIPAIS');
