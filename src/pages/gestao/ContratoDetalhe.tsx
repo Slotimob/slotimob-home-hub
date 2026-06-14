@@ -192,6 +192,43 @@ export default function ContratoDetalhe() {
     }
   };
 
+  // Hydrate automation form when lease loads
+  useEffect(() => {
+    const auto: any = (lease as any)?.billing_automation;
+    if (auto) {
+      setAutomationForm({
+        email_enabled: !!auto.email_enabled,
+        email_destination: auto.email_destination || "",
+        whatsapp_enabled: !!auto.whatsapp_enabled,
+        whatsapp_destination: auto.whatsapp_destination || "",
+      });
+    }
+  }, [(lease as any)?.billing_automation]);
+
+  const handleSaveAutomation = async () => {
+    if (!lease) return;
+    setSavingAutomation(true);
+    try {
+      await updateLease.mutateAsync({
+        id: lease.id,
+        data: {
+          billing_automation: {
+            ...((lease as any).billing_automation || {}),
+            email_enabled: automationForm.email_enabled,
+            email_destination: automationForm.email_destination,
+            whatsapp_enabled: automationForm.whatsapp_enabled,
+            whatsapp_destination: automationForm.whatsapp_destination,
+          },
+        } as any,
+      });
+      toast({ title: "Automação configurada com sucesso!" });
+    } catch {
+      toast({ title: "Erro ao salvar", variant: "destructive" });
+    } finally {
+      setSavingAutomation(false);
+    }
+  };
+
   const handleSaveCib = async () => {
     if (!lease) return;
     try {
