@@ -66,7 +66,7 @@ export function ContactSelector({
     try {
       const { data, error } = await supabase
         .from('contacts')
-        .select('id, name, email, phone, categories')
+        .select('id, name, email, phone, whatsapp, categories')
         .order('name');
 
       if (error) throw error;
@@ -80,11 +80,12 @@ export function ContactSelector({
 
   // Filter contacts based on search and optional category filter
   const filteredContacts = contacts.filter((contact) => {
-    const matchesSearch = 
+    const matchesSearch =
       contact.name.toLowerCase().includes(search.toLowerCase()) ||
       contact.email?.toLowerCase().includes(search.toLowerCase()) ||
-      contact.phone?.includes(search);
-    
+      contact.phone?.includes(search) ||
+      contact.whatsapp?.includes(search);
+
     if (!matchesSearch) return false;
     
     // If no category filter, show all
