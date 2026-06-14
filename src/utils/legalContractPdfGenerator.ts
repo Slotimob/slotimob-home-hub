@@ -668,14 +668,14 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   // CLÁUSULA SEXTA - DA GARANTIA
   addClauseHeader('SEXTA', 'DA GARANTIA LOCATÍCIA');
-  
+
   const garantiaTexto = getGarantiaTexto(data);
-  addSubClause('5.1', garantiaTexto);
-  
+  addSubClause('6.1', garantiaTexto);
+
   if (data.contrato.garantia === 'fiador') {
-    addSubClause('5.2', 'O(s) FIADOR(es) responde(m) solidariamente por todas as obrigações do LOCATÁRIO, incluindo aluguel, encargos, multas, reparos, pinturas e quaisquer outras despesas ou indenizações devidas ao LOCADOR, permanecendo a fiança em vigor até a efetiva entrega das chaves e quitação integral de todas as obrigações.');
-    
-    addSubClause('5.3', 'A fiança permanece válida mesmo em caso de prorrogação da locação, seja por prazo determinado ou indeterminado, renunciando o(s) FIADOR(es) expressamente ao direito de exoneração previsto no art. 835 do Código Civil.');
+    addSubClause('6.2', 'O(s) FIADOR(es) responde(m) solidariamente por todas as obrigações do LOCATÁRIO, incluindo aluguel, encargos, multas, reparos, pinturas e quaisquer outras despesas ou indenizações devidas ao LOCADOR, permanecendo a fiança em vigor até a efetiva entrega das chaves e quitação integral de todas as obrigações.');
+
+    addSubClause('6.3', 'A fiança permanece válida mesmo em caso de prorrogação da locação, seja por prazo determinado ou indeterminado, renunciando o(s) FIADOR(es) expressamente ao direito de exoneração previsto no art. 835 do Código Civil.');
   }
 
   // CLÁUSULA SEXTA - DAS OBRIGAÇÕES DO LOCADOR
