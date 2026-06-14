@@ -32,7 +32,6 @@ import {
   Scale,
   Zap,
   Save,
-  Scale as ScaleIcon,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
