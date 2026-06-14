@@ -115,10 +115,20 @@ export default function ContratoDetalhe() {
     sent_by: "",
     method: "whatsapp" as "whatsapp" | "email" | "phone" | "in_person" | "other",
     notes: "",
+    sent_to: "",
   });
+  const [logsLimit, setLogsLimit] = useState(20);
 
   const [isEditingCib, setIsEditingCib] = useState(false);
   const [editedCib, setEditedCib] = useState("");
+
+  const [automationForm, setAutomationForm] = useState({
+    email_enabled: false,
+    email_destination: "",
+    whatsapp_enabled: false,
+    whatsapp_destination: "",
+  });
+  const [savingAutomation, setSavingAutomation] = useState(false);
 
   const { data: lease, isLoading, refetch } = useQuery({
     queryKey: ["lease-detail", id, effectiveBrokerId],
