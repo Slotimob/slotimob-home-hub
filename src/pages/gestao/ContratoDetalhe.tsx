@@ -705,24 +705,16 @@ export default function ContratoDetalhe() {
                       <Label className="text-xs">Para (e-mail destino)</Label>
                       <Input
                         type="email"
-                        placeholder="inquilino@exemplo.com"
+                        placeholder={tenant?.email || "email@exemplo.com"}
                         value={automationForm.email_destination}
                         onChange={(e) =>
                           setAutomationForm((p) => ({ ...p, email_destination: e.target.value }))
                         }
-                        className="h-9 text-sm"
+                        className="h-8 text-sm"
                       />
-                      {tenant?.email && !automationForm.email_destination && (
-                        <button
-                          type="button"
-                          className="text-[11px] text-primary hover:underline"
-                          onClick={() =>
-                            setAutomationForm((p) => ({ ...p, email_destination: tenant.email || "" }))
-                          }
-                        >
-                          Usar e-mail do inquilino: {tenant.email}
-                        </button>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Padrão: e-mail do inquilino{tenant?.email ? ` (${tenant.email})` : " (não cadastrado)"}
+                      </p>
                     </div>
                   </div>
                 )}
