@@ -882,13 +882,19 @@ function currencyToWords(value: number): string {
 
 // Exportação para uso com contratos existentes
 export const generateLegalContractFromLease = async (lease: any): Promise<void> => {
-  const guarantorData = typeof lease.guarantor_data === 'string' 
-    ? JSON.parse(lease.guarantor_data || '{}') 
+  const guarantorData = typeof lease.guarantor_data === 'string'
+    ? JSON.parse(lease.guarantor_data || '{}')
     : (lease.guarantor_data || {});
-  
+
   const paymentInfo = typeof lease.payment_info === 'string'
     ? JSON.parse(lease.payment_info || '{}')
     : (lease.payment_info || {});
+
+  const billingAutomation = typeof lease.billing_automation === 'string'
+    ? JSON.parse(lease.billing_automation || '{}')
+    : (lease.billing_automation || {});
+
+  const billingContact = billingAutomation.billing_contact || {};
 
   const data: LegalContractData = {
     locador: {
