@@ -256,6 +256,165 @@ export type Database = {
         }
         Relationships: []
       }
+      asaas_accounts: {
+        Row: {
+          asaas_account_id: string
+          asaas_api_key: string
+          broker_id: string
+          created_at: string | null
+          id: string
+          status: string | null
+          updated_at: string | null
+          wallet_id: string | null
+        }
+        Insert: {
+          asaas_account_id: string
+          asaas_api_key: string
+          broker_id: string
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+          wallet_id?: string | null
+        }
+        Update: {
+          asaas_account_id?: string
+          asaas_api_key?: string
+          broker_id?: string
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+          wallet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_accounts_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asaas_customers: {
+        Row: {
+          asaas_customer_id: string
+          broker_id: string
+          contact_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          asaas_customer_id: string
+          broker_id: string
+          contact_id: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          asaas_customer_id?: string
+          broker_id?: string
+          contact_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_customers_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_customers_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asaas_payments: {
+        Row: {
+          asaas_payment_id: string
+          asaas_subscription_id: string | null
+          bank_slip_url: string | null
+          billing_type: string
+          broker_id: string
+          created_at: string | null
+          due_date: string
+          financial_transaction_id: string | null
+          id: string
+          invoice_url: string | null
+          lease_id: string | null
+          pix_copy_paste: string | null
+          pix_qr_code: string | null
+          status: string | null
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          asaas_payment_id: string
+          asaas_subscription_id?: string | null
+          bank_slip_url?: string | null
+          billing_type: string
+          broker_id: string
+          created_at?: string | null
+          due_date: string
+          financial_transaction_id?: string | null
+          id?: string
+          invoice_url?: string | null
+          lease_id?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          status?: string | null
+          updated_at?: string | null
+          value: number
+        }
+        Update: {
+          asaas_payment_id?: string
+          asaas_subscription_id?: string | null
+          bank_slip_url?: string | null
+          billing_type?: string
+          broker_id?: string
+          created_at?: string | null
+          due_date?: string
+          financial_transaction_id?: string | null
+          id?: string
+          invoice_url?: string | null
+          lease_id?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          status?: string | null
+          updated_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_payments_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_payments_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_payments_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_improvements: {
         Row: {
           affects_market_value: boolean
@@ -3706,6 +3865,9 @@ export type Database = {
         Row: {
           ai_credits_limit: number
           ai_credits_used: number
+          asaas_customer_id: string | null
+          asaas_subscription_id: string | null
+          billing_provider: string | null
           cancel_at_period_end: boolean | null
           created_at: string | null
           current_period_end: string | null
@@ -3730,6 +3892,9 @@ export type Database = {
         Insert: {
           ai_credits_limit?: number
           ai_credits_used?: number
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          billing_provider?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
@@ -3754,6 +3919,9 @@ export type Database = {
         Update: {
           ai_credits_limit?: number
           ai_credits_used?: number
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          billing_provider?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
