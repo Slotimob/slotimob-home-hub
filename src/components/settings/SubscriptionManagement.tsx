@@ -222,7 +222,7 @@ export const SubscriptionManagement = () => {
                 ) : (
                   <ExternalLink className="h-4 w-4" />
                 )}
-                {loadingAction === 'portal' ? 'Abrindo portal...' : 'Gerenciar Assinatura (Stripe)'}
+                {loadingAction === 'portal' ? 'Abrindo portal...' : 'Gerenciar Faturamento'}
               </Button>
             )}
             {hasStripe && (
