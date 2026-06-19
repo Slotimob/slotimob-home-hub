@@ -38,8 +38,8 @@ export function TeamManagement() {
       const userIds = (data || []).map((m: any) => m.user_id);
       if (userIds.length === 0) return [];
 
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
+      const { data: profiles, error: profilesError } = await (supabase as any)
+        .from('profile_directory')
         .select('id, full_name, email')
         .in('id', userIds);
       if (profilesError) throw profilesError;
