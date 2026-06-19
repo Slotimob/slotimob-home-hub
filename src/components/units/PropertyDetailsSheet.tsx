@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
