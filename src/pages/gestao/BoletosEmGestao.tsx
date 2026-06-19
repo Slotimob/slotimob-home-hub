@@ -203,6 +203,17 @@ export default function BoletosEmGestao() {
             <SelectItem value="CANCELLED">Cancelado</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={unitFilter} onValueChange={setUnitFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Todos os imóveis" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os imóveis</SelectItem>
+            {units?.map(u => (
+              <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Input type="date" className="w-[150px]" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
         <Input type="date" className="w-[150px]" value={dateTo} onChange={e => setDateTo(e.target.value)} />
       </div>
@@ -268,6 +279,26 @@ export default function BoletosEmGestao() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handlePaymentAction(boleto.id, 'get_slip_url')}
+                          >
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Reemitir boleto
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handlePaymentAction(boleto.id, 'send_email')}
+                          >
+                            <Mail className="mr-2 h-4 w-4" />
+                            Enviar por e-mail
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handlePaymentAction(boleto.id, 'cancel')}
+                            className="text-destructive"
+                          >
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Cancelar cobrança
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           {boleto.bank_slip_url && (
                             <DropdownMenuItem onClick={() => window.open(boleto.bank_slip_url!, '_blank')}>
                               <ExternalLink className="h-4 w-4 mr-2" />
