@@ -203,6 +203,8 @@ export function AssetDetailDialog({
     title: '',
     description: '',
     scheduled_at: '',
+    responsible_name: '',
+    outcome: '',
   });
   const [savingActivity, setSavingActivity] = useState(false);
 
@@ -389,7 +391,7 @@ export function AssetDetailDialog({
     queryFn: async () => {
       const { data } = await supabase
         .from('property_activities')
-        .select('id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at')
+        .select('id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at, responsible_name, outcome')
         .eq('unit_id', asset!.unitId)
         .order('created_at', { ascending: false });
       return (data || []).map(r => ({ ...r, source: 'manual' as const }));
@@ -430,6 +432,8 @@ export function AssetDetailDialog({
           : '',
         Fonte: ({ agenda: 'Agenda', pipeline: 'Pipeline', manual: 'Manual' } as Record<string,string>)[a.source] || a.source,
         Concluído: a.is_completed ? 'Sim' : 'Não',
+        Responsável: a.responsible_name || '',
+        Resultado: a.outcome || '',
       }));
       const csv = Papa.unparse(rows);
       const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -455,8 +459,8 @@ export function AssetDetailDialog({
     doc.setFontSize(9);
     doc.setTextColor(60);
     doc.setFont('helvetica', 'bold');
-    const cols = ['Data', 'Tipo', 'Título', 'Fonte', 'Status'];
-    const colWidths = [28, 22, 80, 22, 20];
+    const cols = ['Data', 'Tipo', 'Título', 'Fonte', 'Resp.', 'Resultado', 'Status'];
+    const colWidths = [24, 18, 56, 18, 22, 22, 20];
     let x = 14;
     cols.forEach((col, i) => { doc.text(col, x, y); x += colWidths[i]; });
     doc.setDrawColor(200);
@@ -471,7 +475,7 @@ export function AssetDetailDialog({
         : '';
       const source = ({ agenda: 'Agenda', pipeline: 'Pipeline', manual: 'Manual' } as Record<string,string>)[a.source] || '';
       const status = a.is_completed ? 'Concluído' : 'Pendente';
-      const rowData = [date, a.activity_type, a.title, source, status];
+      const rowData = [date, a.activity_type, a.title, source, a.responsible_name || '', a.outcome || '', status];
       x = 14;
       rowData.forEach((val, i) => {
         const maxW = colWidths[i] - 2;
@@ -494,8 +498,10 @@ export function AssetDetailDialog({
       title: newActivity.title,
       description: newActivity.description || null,
       scheduled_at: newActivity.scheduled_at || null,
+      responsible_name: newActivity.responsible_name || null,
+      outcome: newActivity.outcome || null,
     });
-    setNewActivity({ activity_type: 'note', title: '', description: '', scheduled_at: '' });
+    setNewActivity({ activity_type: 'note', title: '', description: '', scheduled_at: '', responsible_name: '', outcome: '' });
     setShowNewForm(false);
     setSavingActivity(false);
     refetchPropertyActivities();
@@ -1178,6 +1184,24 @@ export function AssetDetailDialog({
                     <Label className="text-xs">Observações (opcional)</Label>
                     <Textarea className="text-xs min-h-[60px]" value={newActivity.description} onChange={e => setNewActivity(p => ({ ...p, description: e.target.value }))} />
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Responsável</Label>
+                      <Input
+                        placeholder="Nome do responsável"
+                        value={newActivity.responsible_name}
+                        onChange={e => setNewActivity(prev => ({ ...prev, responsible_name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Resultado</Label>
+                      <Input
+                        placeholder="Resultado ou observação"
+                        value={newActivity.outcome}
+                        onChange={e => setNewActivity(prev => ({ ...prev, outcome: e.target.value }))}
+                      />
+                    </div>
+                  </div>
                   <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="ghost" onClick={() => setShowNewForm(false)}>Cancelar</Button>
                     <Button size="sm" onClick={handleSaveActivity} disabled={!newActivity.title.trim() || savingActivity}>
@@ -1231,6 +1255,16 @@ export function AssetDetailDialog({
                           </div>
                           {activity.description && (
                             <p className="text-xs text-muted-foreground mt-0.5 truncate">{activity.description}</p>
+                          )}
+                          {activity.source === 'manual' && activity.responsible_name && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Responsável: <span className="font-medium text-foreground">{activity.responsible_name}</span>
+                            </p>
+                          )}
+                          {activity.source === 'manual' && activity.outcome && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Resultado: <span className="font-medium text-foreground">{activity.outcome}</span>
+                            </p>
                           )}
                           <p className="text-[10px] text-muted-foreground mt-1">
                             {format(new Date(displayDate), "dd 'de' MMM 'de' yyyy, HH:mm", { locale: ptBR })}
