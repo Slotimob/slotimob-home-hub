@@ -41,9 +41,17 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2,
-  Eye, Copy, Search, Loader2, Download, CheckCircle2,
+  Eye, Copy, Search, Loader2, Download, CheckCircle2, MoreHorizontal,
 } from 'lucide-react';
+
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
