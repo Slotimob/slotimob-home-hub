@@ -126,12 +126,12 @@ export default function BlogPost() {
   const { data: author } = useQuery({
     queryKey: ['blog-author', post?.author_id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('profile_directory' as any)
+      const { data } = await (supabase as any)
+        .from('profile_directory')
         .select('full_name, bio_mini, linkedin_url, instagram_url, author_role, avatar_url')
         .eq('id', post!.author_id)
         .single();
-      return data;
+      return data as any;
     },
     enabled: !!post?.author_id,
   });
