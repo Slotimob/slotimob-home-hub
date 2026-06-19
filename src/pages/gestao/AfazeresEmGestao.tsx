@@ -102,6 +102,29 @@ const AfazeresEmGestao = () => {
       .slice(0, 8);
   }, [leases]);
 
+  const today = startOfDay(new Date());
+  const in90Days = addDays(today, 90);
+  const in30Days = addDays(today, 30);
+
+  const expiringContracts = leases.filter((l) => {
+    if (l.status !== 'active' || !l.end_date) return false;
+    const endDate = parseISO(l.end_date);
+    return !isAfter(endDate, in90Days);
+  });
+
+  const pendingAdjustments = leases.filter((l) => {
+    if (l.status !== 'active' || !l.next_adjustment_date) return false;
+    const adjDate = parseISO(l.next_adjustment_date);
+    return !isAfter(adjDate, in30Days);
+  });
+
+  const pendingSignatures = leases.filter(
+    (l) =>
+      l.contract_status === 'active' &&
+      (l.signature_status === 'pending' || !l.signature_status) &&
+      !l.signed_contract_path
+  );
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
