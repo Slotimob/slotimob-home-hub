@@ -36,9 +36,7 @@ const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
 };
 
 export function AssetHealthListItem({ asset, onConfigureClick, onManageClick, onLinkClick }: AssetHealthListItemProps) {
-  const isMobile = useIsMobile();
   const overallConfig = OVERALL_STATUS_CONFIG[asset.overallStatus];
-  const activeObligations = asset.obligations.filter(o => o.status !== "ignored");
 
   const handleLinkClick = (obligation: ObligationHealth) => {
     if (onLinkClick) {
