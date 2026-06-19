@@ -18,9 +18,10 @@ interface RentReceivablesWidgetProps {
   refreshKey: number;
 }
 
-export function RentReceivablesWidget({ dateRange, refreshKey }: RentReceivablesWidgetProps) {
+export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: RentReceivablesWidgetProps) {
   const scope = useDashboardScope();
-  const { data, isLoading } = useRentalMetrics({ from: dateRange.from, to: dateRange.to, refreshKey });
+  const { period, setPeriod, dateRange: localDateRange } = useWidgetPeriod('this_month');
+  const { data, isLoading } = useRentalMetrics({ from: localDateRange.from, to: localDateRange.to, refreshKey });
 
   const received = data?.received ?? { amount: 0, count: 0 };
   const receivable = data?.receivable ?? { amount: 0, count: 0 };

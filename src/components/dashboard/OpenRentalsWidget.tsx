@@ -19,9 +19,10 @@ interface OpenRentalsWidgetProps {
   refreshKey: number;
 }
 
-export function OpenRentalsWidget({ dateRange, refreshKey }: OpenRentalsWidgetProps) {
+export function OpenRentalsWidget({ dateRange: _dateRange, refreshKey }: OpenRentalsWidgetProps) {
   const scope = useDashboardScope();
-  const { data, isLoading } = useRentalMetrics({ from: dateRange.from, to: dateRange.to, refreshKey });
+  const { period, setPeriod, dateRange: localDateRange } = useWidgetPeriod('this_month');
+  const { data, isLoading } = useRentalMetrics({ from: localDateRange.from, to: localDateRange.to, refreshKey });
 
   const items = data?.properties_with_open_rentals ?? [];
   const totalAmount = items.reduce((s, i) => s + i.total_open, 0);
