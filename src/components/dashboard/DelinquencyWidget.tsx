@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
@@ -40,9 +40,6 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
         <CardTitle className="text-base flex items-center gap-2">
           <AlertCircle className={`h-4 w-4 ${hasOverdue ? 'text-destructive' : 'text-muted-foreground'}`} />
           Inadimplência <HelpTooltip featureKey="dashboard.delinquency" />
-          {scope === 'workspace' && (
-            <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-          )}
         </CardTitle>
         <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
@@ -96,6 +93,11 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
             >
               Ver inadimplentes <ArrowRight className="h-3 w-3" />
             </Link>
+          </div>
+        )}
+        {scope === 'workspace' && (
+          <div className="flex justify-end pt-2">
+            <span className="text-[10px] text-muted-foreground">• Equipe</span>
           </div>
         )}
       </CardContent>

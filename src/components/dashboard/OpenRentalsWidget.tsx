@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Building2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -35,9 +35,6 @@ export function OpenRentalsWidget({ dateRange: _dateRange, refreshKey }: OpenRen
           <CardTitle className="text-base flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Imóveis com aluguel em aberto <HelpTooltip featureKey="dashboard.open_rentals" />
-            {scope === 'workspace' && (
-              <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-            )}
           </CardTitle>
           {items.length > 0 && (
             <span className="text-xs text-muted-foreground">
@@ -82,6 +79,11 @@ export function OpenRentalsWidget({ dateRange: _dateRange, refreshKey }: OpenRen
                 Ver todos ({items.length})
               </Link>
             )}
+          </div>
+        )}
+        {scope === 'workspace' && (
+          <div className="flex justify-end pt-2">
+            <span className="text-[10px] text-muted-foreground">• Equipe</span>
           </div>
         )}
       </CardContent>

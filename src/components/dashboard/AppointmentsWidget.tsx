@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardScope } from '@/hooks/useDashboardScope';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Calendar, Phone, Users, Eye, ClipboardCheck, ArrowRight } from 'lucide-react';
@@ -114,9 +114,6 @@ export function AppointmentsWidget({ refreshKey }: AppointmentsWidgetProps) {
         <CardTitle className="text-base flex items-center gap-2">
           <Calendar className="h-4 w-4" />
           Compromissos <HelpTooltip featureKey="dashboard.appointments" />
-          {scope === 'workspace' && (
-            <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-          )}
         </CardTitle>
         <div className="flex items-center gap-1">
           {PERIOD_OPTIONS.map((option) => (
@@ -180,6 +177,11 @@ export function AppointmentsWidget({ refreshKey }: AppointmentsWidgetProps) {
                 Ver todos ({total})
               </Link>
             )}
+          </div>
+        )}
+        {scope === 'workspace' && (
+          <div className="flex justify-end pt-2">
+            <span className="text-[10px] text-muted-foreground">• Equipe</span>
           </div>
         )}
       </CardContent>

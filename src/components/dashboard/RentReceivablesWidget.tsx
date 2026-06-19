@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Wallet, ArrowRight } from 'lucide-react';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
@@ -35,9 +35,6 @@ export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: Ren
         <CardTitle className="text-base flex items-center gap-2">
           <Wallet className="h-4 w-4" />
           Aluguéis no período <HelpTooltip featureKey="dashboard.rent_receivables" />
-          {scope === 'workspace' && (
-            <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-          )}
         </CardTitle>
         <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
@@ -83,6 +80,11 @@ export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: Ren
             >
               Ver detalhes <ArrowRight className="h-3 w-3" />
             </Link>
+          </div>
+        )}
+        {scope === 'workspace' && (
+          <div className="flex justify-end pt-2">
+            <span className="text-[10px] text-muted-foreground">• Equipe</span>
           </div>
         )}
       </CardContent>
