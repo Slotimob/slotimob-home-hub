@@ -52,7 +52,16 @@ import {
   Phone,
   Users,
   Circle,
+  Download,
+  FileSpreadsheet,
+  Calendar as CalendarIcon,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { cn } from "@/lib/utils";
@@ -187,6 +196,8 @@ export function AssetDetailDialog({
 
   // Activities tab state
   const [showNewForm, setShowNewForm] = useState(false);
+  const [activityDateFrom, setActivityDateFrom] = useState("");
+  const [activityDateTo, setActivityDateTo] = useState("");
   const [newActivity, setNewActivity] = useState({
     activity_type: 'note',
     title: '',
@@ -398,6 +409,80 @@ export function AssetDetailDialog({
       return dateB - dateA;
     });
   }, [scheduleActivities, dealActivities, propertyActivities]);
+
+  const filteredActivities = useMemo(() => {
+    return allActivities.filter((a: any) => {
+      const date = new Date(a.scheduled_at || a.created_at);
+      if (activityDateFrom && date < new Date(activityDateFrom)) return false;
+      if (activityDateTo && date > new Date(activityDateTo + 'T23:59:59')) return false;
+      return true;
+    });
+  }, [allActivities, activityDateFrom, activityDateTo]);
+
+  const exportActivitiesCSV = () => {
+    import('papaparse').then(Papa => {
+      const rows = filteredActivities.map((a: any) => ({
+        Tipo: a.activity_type,
+        Título: a.title,
+        Descrição: a.description || '',
+        Data: a.scheduled_at || a.created_at
+          ? format(new Date(a.scheduled_at || a.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
+          : '',
+        Fonte: ({ agenda: 'Agenda', pipeline: 'Pipeline', manual: 'Manual' } as Record<string,string>)[a.source] || a.source,
+        Concluído: a.is_completed ? 'Sim' : 'Não',
+      }));
+      const csv = Papa.unparse(rows);
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `atividades-${asset?.unitId || 'imovel'}-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  };
+
+  const exportActivitiesPDF = async () => {
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    doc.setFontSize(16);
+    doc.text('Histórico de Atividades', 14, 18);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Imóvel: ${asset?.unitId || ''}`, 14, 26);
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 32);
+    let y = 42;
+    doc.setFontSize(9);
+    doc.setTextColor(60);
+    doc.setFont('helvetica', 'bold');
+    const cols = ['Data', 'Tipo', 'Título', 'Fonte', 'Status'];
+    const colWidths = [28, 22, 80, 22, 20];
+    let x = 14;
+    cols.forEach((col, i) => { doc.text(col, x, y); x += colWidths[i]; });
+    doc.setDrawColor(200);
+    doc.line(14, y + 2, 196, y + 2);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    filteredActivities.forEach((a: any) => {
+      if (y > 270) { doc.addPage(); y = 18; }
+      const date = a.scheduled_at || a.created_at
+        ? format(new Date(a.scheduled_at || a.created_at), "dd/MM/yy HH:mm")
+        : '';
+      const source = ({ agenda: 'Agenda', pipeline: 'Pipeline', manual: 'Manual' } as Record<string,string>)[a.source] || '';
+      const status = a.is_completed ? 'Concluído' : 'Pendente';
+      const rowData = [date, a.activity_type, a.title, source, status];
+      x = 14;
+      rowData.forEach((val, i) => {
+        const maxW = colWidths[i] - 2;
+        const text = doc.splitTextToSize(String(val || ''), maxW);
+        doc.text(text[0], x, y);
+        x += colWidths[i];
+      });
+      y += 6;
+    });
+    doc.save(`atividades-${asset?.unitId || 'imovel'}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
 
   const handleSaveActivity = async () => {
     if (!newActivity.title.trim() || !asset) return;
@@ -1003,13 +1088,66 @@ export function AssetDetailDialog({
         <TabsContent value="activities" className="flex-1 overflow-hidden m-0">
           <ScrollArea className="h-full px-4 py-4">
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">{allActivities.length} registro(s)</p>
-                <Button size="sm" variant="outline" onClick={() => setShowNewForm(v => !v)}>
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Nova atividade
-                </Button>
+              <div className="space-y-3">
+                <div className="flex gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    <span>Período:</span>
+                  </div>
+                  <Input
+                    type="date"
+                    className="h-7 text-xs w-[130px]"
+                    value={activityDateFrom}
+                    onChange={e => setActivityDateFrom(e.target.value)}
+                  />
+                  <span className="text-xs text-muted-foreground self-center">até</span>
+                  <Input
+                    type="date"
+                    className="h-7 text-xs w-[130px]"
+                    value={activityDateTo}
+                    onChange={e => setActivityDateTo(e.target.value)}
+                  />
+                  {(activityDateFrom || activityDateTo) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs px-2"
+                      onClick={() => { setActivityDateFrom(''); setActivityDateTo(''); }}
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">{filteredActivities.length} registro(s)</p>
+                  <div className="flex gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Download className="h-3.5 w-3.5 mr-1" />
+                          Exportar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={exportActivitiesCSV}>
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={exportActivitiesPDF}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button size="sm" variant="outline" onClick={() => setShowNewForm(v => !v)}>
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Nova atividade
+                    </Button>
+                  </div>
+                </div>
               </div>
+
 
               {showNewForm && (
                 <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
@@ -1050,7 +1188,7 @@ export function AssetDetailDialog({
                 </div>
               )}
 
-              {allActivities.length === 0 ? (
+              {filteredActivities.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
                   <Clock className="h-8 w-8 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">Nenhuma atividade registrada</p>
@@ -1058,7 +1196,7 @@ export function AssetDetailDialog({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {allActivities.map((activity: any) => {
+                  {filteredActivities.map((activity: any) => {
                     const activityIcons: Record<string, React.ReactNode> = {
                       note: <FileText className="h-3.5 w-3.5" />,
                       visit: <MapPin className="h-3.5 w-3.5" />,
