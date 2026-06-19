@@ -470,7 +470,7 @@ export function CreateLeaseWizard({
                 'Authorization': `Bearer ${session?.access_token}`,
                 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
               },
-              body: JSON.stringify({ lease_id: leaseId }),
+              body: JSON.stringify({ lease_id: leaseId, billing_type: chargeConfig.billing_type }),
             }
           );
           // erros da edge function são logados mas não bloqueiam o fluxo do wizard
