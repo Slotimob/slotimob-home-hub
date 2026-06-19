@@ -24,8 +24,8 @@ export const useTeamMembers = () => {
       if (!effectiveBrokerId) return [];
 
       // Get all workspace user IDs via the security definer function
-      const { data: ownerProfile } = await supabase
-        .from('profiles')
+      const { data: ownerProfile } = await (supabase as any)
+        .from('profile_directory')
         .select('id, full_name, email')
         .eq('id', effectiveBrokerId)
         .single();
@@ -43,8 +43,8 @@ export const useTeamMembers = () => {
 
       // Fetch profiles for all members
       const memberIds = orgMembers.map(m => m.user_id);
-      const { data: memberProfiles } = await supabase
-        .from('profiles')
+      const { data: memberProfiles } = await (supabase as any)
+        .from('profile_directory')
         .select('id, full_name, email')
         .in('id', memberIds);
 
