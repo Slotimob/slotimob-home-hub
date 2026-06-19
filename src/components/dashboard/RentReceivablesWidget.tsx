@@ -82,6 +82,11 @@ export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: Ren
             </Link>
           </div>
         )}
+        {scope === 'workspace' && (
+          <div className="flex justify-end pt-2">
+            <span className="text-[10px] text-muted-foreground">• Equipe</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

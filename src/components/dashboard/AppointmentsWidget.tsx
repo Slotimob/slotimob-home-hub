@@ -179,6 +179,11 @@ export function AppointmentsWidget({ refreshKey }: AppointmentsWidgetProps) {
             )}
           </div>
         )}
+        {scope === 'workspace' && (
+          <div className="flex justify-end pt-2">
+            <span className="text-[10px] text-muted-foreground">• Equipe</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
