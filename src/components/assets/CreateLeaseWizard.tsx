@@ -1070,6 +1070,7 @@ export function CreateLeaseWizard({
                     <SelectItem value="boleto">Boleto</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">Tipo selecionado: <strong>{tipoPagamento}</strong></p>
               </div>
 
               {tipoPagamento === "pix" && (
