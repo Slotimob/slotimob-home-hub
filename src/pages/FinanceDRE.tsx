@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, Download, FileText, FileDown, X, Calendar } from "lucide-react";
+import { FileSpreadsheet, Download, FileText, FileDown, X } from "lucide-react";
 import { useDREReport, DREData } from "@/hooks/useDREReport";
 import { format, startOfMonth, endOfMonth, addMonths, eachMonthOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
