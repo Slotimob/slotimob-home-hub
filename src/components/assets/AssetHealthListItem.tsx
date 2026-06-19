@@ -5,17 +5,9 @@ import {
   Home, 
   Building2,
   ClipboardList,
-  Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AssetHealth, ObligationHealth, ObligationStatus, ObligationType } from "@/hooks/useAssetHealth";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { AssetHealth, ObligationHealth } from "@/hooks/useAssetHealth";
 import { ObligationTrafficLights } from "./ObligationTrafficLights";
 
 export interface AssetHealthListItemProps {
@@ -44,9 +36,7 @@ const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
 };
 
 export function AssetHealthListItem({ asset, onConfigureClick, onManageClick, onLinkClick }: AssetHealthListItemProps) {
-  const isMobile = useIsMobile();
   const overallConfig = OVERALL_STATUS_CONFIG[asset.overallStatus];
-  const activeObligations = asset.obligations.filter(o => o.status !== "ignored");
 
   const handleLinkClick = (obligation: ObligationHealth) => {
     if (onLinkClick) {
@@ -62,8 +52,12 @@ export function AssetHealthListItem({ asset, onConfigureClick, onManageClick, on
         asset.overallStatus === "attention" && "border-yellow-500/30 bg-yellow-500/5"
       )}
     >
-      {/* Unit Info */}
-      <div className="flex-1 min-w-0">
+      {/* Left Column: Unit Info (clickable) */}
+      <button
+        type="button"
+        className="flex-1 min-w-0 text-left cursor-pointer"
+        onClick={() => onManageClick(asset)}
+      >
         <div className="flex items-center gap-2">
           <Badge 
             variant="outline" 
@@ -93,62 +87,43 @@ export function AssetHealthListItem({ asset, onConfigureClick, onManageClick, on
             {asset.ownerName}
           </p>
         )}
-      </div>
+      </button>
 
-      {/* Status Badge */}
-      <Badge className={cn("shrink-0 text-[10px] px-2 py-0.5", overallConfig.className)}>
-        {overallConfig.label}
-      </Badge>
-
-      {/* Obligation Dots */}
-      <div className="hidden sm:flex items-center">
-        <ObligationTrafficLights
-          obligations={asset.obligations}
-          onLinkClick={onLinkClick ? handleLinkClick : undefined}
-          compact
-        />
-      </div>
-
-      {/* Quick Actions */}
-      <TooltipProvider delayDuration={0}>
-        <div className="flex items-center gap-1 shrink-0">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onManageClick(asset)}
-              >
-                <ClipboardList className="h-3.5 w-3.5 text-primary" />
-              </Button>
-            </TooltipTrigger>
-            {!isMobile && (
-              <TooltipContent>
-                <p>Gerenciar ativo</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onConfigureClick(asset.unitId)}
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            {!isMobile && (
-              <TooltipContent>
-                <p>Configurar obrigações</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
+      {/* Center Column: Obligations + Status */}
+      <div className="flex items-center gap-2">
+        <div className="hidden sm:flex items-center">
+          <ObligationTrafficLights
+            obligations={asset.obligations}
+            onLinkClick={onLinkClick ? handleLinkClick : undefined}
+            compact
+          />
         </div>
-      </TooltipProvider>
+        <Badge className={cn("shrink-0 text-[10px] px-2 py-0.5", overallConfig.className)}>
+          {overallConfig.label}
+        </Badge>
+      </div>
+
+      {/* Right Column: Actions */}
+      <div className="flex items-center gap-1 shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1 text-[11px] px-2"
+          onClick={() => onManageClick(asset)}
+        >
+          <ClipboardList className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Gerenciar</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1 text-[11px] px-2"
+          onClick={() => onConfigureClick(asset.unitId)}
+        >
+          <Settings2 className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Configurar</span>
+        </Button>
+      </div>
     </div>
   );
 }
