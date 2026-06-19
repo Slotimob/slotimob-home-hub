@@ -196,6 +196,8 @@ export function AssetDetailDialog({
 
   // Activities tab state
   const [showNewForm, setShowNewForm] = useState(false);
+  const [activityDateFrom, setActivityDateFrom] = useState("");
+  const [activityDateTo, setActivityDateTo] = useState("");
   const [newActivity, setNewActivity] = useState({
     activity_type: 'note',
     title: '',
