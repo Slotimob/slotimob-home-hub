@@ -185,6 +185,16 @@ export function AssetDetailDialog({
   const [editingCib, setEditingCib] = useState(false);
   const [cibValue, setCibValue] = useState("");
 
+  // Activities tab state
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newActivity, setNewActivity] = useState({
+    activity_type: 'note',
+    title: '',
+    description: '',
+    scheduled_at: '',
+  });
+  const [savingActivity, setSavingActivity] = useState(false);
+
   const competencyPeriod = format(currentMonth, "yyyy-MM");
   const monthLabel = format(currentMonth, "MMMM yyyy", { locale: ptBR });
   const capitalizedMonthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
