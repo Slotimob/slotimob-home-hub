@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ExternalLink, Copy, MoreHorizontal, Search, FileText, Loader2, Receipt, AlertCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { ExternalLink, Copy, MoreHorizontal, Search, FileText, Loader2, Receipt, AlertCircle, RefreshCw, Mail, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -31,11 +31,14 @@ export default function BoletosEmGestao() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [unitFilter, setUnitFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const { data: boletos, isLoading } = useQuery({
-    queryKey: ['asaas-payments', effectiveBrokerId, user?.id, statusFilter, dateFrom, dateTo],
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const { data: boletos, isLoading, refetch } = useQuery({
+    queryKey: ['asaas-payments', effectiveBrokerId, user?.id, statusFilter, unitFilter, dateFrom, dateTo],
     queryFn: async () => {
       let query = supabase
         .from('asaas_payments')
@@ -63,6 +66,7 @@ export default function BoletosEmGestao() {
         .order('due_date', { ascending: false });
 
       if (statusFilter !== "all") query = query.eq('status', statusFilter);
+      if (unitFilter !== "all") query = query.eq('lease_id', unitFilter);
       if (dateFrom) query = query.gte('due_date', dateFrom);
       if (dateTo) query = query.lte('due_date', dateTo);
 
@@ -71,6 +75,19 @@ export default function BoletosEmGestao() {
       return data || [];
     },
     enabled: !!user,
+  });
+
+  const { data: units } = useQuery({
+    queryKey: ['units-filter', effectiveBrokerId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('units')
+        .select('id, unit_number')
+        .eq('broker_id', effectiveBrokerId!)
+        .order('unit_number');
+      return data ?? [];
+    },
+    enabled: !!effectiveBrokerId,
   });
 
   const filtered = boletos?.filter(b => {
@@ -85,6 +102,43 @@ export default function BoletosEmGestao() {
     navigator.clipboard.writeText(text);
     toast({ title: `${label} copiado!` });
   };
+
+  async function handlePaymentAction(paymentId: string, action: 'get_slip_url' | 'send_email' | 'cancel') {
+    if (action === 'cancel') {
+      if (!window.confirm('Tem certeza que deseja cancelar esta cobrança no Asaas? Esta ação não pode ser desfeita.')) return;
+    }
+    setActionLoading(`${paymentId}-${action}`);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/asaas-payment-action`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ payment_id: paymentId, action }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
+
+      if (action === 'get_slip_url' && data.bank_slip_url) {
+        window.open(data.bank_slip_url, '_blank');
+      } else if (action === 'send_email') {
+        toast({ title: 'E-mail enviado com sucesso!' });
+      } else if (action === 'cancel') {
+        toast({ title: 'Cobrança cancelada no Asaas.' });
+        refetch();
+      }
+    } catch (err) {
+      toast({ title: 'Erro', description: (err as Error).message, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   const getBadgeClass = (variant: string) => {
     switch (variant) {
@@ -147,6 +201,17 @@ export default function BoletosEmGestao() {
             <SelectItem value="RECEIVED">Pago</SelectItem>
             <SelectItem value="OVERDUE">Vencido</SelectItem>
             <SelectItem value="CANCELLED">Cancelado</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={unitFilter} onValueChange={setUnitFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Todos os imóveis" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os imóveis</SelectItem>
+            {units?.map(u => (
+              <SelectItem key={u.id} value={u.id}>{u.unit_number || '—'}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Input type="date" className="w-[150px]" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
@@ -214,6 +279,26 @@ export default function BoletosEmGestao() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handlePaymentAction(boleto.id, 'get_slip_url')}
+                          >
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Reemitir boleto
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handlePaymentAction(boleto.id, 'send_email')}
+                          >
+                            <Mail className="mr-2 h-4 w-4" />
+                            Enviar por e-mail
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handlePaymentAction(boleto.id, 'cancel')}
+                            className="text-destructive"
+                          >
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Cancelar cobrança
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           {boleto.bank_slip_url && (
                             <DropdownMenuItem onClick={() => window.open(boleto.bank_slip_url!, '_blank')}>
                               <ExternalLink className="h-4 w-4 mr-2" />
