@@ -41,6 +41,14 @@ export default function BoletosEmGestao() {
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Dialogs: alterar vencimento e reajustar valor
+  const [dueDateDialog, setDueDateDialog] = useState<{ id: string; current: string } | null>(null);
+  const [newDueDate, setNewDueDate] = useState("");
+  const [valueDialog, setValueDialog] = useState<{ id: string; current: number } | null>(null);
+  const [newValue, setNewValue] = useState("");
+
+
+
   const { data: boletos, isLoading, refetch } = useQuery({
     queryKey: ['asaas-payments', effectiveBrokerId, user?.id, statusFilter, unitFilter, dateFrom, dateTo],
     queryFn: async () => {
