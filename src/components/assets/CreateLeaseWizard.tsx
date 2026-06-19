@@ -176,6 +176,32 @@ export function CreateLeaseWizard({
     titular: "",
   });
 
+  const [chargeConfig, setChargeConfig] = useState({
+    is_active: false,
+    billing_type: 'BOLETO',
+    fine_percentage: 2,
+    interest_percentage: 1,
+    discount_value: 0,
+    discount_days: 0,
+    send_email: true,
+    send_whatsapp: false,
+    description: '',
+  });
+
+  const { data: hasAsaasAccount } = useQuery({
+    queryKey: ['asaas-account-exists', effectiveBrokerId, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('asaas_accounts')
+        .select('id')
+        .eq('broker_id', effectiveBrokerId || user!.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user && open,
+  });
+
   // Load edit mode data
   useEffect(() => {
     if (open && editLease) {
