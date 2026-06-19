@@ -29,7 +29,7 @@ export function OpenRentalsWidget({ dateRange: _dateRange, refreshKey }: OpenRen
   const displayed = items.slice(0, 6);
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
@@ -44,18 +44,18 @@ export function OpenRentalsWidget({ dateRange: _dateRange, refreshKey }: OpenRen
         </div>
         <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="flex-1 space-y-3">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)}
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-6">
+          <div className="flex-1 flex flex-col items-center justify-center py-6">
             <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Sem aluguéis em aberto. ✓</p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="flex-1 space-y-1">
             {displayed.map((item, i) => {
               const daysOverdue = differenceInDays(new Date(), new Date(item.oldest_due_date));
               const route = item.unit_id ? `/units/${item.unit_id}` : item.property_id ? `/real-estate/${item.property_id}` : '#';
@@ -82,7 +82,7 @@ export function OpenRentalsWidget({ dateRange: _dateRange, refreshKey }: OpenRen
           </div>
         )}
         {scope === 'workspace' && (
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end mt-auto pt-2">
             <span className="text-[10px] text-muted-foreground">• Equipe</span>
           </div>
         )}
