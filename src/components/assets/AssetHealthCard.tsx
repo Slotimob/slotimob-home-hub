@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PropertyImage } from "@/components/ui/PropertyImage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -59,21 +60,11 @@ export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onLink
           className="aspect-[16/9] bg-muted relative cursor-pointer group"
           onClick={() => onManageClick(asset)}
         >
-          {asset.coverImage ? (
-            <img
-              src={asset.coverImage}
-              alt={asset.unitNumber}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center group-hover:bg-muted/80 transition-colors">
-              {asset.propertyName ? (
-                <Building2 className="h-10 w-10 text-muted-foreground/60" />
-              ) : (
-                <Home className="h-10 w-10 text-muted-foreground/60" />
-              )}
-            </div>
-          )}
+          <PropertyImage
+            src={asset.coverImage}
+            alt={asset.unitNumber ?? 'Imóvel'}
+            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+          />
           
           {/* Overall Status Badge */}
           <Badge className={cn("absolute top-2 right-2 text-[10px] px-2 py-0.5", overallConfig.className)}>
