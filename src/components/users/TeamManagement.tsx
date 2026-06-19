@@ -44,7 +44,7 @@ export function TeamManagement() {
         .in('id', userIds);
       if (profilesError) throw profilesError;
 
-      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      const profileMap = new Map<string, any>((profiles || []).map((p: any) => [p.id, p]));
 
       return (data || []).map((m: any) => {
         const profile = profileMap.get(m.user_id);
