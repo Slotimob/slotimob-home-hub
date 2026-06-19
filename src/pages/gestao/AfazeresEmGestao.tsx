@@ -6,6 +6,7 @@ import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { TasksTab } from "@/components/assets/TasksTab";
 import { SEOHead } from "@/components/SEOHead";
 import { useProposals } from "@/hooks/useProposals";
+import { toast } from "sonner";
 import { useLeases, generateBillingMessage, type Lease } from "@/hooks/useLeases";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -202,7 +203,9 @@ const AfazeresEmGestao = () => {
                       onClick={() =>
                         updateProposalStatus.mutate(
                           { id: p.id, status: 'sent' },
-                          { onSuccess: () => {} }
+                          {
+                            onSuccess: () => toast.success('Proposta marcada como enviada'),
+                          }
                         )
                       }
                       disabled={updateProposalStatus.isPending}
