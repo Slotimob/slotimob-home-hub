@@ -1188,7 +1188,7 @@ export function AssetDetailDialog({
                 </div>
               )}
 
-              {allActivities.length === 0 ? (
+              {filteredActivities.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
                   <Clock className="h-8 w-8 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">Nenhuma atividade registrada</p>
@@ -1196,7 +1196,7 @@ export function AssetDetailDialog({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {allActivities.map((activity: any) => {
+                  {filteredActivities.map((activity: any) => {
                     const activityIcons: Record<string, React.ReactNode> = {
                       note: <FileText className="h-3.5 w-3.5" />,
                       visit: <MapPin className="h-3.5 w-3.5" />,
