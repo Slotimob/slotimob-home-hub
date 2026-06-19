@@ -224,17 +224,11 @@ export function PropertyDetailsSheet({
         <div className="space-y-6 p-4 sm:p-6">
           {/* Hero Image */}
           <AspectRatio ratio={16 / 9} className="overflow-hidden rounded-lg bg-muted">
-            {property.cover_image_url ? (
-              <img
-                src={property.cover_image_url}
-                alt={property.unit_number}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <Home className="h-16 w-16 text-muted-foreground/50" />
-              </div>
-            )}
+            <PropertyImage
+              src={property.cover_image_url}
+              alt={property.unit_number ?? 'Imóvel'}
+              className="h-full w-full object-cover"
+            />
           </AspectRatio>
 
           {/* Header Info */}
