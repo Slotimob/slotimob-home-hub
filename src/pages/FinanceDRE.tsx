@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, Download, FileText, FileDown, X } from "lucide-react";
-import { useDREReport, DREData } from "@/hooks/useDREReport";
-import { format, startOfMonth, endOfMonth, addMonths, eachMonthOfInterval } from "date-fns";
+import { FileSpreadsheet, Download, FileText, FileDown } from "lucide-react";
+import { useDREReport } from "@/hooks/useDREReport";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { exportDREtoPDF, exportDREtoCSV } from "@/utils/dreExport";
@@ -15,8 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 import { UnitSelector } from "@/components/finance/UnitSelector";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTransactionDateRange } from "@/hooks/useTransactionDateRange";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -89,71 +86,22 @@ function DRELine({ label, value, items, isTotal, isPositive, isNegative, operato
   );
 }
 
-interface MonthOption {
-  value: string;
-  label: string;
-  year: string;
-  month: string;
-  start: Date;
-  end: Date;
-}
-
-// Generate available months dynamically based on min/max dates from database
-function generateMonthsFromRange(minDate: Date | null, maxDate: Date): MonthOption[] {
-  const now = new Date();
-  // If no min date, start from 24 months ago as fallback
-  const start = minDate || addMonths(now, -24);
-  
-  const allMonths = eachMonthOfInterval({ start, end: maxDate });
-  
-  return allMonths.map(date => ({
-    value: format(date, "yyyy-MM"),
-    label: format(date, "MMMM yyyy", { locale: ptBR }),
-    year: format(date, "yyyy"),
-    month: format(date, "MM"),
-    start: startOfMonth(date),
-    end: endOfMonth(date),
-  })).reverse(); // Most recent first
-}
-
-// Get unique years from months
-function getYears(months: MonthOption[]) {
-  const years = [...new Set(months.map(m => m.year))];
-  return years.sort((a, b) => b.localeCompare(a));
-}
+const MONTH_NAMES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
 
 export default function FinanceDRE() {
-  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+  const currentYear = new Date().getFullYear();
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
-  const [selectedYear, setSelectedYear] = useState<string>("");
-  
-  // Fetch date range from database (respects selected unit)
-  const { minDate, maxDate, isLoading: isLoadingDateRange } = useTransactionDateRange(
-    selectedUnitId || undefined
+  const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+
+  const years = useMemo(
+    () => [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(String),
+    [currentYear]
   );
-  
-  // Generate months dynamically based on database data
-  const months = useMemo(() => {
-    if (!maxDate) return [];
-    return generateMonthsFromRange(minDate, maxDate);
-  }, [minDate, maxDate]);
-  
-  const years = useMemo(() => getYears(months), [months]);
-  
-  // Initialize selected months when data is loaded
-  useEffect(() => {
-    if (months.length > 0 && selectedMonths.length === 0) {
-      // Default to current month
-      const currentMonth = format(new Date(), "yyyy-MM");
-      const hasCurrentMonth = months.some(m => m.value === currentMonth);
-      if (hasCurrentMonth) {
-        setSelectedMonths([currentMonth]);
-      } else if (months.length > 0) {
-        setSelectedMonths([months[0].value]);
-      }
-    }
-  }, [months.length]); // Only run when months array changes
-  
+
   // Fetch unit name for exports
   const { data: selectedUnit } = useQuery({
     queryKey: ["unit-for-dre", selectedUnitId],
@@ -172,113 +120,43 @@ export default function FinanceDRE() {
 
   const unitDisplayName = useMemo(() => {
     if (!selectedUnit) return undefined;
-    const propertyName = selectedUnit.property?.name;
-    return propertyName 
+    const propertyName = (selectedUnit as any).property?.name;
+    return propertyName
       ? `${selectedUnit.unit_number} (${propertyName})`
       : selectedUnit.unit_number;
   }, [selectedUnit]);
-  
-  // Calculate date range based on selected months
+
+  // Compute date range from year + month filters
   const dateRange = useMemo(() => {
-    if (selectedMonths.length === 0) {
-      return { start: startOfMonth(new Date()), end: endOfMonth(new Date()) };
+    const year = parseInt(selectedYear, 10);
+    if (selectedMonth === "all") {
+      const base = new Date(year, 0, 1);
+      return { start: startOfYear(base), end: endOfYear(base) };
     }
-    
-    const sortedMonths = [...selectedMonths].sort();
-    const firstMonth = months.find(m => m.value === sortedMonths[0]);
-    const lastMonth = months.find(m => m.value === sortedMonths[sortedMonths.length - 1]);
-    
-    return {
-      start: firstMonth?.start || startOfMonth(new Date()),
-      end: lastMonth?.end || endOfMonth(new Date()),
-    };
-  }, [selectedMonths, months]);
-  
+    const monthIdx = parseInt(selectedMonth, 10) - 1;
+    const base = new Date(year, monthIdx, 1);
+    return { start: startOfMonth(base), end: endOfMonth(base) };
+  }, [selectedYear, selectedMonth]);
+
   const { data: dre, isLoading } = useDREReport(
-    dateRange.start, 
-    dateRange.end, 
+    dateRange.start,
+    dateRange.end,
     selectedUnitId || undefined
   );
 
-  const toggleMonth = (monthValue: string) => {
-    setSelectedMonths(prev => {
-      if (prev.includes(monthValue)) {
-        return prev.filter(m => m !== monthValue);
-      }
-      return [...prev, monthValue];
-    });
-  };
-
-  const selectLast12Months = () => {
-    // Select last 12 months from the most recent available
-    setSelectedMonths(months.slice(0, 12).map(m => m.value));
-  };
-
-  const selectNext12Months = () => {
-    // Select from current month to +12 months ahead (for projections)
-    const now = new Date();
-    const futureMonths: string[] = [];
-    
-    for (let i = 0; i < 12; i++) {
-      const date = addMonths(now, i);
-      const monthValue = format(date, "yyyy-MM");
-      // Only add if it exists in our available months
-      if (months.some(m => m.value === monthValue)) {
-        futureMonths.push(monthValue);
-      }
-    }
-    
-    setSelectedMonths(futureMonths);
-  };
-
-  const selectCurrentMonth = () => {
-    setSelectedMonths([months[0].value]);
-  };
-
-  const clearMonths = () => {
-    setSelectedMonths([]);
-  };
-
-  const selectYear = (year: string) => {
-    setSelectedYear(year);
-    const yearMonths = months.filter(m => m.year === year).map(m => m.value);
-    setSelectedMonths(yearMonths);
-  };
-
-  const selectSingleMonth = (monthValue: string) => {
-    setSelectedMonths([monthValue]);
-  };
-
   const periodLabel = useMemo(() => {
-    if (selectedMonths.length === 0) {
-      return "Nenhum período selecionado";
-    }
-    if (selectedMonths.length === 1) {
-      const month = months.find(m => m.value === selectedMonths[0]);
-      return month?.label || "";
-    }
-    const sortedMonths = [...selectedMonths].sort();
-    const first = months.find(m => m.value === sortedMonths[0]);
-    const last = months.find(m => m.value === sortedMonths[sortedMonths.length - 1]);
-    return `${first?.label} a ${last?.label}`;
-  }, [selectedMonths, months]);
+    if (selectedMonth === "all") return `Ano de ${selectedYear}`;
+    const monthIdx = parseInt(selectedMonth, 10) - 1;
+    return `${MONTH_NAMES[monthIdx]} de ${selectedYear}`;
+  }, [selectedYear, selectedMonth]);
 
   const handleExportPDF = async () => {
-    if (dre) {
-      await exportDREtoPDF(dre, periodLabel, unitDisplayName);
-    }
+    if (dre) await exportDREtoPDF(dre, periodLabel, unitDisplayName);
   };
 
   const handleExportCSV = () => {
-    if (dre) {
-      exportDREtoCSV(dre, periodLabel, unitDisplayName);
-    }
+    if (dre) exportDREtoCSV(dre, periodLabel, unitDisplayName);
   };
-
-  // Filter months by selected year for the popover
-  const filteredMonths = selectedYear 
-    ? months.filter(m => m.year === selectedYear)
-    : months;
 
   return (
     <AppLayout>
@@ -293,10 +171,10 @@ export default function FinanceDRE() {
               </p>
             </div>
           </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" disabled={!dre || selectedMonths.length === 0}>
+              <Button variant="outline" disabled={!dre}>
                 <Download className="h-4 w-4 mr-2" />
                 Exportar
               </Button>
@@ -317,84 +195,37 @@ export default function FinanceDRE() {
         {/* Filters Section */}
         <Card>
           <CardContent className="py-4">
-            <div className="flex flex-col gap-4">
-              {/* Unit Filter */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Filtrar por Unidade/Imóvel</Label>
-                  <UnitSelector 
-                    value={selectedUnitId} 
-                    onChange={setSelectedUnitId}
-                    placeholder="Todas as unidades"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Selecionar Ano</Label>
-                  <Select value={selectedYear} onValueChange={selectYear}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolha um ano" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="flex gap-3 flex-wrap items-center">
+              <div className="w-full sm:w-64">
+                <UnitSelector
+                  value={selectedUnitId}
+                  onChange={setSelectedUnitId}
+                  placeholder="Todas as unidades"
+                />
               </div>
 
-              
-              {/* Selected Period Display */}
-              <div className="text-center py-2 bg-muted/50 rounded-lg">
-                <p className="text-lg font-semibold capitalize text-primary">
-                  {periodLabel}
-                </p>
-                {selectedMonths.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {format(dateRange.start, "dd/MM/yyyy")} a {format(dateRange.end, "dd/MM/yyyy")}
-                  </p>
-                )}
-                {unitDisplayName && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Unidade: {unitDisplayName}
-                  </p>
-                )}
-              </div>
-              
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Selecionar Meses</Label>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-52 overflow-y-auto pr-1">
-                  {filteredMonths.map((month) => (
-                    <div
-                      key={month.value}
-                      onClick={() => toggleMonth(month.value)}
-                      className={`flex items-center gap-1.5 p-2 rounded-md cursor-pointer text-xs border transition-colors ${
-                        selectedMonths.includes(month.value)
-                          ? 'bg-primary/10 border-primary/40 text-primary font-medium'
-                          : 'border-border hover:bg-muted/50 text-muted-foreground'
-                      }`}
-                    >
-                      <Checkbox
-                        checked={selectedMonths.includes(month.value)}
-                        onCheckedChange={() => toggleMonth(month.value)}
-                        className="pointer-events-none h-3 w-3"
-                      />
-                      <span className="capitalize leading-tight">{month.label}</span>
-                    </div>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(year => (
+                    <SelectItem key={year} value={year}>{year}</SelectItem>
                   ))}
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={clearMonths}>
-                    Limpar Seleção
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => selectedYear ? selectYear(selectedYear) : selectLast12Months()}>
-                    Selecionar Todos
-                  </Button>
-                </div>
-              </div>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os meses</SelectItem>
+                  {MONTH_NAMES.map((name, i) => (
+                    <SelectItem key={i} value={String(i + 1)}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -406,22 +237,12 @@ export default function FinanceDRE() {
               DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO
             </CardTitle>
             <CardDescription className="text-center">
-              {selectedMonths.length > 0 ? (
-                <>
-                  Período: {format(dateRange.start, "dd/MM/yyyy")} a {format(dateRange.end, "dd/MM/yyyy")}
-                  {unitDisplayName && ` | Unidade: ${unitDisplayName}`}
-                </>
-              ) : (
-                "Selecione um período para visualizar o relatório"
-              )}
+              Período: {format(dateRange.start, "dd/MM/yyyy", { locale: ptBR })} a {format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}
+              {unitDisplayName && ` | Unidade: ${unitDisplayName}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="py-6 space-y-4">
-            {selectedMonths.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                Selecione pelo menos um mês para gerar o relatório
-              </div>
-            ) : isLoading ? (
+            {isLoading ? (
               <div className="py-8 text-center text-muted-foreground">
                 Carregando dados...
               </div>
@@ -431,114 +252,19 @@ export default function FinanceDRE() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Receita Bruta */}
-                <DRELine
-                  operator="+"
-                  label="RECEITA BRUTA"
-                  value={dre.grossRevenue.total}
-                  items={dre.grossRevenue.items}
-                  isPositive
-                />
-
-                {/* Deduções */}
-                <DRELine
-                  operator="-"
-                  label="DEDUÇÕES (Impostos)"
-                  value={dre.taxDeductions.total}
-                  items={dre.taxDeductions.items}
-                  isNegative
-                />
-
-                {/* Receita Líquida */}
-                <DRELine
-                  operator="="
-                  label="RECEITA LÍQUIDA"
-                  value={dre.netRevenue}
-                  isTotal
-                  isPositive
-                />
-
-                {/* Custos Variáveis */}
-                <DRELine
-                  operator="-"
-                  label="CUSTOS VARIÁVEIS"
-                  value={dre.variableCosts.total}
-                  items={dre.variableCosts.items}
-                  isNegative
-                />
-
-                {/* Lucro Bruto */}
-                <DRELine
-                  operator="="
-                  label="LUCRO BRUTO"
-                  value={dre.grossProfit}
-                  isTotal
-                  isPositive
-                />
-
-                {/* Despesas Comerciais */}
-                <DRELine
-                  operator="-"
-                  label="DESPESAS COMERCIAIS"
-                  value={dre.salesExpenses.total}
-                  items={dre.salesExpenses.items}
-                  isNegative
-                />
-
-                {/* Despesas Administrativas */}
-                <DRELine
-                  operator="-"
-                  label="DESPESAS ADMINISTRATIVAS"
-                  value={dre.adminExpenses.total}
-                  items={dre.adminExpenses.items}
-                  isNegative
-                />
-
-                {/* Despesas Financeiras */}
-                <DRELine
-                  operator="-"
-                  label="DESPESAS FINANCEIRAS"
-                  value={dre.financialExpenses.total}
-                  items={dre.financialExpenses.items}
-                  isNegative
-                />
-
-                {/* Lucro Operacional */}
-                <DRELine
-                  operator="="
-                  label="LUCRO OPERACIONAL"
-                  value={dre.operatingProfit}
-                  isTotal
-                  isPositive
-                />
-
-                {/* Receitas Financeiras */}
-                <DRELine
-                  operator="+"
-                  label="RECEITAS FINANCEIRAS"
-                  value={dre.financialRevenue.total}
-                  items={dre.financialRevenue.items}
-                  isPositive
-                />
-
-                {/* Distribuição de Lucros */}
-                <DRELine
-                  operator="-"
-                  label="DISTRIBUIÇÃO DE LUCROS"
-                  value={dre.profitDistribution.total}
-                  items={dre.profitDistribution.items}
-                  isNegative
-                />
-
-                {/* Resultado Líquido */}
+                <DRELine operator="+" label="RECEITA BRUTA" value={dre.grossRevenue.total} items={dre.grossRevenue.items} isPositive />
+                <DRELine operator="-" label="DEDUÇÕES (Impostos)" value={dre.taxDeductions.total} items={dre.taxDeductions.items} isNegative />
+                <DRELine operator="=" label="RECEITA LÍQUIDA" value={dre.netRevenue} isTotal isPositive />
+                <DRELine operator="-" label="CUSTOS VARIÁVEIS" value={dre.variableCosts.total} items={dre.variableCosts.items} isNegative />
+                <DRELine operator="=" label="LUCRO BRUTO" value={dre.grossProfit} isTotal isPositive />
+                <DRELine operator="-" label="DESPESAS COMERCIAIS" value={dre.salesExpenses.total} items={dre.salesExpenses.items} isNegative />
+                <DRELine operator="-" label="DESPESAS ADMINISTRATIVAS" value={dre.adminExpenses.total} items={dre.adminExpenses.items} isNegative />
+                <DRELine operator="-" label="DESPESAS FINANCEIRAS" value={dre.financialExpenses.total} items={dre.financialExpenses.items} isNegative />
+                <DRELine operator="=" label="LUCRO OPERACIONAL" value={dre.operatingProfit} isTotal isPositive />
+                <DRELine operator="+" label="RECEITAS FINANCEIRAS" value={dre.financialRevenue.total} items={dre.financialRevenue.items} isPositive />
+                <DRELine operator="-" label="DISTRIBUIÇÃO DE LUCROS" value={dre.profitDistribution.total} items={dre.profitDistribution.items} isNegative />
                 <div className="border-t-2 border-foreground pt-3">
-                  <DRELine
-                    operator="="
-                    label="RESULTADO LÍQUIDO"
-                    value={dre.netResult}
-                    isTotal
-                    isPositive={dre.netResult >= 0}
-                  />
+                  <DRELine operator="=" label="RESULTADO LÍQUIDO" value={dre.netResult} isTotal isPositive={dre.netResult >= 0} />
                 </div>
               </div>
             )}
@@ -546,7 +272,7 @@ export default function FinanceDRE() {
         </Card>
 
         {/* Summary Box */}
-        {dre && selectedMonths.length > 0 && (
+        {dre && (
           <Card className={cn(
             "border-2",
             dre.netResult >= 0 ? "border-emerald-500 bg-emerald-500/5" : "border-red-500 bg-red-500/5"
