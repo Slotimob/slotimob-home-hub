@@ -109,7 +109,7 @@ export function AppointmentsWidget({ refreshKey }: AppointmentsWidgetProps) {
   const total = data?.total || 0;
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Calendar className="h-4 w-4" />
@@ -133,20 +133,20 @@ export function AppointmentsWidget({ refreshKey }: AppointmentsWidgetProps) {
           ))}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="flex-1 space-y-3">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)}
           </div>
         ) : displayed.length === 0 ? (
-          <div className="text-center py-6">
+          <div className="flex-1 flex flex-col items-center justify-center py-6">
             <p className="text-sm text-muted-foreground">Nenhum compromisso no período selecionado.</p>
             <Link to="/schedule" className="text-xs text-primary hover:underline mt-2 inline-flex items-center gap-1">
               Abrir agenda <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="flex-1 space-y-1">
             {displayed.map(item => {
               const Icon = ACTIVITY_ICONS[item.activity_type] || Calendar;
               return (
@@ -180,7 +180,7 @@ export function AppointmentsWidget({ refreshKey }: AppointmentsWidgetProps) {
           </div>
         )}
         {scope === 'workspace' && (
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end mt-auto pt-2">
             <span className="text-[10px] text-muted-foreground">• Equipe</span>
           </div>
         )}

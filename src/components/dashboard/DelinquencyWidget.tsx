@@ -35,7 +35,7 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
   const maxBucketAmount = Math.max(...Object.values(overdue.buckets).map(b => b.amount), 1);
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <AlertCircle className={`h-4 w-4 ${hasOverdue ? 'text-destructive' : 'text-muted-foreground'}`} />
@@ -43,19 +43,19 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
         </CardTitle>
         <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="flex-1 space-y-3">
             <Skeleton className="h-10" />
             <Skeleton className="h-24" />
           </div>
         ) : !hasOverdue ? (
-          <div className="text-center py-6">
+          <div className="flex-1 flex flex-col items-center justify-center py-6">
             <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Sem inadimplência. ✓</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex-1 space-y-4">
             {/* Main KPI */}
             <div className="text-center">
               <p className="text-2xl font-bold text-destructive">{fmtCurrency(overdue.amount)}</p>
@@ -96,7 +96,7 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
           </div>
         )}
         {scope === 'workspace' && (
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end mt-auto pt-2">
             <span className="text-[10px] text-muted-foreground">• Equipe</span>
           </div>
         )}

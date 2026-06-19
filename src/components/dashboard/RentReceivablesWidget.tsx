@@ -30,7 +30,7 @@ export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: Ren
   const pct = total > 0 ? Math.round((received.amount / total) * 100) : 0;
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Wallet className="h-4 w-4" />
@@ -38,18 +38,20 @@ export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: Ren
         </CardTitle>
         <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="flex-1 space-y-3">
             <Skeleton className="h-16" />
             <Skeleton className="h-4" />
           </div>
         ) : total === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Nenhum aluguel previsto para este período.
-          </p>
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Nenhum aluguel previsto para este período.
+            </p>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex-1 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-emerald-500/10 p-3">
                 <p className="text-[11px] text-muted-foreground">Já recebido</p>
@@ -83,7 +85,7 @@ export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: Ren
           </div>
         )}
         {scope === 'workspace' && (
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end mt-auto pt-2">
             <span className="text-[10px] text-muted-foreground">• Equipe</span>
           </div>
         )}
