@@ -284,7 +284,7 @@ serve(async (req) => {
   } catch (err) {
     console.error("[create-checkout-session]", err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Erro interno" }),
+      JSON.stringify({ error: "Erro interno ao processar checkout" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
