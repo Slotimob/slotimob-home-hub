@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { DateRange as RDPRange } from 'react-day-picker';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarDays, RefreshCw, ChevronDown } from 'lucide-react';
