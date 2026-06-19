@@ -449,7 +449,7 @@ export function AssetDetailDialog({
     doc.text('Histórico de Atividades', 14, 18);
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Imóvel: ${asset?.unitName || asset?.unitId || ''}`, 14, 26);
+    doc.text(`Imóvel: ${asset?.unitId || ''}`, 14, 26);
     doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 32);
     let y = 42;
     doc.setFontSize(9);
