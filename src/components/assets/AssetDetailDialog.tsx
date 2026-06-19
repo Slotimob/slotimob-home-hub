@@ -203,6 +203,8 @@ export function AssetDetailDialog({
     title: '',
     description: '',
     scheduled_at: '',
+    responsible_name: '',
+    outcome: '',
   });
   const [savingActivity, setSavingActivity] = useState(false);
 
