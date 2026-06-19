@@ -68,8 +68,8 @@ export function TeamManagement() {
     queryKey: ['organization-owner-profile', effectiveBrokerId],
     queryFn: async () => {
       if (!effectiveBrokerId || !isMember) return null;
-      const { data: profile } = await supabase
-        .from('profiles')
+      const { data: profile } = await (supabase as any)
+        .from('profile_directory')
         .select('full_name, email')
         .eq('id', effectiveBrokerId)
         .maybeSingle();
