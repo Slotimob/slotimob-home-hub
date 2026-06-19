@@ -1492,6 +1492,8 @@ export type Database = {
       }
       contract_charges: {
         Row: {
+          asaas_customer_id: string | null
+          asaas_subscription_id: string | null
           billing_type: string
           broker_id: string
           created_at: string
@@ -1509,6 +1511,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
           billing_type?: string
           broker_id: string
           created_at?: string
@@ -1526,6 +1530,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
           billing_type?: string
           broker_id?: string
           created_at?: string
@@ -3709,6 +3715,8 @@ export type Database = {
           id: string
           is_completed: boolean
           metadata: Json | null
+          outcome: string | null
+          responsible_name: string | null
           scheduled_at: string | null
           title: string
           unit_id: string
@@ -3723,6 +3731,8 @@ export type Database = {
           id?: string
           is_completed?: boolean
           metadata?: Json | null
+          outcome?: string | null
+          responsible_name?: string | null
           scheduled_at?: string | null
           title: string
           unit_id: string
@@ -3737,6 +3747,8 @@ export type Database = {
           id?: string
           is_completed?: boolean
           metadata?: Json | null
+          outcome?: string | null
+          responsible_name?: string | null
           scheduled_at?: string | null
           title?: string
           unit_id?: string
