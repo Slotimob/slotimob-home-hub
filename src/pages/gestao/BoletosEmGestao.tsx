@@ -5,14 +5,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { ExternalLink, Copy, MoreHorizontal, Search, FileText, Loader2, Receipt, AlertCircle, RefreshCw, Mail, XCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ExternalLink, Copy, MoreHorizontal, Search, FileText, Loader2, Receipt, AlertCircle, RefreshCw, Mail, XCircle, CalendarClock, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
 
 const STATUS_MAP: Record<string, { label: string; variant: string }> = {
   PENDING: { label: "Pendente", variant: "yellow" },
@@ -36,6 +40,14 @@ export default function BoletosEmGestao() {
   const [dateTo, setDateTo] = useState("");
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Dialogs: alterar vencimento e reajustar valor
+  const [dueDateDialog, setDueDateDialog] = useState<{ id: string; current: string } | null>(null);
+  const [newDueDate, setNewDueDate] = useState("");
+  const [valueDialog, setValueDialog] = useState<{ id: string; current: number } | null>(null);
+  const [newValue, setNewValue] = useState("");
+
+
 
   const { data: boletos, isLoading, refetch } = useQuery({
     queryKey: ['asaas-payments', effectiveBrokerId, user?.id, statusFilter, unitFilter, dateFrom, dateTo],
@@ -103,7 +115,11 @@ export default function BoletosEmGestao() {
     toast({ title: `${label} copiado!` });
   };
 
-  async function handlePaymentAction(paymentId: string, action: 'get_slip_url' | 'send_email' | 'cancel') {
+  async function handlePaymentAction(
+    paymentId: string,
+    action: 'get_slip_url' | 'send_email' | 'cancel' | 'update_due_date' | 'update_value',
+    extraPayload: Record<string, any> = {}
+  ) {
     if (action === 'cancel') {
       if (!window.confirm('Tem certeza que deseja cancelar esta cobrança no Asaas? Esta ação não pode ser desfeita.')) return;
     }
@@ -119,7 +135,7 @@ export default function BoletosEmGestao() {
             'Authorization': `Bearer ${session?.access_token}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
-          body: JSON.stringify({ payment_id: paymentId, action }),
+          body: JSON.stringify({ payment_id: paymentId, action, ...extraPayload }),
         }
       );
       const data = await res.json();
@@ -132,6 +148,12 @@ export default function BoletosEmGestao() {
       } else if (action === 'cancel') {
         toast({ title: 'Cobrança cancelada no Asaas.' });
         refetch();
+      } else if (action === 'update_due_date') {
+        toast({ title: 'Vencimento atualizado.' });
+        refetch();
+      } else if (action === 'update_value') {
+        toast({ title: 'Valor atualizado.' });
+        refetch();
       }
     } catch (err) {
       toast({ title: 'Erro', description: (err as Error).message, variant: 'destructive' });
@@ -139,6 +161,34 @@ export default function BoletosEmGestao() {
       setActionLoading(null);
     }
   }
+
+  function openChangeDueDateDialog(boleto: any) {
+    setNewDueDate(boleto.due_date || "");
+    setDueDateDialog({ id: boleto.id, current: boleto.due_date || "" });
+  }
+
+  function openReajusteDialog(boleto: any) {
+    setNewValue(String(boleto.value ?? ""));
+    setValueDialog({ id: boleto.id, current: Number(boleto.value) || 0 });
+  }
+
+  async function confirmDueDate() {
+    if (!dueDateDialog || !newDueDate) return;
+    await handlePaymentAction(dueDateDialog.id, 'update_due_date', { new_due_date: newDueDate });
+    setDueDateDialog(null);
+  }
+
+  async function confirmValue() {
+    if (!valueDialog) return;
+    const parsed = parseFloat(newValue.replace(',', '.'));
+    if (isNaN(parsed) || parsed <= 0) {
+      toast({ title: 'Valor inválido', variant: 'destructive' });
+      return;
+    }
+    await handlePaymentAction(valueDialog.id, 'update_value', { new_value: parsed });
+    setValueDialog(null);
+  }
+
 
   const getBadgeClass = (variant: string) => {
     switch (variant) {
@@ -156,7 +206,9 @@ export default function BoletosEmGestao() {
   const overdueAmount = filtered.filter(b => b.status === 'OVERDUE').reduce((s, b) => s + Number(b.value), 0);
 
   return (
+    <AppLayout title="Boletos e Cobranças">
     <div className="space-y-6 p-4 sm:p-6">
+
       <div>
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Receipt className="h-5 w-5 text-primary" />
@@ -291,6 +343,14 @@ export default function BoletosEmGestao() {
                             <Mail className="mr-2 h-4 w-4" />
                             Enviar por e-mail
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openChangeDueDateDialog(boleto)}>
+                            <CalendarClock className="mr-2 h-4 w-4" />
+                            Alterar vencimento
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openReajusteDialog(boleto)}>
+                            <TrendingUp className="mr-2 h-4 w-4" />
+                            Reajustar valor
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handlePaymentAction(boleto.id, 'cancel')}
                             className="text-destructive"
@@ -299,6 +359,7 @@ export default function BoletosEmGestao() {
                             Cancelar cobrança
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+
                           {boleto.bank_slip_url && (
                             <DropdownMenuItem onClick={() => window.open(boleto.bank_slip_url!, '_blank')}>
                               <ExternalLink className="h-4 w-4 mr-2" />
@@ -334,5 +395,71 @@ export default function BoletosEmGestao() {
         </div>
       )}
     </div>
+
+    {/* Dialog: Alterar vencimento */}
+    <Dialog open={!!dueDateDialog} onOpenChange={(open) => !open && setDueDateDialog(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Alterar vencimento</DialogTitle>
+          <DialogDescription>
+            Informe a nova data de vencimento. A cobrança será atualizada no Asaas.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          <Label htmlFor="new-due-date">Nova data</Label>
+          <Input
+            id="new-due-date"
+            type="date"
+            value={newDueDate}
+            onChange={(e) => setNewDueDate(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setDueDateDialog(null)}>Cancelar</Button>
+          <Button
+            onClick={confirmDueDate}
+            disabled={!newDueDate || actionLoading === `${dueDateDialog?.id}-update_due_date`}
+          >
+            {actionLoading === `${dueDateDialog?.id}-update_due_date` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Confirmar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Dialog: Reajustar valor */}
+    <Dialog open={!!valueDialog} onOpenChange={(open) => !open && setValueDialog(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reajustar valor</DialogTitle>
+          <DialogDescription>
+            Informe o novo valor (R$). A cobrança será atualizada no Asaas.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          <Label htmlFor="new-value">Novo valor</Label>
+          <Input
+            id="new-value"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={newValue}
+            onChange={(e) => setNewValue(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setValueDialog(null)}>Cancelar</Button>
+          <Button
+            onClick={confirmValue}
+            disabled={!newValue || actionLoading === `${valueDialog?.id}-update_value`}
+          >
+            {actionLoading === `${valueDialog?.id}-update_value` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Confirmar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </AppLayout>
   );
 }
