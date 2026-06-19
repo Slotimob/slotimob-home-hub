@@ -346,33 +346,6 @@ export default function FinanceDRE() {
                 </div>
               </div>
 
-              {/* Period Controls */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Período:</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="ghost" size="sm" onClick={selectCurrentMonth}>
-                    Mês Atual
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={selectLast12Months}>
-                    Últimos 12 Meses
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={selectNext12Months}>
-                    Próximos 12 Meses
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={clearMonths}
-                    disabled={selectedMonths.length === 0}
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Limpar
-                  </Button>
-                </div>
-              </div>
               
               {/* Selected Period Display */}
               <div className="text-center py-2 bg-muted/50 rounded-lg">
