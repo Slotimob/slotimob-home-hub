@@ -124,12 +124,12 @@ export function ShortcutsWidget({ shortcuts, isLoading }: ShortcutsWidgetProps) 
                     <TooltipTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-auto py-2 lg:py-3 px-2 lg:px-3 flex flex-col items-center gap-1 lg:gap-1.5 hover:bg-primary/10 hover:border-primary/40 hover:text-foreground transition-all group w-full"
+                        className="h-auto min-h-[60px] lg:min-h-[68px] py-2 lg:py-3 px-2 lg:px-3 flex flex-col items-center gap-1 lg:gap-1.5 overflow-hidden hover:bg-primary/10 hover:border-primary/40 hover:text-foreground transition-all group w-full"
                         onClick={() => handleShortcutClick(shortcut)}
                       >
                         <Icon className="h-4 w-4 lg:h-5 lg:w-5 text-primary flex-shrink-0 group-hover:text-primary" />
-                        <span 
-                          className="text-xs text-center leading-tight w-full text-foreground break-words hyphens-auto"
+                        <span
+                          className="text-xs text-center leading-tight w-full text-foreground line-clamp-2 overflow-hidden"
                         >
                           {shortcut.label}
                         </span>
