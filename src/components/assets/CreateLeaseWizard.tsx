@@ -42,6 +42,7 @@ import {
   Sparkles,
   Shield,
   CreditCard,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -79,7 +80,7 @@ interface CreateLeaseWizardProps {
   editLease?: Lease | null;
 }
 
-type WizardStep = "tenant" | "financial" | "guarantee" | "payment" | "compliance";
+type WizardStep = "tenant" | "financial" | "guarantee" | "payment" | "cobranca" | "compliance";
 
 type GuaranteeType = "fiador" | "caucao" | "seguro_fianca" | "none";
 
@@ -88,6 +89,7 @@ const STEPS: { id: WizardStep; title: string; icon: React.ReactNode; optional?: 
   { id: "financial", title: "Financeiro", icon: <Wallet className="h-4 w-4" /> },
   { id: "guarantee", title: "Garantia", icon: <Shield className="h-4 w-4" /> },
   { id: "payment", title: "Pagamento", icon: <CreditCard className="h-4 w-4" /> },
+  { id: "cobranca", title: "Cobrança", icon: <Receipt className="h-4 w-4" /> },
   { id: "compliance", title: "DIMOB", icon: <FileText className="h-4 w-4" /> },
 ];
 
@@ -172,6 +174,32 @@ export function CreateLeaseWizard({
     agencia: "",
     conta: "",
     titular: "",
+  });
+
+  const [chargeConfig, setChargeConfig] = useState({
+    is_active: false,
+    billing_type: 'BOLETO',
+    fine_percentage: 2,
+    interest_percentage: 1,
+    discount_value: 0,
+    discount_days: 0,
+    send_email: true,
+    send_whatsapp: false,
+    description: '',
+  });
+
+  const { data: hasAsaasAccount } = useQuery({
+    queryKey: ['asaas-account-exists', effectiveBrokerId, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('asaas_accounts')
+        .select('id')
+        .eq('broker_id', effectiveBrokerId || user!.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user && open,
   });
 
   // Load edit mode data
@@ -380,16 +408,19 @@ export function CreateLeaseWizard({
         payment_info: finalPaymentInfo,
       };
 
+      let leaseId: string | null = null;
       if (isEditMode && editLease) {
         // Update existing lease
         await updateLease.mutateAsync({
           id: editLease.id,
           data: leaseData,
         });
+        leaseId = editLease.id;
         toast({ title: "Contrato atualizado com sucesso!" });
       } else {
         // Create new lease
         const result = await createLease.mutateAsync(leaseData);
+        leaseId = (result.lease as any)?.id || null;
         const projectionsCount = result.projectionsGenerated;
         const successMessage = projectionsCount > 0
           ? `Contrato criado com sucesso! ${projectionsCount} parcelas financeiras projetadas.`
@@ -400,6 +431,30 @@ export function CreateLeaseWizard({
             ? "As parcelas de aluguel foram automaticamente lançadas no financeiro."
             : undefined,
         });
+      }
+
+      // Save Asaas charge config if active
+      if (leaseId && chargeConfig.is_active) {
+        const chargePayload = {
+          lease_id: leaseId,
+          broker_id: effectiveBrokerId || user!.id,
+          is_active: true,
+          billing_type: chargeConfig.billing_type,
+          fine_percentage: chargeConfig.fine_percentage,
+          interest_percentage: chargeConfig.interest_percentage,
+          discount_value: chargeConfig.discount_value,
+          discount_days: chargeConfig.discount_days,
+          send_email: chargeConfig.send_email,
+          send_whatsapp: chargeConfig.send_whatsapp,
+          description: chargeConfig.description || null,
+        };
+        if (isEditMode) {
+          await supabase
+            .from('contract_charges')
+            .upsert(chargePayload, { onConflict: 'lease_id' });
+        } else {
+          await supabase.from('contract_charges').insert(chargePayload);
+        }
       }
 
       onOpenChange(false);
@@ -413,6 +468,11 @@ export function CreateLeaseWizard({
       });
       setSelectedGuarantorContactId(null);
       setPaymentInfo({ tipo: "pix", chavePix: "", banco: "", agencia: "", conta: "", titular: "" });
+      setChargeConfig({
+        is_active: false, billing_type: 'BOLETO', fine_percentage: 2,
+        interest_percentage: 1, discount_value: 0, discount_days: 0,
+        send_email: true, send_whatsapp: false, description: '',
+      });
       setStep("tenant");
       setSearchTerm("");
     } catch (error) {
@@ -441,6 +501,8 @@ export function CreateLeaseWizard({
         return true;
       case "payment":
         return true; // Payment info is optional
+      case "cobranca":
+        return true; // sempre opcional
       case "compliance":
         return true;
       default:
@@ -1041,6 +1103,145 @@ export function CreateLeaseWizard({
                   💡 Estas informações serão incluídas na Cláusula 4.2 do contrato de locação.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Cobrança Step (Asaas) */}
+          {step === "cobranca" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3 p-4 border rounded-lg bg-muted/30">
+                <div>
+                  <p className="text-sm font-medium">Cobrança automática de boletos</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Gera boletos/PIX automaticamente via Asaas a cada vencimento
+                  </p>
+                </div>
+                <Switch
+                  checked={chargeConfig.is_active}
+                  onCheckedChange={checked => setChargeConfig(p => ({ ...p, is_active: checked }))}
+                  disabled={!hasAsaasAccount}
+                />
+              </div>
+
+              {!hasAsaasAccount && (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-700">Conta Asaas não configurada</p>
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Configure sua conta Asaas em Configurações para ativar a cobrança automática.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {chargeConfig.is_active && (
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <Label>Tipo de Cobrança</Label>
+                    <Select value={chargeConfig.billing_type} onValueChange={v => setChargeConfig(p => ({ ...p, billing_type: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BOLETO">Boleto Bancário</SelectItem>
+                        <SelectItem value="PIX">PIX (QR Code)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Multa por atraso (%)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={10}
+                        step={0.5}
+                        value={chargeConfig.fine_percentage}
+                        onChange={e => setChargeConfig(p => ({ ...p, fine_percentage: parseFloat(e.target.value) || 0 }))}
+                        placeholder="2%"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Máx. 2% (Lei 8.245/91)</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Juros mensais (%)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={12}
+                        step={0.1}
+                        value={chargeConfig.interest_percentage}
+                        onChange={e => setChargeConfig(p => ({ ...p, interest_percentage: parseFloat(e.target.value) || 0 }))}
+                        placeholder="1%"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Máx. 1%/mês</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Desconto antecipado (R$)</Label>
+                      <CurrencyInput
+                        value={chargeConfig.discount_value.toString()}
+                        onChange={v => setChargeConfig(p => ({ ...p, discount_value: parseFloat(v) || 0 }))}
+                        placeholder="R$ 0,00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Dias de antecedência</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={30}
+                        value={chargeConfig.discount_days}
+                        onChange={e => setChargeConfig(p => ({ ...p, discount_days: parseInt(e.target.value) || 0 }))}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Descrição no boleto (opcional)</Label>
+                    <Input
+                      value={chargeConfig.description}
+                      onChange={e => setChargeConfig(p => ({ ...p, description: e.target.value }))}
+                      placeholder="Ex: Aluguel ref. outubro/2025"
+                      maxLength={255}
+                    />
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    <Label className="text-sm font-medium">Notificar inquilino por:</Label>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="text-sm">E-mail</p>
+                        <p className="text-xs text-muted-foreground">Enviar boleto e lembretes por e-mail</p>
+                      </div>
+                      <Switch
+                        checked={chargeConfig.send_email}
+                        onCheckedChange={checked => setChargeConfig(p => ({ ...p, send_email: checked }))}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="text-sm">WhatsApp</p>
+                        <p className="text-xs text-muted-foreground">Enviar link do boleto via WhatsApp</p>
+                      </div>
+                      <Switch
+                        checked={chargeConfig.send_whatsapp}
+                        onCheckedChange={checked => setChargeConfig(p => ({ ...p, send_whatsapp: checked }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!chargeConfig.is_active && hasAsaasAccount && (
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    A cobrança automática pode ser configurada a qualquer momento nas configurações do contrato.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
