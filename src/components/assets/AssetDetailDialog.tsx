@@ -432,6 +432,8 @@ export function AssetDetailDialog({
           : '',
         Fonte: ({ agenda: 'Agenda', pipeline: 'Pipeline', manual: 'Manual' } as Record<string,string>)[a.source] || a.source,
         Concluído: a.is_completed ? 'Sim' : 'Não',
+        Responsável: a.responsible_name || '',
+        Resultado: a.outcome || '',
       }));
       const csv = Papa.unparse(rows);
       const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
