@@ -269,6 +269,112 @@ const AfazeresEmGestao = () => {
             </Card>
           )}
 
+          {(expiringContracts.length > 0 || pendingAdjustments.length > 0) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-primary" />
+                  Contratos a Vencer / Reajuste
+                  <Badge variant="secondary" className="ml-auto">
+                    {expiringContracts.length + pendingAdjustments.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {expiringContracts.map((l) => {
+                  const isPast = isBefore(parseISO(l.end_date!), today);
+                  return (
+                    <div key={`exp-${l.id}`} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <AlertTriangle className={`h-4 w-4 shrink-0 ${isPast ? 'text-destructive' : 'text-amber-500'}`} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {l.unit?.property?.name
+                              ? `${l.unit.property.name} · ${l.unit?.unit_number}`
+                              : l.unit?.unit_number || 'Contrato'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {isPast ? 'Venceu em ' : 'Vence em '}
+                            {format(parseISO(l.end_date!), "dd/MM/yyyy", { locale: ptBR })}
+                            {l.tenant?.name ? ` · ${l.tenant.name}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                        Ver Contrato
+                      </Button>
+                    </div>
+                  );
+                })}
+                {pendingAdjustments.map((l) => {
+                  const isPast = isBefore(parseISO(l.next_adjustment_date!), today);
+                  return (
+                    <div key={`adj-${l.id}`} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <CalendarClock className={`h-4 w-4 shrink-0 ${isPast ? 'text-destructive' : 'text-blue-500'}`} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {l.unit?.property?.name
+                              ? `${l.unit.property.name} · ${l.unit?.unit_number}`
+                              : l.unit?.unit_number || 'Contrato'}
+                            {l.adjustment_index ? ` · ${l.adjustment_index}` : ''}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Reajuste {isPast ? 'em atraso desde ' : 'previsto para '}
+                            {format(parseISO(l.next_adjustment_date!), "dd/MM/yyyy", { locale: ptBR })}
+                            {l.tenant?.name ? ` · ${l.tenant.name}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                        Ver Contrato
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
+          {pendingSignatures.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <PenLine className="h-4 w-4 text-primary" />
+                  Pendências de Assinatura
+                  <Badge variant="secondary" className="ml-auto">
+                    {pendingSignatures.length}
+                  </Badge>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Contratos ativos sem documento assinado anexado.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {pendingSignatures.map((l) => (
+                  <div key={l.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <PenLine className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {l.unit?.property?.name
+                            ? `${l.unit.property.name} · ${l.unit?.unit_number}`
+                            : l.unit?.unit_number || 'Contrato'}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {l.tenant?.name || 'Inquilino'} · iniciado em {format(parseISO(l.start_date), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                      Anexar Assinatura
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           <TasksTab />
         </div>
       </AppLayout>
