@@ -364,97 +364,37 @@ export default function FinanceDRE() {
                 )}
               </div>
               
-              {/* Month Selector Popover */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Selecionar Meses ({selectedMonths.length} selecionado{selectedMonths.length !== 1 ? 's' : ''})
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Selecionar Meses</Label>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-52 overflow-y-auto pr-1">
+                  {filteredMonths.map((month) => (
+                    <div
+                      key={month.value}
+                      onClick={() => toggleMonth(month.value)}
+                      className={`flex items-center gap-1.5 p-2 rounded-md cursor-pointer text-xs border transition-colors ${
+                        selectedMonths.includes(month.value)
+                          ? 'bg-primary/10 border-primary/40 text-primary font-medium'
+                          : 'border-border hover:bg-muted/50 text-muted-foreground'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={selectedMonths.includes(month.value)}
+                        onCheckedChange={() => toggleMonth(month.value)}
+                        className="pointer-events-none h-3 w-3"
+                      />
+                      <span className="capitalize leading-tight">{month.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={clearMonths}>
+                    Limpar Seleção
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-96" align="center">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">Selecione os meses:</p>
-                      <Select 
-                        value={selectedYear || "all"} 
-                        onValueChange={(val) => setSelectedYear(val === "all" ? "" : val)}
-                      >
-                        <SelectTrigger className="w-28 h-8">
-                          <SelectValue placeholder="Ano" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos</SelectItem>
-                          {years.map(year => (
-                            <SelectItem key={year} value={year}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                      {filteredMonths.map((month) => (
-                        <div
-                          key={month.value}
-                          className="flex items-center space-x-2 p-1 hover:bg-muted/50 rounded cursor-pointer"
-                          onClick={() => toggleMonth(month.value)}
-                        >
-                          <Checkbox
-                            id={month.value}
-                            checked={selectedMonths.includes(month.value)}
-                            onCheckedChange={() => toggleMonth(month.value)}
-                          />
-                          <Label
-                            htmlFor={month.value}
-                            className="text-sm capitalize cursor-pointer flex-1"
-                          >
-                            {month.label}
-                          </Label>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              selectSingleMonth(month.value);
-                            }}
-                            title="Selecionar apenas este mês"
-                          >
-                            <span className="text-xs text-muted-foreground">só</span>
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex gap-2 pt-2 border-t">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={clearMonths}
-                      >
-                        Limpar Todos
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => {
-                          if (selectedYear) {
-                            selectYear(selectedYear);
-                          } else {
-                            selectLast12Months();
-                          }
-                        }}
-                      >
-                        Selecionar Todos
-                      </Button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => selectedYear ? selectYear(selectedYear) : selectLast12Months()}>
+                    Selecionar Todos
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
