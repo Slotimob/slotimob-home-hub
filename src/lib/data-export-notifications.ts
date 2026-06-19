@@ -11,7 +11,7 @@ interface ExportRequest {
 export async function notifyExportCreated(request: ExportRequest) {
   try {
     const { data: owner } = await supabase
-      .from('profiles')
+      .from('profile_directory' as any)
       .select('full_name, email')
       .eq('id', request.organization_owner_id)
       .single();
@@ -31,7 +31,7 @@ export async function notifyExportCreated(request: ExportRequest) {
 
     // Notify admins
     const { data: admins } = await supabase
-      .from('profiles')
+      .from('profile_directory' as any)
       .select('id, email')
       .eq('is_super_admin', true);
 
@@ -56,7 +56,7 @@ export async function notifyExportCreated(request: ExportRequest) {
 export async function notifyPreparationStarted(request: ExportRequest) {
   try {
     const { data: owner } = await supabase
-      .from('profiles')
+      .from('profile_directory' as any)
       .select('full_name, email')
       .eq('id', request.organization_owner_id)
       .single();
@@ -81,7 +81,7 @@ export async function notifyPreparationStarted(request: ExportRequest) {
 export async function notifyExportRejected(request: ExportRequest) {
   try {
     const { data: owner } = await supabase
-      .from('profiles')
+      .from('profile_directory' as any)
       .select('full_name, email')
       .eq('id', request.organization_owner_id)
       .single();
