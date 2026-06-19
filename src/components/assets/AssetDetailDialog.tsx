@@ -623,7 +623,7 @@ export function AssetDetailDialog({
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <div className="px-4 pt-2 border-b">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview" className="text-xs">
               <LayoutDashboard className="h-3.5 w-3.5 mr-1" />
               Visão Geral
@@ -635,6 +635,10 @@ export function AssetDetailDialog({
             <TabsTrigger value="fiscal" className="text-xs">
               <Shield className="h-3.5 w-3.5 mr-1" />
               Fiscal
+            </TabsTrigger>
+            <TabsTrigger value="activities" className="text-xs">
+              <Clock className="h-3.5 w-3.5 mr-1" />
+              Atividades
             </TabsTrigger>
           </TabsList>
         </div>
