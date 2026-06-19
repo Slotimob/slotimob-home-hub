@@ -408,16 +408,19 @@ export function CreateLeaseWizard({
         payment_info: finalPaymentInfo,
       };
 
+      let leaseId: string | null = null;
       if (isEditMode && editLease) {
         // Update existing lease
         await updateLease.mutateAsync({
           id: editLease.id,
           data: leaseData,
         });
+        leaseId = editLease.id;
         toast({ title: "Contrato atualizado com sucesso!" });
       } else {
         // Create new lease
         const result = await createLease.mutateAsync(leaseData);
+        leaseId = result.lease?.id || null;
         const projectionsCount = result.projectionsGenerated;
         const successMessage = projectionsCount > 0
           ? `Contrato criado com sucesso! ${projectionsCount} parcelas financeiras projetadas.`
@@ -428,6 +431,30 @@ export function CreateLeaseWizard({
             ? "As parcelas de aluguel foram automaticamente lançadas no financeiro."
             : undefined,
         });
+      }
+
+      // Save Asaas charge config if active
+      if (leaseId && chargeConfig.is_active) {
+        const chargePayload = {
+          lease_id: leaseId,
+          broker_id: effectiveBrokerId || user!.id,
+          is_active: true,
+          billing_type: chargeConfig.billing_type,
+          fine_percentage: chargeConfig.fine_percentage,
+          interest_percentage: chargeConfig.interest_percentage,
+          discount_value: chargeConfig.discount_value,
+          discount_days: chargeConfig.discount_days,
+          send_email: chargeConfig.send_email,
+          send_whatsapp: chargeConfig.send_whatsapp,
+          description: chargeConfig.description || null,
+        };
+        if (isEditMode) {
+          await supabase
+            .from('contract_charges')
+            .upsert(chargePayload, { onConflict: 'lease_id' });
+        } else {
+          await supabase.from('contract_charges').insert(chargePayload);
+        }
       }
 
       onOpenChange(false);
