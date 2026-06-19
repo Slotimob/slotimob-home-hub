@@ -1,3 +1,4 @@
+import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePermissions } from '@/hooks/usePermissions';

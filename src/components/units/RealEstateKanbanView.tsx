@@ -1,3 +1,4 @@
+import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useState, useMemo } from 'react';
 import {
   DndContext,
