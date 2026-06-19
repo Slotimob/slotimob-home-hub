@@ -430,6 +430,7 @@ export default function Proposals() {
                                     onDelete={(id) => setDeletingId(id)}
                                     onDownloadPdf={handleDownloadPdf}
                                     pdfDownloading={pdfDownloading}
+                                    onToggleStatus={handleToggleStatus}
                                   />
 
                                 </TableCell>
