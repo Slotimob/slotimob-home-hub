@@ -22,8 +22,24 @@ const BRAND = {
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
 const LOGO_URL = `${SITE_URL}/sloti-logo.png`;
 
+// SECURITY: escape user-supplied values before interpolating into HTML.
+function escapeHtml(input: unknown): string {
+  return String(input ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-// ─── Shared layout wrapper ───────────────────────────────────────────────────
+// SECURITY: only allow https URLs in CTA links (blocks javascript:, data:, etc.).
+function safeUrl(url: string | undefined, fallback: string): string {
+  const candidate = String(url ?? "").trim();
+  if (/^https:\/\//i.test(candidate)) return candidate;
+  return fallback;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function emailLayout(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
