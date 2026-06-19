@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
 import { useDashboardScope } from '@/hooks/useDashboardScope';
 import type { DateRange } from './DashboardDateFilter';
+import { useWidgetPeriod, WidgetPeriodFilter } from './WidgetPeriodFilter';
 
 function fmtCurrency(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -17,9 +18,10 @@ interface RentReceivablesWidgetProps {
   refreshKey: number;
 }
 
-export function RentReceivablesWidget({ dateRange, refreshKey }: RentReceivablesWidgetProps) {
+export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: RentReceivablesWidgetProps) {
   const scope = useDashboardScope();
-  const { data, isLoading } = useRentalMetrics({ from: dateRange.from, to: dateRange.to, refreshKey });
+  const { period, setPeriod, dateRange: localDateRange } = useWidgetPeriod('this_month');
+  const { data, isLoading } = useRentalMetrics({ from: localDateRange.from, to: localDateRange.to, refreshKey });
 
   const received = data?.received ?? { amount: 0, count: 0 };
   const receivable = data?.receivable ?? { amount: 0, count: 0 };
@@ -37,6 +39,7 @@ export function RentReceivablesWidget({ dateRange, refreshKey }: RentReceivables
             <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
           )}
         </CardTitle>
+        <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
       <CardContent>
         {isLoading ? (

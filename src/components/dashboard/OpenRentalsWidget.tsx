@@ -7,6 +7,8 @@ import { differenceInDays } from 'date-fns';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
 import { useDashboardScope } from '@/hooks/useDashboardScope';
 import type { DateRange } from './DashboardDateFilter';
+import { useWidgetPeriod, WidgetPeriodFilter } from './WidgetPeriodFilter';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 
 function fmtCurrency(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -17,9 +19,10 @@ interface OpenRentalsWidgetProps {
   refreshKey: number;
 }
 
-export function OpenRentalsWidget({ dateRange, refreshKey }: OpenRentalsWidgetProps) {
+export function OpenRentalsWidget({ dateRange: _dateRange, refreshKey }: OpenRentalsWidgetProps) {
   const scope = useDashboardScope();
-  const { data, isLoading } = useRentalMetrics({ from: dateRange.from, to: dateRange.to, refreshKey });
+  const { period, setPeriod, dateRange: localDateRange } = useWidgetPeriod('this_month');
+  const { data, isLoading } = useRentalMetrics({ from: localDateRange.from, to: localDateRange.to, refreshKey });
 
   const items = data?.properties_with_open_rentals ?? [];
   const totalAmount = items.reduce((s, i) => s + i.total_open, 0);
@@ -31,7 +34,7 @@ export function OpenRentalsWidget({ dateRange, refreshKey }: OpenRentalsWidgetPr
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Building2 className="h-4 w-4" />
-            Imóveis com aluguel em aberto
+            Imóveis com aluguel em aberto <HelpTooltip featureKey="dashboard.open_rentals" />
             {scope === 'workspace' && (
               <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
             )}
@@ -42,6 +45,7 @@ export function OpenRentalsWidget({ dateRange, refreshKey }: OpenRentalsWidgetPr
             </span>
           )}
         </div>
+        <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
       <CardContent>
         {isLoading ? (

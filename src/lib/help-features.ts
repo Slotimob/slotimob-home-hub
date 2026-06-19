@@ -4,6 +4,7 @@ export const HELP_FEATURES = {
   'dashboard.appointments': 'Widget de Compromissos',
   'dashboard.rent_receivables': 'Widget de Aluguéis',
   'dashboard.delinquency': 'Widget de Inadimplência',
+  'dashboard.open_rentals': 'Widget de Imóveis com Aluguel em Aberto',
 
   // Ativos
   'assets.properties': 'Empreendimentos',
@@ -46,6 +47,7 @@ export const HELP_DEFAULT_DESCRIPTIONS: Partial<Record<FeatureKey, string>> = {
   'dashboard.appointments': 'Compromissos e tarefas agendados para os próximos dias, incluindo visitas, reuniões, vencimentos de contratos e obrigações de aluguéis.',
   'dashboard.rent_receivables': 'Total de cobranças de aluguel no período selecionado. Inclui contratos ativos com data de vencimento dentro do período.',
   'dashboard.delinquency': 'Valor total de aluguéis em aberto com data de vencimento ultrapassada. Considera cobranças pendentes ou em atraso registradas no financeiro.',
+  'dashboard.open_rentals': 'Lista de imóveis com cobranças de aluguel pendentes ou em atraso no período, incluindo valor total em aberto e tempo de atraso máximo.',
   'assets.properties': 'Empreendimentos são condomínios, loteamentos ou projetos que agrupam múltiplas unidades.',
   'assets.units': 'Unidades são imóveis pertencentes a um empreendimento, como apartamentos e salas comerciais.',
   'assets.standalone': 'Imóveis avulsos são propriedades independentes não vinculadas a nenhum empreendimento, como terrenos, casas e galpões.',
