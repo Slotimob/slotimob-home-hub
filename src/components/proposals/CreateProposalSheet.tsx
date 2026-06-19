@@ -615,10 +615,10 @@ export function CreateProposalSheet({
                     {selectedUnit && (
                       <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 space-y-2">
                         {selectedUnit.cover_image_url && (
-                          <img
+                          <PropertyImage
                             src={selectedUnit.cover_image_url}
-                            className="w-full h-28 object-cover rounded-lg"
                             alt="Capa do imóvel"
+                            className="w-full h-28 object-cover rounded-lg"
                           />
                         )}
                         <div className="flex items-start justify-between gap-2">

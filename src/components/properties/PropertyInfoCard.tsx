@@ -122,17 +122,11 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
         <div className="flex gap-4 p-4">
           {/* Thumbnail */}
           <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted shrink-0">
-            {property.image_url ? (
-              <img 
-                src={property.image_url} 
-                alt={property.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Building2 className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
+            <PropertyImage
+              src={property.image_url}
+              alt={property.name ?? 'Imóvel'}
+              className="w-full h-full object-cover"
+            />
           </div>
 
           {/* Info */}
@@ -241,9 +235,9 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
         {/* Main Image */}
         {(property.image_url || galleryImages.length > 0) && (
           <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-            <img 
-              src={property.image_url || galleryImages[0]} 
-              alt={property.name}
+            <PropertyImage
+              src={property.image_url || galleryImages[0]}
+              alt={property.name ?? 'Imóvel'}
               className="w-full h-full object-cover"
             />
             {galleryImages.length > 0 && (
@@ -378,8 +372,8 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
           <div className="space-y-4">
             {/* Main Image */}
             <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-              <img 
-                src={galleryImages[selectedImageIndex]} 
+              <PropertyImage
+                src={galleryImages[selectedImageIndex]}
                 alt={`Foto ${selectedImageIndex + 1}`}
                 className="w-full h-full object-contain"
               />
@@ -394,7 +388,7 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
                     index === selectedImageIndex ? 'border-primary' : 'border-transparent'
                   }`}
                 >
-                  <img src={url} alt={`Thumb ${index + 1}`} className="w-full h-full object-cover" />
+                  <PropertyImage src={url} alt={`Thumb ${index + 1}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
