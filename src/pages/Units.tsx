@@ -1,3 +1,4 @@
+import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -761,18 +762,11 @@ const Units = () => {
                         </div>
                       </div>
                     )}
-                    {unit.cover_image_url ? (
-                      <img
-                        src={unit.cover_image_url}
-                        alt={`Unidade ${unit.unit_number}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                        <Home className="h-10 w-10 text-muted-foreground/50" />
-                      </div>
-                    )}
+                    <PropertyImage
+                      src={unit.cover_image_url}
+                      alt={`Unidade ${unit.unit_number}`}
+                      className="w-full h-full object-cover"
+                    />
                     <Badge 
                       className={`absolute top-2 right-2 ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
                     >
