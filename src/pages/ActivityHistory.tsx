@@ -122,8 +122,8 @@ const ActivityHistory = () => {
       });
       const uniqueIds = [...userIds];
       if (uniqueIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
+        const { data: profiles } = await (supabase as any)
+          .from('profile_directory')
           .select('id, full_name')
           .in('id', uniqueIds);
 

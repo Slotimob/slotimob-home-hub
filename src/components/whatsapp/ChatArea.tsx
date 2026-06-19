@@ -156,8 +156,8 @@ function useAgentName(userId: string | null, teamMembers: { id: string; name: st
     if (found) { setName(found.name); return; }
 
     // Fallback: fetch from profiles
-    supabase.from('profiles').select('full_name').eq('id', userId).maybeSingle()
-      .then(({ data }) => setName(data?.full_name || 'Agente'));
+    (supabase as any).from('profile_directory').select('full_name').eq('id', userId).maybeSingle()
+      .then(({ data }: any) => setName(data?.full_name || 'Agente'));
   }, [userId, teamMembers]);
 
   return name;

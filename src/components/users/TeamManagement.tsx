@@ -38,13 +38,13 @@ export function TeamManagement() {
       const userIds = (data || []).map((m: any) => m.user_id);
       if (userIds.length === 0) return [];
 
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
+      const { data: profiles, error: profilesError } = await (supabase as any)
+        .from('profile_directory')
         .select('id, full_name, email')
         .in('id', userIds);
       if (profilesError) throw profilesError;
 
-      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      const profileMap = new Map<string, any>((profiles || []).map((p: any) => [p.id, p]));
 
       return (data || []).map((m: any) => {
         const profile = profileMap.get(m.user_id);
@@ -68,8 +68,8 @@ export function TeamManagement() {
     queryKey: ['organization-owner-profile', effectiveBrokerId],
     queryFn: async () => {
       if (!effectiveBrokerId || !isMember) return null;
-      const { data: profile } = await supabase
-        .from('profiles')
+      const { data: profile } = await (supabase as any)
+        .from('profile_directory')
         .select('full_name, email')
         .eq('id', effectiveBrokerId)
         .maybeSingle();

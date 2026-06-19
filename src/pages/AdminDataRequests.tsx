@@ -65,11 +65,11 @@ const AdminDataRequests = () => {
     queryKey: ['profiles-for-exports', ownerIds],
     queryFn: async () => {
       if (ownerIds.length === 0) return [];
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, phone')
+      const { data } = await (supabase as any)
+        .from('profile_directory')
+        .select('id, full_name, email')
         .in('id', ownerIds);
-      return data || [];
+      return (data || []) as any[];
     },
     enabled: ownerIds.length > 0,
   });

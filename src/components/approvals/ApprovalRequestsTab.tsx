@@ -84,12 +84,12 @@ export function ApprovalRequestsTab() {
     queryKey: ['profiles-for-approvals', requesterIds],
     queryFn: async () => {
       if (!requesterIds.length) return {};
-      const { data } = await supabase
-        .from('profiles')
+      const { data } = await (supabase as any)
+        .from('profile_directory')
         .select('id, full_name, email')
         .in('id', requesterIds);
       const map: Record<string, { full_name: string; email: string }> = {};
-      data?.forEach((p) => { map[p.id] = { full_name: p.full_name || '', email: p.email || '' }; });
+      (data || []).forEach((p: any) => { map[p.id] = { full_name: p.full_name || '', email: p.email || '' }; });
       return map;
     },
     enabled: requesterIds.length > 0,

@@ -236,8 +236,8 @@ export const AssetActivityTimeline = ({
     queryKey: ['audit-profiles', brokerIds.join(',')],
     queryFn: async () => {
       if (brokerIds.length === 0) return {};
-      const { data } = await supabase
-        .from('profiles')
+      const { data } = await (supabase as any)
+        .from('profile_directory')
         .select('id, full_name')
         .in('id', brokerIds);
       const map: ProfileMap = {};

@@ -190,13 +190,13 @@ export default function WhatsApp() {
       if (!members || members.length === 0) return;
 
       const memberIds = [effectiveBrokerId, ...members.map(m => m.user_id)];
-      const { data: profiles } = await supabase
-        .from('profiles')
+      const { data: profiles } = await (supabase as any)
+        .from('profile_directory')
         .select('id, full_name')
         .in('id', memberIds);
 
       setTeamMembers(
-        (profiles || []).map(p => ({ id: p.id, name: p.full_name || 'Sem nome' }))
+        (profiles || []).map((p: any) => ({ id: p.id, name: p.full_name || 'Sem nome' }))
       );
     };
     fetchTeam();

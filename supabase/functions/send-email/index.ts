@@ -22,8 +22,24 @@ const BRAND = {
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
 const LOGO_URL = `${SITE_URL}/sloti-logo.png`;
 
+// SECURITY: escape user-supplied values before interpolating into HTML.
+function escapeHtml(input: unknown): string {
+  return String(input ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-// ─── Shared layout wrapper ───────────────────────────────────────────────────
+// SECURITY: only allow https URLs in CTA links (blocks javascript:, data:, etc.).
+function safeUrl(url: string | undefined, fallback: string): string {
+  const candidate = String(url ?? "").trim();
+  if (/^https:\/\//i.test(candidate)) return candidate;
+  return fallback;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function emailLayout(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -53,19 +69,22 @@ ${bodyHtml}
 }
 
 function ctaButton(text: string, url: string): string {
+  const safeText = escapeHtml(text);
+  const safeHref = escapeHtml(safeUrl(url, SITE_URL));
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto;">
 <tr><td style="background:${BRAND.primary};border-radius:${BRAND.radius};padding:14px 32px;">
-<a href="${url}" target="_blank" style="color:#fff;text-decoration:none;font-weight:600;font-size:16px;display:block;">${text}</a>
+<a href="${safeHref}" target="_blank" style="color:#fff;text-decoration:none;font-weight:600;font-size:16px;display:block;">${safeText}</a>
 </td></tr></table>`;
 }
 
 // ─── Templates ───────────────────────────────────────────────────────────────
 
 function welcomeEmail(userName: string, dashboardUrl: string): { subject: string; html: string } {
+  const safeName = escapeHtml(userName);
   return {
     subject: "O futuro da sua gestão imobiliária começou! 🏠",
     html: emailLayout("Bem-vindo à SlotiMob", `
-      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Seja muito bem-vindo(a) à SlotiMob, ${userName}!</h1>
+      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Seja muito bem-vindo(a) à SlotiMob, ${safeName}!</h1>
       <p>Você não acabou de contratar um software — <strong>você ganhou um novo sócio tecnológico</strong>. Agora, seus leads do WhatsApp não ficam mais perdidos e sua gestão financeira está a um clique de distância.</p>
       <p style="font-weight:600;color:${BRAND.foreground};margin:24px 0 12px;">Seus próximos passos:</p>
       <ul style="padding-left:20px;color:#555;line-height:2;">
@@ -85,15 +104,17 @@ function leadAssignedEmail(
   leadPhone: string,
   chatUrl: string,
 ): { subject: string; html: string } {
+  const safeAgent = escapeHtml(agentName);
+  const safeLead = escapeHtml(leadName);
   return {
     subject: "⚡ URGENTE: Novo Lead para você!",
     html: emailLayout("Novo Lead Atribuído", `
       <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Som de dinheiro! 💰 Um novo lead acaba de entrar.</h1>
-      <p>Olá, <strong>${agentName}</strong>! A roleta de leads da SlotiMob acabou de te atribuir um novo contato vindo do WhatsApp. O tempo médio de resposta é o <strong>fator principal para o fechamento</strong>.</p>
+      <p>Olá, <strong>${safeAgent}</strong>! A roleta de leads da SlotiMob acabou de te atribuir um novo contato vindo do WhatsApp. O tempo médio de resposta é o <strong>fator principal para o fechamento</strong>.</p>
       <table role="presentation" width="100%" style="margin:20px 0;border:1px solid #e5e7eb;border-radius:${BRAND.radius};overflow:hidden;">
         <tr style="background:${BRAND.mutedBg};">
           <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};width:120px;">Nome</td>
-          <td style="padding:12px 16px;">${leadName}</td>
+          <td style="padding:12px 16px;">${safeLead}</td>
         </tr>
         <tr>
           <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};">Origem</td>
@@ -178,6 +199,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Validate recipient format (cheap defense against header injection and typos)
+    if (!EMAIL_RE.test(String(to))) {
+      return new Response(JSON.stringify({ error: "Invalid recipient email" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // SECURITY: only allow `welcome` and `lead_assigned` to be sent to the caller's
+    // own account email. This prevents abuse of the platform's official `from` address
+    // to send branded phishing to arbitrary recipients.
+    if (template === "welcome" || template === "lead_assigned") {
+      const callerEmail = (user.email || "").toLowerCase();
+      if (!callerEmail || callerEmail !== String(to).toLowerCase()) {
+        return new Response(
+          JSON.stringify({ error: "This template can only be sent to your own account email" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     let subject: string;
