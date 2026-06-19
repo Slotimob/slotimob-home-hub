@@ -201,6 +201,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // Validate recipient format (cheap defense against header injection and typos)
+    if (!EMAIL_RE.test(String(to))) {
+      return new Response(JSON.stringify({ error: "Invalid recipient email" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // SECURITY: only allow `welcome` and `lead_assigned` to be sent to the caller's
+    // own account email. This prevents abuse of the platform's official `from` address
+    // to send branded phishing to arbitrary recipients.
+    if (template === "welcome" || template === "lead_assigned") {
+      const callerEmail = (user.email || "").toLowerCase();
+      if (!callerEmail || callerEmail !== String(to).toLowerCase()) {
+        return new Response(
+          JSON.stringify({ error: "This template can only be sent to your own account email" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     let subject: string;
     let html: string;
 
