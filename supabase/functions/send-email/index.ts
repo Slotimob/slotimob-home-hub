@@ -80,10 +80,11 @@ function ctaButton(text: string, url: string): string {
 // ─── Templates ───────────────────────────────────────────────────────────────
 
 function welcomeEmail(userName: string, dashboardUrl: string): { subject: string; html: string } {
+  const safeName = escapeHtml(userName);
   return {
     subject: "O futuro da sua gestão imobiliária começou! 🏠",
     html: emailLayout("Bem-vindo à SlotiMob", `
-      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Seja muito bem-vindo(a) à SlotiMob, ${userName}!</h1>
+      <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Seja muito bem-vindo(a) à SlotiMob, ${safeName}!</h1>
       <p>Você não acabou de contratar um software — <strong>você ganhou um novo sócio tecnológico</strong>. Agora, seus leads do WhatsApp não ficam mais perdidos e sua gestão financeira está a um clique de distância.</p>
       <p style="font-weight:600;color:${BRAND.foreground};margin:24px 0 12px;">Seus próximos passos:</p>
       <ul style="padding-left:20px;color:#555;line-height:2;">
