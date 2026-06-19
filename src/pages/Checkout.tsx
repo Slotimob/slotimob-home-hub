@@ -1,13 +1,8 @@
-import { useCallback, useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
-import {
-  EmbeddedCheckoutProvider,
-  EmbeddedCheckout,
-} from '@stripe/react-stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, ArrowLeft, Check, Zap, Rocket, Building2, Briefcase, Shield } from 'lucide-react';
+import { Loader2, ArrowLeft, Check, Zap, Rocket, Building2, Shield, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -17,14 +12,12 @@ import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { cn } from '@/lib/utils';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
-
-type PaidPlan = 'essencial' | 'pro' | 'business';
+type PaidPlan = 'pro' | 'business';
 
 interface PlanMeta {
   id: PaidPlan;
   name: string;
-  icon: typeof Briefcase;
+  icon: typeof Rocket;
   tagline: string;
   features: string[];
   units: string;
@@ -34,23 +27,13 @@ interface PlanMeta {
 
 const plansMeta: PlanMeta[] = [
   {
-    id: 'essencial',
-    name: 'Essencial',
-    icon: Briefcase,
-    tagline: 'Organize e comece a vender',
-    units: '10 unidades',
-    users: '1 usuário',
-    features: ['CRM Pipeline', 'Financeiro básico', 'Contatos ilimitados'],
-    popular: false,
-  },
-  {
     id: 'pro',
     name: 'Pro',
     icon: Rocket,
     tagline: 'Gestão completa com IA',
     units: '50 unidades',
     users: '1 usuário',
-    features: ['Tudo do Essencial', 'Chat IA', 'Contratos ilimitados', 'Relatórios e DRE', 'Gestão de ativos'],
+    features: ['CRM Pipeline', 'Chat IA', 'Contratos ilimitados', 'Relatórios e DRE', 'WhatsApp integrado'],
     popular: true,
   },
   {
@@ -58,8 +41,8 @@ const plansMeta: PlanMeta[] = [
     name: 'Business',
     icon: Building2,
     tagline: 'Escale com equipe',
-    units: '80 unidades',
-    users: '3 usuários',
+    units: '150 unidades',
+    users: '4 usuários',
     features: ['Tudo do Pro', 'Gestão de equipe', 'Roleta de leads', 'Split de comissões'],
     popular: false,
   },
@@ -72,14 +55,13 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
+  const rawPlan = searchParams.get('plan') as PaidPlan;
   const [selectedPlan, setSelectedPlan] = useState<PaidPlan>(
-    (searchParams.get('plan') as PaidPlan) || 'pro'
+    plansMeta.some(p => p.id === rawPlan) ? rawPlan : 'pro'
   );
   const [isAnnual, setIsAnnual] = useState(searchParams.get('cycle') !== 'monthly');
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Key to force re-mount of EmbeddedCheckoutProvider when plan/cycle changes
-  const [sessionKey, setSessionKey] = useState(0);
 
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
   const { slots } = useEarlyAdopterCount();
@@ -108,67 +90,61 @@ export default function CheckoutPage() {
     return null;
   }, [pricing, selectedPlan, isAnnual, isEarlyAdopter]);
 
-  // Sync URL params
   useEffect(() => {
     const cycle = isAnnual ? 'annual' : 'monthly';
-    const params: Record<string, string> = { plan: selectedPlan, cycle };
-    if (searchParams.get('mode')) params.mode = searchParams.get('mode')!;
-    setSearchParams(params, { replace: true });
+    setSearchParams({ plan: selectedPlan, cycle }, { replace: true });
   }, [selectedPlan, isAnnual, setSearchParams]);
 
   const handlePlanChange = (planId: PaidPlan) => {
     if (planId === selectedPlan) return;
     setSelectedPlan(planId);
     setError(null);
-    setSessionKey(k => k + 1);
   };
 
   const handleCycleChange = (annual: boolean) => {
     if (annual === isAnnual) return;
     setIsAnnual(annual);
     setError(null);
-    setSessionKey(k => k + 1);
   };
 
   const billingCycle = isAnnual ? 'annual' : 'monthly';
   const checkoutMode = searchParams.get('mode') === 'immediate' ? 'immediate' : 'trial';
   const isGuest = !authLoading && !user;
 
-  const fetchClientSecret = useCallback(async () => {
-    const body: Record<string, string> = {
-      plan_id: selectedPlan,
-      billing_cycle: billingCycle,
-      mode: isGuest ? 'immediate' : checkoutMode, // Guests always get immediate (no trial)
-    };
-
-    // For guests, don't send auth header — the edge function handles it
-    const { data, error: fnError } = await supabase.functions.invoke('create-checkout-session', {
-      body,
-    });
-
-    if (fnError || !data) {
-      console.error('[Checkout] Edge Function error:', { fnError, data, params: body });
-      const msg = data?.error || fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
-      setError(msg);
-      toast.error(msg);
-      throw new Error(msg);
+  const handleCheckout = async () => {
+    if (isGuest) {
+      navigate(`/auth?redirect=/checkout?plan=${selectedPlan}&cycle=${billingCycle}`);
+      return;
     }
 
-    if (!data.clientSecret && data.type !== 'portal') {
-      console.error('[Checkout] Missing clientSecret in response:', data);
-      const msg = 'Resposta inesperada do servidor. Tente novamente.';
-      setError(msg);
-      toast.error(msg);
-      throw new Error(msg);
-    }
+    setIsCheckingOut(true);
+    setError(null);
 
-    if (data.type === 'portal' && data.url) {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          product_type: 'subscription',
+          plan_id: selectedPlan,
+          billing_cycle: billingCycle,
+        },
+      });
+
+      if (fnError || !data?.url) {
+        const msg = data?.error || fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+
       window.location.href = data.url;
-      throw new Error('Redirecting to portal');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro inesperado.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsCheckingOut(false);
     }
-
-    return data.clientSecret as string;
-  }, [selectedPlan, billingCycle, checkoutMode, isGuest]);
+  };
 
   if (authLoading) {
     return (
@@ -194,14 +170,14 @@ export default function CheckoutPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-lg font-semibold text-foreground">Finalizar assinatura</h1>
-            <p className="text-sm text-muted-foreground">Pagamento seguro processado pelo Stripe</p>
+            <p className="text-sm text-muted-foreground">Pagamento seguro via Asaas</p>
           </div>
           <Shield className="h-5 w-5 text-muted-foreground hidden sm:block" />
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Plan Selector Tabs */}
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Plan Selector */}
         <div className="flex flex-col items-center gap-5 mb-8">
           <div className="flex items-center rounded-xl border border-border bg-card p-1.5 shadow-sm gap-1">
             {plansMeta.map((plan) => {
@@ -233,7 +209,6 @@ export default function CheckoutPage() {
             })}
           </div>
 
-          {/* Billing cycle switch */}
           <div className="flex items-center gap-3">
             <Label className={cn('text-sm transition-colors cursor-pointer', !isAnnual ? 'text-foreground font-medium' : 'text-muted-foreground')}>
               Mensal
@@ -250,9 +225,8 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Main content: Summary + Stripe */}
         <div className="grid lg:grid-cols-5 gap-8 items-start">
-          {/* Order Summary - Left column */}
+          {/* Order Summary */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm sticky top-8">
               <div className="flex items-center gap-3 mb-4">
@@ -265,7 +239,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Price */}
               <div className="rounded-lg bg-muted/50 p-4 mb-5">
                 {pricingLoading ? (
                   <div className="flex items-center justify-center py-2">
@@ -299,13 +272,11 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Limits */}
               <div className="flex gap-2 mb-5">
                 <Badge variant="outline" className="text-xs">{currentMeta.units}</Badge>
                 <Badge variant="outline" className="text-xs">{currentMeta.users}</Badge>
               </div>
 
-              {/* Features */}
               <div className="space-y-2.5">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Incluso no plano</p>
                 {currentMeta.features.map((feature, i) => (
@@ -316,47 +287,88 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* Trial / immediate note */}
               <div className="mt-5 pt-4 border-t border-border">
                 <p className="text-xs text-muted-foreground text-center">
-                  {isGuest || checkoutMode === 'immediate'
+                  {checkoutMode === 'immediate'
                     ? '🔒 Assinatura ativada imediatamente após o pagamento'
                     : '✨ 14 dias grátis · Cancele quando quiser'}
                 </p>
               </div>
-
-              {/* Guest info */}
-              {isGuest && (
-                <div className="mt-4 rounded-lg bg-primary/5 border border-primary/10 p-3">
-                  <p className="text-xs text-foreground font-medium mb-1">Não tem conta ainda?</p>
-                  <p className="text-xs text-muted-foreground">
-                    Sua conta será criada automaticamente com o e-mail informado no pagamento. Você receberá as instruções de acesso por e-mail.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Stripe Checkout - Right column */}
+          {/* Payment CTA */}
           <div className="lg:col-span-3 order-1 lg:order-2">
-            {error ? (
-              <div className="rounded-xl border border-border bg-card p-8 text-center shadow-sm">
-                <p className="text-destructive mb-4">{error}</p>
-                <Button onClick={() => { setError(null); setSessionKey(k => k + 1); }} variant="outline">
-                  Tentar novamente
-                </Button>
+            <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
+              <div className="space-y-6">
+                <div className="text-center space-y-1">
+                  <h3 className="font-semibold text-foreground">Finalizar pagamento</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Você escolhe a forma de pagamento na próxima etapa
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Boleto' },
+                    { label: 'PIX' },
+                    { label: 'Cartão' },
+                  ].map(({ label }) => (
+                    <div key={label} className="flex items-center justify-center rounded-lg border border-border bg-muted/30 p-3">
+                      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {error && (
+                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
+                    <p className="text-sm text-destructive text-center">{error}</p>
+                  </div>
+                )}
+
+                {isGuest ? (
+                  <div className="space-y-3">
+                    <div className="rounded-lg bg-primary/5 border border-primary/10 p-4">
+                      <p className="text-sm text-foreground font-medium mb-1">Crie sua conta primeiro</p>
+                      <p className="text-xs text-muted-foreground">
+                        Para assinar, você precisa ter uma conta no Slotimob.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => navigate(`/auth?redirect=/checkout?plan=${selectedPlan}&cycle=${billingCycle}`)}
+                      className="w-full"
+                      size="lg"
+                    >
+                      Criar conta e assinar
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleCheckout}
+                    disabled={isCheckingOut || pricingLoading}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isCheckingOut ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Preparando pagamento...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Confirmar e pagar
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Shield className="h-3 w-3" />
+                  <span>Pagamento seguro processado pelo Asaas</span>
+                </div>
               </div>
-            ) : (
-              <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-                <EmbeddedCheckoutProvider
-                  key={sessionKey}
-                  stripe={stripePromise}
-                  options={{ fetchClientSecret }}
-                >
-                  <EmbeddedCheckout className="stripe-embedded-checkout" />
-                </EmbeddedCheckoutProvider>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
