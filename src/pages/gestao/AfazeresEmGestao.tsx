@@ -10,8 +10,8 @@ import { useLeases, generateBillingMessage, type Lease } from "@/hooks/useLeases
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquareWarning, Send } from "lucide-react";
-import { addDays, addMonths, format, startOfDay } from "date-fns";
+import { FileText, MessageSquareWarning, Send, CalendarClock, PenLine, AlertTriangle } from "lucide-react";
+import { addDays, addMonths, format, startOfDay, isAfter, isBefore, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
 
@@ -68,7 +68,7 @@ const getBillingStage = (lease: Lease): { stage: BillingFollowup["stage"]; stage
 const AfazeresEmGestao = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { proposals } = useProposals();
+  const { proposals, updateProposalStatus } = useProposals();
   const { data: leases = [] } = useLeases();
 
   const draftProposals = proposals.filter(
@@ -101,6 +101,29 @@ const AfazeresEmGestao = () => {
       .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
       .slice(0, 8);
   }, [leases]);
+
+  const today = startOfDay(new Date());
+  const in90Days = addDays(today, 90);
+  const in30Days = addDays(today, 30);
+
+  const expiringContracts = leases.filter((l) => {
+    if (l.status !== 'active' || !l.end_date) return false;
+    const endDate = parseISO(l.end_date);
+    return !isAfter(endDate, in90Days);
+  });
+
+  const pendingAdjustments = leases.filter((l) => {
+    if (l.status !== 'active' || !l.next_adjustment_date) return false;
+    const adjDate = parseISO(l.next_adjustment_date);
+    return !isAfter(adjDate, in30Days);
+  });
+
+  const pendingSignatures = leases.filter(
+    (l) =>
+      l.status === 'active' &&
+      (l.signature_status === 'pending' || !l.signature_status) &&
+      !l.signed_contract_path
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -176,10 +199,16 @@ const AfazeresEmGestao = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate("/gestao/propostas")}
+                      onClick={() =>
+                        updateProposalStatus.mutate(
+                          { id: p.id, status: 'sent' },
+                          { onSuccess: () => {} }
+                        )
+                      }
+                      disabled={updateProposalStatus.isPending}
                     >
                       <Send className="h-3.5 w-3.5 mr-1.5" />
-                      Enviar
+                      Marcar enviada
                     </Button>
                   </div>
                 ))}
@@ -233,6 +262,112 @@ const AfazeresEmGestao = () => {
                     >
                       <Send className="h-3.5 w-3.5 mr-1.5" />
                       Cobrar
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {(expiringContracts.length > 0 || pendingAdjustments.length > 0) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-primary" />
+                  Contratos a Vencer / Reajuste
+                  <Badge variant="secondary" className="ml-auto">
+                    {expiringContracts.length + pendingAdjustments.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {expiringContracts.map((l) => {
+                  const isPast = isBefore(parseISO(l.end_date!), today);
+                  return (
+                    <div key={`exp-${l.id}`} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <AlertTriangle className={`h-4 w-4 shrink-0 ${isPast ? 'text-destructive' : 'text-amber-500'}`} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {l.unit?.property?.name
+                              ? `${l.unit.property.name} · ${l.unit?.unit_number}`
+                              : l.unit?.unit_number || 'Contrato'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {isPast ? 'Venceu em ' : 'Vence em '}
+                            {format(parseISO(l.end_date!), "dd/MM/yyyy", { locale: ptBR })}
+                            {l.tenant?.name ? ` · ${l.tenant.name}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                        Ver Contrato
+                      </Button>
+                    </div>
+                  );
+                })}
+                {pendingAdjustments.map((l) => {
+                  const isPast = isBefore(parseISO(l.next_adjustment_date!), today);
+                  return (
+                    <div key={`adj-${l.id}`} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <CalendarClock className={`h-4 w-4 shrink-0 ${isPast ? 'text-destructive' : 'text-blue-500'}`} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {l.unit?.property?.name
+                              ? `${l.unit.property.name} · ${l.unit?.unit_number}`
+                              : l.unit?.unit_number || 'Contrato'}
+                            {l.adjustment_index ? ` · ${l.adjustment_index}` : ''}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Reajuste {isPast ? 'em atraso desde ' : 'previsto para '}
+                            {format(parseISO(l.next_adjustment_date!), "dd/MM/yyyy", { locale: ptBR })}
+                            {l.tenant?.name ? ` · ${l.tenant.name}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                        Ver Contrato
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
+          {pendingSignatures.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <PenLine className="h-4 w-4 text-primary" />
+                  Pendências de Assinatura
+                  <Badge variant="secondary" className="ml-auto">
+                    {pendingSignatures.length}
+                  </Badge>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Contratos ativos sem documento assinado anexado.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {pendingSignatures.map((l) => (
+                  <div key={l.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <PenLine className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {l.unit?.property?.name
+                            ? `${l.unit.property.name} · ${l.unit?.unit_number}`
+                            : l.unit?.unit_number || 'Contrato'}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {l.tenant?.name || 'Inquilino'} · iniciado em {format(parseISO(l.start_date), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                      Anexar Assinatura
                     </Button>
                   </div>
                 ))}
