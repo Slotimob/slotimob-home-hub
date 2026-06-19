@@ -127,7 +127,17 @@ Deno.serve(async (req) => {
     // Level 1: No dependencies (profiles first)
     if (tables.profiles && tables.profiles.length > 0) {
       const profile = tables.profiles[0];
-      const sanitizedProfile = { ...profile, id: brokerId };
+      // SECURITY: strip privileged/secret fields from user-supplied payload so a
+      // malicious import cannot escalate privileges or hijack tokens.
+      const {
+        is_super_admin: _isSuperAdmin,
+        feed_token: _feedToken,
+        ical_token: _icalToken,
+        push_subscription: _pushSub,
+        terms_signature: _termsSig,
+        ...safeProfile
+      } = profile as Record<string, unknown>;
+      const sanitizedProfile = { ...safeProfile, id: brokerId };
       const { error } = await supabaseAdmin
         .from('profiles')
         .upsert(sanitizedProfile, { onConflict: 'id' });
