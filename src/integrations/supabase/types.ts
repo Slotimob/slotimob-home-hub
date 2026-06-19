@@ -1490,6 +1490,68 @@ export type Database = {
           },
         ]
       }
+      contract_charges: {
+        Row: {
+          billing_type: string
+          broker_id: string
+          created_at: string
+          description: string | null
+          discount_days: number
+          discount_value: number
+          fine_percentage: number
+          id: string
+          interest_percentage: number
+          is_active: boolean
+          lease_id: string
+          metadata: Json | null
+          send_email: boolean
+          send_whatsapp: boolean
+          updated_at: string
+        }
+        Insert: {
+          billing_type?: string
+          broker_id: string
+          created_at?: string
+          description?: string | null
+          discount_days?: number
+          discount_value?: number
+          fine_percentage?: number
+          id?: string
+          interest_percentage?: number
+          is_active?: boolean
+          lease_id: string
+          metadata?: Json | null
+          send_email?: boolean
+          send_whatsapp?: boolean
+          updated_at?: string
+        }
+        Update: {
+          billing_type?: string
+          broker_id?: string
+          created_at?: string
+          description?: string | null
+          discount_days?: number
+          discount_value?: number
+          fine_percentage?: number
+          id?: string
+          interest_percentage?: number
+          is_active?: boolean
+          lease_id?: string
+          metadata?: Json | null
+          send_email?: boolean
+          send_whatsapp?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_charges_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_templates: {
         Row: {
           broker_id: string | null
@@ -3633,6 +3695,59 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_activities: {
+        Row: {
+          activity_type: string
+          broker_id: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_completed: boolean
+          metadata: Json | null
+          scheduled_at: string | null
+          title: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          activity_type?: string
+          broker_id: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          metadata?: Json | null
+          scheduled_at?: string | null
+          title: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          activity_type?: string
+          broker_id?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          metadata?: Json | null
+          scheduled_at?: string | null
+          title?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_activities_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]

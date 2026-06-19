@@ -20,6 +20,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Home,
   Building2,
@@ -43,7 +46,15 @@ import {
   type LucideIcon,
   Loader2,
   Save,
+  MapPin,
+  Wrench,
+  File,
+  Phone,
+  Users,
+  Circle,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -153,6 +164,8 @@ export function AssetDetailDialog({
 }: AssetDetailDialogProps) {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { findCategoryForObligation, getTransactionTypeForObligation } = useObligationCategoryMapping();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -171,6 +184,16 @@ export function AssetDetailDialog({
   // Inline CIB editing state
   const [editingCib, setEditingCib] = useState(false);
   const [cibValue, setCibValue] = useState("");
+
+  // Activities tab state
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newActivity, setNewActivity] = useState({
+    activity_type: 'note',
+    title: '',
+    description: '',
+    scheduled_at: '',
+  });
+  const [savingActivity, setSavingActivity] = useState(false);
 
   const competencyPeriod = format(currentMonth, "yyyy-MM");
   const monthLabel = format(currentMonth, "MMMM yyyy", { locale: ptBR });
@@ -314,6 +337,84 @@ export function AssetDetailDialog({
       });
     },
   });
+
+  // Activities: schedule_activities (direct unit)
+  const { data: scheduleActivities } = useQuery({
+    queryKey: ['schedule-activities-unit', asset?.unitId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('schedule_activities')
+        .select('id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at')
+        .eq('unit_id', asset!.unitId)
+        .order('scheduled_at', { ascending: false });
+      return (data || []).map(r => ({ ...r, source: 'agenda' as const }));
+    },
+    enabled: !!asset?.unitId && activeTab === 'activities',
+  });
+
+  // Activities: deal_activities via deals.unit_id
+  const { data: dealActivities } = useQuery({
+    queryKey: ['deal-activities-unit', asset?.unitId],
+    queryFn: async () => {
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('id')
+        .eq('unit_id', asset!.unitId);
+      if (!deals?.length) return [];
+      const dealIds = deals.map(d => d.id);
+      const { data } = await supabase
+        .from('deal_activities')
+        .select('id, title, description, activity_type, scheduled_at, completed_at, created_at')
+        .in('deal_id', dealIds)
+        .order('created_at', { ascending: false });
+      return (data || []).map(r => ({ ...r, source: 'pipeline' as const, is_completed: !!r.completed_at }));
+    },
+    enabled: !!asset?.unitId && activeTab === 'activities',
+  });
+
+  // Activities: property_activities (manual)
+  const { data: propertyActivities, refetch: refetchPropertyActivities } = useQuery({
+    queryKey: ['property-activities', asset?.unitId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('property_activities')
+        .select('id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at')
+        .eq('unit_id', asset!.unitId)
+        .order('created_at', { ascending: false });
+      return (data || []).map(r => ({ ...r, source: 'manual' as const }));
+    },
+    enabled: !!asset?.unitId && activeTab === 'activities',
+  });
+
+  const allActivities = useMemo(() => {
+    const all = [
+      ...(scheduleActivities || []),
+      ...(dealActivities || []),
+      ...(propertyActivities || []),
+    ];
+    return all.sort((a: any, b: any) => {
+      const dateA = new Date(a.scheduled_at || a.created_at).getTime();
+      const dateB = new Date(b.scheduled_at || b.created_at).getTime();
+      return dateB - dateA;
+    });
+  }, [scheduleActivities, dealActivities, propertyActivities]);
+
+  const handleSaveActivity = async () => {
+    if (!newActivity.title.trim() || !asset) return;
+    setSavingActivity(true);
+    await supabase.from('property_activities').insert({
+      unit_id: asset.unitId,
+      broker_id: effectiveBrokerId || user?.id,
+      activity_type: newActivity.activity_type,
+      title: newActivity.title,
+      description: newActivity.description || null,
+      scheduled_at: newActivity.scheduled_at || null,
+    });
+    setNewActivity({ activity_type: 'note', title: '', description: '', scheduled_at: '' });
+    setShowNewForm(false);
+    setSavingActivity(false);
+    refetchPropertyActivities();
+  };
 
   // Build monthly obligations list
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
@@ -522,7 +623,7 @@ export function AssetDetailDialog({
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <div className="px-4 pt-2 border-b">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview" className="text-xs">
               <LayoutDashboard className="h-3.5 w-3.5 mr-1" />
               Visão Geral
@@ -534,6 +635,10 @@ export function AssetDetailDialog({
             <TabsTrigger value="fiscal" className="text-xs">
               <Shield className="h-3.5 w-3.5 mr-1" />
               Fiscal
+            </TabsTrigger>
+            <TabsTrigger value="activities" className="text-xs">
+              <Clock className="h-3.5 w-3.5 mr-1" />
+              Atividades
             </TabsTrigger>
           </TabsList>
         </div>
@@ -889,6 +994,114 @@ export function AssetDetailDialog({
                   onEditUnit={() => setEditDialogOpen(true)}
                   onCreateLease={() => setLeaseWizardOpen(true)}
                 />
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Activities Tab */}
+        <TabsContent value="activities" className="flex-1 overflow-hidden m-0">
+          <ScrollArea className="h-full px-4 py-4">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">{allActivities.length} registro(s)</p>
+                <Button size="sm" variant="outline" onClick={() => setShowNewForm(v => !v)}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Nova atividade
+                </Button>
+              </div>
+
+              {showNewForm && (
+                <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Tipo</Label>
+                      <Select value={newActivity.activity_type} onValueChange={v => setNewActivity(p => ({ ...p, activity_type: v }))}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="note">Nota</SelectItem>
+                          <SelectItem value="visit">Visita</SelectItem>
+                          <SelectItem value="maintenance">Manutenção</SelectItem>
+                          <SelectItem value="document">Documento</SelectItem>
+                          <SelectItem value="other">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Data (opcional)</Label>
+                      <Input type="date" className="h-8 text-xs" value={newActivity.scheduled_at} onChange={e => setNewActivity(p => ({ ...p, scheduled_at: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Título *</Label>
+                    <Input className="h-8 text-xs" placeholder="Descreva a atividade..." value={newActivity.title} onChange={e => setNewActivity(p => ({ ...p, title: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Observações (opcional)</Label>
+                    <Textarea className="text-xs min-h-[60px]" value={newActivity.description} onChange={e => setNewActivity(p => ({ ...p, description: e.target.value }))} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="ghost" onClick={() => setShowNewForm(false)}>Cancelar</Button>
+                    <Button size="sm" onClick={handleSaveActivity} disabled={!newActivity.title.trim() || savingActivity}>
+                      {savingActivity && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {allActivities.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <Clock className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">Nenhuma atividade registrada</p>
+                  <p className="text-xs mt-1">Clique em "Nova atividade" para registrar</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {allActivities.map((activity: any) => {
+                    const activityIcons: Record<string, React.ReactNode> = {
+                      note: <FileText className="h-3.5 w-3.5" />,
+                      visit: <MapPin className="h-3.5 w-3.5" />,
+                      maintenance: <Wrench className="h-3.5 w-3.5" />,
+                      document: <File className="h-3.5 w-3.5" />,
+                      call: <Phone className="h-3.5 w-3.5" />,
+                      meeting: <Users className="h-3.5 w-3.5" />,
+                      other: <Circle className="h-3.5 w-3.5" />,
+                    };
+                    const sourceBadge: Record<string, string> = {
+                      agenda: 'Agenda',
+                      pipeline: 'Pipeline',
+                      manual: 'Manual',
+                    };
+                    const displayDate = activity.scheduled_at || activity.created_at;
+                    return (
+                      <div key={`${activity.source}-${activity.id}`} className="flex gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                        <div className={cn(
+                          "h-7 w-7 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                          activity.is_completed ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"
+                        )}>
+                          {activityIcons[activity.activity_type] || activityIcons.other}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={cn("text-sm font-medium truncate", activity.is_completed && "line-through text-muted-foreground")}>
+                              {activity.title}
+                            </p>
+                            <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground shrink-0">
+                              {sourceBadge[activity.source]}
+                            </span>
+                          </div>
+                          {activity.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{activity.description}</p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {format(new Date(displayDate), "dd 'de' MMM 'de' yyyy, HH:mm", { locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </ScrollArea>
