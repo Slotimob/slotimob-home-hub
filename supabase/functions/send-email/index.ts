@@ -69,9 +69,11 @@ ${bodyHtml}
 }
 
 function ctaButton(text: string, url: string): string {
+  const safeText = escapeHtml(text);
+  const safeHref = escapeHtml(safeUrl(url, SITE_URL));
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto;">
 <tr><td style="background:${BRAND.primary};border-radius:${BRAND.radius};padding:14px 32px;">
-<a href="${url}" target="_blank" style="color:#fff;text-decoration:none;font-weight:600;font-size:16px;display:block;">${text}</a>
+<a href="${safeHref}" target="_blank" style="color:#fff;text-decoration:none;font-weight:600;font-size:16px;display:block;">${safeText}</a>
 </td></tr></table>`;
 }
 
