@@ -28,7 +28,7 @@ interface DashboardCustomizeSheetProps {
 
 const WIDGET_LABELS: Record<keyof DashboardWidgetPreferences, { label: string; description: string }> = {
   shortcuts: { label: 'Acessos Rápidos', description: 'Atalhos para ações frequentes' },
-  assets: { label: 'Patrimônio', description: 'Visão consolidada de ativos' },
+  assets: { label: 'Contagem de Ativos', description: 'Visão consolidada de ativos' },
   financial: { label: 'Financeiro', description: 'Receitas, despesas e fluxo de caixa' },
   pipeline: { label: 'Pipeline (CRM)', description: 'Métricas de funil de vendas' },
   appointments: { label: 'Compromissos', description: 'Próximos compromissos da agenda' },
@@ -53,8 +53,8 @@ export function DashboardCustomizeSheet({
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm h-9">
           <Settings2 className="h-4 w-4 flex-shrink-0" />
-          <span className="hidden sm:inline">Customizar Dashboard</span>
-          <span className="sm:hidden">Customizar</span>
+          <span className="hidden sm:inline">Personalizar Dashboard</span>
+          <span className="sm:hidden">Personalizar</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="overflow-y-auto">
