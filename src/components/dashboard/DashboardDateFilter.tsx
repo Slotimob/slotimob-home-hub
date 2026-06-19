@@ -52,6 +52,15 @@ export function DashboardDateFilter({
   isRefreshing = false,
 }: DashboardDateFilterProps) {
   const [customOpen, setCustomOpen] = useState(false);
+  const [pendingRange, setPendingRange] = useState<RDPRange | undefined>({
+    from: dateRange.from,
+    to: dateRange.to,
+  });
+
+  // Sync local pending state when dateRange changes externally (e.g., preset switch)
+  useEffect(() => {
+    setPendingRange({ from: dateRange.from, to: dateRange.to });
+  }, [dateRange.from, dateRange.to]);
 
   const handlePresetChange = (value: DatePreset) => {
     if (value === 'custom') {
