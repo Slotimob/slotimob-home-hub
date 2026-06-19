@@ -82,9 +82,9 @@ export default function BoletosEmGestao() {
     queryFn: async () => {
       const { data } = await supabase
         .from('units')
-        .select('id, name')
+        .select('id, unit_number')
         .eq('broker_id', effectiveBrokerId!)
-        .order('name');
+        .order('unit_number');
       return data ?? [];
     },
     enabled: !!effectiveBrokerId,
@@ -210,7 +210,7 @@ export default function BoletosEmGestao() {
           <SelectContent>
             <SelectItem value="all">Todos os imóveis</SelectItem>
             {units?.map(u => (
-              <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+              <SelectItem key={u.id} value={u.id}>{u.unit_number || '—'}</SelectItem>
             ))}
           </SelectContent>
         </Select>
