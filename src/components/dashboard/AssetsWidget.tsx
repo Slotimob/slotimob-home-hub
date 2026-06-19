@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Building2, Home, Layers, MapPin } from 'lucide-react';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -122,7 +123,9 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
     <TooltipProvider delayDuration={300}>
       <Card className="h-full">
         <CardHeader className="pb-2 px-3 lg:px-6 pt-3 lg:pt-6">
-          <CardTitle className="text-sm lg:text-base font-semibold">Patrimônio</CardTitle>
+          <CardTitle className="text-sm lg:text-base font-semibold flex items-center gap-1.5">
+            Contagem de Ativos <HelpTooltip featureKey="assets.portfolio_count" />
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-3 lg:px-6 pb-3 lg:pb-6">
           {/* Single row layout - responsive with flex wrap */}
