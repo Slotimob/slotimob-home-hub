@@ -194,12 +194,12 @@ export default function ContratoDetalhe() {
   const { data: brokerProfile } = useQuery({
     queryKey: ["broker-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await (supabase as any)
+        .from("profile_directory")
         .select("full_name")
         .eq("id", effectiveBrokerId || user!.id)
         .maybeSingle();
-      return data;
+      return data as any;
     },
     enabled: !!user,
   });
