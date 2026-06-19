@@ -203,7 +203,9 @@ const AfazeresEmGestao = () => {
                       onClick={() =>
                         updateProposalStatus.mutate(
                           { id: p.id, status: 'sent' },
-                          { onSuccess: () => {} }
+                          {
+                            onSuccess: () => toast.success('Proposta marcada como enviada'),
+                          }
                         )
                       }
                       disabled={updateProposalStatus.isPending}
