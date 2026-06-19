@@ -206,7 +206,9 @@ export default function BoletosEmGestao() {
   const overdueAmount = filtered.filter(b => b.status === 'OVERDUE').reduce((s, b) => s + Number(b.value), 0);
 
   return (
+    <AppLayout title="Boletos e Cobranças">
     <div className="space-y-6 p-4 sm:p-6">
+
       <div>
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Receipt className="h-5 w-5 text-primary" />
