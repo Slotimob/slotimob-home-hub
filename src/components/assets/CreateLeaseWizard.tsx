@@ -80,7 +80,7 @@ interface CreateLeaseWizardProps {
   editLease?: Lease | null;
 }
 
-type WizardStep = "tenant" | "financial" | "guarantee" | "payment" | "compliance";
+type WizardStep = "tenant" | "financial" | "guarantee" | "payment" | "cobranca" | "compliance";
 
 type GuaranteeType = "fiador" | "caucao" | "seguro_fianca" | "none";
 
@@ -89,6 +89,7 @@ const STEPS: { id: WizardStep; title: string; icon: React.ReactNode; optional?: 
   { id: "financial", title: "Financeiro", icon: <Wallet className="h-4 w-4" /> },
   { id: "guarantee", title: "Garantia", icon: <Shield className="h-4 w-4" /> },
   { id: "payment", title: "Pagamento", icon: <CreditCard className="h-4 w-4" /> },
+  { id: "cobranca", title: "Cobrança", icon: <Receipt className="h-4 w-4" /> },
   { id: "compliance", title: "DIMOB", icon: <FileText className="h-4 w-4" /> },
 ];
 
