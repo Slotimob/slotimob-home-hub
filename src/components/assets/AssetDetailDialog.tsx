@@ -1254,6 +1254,16 @@ export function AssetDetailDialog({
                           {activity.description && (
                             <p className="text-xs text-muted-foreground mt-0.5 truncate">{activity.description}</p>
                           )}
+                          {activity.source === 'manual' && activity.responsible_name && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Responsável: <span className="font-medium text-foreground">{activity.responsible_name}</span>
+                            </p>
+                          )}
+                          {activity.source === 'manual' && activity.outcome && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Resultado: <span className="font-medium text-foreground">{activity.outcome}</span>
+                            </p>
+                          )}
                           <p className="text-[10px] text-muted-foreground mt-1">
                             {format(new Date(displayDate), "dd 'de' MMM 'de' yyyy, HH:mm", { locale: ptBR })}
                           </p>
