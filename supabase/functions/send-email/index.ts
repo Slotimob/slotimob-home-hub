@@ -104,15 +104,17 @@ function leadAssignedEmail(
   leadPhone: string,
   chatUrl: string,
 ): { subject: string; html: string } {
+  const safeAgent = escapeHtml(agentName);
+  const safeLead = escapeHtml(leadName);
   return {
     subject: "⚡ URGENTE: Novo Lead para você!",
     html: emailLayout("Novo Lead Atribuído", `
       <h1 style="color:${BRAND.foreground};font-size:24px;margin:0 0 16px;">Som de dinheiro! 💰 Um novo lead acaba de entrar.</h1>
-      <p>Olá, <strong>${agentName}</strong>! A roleta de leads da SlotiMob acabou de te atribuir um novo contato vindo do WhatsApp. O tempo médio de resposta é o <strong>fator principal para o fechamento</strong>.</p>
+      <p>Olá, <strong>${safeAgent}</strong>! A roleta de leads da SlotiMob acabou de te atribuir um novo contato vindo do WhatsApp. O tempo médio de resposta é o <strong>fator principal para o fechamento</strong>.</p>
       <table role="presentation" width="100%" style="margin:20px 0;border:1px solid #e5e7eb;border-radius:${BRAND.radius};overflow:hidden;">
         <tr style="background:${BRAND.mutedBg};">
           <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};width:120px;">Nome</td>
-          <td style="padding:12px 16px;">${leadName}</td>
+          <td style="padding:12px 16px;">${safeLead}</td>
         </tr>
         <tr>
           <td style="padding:12px 16px;font-weight:600;color:${BRAND.foreground};">Origem</td>
