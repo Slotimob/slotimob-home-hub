@@ -420,7 +420,7 @@ export function CreateLeaseWizard({
       } else {
         // Create new lease
         const result = await createLease.mutateAsync(leaseData);
-        leaseId = result.lease?.id || null;
+        leaseId = (result.lease as any)?.id || null;
         const projectionsCount = result.projectionsGenerated;
         const successMessage = projectionsCount > 0
           ? `Contrato criado com sucesso! ${projectionsCount} parcelas financeiras projetadas.`
