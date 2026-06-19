@@ -42,7 +42,7 @@ import {
 } from '@/components/ui/tooltip';
 import {
   FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2,
-  Eye, Copy, Search, Loader2, Download,
+  Eye, Copy, Search, Loader2, Download, CheckCircle2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -344,6 +344,7 @@ export default function Proposals() {
                               onDelete={(id) => setDeletingId(id)}
                               onDownloadPdf={handleDownloadPdf}
                               pdfDownloading={pdfDownloading}
+                              onToggleStatus={handleToggleStatus}
                             />
 
                           </div>
@@ -429,6 +430,7 @@ export default function Proposals() {
                                     onDelete={(id) => setDeletingId(id)}
                                     onDownloadPdf={handleDownloadPdf}
                                     pdfDownloading={pdfDownloading}
+                                    onToggleStatus={handleToggleStatus}
                                   />
 
                                 </TableCell>
@@ -521,6 +523,7 @@ function RowActions({
   onDelete,
   onDownloadPdf,
   pdfDownloading,
+  onToggleStatus,
 }: {
   proposal: Proposal;
   onEdit: (p: Proposal) => void;
@@ -528,11 +531,32 @@ function RowActions({
   onDelete: (id: string) => void;
   onDownloadPdf: (p: Proposal) => void;
   pdfDownloading: string | null;
+  onToggleStatus: (p: Proposal) => void;
 }) {
   const hasPdf = !!proposal.pdf_url;
   const isDownloading = pdfDownloading === proposal.id;
   return (
     <div className="flex items-center justify-end gap-1 flex-wrap">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={proposal.status === 'sent' ? 'secondary' : 'outline'}
+            size="sm"
+            className={`h-8 gap-1.5 text-xs px-2 ${proposal.status !== 'sent' ? 'border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40' : ''}`}
+            onClick={() => onToggleStatus(proposal)}
+          >
+            {proposal.status === 'sent'
+              ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+              : <Send className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">
+              {proposal.status === 'sent' ? 'Enviada' : 'Marcar enviada'}
+            </span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {proposal.status === 'sent' ? 'Reverter para rascunho' : 'Marcar como enviada'}
+        </TooltipContent>
+      </Tooltip>
       {hasPdf && (
         <Tooltip>
           <TooltipTrigger asChild>
