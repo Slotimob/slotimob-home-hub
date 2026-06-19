@@ -496,8 +496,10 @@ export function AssetDetailDialog({
       title: newActivity.title,
       description: newActivity.description || null,
       scheduled_at: newActivity.scheduled_at || null,
+      responsible_name: newActivity.responsible_name || null,
+      outcome: newActivity.outcome || null,
     });
-    setNewActivity({ activity_type: 'note', title: '', description: '', scheduled_at: '' });
+    setNewActivity({ activity_type: 'note', title: '', description: '', scheduled_at: '', responsible_name: '', outcome: '' });
     setShowNewForm(false);
     setSavingActivity(false);
     refetchPropertyActivities();
