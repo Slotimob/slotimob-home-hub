@@ -136,16 +136,24 @@ export const useProposals = () => {
 
   const updateProposalStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('proposals')
         .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id, status')
+        .single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      await queryClient.refetchQueries({ queryKey: ['proposals', effectiveBrokerId] });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao atualizar status', description: error.message, variant: 'destructive' });
     },
   });
+
 
   const deleteProposal = useMutation({
     mutationFn: async (id: string) => {
