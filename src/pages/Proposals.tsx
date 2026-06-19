@@ -528,6 +528,7 @@ function RowActions({
   onDelete: (id: string) => void;
   onDownloadPdf: (p: Proposal) => void;
   pdfDownloading: string | null;
+  onToggleStatus: (p: Proposal) => void;
 }) {
   const hasPdf = !!proposal.pdf_url;
   const isDownloading = pdfDownloading === proposal.id;
