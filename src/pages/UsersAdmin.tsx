@@ -101,8 +101,8 @@ const UsersAdmin = () => {
       if (rolesError) throw rolesError;
 
       // Load all profiles to get user info
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
+      const { data: profilesData, error: profilesError } = await (supabase as any)
+        .from('profile_directory')
         .select('id, full_name, email');
 
       if (profilesError) throw profilesError;
