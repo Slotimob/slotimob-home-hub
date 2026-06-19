@@ -501,6 +501,8 @@ export function CreateLeaseWizard({
         return true;
       case "payment":
         return true; // Payment info is optional
+      case "cobranca":
+        return true; // sempre opcional
       case "compliance":
         return true;
       default:
