@@ -88,6 +88,7 @@ export type Database = {
       }
       ai_credit_packs: {
         Row: {
+          asaas_price_reference: string | null
           created_at: string
           credits_amount: number
           id: string
@@ -99,6 +100,7 @@ export type Database = {
           stripe_product_id: string | null
         }
         Insert: {
+          asaas_price_reference?: string | null
           created_at?: string
           credits_amount: number
           id?: string
@@ -110,6 +112,7 @@ export type Database = {
           stripe_product_id?: string | null
         }
         Update: {
+          asaas_price_reference?: string | null
           created_at?: string
           credits_amount?: number
           id?: string
@@ -292,6 +295,54 @@ export type Database = {
             foreignKeyName: "asaas_accounts_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asaas_addon_subscriptions: {
+        Row: {
+          addon_id: string
+          asaas_subscription_id: string
+          broker_id: string
+          created_at: string | null
+          id: string
+          quantity: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          addon_id: string
+          asaas_subscription_id: string
+          broker_id: string
+          created_at?: string | null
+          id?: string
+          quantity?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          addon_id?: string
+          asaas_subscription_id?: string
+          broker_id?: string
+          created_at?: string | null
+          id?: string
+          quantity?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_addon_subscriptions_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_addon_subscriptions_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
