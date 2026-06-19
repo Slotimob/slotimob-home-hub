@@ -395,5 +395,71 @@ export default function BoletosEmGestao() {
         </div>
       )}
     </div>
+
+    {/* Dialog: Alterar vencimento */}
+    <Dialog open={!!dueDateDialog} onOpenChange={(open) => !open && setDueDateDialog(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Alterar vencimento</DialogTitle>
+          <DialogDescription>
+            Informe a nova data de vencimento. A cobrança será atualizada no Asaas.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          <Label htmlFor="new-due-date">Nova data</Label>
+          <Input
+            id="new-due-date"
+            type="date"
+            value={newDueDate}
+            onChange={(e) => setNewDueDate(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setDueDateDialog(null)}>Cancelar</Button>
+          <Button
+            onClick={confirmDueDate}
+            disabled={!newDueDate || actionLoading === `${dueDateDialog?.id}-update_due_date`}
+          >
+            {actionLoading === `${dueDateDialog?.id}-update_due_date` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Confirmar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Dialog: Reajustar valor */}
+    <Dialog open={!!valueDialog} onOpenChange={(open) => !open && setValueDialog(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reajustar valor</DialogTitle>
+          <DialogDescription>
+            Informe o novo valor (R$). A cobrança será atualizada no Asaas.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          <Label htmlFor="new-value">Novo valor</Label>
+          <Input
+            id="new-value"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={newValue}
+            onChange={(e) => setNewValue(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setValueDialog(null)}>Cancelar</Button>
+          <Button
+            onClick={confirmValue}
+            disabled={!newValue || actionLoading === `${valueDialog?.id}-update_value`}
+          >
+            {actionLoading === `${valueDialog?.id}-update_value` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Confirmar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </AppLayout>
   );
 }
