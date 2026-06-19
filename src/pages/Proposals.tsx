@@ -41,9 +41,17 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2,
-  Eye, Copy, Search, Loader2, Download, CheckCircle2,
+  Eye, Copy, Search, Loader2, Download, CheckCircle2, MoreHorizontal,
 } from 'lucide-react';
+
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -411,14 +419,9 @@ export default function Proposals() {
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <button
-                                    onClick={() => handleToggleStatus(proposal)}
-                                    className="hover:opacity-80 transition-opacity"
-                                    title={proposal.status === 'sent' ? 'Reverter para rascunho' : 'Marcar como enviada'}
-                                  >
-                                    <StatusBadge status={proposal.status} />
-                                  </button>
+                                  <StatusBadge status={proposal.status} />
                                 </TableCell>
+
                                 <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                                   {format(new Date(proposal.created_at), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
                                 </TableCell>
@@ -535,80 +538,65 @@ function RowActions({
 }) {
   const hasPdf = !!proposal.pdf_url;
   const isDownloading = pdfDownloading === proposal.id;
+  const canMarkSent = proposal.status === 'draft' || proposal.status === 'pending' || !proposal.status;
+
   return (
-    <div className="flex items-center justify-end gap-1 flex-wrap">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant={proposal.status === 'sent' ? 'secondary' : 'outline'}
-            size="sm"
-            className={`h-8 gap-1.5 text-xs px-2 ${proposal.status !== 'sent' ? 'border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40' : ''}`}
-            onClick={() => onToggleStatus(proposal)}
-          >
-            {proposal.status === 'sent'
-              ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-              : <Send className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">
-              {proposal.status === 'sent' ? 'Enviada' : 'Marcar enviada'}
-            </span>
+    <div className="flex items-center justify-end">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            {isDownloading
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <MoreHorizontal className="h-4 w-4" />}
           </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {proposal.status === 'sent' ? 'Reverter para rascunho' : 'Marcar como enviada'}
-        </TooltipContent>
-      </Tooltip>
-      {hasPdf && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={isDownloading}
-              onClick={() => onDownloadPdf(proposal)}
-            >
-              {isDownloading
-                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                : <Download className="h-3.5 w-3.5" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{isDownloading ? 'Baixando...' : 'Baixar PDF'}</TooltipContent>
-        </Tooltip>
-      )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          {hasPdf && (
+            <DropdownMenuItem onClick={() => onDownloadPdf(proposal)} disabled={isDownloading}>
+              <Eye className="h-4 w-4 mr-2" />
+              Ver proposta
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem onClick={() => onEdit(proposal)}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Editar
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onDuplicate(proposal)}>
+            <Copy className="h-4 w-4 mr-2" />
+            Duplicar
+          </DropdownMenuItem>
 
+          {canMarkSent && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onToggleStatus(proposal)}>
+                <Send className="h-4 w-4 mr-2 text-blue-600" />
+                Marcar como enviada
+              </DropdownMenuItem>
+            </>
+          )}
 
+          {proposal.status === 'sent' && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onToggleStatus(proposal)}>
+                <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                Reverter para rascunho
+              </DropdownMenuItem>
+            </>
+          )}
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(proposal)}>
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Editar</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDuplicate(proposal)}>
-            <Copy className="h-3.5 w-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Duplicar</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive"
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
             onClick={() => onDelete(proposal.id)}
+            className="text-destructive focus:text-destructive"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Excluir</TooltipContent>
-      </Tooltip>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Excluir
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
+
