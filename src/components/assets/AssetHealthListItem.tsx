@@ -5,17 +5,9 @@ import {
   Home, 
   Building2,
   ClipboardList,
-  Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AssetHealth, ObligationHealth, ObligationStatus, ObligationType } from "@/hooks/useAssetHealth";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { AssetHealth, ObligationHealth } from "@/hooks/useAssetHealth";
 import { ObligationTrafficLights } from "./ObligationTrafficLights";
 
 export interface AssetHealthListItemProps {
