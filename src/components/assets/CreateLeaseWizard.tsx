@@ -1159,7 +1159,7 @@ export function CreateLeaseWizard({
                     <div>
                       <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Emissão automática via Asaas</p>
                       <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">
-                        Os boletos serão gerados e enviados automaticamente pelo Asaas a cada vencimento.
+                        Os boletos são gerados e enviados automaticamente pelo Asaas em cada data de vencimento.
                         Configure multa, juros, desconto e notificações na próxima etapa: <strong>Cobrança</strong>.
                       </p>
                     </div>
