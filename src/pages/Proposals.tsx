@@ -536,6 +536,26 @@ function RowActions({
   const isDownloading = pdfDownloading === proposal.id;
   return (
     <div className="flex items-center justify-end gap-1 flex-wrap">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={proposal.status === 'sent' ? 'secondary' : 'outline'}
+            size="sm"
+            className={`h-8 gap-1.5 text-xs px-2 ${proposal.status !== 'sent' ? 'border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40' : ''}`}
+            onClick={() => onToggleStatus(proposal)}
+          >
+            {proposal.status === 'sent'
+              ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+              : <Send className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">
+              {proposal.status === 'sent' ? 'Enviada' : 'Marcar enviada'}
+            </span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {proposal.status === 'sent' ? 'Reverter para rascunho' : 'Marcar como enviada'}
+        </TooltipContent>
+      </Tooltip>
       {hasPdf && (
         <Tooltip>
           <TooltipTrigger asChild>
