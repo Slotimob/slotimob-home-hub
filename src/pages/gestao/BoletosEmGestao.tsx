@@ -31,11 +31,14 @@ export default function BoletosEmGestao() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [unitFilter, setUnitFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const { data: boletos, isLoading } = useQuery({
-    queryKey: ['asaas-payments', effectiveBrokerId, user?.id, statusFilter, dateFrom, dateTo],
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const { data: boletos, isLoading, refetch } = useQuery({
+    queryKey: ['asaas-payments', effectiveBrokerId, user?.id, statusFilter, unitFilter, dateFrom, dateTo],
     queryFn: async () => {
       let query = supabase
         .from('asaas_payments')
@@ -63,6 +66,7 @@ export default function BoletosEmGestao() {
         .order('due_date', { ascending: false });
 
       if (statusFilter !== "all") query = query.eq('status', statusFilter);
+      if (unitFilter !== "all") query = query.eq('lease_id', unitFilter);
       if (dateFrom) query = query.gte('due_date', dateFrom);
       if (dateTo) query = query.lte('due_date', dateTo);
 
@@ -71,6 +75,19 @@ export default function BoletosEmGestao() {
       return data || [];
     },
     enabled: !!user,
+  });
+
+  const { data: units } = useQuery({
+    queryKey: ['units-filter', effectiveBrokerId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('units')
+        .select('id, name')
+        .eq('broker_id', effectiveBrokerId!)
+        .order('name');
+      return data ?? [];
+    },
+    enabled: !!effectiveBrokerId,
   });
 
   const filtered = boletos?.filter(b => {
@@ -85,6 +102,43 @@ export default function BoletosEmGestao() {
     navigator.clipboard.writeText(text);
     toast({ title: `${label} copiado!` });
   };
+
+  async function handlePaymentAction(paymentId: string, action: 'get_slip_url' | 'send_email' | 'cancel') {
+    if (action === 'cancel') {
+      if (!window.confirm('Tem certeza que deseja cancelar esta cobrança no Asaas? Esta ação não pode ser desfeita.')) return;
+    }
+    setActionLoading(`${paymentId}-${action}`);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/asaas-payment-action`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ payment_id: paymentId, action }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
+
+      if (action === 'get_slip_url' && data.bank_slip_url) {
+        window.open(data.bank_slip_url, '_blank');
+      } else if (action === 'send_email') {
+        toast({ title: 'E-mail enviado com sucesso!' });
+      } else if (action === 'cancel') {
+        toast({ title: 'Cobrança cancelada no Asaas.' });
+        refetch();
+      }
+    } catch (err) {
+      toast({ title: 'Erro', description: (err as Error).message, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   const getBadgeClass = (variant: string) => {
     switch (variant) {
