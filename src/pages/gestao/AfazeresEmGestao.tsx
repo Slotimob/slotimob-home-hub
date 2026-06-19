@@ -120,7 +120,7 @@ const AfazeresEmGestao = () => {
 
   const pendingSignatures = leases.filter(
     (l) =>
-      l.contract_status === 'active' &&
+      l.status === 'active' &&
       (l.signature_status === 'pending' || !l.signature_status) &&
       !l.signed_contract_path
   );
