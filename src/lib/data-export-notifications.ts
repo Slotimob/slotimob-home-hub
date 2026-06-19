@@ -29,13 +29,21 @@ export async function notifyExportCreated(request: ExportRequest) {
       });
     }
 
-    // Notify admins
-    const { data: admins } = await supabase
-      .from('profile_directory' as any)
-      .select('id, email')
-      .eq('is_super_admin', true);
+    // Notify admins (super_admins via user_roles)
+    const { data: adminRoles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'super_admin');
 
-    for (const admin of admins || []) {
+    const adminIds = (adminRoles || []).map((r: any) => r.user_id);
+    const { data: admins } = adminIds.length
+      ? await (supabase as any)
+          .from('profile_directory')
+          .select('id, email')
+          .in('id', adminIds)
+      : { data: [] as any[] };
+
+    for (const admin of (admins as any[]) || []) {
       if (admin.email) {
         await supabase.from('email_notifications').insert({
           broker_id: admin.id,
