@@ -40,9 +40,6 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
         <CardTitle className="text-base flex items-center gap-2">
           <AlertCircle className={`h-4 w-4 ${hasOverdue ? 'text-destructive' : 'text-muted-foreground'}`} />
           Inadimplência <HelpTooltip featureKey="dashboard.delinquency" />
-          {scope === 'workspace' && (
-            <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-          )}
         </CardTitle>
         <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>

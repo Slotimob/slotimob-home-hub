@@ -114,9 +114,6 @@ export function AppointmentsWidget({ refreshKey }: AppointmentsWidgetProps) {
         <CardTitle className="text-base flex items-center gap-2">
           <Calendar className="h-4 w-4" />
           Compromissos <HelpTooltip featureKey="dashboard.appointments" />
-          {scope === 'workspace' && (
-            <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-          )}
         </CardTitle>
         <div className="flex items-center gap-1">
           {PERIOD_OPTIONS.map((option) => (

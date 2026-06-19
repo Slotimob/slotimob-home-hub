@@ -35,9 +35,6 @@ export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: Ren
         <CardTitle className="text-base flex items-center gap-2">
           <Wallet className="h-4 w-4" />
           Aluguéis no período <HelpTooltip featureKey="dashboard.rent_receivables" />
-          {scope === 'workspace' && (
-            <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-          )}
         </CardTitle>
         <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>

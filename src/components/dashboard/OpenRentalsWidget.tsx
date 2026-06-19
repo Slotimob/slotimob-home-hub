@@ -35,9 +35,6 @@ export function OpenRentalsWidget({ dateRange: _dateRange, refreshKey }: OpenRen
           <CardTitle className="text-base flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Imóveis com aluguel em aberto <HelpTooltip featureKey="dashboard.open_rentals" />
-            {scope === 'workspace' && (
-              <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-            )}
           </CardTitle>
           {items.length > 0 && (
             <span className="text-xs text-muted-foreground">
