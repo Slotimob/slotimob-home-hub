@@ -338,6 +338,84 @@ export function AssetDetailDialog({
     },
   });
 
+  // Activities: schedule_activities (direct unit)
+  const { data: scheduleActivities } = useQuery({
+    queryKey: ['schedule-activities-unit', asset?.unitId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('schedule_activities')
+        .select('id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at')
+        .eq('unit_id', asset!.unitId)
+        .order('scheduled_at', { ascending: false });
+      return (data || []).map(r => ({ ...r, source: 'agenda' as const }));
+    },
+    enabled: !!asset?.unitId && activeTab === 'activities',
+  });
+
+  // Activities: deal_activities via deals.unit_id
+  const { data: dealActivities } = useQuery({
+    queryKey: ['deal-activities-unit', asset?.unitId],
+    queryFn: async () => {
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('id')
+        .eq('unit_id', asset!.unitId);
+      if (!deals?.length) return [];
+      const dealIds = deals.map(d => d.id);
+      const { data } = await supabase
+        .from('deal_activities')
+        .select('id, title, description, activity_type, scheduled_at, completed_at, created_at')
+        .in('deal_id', dealIds)
+        .order('created_at', { ascending: false });
+      return (data || []).map(r => ({ ...r, source: 'pipeline' as const, is_completed: !!r.completed_at }));
+    },
+    enabled: !!asset?.unitId && activeTab === 'activities',
+  });
+
+  // Activities: property_activities (manual)
+  const { data: propertyActivities, refetch: refetchPropertyActivities } = useQuery({
+    queryKey: ['property-activities', asset?.unitId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('property_activities')
+        .select('id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at')
+        .eq('unit_id', asset!.unitId)
+        .order('created_at', { ascending: false });
+      return (data || []).map(r => ({ ...r, source: 'manual' as const }));
+    },
+    enabled: !!asset?.unitId && activeTab === 'activities',
+  });
+
+  const allActivities = useMemo(() => {
+    const all = [
+      ...(scheduleActivities || []),
+      ...(dealActivities || []),
+      ...(propertyActivities || []),
+    ];
+    return all.sort((a: any, b: any) => {
+      const dateA = new Date(a.scheduled_at || a.created_at).getTime();
+      const dateB = new Date(b.scheduled_at || b.created_at).getTime();
+      return dateB - dateA;
+    });
+  }, [scheduleActivities, dealActivities, propertyActivities]);
+
+  const handleSaveActivity = async () => {
+    if (!newActivity.title.trim() || !asset) return;
+    setSavingActivity(true);
+    await supabase.from('property_activities').insert({
+      unit_id: asset.unitId,
+      broker_id: effectiveBrokerId || user?.id,
+      activity_type: newActivity.activity_type,
+      title: newActivity.title,
+      description: newActivity.description || null,
+      scheduled_at: newActivity.scheduled_at || null,
+    });
+    setNewActivity({ activity_type: 'note', title: '', description: '', scheduled_at: '' });
+    setShowNewForm(false);
+    setSavingActivity(false);
+    refetchPropertyActivities();
+  };
+
   // Build monthly obligations list
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
     if (!unitConfig) return [];
