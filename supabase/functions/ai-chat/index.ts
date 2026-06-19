@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { messages, selected_assets } = await req.json();
+    const { messages, selected_assets, attached_file } = await req.json();
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(
         JSON.stringify({ error: "Mensagens inválidas." }),
@@ -173,12 +173,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    const validatedMessages = messages
+    const validatedMessages: any[] = messages
       .filter((m: any) => m.role && m.content && typeof m.content === "string")
       .map((m: any) => ({
         role: m.role === "user" ? "user" : "assistant",
         content: m.content.slice(0, 10000),
       }));
+
+    // Include attached file in last user message if present
+    if (attached_file?.data && attached_file?.type) {
+      const lastIdx = validatedMessages.length - 1;
+      if (lastIdx >= 0 && validatedMessages[lastIdx].role === 'user') {
+        const textContent = validatedMessages[lastIdx].content as string;
+        const isImage = (attached_file.type as string).startsWith('image/');
+        const fileBlock = isImage
+          ? { type: 'image', source: { type: 'base64', media_type: attached_file.type, data: attached_file.data } }
+          : { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: attached_file.data } };
+        validatedMessages[lastIdx] = {
+          role: 'user',
+          content: [fileBlock, { type: 'text', text: textContent }],
+        };
+      }
+    }
 
     // RAG: Fetch only selected assets (if any)
     let unitsData: any[] = [];
