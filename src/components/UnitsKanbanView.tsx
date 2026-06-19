@@ -119,9 +119,7 @@ const SortableUnitCard = ({
           <div className="flex-1 min-w-0">
             {/* Image Thumbnail with Share Button Overlay */}
             <div className="relative h-20 mb-2 rounded-md overflow-hidden bg-muted">
-              {unit.cover_image_url ? <img src={unit.cover_image_url} alt={`Unidade ${unit.unit_number}`} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                  <Home className="h-6 w-6 text-muted-foreground/50" />
-                </div>}
+              <PropertyImage src={unit.cover_image_url} alt={`Unidade ${unit.unit_number}`} className="w-full h-full object-cover" />
               
               {/* Share button overlay - appears on hover */}
               <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -309,9 +307,7 @@ const DragOverlayCard = ({
         
         <div className="flex-1 min-w-0">
           <div className="relative h-20 mb-2 rounded-md overflow-hidden bg-muted">
-            {unit.cover_image_url ? <img src={unit.cover_image_url} alt={`Unidade ${unit.unit_number}`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                <Home className="h-6 w-6 text-muted-foreground/50" />
-              </div>}
+            <PropertyImage src={unit.cover_image_url} alt={`Unidade ${unit.unit_number}`} className="w-full h-full object-cover" />
           </div>
 
           <div className="space-y-1">

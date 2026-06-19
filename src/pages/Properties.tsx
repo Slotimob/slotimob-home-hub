@@ -226,19 +226,13 @@ const Properties = () => {
                 }}
               >
                 {/* Thumbnail */}
-                {property.image_url ? (
-                  <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-                    <img 
-                      src={property.image_url} 
-                      alt={property.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                ) : (
-                  <div className="aspect-video w-full bg-muted rounded-t-lg flex items-center justify-center">
-                    <Building2 className="h-12 w-12 text-muted-foreground/30" />
-                  </div>
-                )}
+                <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                  <PropertyImage
+                    src={property.image_url}
+                    alt={property.name ?? 'Imóvel'}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-start gap-2">
                     <span className="line-clamp-1">{property.name}</span>

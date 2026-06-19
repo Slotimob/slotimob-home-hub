@@ -144,18 +144,11 @@ const SortableUnitCard = ({
           <div className="flex-1 min-w-0">
             {/* Image Thumbnail */}
             <div className="relative h-20 mb-2 rounded-md overflow-hidden bg-muted">
-              {unit.cover_image_url ? (
-                <img
-                  src={unit.cover_image_url}
-                  alt={unit.unit_number}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                  <Home className="h-6 w-6 text-muted-foreground/50" />
-                </div>
-              )}
+              <PropertyImage
+                src={unit.cover_image_url}
+                alt={unit.unit_number ?? 'Imóvel'}
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* Unit Info */}
@@ -321,17 +314,11 @@ const DragOverlayCard = ({ unit }: { unit: RealEstateUnit }) => {
 
         <div className="flex-1 min-w-0">
           <div className="relative h-20 mb-2 rounded-md overflow-hidden bg-muted">
-            {unit.cover_image_url ? (
-              <img
-                src={unit.cover_image_url}
-                alt={unit.unit_number}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                <Home className="h-6 w-6 text-muted-foreground/50" />
-              </div>
-            )}
+            <PropertyImage
+              src={unit.cover_image_url}
+              alt={unit.unit_number ?? 'Imóvel'}
+              className="w-full h-full object-cover"
+            />
           </div>
 
           <div className="space-y-1">

@@ -673,17 +673,11 @@ const RealEstate = () => {
                   onClick={() => setSelectedUnit(unit)}
                 >
                   <div className="aspect-video bg-muted relative">
-                    {unit.cover_image_url ? (
-                      <img
-                        src={unit.cover_image_url}
-                        alt={unit.unit_number}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Home className="h-12 w-12 text-muted-foreground" />
-                      </div>
-                    )}
+                    <PropertyImage
+                      src={unit.cover_image_url}
+                      alt={unit.unit_number ?? 'Imóvel'}
+                      className="w-full h-full object-cover"
+                    />
                     <Badge className={`absolute top-2 right-2 ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}>
                       {STATUS_LABELS[unit.status]}
                     </Badge>
