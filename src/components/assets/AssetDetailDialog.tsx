@@ -20,6 +20,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Home,
   Building2,
@@ -43,7 +46,15 @@ import {
   type LucideIcon,
   Loader2,
   Save,
+  MapPin,
+  Wrench,
+  File,
+  Phone,
+  Users,
+  Circle,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
