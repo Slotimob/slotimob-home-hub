@@ -271,7 +271,7 @@ export function CreateLeaseWizard({
 
       let query = supabase
         .from("contacts")
-        .select("id, name, email, phone, whatsapp")
+        .select("id, name, email, phone, whatsapp, document_number, document_type")
         .eq("broker_id", effectiveBrokerId || user.id)
         .contains("categories", ["Inquilino"])
         .order("name");
@@ -470,7 +470,7 @@ export function CreateLeaseWizard({
                 'Authorization': `Bearer ${session?.access_token}`,
                 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
               },
-              body: JSON.stringify({ lease_id: leaseId }),
+              body: JSON.stringify({ lease_id: leaseId, billing_type: chargeConfig.billing_type }),
             }
           );
           // erros da edge function são logados mas não bloqueiam o fluxo do wizard
@@ -1177,11 +1177,54 @@ export function CreateLeaseWizard({
                       <SelectContent>
                         <SelectItem value="BOLETO">Boleto Bancário</SelectItem>
                         <SelectItem value="PIX">PIX (QR Code)</SelectItem>
+                        <SelectItem value="CREDIT_CARD">Cartão de Crédito</SelectItem>
+                        <SelectItem value="UNDEFINED">Não definido (inquilino escolhe)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
+                  {chargeConfig.billing_type === "BOLETO" && (
+                    <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dados do Pagador</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Nome</p>
+                          <p className="font-medium">{selectedTenant?.name || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            {(selectedTenant as any)?.document_type || "CPF/CNPJ"}
+                          </p>
+                          <p className="font-medium">
+                            {(selectedTenant as any)?.document_number || (
+                              <span className="text-amber-600 text-xs">
+                                Não informado — edite o contato do inquilino para emitir boleto
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {selectedTenant?.email && (
+                          <div className="sm:col-span-2">
+                            <p className="text-xs text-muted-foreground">E-mail</p>
+                            <p className="font-medium">{selectedTenant.email}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Dia de vencimento</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={28}
+                        value={formData.due_day}
+                        onChange={e => setFormData({ ...formData, due_day: parseInt(e.target.value) || 10 })}
+                      />
+                      <p className="text-[10px] text-muted-foreground">De 1 a 28</p>
+                    </div>
                     <div className="space-y-2">
                       <Label>Multa por atraso (%)</Label>
                       <Input
@@ -1195,6 +1238,9 @@ export function CreateLeaseWizard({
                       />
                       <p className="text-[10px] text-muted-foreground">Máx. 2% (Lei 8.245/91)</p>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>Juros mensais (%)</Label>
                       <Input
@@ -1208,9 +1254,6 @@ export function CreateLeaseWizard({
                       />
                       <p className="text-[10px] text-muted-foreground">Máx. 1%/mês</p>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>Desconto antecipado (R$)</Label>
                       <CurrencyInput
@@ -1219,8 +1262,11 @@ export function CreateLeaseWizard({
                         placeholder="R$ 0,00"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Dias de antecedência</Label>
+                      <Label>Dias de antecedência (desconto)</Label>
                       <Input
                         type="number"
                         min={0}
@@ -1230,24 +1276,22 @@ export function CreateLeaseWizard({
                         placeholder="0"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label>Descrição no boleto</Label>
+                      <Input
+                        value={chargeConfig.description}
+                        onChange={e => setChargeConfig(p => ({ ...p, description: e.target.value }))}
+                        placeholder="Ex: Aluguel ref. mês/ano"
+                        maxLength={255}
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Descrição no boleto (opcional)</Label>
-                    <Input
-                      value={chargeConfig.description}
-                      onChange={e => setChargeConfig(p => ({ ...p, description: e.target.value }))}
-                      placeholder="Ex: Aluguel ref. outubro/2025"
-                      maxLength={255}
-                    />
-                  </div>
-
-                  <div className="space-y-3 pt-1">
-                    <Label className="text-sm font-medium">Notificar inquilino por:</Label>
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <p className="text-sm">E-mail</p>
-                        <p className="text-xs text-muted-foreground">Enviar boleto e lembretes por e-mail</p>
+                        <p className="text-[10px] text-muted-foreground">Enviar por e-mail</p>
                       </div>
                       <Switch
                         checked={chargeConfig.send_email}
@@ -1257,7 +1301,7 @@ export function CreateLeaseWizard({
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <p className="text-sm">WhatsApp</p>
-                        <p className="text-xs text-muted-foreground">Enviar link do boleto via WhatsApp</p>
+                        <p className="text-[10px] text-muted-foreground">Enviar via WhatsApp</p>
                       </div>
                       <Switch
                         checked={chargeConfig.send_whatsapp}
@@ -1265,6 +1309,27 @@ export function CreateLeaseWizard({
                       />
                     </div>
                   </div>
+
+                  {chargeConfig.billing_type === "BOLETO" && (
+                    <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3 space-y-1.5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary">Resumo do Boleto</p>
+                      <div className="grid grid-cols-2 gap-1 text-xs">
+                        <span className="text-muted-foreground">Tipo:</span>
+                        <span className="font-medium">Boleto Bancário</span>
+                        <span className="text-muted-foreground">Pagador:</span>
+                        <span className="font-medium">
+                          {selectedTenant?.name || "-"}
+                          {(selectedTenant as any)?.document_number && ` (${(selectedTenant as any).document_number})`}
+                        </span>
+                        <span className="text-muted-foreground">Vencimento:</span>
+                        <span className="font-medium">Dia {formData.due_day} de cada mês</span>
+                        <span className="text-muted-foreground">Valor:</span>
+                        <span className="font-medium">
+                          {formData.rent_amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
