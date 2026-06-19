@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { DateRange as RDPRange } from 'react-day-picker';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarDays, RefreshCw, ChevronDown } from 'lucide-react';
@@ -51,6 +52,15 @@ export function DashboardDateFilter({
   isRefreshing = false,
 }: DashboardDateFilterProps) {
   const [customOpen, setCustomOpen] = useState(false);
+  const [pendingRange, setPendingRange] = useState<RDPRange | undefined>({
+    from: dateRange.from,
+    to: dateRange.to,
+  });
+
+  // Sync local pending state when dateRange changes externally (e.g., preset switch)
+  useEffect(() => {
+    setPendingRange({ from: dateRange.from, to: dateRange.to });
+  }, [dateRange.from, dateRange.to]);
 
   const handlePresetChange = (value: DatePreset) => {
     if (value === 'custom') {
@@ -114,14 +124,15 @@ export function DashboardDateFilter({
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="range"
-              selected={{ from: dateRange.from, to: dateRange.to }}
+              selected={pendingRange}
               onSelect={(range) => {
+                setPendingRange(range);
+                // Only propagate when BOTH dates selected and they differ-or-equal validly
                 if (range?.from && range?.to) {
                   onDateRangeChange({ from: range.from, to: range.to });
                   setCustomOpen(false);
-                } else if (range?.from) {
-                  onDateRangeChange({ from: range.from, to: range.from });
                 }
+                // If only `from` selected, wait — do not propagate yet
               }}
               initialFocus
               numberOfMonths={2}
