@@ -1277,6 +1277,50 @@ export default function NovoContrato() {
                 </div>
               )}
 
+              {paymentInfo.tipo === "boleto" && (
+                <div className="space-y-3">
+                  <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dados do Pagador</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Nome</p>
+                        <p className="font-medium">{selectedTenant?.name || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {(selectedTenant as any)?.document_type || "CPF/CNPJ"}
+                        </p>
+                        <p className="font-medium">
+                          {(selectedTenant as any)?.document_number ? (
+                            (selectedTenant as any).document_number
+                          ) : (
+                            <span className="text-amber-600 text-xs">
+                              Não informado — edite o contato do inquilino antes de emitir boleto
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      {selectedTenant?.email && (
+                        <div className="sm:col-span-2">
+                          <p className="text-xs text-muted-foreground">E-mail (para envio do boleto)</p>
+                          <p className="font-medium">{selectedTenant.email}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
+                    <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Emissão automática via Asaas</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">
+                        Os boletos são gerados e enviados automaticamente pelo Asaas em cada data de vencimento.
+                        Configure multa, juros, desconto e notificações na próxima etapa: <strong>Cobrança</strong>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="p-3 bg-muted/50 rounded-lg text-sm">
                 <p className="text-muted-foreground">
                   💡 Estas informações serão incluídas na Cláusula 4.2 do contrato de locação.
