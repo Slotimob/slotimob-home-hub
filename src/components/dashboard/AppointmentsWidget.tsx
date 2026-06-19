@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,15 +6,20 @@ import { useDashboardScope } from '@/hooks/useDashboardScope';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button } from '@/components/ui/button';
 import { Calendar, Phone, Users, Eye, ClipboardCheck, ArrowRight } from 'lucide-react';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
-import { format, startOfDay, endOfDay, addDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { format, startOfDay, endOfDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { Link } from 'react-router-dom';
 import type { DateRange } from './DashboardDateFilter';
 
-type WindowMode = 'today' | '7d' | 'period';
+type AppointmentsPeriod = 'today' | '7d' | 'this_month';
+
+const PERIOD_OPTIONS: { value: AppointmentsPeriod; label: string }[] = [
+  { value: 'today', label: 'Hoje' },
+  { value: '7d', label: '7D' },
+  { value: 'this_month', label: 'Este Mês' },
+];
 
 const ACTIVITY_ICONS: Record<string, React.ElementType> = {
   call: Phone,
@@ -28,33 +33,21 @@ interface AppointmentsWidgetProps {
   refreshKey: number;
 }
 
-export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidgetProps) {
+export function AppointmentsWidget({ refreshKey }: AppointmentsWidgetProps) {
   const { user } = useAuth();
   const scope = useDashboardScope();
 
-  const [windowMode, setWindowMode] = useState<WindowMode>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('dashboard:appointments:window') as WindowMode) || 'today';
-    }
-    return 'today';
-  });
-
-  const handleWindowChange = (val: string) => {
-    if (!val) return;
-    const mode = val as WindowMode;
-    setWindowMode(mode);
-    localStorage.setItem('dashboard:appointments:window', mode);
-  };
+  const [period, setPeriod] = useState<AppointmentsPeriod>('today');
 
   const queryRange = useMemo(() => {
     const now = new Date();
-    if (windowMode === 'today') return { from: startOfDay(now), to: endOfDay(now) };
-    if (windowMode === '7d') return { from: startOfDay(now), to: endOfDay(addDays(now, 7)) };
-    return { from: dateRange.from, to: dateRange.to };
-  }, [windowMode, dateRange]);
+    if (period === 'today') return { from: startOfDay(now), to: endOfDay(now) };
+    if (period === '7d') return { from: startOfDay(now), to: endOfDay(addDays(now, 7)) };
+    return { from: startOfMonth(now), to: endOfMonth(now) };
+  }, [period]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard-appointments', user?.id, scope, windowMode, queryRange.from.toISOString(), queryRange.to.toISOString(), refreshKey],
+    queryKey: ['dashboard-appointments', user?.id, scope, period, queryRange.from.toISOString(), queryRange.to.toISOString(), refreshKey],
     queryFn: async () => {
       if (!user) return { items: [], total: 0 };
 
@@ -79,7 +72,6 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
         property_id: string | null; unit_id: string | null; lead_id: string | null; broker_id: string;
       }>;
 
-      // Lookup names for property/unit/contact
       const propIds = [...new Set(items.map(i => i.property_id).filter(Boolean))] as string[];
       const unitIds = [...new Set(items.map(i => i.unit_id).filter(Boolean))] as string[];
       const leadIds = [...new Set(items.map(i => i.lead_id).filter(Boolean))] as string[];
@@ -119,19 +111,29 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Compromissos <HelpTooltip featureKey="dashboard.appointments" />
-            {scope === 'workspace' && (
-              <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
-            )}
-          </CardTitle>
-          <ToggleGroup type="single" value={windowMode} onValueChange={handleWindowChange} size="sm" className="h-7">
-            <ToggleGroupItem value="today" className="text-[11px] h-7 px-2">Hoje</ToggleGroupItem>
-            <ToggleGroupItem value="7d" className="text-[11px] h-7 px-2">7d</ToggleGroupItem>
-            <ToggleGroupItem value="period" className="text-[11px] h-7 px-2">Período</ToggleGroupItem>
-          </ToggleGroup>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Calendar className="h-4 w-4" />
+          Compromissos <HelpTooltip featureKey="dashboard.appointments" />
+          {scope === 'workspace' && (
+            <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
+          )}
+        </CardTitle>
+        <div className="flex items-center gap-1">
+          {PERIOD_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              variant="ghost"
+              size="sm"
+              onClick={() => setPeriod(option.value)}
+              className={`h-6 px-2 text-[10px] ${
+                period === option.value
+                  ? 'bg-primary/10 text-primary font-semibold'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              {option.label}
+            </Button>
+          ))}
         </div>
       </CardHeader>
       <CardContent>
@@ -141,7 +143,7 @@ export function AppointmentsWidget({ dateRange, refreshKey }: AppointmentsWidget
           </div>
         ) : displayed.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-sm text-muted-foreground">Nenhum compromisso na janela selecionada.</p>
+            <p className="text-sm text-muted-foreground">Nenhum compromisso no período selecionado.</p>
             <Link to="/schedule" className="text-xs text-primary hover:underline mt-2 inline-flex items-center gap-1">
               Abrir agenda <ArrowRight className="h-3 w-3" />
             </Link>
