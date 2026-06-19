@@ -391,7 +391,7 @@ export function AssetDetailDialog({
     queryFn: async () => {
       const { data } = await supabase
         .from('property_activities')
-        .select('id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at')
+        .select('id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at, responsible_name, outcome')
         .eq('unit_id', asset!.unitId)
         .order('created_at', { ascending: false });
       return (data || []).map(r => ({ ...r, source: 'manual' as const }));
