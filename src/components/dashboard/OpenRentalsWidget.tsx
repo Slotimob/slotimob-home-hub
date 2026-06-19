@@ -7,6 +7,8 @@ import { differenceInDays } from 'date-fns';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
 import { useDashboardScope } from '@/hooks/useDashboardScope';
 import type { DateRange } from './DashboardDateFilter';
+import { useWidgetPeriod, WidgetPeriodFilter } from './WidgetPeriodFilter';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 
 function fmtCurrency(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
