@@ -11,3 +11,5 @@ export { AppointmentsWidget } from './AppointmentsWidget';
 export { RentReceivablesWidget } from './RentReceivablesWidget';
 export { OpenRentalsWidget } from './OpenRentalsWidget';
 export { DelinquencyWidget } from './DelinquencyWidget';
+export { WidgetPeriodFilter, useWidgetPeriod } from './WidgetPeriodFilter';
+export type { WidgetPeriod } from './WidgetPeriodFilter';
