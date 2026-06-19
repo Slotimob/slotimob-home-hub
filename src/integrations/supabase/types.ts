@@ -164,6 +164,13 @@ export type Database = {
             foreignKeyName: "ai_credits_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_credits_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -295,6 +302,13 @@ export type Database = {
             foreignKeyName: "asaas_accounts_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: true
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_accounts_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -343,6 +357,13 @@ export type Database = {
             foreignKeyName: "asaas_addon_subscriptions_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_addon_subscriptions_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -371,6 +392,13 @@ export type Database = {
           id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "asaas_customers_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "asaas_customers_broker_id_fkey"
             columns: ["broker_id"]
@@ -447,6 +475,13 @@ export type Database = {
             foreignKeyName: "asaas_payments_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_payments_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -513,6 +548,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "asset_improvements_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "asset_improvements_broker_id_fkey"
             columns: ["broker_id"]
@@ -864,6 +906,13 @@ export type Database = {
             foreignKeyName: "balance_audits_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "balance_audits_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -922,6 +971,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bank_accounts_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bank_accounts_broker_id_fkey"
             columns: ["broker_id"]
@@ -986,6 +1042,13 @@ export type Database = {
             foreignKeyName: "bank_statement_entries_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_entries_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1042,6 +1105,13 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_imports_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
             referencedColumns: ["id"]
           },
           {
@@ -1155,6 +1225,13 @@ export type Database = {
             foreignKeyName: "blog_posts_author_id_fkey"
             columns: ["author_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1190,6 +1267,13 @@ export type Database = {
           role?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_messages_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_messages_broker_id_fkey"
             columns: ["broker_id"]
@@ -1253,6 +1337,13 @@ export type Database = {
             foreignKeyName: "companies_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1290,6 +1381,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "consent_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "consent_logs_user_id_fkey"
             columns: ["user_id"]
@@ -1380,6 +1478,13 @@ export type Database = {
             foreignKeyName: "contacts_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1417,6 +1522,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contract_templates_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contract_templates_broker_id_fkey"
             columns: ["broker_id"]
@@ -1459,6 +1571,13 @@ export type Database = {
             foreignKeyName: "custom_obligation_types_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_obligation_types_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1493,6 +1612,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "custom_pipelines_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "custom_pipelines_broker_id_fkey"
             columns: ["broker_id"]
@@ -1784,6 +1910,13 @@ export type Database = {
             foreignKeyName: "deals_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1926,6 +2059,13 @@ export type Database = {
             foreignKeyName: "documents_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2043,6 +2183,13 @@ export type Database = {
             foreignKeyName: "email_notifications_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_notifications_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2089,6 +2236,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "financial_categories_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "financial_categories_broker_id_fkey"
             columns: ["broker_id"]
@@ -2204,6 +2358,13 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
             referencedColumns: ["id"]
           },
           {
@@ -2328,6 +2489,13 @@ export type Database = {
             foreignKeyName: "import_history_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_history_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2384,6 +2552,13 @@ export type Database = {
           webhook_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "integrations_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "integrations_broker_id_fkey"
             columns: ["broker_id"]
@@ -2519,6 +2694,13 @@ export type Database = {
             foreignKeyName: "leads_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2569,6 +2751,13 @@ export type Database = {
           previous_value?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "lease_adjustments_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lease_adjustments_broker_id_fkey"
             columns: ["broker_id"]
@@ -2816,6 +3005,13 @@ export type Database = {
             foreignKeyName: "market_value_history_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_value_history_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2915,6 +3111,13 @@ export type Database = {
             foreignKeyName: "organization_invitations_organization_owner_id_fkey"
             columns: ["organization_owner_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invitations_organization_owner_id_fkey"
+            columns: ["organization_owner_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3007,6 +3210,13 @@ export type Database = {
             foreignKeyName: "owners_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owners_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3092,6 +3302,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "portal_connections_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "portal_connections_broker_id_fkey"
             columns: ["broker_id"]
@@ -3266,6 +3483,13 @@ export type Database = {
             foreignKeyName: "profiles_agency_id_fkey"
             columns: ["agency_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3394,6 +3618,13 @@ export type Database = {
             foreignKeyName: "properties_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3513,6 +3744,13 @@ export type Database = {
             foreignKeyName: "proposals_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3569,6 +3807,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quick_messages_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quick_messages_broker_id_fkey"
             columns: ["broker_id"]
@@ -3686,6 +3931,13 @@ export type Database = {
             foreignKeyName: "sales_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3779,7 +4031,21 @@ export type Database = {
             foreignKeyName: "schedule_activities_assigned_user_id_fkey"
             columns: ["assigned_user_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_activities_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_activities_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
             referencedColumns: ["id"]
           },
           {
@@ -4182,6 +4448,13 @@ export type Database = {
             foreignKeyName: "training_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -4352,6 +4625,13 @@ export type Database = {
             foreignKeyName: "units_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "units_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -4469,6 +4749,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "visits_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "visits_assigned_user_id_fkey"
             columns: ["assigned_user_id"]
@@ -4762,6 +5049,13 @@ export type Database = {
             foreignKeyName: "whatsapp_message_credits_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_credits_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -4871,6 +5165,13 @@ export type Database = {
             foreignKeyName: "whatsapp_sync_jobs_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_sync_jobs_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -4899,6 +5200,13 @@ export type Database = {
           name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "whatsapp_tags_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "whatsapp_tags_broker_id_fkey"
             columns: ["broker_id"]
@@ -4971,6 +5279,13 @@ export type Database = {
             foreignKeyName: "whatsapp_usage_stats_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_usage_stats_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -4978,7 +5293,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profile_directory: {
+        Row: {
+          author_role: string | null
+          avatar_url: string | null
+          bio_mini: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          instagram_url: string | null
+          linkedin_url: string | null
+          theme_preference: string | null
+        }
+        Insert: {
+          author_role?: string | null
+          avatar_url?: string | null
+          bio_mini?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          instagram_url?: string | null
+          linkedin_url?: string | null
+          theme_preference?: string | null
+        }
+        Update: {
+          author_role?: string | null
+          avatar_url?: string | null
+          bio_mini?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          instagram_url?: string | null
+          linkedin_url?: string | null
+          theme_preference?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_latest_terms: {
