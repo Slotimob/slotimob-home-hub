@@ -459,8 +459,8 @@ export function AssetDetailDialog({
     doc.setFontSize(9);
     doc.setTextColor(60);
     doc.setFont('helvetica', 'bold');
-    const cols = ['Data', 'Tipo', 'Título', 'Fonte', 'Status'];
-    const colWidths = [28, 22, 80, 22, 20];
+    const cols = ['Data', 'Tipo', 'Título', 'Fonte', 'Resp.', 'Resultado', 'Status'];
+    const colWidths = [24, 18, 56, 18, 22, 22, 20];
     let x = 14;
     cols.forEach((col, i) => { doc.text(col, x, y); x += colWidths[i]; });
     doc.setDrawColor(200);
@@ -475,7 +475,7 @@ export function AssetDetailDialog({
         : '';
       const source = ({ agenda: 'Agenda', pipeline: 'Pipeline', manual: 'Manual' } as Record<string,string>)[a.source] || '';
       const status = a.is_completed ? 'Concluído' : 'Pendente';
-      const rowData = [date, a.activity_type, a.title, source, status];
+      const rowData = [date, a.activity_type, a.title, source, a.responsible_name || '', a.outcome || '', status];
       x = 14;
       rowData.forEach((val, i) => {
         const maxW = colWidths[i] - 2;
