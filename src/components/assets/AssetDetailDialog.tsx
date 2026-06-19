@@ -164,6 +164,8 @@ export function AssetDetailDialog({
 }: AssetDetailDialogProps) {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { findCategoryForObligation, getTransactionTypeForObligation } = useObligationCategoryMapping();
 
   const [activeTab, setActiveTab] = useState("overview");
