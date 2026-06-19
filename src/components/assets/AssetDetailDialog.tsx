@@ -410,6 +410,80 @@ export function AssetDetailDialog({
     });
   }, [scheduleActivities, dealActivities, propertyActivities]);
 
+  const filteredActivities = useMemo(() => {
+    return allActivities.filter((a: any) => {
+      const date = new Date(a.scheduled_at || a.created_at);
+      if (activityDateFrom && date < new Date(activityDateFrom)) return false;
+      if (activityDateTo && date > new Date(activityDateTo + 'T23:59:59')) return false;
+      return true;
+    });
+  }, [allActivities, activityDateFrom, activityDateTo]);
+
+  const exportActivitiesCSV = () => {
+    import('papaparse').then(Papa => {
+      const rows = filteredActivities.map((a: any) => ({
+        Tipo: a.activity_type,
+        Título: a.title,
+        Descrição: a.description || '',
+        Data: a.scheduled_at || a.created_at
+          ? format(new Date(a.scheduled_at || a.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
+          : '',
+        Fonte: ({ agenda: 'Agenda', pipeline: 'Pipeline', manual: 'Manual' } as Record<string,string>)[a.source] || a.source,
+        Concluído: a.is_completed ? 'Sim' : 'Não',
+      }));
+      const csv = Papa.unparse(rows);
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `atividades-${asset?.unitId || 'imovel'}-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  };
+
+  const exportActivitiesPDF = async () => {
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    doc.setFontSize(16);
+    doc.text('Histórico de Atividades', 14, 18);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Imóvel: ${asset?.unitName || asset?.unitId || ''}`, 14, 26);
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 32);
+    let y = 42;
+    doc.setFontSize(9);
+    doc.setTextColor(60);
+    doc.setFont('helvetica', 'bold');
+    const cols = ['Data', 'Tipo', 'Título', 'Fonte', 'Status'];
+    const colWidths = [28, 22, 80, 22, 20];
+    let x = 14;
+    cols.forEach((col, i) => { doc.text(col, x, y); x += colWidths[i]; });
+    doc.setDrawColor(200);
+    doc.line(14, y + 2, 196, y + 2);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    filteredActivities.forEach((a: any) => {
+      if (y > 270) { doc.addPage(); y = 18; }
+      const date = a.scheduled_at || a.created_at
+        ? format(new Date(a.scheduled_at || a.created_at), "dd/MM/yy HH:mm")
+        : '';
+      const source = ({ agenda: 'Agenda', pipeline: 'Pipeline', manual: 'Manual' } as Record<string,string>)[a.source] || '';
+      const status = a.is_completed ? 'Concluído' : 'Pendente';
+      const rowData = [date, a.activity_type, a.title, source, status];
+      x = 14;
+      rowData.forEach((val, i) => {
+        const maxW = colWidths[i] - 2;
+        const text = doc.splitTextToSize(String(val || ''), maxW);
+        doc.text(text[0], x, y);
+        x += colWidths[i];
+      });
+      y += 6;
+    });
+    doc.save(`atividades-${asset?.unitId || 'imovel'}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   const handleSaveActivity = async () => {
     if (!newActivity.title.trim() || !asset) return;
     setSavingActivity(true);
