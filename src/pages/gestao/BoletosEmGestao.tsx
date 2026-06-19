@@ -341,6 +341,14 @@ export default function BoletosEmGestao() {
                             <Mail className="mr-2 h-4 w-4" />
                             Enviar por e-mail
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openChangeDueDateDialog(boleto)}>
+                            <CalendarClock className="mr-2 h-4 w-4" />
+                            Alterar vencimento
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openReajusteDialog(boleto)}>
+                            <TrendingUp className="mr-2 h-4 w-4" />
+                            Reajustar valor
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handlePaymentAction(boleto.id, 'cancel')}
                             className="text-destructive"
@@ -349,6 +357,7 @@ export default function BoletosEmGestao() {
                             Cancelar cobrança
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+
                           {boleto.bank_slip_url && (
                             <DropdownMenuItem onClick={() => window.open(boleto.bank_slip_url!, '_blank')}>
                               <ExternalLink className="h-4 w-4 mr-2" />
