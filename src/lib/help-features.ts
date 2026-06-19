@@ -9,6 +9,7 @@ export const HELP_FEATURES = {
   'assets.properties': 'Empreendimentos',
   'assets.units': 'Unidades',
   'assets.standalone': 'Imóveis Avulsos',
+  'assets.portfolio_count': 'Contagem de Ativos',
   'assets.documents': 'Documentos do imóvel',
   'assets.activity_timeline': 'Histórico de atividades do imóvel',
   'assets.financial_panel': 'Painel financeiro do imóvel',
@@ -50,6 +51,7 @@ export const HELP_DEFAULT_DESCRIPTIONS: Partial<Record<FeatureKey, string>> = {
   'assets.standalone': 'Imóveis avulsos são propriedades independentes não vinculadas a nenhum empreendimento, como terrenos, casas e galpões.',
   'management.contracts': 'Contratos de locação ativos, histórico de reajustes e gestão de obrigações dos imóveis sob administração.',
   'management.tasks': 'Lista de pendências e tarefas relacionadas à gestão de imóveis, contratos e propostas.',
+  'assets.portfolio_count': 'Inventário completo dos ativos cadastrados: empreendimentos (edifícios, condomínios, loteamentos), unidades vinculadas a empreendimentos e imóveis avulsos. Total = Unidades + Avulsos.',
   'crm.pipeline': 'Funil de negócios com todos os deals em andamento, organizados por estágio de negociação.',
   'finance.dre': 'Demonstrativo de Resultados do Exercício: receitas, despesas e resultado líquido por período de competência.',
 };
