@@ -1050,6 +1050,9 @@ export function CreateLeaseWizard({
             <div className="space-y-4">
               <div className="space-y-3">
                 <Label className="text-base font-semibold">Dados para Pagamento</Label>
+                <div className="p-2 bg-yellow-100 border border-yellow-400 rounded text-xs font-mono">
+                  DEBUG BUILD v3 — tipo: {tipoPagamento}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Informe como o inquilino deve realizar o pagamento do aluguel. Estes dados aparecerão no contrato.
                 </p>
