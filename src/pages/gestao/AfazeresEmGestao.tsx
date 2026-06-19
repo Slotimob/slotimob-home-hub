@@ -176,10 +176,16 @@ const AfazeresEmGestao = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate("/gestao/propostas")}
+                      onClick={() =>
+                        updateProposalStatus.mutate(
+                          { id: p.id, status: 'sent' },
+                          { onSuccess: () => {} }
+                        )
+                      }
+                      disabled={updateProposalStatus.isPending}
                     >
                       <Send className="h-3.5 w-3.5 mr-1.5" />
-                      Enviar
+                      Marcar enviada
                     </Button>
                   </div>
                 ))}
