@@ -1182,6 +1182,24 @@ export function AssetDetailDialog({
                     <Label className="text-xs">Observações (opcional)</Label>
                     <Textarea className="text-xs min-h-[60px]" value={newActivity.description} onChange={e => setNewActivity(p => ({ ...p, description: e.target.value }))} />
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Responsável</Label>
+                      <Input
+                        placeholder="Nome do responsável"
+                        value={newActivity.responsible_name}
+                        onChange={e => setNewActivity(prev => ({ ...prev, responsible_name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Resultado</Label>
+                      <Input
+                        placeholder="Resultado ou observação"
+                        value={newActivity.outcome}
+                        onChange={e => setNewActivity(prev => ({ ...prev, outcome: e.target.value }))}
+                      />
+                    </div>
+                  </div>
                   <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="ghost" onClick={() => setShowNewForm(false)}>Cancelar</Button>
                     <Button size="sm" onClick={handleSaveActivity} disabled={!newActivity.title.trim() || savingActivity}>
