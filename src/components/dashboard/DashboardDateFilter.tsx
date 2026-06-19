@@ -124,14 +124,15 @@ export function DashboardDateFilter({
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="range"
-              selected={{ from: dateRange.from, to: dateRange.to }}
+              selected={pendingRange}
               onSelect={(range) => {
+                setPendingRange(range);
+                // Only propagate when BOTH dates selected and they differ-or-equal validly
                 if (range?.from && range?.to) {
                   onDateRangeChange({ from: range.from, to: range.to });
                   setCustomOpen(false);
-                } else if (range?.from) {
-                  onDateRangeChange({ from: range.from, to: range.from });
                 }
+                // If only `from` selected, wait — do not propagate yet
               }}
               initialFocus
               numberOfMonths={2}
