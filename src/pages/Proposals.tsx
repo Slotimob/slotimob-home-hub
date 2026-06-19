@@ -42,7 +42,7 @@ import {
 } from '@/components/ui/tooltip';
 import {
   FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2,
-  Eye, Copy, Search, Loader2, Download,
+  Eye, Copy, Search, Loader2, Download, CheckCircle2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
