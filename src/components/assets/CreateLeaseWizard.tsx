@@ -532,6 +532,8 @@ export function CreateLeaseWizard({
     }
   };
 
+  const tipoPagamento = paymentInfo.tipo;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
@@ -1068,9 +1070,10 @@ export function CreateLeaseWizard({
                     <SelectItem value="boleto">Boleto</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">Tipo selecionado: <strong>{tipoPagamento}</strong></p>
               </div>
 
-              {paymentInfo.tipo === "pix" && (
+              {tipoPagamento === "pix" && (
                 <div className="space-y-2">
                   <Label>Chave PIX</Label>
                   <Input
@@ -1081,7 +1084,7 @@ export function CreateLeaseWizard({
                 </div>
               )}
 
-              {paymentInfo.tipo === "banco" && (
+              {tipoPagamento === "banco" && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2 space-y-2">
@@ -1120,7 +1123,7 @@ export function CreateLeaseWizard({
                 </div>
               )}
 
-              {paymentInfo.tipo === "boleto" && (
+              {tipoPagamento === "boleto" && (
                 <div className="space-y-3">
                   {/* Dados do pagador (readonly, pré-preenchido do inquilino selecionado) */}
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
