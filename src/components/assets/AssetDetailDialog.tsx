@@ -1088,13 +1088,66 @@ export function AssetDetailDialog({
         <TabsContent value="activities" className="flex-1 overflow-hidden m-0">
           <ScrollArea className="h-full px-4 py-4">
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">{allActivities.length} registro(s)</p>
-                <Button size="sm" variant="outline" onClick={() => setShowNewForm(v => !v)}>
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Nova atividade
-                </Button>
+              <div className="space-y-3">
+                <div className="flex gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    <span>Período:</span>
+                  </div>
+                  <Input
+                    type="date"
+                    className="h-7 text-xs w-[130px]"
+                    value={activityDateFrom}
+                    onChange={e => setActivityDateFrom(e.target.value)}
+                  />
+                  <span className="text-xs text-muted-foreground self-center">até</span>
+                  <Input
+                    type="date"
+                    className="h-7 text-xs w-[130px]"
+                    value={activityDateTo}
+                    onChange={e => setActivityDateTo(e.target.value)}
+                  />
+                  {(activityDateFrom || activityDateTo) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs px-2"
+                      onClick={() => { setActivityDateFrom(''); setActivityDateTo(''); }}
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">{filteredActivities.length} registro(s)</p>
+                  <div className="flex gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Download className="h-3.5 w-3.5 mr-1" />
+                          Exportar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={exportActivitiesCSV}>
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={exportActivitiesPDF}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button size="sm" variant="outline" onClick={() => setShowNewForm(v => !v)}>
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Nova atividade
+                    </Button>
+                  </div>
+                </div>
               </div>
+
 
               {showNewForm && (
                 <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
