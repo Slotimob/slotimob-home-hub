@@ -10,8 +10,7 @@ interface ExportRequest {
 
 export async function notifyExportCreated(request: ExportRequest) {
   try {
-    const { data: owner } = await supabase
-      .from('profile_directory' as any)
+    const { data: owner } = await (supabase as any).from('profile_directory')
       .select('full_name, email')
       .eq('id', request.organization_owner_id)
       .single();
@@ -63,8 +62,7 @@ export async function notifyExportCreated(request: ExportRequest) {
 
 export async function notifyPreparationStarted(request: ExportRequest) {
   try {
-    const { data: owner } = await supabase
-      .from('profile_directory' as any)
+    const { data: owner } = await (supabase as any).from('profile_directory')
       .select('full_name, email')
       .eq('id', request.organization_owner_id)
       .single();
@@ -88,8 +86,7 @@ export async function notifyPreparationStarted(request: ExportRequest) {
 
 export async function notifyExportRejected(request: ExportRequest) {
   try {
-    const { data: owner } = await supabase
-      .from('profile_directory' as any)
+    const { data: owner } = await (supabase as any).from('profile_directory')
       .select('full_name, email')
       .eq('id', request.organization_owner_id)
       .single();
