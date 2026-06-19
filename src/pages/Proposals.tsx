@@ -523,6 +523,7 @@ function RowActions({
   onDelete,
   onDownloadPdf,
   pdfDownloading,
+  onToggleStatus,
 }: {
   proposal: Proposal;
   onEdit: (p: Proposal) => void;
