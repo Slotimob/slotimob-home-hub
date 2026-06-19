@@ -55,6 +55,7 @@ const ContratosEmGestao = React.lazy(() => import("./pages/gestao/ContratosEmGes
 const ContratoDetalhe = React.lazy(() => import("./pages/gestao/ContratoDetalhe"));
 const NovoContrato = React.lazy(() => import("./pages/gestao/NovoContrato"));
 const AfazeresEmGestao = React.lazy(() => import("./pages/gestao/AfazeresEmGestao"));
+const BoletosEmGestao = React.lazy(() => import("./pages/gestao/BoletosEmGestao"));
 const GerencialGestao = React.lazy(() => import("./pages/gestao/GerencialGestao"));
 const CheckoutSuccess = React.lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancel = React.lazy(() => import("./pages/CheckoutCancel"));
@@ -142,6 +143,7 @@ const App = () => (
               <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosRoute /></RequireFeature>)} />
               <Route path="/gestao/contratos/novo" element={guarded(<RequireFeature feature="asset_management"><NovoContrato /></RequireFeature>)} />
               <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
+              <Route path="/gestao/boletos" element={guarded(<RequireFeature feature="asset_management"><BoletosEmGestao /></RequireFeature>)} />
               <Route path="/gestao/gerencial" element={guarded(<RequireFeature feature="asset_management"><GerencialGestao /></RequireFeature>)} />
               <Route path="/gestao/propostas" element={guarded(<Proposals />)} />
               <Route path="/schedule" element={guarded(<Schedule />)} />
