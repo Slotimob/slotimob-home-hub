@@ -27,14 +27,13 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
   const { data: packs, isLoading: isLoadingPacks } = useAICreditPacks();
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
 
-  const handlePurchase = async (pack: { stripe_price_id: string; id: string }) => {
+  const handlePurchase = async (pack: { id: string }) => {
     setLoadingPack(pack.id);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
-          type: 'credit',
-          priceId: pack.stripe_price_id,
-          quantity: 1,
+          product_type: 'ai_credits',
+          credit_pack_id: pack.id,
         },
       });
 
@@ -43,6 +42,8 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
       if (data?.url) {
         window.location.href = data.url;
         onOpenChange(false);
+      } else if (data?.error) {
+        toast.error(data.error);
       }
     } catch (err) {
       console.error('Purchase error:', err);
@@ -52,7 +53,6 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
     }
   };
 
-  // Determine best value (last pack)
   const bestValueId = packs && packs.length > 0 ? packs[packs.length - 1].id : null;
 
   return (
@@ -136,7 +136,7 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
         )}
 
         <p className="text-xs text-muted-foreground text-center">
-          Pagamento único via Stripe. Créditos são adicionados imediatamente após a confirmação.
+          Pagamento via Asaas (Boleto, PIX ou Cartão). Créditos adicionados após confirmação.
         </p>
       </DialogContent>
     </Dialog>

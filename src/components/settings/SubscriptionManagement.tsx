@@ -67,7 +67,8 @@ export const SubscriptionManagement = () => {
   }
 
   const plan = subscription?.plan_id || 'free';
-  const hasStripe = !!subscription?.stripe_subscription_id;
+  const hasAsaas = subscription?.billing_provider === 'asaas' && !!subscription?.asaas_subscription_id;
+  const hasStripe = subscription?.billing_provider === 'stripe' && !!subscription?.stripe_subscription_id;
   const isPaid = ['essencial', 'pro', 'business'].includes(plan);
 
   const handlePortal = async () => {
@@ -81,18 +82,19 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  const handleManageAddon = async (priceId: string, quantity: number) => {
-    setLoadingAction(`addon-${priceId}`);
+  const handleAddAddon = async (addonId: 'extra-units-50' | 'extra-user') => {
+    setLoadingAction(`addon-${addonId}`);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-addon', {
-        body: { priceId, quantity },
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { product_type: 'addon', addon_id: addonId },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast.success('Add-on adicionado à sua assinatura!');
-      refetch();
+      if (error || !data?.url) {
+        toast.error(data?.error || 'Erro ao contratar add-on');
+        return;
+      }
+      window.location.href = data.url;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao atualizar add-on.';
+      const message = err instanceof Error ? err.message : 'Erro ao contratar add-on.';
       toast.error(message);
     } finally {
       setLoadingAction(null);
@@ -229,10 +231,11 @@ export const SubscriptionManagement = () => {
               <Button
                 variant="outline"
                 className="flex-1 gap-2"
-                onClick={() => window.open('https://billing.stripe.com/p/login/eVq7sK9915tj7YXcwV1sQ00', '_blank')}
+                onClick={handlePortal}
+                disabled={loadingAction === 'portal'}
               >
                 <Receipt className="h-4 w-4" />
-                Gerenciar Pagamentos e Faturas
+                Portal do Cliente (Stripe)
               </Button>
             )}
             {!isPaid && !isTrialActive && (
@@ -306,7 +309,7 @@ export const SubscriptionManagement = () => {
       )}
 
       {/* Add-ons - only for paid plans */}
-      {hasStripe && plan !== 'free' && (
+      {(hasAsaas || hasStripe) && plan !== 'free' && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Add-ons</CardTitle>
@@ -353,9 +356,9 @@ export const SubscriptionManagement = () => {
                 <Button
                   size="sm"
                   disabled={!!loadingAction}
-                  onClick={() => handleManageAddon('price_1T7307AUMiQcSICyi27XGFK4', addonUserQty)}
+                  onClick={() => handleAddAddon('extra-user')}
                 >
-                  {loadingAction === 'addon-price_1T7307AUMiQcSICyi27XGFK4' ? (
+                  {loadingAction === 'addon-extra-user' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     'Adicionar'
@@ -395,9 +398,9 @@ export const SubscriptionManagement = () => {
                 <Button
                   size="sm"
                   disabled={!!loadingAction}
-                  onClick={() => handleManageAddon('price_1T72z0AUMiQcSICyrkWUm7fI', addonUnitQty)}
+                  onClick={() => handleAddAddon('extra-units-50')}
                 >
-                  {loadingAction === 'addon-price_1T72z0AUMiQcSICyrkWUm7fI' ? (
+                  {loadingAction === 'addon-extra-units-50' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     'Adicionar'
@@ -439,7 +442,7 @@ export const SubscriptionManagement = () => {
       </Card>
 
       {/* Add-ons for paid users without stripe_subscription_id - redirect to checkout */}
-      {isPaid && !hasStripe && (
+      {isPaid && !hasStripe && !hasAsaas && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">

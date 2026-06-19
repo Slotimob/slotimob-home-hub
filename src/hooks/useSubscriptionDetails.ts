@@ -11,6 +11,9 @@ export interface SubscriptionDetails {
   extra_unit_packs: number;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  asaas_customer_id: string | null;
+  asaas_subscription_id: string | null;
+  billing_provider: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   trial_ends_at: string | null;
@@ -22,7 +25,6 @@ export const useSubscriptionDetails = () => {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
 
-  // Use effectiveBrokerId so members inherit the owner's subscription
   const resolvedUserId = effectiveBrokerId || user?.id;
 
   const { data, isLoading, refetch } = useQuery({
@@ -32,7 +34,7 @@ export const useSubscriptionDetails = () => {
 
       const { data, error } = await supabase
         .from('subscriptions')
-        .select('plan_id, status, is_early_adopter, extra_users_count, extra_unit_packs, stripe_customer_id, stripe_subscription_id, current_period_end, cancel_at_period_end, trial_ends_at, trial_extension_count, last_modified_by_admin')
+        .select('plan_id, status, is_early_adopter, extra_users_count, extra_unit_packs, stripe_customer_id, stripe_subscription_id, asaas_customer_id, asaas_subscription_id, billing_provider, current_period_end, cancel_at_period_end, trial_ends_at, trial_extension_count, last_modified_by_admin')
         .eq('user_id', resolvedUserId)
         .maybeSingle();
 
@@ -48,6 +50,7 @@ export const useSubscriptionDetails = () => {
   });
 
   const openCustomerPortal = async () => {
+    // Legado: somente para usuários com billing_provider = 'stripe'
     const { data, error } = await supabase.functions.invoke('customer-portal');
     if (error) throw error;
     if (data?.url) {
