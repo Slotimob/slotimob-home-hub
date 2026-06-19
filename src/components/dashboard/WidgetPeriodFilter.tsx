@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { startOfDay, endOfDay, startOf courseOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
+import { startOfDay, endOfDay, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
 
 export type WidgetPeriod = 'today' | 'this_month' | 'last_month' | 'next_month';
