@@ -202,7 +202,26 @@ export function PipelineWidget({
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Big Numbers - Fixed metrics */}
-          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border bg-blue-500/5 border-blue-500/20 p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Users className="h-3.5 w-3.5 text-blue-600 dark:text-blue-500" />
+                <span className="text-xs text-muted-foreground">Novos Leads</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-500">{data.newLeads}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">no período selecionado</p>
+            </div>
+            <div className="rounded-lg border bg-green-500/5 border-green-500/20 p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                <span className="text-xs text-muted-foreground">Em Negociação</span>
+              </div>
+              <p className="text-xl font-bold text-green-600 dark:text-green-500">
+                <SmartCurrency value={data.totalDealsValue} />
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">excluindo ganhos/perdidos</p>
+            </div>
+          </div>
 
           {/* Dynamic Stage Big Numbers */}
           {visibleStages.length > 0 && <div className="rounded-lg border">
