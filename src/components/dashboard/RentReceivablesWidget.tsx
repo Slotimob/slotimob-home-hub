@@ -39,6 +39,7 @@ export function RentReceivablesWidget({ dateRange: _dateRange, refreshKey }: Ren
             <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
           )}
         </CardTitle>
+        <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
       <CardContent>
         {isLoading ? (

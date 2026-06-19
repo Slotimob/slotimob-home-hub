@@ -44,6 +44,7 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
             <Badge variant="secondary" className="text-[10px] font-normal">Equipe</Badge>
           )}
         </CardTitle>
+        <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
       <CardContent>
         {isLoading ? (
