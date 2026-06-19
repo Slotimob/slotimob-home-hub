@@ -468,6 +468,11 @@ export function CreateLeaseWizard({
       });
       setSelectedGuarantorContactId(null);
       setPaymentInfo({ tipo: "pix", chavePix: "", banco: "", agencia: "", conta: "", titular: "" });
+      setChargeConfig({
+        is_active: false, billing_type: 'BOLETO', fine_percentage: 2,
+        interest_percentage: 1, discount_value: 0, discount_days: 0,
+        send_email: true, send_whatsapp: false, description: '',
+      });
       setStep("tenant");
       setSearchTerm("");
     } catch (error) {
