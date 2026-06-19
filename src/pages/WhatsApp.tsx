@@ -191,7 +191,7 @@ export default function WhatsApp() {
 
       const memberIds = [effectiveBrokerId, ...members.map(m => m.user_id)];
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory' as any)
         .select('id, full_name')
         .in('id', memberIds);
 
