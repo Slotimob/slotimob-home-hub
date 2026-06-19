@@ -419,14 +419,9 @@ export default function Proposals() {
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <button
-                                    onClick={() => handleToggleStatus(proposal)}
-                                    className="hover:opacity-80 transition-opacity"
-                                    title={proposal.status === 'sent' ? 'Reverter para rascunho' : 'Marcar como enviada'}
-                                  >
-                                    <StatusBadge status={proposal.status} />
-                                  </button>
+                                  <StatusBadge status={proposal.status} />
                                 </TableCell>
+
                                 <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                                   {format(new Date(proposal.created_at), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
                                 </TableCell>
