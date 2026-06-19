@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAICredits } from '@/hooks/useAICredits';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Bot, User, Trash2, Loader2, Sparkles, Zap, Paperclip, X } from 'lucide-react';
+import { Send, Bot, User, Trash2, Loader2, Sparkles, Zap, Paperclip, X, FileUp, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { AssetSelectorDialog, SelectedAsset } from '@/components/chat/AssetSelectorDialog';
 import { Badge } from '@/components/ui/badge';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface ChatMessage {
   id?: string;
@@ -43,6 +44,8 @@ export default function AIChat() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [selectedAssets, setSelectedAssets] = useState<SelectedAsset[]>([]);
   const [assetDialogOpen, setAssetDialogOpen] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; type: string; base64: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load chat history
   useEffect(() => {
@@ -77,7 +80,7 @@ export default function AIChat() {
       role,
       content,
     });
-  }, [user?.id]);
+  }, [user?.id, effectiveBrokerId]);
 
   const handleSend = async () => {
     const trimmed = input.trim();
@@ -107,6 +110,7 @@ export default function AIChat() {
         body: JSON.stringify({
           messages: contextMessages,
           selected_assets: selectedAssets.map(a => ({ id: a.id, type: a.type })),
+          attached_file: attachedFile ? { name: attachedFile.name, type: attachedFile.type, data: attachedFile.base64 } : null,
         }),
       });
 
@@ -159,6 +163,7 @@ export default function AIChat() {
       }
 
       refetchCredits();
+      setAttachedFile(null);
     } catch (err) {
       console.error('Chat error:', err);
       toast.error('Erro de conexão. Tente novamente.');
@@ -172,7 +177,7 @@ export default function AIChat() {
     const { error } = await supabase
       .from('chat_messages')
       .delete()
-      .eq('broker_id', user.id);
+      .eq('broker_id', effectiveBrokerId || user.id);
 
     if (!error) {
       setMessages([]);
@@ -357,7 +362,7 @@ export default function AIChat() {
       {/* Input */}
       <div className="border-t bg-card px-4 py-3">
         <div className="max-w-3xl mx-auto space-y-2">
-          {selectedAssets.length > 0 && (
+          {(selectedAssets.length > 0 || attachedFile) && (
             <div className="flex flex-wrap gap-1.5">
               {selectedAssets.map(asset => (
                 <Badge
@@ -374,19 +379,65 @@ export default function AIChat() {
                   </button>
                 </Badge>
               ))}
+              {attachedFile && (
+                <Badge variant="secondary" className="gap-1 pr-1 text-xs">
+                  <FileUp className="h-3 w-3" />
+                  <span className="max-w-[120px] truncate">{attachedFile.name}</span>
+                  <button
+                    onClick={() => setAttachedFile(null)}
+                    className="ml-0.5 rounded-full hover:bg-muted p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
             </div>
           )}
           <div className="flex gap-2 items-end">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
-              onClick={() => setAssetDialogOpen(true)}
-              disabled={isLoading}
-              title="Anexar imóvel ao contexto"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
+                  disabled={isLoading}
+                  title="Anexar ao contexto"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top">
+                <DropdownMenuItem onClick={() => setAssetDialogOpen(true)}>
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Imóvel cadastrado
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <FileUp className="h-4 w-4 mr-2" />
+                  Arquivo local (imagem ou PDF)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) {
+                  toast.error('Arquivo muito grande. Limite: 5MB.');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  const result = ev.target?.result as string;
+                  setAttachedFile({ name: file.name, type: file.type, base64: result.split(',')[1] });
+                };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+              }}
+            />
             <Textarea
               ref={textareaRef}
               value={input}
