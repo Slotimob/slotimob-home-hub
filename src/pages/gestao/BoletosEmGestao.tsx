@@ -115,7 +115,11 @@ export default function BoletosEmGestao() {
     toast({ title: `${label} copiado!` });
   };
 
-  async function handlePaymentAction(paymentId: string, action: 'get_slip_url' | 'send_email' | 'cancel') {
+  async function handlePaymentAction(
+    paymentId: string,
+    action: 'get_slip_url' | 'send_email' | 'cancel' | 'update_due_date' | 'update_value',
+    extraPayload: Record<string, any> = {}
+  ) {
     if (action === 'cancel') {
       if (!window.confirm('Tem certeza que deseja cancelar esta cobrança no Asaas? Esta ação não pode ser desfeita.')) return;
     }
@@ -131,7 +135,7 @@ export default function BoletosEmGestao() {
             'Authorization': `Bearer ${session?.access_token}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
-          body: JSON.stringify({ payment_id: paymentId, action }),
+          body: JSON.stringify({ payment_id: paymentId, action, ...extraPayload }),
         }
       );
       const data = await res.json();
@@ -144,6 +148,12 @@ export default function BoletosEmGestao() {
       } else if (action === 'cancel') {
         toast({ title: 'Cobrança cancelada no Asaas.' });
         refetch();
+      } else if (action === 'update_due_date') {
+        toast({ title: 'Vencimento atualizado.' });
+        refetch();
+      } else if (action === 'update_value') {
+        toast({ title: 'Valor atualizado.' });
+        refetch();
       }
     } catch (err) {
       toast({ title: 'Erro', description: (err as Error).message, variant: 'destructive' });
@@ -151,6 +161,34 @@ export default function BoletosEmGestao() {
       setActionLoading(null);
     }
   }
+
+  function openChangeDueDateDialog(boleto: any) {
+    setNewDueDate(boleto.due_date || "");
+    setDueDateDialog({ id: boleto.id, current: boleto.due_date || "" });
+  }
+
+  function openReajusteDialog(boleto: any) {
+    setNewValue(String(boleto.value ?? ""));
+    setValueDialog({ id: boleto.id, current: Number(boleto.value) || 0 });
+  }
+
+  async function confirmDueDate() {
+    if (!dueDateDialog || !newDueDate) return;
+    await handlePaymentAction(dueDateDialog.id, 'update_due_date', { new_due_date: newDueDate });
+    setDueDateDialog(null);
+  }
+
+  async function confirmValue() {
+    if (!valueDialog) return;
+    const parsed = parseFloat(newValue.replace(',', '.'));
+    if (isNaN(parsed) || parsed <= 0) {
+      toast({ title: 'Valor inválido', variant: 'destructive' });
+      return;
+    }
+    await handlePaymentAction(valueDialog.id, 'update_value', { new_value: parsed });
+    setValueDialog(null);
+  }
+
 
   const getBadgeClass = (variant: string) => {
     switch (variant) {
