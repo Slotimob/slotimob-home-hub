@@ -40,6 +40,20 @@ export const HELP_FEATURES = {
   'settings.team': 'Equipe e permissões',
 } as const;
 
+export const HELP_DEFAULT_DESCRIPTIONS: Partial<Record<FeatureKey, string>> = {
+  'dashboard.overview': 'Visão geral do seu portfólio imobiliário: patrimônio total, rendimentos, vacância, inadimplência, compromissos e performance do período.',
+  'dashboard.appointments': 'Compromissos e tarefas agendados para os próximos dias, incluindo visitas, reuniões, vencimentos de contratos e obrigações de aluguéis.',
+  'dashboard.rent_receivables': 'Total de cobranças de aluguel no período selecionado. Inclui contratos ativos com data de vencimento dentro do período.',
+  'dashboard.delinquency': 'Valor total de aluguéis em aberto com data de vencimento ultrapassada. Considera cobranças pendentes ou em atraso registradas no financeiro.',
+  'assets.properties': 'Empreendimentos são condomínios, loteamentos ou projetos que agrupam múltiplas unidades.',
+  'assets.units': 'Unidades são imóveis pertencentes a um empreendimento, como apartamentos e salas comerciais.',
+  'assets.standalone': 'Imóveis avulsos são propriedades independentes não vinculadas a nenhum empreendimento, como terrenos, casas e galpões.',
+  'management.contracts': 'Contratos de locação ativos, histórico de reajustes e gestão de obrigações dos imóveis sob administração.',
+  'management.tasks': 'Lista de pendências e tarefas relacionadas à gestão de imóveis, contratos e propostas.',
+  'crm.pipeline': 'Funil de negócios com todos os deals em andamento, organizados por estágio de negociação.',
+  'finance.dre': 'Demonstrativo de Resultados do Exercício: receitas, despesas e resultado líquido por período de competência.',
+};
+
 export type FeatureKey = keyof typeof HELP_FEATURES;
 
 export function isFeatureKey(value: string): value is FeatureKey {

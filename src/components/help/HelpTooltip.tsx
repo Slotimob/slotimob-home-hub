@@ -1,7 +1,7 @@
 import { HelpCircle, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useHelpContent } from '@/hooks/useHelpContent';
-import { HELP_FEATURES, type FeatureKey } from '@/lib/help-features';
+import { HELP_FEATURES, HELP_DEFAULT_DESCRIPTIONS, type FeatureKey } from '@/lib/help-features';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ function HelpBody({
   const description =
     content?.short_description ||
     content?.description ||
+    HELP_DEFAULT_DESCRIPTIONS[featureKey] ||
     'Conteúdo em breve.';
 
   return (
@@ -59,8 +60,6 @@ function HelpBody({
         >
           Ver vídeo <ArrowRight className="h-3 w-3" />
         </Button>
-      ) : !hasContent ? (
-        <p className="text-[11px] text-muted-foreground italic">Conteúdo em breve.</p>
       ) : null}
     </div>
   );
