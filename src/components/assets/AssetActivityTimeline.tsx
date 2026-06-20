@@ -35,6 +35,8 @@ import {
   RefreshCw,
   ChevronDown,
   BarChart3,
+  Plus,
+  StickyNote,
 } from 'lucide-react';
 import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
 import { format } from 'date-fns';
