@@ -29,15 +29,12 @@ export interface DREData {
   netResult: number;
 }
 
-export function useDREReport(startDate?: Date, endDate?: Date, unitIds?: string[]) {
-  const start = startDate || startOfMonth(new Date());
-  const end = endDate || endOfMonth(new Date());
+export function useDREReport(selectedYears: string[], selectedMonths: string[], unitIds?: string[]) {
+  const effectiveYears = selectedYears.length > 0 ? selectedYears : [String(new Date().getFullYear())];
 
   return useQuery({
-    queryKey: ["dre-report", format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"), unitIds?.join(",") || "all"],
+    queryKey: ["dre-report", [...effectiveYears].sort().join(","), [...selectedMonths].sort().join(","), unitIds?.join(",") || "all"],
     queryFn: async (): Promise<DREData> => {
-      // Fetch all transactions by competency (transaction_date) - accrual basis accounting
-      // This includes ALL transactions regardless of payment status (paid/pending)
       let query = supabase
         .from("financial_transactions")
         .select(`
@@ -50,14 +47,52 @@ export function useDREReport(startDate?: Date, endDate?: Date, unitIds?: string[
             name,
             dre_type
           )
-        `)
-        .gte("transaction_date", format(start, "yyyy-MM-dd"))
-        .lte("transaction_date", format(end, "yyyy-MM-dd"));
+        `);
+
+      // Build date periods for each selected year × month combination
+      type Period = { start: string; end: string };
+      const periods: Period[] = [];
+
+      for (const yearStr of effectiveYears) {
+        const year = parseInt(yearStr, 10);
+        if (selectedMonths.length === 0) {
+          periods.push({
+            start: format(startOfYear(new Date(year, 0, 1)), "yyyy-MM-dd"),
+            end: format(endOfYear(new Date(year, 0, 1)), "yyyy-MM-dd"),
+          });
+        } else {
+          for (const monthStr of selectedMonths) {
+            const monthIdx = parseInt(monthStr, 10) - 1;
+            const base = new Date(year, monthIdx, 1);
+            periods.push({
+              start: format(startOfMonth(base), "yyyy-MM-dd"),
+              end: format(endOfMonth(base), "yyyy-MM-dd"),
+            });
+          }
+        }
+      }
+
+      if (periods.length === 1) {
+        query = query
+          .gte("transaction_date", periods[0].start)
+          .lte("transaction_date", periods[0].end);
+      } else {
+        const orFilter = periods
+          .map((p) => `and(transaction_date.gte.${p.start},transaction_date.lte.${p.end})`)
+          .join(",");
+        query = query.or(orFilter);
+      }
 
       // Filter by units if provided
       if (unitIds && unitIds.length > 0) {
         query = query.in("unit_id", unitIds);
       }
+
+      const overallStart = new Date(periods.reduce((a, p) => (p.start < a ? p.start : a), periods[0].start));
+      const overallEnd = new Date(periods.reduce((a, p) => (p.end > a ? p.end : a), periods[0].end));
+      const start = overallStart;
+      const end = overallEnd;
+
 
       const { data: transactions, error } = await query;
 
