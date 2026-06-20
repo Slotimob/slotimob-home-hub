@@ -304,9 +304,10 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
            .eq("id", lease.id);
        }
  
-       toast.success("Arquivo enviado com sucesso!");
-       queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-       queryClient.invalidateQueries({ queryKey: ["leases"] });
+        toast.success("Arquivo enviado com sucesso!");
+        queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
+        queryClient.invalidateQueries({ queryKey: ["leases"] });
+        queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
      } catch (error: any) {
        console.error("Upload error:", error);
        toast.error("Erro ao enviar arquivo", {
@@ -394,6 +395,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
       toast.success("Arquivo removido com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
       queryClient.invalidateQueries({ queryKey: ["leases"] });
+      queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
     } catch (error: any) {
       console.error("Delete error:", error);
       toast.error("Erro ao remover arquivo", {
