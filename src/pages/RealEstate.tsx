@@ -72,6 +72,7 @@ interface RealEstateUnit {
   postal_code: string | null;
   created_at: string;
   tags: string[] | null;
+  gallery_images?: string[] | null;
   is_managed?: boolean;
   registration_number?: string | null;
   has_no_registration?: boolean | null;
