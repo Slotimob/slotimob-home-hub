@@ -236,6 +236,7 @@ export function useWhatsAppSettingsConnection() {
 // ─── useConversations ───────────────────────────────────────────────
 
 export function useConversations(connectionId: string | null) {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<WhatsAppConversationWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
 
