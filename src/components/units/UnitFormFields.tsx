@@ -20,7 +20,7 @@ import { CreatePropertyQuickDialog } from '@/components/units/CreatePropertyQuic
 import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
 import { ContactCategory } from '@/components/contacts/ContactCategoryFilter';
 import { TagsInput } from '@/components/units/TagsInput';
-import { Plus, Search, Building2, HelpCircle, Target, Settings2 } from 'lucide-react';
+import { Plus, Search, Building2, HelpCircle, Target, Settings2, Globe } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -89,6 +89,7 @@ export interface UnitFormData {
   intent_type: IntentType;
   market_value: string;
   is_occupied: boolean;
+  is_published_portal: boolean;
 }
 
 export const getInitialFormData = (): UnitFormData => ({
@@ -128,6 +129,7 @@ export const getInitialFormData = (): UnitFormData => ({
   intent_type: 'sale',
   market_value: '',
   is_occupied: false,
+  is_published_portal: false,
 });
 
 interface UnitFormFieldsProps {
