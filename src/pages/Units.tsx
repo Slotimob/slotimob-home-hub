@@ -106,10 +106,46 @@ const Units = () => {
   const canCreate = isOwner || hasPermission('assets_units', 'create');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: units = [], isLoading: loadingUnits } = useQuery({
+    queryKey: ['units', propertyId || 'all'],
+    queryFn: async () => {
+      if (propertyId) {
+        const { data, error } = await supabase
+          .from('units')
+          .select('*')
+          .eq('property_id', propertyId)
+          .order('unit_number', { ascending: true });
+        if (error) throw error;
+        return (data || []) as Unit[];
+      } else {
+        const { data, error } = await supabase
+          .from('units')
+          .select('*, property:properties(id, name, commission_rate)')
+          .or('is_standalone.is.null,is_standalone.eq.false')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []) as Unit[];
+      }
+    },
+    enabled: !!user,
+  });
+
+  const { data: allProperties = [] } = useQuery({
+    queryKey: ['properties'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name, city, state, commission_rate')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return (data || []) as Property[];
+    },
+    enabled: !!user && !propertyId,
+  });
+
   const [property, setProperty] = useState<Property | null>(null);
-  const [allProperties, setAllProperties] = useState<Property[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [loadingUnits, setLoadingUnits] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
