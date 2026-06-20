@@ -54,9 +54,9 @@ export function useDREReport(startDate?: Date, endDate?: Date, unitIds?: string[
         .gte("transaction_date", format(start, "yyyy-MM-dd"))
         .lte("transaction_date", format(end, "yyyy-MM-dd"));
 
-      // Filter by unit if provided
-      if (unitId) {
-        query = query.eq("unit_id", unitId);
+      // Filter by units if provided
+      if (unitIds && unitIds.length > 0) {
+        query = query.in("unit_id", unitIds);
       }
 
       const { data: transactions, error } = await query;
