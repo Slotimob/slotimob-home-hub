@@ -9,15 +9,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Camera, FileText, Loader2, Scale, Shield, Linkedin, Instagram, PenLine, Building2 } from 'lucide-react';
+import {
+  Camera, FileText, Loader2, Linkedin, Instagram, PenLine,
+  ChevronDown, Building2, Receipt, Shield, Bell, CreditCard,
+  Scale, Download, AlertTriangle, User,
+} from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { NotificationSettings } from '@/components/NotificationSettings';
 
@@ -25,12 +29,69 @@ import { AppLayout } from '@/components/AppLayout';
 import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
 import { DeleteAccountSection } from '@/components/settings/DeleteAccountSection';
 
+const UF_OPTIONS = [
+  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB',
+  'PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
+];
+
+interface AsaasConfig {
+  name?: string;
+  cpf_cnpj?: string;
+  person_type?: 'FISICA' | 'MEI' | 'JURIDICA';
+  mobile_phone?: string;
+  postal_code?: string;
+  address?: string;
+  address_number?: string;
+  province?: string;
+  city?: string;
+  state?: string;
+}
+
+const SettingsSection = ({
+  title,
+  description,
+  icon: Icon,
+  defaultOpen = false,
+  children,
+  className = 'border rounded-lg overflow-hidden',
+}: {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className={className}>
+      <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
+        <div className="flex items-center gap-3">
+          <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
+          <div>
+            <p className="font-semibold text-sm">{title}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        <ChevronDown
+          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="p-4 border-t space-y-4">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
 const Settings = () => {
   const { user, loading } = useAuth();
   const { isAdmin } = useAdminAccess();
   const { isSuperAdmin } = useSuperAdminAccess();
   const { isAgent } = useUserRole();
-  const { isMember, ownerId } = useWorkspace();
+  const { isMember } = useWorkspace();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -42,24 +103,26 @@ const Settings = () => {
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [creciUrl, setCreciUrl] = useState('');
-  const [subscriptionPlan, setSubscriptionPlan] = useState('essencial');
-  
+
   const [bioMini, setBioMini] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
   const [authorRole, setAuthorRole] = useState('');
-  
+
+  const [asaasConfig, setAsaasConfig] = useState<AsaasConfig>({});
+  const [savingAsaas, setSavingAsaas] = useState(false);
+  const [fetchingCep, setFetchingCep] = useState(false);
+
   const [uploading, setUploading] = useState(false);
   const [uploadingCreci, setUploadingCreci] = useState(false);
   const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [savingPhone, setSavingPhone] = useState(false);
   const [savingAuthor, setSavingAuthor] = useState(false);
+  const [loadingCreciView, setLoadingCreciView] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
+    if (!loading && !user) navigate('/auth');
   }, [user, loading, navigate]);
 
   useEffect(() => {
@@ -86,80 +149,44 @@ const Settings = () => {
         setAvatarUrl(data.avatar_url || '');
         setCreciUrl(data.creci_document_url || '');
         setTheme(data.theme_preference || 'light-purple');
-        setSubscriptionPlan(data.subscription_plan || 'essencial');
         setBioMini(data.bio_mini || '');
         setLinkedinUrl(data.linkedin_url || '');
         setInstagramUrl(data.instagram_url || '');
         setAuthorRole(data.author_role || '');
+        setAsaasConfig(((data as any).asaas_config as AsaasConfig) || {});
       }
     } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar perfil',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao carregar perfil', description: error.message, variant: 'destructive' });
     }
   };
 
   const updateTheme = async (newTheme: string) => {
     setTheme(newTheme);
-    // Apply immediately to DOM and persist in localStorage
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('slotimob-theme', newTheme);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ theme_preference: newTheme })
-        .eq('id', user?.id);
-
+      const { error } = await supabase.from('profiles').update({ theme_preference: newTheme }).eq('id', user?.id);
       if (error) throw error;
-      
-      toast({
-        title: 'Tema salvo!',
-        description: 'Suas preferências foram atualizadas.',
-      });
+      toast({ title: 'Tema salvo!', description: 'Suas preferências foram atualizadas.' });
     } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar tema',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao salvar tema', description: error.message, variant: 'destructive' });
     }
   };
 
   const updateFullName = async () => {
     if (!fullName.trim()) {
-      toast({
-        title: 'Erro',
-        description: 'O nome não pode estar vazio.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: 'O nome não pode estar vazio.', variant: 'destructive' });
       return;
     }
-
     setSavingName(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ full_name: fullName.trim() })
-        .eq('id', user?.id);
-
+      const { error } = await supabase.from('profiles').update({ full_name: fullName.trim() }).eq('id', user?.id);
       if (error) throw error;
-
-      // Invalidate all profile-related queries for instant UI sync
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['organization-owner-profile'] });
-
-      toast({
-        title: 'Nome atualizado!',
-        description: 'Seu nome foi salvo com sucesso.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao atualizar nome',
-        description: 'Não foi possível salvar seu nome. Verifique sua conexão e tente novamente.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Nome atualizado!', description: 'Seu nome foi salvo com sucesso.' });
+    } catch {
+      toast({ title: 'Erro ao atualizar nome', description: 'Não foi possível salvar seu nome.', variant: 'destructive' });
     } finally {
       setSavingName(false);
     }
@@ -168,23 +195,11 @@ const Settings = () => {
   const updatePhone = async () => {
     setSavingPhone(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ phone })
-        .eq('id', user?.id);
-
+      const { error } = await supabase.from('profiles').update({ phone }).eq('id', user?.id);
       if (error) throw error;
-
-      toast({
-        title: 'Telefone atualizado!',
-        description: 'Seu número de contato foi salvo.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao atualizar telefone',
-        description: 'Não foi possível salvar seu telefone. Verifique sua conexão e tente novamente.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Telefone atualizado!', description: 'Seu número de contato foi salvo.' });
+    } catch {
+      toast({ title: 'Erro ao atualizar telefone', description: 'Não foi possível salvar seu telefone.', variant: 'destructive' });
     } finally {
       setSavingPhone(false);
     }
@@ -202,21 +217,51 @@ const Settings = () => {
           author_role: authorRole || null,
         })
         .eq('id', user?.id);
-
       if (error) throw error;
-
-      toast({
-        title: 'Perfil de autor salvo!',
-        description: 'Seus dados serão exibidos nos artigos do blog.',
-      });
+      toast({ title: 'Perfil de autor salvo!', description: 'Seus dados serão exibidos nos artigos do blog.' });
     } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
     } finally {
       setSavingAuthor(false);
+    }
+  };
+
+  const handleCepBlur = async () => {
+    const cep = (asaasConfig.postal_code || '').replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    setFetchingCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (data?.erro) return;
+      setAsaasConfig((prev) => ({
+        ...prev,
+        address: data.logradouro || prev.address,
+        province: data.bairro || prev.province,
+        city: data.localidade || prev.city,
+        state: data.uf || prev.state,
+      }));
+    } catch {
+      // silent
+    } finally {
+      setFetchingCep(false);
+    }
+  };
+
+  const saveAsaasConfig = async () => {
+    setSavingAsaas(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ asaas_config: asaasConfig as any } as any)
+        .eq('id', user?.id);
+      if (error) throw error;
+      setProfile((p: any) => ({ ...p, asaas_config: asaasConfig }));
+      toast({ title: 'Dados Asaas salvos!', description: 'Configuração de emissor atualizada.' });
+    } catch (error: any) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+    } finally {
+      setSavingAsaas(false);
     }
   };
 
@@ -226,121 +271,52 @@ const Settings = () => {
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
-      
       if (!event.target.files || event.target.files.length === 0) {
-        toast({
-          title: 'Nenhum arquivo selecionado',
-          description: 'Por favor, selecione uma imagem para usar como foto de perfil.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Nenhum arquivo selecionado', description: 'Selecione uma imagem.', variant: 'destructive' });
         return;
       }
-
       const file = event.target.files[0];
-
-      // Validate file size
       if (file.size > MAX_AVATAR_SIZE_BYTES) {
-        toast({
-          title: 'Arquivo muito grande',
-          description: `O tamanho máximo permitido é ${MAX_AVATAR_SIZE_MB}MB. Escolha uma imagem menor.`,
-          variant: 'destructive',
-        });
+        toast({ title: 'Arquivo muito grande', description: `Máx ${MAX_AVATAR_SIZE_MB}MB.`, variant: 'destructive' });
         return;
       }
-
-      // Validate file type
       const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!validTypes.includes(file.type)) {
-        toast({
-          title: 'Formato inválido',
-          description: 'Por favor, selecione uma imagem JPG, PNG ou WEBP.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Formato inválido', description: 'JPG, PNG ou WEBP.', variant: 'destructive' });
         return;
       }
-
       const fileExt = file.name.split('.').pop();
-      const fileName = `avatar.${fileExt}`;
-      const filePath = `${user?.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
+      const filePath = `${user?.id}/avatar.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Add cache-busting query param to force immediate refresh
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
       const newAvatarUrl = `${data.publicUrl}?t=${Date.now()}`;
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: newAvatarUrl })
-        .eq('id', user?.id);
-
+      const { error: updateError } = await supabase.from('profiles').update({ avatar_url: newAvatarUrl }).eq('id', user?.id);
       if (updateError) throw updateError;
-
-      // Update local state immediately
       setAvatarUrl(newAvatarUrl);
-      
-      toast({
-        title: 'Foto atualizada!',
-        description: 'Sua foto de perfil foi salva com sucesso.',
-      });
+      toast({ title: 'Foto atualizada!', description: 'Sua foto foi salva.' });
     } catch (error: any) {
-      console.error('Avatar upload error:', error);
-      
-      let errorMessage = 'Não foi possível atualizar sua foto. Tente novamente.';
-      
-      if (error.message?.includes('payload too large')) {
-        errorMessage = `O arquivo é muito grande. O tamanho máximo é ${MAX_AVATAR_SIZE_MB}MB.`;
-      } else if (error.message?.includes('network')) {
-        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
-      }
-      
-      toast({
-        title: 'Erro ao fazer upload',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao fazer upload', description: error.message || 'Tente novamente.', variant: 'destructive' });
     } finally {
       setUploading(false);
-      // Reset the input so the same file can be selected again
       event.target.value = '';
     }
   };
 
   const requestPasswordChange = async () => {
     if (!email) {
-      toast({
-        title: 'Erro',
-        description: 'Email não encontrado. Faça login novamente.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: 'Email não encontrado.', variant: 'destructive' });
       return;
     }
-
     setSendingPasswordReset(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-
       if (error) throw error;
-
-      toast({
-        title: 'Email enviado!',
-        description: `Enviamos um link para ${email} para alteração de senha.`,
-      });
+      toast({ title: 'Email enviado!', description: `Enviamos um link para ${email}.` });
     } catch (error: any) {
-      toast({
-        title: 'Erro ao enviar email',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao enviar email', description: error.message, variant: 'destructive' });
     } finally {
       setSendingPasswordReset(false);
     }
@@ -352,119 +328,43 @@ const Settings = () => {
   const uploadCreciDocument = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploadingCreci(true);
-      
-      if (!event.target.files || event.target.files.length === 0) {
-        toast({
-          title: 'Nenhum arquivo selecionado',
-          description: 'Por favor, selecione uma imagem ou PDF do seu CRECI.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
+      if (!event.target.files || event.target.files.length === 0) return;
       const file = event.target.files[0];
-
-      // Validate file size
       if (file.size > MAX_CRECI_SIZE_BYTES) {
-        toast({
-          title: 'Arquivo muito grande',
-          description: `O tamanho máximo permitido é ${MAX_CRECI_SIZE_MB}MB. Escolha um arquivo menor.`,
-          variant: 'destructive',
-        });
+        toast({ title: 'Arquivo muito grande', description: `Máx ${MAX_CRECI_SIZE_MB}MB.`, variant: 'destructive' });
         return;
       }
-
-      // Validate file type
       const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
       if (!validTypes.includes(file.type)) {
-        toast({
-          title: 'Formato inválido',
-          description: 'Por favor, selecione uma imagem (JPG, PNG, WEBP) ou PDF.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Formato inválido', description: 'Imagem ou PDF.', variant: 'destructive' });
         return;
       }
-
       const fileExt = file.name.split('.').pop();
       const fileName = `${user?.id}/creci.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('user-documents')
-        .upload(fileName, file, { upsert: true });
-
+      const { error: uploadError } = await supabase.storage.from('user-documents').upload(fileName, file, { upsert: true });
       if (uploadError) throw uploadError;
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ creci_document_url: fileName })
-        .eq('id', user?.id);
-
+      const { error: updateError } = await supabase.from('profiles').update({ creci_document_url: fileName }).eq('id', user?.id);
       if (updateError) throw updateError;
-
       setCreciUrl(fileName);
-      toast({
-        title: 'CRECI enviado!',
-        description: 'Seu documento foi salvo com sucesso.',
-      });
+      toast({ title: 'CRECI enviado!', description: 'Documento salvo.' });
     } catch (error: any) {
-      console.error('CRECI upload error:', error);
-      
-      let errorMessage = 'Não foi possível enviar o documento. Tente novamente.';
-      
-      if (error.message?.includes('payload too large')) {
-        errorMessage = `O arquivo é muito grande. O tamanho máximo é ${MAX_CRECI_SIZE_MB}MB.`;
-      } else if (error.message?.includes('network')) {
-        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
-      }
-      
-      toast({
-        title: 'Erro ao fazer upload',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao fazer upload', description: error.message || 'Tente novamente.', variant: 'destructive' });
     } finally {
       setUploadingCreci(false);
       event.target.value = '';
     }
   };
 
-  const getSignedCreciUrl = async (filePath: string): Promise<string | null> => {
-    try {
-      // Generate a fresh signed URL on each request (1 hour validity)
-      // This ensures we always get a valid, non-expired URL
-      const { data, error } = await supabase.storage
-        .from('user-documents')
-        .createSignedUrl(filePath, 3600);
-      
-      if (error) {
-        console.error('Error generating signed URL:', error);
-        return null;
-      }
-      
-      return data.signedUrl;
-    } catch (error) {
-      console.error('Error generating signed URL:', error);
-      return null;
-    }
-  };
-
-  const [loadingCreciView, setLoadingCreciView] = useState(false);
-
   const handleViewCreci = async () => {
     if (!creciUrl) return;
-    
     setLoadingCreciView(true);
     try {
-      const signedUrl = await getSignedCreciUrl(creciUrl);
-      if (signedUrl) {
-        window.open(signedUrl, '_blank', 'noopener,noreferrer');
-      } else {
-        toast({
-          title: 'Erro ao acessar documento',
-          description: 'O link do documento expirou ou não está disponível. Tente fazer o upload novamente.',
-          variant: 'destructive',
-        });
+      const { data, error } = await supabase.storage.from('user-documents').createSignedUrl(creciUrl, 3600);
+      if (error || !data?.signedUrl) {
+        toast({ title: 'Erro ao acessar documento', description: 'Link expirado.', variant: 'destructive' });
+        return;
       }
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
     } finally {
       setLoadingCreciView(false);
     }
@@ -478,9 +378,11 @@ const Settings = () => {
     );
   }
 
+  const asaasSaved = !!(profile?.asaas_config?.cpf_cnpj);
+
   return (
     <AppLayout title="Configurações">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-3">
         {/* Workspace banner for members */}
         {isMember && (
           <Alert className="border-primary/20 bg-primary/5">
@@ -491,420 +393,364 @@ const Settings = () => {
             </AlertDescription>
           </Alert>
         )}
-        {/* Profile Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Perfil</CardTitle>
-            <CardDescription>Gerencie suas informações pessoais</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Avatar */}
-            <div className="flex items-center gap-4">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={avatarUrl} />
-                <AvatarFallback className="text-2xl">
-                  {profile?.full_name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <Label htmlFor="avatar-upload" className="cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" disabled={uploading} asChild>
-                      <span>
-                        {uploading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Camera className="h-4 w-4" />
-                        )}
-                        <span className="ml-2">Alterar foto</span>
-                      </span>
-                    </Button>
-                  </div>
-                </Label>
-                <Input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={uploadAvatar}
-                  disabled={uploading}
-                />
-                <p className="text-sm text-muted-foreground mt-2">
-                  JPG, PNG ou WEBP (máx. 5MB)
-                </p>
-              </div>
-            </div>
 
-            <Separator />
-
-            {/* Full Name */}
-            <div className="space-y-2">
-              <Label htmlFor="full-name">Nome Completo</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="full-name"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Como você gostaria de ser identificado"
-                />
-                <Button onClick={updateFullName} disabled={savingName}>
-                  {savingName ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Salvando...
-                    </>
-                  ) : (
-                    'Salvar'
-                  )}
+        {/* 1 — Perfil */}
+        <SettingsSection title="Perfil" description="Foto, nome e telefone" icon={User} defaultOpen>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-24 w-24">
+              <AvatarImage src={avatarUrl} />
+              <AvatarFallback className="text-2xl">{profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <Label htmlFor="avatar-upload" className="cursor-pointer">
+                <Button variant="outline" size="sm" disabled={uploading} asChild>
+                  <span>
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                    <span className="ml-2">Alterar foto</span>
+                  </span>
                 </Button>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-sm text-muted-foreground">
-                Entre em contato com o suporte para alterar seu email
-              </p>
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(00) 00000-0000"
-                />
-                <Button onClick={updatePhone} disabled={savingPhone}>
-                  {savingPhone ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Salvando...
-                    </>
-                  ) : (
-                    'Salvar'
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Author Profile (E-E-A-T) - Super Admin only */}
-        {isSuperAdmin && <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PenLine className="h-5 w-5" />
-              Perfil de Autor
-            </CardTitle>
-            <CardDescription>
-              Dados exibidos nos artigos do blog para credibilidade (E-E-A-T)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="author-role">Cargo / Especialidade</Label>
-              <Input
-                id="author-role"
-                value={authorRole}
-                onChange={(e) => setAuthorRole(e.target.value)}
-                placeholder="Ex: CEO & Fundador, Especialista em Gestão Imobiliária"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bio-mini">Mini Bio</Label>
-              <Textarea
-                id="bio-mini"
-                value={bioMini}
-                onChange={(e) => setBioMini(e.target.value)}
-                placeholder="Breve descrição profissional (2-3 frases)..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="linkedin-url" className="flex items-center gap-1.5">
-                <Linkedin className="h-3.5 w-3.5" /> LinkedIn
               </Label>
+              <Input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={uploadAvatar} disabled={uploading} />
+              <p className="text-sm text-muted-foreground mt-2">JPG, PNG ou WEBP (máx. 5MB)</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label htmlFor="full-name">Nome Completo</Label>
+            <div className="flex gap-2">
+              <Input id="full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Como você gostaria de ser identificado" />
+              <Button onClick={updateFullName} disabled={savingName}>
+                {savingName ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</> : 'Salvar'}
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" value={email} disabled className="bg-muted" />
+            <p className="text-sm text-muted-foreground">Entre em contato com o suporte para alterar seu email</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefone</Label>
+            <div className="flex gap-2">
+              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+              <Button onClick={updatePhone} disabled={savingPhone}>
+                {savingPhone ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</> : 'Salvar'}
+              </Button>
+            </div>
+          </div>
+        </SettingsSection>
+
+        {/* 2 — Asaas */}
+        <SettingsSection
+          title="Configuração de Boleto Asaas"
+          description="Dados do emissor para emissão de boletos"
+          icon={Receipt}
+        >
+          {asaasSaved && (
+            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400 border border-green-200 dark:border-green-800">
+              Dados salvos
+            </Badge>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Nome / Razão Social</Label>
               <Input
-                id="linkedin-url"
-                value={linkedinUrl}
-                onChange={(e) => setLinkedinUrl(e.target.value)}
-                placeholder="https://linkedin.com/in/seu-perfil"
+                value={asaasConfig.name || ''}
+                onChange={(e) => setAsaasConfig({ ...asaasConfig, name: e.target.value })}
+                placeholder="Nome do emissor"
               />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="instagram-url" className="flex items-center gap-1.5">
-                <Instagram className="h-3.5 w-3.5" /> Instagram
-              </Label>
+              <Label>CPF ou CNPJ</Label>
               <Input
-                id="instagram-url"
-                value={instagramUrl}
-                onChange={(e) => setInstagramUrl(e.target.value)}
-                placeholder="https://instagram.com/seu-perfil"
+                value={asaasConfig.cpf_cnpj || ''}
+                onChange={(e) => setAsaasConfig({ ...asaasConfig, cpf_cnpj: e.target.value })}
+                placeholder="000.000.000-00 ou 00.000.000/0001-00"
               />
             </div>
-
-            <Button onClick={updateAuthorProfile} disabled={savingAuthor}>
-              {savingAuthor ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Salvando...
-                </>
-              ) : (
-                'Salvar Perfil de Autor'
-              )}
-            </Button>
-          </CardContent>
-        </Card>}
-
-        {/* Security Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Segurança da Conta
-            </CardTitle>
-            <CardDescription>
-              {user?.app_metadata?.provider === 'google'
-                ? 'Sua conta está vinculada ao Google. Você pode criar uma senha para também acessar via email.'
-                : 'Altere sua senha de acesso de forma segura'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {user?.app_metadata?.provider === 'google' && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                  <svg className="h-5 w-5" viewBox="0 0 24 24">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Conta Google vinculada</p>
-                  <p className="text-xs text-muted-foreground">{email}</p>
-                </div>
-                <Badge variant="secondary" className="text-xs">Ativo</Badge>
-              </div>
-            )}
-
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                {user?.app_metadata?.provider === 'google'
-                  ? 'Ao criar uma senha, você poderá fazer login tanto pelo Google quanto por email e senha. Enviaremos um link seguro para o seu email.'
-                  : <>Por questões de segurança, enviaremos um email de confirmação para <strong>{email}</strong> antes de permitir a alteração da senha.</>
-                }
-              </p>
-            </div>
-            <Button onClick={requestPasswordChange} disabled={sendingPasswordReset}>
-              {sendingPasswordReset ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Enviando email...
-                </>
-              ) : (
-                user?.app_metadata?.provider === 'google'
-                  ? 'Criar senha de acesso'
-                  : 'Alterar Senha'
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Documents Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Documentos</CardTitle>
-            <CardDescription>Credenciais profissionais</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>CRECI</Label>
-              <div className="flex items-center gap-2">
-              {creciUrl && (
-                  <button
-                    onClick={handleViewCreci}
-                    disabled={loadingCreciView}
-                    className="text-sm text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
-                  >
-                    {loadingCreciView ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <FileText className="h-4 w-4" />
-                    )}
-                    {loadingCreciView ? 'Abrindo...' : 'Ver documento'}
-                  </button>
-                )}
-                <Label htmlFor="creci-upload" className="cursor-pointer">
-                  <Button variant="outline" size="sm" disabled={uploadingCreci} asChild>
-                    <span>
-                      {uploadingCreci ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        creciUrl ? 'Atualizar' : 'Enviar CRECI'
-                      )}
-                    </span>
-                  </Button>
-                </Label>
-                <Input
-                  id="creci-upload"
-                  type="file"
-                  accept="image/*,application/pdf"
-                  capture="environment"
-                  className="hidden"
-                  onChange={uploadCreciDocument}
-                  disabled={uploadingCreci}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Envie uma foto ou PDF do seu CRECI (máx. 10MB)
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Preferences Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Preferências</CardTitle>
-            <CardDescription>Personalize sua experiência</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="theme-select">Tema</Label>
-              <Select value={theme} onValueChange={updateTheme}>
-                <SelectTrigger id="theme-select">
-                  <SelectValue placeholder="Selecione um tema" />
-                </SelectTrigger>
+              <Label>Tipo de Pessoa</Label>
+              <Select
+                value={asaasConfig.person_type || ''}
+                onValueChange={(v) => setAsaasConfig({ ...asaasConfig, person_type: v as AsaasConfig['person_type'] })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light-green">Claro — Verde</SelectItem>
-                  <SelectItem value="light-blue">Claro — Azul</SelectItem>
-                  <SelectItem value="light-purple">Claro — Roxo</SelectItem>
-                  <SelectItem value="dark-green">Escuro — Verde</SelectItem>
-                  <SelectItem value="dark-purple">Escuro — Roxo</SelectItem>
+                  <SelectItem value="FISICA">Pessoa Física</SelectItem>
+                  <SelectItem value="MEI">MEI</SelectItem>
+                  <SelectItem value="JURIDICA">Empresa (LTDA/SA)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Notification Settings */}
-        <NotificationSettings />
-
-        {/* Subscription Section - Owner only */}
-        {!isAgent && <SubscriptionManagement />}
-
-        {/* Legal Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Documentos Legais</CardTitle>
-            <CardDescription>Políticas e termos do aplicativo</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full gap-2"
-              onClick={() => navigate('/legal')}
-            >
-              <Scale className="h-4 w-4" />
-              Política de Privacidade e Termos de Uso
-            </Button>
-            
-            {profile?.terms_accepted_at && (
-              <div className="p-3 bg-muted/50 rounded-lg space-y-1">
-                <p className="text-sm font-medium text-foreground">Aceite dos Termos</p>
-                <p className="text-xs text-muted-foreground">
-                  Você aceitou os termos em:{' '}
-                  <span className="font-medium text-foreground">
-                    {new Date(profile.terms_accepted_at).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                </p>
-                {profile?.terms_version && (
-                  <p className="text-xs text-muted-foreground">
-                    Versão: <span className="font-medium">{profile.terms_version}</span>
-                  </p>
-                )}
-              </div>
-            )}
-            
-            {isAdmin && (
-              <>
-                <Separator className="my-3" />
-                <p className="text-xs text-muted-foreground mb-2">Área Administrativa</p>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs gap-2"
-                    onClick={() => navigate('/admin/terms')}
-                  >
-                    <Shield className="h-3 w-3" />
-                    Gerenciar Versões dos Termos
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs gap-2"
-                    onClick={() => navigate('/admin/users')}
-                  >
-                    <Shield className="h-3 w-3" />
-                    Gerenciar Usuários
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Data Export - Owner only */}
-        {!isMember && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Exportar meus dados
-              </CardTitle>
-              <CardDescription>Solicite uma cópia completa dos dados do seu workspace</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={() => navigate('/settings/data-export')}
+            <div className="space-y-2">
+              <Label>Celular</Label>
+              <Input
+                value={asaasConfig.mobile_phone || ''}
+                onChange={(e) => setAsaasConfig({ ...asaasConfig, mobile_phone: e.target.value })}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>CEP {fetchingCep && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}</Label>
+              <Input
+                value={asaasConfig.postal_code || ''}
+                onChange={(e) => setAsaasConfig({ ...asaasConfig, postal_code: e.target.value })}
+                onBlur={handleCepBlur}
+                placeholder="00000-000"
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Logradouro</Label>
+              <Input
+                value={asaasConfig.address || ''}
+                onChange={(e) => setAsaasConfig({ ...asaasConfig, address: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Número</Label>
+              <Input
+                value={asaasConfig.address_number || ''}
+                onChange={(e) => setAsaasConfig({ ...asaasConfig, address_number: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Bairro</Label>
+              <Input
+                value={asaasConfig.province || ''}
+                onChange={(e) => setAsaasConfig({ ...asaasConfig, province: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Cidade</Label>
+              <Input
+                value={asaasConfig.city || ''}
+                onChange={(e) => setAsaasConfig({ ...asaasConfig, city: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Select
+                value={asaasConfig.state || ''}
+                onValueChange={(v) => setAsaasConfig({ ...asaasConfig, state: v })}
               >
-                <FileText className="h-4 w-4" />
-                Exportar meus dados
-              </Button>
-            </CardContent>
-          </Card>
+                <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                <SelectContent>
+                  {UF_OPTIONS.map((uf) => (
+                    <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
+            <Receipt className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-600 dark:text-blue-500">
+              Estes dados são usados para criar sua subconta no <strong>Asaas</strong> — https://www.asaas.com e identificar o emissor nos boletos.
+            </p>
+          </div>
+
+          <Button onClick={saveAsaasConfig} disabled={savingAsaas}>
+            {savingAsaas ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</> : 'Salvar dados Asaas'}
+          </Button>
+        </SettingsSection>
+
+        {/* 3 — Segurança */}
+        <SettingsSection title="Segurança da Conta" description="Senha e método de acesso" icon={Shield}>
+          {user?.app_metadata?.provider === 'google' && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                <svg className="h-5 w-5" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">Conta Google vinculada</p>
+                <p className="text-xs text-muted-foreground">{email}</p>
+              </div>
+              <Badge variant="secondary" className="text-xs">Ativo</Badge>
+            </div>
+          )}
+
+          <p className="text-sm text-muted-foreground">
+            {user?.app_metadata?.provider === 'google'
+              ? 'Ao criar uma senha, você poderá fazer login tanto pelo Google quanto por email e senha. Enviaremos um link seguro para o seu email.'
+              : <>Por questões de segurança, enviaremos um email de confirmação para <strong>{email}</strong> antes de permitir a alteração da senha.</>}
+          </p>
+          <Button onClick={requestPasswordChange} disabled={sendingPasswordReset}>
+            {sendingPasswordReset ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Enviando email...</>
+            ) : user?.app_metadata?.provider === 'google' ? 'Criar senha de acesso' : 'Alterar Senha'}
+          </Button>
+        </SettingsSection>
+
+        {/* 4 — Documentos */}
+        <SettingsSection title="Documentos" description="CRECI e perfil profissional" icon={FileText}>
+          <div className="space-y-2">
+            <Label>CRECI</Label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {creciUrl && (
+                <button
+                  onClick={handleViewCreci}
+                  disabled={loadingCreciView}
+                  className="text-sm text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
+                >
+                  {loadingCreciView ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  {loadingCreciView ? 'Abrindo...' : 'Ver documento'}
+                </button>
+              )}
+              <Label htmlFor="creci-upload" className="cursor-pointer">
+                <Button variant="outline" size="sm" disabled={uploadingCreci} asChild>
+                  <span>
+                    {uploadingCreci ? <Loader2 className="h-4 w-4 animate-spin" /> : creciUrl ? 'Atualizar' : 'Enviar CRECI'}
+                  </span>
+                </Button>
+              </Label>
+              <Input
+                id="creci-upload"
+                type="file"
+                accept="image/*,application/pdf"
+                capture="environment"
+                className="hidden"
+                onChange={uploadCreciDocument}
+                disabled={uploadingCreci}
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">Envie uma foto ou PDF do seu CRECI (máx. 10MB)</p>
+          </div>
+
+          {isSuperAdmin && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <PenLine className="h-4 w-4 text-muted-foreground" />
+                  <p className="font-medium text-sm">Perfil de Autor</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Dados exibidos nos artigos do blog (E-E-A-T)</p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="author-role">Cargo / Especialidade</Label>
+                  <Input id="author-role" value={authorRole} onChange={(e) => setAuthorRole(e.target.value)} placeholder="Ex: CEO & Fundador" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio-mini">Mini Bio</Label>
+                  <Textarea id="bio-mini" value={bioMini} onChange={(e) => setBioMini(e.target.value)} placeholder="Breve descrição..." rows={3} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin-url" className="flex items-center gap-1.5"><Linkedin className="h-3.5 w-3.5" /> LinkedIn</Label>
+                  <Input id="linkedin-url" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/..." />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="instagram-url" className="flex items-center gap-1.5"><Instagram className="h-3.5 w-3.5" /> Instagram</Label>
+                  <Input id="instagram-url" value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/..." />
+                </div>
+                <Button onClick={updateAuthorProfile} disabled={savingAuthor}>
+                  {savingAuthor ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</> : 'Salvar Perfil de Autor'}
+                </Button>
+              </div>
+            </>
+          )}
+        </SettingsSection>
+
+        {/* 5 — Preferências */}
+        <SettingsSection title="Preferências e Notificações" description="Tema e configurações de alertas" icon={Bell}>
+          <div className="space-y-2">
+            <Label htmlFor="theme-select">Tema</Label>
+            <Select value={theme} onValueChange={updateTheme}>
+              <SelectTrigger id="theme-select"><SelectValue placeholder="Selecione um tema" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light-green">Claro — Verde</SelectItem>
+                <SelectItem value="light-blue">Claro — Azul</SelectItem>
+                <SelectItem value="light-purple">Claro — Roxo</SelectItem>
+                <SelectItem value="dark-green">Escuro — Verde</SelectItem>
+                <SelectItem value="dark-purple">Escuro — Roxo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Separator />
+          <NotificationSettings />
+        </SettingsSection>
+
+        {/* 6 — Assinatura */}
+        {!isAgent && (
+          <SettingsSection title="Gerenciar Assinatura" description="Plano, créditos IA e add-ons" icon={CreditCard}>
+            <SubscriptionManagement />
+          </SettingsSection>
         )}
 
-        {/* Delete Account - Danger Zone (hidden for members) */}
-        {!isMember && <DeleteAccountSection />}
+        {/* 7 — Legal */}
+        <SettingsSection title="Documentos Legais" description="Política de privacidade e termos de uso" icon={Scale}>
+          <Button variant="outline" className="w-full gap-2" onClick={() => navigate('/legal')}>
+            <Scale className="h-4 w-4" />
+            Política de Privacidade e Termos de Uso
+          </Button>
+
+          {profile?.terms_accepted_at && (
+            <div className="p-3 bg-muted/50 rounded-lg space-y-1">
+              <p className="text-sm font-medium text-foreground">Aceite dos Termos</p>
+              <p className="text-xs text-muted-foreground">
+                Você aceitou os termos em:{' '}
+                <span className="font-medium text-foreground">
+                  {new Date(profile.terms_accepted_at).toLocaleDateString('pt-BR', {
+                    day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                  })}
+                </span>
+              </p>
+              {profile?.terms_version && (
+                <p className="text-xs text-muted-foreground">
+                  Versão: <span className="font-medium">{profile.terms_version}</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {isAdmin && (
+            <>
+              <Separator className="my-3" />
+              <p className="text-xs text-muted-foreground mb-2">Área Administrativa</p>
+              <div className="flex flex-col gap-2">
+                <Button variant="outline" size="sm" className="w-full text-xs gap-2" onClick={() => navigate('/admin/terms')}>
+                  <Shield className="h-3 w-3" /> Gerenciar Versões dos Termos
+                </Button>
+                <Button variant="outline" size="sm" className="w-full text-xs gap-2" onClick={() => navigate('/admin/users')}>
+                  <Shield className="h-3 w-3" /> Gerenciar Usuários
+                </Button>
+              </div>
+            </>
+          )}
+        </SettingsSection>
+
+        {/* 8 — Exportar */}
+        {!isMember && (
+          <SettingsSection title="Exportar meus dados" description="Cópia completa dos seus dados" icon={Download}>
+            <Button variant="outline" className="w-full gap-2" onClick={() => navigate('/settings/data-export')}>
+              <Download className="h-4 w-4" />
+              Exportar meus dados
+            </Button>
+          </SettingsSection>
+        )}
+
+        {/* 9 — Zona de Perigo */}
+        {!isMember && (
+          <SettingsSection
+            title="Zona de Perigo"
+            description="Ações irreversíveis"
+            icon={AlertTriangle}
+            className="border border-destructive/50 rounded-lg overflow-hidden"
+          >
+            <DeleteAccountSection />
+          </SettingsSection>
+        )}
       </div>
     </AppLayout>
   );
