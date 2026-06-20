@@ -151,7 +151,7 @@ export function useWhatsAppSettingsConnection() {
     if (!user) return;
 
     const channel = supabase
-      .channel('whatsapp-settings-realtime')
+      .channel(`whatsapp-settings-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -236,6 +236,7 @@ export function useWhatsAppSettingsConnection() {
 // ─── useConversations ───────────────────────────────────────────────
 
 export function useConversations(connectionId: string | null) {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<WhatsAppConversationWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -302,10 +303,10 @@ export function useConversations(connectionId: string | null) {
   }, [fetchConversations]);
 
   useEffect(() => {
-    if (!connectionId) return;
+    if (!connectionId || !user) return;
 
     const channel = supabase
-      .channel('conversations-changes')
+      .channel(`conversations-${user.id}-${connectionId}`)
       .on(
         'postgres_changes',
         {
@@ -356,7 +357,7 @@ export function useConversations(connectionId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [connectionId]);
+  }, [connectionId, user]);
 
   return { conversations, loading, refetch: fetchConversations };
 }
@@ -364,6 +365,7 @@ export function useConversations(connectionId: string | null) {
 // ─── useMessages ────────────────────────────────────────────────────
 
 export function useMessages(conversationId: string | null, remoteJid?: string | null) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [lazyLoading, setLazyLoading] = useState(false);
@@ -427,10 +429,10 @@ export function useMessages(conversationId: string | null, remoteJid?: string | 
   }, [conversationId]);
 
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !user) return;
 
     const channel = supabase
-      .channel(`messages-${conversationId}`)
+      .channel(`messages-${user.id}-${conversationId}`)
       .on(
         'postgres_changes',
         {
@@ -477,7 +479,7 @@ export function useMessages(conversationId: string | null, remoteJid?: string | 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, user]);
 
   return { messages, loading: loading || lazyLoading, refetch: fetchMessages };
 }

@@ -5582,6 +5582,7 @@ export type Database = {
       is_crm_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
       maintain_audit_partitions: { Args: never; Returns: undefined }
+      realtime_topic_allowed: { Args: { p_topic: string }; Returns: boolean }
       regenerate_feed_token: { Args: { p_user_id: string }; Returns: string }
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
       register_export_download: {

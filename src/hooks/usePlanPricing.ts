@@ -9,6 +9,9 @@ export interface PlanPricing {
   price_early_adopter: number;
   price_annual_early_adopter: number;
   early_adopter_limit: number | null;
+  // NOTE: Stripe price IDs are intentionally NOT fetched on the client.
+  // They are sensitive (allow crafting checkout sessions at arbitrary tiers)
+  // and are read server-side by the `create-checkout-session` edge function.
   stripe_price_id_monthly: string | null;
   stripe_price_id_yearly: string | null;
   stripe_price_id_early_adopter: string | null;
@@ -21,7 +24,7 @@ export const usePlanPricing = () => {
     queryFn: async (): Promise<Record<string, PlanPricing>> => {
       const { data, error } = await supabase
         .from('subscription_plans')
-        .select('id, name, price_original, price_annual, price_early_adopter, price_annual_early_adopter, early_adopter_limit, stripe_price_id_monthly, stripe_price_id_yearly, stripe_price_id_early_adopter, stripe_price_id_annual_early_adopter')
+        .select('id, name, price_original, price_annual, price_early_adopter, price_annual_early_adopter, early_adopter_limit')
         .eq('is_active', true)
         .in('id', ['start', 'essencial', 'pro', 'business']);
 
@@ -40,10 +43,10 @@ export const usePlanPricing = () => {
           price_early_adopter: Number(plan.price_early_adopter) || 0,
           price_annual_early_adopter: Number(plan.price_annual_early_adopter) || 0,
           early_adopter_limit: plan.early_adopter_limit,
-          stripe_price_id_monthly: plan.stripe_price_id_monthly,
-          stripe_price_id_yearly: plan.stripe_price_id_yearly,
-          stripe_price_id_early_adopter: plan.stripe_price_id_early_adopter,
-          stripe_price_id_annual_early_adopter: (plan as any).stripe_price_id_annual_early_adopter ?? null,
+          stripe_price_id_monthly: null,
+          stripe_price_id_yearly: null,
+          stripe_price_id_early_adopter: null,
+          stripe_price_id_annual_early_adopter: null,
         };
       }
       return map;

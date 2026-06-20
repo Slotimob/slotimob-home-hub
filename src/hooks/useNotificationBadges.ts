@@ -54,7 +54,7 @@ export function useNotificationBadges() {
 
     // Listen for preference changes
     const channel = supabase
-      .channel('profile-prefs')
+      .channel(`profile-prefs-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -155,7 +155,7 @@ export function useNotificationBadges() {
 
     // Set up realtime subscriptions
     const leadsChannel = supabase
-      .channel('leads-changes')
+      .channel(`leads-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -176,7 +176,7 @@ export function useNotificationBadges() {
       .subscribe();
 
     const dealsChannel = supabase
-      .channel('deals-changes')
+      .channel(`deals-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -197,7 +197,7 @@ export function useNotificationBadges() {
       .subscribe();
 
     const visitsChannel = supabase
-      .channel('visits-changes')
+      .channel(`visits-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -218,7 +218,7 @@ export function useNotificationBadges() {
       .subscribe();
 
     const whatsappChannel = supabase
-      .channel('whatsapp-changes')
+      .channel(`whatsapp-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
