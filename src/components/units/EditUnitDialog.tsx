@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -167,6 +168,7 @@ export const EditUnitDialog = ({
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const queryClient = useQueryClient();
   
   const isStandalone = unit.is_standalone ?? false;
   const moduleKey = isStandalone ? 'assets_standalone' : 'assets_units';
@@ -211,6 +213,11 @@ export const EditUnitDialog = ({
     try {
       const { error } = await supabase.from('units').delete().eq('id', unit.id);
       if (error) throw error;
+      try {
+        queryClient.invalidateQueries({ queryKey: ['units'] });
+        queryClient.invalidateQueries({ queryKey: ['asset-health'] });
+        queryClient.invalidateQueries({ queryKey: ['unit-full-data'] });
+      } catch {}
       toast({ title: 'Imóvel excluído com sucesso' });
       clearDraft();
       onOpenChange(false);
@@ -309,6 +316,12 @@ export const EditUnitDialog = ({
         .eq('id', unit.id);
 
       if (error) throw error;
+
+      try {
+        queryClient.invalidateQueries({ queryKey: ['units'] });
+        queryClient.invalidateQueries({ queryKey: ['asset-health'] });
+        queryClient.invalidateQueries({ queryKey: ['unit-full-data'] });
+      } catch {}
 
       // Clear draft on successful save
       clearDraft();

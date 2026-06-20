@@ -1,6 +1,7 @@
 import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
@@ -106,10 +107,46 @@ const Units = () => {
   const canCreate = isOwner || hasPermission('assets_units', 'create');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: units = [], isLoading: loadingUnits } = useQuery({
+    queryKey: ['units', propertyId || 'all'],
+    queryFn: async () => {
+      if (propertyId) {
+        const { data, error } = await supabase
+          .from('units')
+          .select('*')
+          .eq('property_id', propertyId)
+          .order('unit_number', { ascending: true });
+        if (error) throw error;
+        return (data || []) as Unit[];
+      } else {
+        const { data, error } = await supabase
+          .from('units')
+          .select('*, property:properties(id, name, commission_rate)')
+          .or('is_standalone.is.null,is_standalone.eq.false')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []) as Unit[];
+      }
+    },
+    enabled: !!user,
+  });
+
+  const { data: allProperties = [] } = useQuery({
+    queryKey: ['properties'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name, city, state, commission_rate')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return (data || []) as Property[];
+    },
+    enabled: !!user && !propertyId,
+  });
+
   const [property, setProperty] = useState<Property | null>(null);
-  const [allProperties, setAllProperties] = useState<Property[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [loadingUnits, setLoadingUnits] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
@@ -292,14 +329,8 @@ const Units = () => {
   const isAllUnitsView = !propertyId;
 
   useEffect(() => {
-    if (user) {
-      if (propertyId) {
-        loadProperty();
-        loadUnitsForProperty();
-      } else {
-        loadAllUnits();
-        loadAllProperties();
-      }
+    if (user && propertyId) {
+      loadProperty();
     }
   }, [user, propertyId]);
 
@@ -325,71 +356,8 @@ const Units = () => {
     }
   };
 
-  const loadUnitsForProperty = async () => {
-    if (!propertyId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('units')
-        .select('*')
-        .eq('property_id', propertyId)
-        .order('unit_number', { ascending: true });
-
-      if (error) throw error;
-      setUnits(data || []);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar unidades',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoadingUnits(false);
-    }
-  };
-
-  const loadAllUnits = async () => {
-    try {
-      // Only load units that are NOT standalone (is_standalone = false or null)
-      const { data, error } = await supabase
-        .from('units')
-        .select('*, property:properties(id, name, commission_rate)')
-        .or('is_standalone.is.null,is_standalone.eq.false')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setUnits(data || []);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar unidades',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoadingUnits(false);
-    }
-  };
-
-  const loadAllProperties = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('id, name, city, state, commission_rate')
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      setAllProperties(data || []);
-    } catch (error: any) {
-      console.error('Error loading properties:', error);
-    }
-  };
-
   const reloadUnits = () => {
-    if (propertyId) {
-      loadUnitsForProperty();
-    } else {
-      loadAllUnits();
-    }
+    queryClient.invalidateQueries({ queryKey: ['units'] });
   };
 
   if (loading || loadingUnits || (!isAllUnitsView && !property)) {
@@ -562,7 +530,7 @@ const Units = () => {
           viewModeSlot={
             <div className="flex items-center gap-3">
               <ViewModeTabs value={viewMode} onValueChange={handleViewModeChange} showTable={true} />
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setLoadingUnits(true); reloadUnits(); }} title="Atualizar lista">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => reloadUnits()} title="Atualizar lista">
                 <RefreshCw className="h-4 w-4" />
               </Button>
               {/* Active Filters Summary Badges */}
