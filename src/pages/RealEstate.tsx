@@ -1,5 +1,6 @@
 import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
