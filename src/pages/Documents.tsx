@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -108,6 +109,61 @@ const Documents = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [deleteDoc, setDeleteDoc] = useState<Document | null>(null);
+
+  // Docs from property_documents table
+  const { data: propertyDocs = [] } = useQuery({
+    queryKey: ['documents-property-docs', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('property_documents')
+        .select('id, title, file_path, external_url, source_type, created_at, properties(name)')
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Docs from lease journey (signed_contract_path + metadata.entry_inspection_path)
+  const { data: journeyDocs = [] } = useQuery({
+    queryKey: ['documents-journey', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('leases')
+        .select('id, signed_contract_path, metadata, start_date, tenant_contact:tenant_contact_id(name)')
+        .order('start_date', { ascending: false });
+
+      const docs: { id: string; title: string; path: string; tenant: string; date: string; bucket: string }[] = [];
+      (data || []).forEach((lease: any) => {
+        const tenantName = (lease.tenant_contact as any)?.name || 'Inquilino';
+        if (lease.signed_contract_path) {
+          docs.push({
+            id: `${lease.id}-signed`,
+            title: `Contrato Assinado — ${tenantName}`,
+            path: lease.signed_contract_path,
+            tenant: tenantName,
+            date: lease.start_date || '',
+            bucket: 'documents',
+          });
+        }
+        const meta = (lease.metadata as any) || {};
+        if (meta.entry_inspection_path) {
+          docs.push({
+            id: `${lease.id}-inspection`,
+            title: `Vistoria de Entrada — ${tenantName}`,
+            path: meta.entry_inspection_path,
+            tenant: tenantName,
+            date: meta.entry_inspection_date
+              ? new Date(meta.entry_inspection_date).toISOString().split('T')[0]
+              : (lease.start_date || ''),
+            bucket: 'documents',
+          });
+        }
+      });
+      return docs;
+    },
+    enabled: !!user?.id,
+  });
+  
   
   // Sync tab with route
   const activeTab = getTabFromPath(location.pathname);
@@ -199,6 +255,23 @@ const Documents = () => {
         description: error.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleDownloadFromBucket = async (bucket: string, path: string, title: string) => {
+    try {
+      const { data, error } = await supabase.storage.from(bucket).download(path);
+      if (error) throw error;
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = title;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast({ title: 'Erro ao baixar documento', description: error.message, variant: 'destructive' });
     }
   };
 
@@ -459,6 +532,142 @@ const Documents = () => {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              </div>
+            )}
+
+            {/* Docs de Empreendimentos */}
+            {propertyDocs.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-medium">Docs de Empreendimentos</h3>
+                  <Badge variant="secondary" className="text-xs">{propertyDocs.length}</Badge>
+                </div>
+                <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="min-w-[200px]">Documento</TableHead>
+                          <TableHead className="min-w-[160px]">Empreendimento</TableHead>
+                          <TableHead className="w-[120px]">Tipo</TableHead>
+                          <TableHead className="w-[100px] text-center">Data</TableHead>
+                          <TableHead className="w-[80px] text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {propertyDocs.map((doc: any) => (
+                          <TableRow key={doc.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell>
+                              <span className="font-medium text-foreground line-clamp-1">{doc.title}</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-muted-foreground">
+                                {(doc.properties as any)?.name || '—'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className="text-xs font-normal bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                Doc. Imóvel
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(doc.created_at).toLocaleDateString('pt-BR')}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end">
+                                {doc.external_url ? (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8"
+                                        onClick={() => window.open(doc.external_url, '_blank')}>
+                                        <ExternalLink className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Abrir</TooltipContent>
+                                  </Tooltip>
+                                ) : doc.file_path ? (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8"
+                                        onClick={() => handleDownloadFromBucket('property-documents', doc.file_path, doc.title)}>
+                                        <Download className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Baixar</TooltipContent>
+                                  </Tooltip>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Jornada dos Contratos */}
+            {journeyDocs.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-medium">Jornada dos Contratos</h3>
+                  <Badge variant="secondary" className="text-xs">{journeyDocs.length}</Badge>
+                </div>
+                <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="min-w-[200px]">Documento</TableHead>
+                          <TableHead className="min-w-[160px]">Inquilino</TableHead>
+                          <TableHead className="w-[120px]">Tipo</TableHead>
+                          <TableHead className="w-[100px] text-center">Data</TableHead>
+                          <TableHead className="w-[80px] text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {journeyDocs.map((doc) => (
+                          <TableRow key={doc.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell>
+                              <span className="font-medium text-foreground">{doc.title}</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-muted-foreground">{doc.tenant}</span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className="text-xs font-normal bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                                Jornada
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm text-muted-foreground">
+                                {doc.date ? new Date(doc.date).toLocaleDateString('pt-BR') : '—'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8"
+                                      onClick={() => handleDownloadFromBucket(doc.bucket, doc.path, doc.title)}>
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Baixar</TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </div>
             )}
