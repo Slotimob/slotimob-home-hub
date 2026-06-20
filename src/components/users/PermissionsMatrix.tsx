@@ -37,6 +37,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
 
   // Gestão group
   { key: '_group_management', label: 'Gestão', actions: [], isGroupHeader: true },
+  { key: 'management_proposals', label: 'Propostas Comerciais', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_rentals', label: 'Aluguéis', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_contracts', label: 'Contratos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_reports', label: 'Gerencial', actions: ['view', 'create', 'edit', 'delete'], indent: true },

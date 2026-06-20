@@ -35,6 +35,7 @@ export const PERMISSION_MODULES_KEYS = [
   // Standalone
   'dashboard',
   // Gestão
+  'management_proposals',
   'management_rentals',
   'management_contracts',
   'management_reports',
