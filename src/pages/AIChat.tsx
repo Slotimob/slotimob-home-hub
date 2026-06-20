@@ -51,10 +51,11 @@ export default function AIChat() {
   useEffect(() => {
     if (!user?.id) return;
     const load = async () => {
+      const brokerId = effectiveBrokerId || user.id;
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
-        .eq('broker_id', user.id)
+        .eq('broker_id', brokerId)
         .order('created_at', { ascending: true })
         .limit(100);
 
@@ -64,7 +65,7 @@ export default function AIChat() {
       setIsLoadingHistory(false);
     };
     load();
-  }, [user?.id]);
+  }, [user?.id, effectiveBrokerId]);
 
   // Auto-scroll
   useEffect(() => {
@@ -472,7 +473,7 @@ export default function AIChat() {
   // Owners always have access; members need chat.view permission
   const gatedContent = isOwner ? chatContent : (
     <PermissionGate
-      permission="chat.view"
+      permission="chat.use"
       fallback={
         <div className="flex items-center justify-center h-[60vh]">
           <div className="text-center p-6">
