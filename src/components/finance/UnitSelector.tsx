@@ -25,19 +25,29 @@ interface UnitOption {
   isStandalone: boolean;
 }
 
-interface UnitSelectorProps {
-  values: string[];
-  onChange: (values: string[]) => void;
+type UnitSelectorProps = {
   placeholder?: string;
   disabled?: boolean;
-}
+} & (
+  | { values: string[]; onChange: (values: string[]) => void; value?: never }
+  | { value: string; onChange: (value: string) => void; values?: never }
+);
 
-export function UnitSelector({
-  values,
-  onChange,
-  placeholder = "Todas as unidades",
-  disabled = false,
-}: UnitSelectorProps) {
+export function UnitSelector(props: UnitSelectorProps) {
+  const { placeholder = "Todas as unidades", disabled = false } = props;
+  const isMulti = "values" in props && Array.isArray(props.values);
+  const values: string[] = isMulti
+    ? (props as { values: string[] }).values
+    : (props as { value: string }).value
+      ? [(props as { value: string }).value]
+      : [];
+  const emit = (next: string[]) => {
+    if (isMulti) {
+      (props as { onChange: (v: string[]) => void }).onChange(next);
+    } else {
+      (props as { onChange: (v: string) => void }).onChange(next[0] ?? "");
+    }
+  };
   const [open, setOpen] = useState(false);
 
   const { data: units = [], isLoading } = useQuery({
