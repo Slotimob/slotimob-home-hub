@@ -35,16 +35,9 @@ export const useEarlyAdopterCount = () => {
     refetchInterval: 60 * 1000,
   });
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('early-adopter-claims-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'early_adopter_claims' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['early-adopter-slots'] });
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
+  // Realtime subscription removed: landing page is accessible to anonymous users
+  // and the realtime.messages RLS policy now requires workspace-scoped topics.
+  // The `refetchInterval` of 60s keeps the slot counts fresh enough.
 
   return {
     slots: data || { essencial: null, pro: null, business: null },
