@@ -96,8 +96,8 @@ const MONTH_NAMES_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set"
 export default function FinanceDRE() {
   const currentYear = new Date().getFullYear();
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
-  const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
-  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [selectedYears, setSelectedYears] = useState<string[]>([String(currentYear)]);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
   const years = useMemo(
     () => [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(String),
