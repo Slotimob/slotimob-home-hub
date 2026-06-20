@@ -357,7 +357,7 @@ export function useConversations(connectionId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [connectionId]);
+  }, [connectionId, user]);
 
   return { conversations, loading, refetch: fetchConversations };
 }
