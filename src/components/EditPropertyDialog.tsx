@@ -167,6 +167,8 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
         .eq('id', property.id);
 
       if (error) throw error;
+      // Invalidate properties list cache so parent re-fetches
+      try { queryClient.invalidateQueries({ queryKey: ['properties'] }); } catch {}
       clearDraft();
 
       toast({
