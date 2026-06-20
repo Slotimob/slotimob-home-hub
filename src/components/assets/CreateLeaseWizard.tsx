@@ -532,7 +532,7 @@ export function CreateLeaseWizard({
     }
   };
 
-  const tipoPagamento = paymentInfo.tipo;
+  
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1050,9 +1050,6 @@ export function CreateLeaseWizard({
             <div className="space-y-4">
               <div className="space-y-3">
                 <Label className="text-base font-semibold">Dados para Pagamento</Label>
-                <div className="p-2 bg-yellow-100 border border-yellow-400 rounded text-xs font-mono">
-                  DEBUG BUILD v3 — tipo: {tipoPagamento}
-                </div>
                 <p className="text-sm text-muted-foreground">
                   Informe como o inquilino deve realizar o pagamento do aluguel. Estes dados aparecerão no contrato.
                 </p>
@@ -1073,108 +1070,101 @@ export function CreateLeaseWizard({
                     <SelectItem value="boleto">Boleto</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Tipo selecionado: <strong>{tipoPagamento}</strong></p>
               </div>
 
-              {(() => {
-                switch (tipoPagamento) {
-                  case "pix":
-                    return (
-                      <div className="space-y-2">
-                        <Label>Chave PIX</Label>
-                        <Input
-                          value={paymentInfo.chavePix || ""}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, chavePix: e.target.value })}
-                          placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
-                        />
+              {paymentInfo.tipo === "pix" && (
+                <div className="space-y-2">
+                  <Label>Chave PIX</Label>
+                  <Input
+                    value={paymentInfo.chavePix || ""}
+                    onChange={(e) => setPaymentInfo({ ...paymentInfo, chavePix: e.target.value })}
+                    placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                  />
+                </div>
+              )}
+
+              {paymentInfo.tipo === "banco" && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2 space-y-2">
+                      <Label>Banco</Label>
+                      <Input
+                        value={paymentInfo.banco || ""}
+                        onChange={(e) => setPaymentInfo({ ...paymentInfo, banco: e.target.value })}
+                        placeholder="Nome do banco"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Agência</Label>
+                      <Input
+                        value={paymentInfo.agencia || ""}
+                        onChange={(e) => setPaymentInfo({ ...paymentInfo, agencia: e.target.value })}
+                        placeholder="0000"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Conta</Label>
+                      <Input
+                        value={paymentInfo.conta || ""}
+                        onChange={(e) => setPaymentInfo({ ...paymentInfo, conta: e.target.value })}
+                        placeholder="00000-0"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 space-y-2">
+                      <Label>Titular</Label>
+                      <Input
+                        value={paymentInfo.titular || ""}
+                        onChange={(e) => setPaymentInfo({ ...paymentInfo, titular: e.target.value })}
+                        placeholder="Nome do titular da conta"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentInfo.tipo === "boleto" && (
+                <div className="space-y-3">
+                  <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dados do Pagador</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Nome</p>
+                        <p className="font-medium">{selectedTenant?.name || "-"}</p>
                       </div>
-                    );
-                  case "banco":
-                    return (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="sm:col-span-2 space-y-2">
-                            <Label>Banco</Label>
-                            <Input
-                              value={paymentInfo.banco || ""}
-                              onChange={(e) => setPaymentInfo({ ...paymentInfo, banco: e.target.value })}
-                              placeholder="Nome do banco"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Agência</Label>
-                            <Input
-                              value={paymentInfo.agencia || ""}
-                              onChange={(e) => setPaymentInfo({ ...paymentInfo, agencia: e.target.value })}
-                              placeholder="0000"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Conta</Label>
-                            <Input
-                              value={paymentInfo.conta || ""}
-                              onChange={(e) => setPaymentInfo({ ...paymentInfo, conta: e.target.value })}
-                              placeholder="00000-0"
-                            />
-                          </div>
-                          <div className="sm:col-span-2 space-y-2">
-                            <Label>Titular</Label>
-                            <Input
-                              value={paymentInfo.titular || ""}
-                              onChange={(e) => setPaymentInfo({ ...paymentInfo, titular: e.target.value })}
-                              placeholder="Nome do titular da conta"
-                            />
-                          </div>
-                        </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {(selectedTenant as any)?.document_type || "CPF/CNPJ"}
+                        </p>
+                        <p className="font-medium">
+                          {(selectedTenant as any)?.document_number ? (
+                            (selectedTenant as any).document_number
+                          ) : (
+                            <span className="text-amber-600 text-xs">
+                              Não informado — edite o contato do inquilino antes de emitir boleto
+                            </span>
+                          )}
+                        </p>
                       </div>
-                    );
-                  case "boleto":
-                  default:
-                    return tipoPagamento === "boleto" ? (
-                      <div className="space-y-3">
-                        <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dados do Pagador</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Nome</p>
-                              <p className="font-medium">{selectedTenant?.name || "-"}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                {(selectedTenant as any)?.document_type || "CPF/CNPJ"}
-                              </p>
-                              <p className="font-medium">
-                                {(selectedTenant as any)?.document_number ? (
-                                  (selectedTenant as any).document_number
-                                ) : (
-                                  <span className="text-amber-600 text-xs">
-                                    Não informado — edite o contato do inquilino antes de emitir boleto
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                            {selectedTenant?.email && (
-                              <div className="sm:col-span-2">
-                                <p className="text-xs text-muted-foreground">E-mail (para envio do boleto)</p>
-                                <p className="font-medium">{selectedTenant.email}</p>
-                              </div>
-                            )}
-                          </div>
+                      {selectedTenant?.email && (
+                        <div className="sm:col-span-2">
+                          <p className="text-xs text-muted-foreground">E-mail (para envio do boleto)</p>
+                          <p className="font-medium">{selectedTenant.email}</p>
                         </div>
-                        <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
-                          <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Emissão automática via Asaas</p>
-                            <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">
-                              Os boletos são gerados e enviados automaticamente pelo Asaas em cada data de vencimento.
-                              Configure multa, juros, desconto e notificações na próxima etapa: <strong>Cobrança</strong>.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null;
-                }
-              })()}
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
+                    <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Emissão automática via Asaas</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">
+                        Os boletos são gerados e enviados automaticamente pelo Asaas em cada data de vencimento.
+                        Configure multa, juros, desconto e notificações na próxima etapa: <strong>Cobrança</strong>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="p-3 bg-muted/50 rounded-lg text-sm">
                 <p className="text-muted-foreground">
