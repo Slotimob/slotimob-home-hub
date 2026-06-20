@@ -65,7 +65,12 @@ Deno.serve(async (req) => {
       });
     }
   } else {
-    safeWarn('whatsapp-webhook: no WHATSAPP_WEBHOOK_TOKEN or EVOLUTION_API_KEY configured — accepting unauthenticated request. Configure one of these secrets to enforce webhook authentication.');
+    // SECURITY: fail closed — never accept unauthenticated webhook requests.
+    safeWarn('whatsapp-webhook: rejected request — WHATSAPP_WEBHOOK_TOKEN/EVOLUTION_API_KEY not configured. Set one of these secrets to enable the webhook.');
+    return new Response(
+      JSON.stringify({ error: 'Webhook authentication not configured' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   }
 
   const supabaseAdmin = createClient(
