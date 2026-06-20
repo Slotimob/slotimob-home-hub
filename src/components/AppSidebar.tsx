@@ -181,7 +181,7 @@ export function AppSidebar() {
       title: 'CRM', 
       icon: Users,
       items: [
-        { title: 'Mensagens', url: '/whatsapp', moduleKey: 'integrations' },
+        { title: 'Mensagens', url: '/whatsapp', moduleKey: 'crm_whatsapp' },
         { 
           title: 'Pipeline', 
           url: '/pipeline',
