@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/hooks/useAuth';
@@ -100,6 +101,7 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('assets_properties', 'edit');
   const canDelete = isOwner || hasPermission('assets_properties', 'delete');
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [freshProperty, setFreshProperty] = useState<Property | null>(null);
@@ -165,6 +167,8 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
         .eq('id', property.id);
 
       if (error) throw error;
+      // Invalidate properties list cache so parent re-fetches
+      try { queryClient.invalidateQueries({ queryKey: ['properties'] }); } catch {}
       clearDraft();
 
       toast({

@@ -1,6 +1,7 @@
 import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,9 +46,21 @@ const Properties = () => {
   const canCreate = isOwner || hasPermission('assets_properties', 'create');
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [properties, setProperties] = useState<Property[]>([]);
+  const queryClient = useQueryClient();
+  const { data: properties = [], isLoading: loadingProperties } = useQuery({
+    queryKey: ['properties'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as Property[];
+    },
+    enabled: !!user,
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [loadingProperties, setLoadingProperties] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -64,32 +77,6 @@ const Properties = () => {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
-
-  useEffect(() => {
-    if (user) {
-      loadProperties();
-    }
-  }, [user]);
-
-  const loadProperties = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProperties(data || []);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar empreendimentos',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoadingProperties(false);
-    }
-  };
 
   // Helper to get unit count for a property
   const getUnitCount = (propertyId: string) => unitCounts[propertyId] || 0;
@@ -138,10 +125,10 @@ const Properties = () => {
                 <Plus className="h-4 w-4" />
                 <span className="hidden md:inline md:ml-2">Novo Empreendimento</span>
               </Button>
-              <AddAssetButton 
-                variant="outline" 
+              <AddAssetButton
+                variant="outline"
                 showIcon={true}
-                onSuccess={loadProperties}
+                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['properties'] })}
               />
               <Button variant="outline" size="sm" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3" onClick={() => setIsImportOpen(true)}>
                 <Upload className="h-4 w-4" />
@@ -152,10 +139,10 @@ const Properties = () => {
         </div>
       }
     >
-      <CreatePropertyDialog 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
-        onSuccess={loadProperties} 
+      <CreatePropertyDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['properties'] })}
       />
       
       <div className="space-y-6">
@@ -291,7 +278,7 @@ const Properties = () => {
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           onSuccess={() => {
-            loadProperties();
+            queryClient.invalidateQueries({ queryKey: ['properties'] });
             setSelectedProperty(null);
           }}
         />
@@ -300,7 +287,7 @@ const Properties = () => {
       <ImportUnitsDialog
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
-        onSuccess={loadProperties}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['properties'] })}
       />
     </AppLayout>
   );
