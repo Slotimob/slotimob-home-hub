@@ -105,9 +105,11 @@ const ActivityHistory = () => {
 
   const loadLogs = async () => {
     try {
+      const cutoff = subDays(new Date(), 14).toISOString();
       const { data, error } = await supabase
         .from('audit_logs')
         .select('*')
+        .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .limit(500);
 
@@ -158,9 +160,7 @@ const ActivityHistory = () => {
     switch (period) {
       case 'today': return startOfDay(now);
       case '7': return subDays(now, 7);
-      case '30': return subDays(now, 30);
-      case '90': return subDays(now, 90);
-      case '180': return subDays(now, 180);
+      case '14': return subDays(now, 14);
       default: return null;
     }
   };
@@ -223,7 +223,7 @@ const ActivityHistory = () => {
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
           Timeline de todas as alterações realizadas no sistema.
-          <span className="ml-1 opacity-70">Histórico mantido pelos últimos 90 dias.</span>
+          <span className="ml-1 opacity-70">Histórico dos últimos 14 dias.</span>
         </p>
 
         {/* Compact filters */}
@@ -291,12 +291,10 @@ const ActivityHistory = () => {
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tudo</SelectItem>
+                <SelectItem value="all">Tudo (14 dias)</SelectItem>
                 <SelectItem value="today">Hoje</SelectItem>
                 <SelectItem value="7">7 dias</SelectItem>
-                <SelectItem value="30">30 dias</SelectItem>
-                <SelectItem value="90">90 dias</SelectItem>
-                <SelectItem value="180">180 dias</SelectItem>
+                <SelectItem value="14">14 dias</SelectItem>
               </SelectContent>
             </Select>
           </div>
