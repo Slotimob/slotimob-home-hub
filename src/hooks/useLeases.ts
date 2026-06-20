@@ -192,7 +192,7 @@ export function useLeases() {
         `)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || error.details || "Erro inesperado");
 
       return (data || []).map((lease) => ({
         ...lease,
@@ -236,7 +236,7 @@ export function useLeaseByUnitId(unitId: string | null) {
         .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || error.details || "Erro inesperado");
 
       if (!data) return null;
 
@@ -303,7 +303,7 @@ export function useCreateLease() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || error.details || "Erro inesperado");
 
       // Step 2: Update unit as occupied
       await supabase
