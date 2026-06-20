@@ -18,7 +18,7 @@ export function useWhatsAppGlobalListener() {
     if (!user) return;
 
     const channel = supabase
-      .channel('whatsapp-global-listener')
+      .channel(`whatsapp-global-${user.id}`)
       .on(
         'postgres_changes',
         {
