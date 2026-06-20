@@ -91,6 +91,8 @@ const MONTH_NAMES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
+const MONTH_NAMES_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
 export default function FinanceDRE() {
   const currentYear = new Date().getFullYear();
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
