@@ -189,7 +189,7 @@ export default function FinanceDRE() {
         <Card>
           <CardContent className="py-4 space-y-3">
             {/* Unit filter */}
-            <div className="w-full sm:w-64">
+            <div className="w-full sm:w-64 mx-auto">
               <UnitSelector
                 values={selectedUnitIds}
                 onChange={setSelectedUnitIds}
@@ -198,7 +198,7 @@ export default function FinanceDRE() {
             </div>
 
             {/* Year multi-select */}
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 justify-center">
               {years.map(year => (
                 <Button
                   key={year}
@@ -222,7 +222,7 @@ export default function FinanceDRE() {
             </div>
 
             {/* Month multi-select */}
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 justify-center">
               <Button
                 type="button"
                 size="sm"
