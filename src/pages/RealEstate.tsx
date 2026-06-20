@@ -1,5 +1,6 @@
 import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,6 +72,7 @@ interface RealEstateUnit {
   postal_code: string | null;
   created_at: string;
   tags: string[] | null;
+  gallery_images?: string[] | null;
   is_managed?: boolean;
   registration_number?: string | null;
   has_no_registration?: boolean | null;
@@ -139,12 +141,10 @@ const RealEstate = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [realEstateUnits, setRealEstateUnits] = useState<RealEstateUnit[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<UnitsFiltersState>(initialFilters);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('created_at_desc');
-  const [isLoading, setIsLoading] = useState(true);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   
   const [selectedUnit, setSelectedUnit] = useState<RealEstateUnit | null>(null);
@@ -153,6 +153,29 @@ const RealEstate = () => {
     return (saved === 'grid' || saved === 'table' || saved === 'kanban') ? saved : 'table';
   });
   const isMobile = useIsMobile();
+
+  const queryClient = useQueryClient();
+
+  const { data: realEstateUnits = [], isLoading } = useQuery({
+    queryKey: ['units', 'standalone'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('units')
+        .select(`
+          *,
+          owner:owners(name)
+        `)
+        .eq('is_standalone', true)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as RealEstateUnit[];
+    },
+    enabled: !!user,
+  });
+
+  const reloadRealEstateUnits = () => {
+    queryClient.invalidateQueries({ queryKey: ['units'] });
+  };
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -165,36 +188,6 @@ const RealEstate = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      loadRealEstateUnits();
-    }
-  }, [user]);
-
-  const loadRealEstateUnits = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('units')
-        .select(`
-          *,
-          owner:owners(name)
-        `)
-        .eq('is_standalone', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setRealEstateUnits((data as unknown as RealEstateUnit[]) || []);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar imóveis',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Apply filters and sorting
   const filteredUnits = useMemo(() => {
@@ -369,7 +362,7 @@ const RealEstate = () => {
                 standalone={true}
                 variant="default"
                 size="sm"
-                onSuccess={loadRealEstateUnits}
+                onSuccess={reloadRealEstateUnits}
               />
             </PermissionGate>
             {/* Secondary: Compartilhar */}
@@ -509,7 +502,7 @@ const RealEstate = () => {
                   showKanban={true}
                   showTable={true}
                 />
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setIsLoading(true); loadRealEstateUnits(); }} title="Atualizar lista">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => reloadRealEstateUnits()} title="Atualizar lista">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -529,7 +522,7 @@ const RealEstate = () => {
                   <AddAssetButton
                     standalone={true}
                     variant="default"
-                    onSuccess={loadRealEstateUnits}
+                    onSuccess={reloadRealEstateUnits}
                   />
                 )}
               </CardContent>
@@ -538,7 +531,7 @@ const RealEstate = () => {
             <RealEstateKanbanView
               units={filteredUnits}
               onUnitClick={(unit) => setSelectedUnit(unit)}
-              onSuccess={loadRealEstateUnits}
+              onSuccess={reloadRealEstateUnits}
             />
           ) : viewMode === 'table' ? (
             <TooltipProvider delayDuration={0}>
@@ -797,7 +790,7 @@ const RealEstate = () => {
         <ImportUnitsDialog
           open={isImportDialogOpen}
           onOpenChange={setIsImportDialogOpen}
-          onSuccess={loadRealEstateUnits}
+          onSuccess={reloadRealEstateUnits}
           standalone={true}
         />
 
@@ -807,7 +800,7 @@ const RealEstate = () => {
             unit={selectedUnit as any}
             open={!!selectedUnit}
             onOpenChange={(open) => !open && setSelectedUnit(null)}
-            onSuccess={loadRealEstateUnits}
+            onSuccess={reloadRealEstateUnits}
           />
         )}
 
