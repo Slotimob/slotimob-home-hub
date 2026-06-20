@@ -37,12 +37,12 @@ export interface PaymentInfo {
   agencia?: string;
   conta?: string;
   titular?: string;
-  // campos Asaas para boleto
-  fine_value?: number;          // multa % (ex: 2)
-  interest_value?: number;       // juros % ao mês (ex: 1)
-  discount_value?: number;       // valor do desconto
+  // campos Asaas — usados quando tipo = "boleto"
+  fine_value?: number;
+  interest_value?: number;
+  discount_value?: number;
   discount_type?: "FIXED" | "PERCENTAGE";
-  discount_due_date_limit_days?: number; // dias antes do vencimento
+  discount_due_date_limit_days?: number;
   send_email?: boolean;
   send_whatsapp?: boolean;
 }
