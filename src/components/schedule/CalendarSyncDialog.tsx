@@ -63,6 +63,7 @@ export function CalendarSyncDialog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile-ical-token"] });
+      setJustRegenerated(true);
       toast.success("Link de acesso redefinido com sucesso!");
     },
     onError: () => {
@@ -91,8 +92,13 @@ export function CalendarSyncDialog() {
     regenerateToken.mutate();
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) setJustRegenerated(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <CalendarSync className="h-4 w-4" />
@@ -135,6 +141,15 @@ export function CalendarSyncDialog() {
             </Button>
           </div>
 
+          {justRegenerated && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Link renovado.</strong> Remova o link antigo dos seus apps de calendário e adicione o novo link acima.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Info Alert */}
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -146,20 +161,44 @@ export function CalendarSyncDialog() {
 
           {/* Regenerate Token Section */}
           <div className="pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Se o link foi compartilhado acidentalmente, você pode gerar um novo.
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium mb-1">Segurança</p>
+                <p className="text-sm text-muted-foreground">
+                  Ao revogar, o link atual para de funcionar imediatamente em todos os dispositivos.
+                </p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRegenerate}
-                disabled={regenerateToken.isPending}
-                className="text-destructive hover:text-destructive hover:bg-destructive/5"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${regenerateToken.isPending ? 'animate-spin' : ''}`} />
-                Redefinir Link
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={regenerateToken.isPending}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/5 shrink-0"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${regenerateToken.isPending ? 'animate-spin' : ''}`} />
+                    Revogar e gerar novo link
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Revogar link de sincronização?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      O link atual vai <strong>parar de funcionar imediatamente</strong> em todos os aplicativos de calendário onde foi adicionado (Google Calendar, Outlook, iPhone, etc.).<br /><br />
+                      Após gerar o novo link, você precisará removê-lo dos seus apps e adicionar o novo manualmente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleRegenerate}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Sim, revogar e gerar novo
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
