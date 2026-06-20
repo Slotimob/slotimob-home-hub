@@ -223,7 +223,15 @@ export const EditUnitDialog = ({
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
-      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+      if (error?.code === '23503') {
+        toast({
+          title: 'Não é possível excluir esta unidade',
+          description: 'Existem contratos, propostas ou visitas vinculadas a esta unidade. Encerre ou exclua esses registros primeiro.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+      }
     } finally {
       setDeleting(false);
       setShowDeleteDialog(false);

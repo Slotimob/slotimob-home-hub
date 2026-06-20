@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -80,10 +81,12 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
   const { user } = useAuth();
   const { toast } = useToast();
   const { isOwner, hasPermission } = usePermissions();
+  const queryClient = useQueryClient();
   const moduleKey = unit.is_standalone ? 'assets_standalone' : 'assets_units';
   const canEdit = isOwner || hasPermission(moduleKey, 'edit');
   const canDelete = isOwner || hasPermission(moduleKey, 'delete');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [propertyDetails, setPropertyDetails] = useState<PropertyDetails | null>(null);
   const [showPropertyInfo, setShowPropertyInfo] = useState(false);
@@ -114,10 +117,27 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
   }, [open, unit.property_id]);
 
   const handleDelete = async () => {
+    setDeleting(true);
     try {
       const { error } = await supabase.from('units').delete().eq('id', unit.id);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23503') {
+          toast({
+            title: 'Não é possível excluir esta unidade',
+            description: 'Existem contratos, propostas ou visitas vinculadas a esta unidade. Encerre ou exclua esses registros primeiro.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        throw error;
+      }
+
+      try {
+        queryClient.invalidateQueries({ queryKey: ['units'] });
+        queryClient.invalidateQueries({ queryKey: ['asset-health'] });
+        queryClient.invalidateQueries({ queryKey: ['unit-full-data'] });
+      } catch {}
 
       toast({
         title: 'Unidade excluída!',
@@ -132,6 +152,9 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -340,8 +363,12 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Excluindo...' : 'Excluir'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
