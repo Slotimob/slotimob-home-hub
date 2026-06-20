@@ -5,8 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, Download, FileText, FileDown } from "lucide-react";
 import { useDREReport } from "@/hooks/useDREReport";
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { exportDREtoPDF, exportDREtoCSV } from "@/utils/dreExport";
 import {
@@ -19,13 +17,6 @@ import {
 import { UnitSelector } from "@/components/finance/UnitSelector";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
