@@ -479,7 +479,7 @@ export function useMessages(conversationId: string | null, remoteJid?: string | 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, user]);
 
   return { messages, loading: loading || lazyLoading, refetch: fetchMessages };
 }
