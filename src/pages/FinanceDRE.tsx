@@ -130,29 +130,27 @@ export default function FinanceDRE() {
       : selectedUnit.unit_number;
   }, [selectedUnit, selectedUnitIds]);
 
-  // Compute date range from year + month filters
-  const dateRange = useMemo(() => {
-    const year = parseInt(selectedYear, 10);
-    if (selectedMonth === "all") {
-      const base = new Date(year, 0, 1);
-      return { start: startOfYear(base), end: endOfYear(base) };
-    }
-    const monthIdx = parseInt(selectedMonth, 10) - 1;
-    const base = new Date(year, monthIdx, 1);
-    return { start: startOfMonth(base), end: endOfMonth(base) };
-  }, [selectedYear, selectedMonth]);
-
   const { data: dre, isLoading } = useDREReport(
-    dateRange.start,
-    dateRange.end,
+    selectedYears,
+    selectedMonths,
     selectedUnitIds.length > 0 ? selectedUnitIds : undefined
   );
 
   const periodLabel = useMemo(() => {
-    if (selectedMonth === "all") return `Ano de ${selectedYear}`;
-    const monthIdx = parseInt(selectedMonth, 10) - 1;
-    return `${MONTH_NAMES[monthIdx]} de ${selectedYear}`;
-  }, [selectedYear, selectedMonth]);
+    const effYears = (selectedYears.length === 0 ? [String(currentYear)] : [...selectedYears]).sort();
+    const yearsLabel = effYears.length === 1
+      ? effYears[0]
+      : `${effYears[0]}–${effYears[effYears.length - 1]}`;
+
+    if (selectedMonths.length === 0) {
+      return effYears.length === 1 ? `Ano de ${yearsLabel}` : `Anos ${yearsLabel}`;
+    }
+    if (selectedMonths.length === 1) {
+      const monthIdx = parseInt(selectedMonths[0], 10) - 1;
+      return `${MONTH_NAMES[monthIdx]} de ${yearsLabel}`;
+    }
+    return `${selectedMonths.length} meses — ${yearsLabel}`;
+  }, [selectedYears, selectedMonths, currentYear]);
 
   const handleExportPDF = async () => {
     if (dre) await exportDREtoPDF(dre, periodLabel, unitDisplayName);
