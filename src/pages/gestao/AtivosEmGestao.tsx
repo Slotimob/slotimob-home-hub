@@ -158,8 +158,7 @@ const AtivosEmGestao = () => {
   };
 
   const handleAssetClick = (asset: AssetHealthType) => {
-    setSelectedAsset(asset);
-    setDetailDialogOpen(true);
+    navigate(`/gestao/alugueis?id=${asset.unitId}`);
   };
 
   const handleEditUnit = () => {
@@ -426,7 +425,6 @@ const AtivosEmGestao = () => {
 
         {/* Dialogs */}
         <ConfigureObligationsDialog open={configDialogOpen} onOpenChange={setConfigDialogOpen} unitId={selectedUnit?.id || null} unitName={selectedUnit?.name || ""} />
-        <AssetDetailDialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen} asset={selectedAsset} />
 
         <AssetManagementGuide open={guideOpen} onOpenChange={setGuideOpen} />
         <LinkTransactionDialog

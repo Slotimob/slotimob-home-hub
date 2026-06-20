@@ -51,6 +51,7 @@ const FinanceReconciliation = React.lazy(() => import("./pages/FinanceReconcilia
 const FinanceCategories = React.lazy(() => import("./pages/FinanceCategories"));
 const FinanceDRE = React.lazy(() => import("./pages/FinanceDRE"));
 const AtivosEmGestao = React.lazy(() => import("./pages/gestao/AtivosEmGestao"));
+const AlugueiDetalhe = React.lazy(() => import("./pages/gestao/AlugueiDetalhe"));
 const ContratosEmGestao = React.lazy(() => import("./pages/gestao/ContratosEmGestao"));
 const ContratoDetalhe = React.lazy(() => import("./pages/gestao/ContratoDetalhe"));
 const NovoContrato = React.lazy(() => import("./pages/gestao/NovoContrato"));
@@ -79,6 +80,12 @@ const guarded = (element: React.ReactNode) => <AuthGuard>{element}</AuthGuard>;
 const ContratosRoute = () => {
   const [searchParams] = useSearchParams();
   return searchParams.get("id") ? <ContratoDetalhe /> : <ContratosEmGestao />;
+};
+
+/** Renders asset detail when ?id= is present, otherwise the list page */
+const AlugueiRoute = () => {
+  const [searchParams] = useSearchParams();
+  return searchParams.get("id") ? <AlugueiDetalhe /> : <AtivosEmGestao />;
 };
 
 const App = () => (
@@ -139,7 +146,7 @@ const App = () => (
               <Route path="/finance/reconciliation" element={guarded(<RequireFeature feature="finance_full"><FinanceReconciliation /></RequireFeature>)} />
               <Route path="/finance/categories" element={guarded(<FinanceCategories />)} />
               
-              <Route path="/gestao/alugueis" element={guarded(<RequireFeature feature="asset_management"><AtivosEmGestao /></RequireFeature>)} />
+              <Route path="/gestao/alugueis" element={guarded(<RequireFeature feature="asset_management"><AlugueiRoute /></RequireFeature>)} />
               <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosRoute /></RequireFeature>)} />
               <Route path="/gestao/contratos/novo" element={guarded(<RequireFeature feature="asset_management"><NovoContrato /></RequireFeature>)} />
               <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
