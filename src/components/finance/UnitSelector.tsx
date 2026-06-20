@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, Home, Building2 } from "lucide-react";
+import { Check, ChevronsUpDown, Home, Building2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,17 +26,17 @@ interface UnitOption {
 }
 
 interface UnitSelectorProps {
-  value: string;
-  onChange: (value: string) => void;
+  values: string[];
+  onChange: (values: string[]) => void;
   placeholder?: string;
   disabled?: boolean;
 }
 
-export function UnitSelector({ 
-  value, 
-  onChange, 
-  placeholder = "Selecione uma unidade (opcional)",
-  disabled = false 
+export function UnitSelector({
+  values,
+  onChange,
+  placeholder = "Todas as unidades",
+  disabled = false,
 }: UnitSelectorProps) {
   const [open, setOpen] = useState(false);
 
@@ -65,7 +65,30 @@ export function UnitSelector({
     },
   });
 
-  const selectedUnit = units.find((u) => u.id === value);
+  const toggle = (id: string) => {
+    if (values.includes(id)) {
+      onChange(values.filter((v) => v !== id));
+    } else {
+      onChange([...values, id]);
+    }
+  };
+
+  const clear = () => {
+    onChange([]);
+    setOpen(false);
+  };
+
+  const triggerLabel = () => {
+    if (values.length === 0) return null;
+    if (values.length === 1) {
+      const u = units.find((u) => u.id === values[0]);
+      if (!u) return "1 unidade";
+      return u.sublabel ? `${u.label} (${u.sublabel})` : u.label;
+    }
+    return `${values.length} unidades selecionadas`;
+  };
+
+  const label = triggerLabel();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -77,24 +100,27 @@ export function UnitSelector({
           className="w-full h-10 justify-between font-normal"
           disabled={disabled || isLoading}
         >
-          {selectedUnit ? (
-            <div className="flex items-center gap-2 truncate">
-              {selectedUnit.isStandalone ? (
-                <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
-              ) : (
-                <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-              )}
-              <span className="truncate">{selectedUnit.label}</span>
-              {selectedUnit.sublabel && (
-                <span className="text-muted-foreground text-xs truncate">
-                  ({selectedUnit.sublabel})
-                </span>
-              )}
-            </div>
-          ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
-          )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className="truncate text-left flex-1">
+            {label ? (
+              <span className="text-foreground">{label}</span>
+            ) : (
+              <span className="text-muted-foreground">{placeholder}</span>
+            )}
+          </span>
+          <div className="flex items-center gap-1 ml-2 shrink-0">
+            {values.length > 0 && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => { e.stopPropagation(); clear(); }}
+                onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), clear())}
+                className="rounded-full p-0.5 hover:bg-muted"
+              >
+                <X className="h-3 w-3" />
+              </span>
+            )}
+            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full min-w-[300px] p-0" align="start">
@@ -103,35 +129,23 @@ export function UnitSelector({
           <CommandList className="max-h-[250px] overflow-y-auto" onWheel={(e) => e.stopPropagation()}>
             <CommandEmpty>Nenhuma unidade encontrada.</CommandEmpty>
             <CommandGroup>
-              <CommandItem
-                value="__clear__"
-                onSelect={() => {
-                  onChange("");
-                  setOpen(false);
-                }}
-              >
-                <span className="text-muted-foreground">Nenhuma (Limpar)</span>
-              </CommandItem>
               {units.map((unit) => (
                 <CommandItem
                   key={unit.id}
                   value={`${unit.label} ${unit.sublabel || ""}`}
-                  onSelect={() => {
-                    onChange(unit.id);
-                    setOpen(false);
-                  }}
+                  onSelect={() => toggle(unit.id)}
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
-                      value === unit.id ? "opacity-100" : "opacity-0"
+                      "mr-2 h-4 w-4 shrink-0",
+                      values.includes(unit.id) ? "opacity-100" : "opacity-0"
                     )}
                   />
                   <div className="flex items-center gap-2">
                     {unit.isStandalone ? (
-                      <Home className="h-4 w-4 text-muted-foreground" />
+                      <Home className="h-4 w-4 text-muted-foreground shrink-0" />
                     ) : (
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}
                     <div className="flex flex-col">
                       <span>{unit.label}</span>
