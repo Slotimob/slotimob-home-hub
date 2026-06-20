@@ -52,7 +52,7 @@ function useSyncJobListener(effectiveBrokerId: string | null) {
       });
 
     const channel = supabase
-      .channel('sync-jobs-realtime')
+      .channel(`sync-jobs-${effectiveBrokerId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
