@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { AssetSelectorDialog, SelectedAsset } from '@/components/chat/AssetSelectorDialog';
 import { Badge } from '@/components/ui/badge';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { ENV } from '@/config/env';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface ChatMessage {
@@ -28,7 +29,7 @@ interface ChatMessage {
   created_at?: string;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+const CHAT_URL = `${ENV.SUPABASE_URL}/functions/v1/ai-chat`;
 
 export default function AIChat() {
   const navigate = useNavigate();
