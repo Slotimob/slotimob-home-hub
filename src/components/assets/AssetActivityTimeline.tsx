@@ -572,6 +572,36 @@ export const AssetActivityTimeline = ({
         </div>
       </div>
 
+      {showNoteForm && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Nova atividade manual</p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="Descrição (ex: Vistoria feita, Reunião com proprietário...)"
+              value={noteTitle}
+              onChange={e => setNoteTitle(e.target.value)}
+              className="h-8 text-sm flex-1"
+              onKeyDown={e => { if (e.key === 'Enter') saveNote(); }}
+              autoFocus
+            />
+            <input
+              type="date"
+              value={noteDate}
+              onChange={e => setNoteDate(e.target.value)}
+              className="h-8 text-sm rounded-md border border-input bg-background px-2 shrink-0 w-full sm:w-[140px]"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setShowNoteForm(false); setNoteTitle(''); }}>
+              Cancelar
+            </Button>
+            <Button size="sm" className="h-7 text-xs" onClick={saveNote} disabled={!noteTitle.trim() || savingNote}>
+              {savingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Salvar'}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Count */}
       <p className="text-[11px] text-muted-foreground">
         {filteredLogs.length} {filteredLogs.length === 1 ? 'registro' : 'registros'}
