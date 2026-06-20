@@ -200,10 +200,11 @@ export default function FinanceDRE() {
             <div className="flex gap-3 flex-wrap items-center">
               <div className="w-full sm:w-64">
                 <UnitSelector
-                  value={selectedUnitId}
-                  onChange={setSelectedUnitId}
+                  values={selectedUnitIds}
+                  onChange={setSelectedUnitIds}
                   placeholder="Todas as unidades"
                 />
+
               </div>
 
               <Select value={selectedYear} onValueChange={setSelectedYear}>
