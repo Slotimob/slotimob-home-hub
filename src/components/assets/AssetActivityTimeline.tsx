@@ -420,7 +420,7 @@ export const AssetActivityTimeline = ({
     doc.setFontSize(9);
     doc.text(`${filteredLogs.length} registros`, 14, 22);
 
-    const tableData = filteredLogs.map(log => {
+    const tableData = filteredLogs.filter((l): l is AuditLog => !isManualNote(l)).map(log => {
       const changes = getChangedFields(log);
       return [
         formatTimestampAbsolute(log.created_at),
