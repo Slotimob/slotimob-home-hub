@@ -173,7 +173,7 @@ const RealEstate = () => {
     enabled: !!user,
   });
 
-  const reloadRealEstateUnits = () => {
+  const rereloadRealEstateUnits = () => {
     queryClient.invalidateQueries({ queryKey: ['units'] });
   };
 
@@ -362,7 +362,7 @@ const RealEstate = () => {
                 standalone={true}
                 variant="default"
                 size="sm"
-                onSuccess={loadRealEstateUnits}
+                onSuccess={reloadRealEstateUnits}
               />
             </PermissionGate>
             {/* Secondary: Compartilhar */}
@@ -502,7 +502,7 @@ const RealEstate = () => {
                   showKanban={true}
                   showTable={true}
                 />
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setIsLoading(true); loadRealEstateUnits(); }} title="Atualizar lista">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => rereloadRealEstateUnits()} title="Atualizar lista">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -522,7 +522,7 @@ const RealEstate = () => {
                   <AddAssetButton
                     standalone={true}
                     variant="default"
-                    onSuccess={loadRealEstateUnits}
+                    onSuccess={reloadRealEstateUnits}
                   />
                 )}
               </CardContent>
@@ -531,7 +531,7 @@ const RealEstate = () => {
             <RealEstateKanbanView
               units={filteredUnits}
               onUnitClick={(unit) => setSelectedUnit(unit)}
-              onSuccess={loadRealEstateUnits}
+              onSuccess={reloadRealEstateUnits}
             />
           ) : viewMode === 'table' ? (
             <TooltipProvider delayDuration={0}>
@@ -790,7 +790,7 @@ const RealEstate = () => {
         <ImportUnitsDialog
           open={isImportDialogOpen}
           onOpenChange={setIsImportDialogOpen}
-          onSuccess={loadRealEstateUnits}
+          onSuccess={reloadRealEstateUnits}
           standalone={true}
         />
 
@@ -800,7 +800,7 @@ const RealEstate = () => {
             unit={selectedUnit as any}
             open={!!selectedUnit}
             onOpenChange={(open) => !open && setSelectedUnit(null)}
-            onSuccess={loadRealEstateUnits}
+            onSuccess={reloadRealEstateUnits}
           />
         )}
 
