@@ -73,7 +73,7 @@ export function useLeaseFinancialProjection() {
         .eq("reference", `lease:${leaseId}`)
         .limit(1);
 
-      if (checkError) throw checkError;
+      if (checkError) throw new Error(checkError.message || checkError.details || "Erro inesperado");
 
       if (existingTransactions && existingTransactions.length > 0) {
         console.log("Transactions already exist for this lease, skipping generation");
@@ -88,7 +88,7 @@ export function useLeaseFinancialProjection() {
         .eq("type", "income")
         .maybeSingle();
 
-      if (catError) throw catError;
+      if (catError) throw new Error(catError.message || catError.details || "Erro inesperado");
 
       const categoryId = rentCategory?.id || null;
 
@@ -150,7 +150,7 @@ export function useLeaseFinancialProjection() {
         .from("financial_transactions")
         .insert(transactions);
 
-      if (insertError) throw insertError;
+      if (insertError) throw new Error(insertError.message || insertError.details || "Erro inesperado");
 
       return { count: transactions.length };
     },
