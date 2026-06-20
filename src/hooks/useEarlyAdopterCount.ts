@@ -8,8 +8,6 @@ interface EarlyAdopterSlots {
 }
 
 export const useEarlyAdopterCount = () => {
-  const queryClient = useQueryClient();
-
   const { data, isLoading, error } = useQuery({
     queryKey: ['early-adopter-slots'],
     queryFn: async (): Promise<EarlyAdopterSlots> => {
