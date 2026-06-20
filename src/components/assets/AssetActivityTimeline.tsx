@@ -525,6 +525,15 @@ export const AssetActivityTimeline = ({
 
         {/* Export buttons */}
         <div className="flex gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1.5"
+            onClick={() => setShowNoteForm(v => !v)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Incluir atividade
+          </Button>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
