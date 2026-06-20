@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { SlotiLogo } from '@/components/SlotiLogo';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -47,7 +48,8 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   if (!isAuthReady || !profileChecked) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <SlotiLogo size="lg" className="mb-2" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
         <p className="text-muted-foreground text-sm animate-pulse">
           Carregando suas configurações e seu Plano...
         </p>
