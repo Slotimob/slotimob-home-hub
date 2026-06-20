@@ -102,29 +102,31 @@ export default function FinanceDRE() {
     [currentYear]
   );
 
-  // Fetch unit name for exports
+  // Fetch unit name for exports (only when exactly 1 unit selected)
   const { data: selectedUnit } = useQuery({
-    queryKey: ["unit-for-dre", selectedUnitId],
+    queryKey: ["unit-for-dre", selectedUnitIds[0]],
     queryFn: async () => {
-      if (!selectedUnitId) return null;
+      if (!selectedUnitIds[0]) return null;
       const { data, error } = await supabase
         .from("units")
         .select("unit_number, property:properties(name)")
-        .eq("id", selectedUnitId)
+        .eq("id", selectedUnitIds[0])
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedUnitId,
+    enabled: selectedUnitIds.length === 1,
   });
 
   const unitDisplayName = useMemo(() => {
+    if (selectedUnitIds.length === 0) return undefined;
+    if (selectedUnitIds.length > 1) return `${selectedUnitIds.length} unidades`;
     if (!selectedUnit) return undefined;
     const propertyName = (selectedUnit as any).property?.name;
     return propertyName
       ? `${selectedUnit.unit_number} (${propertyName})`
       : selectedUnit.unit_number;
-  }, [selectedUnit]);
+  }, [selectedUnit, selectedUnitIds]);
 
   // Compute date range from year + month filters
   const dateRange = useMemo(() => {
