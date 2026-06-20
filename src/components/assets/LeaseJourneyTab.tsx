@@ -401,6 +401,9 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
       queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
       queryClient.invalidateQueries({ queryKey: ["leases"] });
       queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
+      queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
     } catch (error: any) {
       console.error("Delete error:", error);
       toast.error("Erro ao remover arquivo", {
