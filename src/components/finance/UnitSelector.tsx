@@ -76,15 +76,21 @@ export function UnitSelector(props: UnitSelectorProps) {
   });
 
   const toggle = (id: string) => {
-    if (values.includes(id)) {
-      onChange(values.filter((v) => v !== id));
+    if (isMulti) {
+      if (values.includes(id)) {
+        emit(values.filter((v) => v !== id));
+      } else {
+        emit([...values, id]);
+      }
     } else {
-      onChange([...values, id]);
+      // Single-select: toggling the same item clears, otherwise replace
+      emit(values[0] === id ? [] : [id]);
+      setOpen(false);
     }
   };
 
   const clear = () => {
-    onChange([]);
+    emit([]);
     setOpen(false);
   };
 
