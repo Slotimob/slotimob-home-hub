@@ -197,7 +197,7 @@ export function useNotificationBadges() {
       .subscribe();
 
     const visitsChannel = supabase
-      .channel('visits-changes')
+      .channel(`visits-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
