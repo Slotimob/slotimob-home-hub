@@ -641,6 +641,41 @@ export const AssetActivityTimeline = ({
                     );
                   }
 
+                  if (isManualNote(item)) {
+                    const authorName = profileMap[item.broker_id] || 'Usuário';
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-start gap-2.5 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                      >
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                          <StickyNote className="h-3 w-3" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm leading-snug">
+                            <span className="font-medium">{authorName}</span>
+                            {' '}
+                            <span className="text-muted-foreground">registrou atividade:</span>
+                            {' '}
+                            <span>{item.title}</span>
+                          </p>
+                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">
+                                {item.scheduled_at ? formatTimestamp(item.scheduled_at) : formatTimestamp(item.created_at)}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="text-xs">
+                              {item.scheduled_at ? formatTimestampAbsolute(item.scheduled_at) : formatTimestampAbsolute(item.created_at)}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    );
+                  }
+
                   const log = item;
                   const TableIcon = TABLE_ICONS[log.table_name] || FileText;
                   const authorName = profileMap[log.broker_id] || 'Usuário';
