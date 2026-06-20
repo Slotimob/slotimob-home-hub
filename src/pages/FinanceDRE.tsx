@@ -196,39 +196,70 @@ export default function FinanceDRE() {
 
         {/* Filters Section */}
         <Card>
-          <CardContent className="py-4">
-            <div className="flex gap-3 flex-wrap items-center">
-              <div className="w-full sm:w-64">
-                <UnitSelector
-                  values={selectedUnitIds}
-                  onChange={setSelectedUnitIds}
-                  placeholder="Todas as unidades"
-                />
+          <CardContent className="py-4 space-y-3">
+            {/* Unit filter */}
+            <div className="w-full sm:w-64">
+              <UnitSelector
+                values={selectedUnitIds}
+                onChange={setSelectedUnitIds}
+                placeholder="Todas as unidades"
+              />
+            </div>
 
-              </div>
+            {/* Year multi-select */}
+            <div className="flex flex-wrap gap-1.5">
+              {years.map(year => (
+                <Button
+                  key={year}
+                  type="button"
+                  size="sm"
+                  variant={selectedYears.includes(year) ? "default" : "outline"}
+                  className="h-8 px-3 text-xs"
+                  onClick={() => {
+                    if (selectedYears.includes(year)) {
+                      if (selectedYears.length > 1) {
+                        setSelectedYears(prev => prev.filter(y => y !== year));
+                      }
+                    } else {
+                      setSelectedYears(prev => [...prev, year]);
+                    }
+                  }}
+                >
+                  {year}
+                </Button>
+              ))}
+            </div>
 
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(year => (
-                    <SelectItem key={year} value={year}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Mês" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os meses</SelectItem>
-                  {MONTH_NAMES.map((name, i) => (
-                    <SelectItem key={i} value={String(i + 1)}>{name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Month multi-select */}
+            <div className="flex flex-wrap gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant={selectedMonths.length === 0 ? "default" : "outline"}
+                className="h-7 px-2 text-xs"
+                onClick={() => setSelectedMonths([])}
+              >
+                Todos
+              </Button>
+              {MONTH_NAMES_SHORT.map((name, i) => {
+                const val = String(i + 1);
+                return (
+                  <Button
+                    key={i}
+                    type="button"
+                    size="sm"
+                    variant={selectedMonths.includes(val) ? "default" : "outline"}
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      setSelectedMonths(prev =>
+                        prev.includes(val) ? prev.filter(m => m !== val) : [...prev, val]
+                      );
+                    }}
+                  >
+                    {name}
+                  </Button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -240,7 +271,7 @@ export default function FinanceDRE() {
               DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO
             </CardTitle>
             <CardDescription className="text-center">
-              Período: {format(dateRange.start, "dd/MM/yyyy", { locale: ptBR })} a {format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}
+              Período: {periodLabel}
               {unitDisplayName && ` | Unidade: ${unitDisplayName}`}
             </CardDescription>
           </CardHeader>
