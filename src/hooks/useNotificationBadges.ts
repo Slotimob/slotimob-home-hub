@@ -54,7 +54,7 @@ export function useNotificationBadges() {
 
     // Listen for preference changes
     const channel = supabase
-      .channel('profile-prefs')
+      .channel(`profile-prefs-${user.id}`)
       .on(
         'postgres_changes',
         {
