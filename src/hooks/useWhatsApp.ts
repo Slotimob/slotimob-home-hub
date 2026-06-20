@@ -365,6 +365,7 @@ export function useConversations(connectionId: string | null) {
 // ─── useMessages ────────────────────────────────────────────────────
 
 export function useMessages(conversationId: string | null, remoteJid?: string | null) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [lazyLoading, setLazyLoading] = useState(false);
