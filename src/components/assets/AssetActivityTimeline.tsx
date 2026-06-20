@@ -267,15 +267,73 @@ export const AssetActivityTimeline = ({
     staleTime: 60_000,
   });
 
+  // Fetch manual notes
+  const { data: manualNotes = [] } = useQuery<ManualNote[]>({
+    queryKey: ['asset-manual-notes', assetType, assetId],
+    queryFn: async () => {
+      const col = assetType === 'unit' ? 'unit_id' : 'property_id';
+      const { data, error } = await (supabase as any)
+        .from('property_activities')
+        .select('id, title, scheduled_at, created_at, broker_id')
+        .eq(col, assetId)
+        .order('scheduled_at', { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        ...r,
+        type: 'manual_note' as const,
+      }));
+    },
+    staleTime: 30_000,
+  });
+
+  const saveNote = async () => {
+    if (!noteTitle.trim()) return;
+    setSavingNote(true);
+    try {
+      const col = assetType === 'unit' ? 'unit_id' : 'property_id';
+      const { error } = await (supabase as any)
+        .from('property_activities')
+        .insert({
+          [col]: assetId,
+          broker_id: brokerId,
+          activity_type: 'note',
+          title: noteTitle.trim(),
+          scheduled_at: noteDate ? new Date(noteDate + 'T12:00:00').toISOString() : null,
+        });
+      if (error) throw error;
+      setNoteTitle('');
+      setNoteDate(new Date().toISOString().split('T')[0]);
+      setShowNoteForm(false);
+      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes', assetType, assetId] });
+    } catch (e: any) {
+      toast({ title: 'Erro ao salvar atividade', description: e.message, variant: 'destructive' });
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
   // Filter logs
   const filteredLogs = useMemo(() => {
-    return rawLogs.filter(log => {
+    const auditFiltered = rawLogs.filter(log => {
       if (!matchesEventType(log, eventFilter)) return false;
       if (periodStartDate && new Date(log.created_at) < periodStartDate) return false;
       if (userFilter !== 'all' && log.broker_id !== userFilter) return false;
       return true;
     });
-  }, [rawLogs, eventFilter, periodStartDate, userFilter]);
+
+    const notesFiltered = manualNotes.filter(note => {
+      const nDate = note.scheduled_at ? new Date(note.scheduled_at) : new Date(note.created_at);
+      if (periodStartDate && nDate < periodStartDate) return false;
+      if (userFilter !== 'all' && note.broker_id !== userFilter) return false;
+      return true;
+    });
+
+    return [...auditFiltered, ...notesFiltered].sort((a, b) => {
+      const dateA = isManualNote(a) ? (a.scheduled_at ?? a.created_at) : a.created_at;
+      const dateB = isManualNote(b) ? (b.scheduled_at ?? b.created_at) : b.created_at;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+  }, [rawLogs, manualNotes, eventFilter, periodStartDate, userFilter]);
 
   // Collapse billing and paginate
   const timelineItems = useMemo(() => {
@@ -291,7 +349,11 @@ export const AssetActivityTimeline = ({
     const groups: { label: string; items: TimelineItem[] }[] = [];
     let currentDayLabel = '';
     for (const item of timelineItems) {
-      const dateStr = isBillingSummary(item) ? item.logs[0].created_at : item.created_at;
+      const dateStr = isBillingSummary(item)
+        ? item.logs[0].created_at
+        : isManualNote(item)
+          ? (item.scheduled_at ?? item.created_at)
+          : item.created_at;
       const dayLabel = getDayLabel(dateStr);
       if (dayLabel !== currentDayLabel) {
         currentDayLabel = dayLabel;
