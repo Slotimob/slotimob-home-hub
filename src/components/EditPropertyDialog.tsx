@@ -101,6 +101,7 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('assets_properties', 'edit');
   const canDelete = isOwner || hasPermission('assets_properties', 'delete');
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [freshProperty, setFreshProperty] = useState<Property | null>(null);
