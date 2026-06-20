@@ -191,6 +191,12 @@ export const AssetActivityTimeline = ({
   const [page, setPage] = useState(1);
   const [raConfigOpen, setRaConfigOpen] = useState(false);
 
+  const queryClient = useQueryClient();
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteDate, setNoteDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [savingNote, setSavingNote] = useState(false);
+
   // Build date filter
   const periodStartDate = useMemo(() => {
     if (periodFilter === 'all') return null;
