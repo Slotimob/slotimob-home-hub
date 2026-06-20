@@ -155,7 +155,7 @@ export function useNotificationBadges() {
 
     // Set up realtime subscriptions
     const leadsChannel = supabase
-      .channel('leads-changes')
+      .channel(`leads-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
