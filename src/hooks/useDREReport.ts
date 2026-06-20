@@ -29,12 +29,12 @@ export interface DREData {
   netResult: number;
 }
 
-export function useDREReport(startDate?: Date, endDate?: Date, unitId?: string) {
+export function useDREReport(startDate?: Date, endDate?: Date, unitIds?: string[]) {
   const start = startDate || startOfMonth(new Date());
   const end = endDate || endOfMonth(new Date());
 
   return useQuery({
-    queryKey: ["dre-report", format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"), unitId || "all"],
+    queryKey: ["dre-report", format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"), unitIds?.join(",") || "all"],
     queryFn: async (): Promise<DREData> => {
       // Fetch all transactions by competency (transaction_date) - accrual basis accounting
       // This includes ALL transactions regardless of payment status (paid/pending)
@@ -54,9 +54,9 @@ export function useDREReport(startDate?: Date, endDate?: Date, unitId?: string) 
         .gte("transaction_date", format(start, "yyyy-MM-dd"))
         .lte("transaction_date", format(end, "yyyy-MM-dd"));
 
-      // Filter by unit if provided
-      if (unitId) {
-        query = query.eq("unit_id", unitId);
+      // Filter by units if provided
+      if (unitIds && unitIds.length > 0) {
+        query = query.in("unit_id", unitIds);
       }
 
       const { data: transactions, error } = await query;
