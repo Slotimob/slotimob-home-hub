@@ -380,7 +380,7 @@ export function useUpdateLease() {
         .update(updateData)
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || error.details || "Erro ao salvar");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["leases"] });
@@ -538,7 +538,7 @@ export function useUpdateLeaseSignature() {
         .update(updateData)
         .eq("id", leaseId);
 
-      if (error) throw error;
+      if (error) throw new Error(error.message || error.details || "Erro ao salvar");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["leases"] });
