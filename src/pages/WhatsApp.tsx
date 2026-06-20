@@ -56,7 +56,7 @@ function useWhatsAppAnyConnection() {
     fetch();
 
     const channel = supabase
-      .channel('whatsapp-connection-page')
+      .channel(`whatsapp-connection-${effectiveBrokerId}`)
       .on(
         'postgres_changes',
         {
