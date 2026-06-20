@@ -141,12 +141,10 @@ const RealEstate = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [realEstateUnits, setRealEstateUnits] = useState<RealEstateUnit[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<UnitsFiltersState>(initialFilters);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('created_at_desc');
-  const [isLoading, setIsLoading] = useState(true);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   
   const [selectedUnit, setSelectedUnit] = useState<RealEstateUnit | null>(null);
@@ -155,6 +153,29 @@ const RealEstate = () => {
     return (saved === 'grid' || saved === 'table' || saved === 'kanban') ? saved : 'table';
   });
   const isMobile = useIsMobile();
+
+  const queryClient = useQueryClient();
+
+  const { data: realEstateUnits = [], isLoading } = useQuery({
+    queryKey: ['units', 'standalone'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('units')
+        .select(`
+          *,
+          owner:owners(name)
+        `)
+        .eq('is_standalone', true)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as RealEstateUnit[];
+    },
+    enabled: !!user,
+  });
+
+  const reloadRealEstateUnits = () => {
+    queryClient.invalidateQueries({ queryKey: ['units'] });
+  };
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -167,36 +188,6 @@ const RealEstate = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      loadRealEstateUnits();
-    }
-  }, [user]);
-
-  const loadRealEstateUnits = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('units')
-        .select(`
-          *,
-          owner:owners(name)
-        `)
-        .eq('is_standalone', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setRealEstateUnits((data as unknown as RealEstateUnit[]) || []);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar imóveis',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Apply filters and sorting
   const filteredUnits = useMemo(() => {
