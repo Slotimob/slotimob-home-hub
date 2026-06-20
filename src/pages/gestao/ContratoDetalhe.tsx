@@ -460,7 +460,7 @@ export default function ContratoDetalhe() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="journey" className="gap-1 text-xs px-1">
             <RouteIcon className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Jornada</span>
@@ -471,6 +471,7 @@ export default function ContratoDetalhe() {
             <span className="hidden sm:inline">Fiscal</span>
           </TabsTrigger>
           <TabsTrigger value="billing" className="text-xs px-1">Cobrança</TabsTrigger>
+          <TabsTrigger value="boletos" className="text-xs px-1">Boletos</TabsTrigger>
           <TabsTrigger value="reports" className="text-xs px-1">Relatórios</TabsTrigger>
         </TabsList>
 

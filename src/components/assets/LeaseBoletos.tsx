@@ -71,7 +71,7 @@ export function LeaseBoletos({ leaseId, brokerId }: Props) {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
-          apikey: ENV.SUPABASE_ANON_KEY,
+          apikey: ENV.SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ payment_id: paymentId, action, ...extra }),
       });
