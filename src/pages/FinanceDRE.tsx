@@ -93,7 +93,7 @@ const MONTH_NAMES = [
 
 export default function FinanceDRE() {
   const currentYear = new Date().getFullYear();
-  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
 
