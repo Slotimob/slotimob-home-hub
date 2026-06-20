@@ -218,7 +218,7 @@ export function useNotificationBadges() {
       .subscribe();
 
     const whatsappChannel = supabase
-      .channel('whatsapp-changes')
+      .channel(`whatsapp-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
