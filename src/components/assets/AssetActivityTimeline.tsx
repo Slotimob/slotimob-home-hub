@@ -384,7 +384,7 @@ export const AssetActivityTimeline = ({
   // Export CSV
   const exportCSV = useCallback(() => {
     const headers = ['Data', 'Ação', 'Tabela', 'Registro', 'Usuário', 'Alterações'];
-    const rows = filteredLogs.map(log => {
+    const rows = filteredLogs.filter((l): l is AuditLog => !isManualNote(l)).map(log => {
       const changes = getChangedFields(log);
       return [
         formatTimestampAbsolute(log.created_at),
