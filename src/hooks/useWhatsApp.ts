@@ -151,7 +151,7 @@ export function useWhatsAppSettingsConnection() {
     if (!user) return;
 
     const channel = supabase
-      .channel('whatsapp-settings-realtime')
+      .channel(`whatsapp-settings-${user.id}`)
       .on(
         'postgres_changes',
         {
