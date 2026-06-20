@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback } from 'react';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +35,8 @@ import {
   RefreshCw,
   ChevronDown,
   BarChart3,
+  Plus,
+  StickyNote,
 } from 'lucide-react';
 import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
 import { format } from 'date-fns';
@@ -113,19 +116,31 @@ interface BillingSummary {
   logs: AuditLog[];
 }
 
-type TimelineItem = AuditLog | BillingSummary;
-
-function isBillingSummary(item: TimelineItem): item is BillingSummary {
-  return 'type' in item && item.type === 'billing_summary';
+interface ManualNote {
+  id: string;
+  type: 'manual_note';
+  title: string;
+  scheduled_at: string | null;
+  created_at: string;
+  broker_id: string;
 }
 
-function collapseBillingEvents(logs: AuditLog[]): TimelineItem[] {
-  // Count billing_issued per month
+function isManualNote(item: any): item is ManualNote {
+  return item && item.type === 'manual_note';
+}
+
+type TimelineItem = AuditLog | BillingSummary | ManualNote;
+
+function isBillingSummary(item: TimelineItem): item is BillingSummary {
+  return 'type' in item && (item as any).type === 'billing_summary';
+}
+
+function collapseBillingEvents(logs: (AuditLog | ManualNote)[]): TimelineItem[] {
   const billingByMonth = new Map<string, AuditLog[]>();
-  const nonBilling: AuditLog[] = [];
+  const nonBilling: (AuditLog | ManualNote)[] = [];
 
   for (const log of logs) {
-    if (log.action === 'billing_issued') {
+    if (!isManualNote(log) && log.action === 'billing_issued') {
       const d = new Date(log.created_at);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!billingByMonth.has(key)) billingByMonth.set(key, []);
@@ -135,7 +150,6 @@ function collapseBillingEvents(logs: AuditLog[]): TimelineItem[] {
     }
   }
 
-  // Build items: if a month has >5 billing events, collapse into summary
   const result: TimelineItem[] = [...nonBilling];
 
   for (const [key, bLogs] of billingByMonth) {
@@ -153,10 +167,9 @@ function collapseBillingEvents(logs: AuditLog[]): TimelineItem[] {
     }
   }
 
-  // Sort by created_at desc (summaries use first log's date)
   result.sort((a, b) => {
-    const dateA = isBillingSummary(a) ? a.logs[0].created_at : a.created_at;
-    const dateB = isBillingSummary(b) ? b.logs[0].created_at : b.created_at;
+    const dateA = isBillingSummary(a) ? a.logs[0].created_at : isManualNote(a) ? (a.scheduled_at ?? a.created_at) : a.created_at;
+    const dateB = isBillingSummary(b) ? b.logs[0].created_at : isManualNote(b) ? (b.scheduled_at ?? b.created_at) : b.created_at;
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 
@@ -177,6 +190,12 @@ export const AssetActivityTimeline = ({
   const [userFilter, setUserFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [raConfigOpen, setRaConfigOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteDate, setNoteDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [savingNote, setSavingNote] = useState(false);
 
   // Build date filter
   const periodStartDate = useMemo(() => {
@@ -248,15 +267,73 @@ export const AssetActivityTimeline = ({
     staleTime: 60_000,
   });
 
+  // Fetch manual notes
+  const { data: manualNotes = [] } = useQuery<ManualNote[]>({
+    queryKey: ['asset-manual-notes', assetType, assetId],
+    queryFn: async () => {
+      const col = assetType === 'unit' ? 'unit_id' : 'property_id';
+      const { data, error } = await (supabase as any)
+        .from('property_activities')
+        .select('id, title, scheduled_at, created_at, broker_id')
+        .eq(col, assetId)
+        .order('scheduled_at', { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        ...r,
+        type: 'manual_note' as const,
+      }));
+    },
+    staleTime: 30_000,
+  });
+
+  const saveNote = async () => {
+    if (!noteTitle.trim()) return;
+    setSavingNote(true);
+    try {
+      const col = assetType === 'unit' ? 'unit_id' : 'property_id';
+      const { error } = await (supabase as any)
+        .from('property_activities')
+        .insert({
+          [col]: assetId,
+          broker_id: brokerId,
+          activity_type: 'note',
+          title: noteTitle.trim(),
+          scheduled_at: noteDate ? new Date(noteDate + 'T12:00:00').toISOString() : null,
+        });
+      if (error) throw error;
+      setNoteTitle('');
+      setNoteDate(new Date().toISOString().split('T')[0]);
+      setShowNoteForm(false);
+      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes', assetType, assetId] });
+    } catch (e: any) {
+      toast({ title: 'Erro ao salvar atividade', description: e.message, variant: 'destructive' });
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
   // Filter logs
   const filteredLogs = useMemo(() => {
-    return rawLogs.filter(log => {
+    const auditFiltered = rawLogs.filter(log => {
       if (!matchesEventType(log, eventFilter)) return false;
       if (periodStartDate && new Date(log.created_at) < periodStartDate) return false;
       if (userFilter !== 'all' && log.broker_id !== userFilter) return false;
       return true;
     });
-  }, [rawLogs, eventFilter, periodStartDate, userFilter]);
+
+    const notesFiltered = manualNotes.filter(note => {
+      const nDate = note.scheduled_at ? new Date(note.scheduled_at) : new Date(note.created_at);
+      if (periodStartDate && nDate < periodStartDate) return false;
+      if (userFilter !== 'all' && note.broker_id !== userFilter) return false;
+      return true;
+    });
+
+    return [...auditFiltered, ...notesFiltered].sort((a, b) => {
+      const dateA = isManualNote(a) ? (a.scheduled_at ?? a.created_at) : a.created_at;
+      const dateB = isManualNote(b) ? (b.scheduled_at ?? b.created_at) : b.created_at;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+  }, [rawLogs, manualNotes, eventFilter, periodStartDate, userFilter]);
 
   // Collapse billing and paginate
   const timelineItems = useMemo(() => {
@@ -272,7 +349,11 @@ export const AssetActivityTimeline = ({
     const groups: { label: string; items: TimelineItem[] }[] = [];
     let currentDayLabel = '';
     for (const item of timelineItems) {
-      const dateStr = isBillingSummary(item) ? item.logs[0].created_at : item.created_at;
+      const dateStr = isBillingSummary(item)
+        ? item.logs[0].created_at
+        : isManualNote(item)
+          ? (item.scheduled_at ?? item.created_at)
+          : item.created_at;
       const dayLabel = getDayLabel(dateStr);
       if (dayLabel !== currentDayLabel) {
         currentDayLabel = dayLabel;
@@ -303,7 +384,7 @@ export const AssetActivityTimeline = ({
   // Export CSV
   const exportCSV = useCallback(() => {
     const headers = ['Data', 'Ação', 'Tabela', 'Registro', 'Usuário', 'Alterações'];
-    const rows = filteredLogs.map(log => {
+    const rows = filteredLogs.filter((l): l is AuditLog => !isManualNote(l)).map(log => {
       const changes = getChangedFields(log);
       return [
         formatTimestampAbsolute(log.created_at),
@@ -339,7 +420,7 @@ export const AssetActivityTimeline = ({
     doc.setFontSize(9);
     doc.text(`${filteredLogs.length} registros`, 14, 22);
 
-    const tableData = filteredLogs.map(log => {
+    const tableData = filteredLogs.filter((l): l is AuditLog => !isManualNote(l)).map(log => {
       const changes = getChangedFields(log);
       return [
         formatTimestampAbsolute(log.created_at),
@@ -444,6 +525,15 @@ export const AssetActivityTimeline = ({
 
         {/* Export buttons */}
         <div className="flex gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1.5"
+            onClick={() => setShowNoteForm(v => !v)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Incluir atividade
+          </Button>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -482,6 +572,36 @@ export const AssetActivityTimeline = ({
         </div>
       </div>
 
+      {showNoteForm && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Nova atividade manual</p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="Descrição (ex: Vistoria feita, Reunião com proprietário...)"
+              value={noteTitle}
+              onChange={e => setNoteTitle(e.target.value)}
+              className="h-8 text-sm flex-1"
+              onKeyDown={e => { if (e.key === 'Enter') saveNote(); }}
+              autoFocus
+            />
+            <input
+              type="date"
+              value={noteDate}
+              onChange={e => setNoteDate(e.target.value)}
+              className="h-8 text-sm rounded-md border border-input bg-background px-2 shrink-0 w-full sm:w-[140px]"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setShowNoteForm(false); setNoteTitle(''); }}>
+              Cancelar
+            </Button>
+            <Button size="sm" className="h-7 text-xs" onClick={saveNote} disabled={!noteTitle.trim() || savingNote}>
+              {savingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Salvar'}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Count */}
       <p className="text-[11px] text-muted-foreground">
         {filteredLogs.length} {filteredLogs.length === 1 ? 'registro' : 'registros'}
@@ -518,6 +638,41 @@ export const AssetActivityTimeline = ({
                         summary={item}
                         profileMap={profileMap}
                       />
+                    );
+                  }
+
+                  if (isManualNote(item)) {
+                    const authorName = profileMap[item.broker_id] || 'Usuário';
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-start gap-2.5 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                      >
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                          <StickyNote className="h-3 w-3" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm leading-snug">
+                            <span className="font-medium">{authorName}</span>
+                            {' '}
+                            <span className="text-muted-foreground">registrou atividade:</span>
+                            {' '}
+                            <span>{item.title}</span>
+                          </p>
+                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">
+                                {item.scheduled_at ? formatTimestamp(item.scheduled_at) : formatTimestamp(item.created_at)}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="text-xs">
+                              {item.scheduled_at ? formatTimestampAbsolute(item.scheduled_at) : formatTimestampAbsolute(item.created_at)}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     );
                   }
 

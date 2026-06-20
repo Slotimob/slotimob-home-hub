@@ -3719,10 +3719,11 @@ export type Database = {
           is_completed: boolean
           metadata: Json | null
           outcome: string | null
+          property_id: string | null
           responsible_name: string | null
           scheduled_at: string | null
           title: string
-          unit_id: string
+          unit_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3735,10 +3736,11 @@ export type Database = {
           is_completed?: boolean
           metadata?: Json | null
           outcome?: string | null
+          property_id?: string | null
           responsible_name?: string | null
           scheduled_at?: string | null
           title: string
-          unit_id: string
+          unit_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3751,13 +3753,21 @@ export type Database = {
           is_completed?: boolean
           metadata?: Json | null
           outcome?: string | null
+          property_id?: string | null
           responsible_name?: string | null
           scheduled_at?: string | null
           title?: string
-          unit_id?: string
+          unit_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "property_activities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "property_activities_unit_id_fkey"
             columns: ["unit_id"]
