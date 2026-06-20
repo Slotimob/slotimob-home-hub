@@ -116,19 +116,31 @@ interface BillingSummary {
   logs: AuditLog[];
 }
 
-type TimelineItem = AuditLog | BillingSummary;
-
-function isBillingSummary(item: TimelineItem): item is BillingSummary {
-  return 'type' in item && item.type === 'billing_summary';
+interface ManualNote {
+  id: string;
+  type: 'manual_note';
+  title: string;
+  scheduled_at: string | null;
+  created_at: string;
+  broker_id: string;
 }
 
-function collapseBillingEvents(logs: AuditLog[]): TimelineItem[] {
-  // Count billing_issued per month
+function isManualNote(item: any): item is ManualNote {
+  return item && item.type === 'manual_note';
+}
+
+type TimelineItem = AuditLog | BillingSummary | ManualNote;
+
+function isBillingSummary(item: TimelineItem): item is BillingSummary {
+  return 'type' in item && (item as any).type === 'billing_summary';
+}
+
+function collapseBillingEvents(logs: (AuditLog | ManualNote)[]): TimelineItem[] {
   const billingByMonth = new Map<string, AuditLog[]>();
-  const nonBilling: AuditLog[] = [];
+  const nonBilling: (AuditLog | ManualNote)[] = [];
 
   for (const log of logs) {
-    if (log.action === 'billing_issued') {
+    if (!isManualNote(log) && log.action === 'billing_issued') {
       const d = new Date(log.created_at);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!billingByMonth.has(key)) billingByMonth.set(key, []);
@@ -138,7 +150,6 @@ function collapseBillingEvents(logs: AuditLog[]): TimelineItem[] {
     }
   }
 
-  // Build items: if a month has >5 billing events, collapse into summary
   const result: TimelineItem[] = [...nonBilling];
 
   for (const [key, bLogs] of billingByMonth) {
@@ -156,10 +167,9 @@ function collapseBillingEvents(logs: AuditLog[]): TimelineItem[] {
     }
   }
 
-  // Sort by created_at desc (summaries use first log's date)
   result.sort((a, b) => {
-    const dateA = isBillingSummary(a) ? a.logs[0].created_at : a.created_at;
-    const dateB = isBillingSummary(b) ? b.logs[0].created_at : b.created_at;
+    const dateA = isBillingSummary(a) ? a.logs[0].created_at : isManualNote(a) ? (a.scheduled_at ?? a.created_at) : a.created_at;
+    const dateB = isBillingSummary(b) ? b.logs[0].created_at : isManualNote(b) ? (b.scheduled_at ?? b.created_at) : b.created_at;
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 
