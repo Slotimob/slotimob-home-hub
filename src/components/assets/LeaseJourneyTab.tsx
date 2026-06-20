@@ -299,10 +299,11 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
            [`${currentUploadKey}_date`]: new Date().toISOString(),
          };
  
-         await supabase
-           .from("leases")
-           .update({ metadata: metadataUpdate })
-           .eq("id", lease.id);
+          const { error: dbError2 } = await supabase
+            .from("leases")
+            .update({ metadata: metadataUpdate })
+            .eq("id", lease.id);
+          if (dbError2) throw dbError2;
        }
  
         toast.success("Arquivo enviado com sucesso!");
