@@ -20,7 +20,7 @@ import { CreatePropertyQuickDialog } from '@/components/units/CreatePropertyQuic
 import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
 import { ContactCategory } from '@/components/contacts/ContactCategoryFilter';
 import { TagsInput } from '@/components/units/TagsInput';
-import { Plus, Search, Building2, HelpCircle, Target, Settings2 } from 'lucide-react';
+import { Plus, Search, Building2, HelpCircle, Target, Settings2, Globe } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -89,6 +89,7 @@ export interface UnitFormData {
   intent_type: IntentType;
   market_value: string;
   is_occupied: boolean;
+  is_published_portal: boolean;
 }
 
 export const getInitialFormData = (): UnitFormData => ({
@@ -128,6 +129,7 @@ export const getInitialFormData = (): UnitFormData => ({
   intent_type: 'sale',
   market_value: '',
   is_occupied: false,
+  is_published_portal: false,
 });
 
 interface UnitFormFieldsProps {
@@ -244,6 +246,27 @@ export const UnitFormFields = ({
             id="is_managed"
             checked={formData.is_managed}
             onCheckedChange={(checked) => setFormData({ ...formData, is_managed: checked })}
+            className="flex-shrink-0"
+          />
+        </div>
+
+        {/* Portal Publishing Toggle */}
+        <div className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+          <div className="space-y-0.5 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+              <Label htmlFor="is_published_portal" className="font-medium cursor-pointer">
+                Publicar nos Portais Imobiliários
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Ao ativar, este imóvel será incluído no Feed XML para Zap Imóveis, VivaReal, OLX e outros portais. Configure a integração em <strong>Integrações → Portal Imobiliário</strong>.
+            </p>
+          </div>
+          <Switch
+            id="is_published_portal"
+            checked={formData.is_published_portal}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_published_portal: checked })}
             className="flex-shrink-0"
           />
         </div>
