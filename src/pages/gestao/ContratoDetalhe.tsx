@@ -1144,6 +1144,14 @@ export default function ContratoDetalhe() {
           </Card>
         </TabsContent>
 
+        {/* Boletos */}
+        <TabsContent value="boletos" className="mt-4">
+          <LeaseBoletos
+            leaseId={lease.id}
+            brokerId={effectiveBrokerId || user!.id}
+          />
+        </TabsContent>
+
         {/* Reports */}
         <TabsContent value="reports" className="space-y-4 mt-4">
           <Card>
