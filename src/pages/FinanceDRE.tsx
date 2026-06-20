@@ -5,8 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, Download, FileText, FileDown } from "lucide-react";
 import { useDREReport } from "@/hooks/useDREReport";
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { exportDREtoPDF, exportDREtoCSV } from "@/utils/dreExport";
 import {
@@ -19,13 +17,6 @@ import {
 import { UnitSelector } from "@/components/finance/UnitSelector";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -91,11 +82,13 @@ const MONTH_NAMES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
+const MONTH_NAMES_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
 export default function FinanceDRE() {
   const currentYear = new Date().getFullYear();
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
-  const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
-  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [selectedYears, setSelectedYears] = useState<string[]>([String(currentYear)]);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
   const years = useMemo(
     () => [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(String),
@@ -128,29 +121,27 @@ export default function FinanceDRE() {
       : selectedUnit.unit_number;
   }, [selectedUnit, selectedUnitIds]);
 
-  // Compute date range from year + month filters
-  const dateRange = useMemo(() => {
-    const year = parseInt(selectedYear, 10);
-    if (selectedMonth === "all") {
-      const base = new Date(year, 0, 1);
-      return { start: startOfYear(base), end: endOfYear(base) };
-    }
-    const monthIdx = parseInt(selectedMonth, 10) - 1;
-    const base = new Date(year, monthIdx, 1);
-    return { start: startOfMonth(base), end: endOfMonth(base) };
-  }, [selectedYear, selectedMonth]);
-
   const { data: dre, isLoading } = useDREReport(
-    dateRange.start,
-    dateRange.end,
+    selectedYears,
+    selectedMonths,
     selectedUnitIds.length > 0 ? selectedUnitIds : undefined
   );
 
   const periodLabel = useMemo(() => {
-    if (selectedMonth === "all") return `Ano de ${selectedYear}`;
-    const monthIdx = parseInt(selectedMonth, 10) - 1;
-    return `${MONTH_NAMES[monthIdx]} de ${selectedYear}`;
-  }, [selectedYear, selectedMonth]);
+    const effYears = (selectedYears.length === 0 ? [String(currentYear)] : [...selectedYears]).sort();
+    const yearsLabel = effYears.length === 1
+      ? effYears[0]
+      : `${effYears[0]}–${effYears[effYears.length - 1]}`;
+
+    if (selectedMonths.length === 0) {
+      return effYears.length === 1 ? `Ano de ${yearsLabel}` : `Anos ${yearsLabel}`;
+    }
+    if (selectedMonths.length === 1) {
+      const monthIdx = parseInt(selectedMonths[0], 10) - 1;
+      return `${MONTH_NAMES[monthIdx]} de ${yearsLabel}`;
+    }
+    return `${selectedMonths.length} meses — ${yearsLabel}`;
+  }, [selectedYears, selectedMonths, currentYear]);
 
   const handleExportPDF = async () => {
     if (dre) await exportDREtoPDF(dre, periodLabel, unitDisplayName);
@@ -196,39 +187,70 @@ export default function FinanceDRE() {
 
         {/* Filters Section */}
         <Card>
-          <CardContent className="py-4">
-            <div className="flex gap-3 flex-wrap items-center">
-              <div className="w-full sm:w-64">
-                <UnitSelector
-                  values={selectedUnitIds}
-                  onChange={setSelectedUnitIds}
-                  placeholder="Todas as unidades"
-                />
+          <CardContent className="py-4 space-y-3">
+            {/* Unit filter */}
+            <div className="w-full sm:w-64">
+              <UnitSelector
+                values={selectedUnitIds}
+                onChange={setSelectedUnitIds}
+                placeholder="Todas as unidades"
+              />
+            </div>
 
-              </div>
+            {/* Year multi-select */}
+            <div className="flex flex-wrap gap-1.5">
+              {years.map(year => (
+                <Button
+                  key={year}
+                  type="button"
+                  size="sm"
+                  variant={selectedYears.includes(year) ? "default" : "outline"}
+                  className="h-8 px-3 text-xs"
+                  onClick={() => {
+                    if (selectedYears.includes(year)) {
+                      if (selectedYears.length > 1) {
+                        setSelectedYears(prev => prev.filter(y => y !== year));
+                      }
+                    } else {
+                      setSelectedYears(prev => [...prev, year]);
+                    }
+                  }}
+                >
+                  {year}
+                </Button>
+              ))}
+            </div>
 
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(year => (
-                    <SelectItem key={year} value={year}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Mês" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os meses</SelectItem>
-                  {MONTH_NAMES.map((name, i) => (
-                    <SelectItem key={i} value={String(i + 1)}>{name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Month multi-select */}
+            <div className="flex flex-wrap gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant={selectedMonths.length === 0 ? "default" : "outline"}
+                className="h-7 px-2 text-xs"
+                onClick={() => setSelectedMonths([])}
+              >
+                Todos
+              </Button>
+              {MONTH_NAMES_SHORT.map((name, i) => {
+                const val = String(i + 1);
+                return (
+                  <Button
+                    key={i}
+                    type="button"
+                    size="sm"
+                    variant={selectedMonths.includes(val) ? "default" : "outline"}
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      setSelectedMonths(prev =>
+                        prev.includes(val) ? prev.filter(m => m !== val) : [...prev, val]
+                      );
+                    }}
+                  >
+                    {name}
+                  </Button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -240,7 +262,7 @@ export default function FinanceDRE() {
               DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO
             </CardTitle>
             <CardDescription className="text-center">
-              Período: {format(dateRange.start, "dd/MM/yyyy", { locale: ptBR })} a {format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}
+              Período: {periodLabel}
               {unitDisplayName && ` | Unidade: ${unitDisplayName}`}
             </CardDescription>
           </CardHeader>
