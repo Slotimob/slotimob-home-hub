@@ -3444,6 +3444,7 @@ export type Database = {
         Row: {
           accepted_terms: boolean | null
           agency_id: string | null
+          asaas_config: Json | null
           author_role: string | null
           avatar_url: string | null
           bio_mini: string | null
@@ -3479,6 +3480,7 @@ export type Database = {
         Insert: {
           accepted_terms?: boolean | null
           agency_id?: string | null
+          asaas_config?: Json | null
           author_role?: string | null
           avatar_url?: string | null
           bio_mini?: string | null
@@ -3514,6 +3516,7 @@ export type Database = {
         Update: {
           accepted_terms?: boolean | null
           agency_id?: string | null
+          asaas_config?: Json | null
           author_role?: string | null
           avatar_url?: string | null
           bio_mini?: string | null
