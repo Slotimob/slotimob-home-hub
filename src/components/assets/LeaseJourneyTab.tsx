@@ -284,13 +284,14 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
  
        // Update lease metadata or signed_contract_path
        if (currentUploadKey === "signed_contract") {
-         await supabase
-           .from("leases")
-           .update({
-             signed_contract_path: filePath,
-             signature_status: "signed",
-           })
-           .eq("id", lease.id);
+          const { error: dbError1 } = await supabase
+            .from("leases")
+            .update({
+              signed_contract_path: filePath,
+              signature_status: "signed",
+            })
+            .eq("id", lease.id);
+          if (dbError1) throw dbError1;
        } else {
          const metadataUpdate = {
            ...lease.metadata,
