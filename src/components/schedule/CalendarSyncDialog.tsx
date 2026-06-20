@@ -33,6 +33,7 @@ export function CalendarSyncDialog() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [justRegenerated, setJustRegenerated] = useState(false);
 
   // Fetch the user's ical_token from profile
   const { data: profile, isLoading } = useQuery({
