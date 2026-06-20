@@ -429,10 +429,10 @@ export function useMessages(conversationId: string | null, remoteJid?: string | 
   }, [conversationId]);
 
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !user) return;
 
     const channel = supabase
-      .channel(`messages-${conversationId}`)
+      .channel(`messages-${user.id}-${conversationId}`)
       .on(
         'postgres_changes',
         {
