@@ -317,6 +317,12 @@ export const EditUnitDialog = ({
 
       if (error) throw error;
 
+      try {
+        queryClient.invalidateQueries({ queryKey: ['units'] });
+        queryClient.invalidateQueries({ queryKey: ['asset-health'] });
+        queryClient.invalidateQueries({ queryKey: ['unit-full-data'] });
+      } catch {}
+
       // Clear draft on successful save
       clearDraft();
 

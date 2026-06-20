@@ -137,6 +137,7 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
 
   const handleEditSuccess = () => {
     setShowEditDialog(false);
+    onOpenChange(false);
     onSuccess();
   };
 
