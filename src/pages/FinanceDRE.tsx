@@ -143,7 +143,7 @@ export default function FinanceDRE() {
   const { data: dre, isLoading } = useDREReport(
     dateRange.start,
     dateRange.end,
-    selectedUnitId || undefined
+    selectedUnitIds.length > 0 ? selectedUnitIds : undefined
   );
 
   const periodLabel = useMemo(() => {
