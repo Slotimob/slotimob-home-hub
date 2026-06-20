@@ -303,10 +303,10 @@ export function useConversations(connectionId: string | null) {
   }, [fetchConversations]);
 
   useEffect(() => {
-    if (!connectionId) return;
+    if (!connectionId || !user) return;
 
     const channel = supabase
-      .channel('conversations-changes')
+      .channel(`conversations-${user.id}-${connectionId}`)
       .on(
         'postgres_changes',
         {
