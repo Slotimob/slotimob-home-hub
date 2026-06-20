@@ -173,7 +173,7 @@ const RealEstate = () => {
     enabled: !!user,
   });
 
-  const rereloadRealEstateUnits = () => {
+  const reloadRealEstateUnits = () => {
     queryClient.invalidateQueries({ queryKey: ['units'] });
   };
 
@@ -502,7 +502,7 @@ const RealEstate = () => {
                   showKanban={true}
                   showTable={true}
                 />
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => rereloadRealEstateUnits()} title="Atualizar lista">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => reloadRealEstateUnits()} title="Atualizar lista">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
