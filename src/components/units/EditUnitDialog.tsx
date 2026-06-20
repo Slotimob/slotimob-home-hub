@@ -100,6 +100,7 @@ interface Unit {
   intent_type?: 'sale' | 'rental' | 'both' | null;
   market_value?: number | null;
   is_occupied?: boolean | null;
+  is_published_portal?: boolean | null;
 }
 
 interface EditUnitDialogProps {
@@ -149,6 +150,7 @@ function mapUnitToFormData(u: Unit): UnitFormData {
     intent_type: u.intent_type || 'sale',
     market_value: u.market_value?.toString() || '',
     is_occupied: u.is_occupied ?? false,
+    is_published_portal: u.is_published_portal ?? false,
   };
 }
 
@@ -313,6 +315,7 @@ export const EditUnitDialog = ({
         intent_type: formData.intent_type,
         market_value: formData.market_value ? parseFloat(formData.market_value) : null,
         is_occupied: formData.is_occupied,
+        is_published_portal: formData.is_published_portal,
       };
 
       unitSchema.parse(payload);
