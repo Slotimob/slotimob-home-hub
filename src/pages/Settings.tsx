@@ -619,8 +619,12 @@ const Settings = () => {
             </p>
           </div>
 
-          <Button onClick={saveAsaasConfig} disabled={savingAsaas}>
-            {savingAsaas ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</> : 'Salvar dados Asaas'}
+          <Button onClick={saveAsaasConfig} disabled={savingAsaas || asaasAccountStatus === 'active'}>
+            {savingAsaas
+              ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Criando subconta...</>
+              : asaasAccountStatus === 'active'
+              ? '✓ Conta já configurada'
+              : 'Criar subconta e ativar cobrança'}
           </Button>
         </SettingsSection>
 
