@@ -42,15 +42,40 @@ export default function Blog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const geoFilter = searchParams.get('geo') || '';
   const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeCat, geoFilter]);
+
+  const { data: totalCount } = useQuery({
+    queryKey: ['blog-posts-count', activeCat, geoFilter],
+    queryFn: async () => {
+      let q = supabase
+        .from('blog_posts')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_published', true);
+      if (activeCat) q = q.eq('category_id', activeCat);
+      if (geoFilter) q = q.ilike('geo_location', geoFilter);
+      const { count, error } = await q;
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
 
   const { data: posts, isLoading } = useQuery({
-    queryKey: ['blog-posts-public'],
+    queryKey: ['blog-posts-public', activeCat, geoFilter, page],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const offset = (page - 1) * PAGE_SIZE;
+      let q = supabase
         .from('blog_posts')
         .select('id, title, slug, excerpt, featured_image, featured_image_alt, category_id, is_published, published_at, reading_time_min, views_count, ai_summary, geo_location, seo_tags')
-        .eq('is_published', true)
-        .order('published_at', { ascending: false });
+        .eq('is_published', true);
+      if (activeCat) q = q.eq('category_id', activeCat);
+      if (geoFilter) q = q.ilike('geo_location', geoFilter);
+      const { data, error } = await q
+        .order('published_at', { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
       if (error) throw error;
       return data as unknown as BlogPost[];
     },
@@ -68,20 +93,28 @@ export default function Blog() {
     },
   });
 
-  const getCat = (id: string | null) => categories?.find((c) => c.id === id);
-
-  // Filter posts by GEO and category
-  const filtered = (posts || []).filter((p) => {
-    if (geoFilter && p.geo_location !== geoFilter) return false;
-    if (activeCat && p.category_id !== activeCat) return false;
-    return true;
+  // Fetch geo locations independently (not filtered by current geo) for the chip row
+  const { data: geoLocationsData } = useQuery({
+    queryKey: ['blog-geo-locations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('geo_location')
+        .eq('is_published', true)
+        .not('geo_location', 'is', null);
+      if (error) throw error;
+      return data as { geo_location: string | null }[];
+    },
   });
 
-  const featured = filtered[0];
-  const rest = filtered.slice(1);
+  const getCat = (id: string | null) => categories?.find((c) => c.id === id);
 
-  // Extract unique GEO locations for display
-  const geoLocations = [...new Set((posts || []).map(p => p.geo_location).filter(Boolean))] as string[];
+  const filtered = posts || [];
+  const featured = page === 1 ? filtered[0] : undefined;
+  const rest = page === 1 ? filtered.slice(1) : filtered;
+  const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / PAGE_SIZE));
+
+  const geoLocations = [...new Set((geoLocationsData || []).map(p => p.geo_location).filter(Boolean))] as string[];
 
   const clearGeo = () => {
     searchParams.delete('geo');
