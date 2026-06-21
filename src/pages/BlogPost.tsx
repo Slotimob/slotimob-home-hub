@@ -165,7 +165,7 @@ export default function BlogPost() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background" data-theme="light-green">
+      <div className="min-h-screen bg-background">
         <LandingHeader />
         <main className="pt-24 pb-16">
           <div className="container mx-auto px-4 max-w-5xl">
@@ -187,7 +187,7 @@ export default function BlogPost() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-background" data-theme="light-green">
+      <div className="min-h-screen bg-background">
         <LandingHeader />
         <div className="pt-24 text-center py-20">
           <h1 className="text-2xl font-bold mb-4">Artigo não encontrado</h1>
@@ -285,7 +285,7 @@ export default function BlogPost() {
         {post.geo_location && <meta name="geo.region" content={post.geo_location} />}
       </Helmet>
 
-      <div className="min-h-screen bg-background" data-theme="light-green">
+      <div className="min-h-screen bg-background">
         {/* Reading progress bar */}
         <div className="fixed top-0 left-0 right-0 z-[60]">
           <Progress value={readProgress} className="h-1 rounded-none" />
@@ -364,6 +364,20 @@ export default function BlogPost() {
                   className="prose prose-lg max-w-none dark:prose-invert prose-headings:scroll-mt-20 prose-a:text-primary prose-img:rounded-xl"
                   dangerouslySetInnerHTML={{ __html: processedContent }}
                 />
+
+                {/* Inline CTA */}
+                <div className="my-10 rounded-2xl border border-accent/20 bg-accent/5 p-8 text-center">
+                  <p className="font-bold text-lg text-foreground mb-2">
+                    Automatize sua gestão de imóveis
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-5">
+                    Boletos, contratos, cobranças e reajustes no automático. Para quem gere de 1 a 50 imóveis.
+                  </p>
+                  <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Link to="/checkout?plan=pro">Testar 7 dias grátis →</Link>
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-3">Sem cartão · Cancele quando quiser</p>
+                </div>
 
                 {/* FAQ Section */}
                 {faqs.length > 0 && (
@@ -455,23 +469,17 @@ export default function BlogPost() {
                     </Card>
                   )}
 
-                  <Card>
-                    <CardContent className="p-4">
-                      <h3 className="text-sm font-semibold mb-3">Ferramentas Relacionadas</h3>
-                      <div className="space-y-2">
-                        {relatedTools.map((tool) => (
-                          <Link
-                            key={tool.href}
-                            to={tool.href}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors text-sm text-muted-foreground hover:text-foreground"
-                          >
-                            <tool.icon className="h-4 w-4 shrink-0" />
-                            {tool.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 space-y-3">
+                    <p className="text-sm font-semibold text-foreground leading-snug">
+                      Automatize sua gestão de imóveis
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Boletos, contratos e cobranças no automático. 7 dias grátis, sem cartão.
+                    </p>
+                    <Button asChild size="sm" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                      <Link to="/checkout?plan=pro">Começar grátis →</Link>
+                    </Button>
+                  </div>
                 </div>
               </aside>
             </div>
