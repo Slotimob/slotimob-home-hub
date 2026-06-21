@@ -157,6 +157,17 @@ const Settings = () => {
         setAuthorRole(data.author_role || '');
         setAsaasConfig(((data as any).asaas_config as AsaasConfig) || {});
       }
+
+      // Verificar status da subconta Asaas
+      const { data: asaasAcc } = await supabase
+        .from('asaas_accounts')
+        .select('asaas_account_id, status')
+        .eq('broker_id', user?.id)
+        .maybeSingle();
+      if (asaasAcc) {
+        setAsaasAccountStatus(asaasAcc.status as 'active' | 'pending');
+        setAsaasAccountId(asaasAcc.asaas_account_id);
+      }
     } catch (error: any) {
       toast({ title: 'Erro ao carregar perfil', description: error.message, variant: 'destructive' });
     }
