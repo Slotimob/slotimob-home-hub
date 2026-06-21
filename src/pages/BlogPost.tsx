@@ -136,6 +136,23 @@ export default function BlogPost() {
     enabled: !!post?.author_id,
   });
 
+  // Related posts (same category, excluding current)
+  const { data: related } = useQuery({
+    queryKey: ['blog-related', post?.category_id, post?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('blog_posts')
+        .select('id, title, slug, excerpt, featured_image, reading_time_min, published_at')
+        .eq('is_published', true)
+        .eq('category_id', post!.category_id!)
+        .neq('id', post!.id)
+        .order('published_at', { ascending: false })
+        .limit(3);
+      return data;
+    },
+    enabled: !!post?.category_id && !!post?.id,
+  });
+
   // Increment view count
   useEffect(() => {
     if (post?.id) {
