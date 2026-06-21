@@ -330,6 +330,34 @@ export default function Blog() {
                     ))}
                   </div>
                 )}
+
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-4 mt-10">
+                    <Button
+                      variant="outline"
+                      disabled={page === 1}
+                      onClick={() => {
+                        setPage((p) => Math.max(1, p - 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      ← Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Página {page} de {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      disabled={page >= totalPages}
+                      onClick={() => {
+                        setPage((p) => Math.min(totalPages, p + 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      Próxima →
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
