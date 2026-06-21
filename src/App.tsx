@@ -70,6 +70,7 @@ const Proposals = React.lazy(() => import("./pages/Proposals"));
 const AdminApprovals = React.lazy(() => import("./pages/AdminApprovals"));
 const DataExport = React.lazy(() => import("./pages/DataExport"));
 const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
+const Plans = React.lazy(() => import("./pages/Plans"));
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => (
               <Route path="/apresentacao" element={<Presentation />} />
               <Route path="/presentation" element={<Navigate to="/apresentacao" replace />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/planos" element={<Plans />} />
               <Route path="/checkout/success" element={<CheckoutSuccess />} />
               <Route path="/checkout/cancel" element={<CheckoutCancel />} />
 
