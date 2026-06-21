@@ -35,9 +35,17 @@ export function LpPricing() {
         </div>
 
         <Reveal delay={200}>
-          <p className="mt-10 text-center text-[12px]" style={{ color: 'var(--lp-mute)' }}>
-            add-ons disponíveis · usuário extra · pack +50 unidades · créditos whatsapp · créditos ia
-          </p>
+          <div className="mt-10 text-center space-y-3">
+            <p className="text-[12px]" style={{ color: 'var(--lp-mute)' }}>
+              add-ons disponíveis · usuário extra · pack +50 unidades · créditos whatsapp · créditos ia
+            </p>
+            <Link
+              to="/planos"
+              className="inline-block text-sm text-accent underline hover:no-underline"
+            >
+              Ver comparação completa de planos →
+            </Link>
+          </div>
         </Reveal>
       </div>
     </section>
