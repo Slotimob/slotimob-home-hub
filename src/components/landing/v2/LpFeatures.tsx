@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import SectionWrapper from '@/components/marketing/SectionWrapper';
+import { Reveal } from './Reveal';
 
 interface FeatureBlockProps {
   reverse?: boolean;
@@ -20,6 +21,7 @@ interface FeatureBlockProps {
   description: string;
   bullets: string[];
   mockup: React.ReactNode;
+  index?: number;
 }
 
 function FeatureBlock({
@@ -30,11 +32,12 @@ function FeatureBlock({
   description,
   bullets,
   mockup,
+  index = 0,
 }: FeatureBlockProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
       {/* Text column */}
-      <div className={reverse ? 'lg:order-2' : ''}>
+      <Reveal delay={index * 60} className={reverse ? 'lg:order-2' : ''}>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-xs font-semibold">
           <Icon className="h-3.5 w-3.5" />
           {badge}
@@ -53,7 +56,7 @@ function FeatureBlock({
             </li>
           ))}
         </ul>
-      </div>
+      </Reveal>
 
       {/* Mockup column */}
       <div className={reverse ? 'lg:order-1' : ''}>
@@ -384,17 +387,20 @@ function MockButton({ children, primary = false }: { children: React.ReactNode; 
 export function LpFeatures() {
   return (
     <SectionWrapper background="muted" id="funcionalidades">
-      <div className="text-center mb-16 md:mb-20">
-        <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
-          Sistema que trabalha enquanto você dorme
-        </h2>
-        <p className="text-lg text-muted-foreground mt-3 max-w-2xl mx-auto">
-          Tudo o que você precisa para gerir seus imóveis sem esforço, em um único lugar.
-        </p>
-      </div>
+      <Reveal>
+        <div className="text-center mb-16 md:mb-20">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+            Sistema que trabalha enquanto você dorme
+          </h2>
+          <p className="text-lg text-muted-foreground mt-3 max-w-2xl mx-auto">
+            Tudo o que você precisa para gerir seus imóveis sem esforço, em um único lugar.
+          </p>
+        </div>
+      </Reveal>
 
       <div className="space-y-20 md:space-y-28">
         <FeatureBlock
+          index={0}
           icon={Receipt}
           badge="Cobranças"
           title="Boletos gerados no automático, todo mês"
@@ -408,6 +414,7 @@ export function LpFeatures() {
         />
 
         <FeatureBlock
+          index={1}
           reverse
           icon={TrendingUp}
           badge="Inadimplência"
@@ -422,6 +429,7 @@ export function LpFeatures() {
         />
 
         <FeatureBlock
+          index={2}
           icon={FileSignature}
           badge="Contratos"
           title="Contrato digital assinado em 5 minutos"
@@ -435,6 +443,7 @@ export function LpFeatures() {
         />
 
         <FeatureBlock
+          index={3}
           reverse
           icon={BarChart3}
           badge="Financeiro"
@@ -449,6 +458,7 @@ export function LpFeatures() {
         />
 
         <FeatureBlock
+          index={4}
           icon={Users}
           badge="CRM"
           title="Todos os seus inquilinos, contratos e vencimentos em um lugar"
@@ -462,6 +472,7 @@ export function LpFeatures() {
         />
 
         <FeatureBlock
+          index={5}
           reverse
           icon={Sparkles}
           badge="Inteligência Artificial"
