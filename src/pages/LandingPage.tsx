@@ -71,6 +71,8 @@ function injectJsonLdOnce() {
 export default function LandingPage() {
   const { segment: segmentSlug } = useParams<{ segment?: string }>();
   const segment = getSegment(segmentSlug);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     injectFontsOnce();
@@ -81,6 +83,45 @@ export default function LandingPage() {
       if (el) el.remove();
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const check = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (cancelled) return;
+
+      if (session?.user) {
+        const checkoutPlan = searchParams.get('checkout_plan');
+
+        if (checkoutPlan && ['essencial', 'pro', 'business'].includes(checkoutPlan)) {
+          try {
+            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+              body: { plan_id: checkoutPlan }
+            });
+
+            if (!error && data?.url) {
+              window.location.href = data.url;
+            } else if (error) {
+              console.error('Post-OAuth checkout error:', error);
+              toast.error('Erro ao iniciar checkout. Tente novamente na página de planos.');
+            }
+          } catch (err) {
+            console.error('Post-OAuth checkout error:', err);
+          }
+
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        navigate('/dashboard', { replace: true });
+      }
+    };
+
+    check();
+    return () => { cancelled = true; };
+  }, [navigate, searchParams]);
 
   return (
     <div data-lp="v2">
