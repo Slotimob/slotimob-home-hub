@@ -43,6 +43,7 @@ import {
   Shield,
   CreditCard,
   Receipt,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
