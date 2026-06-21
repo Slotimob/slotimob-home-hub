@@ -30,7 +30,7 @@ export function LpHero() {
             </div>
 
             {/* H1 */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-foreground">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-foreground">
               Seu imóvel gera renda.
               <br />
               <span className="text-accent">Não trabalho.</span>
