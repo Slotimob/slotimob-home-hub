@@ -125,11 +125,11 @@ export default function Blog() {
     <>
       <SEOHead
         title="Blog - Conteúdo para o Mercado Imobiliário"
-        description="Artigos, dicas e estratégias para corretores e gestores imobiliários. Gestão, vendas, locação e tecnologia."
+        description="Dicas e guias práticos para quem gere imóveis sem depender de imobiliária. Boletos, contratos, reajustes e gestão financeira."
         path="/blog"
       />
       <Helmet>
-        <link rel="alternate" type="application/rss+xml" title="SlotiMob Blog RSS" href="/rss.xml" />
+        <link rel="alternate" type="application/rss+xml" title="Slotimob Blog RSS" href="/rss.xml" />
       </Helmet>
 
       <div className="min-h-screen bg-background">
