@@ -7,7 +7,9 @@ import { getSegment } from '@/config/landingSegments';
 import { LpHeader } from '@/components/landing/v2/LpHeader';
 import { LpHero } from '@/components/landing/v2/LpHero';
 import { LpStats } from '@/components/landing/v2/LpStats';
+import { LpPainPoints } from '@/components/landing/v2/LpPainPoints';
 import { LpModules } from '@/components/landing/v2/LpModules';
+import SocialProofNumbers from '@/components/marketing/SocialProofNumbers';
 import { LpComparison } from '@/components/landing/v2/LpComparison';
 import { LpPricing } from '@/components/landing/v2/LpPricing';
 import { LpFaq } from '@/components/landing/v2/LpFaq';
@@ -133,6 +135,12 @@ export default function LandingPage() {
       <LpHeader />
       <main className="scroll-smooth">
         <LpHero />
+        <section className="py-12 md:py-16 bg-muted/30 border-y border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SocialProofNumbers />
+          </div>
+        </section>
+        <LpPainPoints />
         <LpStats />
         <LpModules />
         <Suspense fallback={<div style={{ minHeight: 600 }} aria-hidden />}>
