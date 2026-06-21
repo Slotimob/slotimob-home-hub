@@ -432,7 +432,7 @@ const Settings = () => {
     );
   }
 
-  const asaasSaved = !!(profile?.asaas_config?.cpf_cnpj);
+  
 
   return (
     <AppLayout title="Configurações">
