@@ -112,6 +112,8 @@ const Settings = () => {
   const [asaasConfig, setAsaasConfig] = useState<AsaasConfig>({});
   const [savingAsaas, setSavingAsaas] = useState(false);
   const [fetchingCep, setFetchingCep] = useState(false);
+  const [asaasAccountStatus, setAsaasAccountStatus] = useState<'active' | 'pending' | null>(null);
+  const [asaasAccountId, setAsaasAccountId] = useState<string | null>(null);
 
   const [uploading, setUploading] = useState(false);
   const [uploadingCreci, setUploadingCreci] = useState(false);
