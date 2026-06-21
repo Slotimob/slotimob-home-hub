@@ -96,7 +96,7 @@ export default function Blog() {
         <link rel="alternate" type="application/rss+xml" title="SlotiMob Blog RSS" href="/rss.xml" />
       </Helmet>
 
-      <div className="min-h-screen bg-background" data-theme="light-green">
+      <div className="min-h-screen bg-background">
         <LandingHeader />
 
         <main className="pt-24 pb-16">
