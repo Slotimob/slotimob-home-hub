@@ -136,6 +136,23 @@ export default function BlogPost() {
     enabled: !!post?.author_id,
   });
 
+  // Related posts (same category, excluding current)
+  const { data: related } = useQuery({
+    queryKey: ['blog-related', post?.category_id, post?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('blog_posts')
+        .select('id, title, slug, excerpt, featured_image, reading_time_min, published_at')
+        .eq('is_published', true)
+        .eq('category_id', post!.category_id!)
+        .neq('id', post!.id)
+        .order('published_at', { ascending: false })
+        .limit(3);
+      return data;
+    },
+    enabled: !!post?.category_id && !!post?.id,
+  });
+
   // Increment view count
   useEffect(() => {
     if (post?.id) {
@@ -437,6 +454,39 @@ export default function BlogPost() {
                       </div>
                     </CardContent>
                   </Card>
+                )}
+
+                {/* Related posts */}
+                {related && related.length > 0 && (
+                  <section className="mt-12 border-t border-border pt-8">
+                    <h2 className="text-xl font-bold mb-6">Você também pode gostar</h2>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      {related.map((r: any) => (
+                        <Link
+                          key={r.id}
+                          to={`/blog/${r.slug}`}
+                          className="rounded-lg border border-border bg-card p-4 hover:border-accent/30 transition-all group"
+                        >
+                          {r.featured_image ? (
+                            <img
+                              src={r.featured_image}
+                              alt={r.title}
+                              className="aspect-video w-full object-cover rounded-md"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="aspect-video w-full rounded-md bg-gradient-to-br from-primary/10 to-secondary/10" />
+                          )}
+                          <h3 className="text-sm font-semibold line-clamp-2 mt-3 group-hover:text-primary transition-colors">
+                            {r.title}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {r.reading_time_min || 5} min de leitura
+                          </p>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
                 )}
               </article>
 
