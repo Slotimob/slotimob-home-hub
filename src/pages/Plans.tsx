@@ -220,8 +220,8 @@ function ComparisonTable() {
                 </thead>
                 <tbody>
                   {categories.map((cat) => (
-                    <>
-                      <tr key={`cat-${cat.name}`}>
+                    <Fragment key={cat.name}>
+                      <tr>
                         <td
                           colSpan={4}
                           className="bg-muted font-semibold text-sm text-foreground px-4 py-2 border-t border-border"
@@ -242,7 +242,7 @@ function ComparisonTable() {
                           <td className="p-4 text-center">{renderCell(row.business)}</td>
                         </tr>
                       ))}
-                    </>
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
