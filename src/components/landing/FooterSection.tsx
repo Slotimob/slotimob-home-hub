@@ -91,7 +91,7 @@ export function FooterSection() {
 
         <div className="mt-12 pt-6 border-t border-background/10 flex flex-col md:flex-row justify-between items-center gap-3">
           <p className="text-xs text-background/40">
-            © {new Date().getFullYear()} SLOTIMOB. Todos os direitos reservados.
+            © {new Date().getFullYear()} Slotimob · CNPJ 00.000.000/0001-00 · Todos os direitos reservados.
           </p>
           <p className="text-xs text-background/40">
             Feito com 💚 para o mercado imobiliário brasileiro.

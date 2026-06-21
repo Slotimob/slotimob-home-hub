@@ -24,6 +24,7 @@ import {
   Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import TrustBar from '@/components/marketing/TrustBar';
 
 /* ── Mega-menu data ─────────────────────────────────────────── */
 
@@ -53,7 +54,7 @@ const recursosItems = [
 
 /* ── Component ──────────────────────────────────────────────── */
 
-export function LandingHeader() {
+export function LandingHeader({ showTrustBar = false }: { showTrustBar?: boolean } = {}) {
   const { user, loading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -87,9 +88,11 @@ export function LandingHeader() {
   const toggleMobileAccordion = (id: string) => setMobileAccordion(prev => prev === id ? null : id);
 
   return (
+    <div className="fixed top-0 left-0 right-0 z-50">
+      {showTrustBar && <TrustBar />}
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+        'transition-all duration-300',
         scrolled
           ? 'bg-background/95 backdrop-blur-md shadow-sm border-b border-border'
           : 'bg-background/80 backdrop-blur-sm'
@@ -228,6 +231,7 @@ export function LandingHeader() {
         </div>
       )}
     </header>
+    </div>
   );
 }
 
