@@ -96,17 +96,17 @@ export default function Blog() {
         <link rel="alternate" type="application/rss+xml" title="SlotiMob Blog RSS" href="/rss.xml" />
       </Helmet>
 
-      <div className="min-h-screen bg-background" data-theme="light-green">
+      <div className="min-h-screen bg-background">
         <LandingHeader />
 
         <main className="pt-24 pb-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                Blog SlotiMob
+                Blog Slotimob
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Conteúdo estratégico para quem quer escalar no mercado imobiliário.
+                Dicas, guias e estratégias para quem gere imóveis com autonomia.
               </p>
 
               {/* Category pills */}
@@ -114,7 +114,7 @@ export default function Blog() {
                 <div className="flex flex-wrap justify-center gap-2 mt-6">
                   <Badge
                     variant={!activeCat ? 'default' : 'outline'}
-                    className="px-3 py-1 text-sm cursor-pointer"
+                    className={!activeCat ? 'bg-accent text-accent-foreground border-transparent cursor-pointer px-3 py-1 text-sm' : 'cursor-pointer px-3 py-1 text-sm'}
                     onClick={() => setActiveCat(null)}
                   >
                     Todos
@@ -123,7 +123,7 @@ export default function Blog() {
                     <Badge
                       key={cat.id}
                       variant={activeCat === cat.id ? 'default' : 'outline'}
-                      className="px-3 py-1 text-sm cursor-pointer"
+                      className={activeCat === cat.id ? 'bg-accent text-accent-foreground border-transparent cursor-pointer px-3 py-1 text-sm' : 'cursor-pointer px-3 py-1 text-sm'}
                       onClick={() => setActiveCat(activeCat === cat.id ? null : cat.id)}
                     >
                       {cat.name}
@@ -182,7 +182,7 @@ export default function Blog() {
                 {/* Featured post */}
                 {featured && (
                   <Link to={`/blog/${featured.slug}`} className="block group">
-                    <article className="relative rounded-2xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-xl">
+                    <article className="relative rounded-2xl overflow-hidden bg-card border border-border hover:border-accent/30 transition-all duration-300 hover:shadow-xl">
                       <div className="grid md:grid-cols-2">
                         <div className="aspect-video md:aspect-auto overflow-hidden bg-muted">
                           {featured.featured_image ? (
@@ -229,7 +229,7 @@ export default function Blog() {
                               <Clock className="h-3 w-3" /> {featured.reading_time_min || 5} min
                             </span>
                           </div>
-                          <span className="inline-flex items-center gap-1 text-primary font-medium mt-4 text-sm group-hover:gap-2 transition-all">
+                          <span className="inline-flex items-center gap-1 text-accent font-medium mt-4 text-sm group-hover:gap-2 transition-all">
                             Ler artigo <ArrowRight className="h-4 w-4" />
                           </span>
                         </div>
@@ -243,7 +243,7 @@ export default function Blog() {
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {rest.map((post) => (
                       <Link key={post.id} to={`/blog/${post.slug}`} className="group">
-                        <article className="rounded-xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg h-full flex flex-col">
+                        <article className="rounded-xl overflow-hidden bg-card border border-border hover:border-accent/30 transition-all duration-300 hover:shadow-lg h-full flex flex-col">
                           <div className="aspect-video overflow-hidden bg-muted">
                             {post.featured_image ? (
                               <img
