@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, UserPlus, Sparkles, CheckCircle2, X, ChevronDown } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
