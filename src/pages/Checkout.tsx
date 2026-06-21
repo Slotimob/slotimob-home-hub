@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, createContext, useContext, FormEvent } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useMemo, FormEvent } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -9,12 +9,11 @@ import {
   Rocket,
   Building2,
   Shield,
-  ChevronLeft,
-  Sparkles,
+  User,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -65,91 +64,25 @@ const plansMeta: PlanMeta[] = [
 
 const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
 
-// ============================================================================
-// Checkout Context
-// ============================================================================
-
-interface CheckoutContextValue {
-  step: number;
-  setStep: (n: number) => void;
-  nextStep: () => void;
-  prevStep: () => void;
-  goToStep: (n: number) => void;
-  selectedPlan: AnyPlan;
-  setSelectedPlan: (p: AnyPlan) => void;
-  isAnnual: boolean;
-  setIsAnnual: (v: boolean) => void;
+interface PlanCardData {
+  id: AnyPlan;
+  name: string;
+  icon: typeof Rocket;
+  tagline: string;
+  popular: boolean;
+  isFree: boolean;
 }
 
-const CheckoutContext = createContext<CheckoutContextValue | null>(null);
-
-function useCheckoutCtx() {
-  const ctx = useContext(CheckoutContext);
-  if (!ctx) throw new Error('useCheckoutCtx must be used inside CheckoutContext');
-  return ctx;
-}
-
-// ============================================================================
-// Stepper
-// ============================================================================
-
-const STEPS = [
-  { n: 1, label: 'Conta' },
-  { n: 2, label: 'Plano' },
-  { n: 3, label: 'Pagamento' },
-  { n: 4, label: 'Addons' },
-  { n: 5, label: 'Confirmar' },
+const ADDONS = [
+  { id: 'units_50', label: '+50 unidades', price: 39.9 },
+  { id: 'user_1', label: '+1 usuário', price: 49.9 },
+  { id: 'ai_sm', label: 'Créditos IA (S)', price: 24.9 },
+  { id: 'ai_md', label: 'Créditos IA (M)', price: 39.9 },
+  { id: 'ai_lg', label: 'Créditos IA (G)', price: 89.9 },
 ];
 
-function CheckoutStepper({ currentStep }: { currentStep: number }) {
-  return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="flex items-center">
-        {STEPS.map((s, idx) => {
-          const done = s.n < currentStep;
-          const active = s.n === currentStep;
-          const isLast = idx === STEPS.length - 1;
-          return (
-            <div key={s.n} className="flex-1 flex items-center last:flex-none">
-              <div className="flex flex-col items-center gap-1.5">
-                <div
-                  className={cn(
-                    'h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors border-2',
-                    done && 'bg-accent border-accent text-accent-foreground',
-                    active && 'bg-primary border-primary text-primary-foreground',
-                    !done && !active && 'bg-card border-border text-muted-foreground'
-                  )}
-                >
-                  {done ? <Check className="h-4 w-4" /> : s.n}
-                </div>
-                <span
-                  className={cn(
-                    'text-xs font-medium whitespace-nowrap',
-                    active ? 'text-foreground' : 'text-muted-foreground',
-                    !active && 'hidden sm:block'
-                  )}
-                >
-                  {s.label}
-                </span>
-              </div>
-              {!isLast && (
-                <div
-                  className={cn(
-                    'flex-1 h-0.5 mx-2 -mt-5 transition-colors',
-                    done ? 'bg-accent' : 'bg-border'
-                  )}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // ============================================================================
-// Step 1 — Account
+// Google icon
 // ============================================================================
 
 function GoogleIcon() {
@@ -163,182 +96,50 @@ function GoogleIcon() {
   );
 }
 
-function StepAccount() {
-  const { nextStep, goToStep, selectedPlan, isAnnual } = useCheckoutCtx();
-  const { user, loading: authLoading } = useAuth();
-  const [searchParams] = useSearchParams();
+// ============================================================================
+// Main Checkout
+// ============================================================================
 
+export default function Checkout() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+
+  const initialPlan = (searchParams.get('plan') as AnyPlan) || 'pro';
+  const initialAnnual = searchParams.get('cycle') === 'annual';
+
+  const [selectedPlan, setSelectedPlan] = useState<AnyPlan>(
+    ['start', 'pro', 'business'].includes(initialPlan) ? initialPlan : 'pro'
+  );
+  const [isAnnual, setIsAnnual] = useState<boolean>(initialAnnual);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+
+  // Account form (when not logged in)
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  // Auto-skip if logged in or returning from OAuth
-  useEffect(() => {
-    if (authLoading) return;
-    const stepParam = searchParams.get('step');
-    if (user) {
-      goToStep(stepParam ? Number(stepParam) : 2);
-    }
-  }, [user, authLoading, searchParams, goToStep]);
-
-  const handleGoogleSignIn = async () => {
-    const cycle = isAnnual ? 'annual' : 'monthly';
-    const planParam = selectedPlan === 'start' ? 'pro' : selectedPlan;
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/checkout?plan=${planParam}&cycle=${cycle}&step=2`,
-      },
-    });
-  };
-
-  const handleEmailSignUp = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
-      return;
-    }
-    if (password.length < 8) {
-      setError('A senha deve ter no mínimo 8 caracteres');
-      return;
-    }
-    setLoading(true);
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/checkout`,
-        data: { full_name: name },
-      },
-    });
-    setLoading(false);
-    if (signUpError) {
-      setError(signUpError.message);
-      return;
-    }
-    toast.success('Conta criada! Bem-vindo ao Slotimob 🎉');
-    nextStep();
-  };
-
-  if (authLoading || user) {
-    return (
-      <div className="max-w-md mx-auto py-16 flex justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-md mx-auto py-10 px-4">
-      <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-foreground">Crie sua conta grátis</h2>
-        <p className="text-sm text-muted-foreground mt-1">7 dias de PRO grátis · sem cartão</p>
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full gap-2"
-        onClick={handleGoogleSignIn}
-      >
-        <GoogleIcon />
-        Continuar com Google
-      </Button>
-
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-muted/30 px-2 text-muted-foreground">ou</span>
-        </div>
-      </div>
-
-      <form onSubmit={handleEmailSignUp} className="space-y-3">
-        <Input
-          placeholder="Seu nome"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <Input
-          type="email"
-          placeholder="E-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <Input
-          type="password"
-          placeholder="Senha (mín. 8 caracteres)"
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <Input
-          type="password"
-          placeholder="Confirmar senha"
-          minLength={8}
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
-
-        {error && <p className="text-destructive text-sm">{error}</p>}
-
-        <Button type="submit" className="w-full" size="lg" disabled={loading}>
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            'Criar conta e continuar →'
-          )}
-        </Button>
-      </form>
-
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Já tem conta?{' '}
-        <Link to="/auth?redirect=/checkout" className="text-accent hover:underline font-medium">
-          Entrar
-        </Link>
-      </p>
-    </div>
-  );
-}
-
-// ============================================================================
-// Step 2 — Plan
-// ============================================================================
-
-interface PlanCardData {
-  id: AnyPlan;
-  name: string;
-  icon: typeof Rocket;
-  tagline: string;
-  units: string;
-  users: string;
-  features: string[];
-  popular: boolean;
-  isFree: boolean;
-}
-
-function StepPlan() {
-  const {
-    nextStep,
-    prevStep,
-    goToStep,
-    selectedPlan,
-    setSelectedPlan,
-    isAnnual,
-    setIsAnnual,
-  } = useCheckoutCtx();
+  // Checkout
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
   const { slots } = useEarlyAdopterCount();
+
+  // URL sync
+  useEffect(() => {
+    const cycle = isAnnual ? 'annual' : 'monthly';
+    setSearchParams({ plan: selectedPlan, cycle }, { replace: true });
+  }, [selectedPlan, isAnnual, setSearchParams]);
+
+  // Reset addons + annual when switching to start
+  useEffect(() => {
+    if (selectedPlan === 'start') {
+      setSelectedAddons([]);
+      setIsAnnual(false);
+    }
+  }, [selectedPlan]);
 
   const allPlans: PlanCardData[] = useMemo(
     () => [
@@ -346,295 +147,477 @@ function StepPlan() {
         id: 'start',
         name: 'Start',
         icon: Zap,
-        tagline: 'Comece gratuitamente',
-        units: '5 unidades',
-        users: '1 usuário',
-        features: ['Contratos básicos', 'Relatórios simples', 'Suporte por email'],
+        tagline: 'Para começar',
         popular: false,
         isFree: true,
       },
-      ...plansMeta.map((p) => ({ ...p, isFree: false })),
+      ...plansMeta.map((p) => ({
+        id: p.id,
+        name: p.name,
+        icon: p.icon,
+        tagline: p.tagline,
+        popular: p.popular,
+        isFree: false,
+      })),
     ],
     []
   );
 
-  const getEarlyAdopterAvailable = (planId: PaidPlan): boolean => {
+  const isEarlyAdopterAvailable = (planId: PaidPlan): boolean => {
     const slotData = slots[planId];
     return !!slotData && slotData.remaining > 0;
   };
 
-  const anyEarlyAdopter =
-    getEarlyAdopterAvailable('pro') || getEarlyAdopterAvailable('business');
-
   const getDisplayPrice = (planId: PaidPlan): number => {
     const p = pricing?.[planId];
     if (!p) return 0;
-    if (getEarlyAdopterAvailable(planId)) return p.price_early_adopter;
+    if (isEarlyAdopterAvailable(planId)) {
+      return isAnnual ? p.price_annual_early_adopter || p.price_early_adopter : p.price_early_adopter;
+    }
     return isAnnual ? p.price_annual : p.price_original;
   };
 
-  const getOriginalPrice = (planId: PaidPlan): number | null => {
-    const p = pricing?.[planId];
-    if (!p) return null;
-    if (getEarlyAdopterAvailable(planId)) return p.price_original;
-    if (isAnnual && p.price_original > p.price_annual) return p.price_original;
-    return null;
+  const planPrice = selectedPlan === 'start' ? 0 : getDisplayPrice(selectedPlan as PaidPlan);
+  const addonsTotal = selectedAddons.reduce((sum, id) => {
+    const a = ADDONS.find((x) => x.id === id);
+    return sum + (a?.price ?? 0);
+  }, 0);
+  const totalPrice = planPrice + addonsTotal;
+
+  const planNameSelected = allPlans.find((p) => p.id === selectedPlan)?.name ?? '';
+
+  const toggleAddon = (id: string) => {
+    setSelectedAddons((curr) =>
+      curr.includes(id) ? curr.filter((x) => x !== id) : [...curr, id]
+    );
   };
 
-  const handleSelect = (plan: PlanCardData) => {
-    setSelectedPlan(plan.id);
-    if (plan.id === 'start') {
-      goToStep(4);
-    } else {
-      nextStep();
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setName('');
+    setEmail('');
+    setPassword('');
+  };
+
+  const handleGoogleSignIn = async () => {
+    const cycle = isAnnual ? 'annual' : 'monthly';
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/checkout?plan=${selectedPlan}&cycle=${cycle}`,
+      },
+    });
+  };
+
+  const handleCheckout = async (e?: FormEvent) => {
+    e?.preventDefault();
+    setCheckoutError(null);
+    setAuthError(null);
+
+    // 1. Sign up if not logged in
+    if (!user) {
+      if (!name || !email || !password) {
+        setAuthError('Preencha todos os campos');
+        return;
+      }
+      setIsCheckingOut(true);
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
+      });
+      if (signUpError) {
+        setAuthError(signUpError.message);
+        setIsCheckingOut(false);
+        return;
+      }
+      if (signUpData.user && !signUpData.session) {
+        toast.info('Verifique seu email para continuar');
+        setIsCheckingOut(false);
+        return;
+      }
+      toast.success('Conta criada! Bem-vindo ao Slotimob 🎉');
+    }
+
+    // 2. Start plan = no charge
+    if (selectedPlan === 'start') {
+      setIsCheckingOut(false);
+      navigate('/dashboard');
+      return;
+    }
+
+    // 3. Paid: call create-checkout-session
+    setIsCheckingOut(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          product_type: 'subscription',
+          plan_id: selectedPlan,
+          billing_cycle: isAnnual ? 'annual' : 'monthly',
+        },
+      });
+
+      if (fnError || !data?.url) {
+        const msg = data?.error || fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
+        setCheckoutError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro inesperado.';
+      setCheckoutError(msg);
+      toast.error(msg);
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
+  const ctaDisabled =
+    isCheckingOut || (!user && (!name || !email || !password));
+
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4">
-      <div className="flex items-center mb-6">
-        <Button variant="ghost" size="sm" onClick={prevStep} className="gap-1">
-          <ChevronLeft className="h-4 w-4" />
-          Voltar
-        </Button>
-      </div>
-
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-foreground">Escolha seu plano</h2>
-        <p className="text-muted-foreground mt-2">
-          Você pode mudar de plano a qualquer momento
-        </p>
-      </div>
-
-      <div className="flex items-center justify-center gap-3 mb-8">
-        <Label
-          className={cn(
-            'text-sm cursor-pointer',
-            !isAnnual ? 'text-foreground font-medium' : 'text-muted-foreground'
-          )}
-        >
-          Mensal
-        </Label>
-        <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
-        <Label
-          className={cn(
-            'text-sm cursor-pointer',
-            isAnnual ? 'text-foreground font-medium' : 'text-muted-foreground'
-          )}
-        >
-          Anual
-        </Label>
-        {isAnnual && (
-          <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20 text-xs">
-            Economize até 34%
-          </Badge>
-        )}
-      </div>
-
-      {anyEarlyAdopter && (
-        <div className="flex justify-center mb-6">
-          <Badge className="bg-accent/10 text-accent border-accent/20">
-            <Sparkles className="h-3 w-3 mr-1" />
-            Preço Early Adopter disponível
-          </Badge>
+    <div className="min-h-screen bg-muted/30 flex flex-col">
+      {/* Header */}
+      <header className="border-b bg-card">
+        <div className="container mx-auto max-w-6xl px-4 py-3 flex items-center gap-3">
+          <Link to="/" className="text-primary font-bold text-lg">
+            Slotimob
+          </Link>
+          <div className="flex-1" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Shield className="h-3.5 w-3.5" />
+            <span>Pagamento seguro via Asaas</span>
+          </div>
         </div>
-      )}
+      </header>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {allPlans.map((plan) => {
-          const selected = plan.id === selectedPlan;
-          const isPaid = !plan.isFree;
-          const paidId = plan.id as PaidPlan;
-          const earlyAdopter = isPaid && getEarlyAdopterAvailable(paidId);
-          const displayPrice = isPaid ? getDisplayPrice(paidId) : 0;
-          const originalPrice = isPaid ? getOriginalPrice(paidId) : null;
+      <main className="container mx-auto max-w-6xl px-4 py-8 lg:py-12 flex-1">
+        <div className="grid lg:grid-cols-[1fr_1.4fr] gap-8 items-start">
+          {/* LEFT — Order summary */}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm lg:sticky lg:top-8 space-y-6">
+            <h2 className="font-semibold text-foreground">Resumo do pedido</h2>
 
-          return (
-            <div
-              key={plan.id}
-              className={cn(
-                'relative rounded-2xl border bg-card p-6 transition-all duration-200 flex flex-col',
-                selected
-                  ? 'ring-2 ring-accent shadow-lg scale-[1.02] border-accent'
-                  : plan.popular
-                  ? 'ring-2 ring-accent/40 border-accent/40'
-                  : 'border-border'
-              )}
-            >
-              {plan.popular && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground">
-                  MAIS POPULAR
-                </Badge>
-              )}
+            {/* Plan selector */}
+            <div className="space-y-2">
+              {allPlans.map((plan) => {
+                const selected = plan.id === selectedPlan;
+                const isPaid = !plan.isFree;
+                const paidId = plan.id as PaidPlan;
+                const earlyAdopter = isPaid && isEarlyAdopterAvailable(paidId);
+                const price = isPaid ? getDisplayPrice(paidId) : 0;
 
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <plan.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-foreground">{plan.name}</h3>
-                  <p className="text-xs text-muted-foreground">{plan.tagline}</p>
-                </div>
-              </div>
-
-              <div className="mb-5">
-                {plan.isFree ? (
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-foreground">Grátis</span>
-                  </div>
-                ) : pricingLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                ) : (
-                  <>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-foreground">
-                        R$ {formatPrice(displayPrice)}
-                      </span>
-                      <span className="text-sm text-muted-foreground">/mês</span>
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => setSelectedPlan(plan.id)}
+                    className={cn(
+                      'w-full flex items-center gap-3 rounded-xl border p-4 text-left transition-all',
+                      selected
+                        ? 'border-accent bg-accent/5 ring-1 ring-accent'
+                        : 'border-border bg-card hover:border-accent/40'
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center',
+                        selected ? 'border-accent bg-accent' : 'border-border'
+                      )}
+                    >
+                      {selected && <Check className="h-3 w-3 text-accent-foreground" />}
                     </div>
-                    {originalPrice && originalPrice > displayPrice && (
-                      <p className="text-xs text-muted-foreground mt-1 line-through">
-                        R$ {formatPrice(originalPrice)}/mês
+                    <plan.icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-foreground">{plan.name}</span>
+                        {plan.popular && (
+                          <Badge className="text-[10px] px-1.5 py-0 bg-accent text-accent-foreground">
+                            Popular
+                          </Badge>
+                        )}
+                        {earlyAdopter && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-accent/10 text-accent border-accent/20">
+                            Early
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{plan.tagline}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground shrink-0">
+                      {plan.isFree ? (
+                        'Grátis'
+                      ) : pricingLoading ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        `R$ ${formatPrice(price)}`
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Billing toggle */}
+            {selectedPlan !== 'start' && (
+              <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 gap-3 flex-wrap">
+                <span className="text-sm text-muted-foreground">Cobrança</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAnnual(false)}
+                    className={cn(
+                      'text-sm',
+                      !isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                    )}
+                  >
+                    Mensal
+                  </button>
+                  <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
+                  <button
+                    type="button"
+                    onClick={() => setIsAnnual(true)}
+                    className={cn(
+                      'text-sm',
+                      isAnnual ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                    )}
+                  >
+                    Anual
+                  </button>
+                  {isAnnual && (
+                    <Badge variant="secondary" className="text-xs bg-accent/10 text-accent border-accent/20">
+                      -34%
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Addons */}
+            {selectedPlan !== 'start' && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Adicionais
+                </p>
+                {ADDONS.map((addon) => {
+                  const selected = selectedAddons.includes(addon.id);
+                  return (
+                    <button
+                      key={addon.id}
+                      type="button"
+                      onClick={() => toggleAddon(addon.id)}
+                      className={cn(
+                        'flex items-center justify-between w-full rounded-lg border px-3 py-2.5 text-sm transition-all',
+                        selected
+                          ? 'border-accent bg-accent/5 text-foreground'
+                          : 'border-border text-muted-foreground hover:border-accent/30'
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            'h-4 w-4 rounded border-2 flex items-center justify-center',
+                            selected ? 'border-accent bg-accent' : 'border-border'
+                          )}
+                        >
+                          {selected && <Check className="h-2.5 w-2.5 text-accent-foreground" />}
+                        </div>
+                        <span>{addon.label}</span>
+                      </div>
+                      <span className="font-medium">+R$ {formatPrice(addon.price)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Price summary */}
+            <div className="border-t border-border pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Plano {planNameSelected}</span>
+                <span>
+                  {selectedPlan === 'start' ? 'Grátis' : `R$ ${formatPrice(planPrice)}`}
+                </span>
+              </div>
+              {selectedAddons.map((id) => {
+                const addon = ADDONS.find((a) => a.id === id);
+                if (!addon) return null;
+                return (
+                  <div key={id} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{addon.label}</span>
+                    <span>+R$ {formatPrice(addon.price)}</span>
+                  </div>
+                );
+              })}
+              <div className="flex justify-between font-semibold text-base pt-2 border-t border-border">
+                <span>Total</span>
+                <span>
+                  {selectedPlan === 'start'
+                    ? 'Grátis'
+                    : `R$ ${formatPrice(totalPrice)}/mês`}
+                </span>
+              </div>
+              {isAnnual && selectedPlan !== 'start' && (
+                <p className="text-xs text-muted-foreground text-right">
+                  Cobrado R$ {formatPrice(totalPrice * 12)}/ano
+                </p>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              🔒 7 dias grátis · sem cartão · cancele quando quiser
+            </p>
+          </div>
+
+          {/* RIGHT — Account + Payment + CTA */}
+          <div className="space-y-6">
+            {/* Account */}
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+              <h3 className="font-semibold text-foreground">Seus dados</h3>
+
+              {user ? (
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {user.email}
                       </p>
-                    )}
-                    {earlyAdopter && (
-                      <Badge className="mt-2 bg-accent/10 text-accent border-accent/20 text-[10px]">
-                        <Zap className="h-3 w-3 mr-1" />
-                        Early Adopter
-                      </Badge>
-                    )}
-                  </>
-                )}
-              </div>
+                      <p className="text-xs text-muted-foreground">Conta ativa</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="text-xs text-muted-foreground shrink-0"
+                  >
+                    Não sou eu
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2 h-11"
+                    onClick={handleGoogleSignIn}
+                  >
+                    <GoogleIcon />
+                    Continuar com Google
+                  </Button>
 
-              <div className="flex gap-2 mb-4">
-                <Badge variant="outline" className="text-xs">{plan.units}</Badge>
-                <Badge variant="outline" className="text-xs">{plan.users}</Badge>
-              </div>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">ou com email</span>
+                    </div>
+                  </div>
 
-              <div className="space-y-2 mb-6 flex-1">
-                {plan.features.map((f, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <Check className="h-4 w-4 shrink-0 mt-0.5 text-accent" />
-                    <span className="text-sm text-muted-foreground">{f}</span>
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="Seu nome"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
+                    <Input
+                      type="email"
+                      placeholder="E-mail"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Senha (mín. 6 caracteres)"
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {authError && <p className="text-destructive text-sm">{authError}</p>}
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    Já tem conta?{' '}
+                    <Link
+                      to="/auth?redirect=/checkout"
+                      className="text-accent hover:underline font-medium"
+                    >
+                      Entrar
+                    </Link>
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Payment methods info */}
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <p className="text-sm font-medium text-muted-foreground mb-3">
+                Formas de pagamento aceitas
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {['Boleto', 'PIX', 'Cartão'].map((m) => (
+                  <div
+                    key={m}
+                    className="flex items-center justify-center rounded-lg border border-border bg-muted/30 py-3"
+                  >
+                    <span className="text-xs text-muted-foreground font-medium">{m}</span>
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground mt-3 text-center">
+                Você escolhe a forma na próxima tela (Asaas)
+              </p>
+            </div>
+
+            {/* CTA */}
+            <div className="space-y-3">
+              {checkoutError && (
+                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
+                  <p className="text-sm text-destructive text-center">{checkoutError}</p>
+                </div>
+              )}
 
               <Button
-                onClick={() => handleSelect(plan)}
-                className="w-full"
-                variant={plan.popular || selected ? 'default' : 'outline'}
+                size="lg"
+                className="w-full text-base h-14 bg-accent hover:bg-accent/90 text-accent-foreground"
+                onClick={() => handleCheckout()}
+                disabled={ctaDisabled}
               >
-                {plan.isFree ? 'Começar grátis' : 'Selecionar'}
+                {isCheckingOut ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Preparando...
+                  </>
+                ) : selectedPlan === 'start' ? (
+                  'Começar grátis →'
+                ) : (
+                  'Assinar agora →'
+                )}
               </Button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
-// ============================================================================
-// Step 3-5 — Placeholders
-// ============================================================================
-
-function StepPayment() {
-  return (
-    <div className="max-w-2xl mx-auto py-10 px-4 text-center text-muted-foreground">
-      Pagamento — em breve (Etapa 8)
-    </div>
-  );
-}
-
-function StepAddons() {
-  return (
-    <div className="max-w-2xl mx-auto py-10 px-4 text-center text-muted-foreground">
-      Addons — em breve (Etapa 8)
-    </div>
-  );
-}
-
-function StepConfirm() {
-  return (
-    <div className="max-w-2xl mx-auto py-10 px-4 text-center text-muted-foreground">
-      Confirmação — em breve (Etapa 8)
-    </div>
-  );
-}
-
-// ============================================================================
-// Orchestrator
-// ============================================================================
-
-export default function CheckoutPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const rawPlan = searchParams.get('plan') as AnyPlan | null;
-  const rawStep = Number(searchParams.get('step'));
-  const initialPlan: AnyPlan =
-    rawPlan && ['start', 'pro', 'business'].includes(rawPlan) ? rawPlan : 'pro';
-
-  const [step, setStep] = useState<number>(
-    rawStep >= 1 && rawStep <= 5 ? rawStep : 1
-  );
-  const [selectedPlan, setSelectedPlan] = useState<AnyPlan>(initialPlan);
-  const [isAnnual, setIsAnnual] = useState(searchParams.get('cycle') !== 'monthly');
-
-  // Sync URL
-  useEffect(() => {
-    const cycle = isAnnual ? 'annual' : 'monthly';
-    const planParam = selectedPlan === 'start' ? 'start' : selectedPlan;
-    setSearchParams({ plan: planParam, cycle, step: String(step) }, { replace: true });
-  }, [selectedPlan, isAnnual, step, setSearchParams]);
-
-  const nextStep = () => setStep((s) => Math.min(5, s + 1));
-  const prevStep = () => setStep((s) => Math.max(1, s - 1));
-  const goToStep = (n: number) => setStep(Math.max(1, Math.min(5, n)));
-
-  const ctxValue: CheckoutContextValue = {
-    step,
-    setStep,
-    nextStep,
-    prevStep,
-    goToStep,
-    selectedPlan,
-    setSelectedPlan,
-    isAnnual,
-    setIsAnnual,
-  };
-
-  return (
-    <CheckoutContext.Provider value={ctxValue}>
-      <div className="min-h-screen bg-muted/30 flex flex-col">
-        <header className="border-b bg-card sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-            <span className="text-primary font-bold text-lg">Slotimob</span>
-            <div className="flex-1" />
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-              <Shield className="h-4 w-4" />
-              <span>Pagamento seguro via Asaas</span>
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                <span>Você será redirecionado para o ambiente seguro do Asaas</span>
+              </div>
             </div>
           </div>
-        </header>
+        </div>
+      </main>
 
-        <CheckoutStepper currentStep={step} />
-
-        <main className="flex-1">
-          {step === 1 && <StepAccount />}
-          {step === 2 && <StepPlan />}
-          {step === 3 && <StepPayment />}
-          {step === 4 && <StepAddons />}
-          {step === 5 && <StepConfirm />}
-        </main>
-
-        <footer className="border-t bg-card py-4">
-          <p className="text-center text-xs text-muted-foreground">
-            © Slotimob · Pagamento processado pelo Asaas
-          </p>
-        </footer>
-      </div>
-    </CheckoutContext.Provider>
+      <footer className="border-t bg-card py-4 mt-8">
+        <p className="text-center text-xs text-muted-foreground">
+          © Slotimob · Pagamento processado pelo Asaas
+        </p>
+      </footer>
+    </div>
   );
 }
