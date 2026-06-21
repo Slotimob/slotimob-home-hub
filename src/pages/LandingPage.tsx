@@ -84,7 +84,7 @@ export default function LandingPage() {
     <div data-lp="v2">
       <SEOHead
         title="Gestão imobiliária para corretores e imobiliárias"
-        description="CRM, financeiro, contratos, WhatsApp e IA em um único sistema. Trial PRO de 14 dias, sem cartão. Para corretores autônomos e imobiliárias."
+        description="CRM, financeiro, contratos, WhatsApp e IA em um único sistema. Trial PRO de 7 dias, sem cartão. Para corretores autônomos e imobiliárias."
         path={segment.slug ? `/lp/${segment.slug}` : '/'}
       />
       <LpHeader />

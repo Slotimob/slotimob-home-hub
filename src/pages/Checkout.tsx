@@ -291,7 +291,7 @@ export default function CheckoutPage() {
                 <p className="text-xs text-muted-foreground text-center">
                   {checkoutMode === 'immediate'
                     ? '🔒 Assinatura ativada imediatamente após o pagamento'
-                    : '✨ 14 dias grátis · Cancele quando quiser'}
+                    : '✨ 7 dias grátis · Cancele quando quiser'}
                 </p>
               </div>
             </div>

@@ -33,7 +33,7 @@ const plans: PlanDef[] = [
   id: 'start',
   name: 'Start',
   icon: Briefcase,
-  description: 'Comece grátis e teste o PRO por 14 dias',
+  description: 'Comece grátis e teste o PRO por 7 dias',
   units: 'Até 5 unidades',
   users: '1 usuário',
   features: [
@@ -226,7 +226,7 @@ export function PricingSection() {
         
         {isStart &&
         <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-muted-foreground text-background px-4 whitespace-nowrap">
-            🎁 TESTE O PRO POR 14 DIAS
+            🎁 TESTE O PRO POR 7 DIAS
           </Badge>
         }
         {isPro &&
@@ -303,7 +303,7 @@ export function PricingSection() {
           <div className="mb-5 rounded-lg p-3 border border-dashed border-muted-foreground/30 bg-muted/50">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Zap className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase">14 dias de PRO</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase">7 dias de PRO</span>
               </div>
               <p className="text-xs text-center text-muted-foreground">
                 Experimente o Plano PRO. Após o período, você decide.
@@ -391,7 +391,7 @@ export function PricingSection() {
             Planos para cada momento
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8" style={{ textWrap: 'balance' }}>
-            Comece pequeno e escale conforme seu negócio cresce. Todos com 14 dias grátis.
+            Comece pequeno e escale conforme seu negócio cresce. Todos com 7 dias grátis.
           </p>
 
           <div className="flex items-center justify-center gap-3">
@@ -447,7 +447,7 @@ export function PricingSection() {
             ✨ Preço de Early Adopter é <strong>vitalício</strong> enquanto sua assinatura estiver ativa
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            14 dias grátis em todos os planos. Cancele quando quiser.
+            7 dias grátis em todos os planos. Cancele quando quiser.
           </p>
         </div>
       </div>
