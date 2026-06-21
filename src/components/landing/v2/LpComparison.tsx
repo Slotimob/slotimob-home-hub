@@ -1,6 +1,7 @@
 import { CheckCircle2, X } from 'lucide-react';
 import SectionWrapper from '@/components/marketing/SectionWrapper';
 import CTAButton from '@/components/marketing/CTAButton';
+import { Reveal } from '../v2/Reveal';
 
 interface Row {
   aspect: string;
@@ -22,18 +23,21 @@ export function LpComparison() {
   return (
     <SectionWrapper background="primary" id="comparativo">
       {/* Title */}
-      <div className="text-center mb-12 md:mb-16">
-        <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground leading-tight">
-          Quanto você perde fazendo manual?
-        </h2>
-        <p className="text-lg text-primary-foreground/70 mt-3 max-w-2xl mx-auto">
-          ⏱️ 4 horas/mês economizadas + até R$ 1.800/ano em reajustes que você
-          deixou de perder.
-        </p>
-      </div>
+      <Reveal>
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground leading-tight">
+            Quanto você perde fazendo manual?
+          </h2>
+          <p className="text-lg text-primary-foreground/70 mt-3 max-w-2xl mx-auto">
+            ⏱️ 4 horas/mês economizadas + até R$ 1.800/ano em reajustes que você
+            deixou de perder.
+          </p>
+        </div>
+      </Reveal>
 
       {/* Desktop table */}
-      <div className="hidden md:block max-w-5xl mx-auto">
+      <Reveal delay={100} className="hidden md:block max-w-5xl mx-auto">
+      <div>
         <div className="grid grid-cols-[1.2fr_1fr_1fr] rounded-2xl overflow-hidden border border-primary-foreground/15">
           {/* Header */}
           <div className="px-6 py-5 bg-primary-foreground/5">
@@ -86,9 +90,11 @@ export function LpComparison() {
           ))}
         </div>
       </div>
+      </Reveal>
 
       {/* Mobile cards */}
-      <div className="md:hidden space-y-4">
+      <Reveal delay={100} className="md:hidden">
+      <div className="space-y-4">
         {rows.map((r) => (
           <div
             key={r.aspect}
@@ -116,16 +122,19 @@ export function LpComparison() {
           </div>
         ))}
       </div>
+      </Reveal>
 
       {/* CTA */}
-      <div className="text-center mt-10">
-        <CTAButton href="/checkout?plan=pro&trial=true" size="lg">
-          Começar grátis agora
-        </CTAButton>
-        <p className="mt-3 text-sm text-primary-foreground/60">
-          Sem cartão · 7 dias de PRO grátis
-        </p>
-      </div>
+      <Reveal delay={200}>
+        <div className="text-center mt-10">
+          <CTAButton href="/checkout?plan=pro&trial=true" size="lg">
+            Começar grátis agora
+          </CTAButton>
+          <p className="mt-3 text-sm text-primary-foreground/60">
+            Sem cartão · 7 dias de PRO grátis
+          </p>
+        </div>
+      </Reveal>
     </SectionWrapper>
   );
 }

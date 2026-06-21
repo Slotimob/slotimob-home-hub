@@ -4,6 +4,7 @@ import { BookOpen, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import SectionWrapper from '@/components/marketing/SectionWrapper';
 import CTAButton from '@/components/marketing/CTAButton';
+import { Reveal } from './Reveal';
 
 interface BlogPost {
   id: string;
@@ -52,19 +53,25 @@ export function LpBlogPreview() {
 
   return (
     <SectionWrapper background="muted" id="blog">
-      <div className="text-center mb-10 md:mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
-          Aprenda a gerir seus imóveis melhor
-        </h2>
-        <p className="text-lg text-muted-foreground mt-3 max-w-2xl mx-auto">
-          Dicas práticas de gestão, contratos, finanças e legislação.
-        </p>
-      </div>
+      <Reveal>
+        <div className="text-center mb-10 md:mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+            Aprenda a gerir seus imóveis melhor
+          </h2>
+          <p className="text-lg text-muted-foreground mt-3 max-w-2xl mx-auto">
+            Dicas práticas de gestão, contratos, finanças e legislação.
+          </p>
+        </div>
+      </Reveal>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => <PostSkeleton key={i} />)
-          : posts!.map((post) => <PostCard key={post.id} post={post} />)}
+          : posts!.map((post, index) => (
+              <Reveal key={post.id} delay={index * 80}>
+                <PostCard post={post} />
+              </Reveal>
+            ))}
       </div>
 
       <div className="text-center mt-10">
