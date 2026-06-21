@@ -455,6 +455,39 @@ export default function BlogPost() {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Related posts */}
+                {related && related.length > 0 && (
+                  <section className="mt-12 border-t border-border pt-8">
+                    <h2 className="text-xl font-bold mb-6">Você também pode gostar</h2>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      {related.map((r: any) => (
+                        <Link
+                          key={r.id}
+                          to={`/blog/${r.slug}`}
+                          className="rounded-lg border border-border bg-card p-4 hover:border-accent/30 transition-all group"
+                        >
+                          {r.featured_image ? (
+                            <img
+                              src={r.featured_image}
+                              alt={r.title}
+                              className="aspect-video w-full object-cover rounded-md"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="aspect-video w-full rounded-md bg-gradient-to-br from-primary/10 to-secondary/10" />
+                          )}
+                          <h3 className="text-sm font-semibold line-clamp-2 mt-3 group-hover:text-primary transition-colors">
+                            {r.title}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {r.reading_time_min || 5} min de leitura
+                          </p>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </article>
 
               {/* Sidebar */}
