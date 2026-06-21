@@ -1,92 +1,131 @@
-import { Reveal } from './Reveal';
-import { Check, X, Minus } from 'lucide-react';
+import { CheckCircle2, X } from 'lucide-react';
+import SectionWrapper from '@/components/marketing/SectionWrapper';
+import CTAButton from '@/components/marketing/CTAButton';
 
-type Cell = 'yes' | 'no' | 'partial';
-const ROWS: { label: string; slo: Cell; crm: Cell; sheet: Cell }[] = [
-  { label: 'CRM com kanban e pipeline visual', slo: 'yes', crm: 'yes', sheet: 'no' },
-  { label: 'Financeiro com DRE por categoria', slo: 'yes', crm: 'partial', sheet: 'partial' },
-  { label: 'Conciliação bancária com OFX', slo: 'yes', crm: 'no', sheet: 'no' },
-  { label: 'Contratos em PDF automáticos', slo: 'yes', crm: 'partial', sheet: 'no' },
-  { label: 'Relatório DIMOB em um clique', slo: 'yes', crm: 'no', sheet: 'no' },
-  { label: 'WhatsApp integrado ao CRM', slo: 'yes', crm: 'partial', sheet: 'no' },
-  { label: 'Assistente de IA com créditos', slo: 'yes', crm: 'no', sheet: 'no' },
-  { label: 'Relatórios automáticos (semanal / mensal)', slo: 'yes', crm: 'partial', sheet: 'no' },
-  { label: 'Preço acessível para autônomo', slo: 'yes', crm: 'no', sheet: 'yes' },
-  { label: 'Tudo em um único login', slo: 'yes', crm: 'partial', sheet: 'no' },
-];
-
-function Mark({ v }: { v: Cell }) {
-  if (v === 'yes') return <Check className="w-4 h-4" style={{ color: 'var(--lp-accent)' }} aria-label="sim" />;
-  if (v === 'partial') return <Minus className="w-4 h-4" style={{ color: 'var(--lp-mute)' }} aria-label="parcial" />;
-  return <X className="w-4 h-4" style={{ color: 'var(--lp-mute)' }} aria-label="não" />;
+interface Row {
+  aspect: string;
+  manual: string;
+  slotimob: string;
 }
+
+const rows: Row[] = [
+  { aspect: 'Emissão de boletos', manual: 'Gerar um a um todo mês', slotimob: '100% automático' },
+  { aspect: 'Cobrança de atrasos', manual: 'WhatsApp pessoal', slotimob: 'Régua automática' },
+  { aspect: 'Reajuste de contrato', manual: 'Lembrar + calcular na mão', slotimob: 'IGPM/IPCA automático' },
+  { aspect: 'Multa e juros', manual: 'Deixa passar', slotimob: 'Cobra automaticamente' },
+  { aspect: 'Contrato', manual: 'Papel + cartório', slotimob: 'Digital, assinatura online' },
+  { aspect: 'Tempo gasto por mês', manual: '4+ horas', slotimob: 'Menos de 15 minutos' },
+  { aspect: 'Relatório IR', manual: 'Montar na mão', slotimob: 'Gerado automaticamente' },
+];
 
 export function LpComparison() {
   return (
-    <section id="comparativo" className="py-24 md:py-36">
-      <div className="max-w-[1280px] mx-auto px-5 md:px-10">
-        <div className="grid grid-cols-12 gap-6 mb-12 md:mb-20">
-          <div className="col-span-12 md:col-span-4">
-            <Reveal>
-              <p className="lp-eyebrow">05 — comparativo</p>
-            </Reveal>
-          </div>
-          <div className="col-span-12 md:col-span-8">
-            <Reveal delay={80}>
-              <h2 className="lp-display text-[40px] md:text-[80px]">
-                por que slotimob,
-                <br />
-                <em className="lp-serif" style={{ fontStyle: 'italic', color: 'var(--lp-accent)' }}>e não</em> outra coisa.
-              </h2>
-            </Reveal>
-          </div>
-        </div>
-
-        <Reveal delay={120}>
-          <div className="overflow-x-auto lp-scroll-x">
-            <table className="w-full border-collapse min-w-[640px]">
-              <thead>
-                <tr style={{ borderTop: '1px solid var(--lp-line)', borderBottom: '1px solid var(--lp-line)' }}>
-                  <th className="text-left lp-eyebrow py-5 w-[42%]">recurso</th>
-                  <th
-                    className="lp-display text-lg py-5 px-4 w-[19.33%]"
-                    style={{
-                      color: 'var(--lp-ink)',
-                      background: 'var(--lp-accent)',
-                      borderLeft: '1px solid var(--lp-accent)',
-                      borderRight: '1px solid var(--lp-accent)',
-                    }}
-                  >
-                    slotimob
-                  </th>
-                  <th className="lp-eyebrow py-5 px-4 w-[19.33%]">crm tradicional</th>
-                  <th className="lp-eyebrow py-5 px-4 w-[19.33%]">planilhas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ROWS.map((r, i) => (
-                  <tr key={r.label} style={{ borderBottom: '1px solid var(--lp-line)' }}>
-                    <td className="py-4 text-[14px]" style={{ color: 'var(--lp-ink)' }}>{r.label}</td>
-                    <td
-                      className="py-4 px-4 text-center"
-                      style={{
-                        background: 'rgba(47,201,175,0.04)',
-                        borderLeft: '1px solid var(--lp-accent)',
-                        borderRight: '1px solid var(--lp-accent)',
-                        ...(i === ROWS.length - 1 ? { borderBottom: '1px solid var(--lp-accent)' } : {}),
-                      }}
-                    >
-                      <div className="flex justify-center"><Mark v={r.slo} /></div>
-                    </td>
-                    <td className="py-4 px-4 text-center"><div className="flex justify-center"><Mark v={r.crm} /></div></td>
-                    <td className="py-4 px-4 text-center"><div className="flex justify-center"><Mark v={r.sheet} /></div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Reveal>
+    <SectionWrapper background="primary" id="comparativo">
+      {/* Title */}
+      <div className="text-center mb-12 md:mb-16">
+        <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground leading-tight">
+          Quanto você perde fazendo manual?
+        </h2>
+        <p className="text-lg text-primary-foreground/70 mt-3 max-w-2xl mx-auto">
+          ⏱️ 4 horas/mês economizadas + até R$ 1.800/ano em reajustes que você
+          deixou de perder.
+        </p>
       </div>
-    </section>
+
+      {/* Desktop table */}
+      <div className="hidden md:block max-w-5xl mx-auto">
+        <div className="grid grid-cols-[1.2fr_1fr_1fr] rounded-2xl overflow-hidden border border-primary-foreground/15">
+          {/* Header */}
+          <div className="px-6 py-5 bg-primary-foreground/5">
+            <p className="text-xs uppercase tracking-wider text-primary-foreground/50">
+              Comparativo
+            </p>
+          </div>
+          <div className="px-6 py-5 bg-primary-foreground/5 border-l border-primary-foreground/10">
+            <div className="flex items-center gap-2">
+              <X className="h-5 w-5 text-destructive" />
+              <span className="font-semibold text-primary-foreground">Gestão Manual</span>
+            </div>
+            <p className="text-xs text-primary-foreground/50 mt-1">Como a maioria faz</p>
+          </div>
+          <div className="px-6 py-5 bg-accent/10 border-l border-accent/30">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-accent" />
+              <span className="font-semibold text-primary-foreground">Com Slotimob</span>
+            </div>
+            <p className="text-xs text-primary-foreground/60 mt-1">Como deveria ser</p>
+          </div>
+
+          {/* Rows */}
+          {rows.map((r, i) => (
+            <div key={r.aspect} className="contents">
+              <div
+                className={`px-6 py-4 text-sm font-medium text-primary-foreground ${
+                  i % 2 === 0 ? 'bg-primary-foreground/[0.03]' : ''
+                }`}
+              >
+                {r.aspect}
+              </div>
+              <div
+                className={`px-6 py-4 text-sm text-primary-foreground/70 border-l border-primary-foreground/10 flex items-center gap-2 ${
+                  i % 2 === 0 ? 'bg-primary-foreground/[0.03]' : ''
+                }`}
+              >
+                <X className="h-4 w-4 text-destructive shrink-0" />
+                <span>{r.manual}</span>
+              </div>
+              <div
+                className={`px-6 py-4 text-sm font-medium text-primary-foreground border-l border-accent/30 flex items-center gap-2 ${
+                  i % 2 === 0 ? 'bg-accent/[0.08]' : 'bg-accent/5'
+                }`}
+              >
+                <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                <span>{r.slotimob}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-4">
+        {rows.map((r) => (
+          <div
+            key={r.aspect}
+            className="rounded-xl border border-primary-foreground/15 bg-primary-foreground/[0.03] p-4"
+          >
+            <p className="text-xs uppercase tracking-wider text-primary-foreground/50 mb-3">
+              {r.aspect}
+            </p>
+            <div className="space-y-2.5">
+              <div className="flex items-start gap-2 text-sm">
+                <X className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[10px] uppercase text-primary-foreground/40">Manual</p>
+                  <p className="text-primary-foreground/70">{r.manual}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 text-sm rounded-lg bg-accent/10 border border-accent/20 p-2.5">
+                <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[10px] uppercase text-accent">Slotimob</p>
+                  <p className="text-primary-foreground font-medium">{r.slotimob}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div className="text-center mt-10">
+        <CTAButton href="/checkout?plan=pro&trial=true" size="lg">
+          Começar grátis agora
+        </CTAButton>
+        <p className="mt-3 text-sm text-primary-foreground/60">
+          Sem cartão · 7 dias de PRO grátis
+        </p>
+      </div>
+    </SectionWrapper>
   );
 }
