@@ -76,6 +76,7 @@ export function ApprovalRequestsTab() {
       return data as any[];
     },
     enabled: !!user?.id,
+    refetchInterval: 30_000,
   });
 
   // Fetch profile names for requesters
