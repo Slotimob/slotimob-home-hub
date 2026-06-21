@@ -969,7 +969,7 @@ const Auth = () => {
               ) : (
                 <>
                   {/* Google OAuth */}
-                  <Button type="button" variant="outline" className="w-full h-12 text-sm font-medium" onClick={handleGoogleLogin} disabled={googleLoading || loading}>
+                  <Button type="button" variant="outline" className="w-full h-12 gap-2 text-sm font-medium" onClick={handleGoogleLogin} disabled={googleLoading || loading}>
                     {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                     {googleLoading ? 'Conectando...' : 'Continuar com Google'}
                   </Button>
