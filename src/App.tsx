@@ -71,6 +71,10 @@ const AdminApprovals = React.lazy(() => import("./pages/AdminApprovals"));
 const DataExport = React.lazy(() => import("./pages/DataExport"));
 const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
 const Plans = React.lazy(() => import("./pages/Plans"));
+const Sobre = React.lazy(() => import("./pages/Sobre"));
+const Contato = React.lazy(() => import("./pages/Contato"));
+const TermosDeUso = React.lazy(() => import("./pages/TermosDeUso"));
+const PoliticaDePrivacidade = React.lazy(() => import("./pages/PoliticaDePrivacidade"));
 
 const queryClient = new QueryClient();
 
@@ -118,7 +122,12 @@ const App = () => (
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/planos" element={<Plans />} />
               <Route path="/checkout/success" element={<CheckoutSuccess />} />
-              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+             <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+             <Route path="/sobre" element={<Sobre />} />
+             <Route path="/contato" element={<Contato />} />
+             <Route path="/termos-de-uso" element={<TermosDeUso />} />
+             <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
+
 
               {/* Protected routes — wrapped with AuthGuard */}
               <Route path="/dashboard" element={guarded(<Dashboard />)} />
