@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GlowInitializer } from "@/components/GlowInitializer";
 import { TrackingProvider } from "@/components/TrackingProvider";
@@ -16,7 +16,7 @@ import { RequireFeature } from "@/components/subscription/RequireFeature";
 import { LandingThemeProvider } from "@/components/LandingThemeProvider";
 import { SuspenseFallback } from "@/components/SuspenseFallback";
 
-const Index = React.lazy(() => import("./pages/Index"));
+
 const LandingPage = React.lazy(() => import("./pages/LandingPage"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Auth = React.lazy(() => import("./pages/Auth"));
@@ -102,7 +102,7 @@ const App = () => (
             <Suspense fallback={<SuspenseFallback />}>
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<LandingPage />} />
               <Route path="/lp/:segment" element={<LandingPage />} />
               <Route path="/demo" element={<ProductDemo />} />
               <Route path="/auth" element={<LandingThemeProvider><Auth /></LandingThemeProvider>} />
@@ -113,7 +113,7 @@ const App = () => (
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/apresentacao" element={<Presentation />} />
-              <Route path="/presentation" element={<Presentation />} />
+              <Route path="/presentation" element={<Navigate to="/apresentacao" replace />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/checkout/success" element={<CheckoutSuccess />} />
               <Route path="/checkout/cancel" element={<CheckoutCancel />} />
