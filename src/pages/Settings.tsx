@@ -112,6 +112,8 @@ const Settings = () => {
   const [asaasConfig, setAsaasConfig] = useState<AsaasConfig>({});
   const [savingAsaas, setSavingAsaas] = useState(false);
   const [fetchingCep, setFetchingCep] = useState(false);
+  const [asaasAccountStatus, setAsaasAccountStatus] = useState<'active' | 'pending' | null>(null);
+  const [asaasAccountId, setAsaasAccountId] = useState<string | null>(null);
 
   const [uploading, setUploading] = useState(false);
   const [uploadingCreci, setUploadingCreci] = useState(false);
@@ -154,6 +156,17 @@ const Settings = () => {
         setInstagramUrl(data.instagram_url || '');
         setAuthorRole(data.author_role || '');
         setAsaasConfig(((data as any).asaas_config as AsaasConfig) || {});
+      }
+
+      // Verificar status da subconta Asaas
+      const { data: asaasAcc } = await supabase
+        .from('asaas_accounts')
+        .select('asaas_account_id, status')
+        .eq('broker_id', user?.id)
+        .maybeSingle();
+      if (asaasAcc) {
+        setAsaasAccountStatus(asaasAcc.status as 'active' | 'pending');
+        setAsaasAccountId(asaasAcc.asaas_account_id);
       }
     } catch (error: any) {
       toast({ title: 'Erro ao carregar perfil', description: error.message, variant: 'destructive' });
@@ -249,17 +262,58 @@ const Settings = () => {
   };
 
   const saveAsaasConfig = async () => {
+    if (!asaasConfig.name || !asaasConfig.cpf_cnpj) {
+      toast({ title: 'Preencha nome e CPF/CNPJ', variant: 'destructive' });
+      return;
+    }
     setSavingAsaas(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ asaas_config: asaasConfig as any } as any)
-        .eq('id', user?.id);
-      if (error) throw error;
+      // Mapear person_type → companyType do Asaas
+      const companyTypeMap: Record<string, string> = {
+        FISICA: 'INDIVIDUAL',
+        MEI: 'MEI',
+        JURIDICA: 'LIMITED',
+      };
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/setup-asaas-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            name: asaasConfig.name,
+            email: user?.email,
+            cpfCnpj: asaasConfig.cpf_cnpj,
+            mobilePhone: asaasConfig.mobile_phone,
+            companyType: companyTypeMap[asaasConfig.person_type || ''] || 'INDIVIDUAL',
+            address: asaasConfig.address,
+            addressNumber: asaasConfig.address_number,
+            province: asaasConfig.province,
+            postalCode: asaasConfig.postal_code,
+            city: asaasConfig.city,
+            state: asaasConfig.state,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Erro ao configurar conta Asaas');
+
+      setAsaasAccountStatus('active');
+      setAsaasAccountId(json.asaas_account_id);
       setProfile((p: any) => ({ ...p, asaas_config: asaasConfig }));
-      toast({ title: 'Dados Asaas salvos!', description: 'Configuração de emissor atualizada.' });
+
+      toast({
+        title: json.already_exists ? 'Conta Asaas já configurada' : 'Conta Asaas criada!',
+        description: json.already_exists
+          ? 'Sua subconta já estava ativa no Asaas.'
+          : 'Sua subconta foi criada. Você já pode emitir boletos.',
+      });
     } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao configurar Asaas', description: error.message, variant: 'destructive' });
     } finally {
       setSavingAsaas(false);
     }
@@ -378,7 +432,7 @@ const Settings = () => {
     );
   }
 
-  const asaasSaved = !!(profile?.asaas_config?.cpf_cnpj);
+  
 
   return (
     <AppLayout title="Configurações">
@@ -452,9 +506,18 @@ const Settings = () => {
           description="Dados do emissor para emissão de boletos"
           icon={Receipt}
         >
-          {asaasSaved && (
-            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400 border border-green-200 dark:border-green-800">
-              Dados salvos
+          {asaasAccountStatus === 'active' ? (
+            <div className="flex items-center gap-2">
+              <Badge className="bg-green-100 text-green-700 border border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800">
+                ✓ Subconta Asaas ativa
+              </Badge>
+              {asaasAccountId && (
+                <span className="text-xs text-muted-foreground font-mono">{asaasAccountId}</span>
+              )}
+            </div>
+          ) : (
+            <Badge variant="outline" className="text-muted-foreground">
+              Não configurada — preencha e salve para ativar
             </Badge>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -556,8 +619,12 @@ const Settings = () => {
             </p>
           </div>
 
-          <Button onClick={saveAsaasConfig} disabled={savingAsaas}>
-            {savingAsaas ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</> : 'Salvar dados Asaas'}
+          <Button onClick={saveAsaasConfig} disabled={savingAsaas || asaasAccountStatus === 'active'}>
+            {savingAsaas
+              ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Criando subconta...</>
+              : asaasAccountStatus === 'active'
+              ? '✓ Conta já configurada'
+              : 'Criar subconta e ativar cobrança'}
           </Button>
         </SettingsSection>
 

@@ -271,6 +271,7 @@ export type Database = {
           asaas_account_id: string
           asaas_api_key: string
           broker_id: string
+          cpf_cnpj: string | null
           created_at: string | null
           id: string
           status: string | null
@@ -281,6 +282,7 @@ export type Database = {
           asaas_account_id: string
           asaas_api_key: string
           broker_id: string
+          cpf_cnpj?: string | null
           created_at?: string | null
           id?: string
           status?: string | null
@@ -291,6 +293,7 @@ export type Database = {
           asaas_account_id?: string
           asaas_api_key?: string
           broker_id?: string
+          cpf_cnpj?: string | null
           created_at?: string | null
           id?: string
           status?: string | null
