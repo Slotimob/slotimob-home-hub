@@ -457,27 +457,10 @@ export function CreateLeaseWizard({
         }
       }
 
-      // Se cobrança ativa, disparar criação no Asaas
-      if (chargeConfig.is_active && leaseId) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-asaas-charge`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session?.access_token}`,
-                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-              },
-              body: JSON.stringify({ lease_id: leaseId, billing_type: chargeConfig.billing_type }),
-            }
-          );
-          // erros da edge function são logados mas não bloqueiam o fluxo do wizard
-        } catch (efErr) {
-          console.warn('create-asaas-charge falhou (não bloqueia):', efErr);
-        }
-      }
+      // Cobrança automática NÃO é disparada na criação do contrato.
+      // O corretor ativará manualmente na página do contrato após a assinatura.
+
+
 
       onOpenChange(false);
       onSuccess?.();
