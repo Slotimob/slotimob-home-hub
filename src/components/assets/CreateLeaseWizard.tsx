@@ -43,6 +43,7 @@ import {
   Shield,
   CreditCard,
   Receipt,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -457,27 +458,10 @@ export function CreateLeaseWizard({
         }
       }
 
-      // Se cobrança ativa, disparar criação no Asaas
-      if (chargeConfig.is_active && leaseId) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-asaas-charge`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session?.access_token}`,
-                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-              },
-              body: JSON.stringify({ lease_id: leaseId, billing_type: chargeConfig.billing_type }),
-            }
-          );
-          // erros da edge function são logados mas não bloqueiam o fluxo do wizard
-        } catch (efErr) {
-          console.warn('create-asaas-charge falhou (não bloqueia):', efErr);
-        }
-      }
+      // Cobrança automática NÃO é disparada na criação do contrato.
+      // O corretor ativará manualmente na página do contrato após a assinatura.
+
+
 
       onOpenChange(false);
       onSuccess?.();
@@ -1177,7 +1161,12 @@ export function CreateLeaseWizard({
           {/* Cobrança Step (Asaas) */}
           {step === "cobranca" && (
             <div className="space-y-4">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 flex gap-2">
+                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>A cobrança automática será ativada na página do contrato, após a assinatura.</span>
+              </div>
               <div className="grid grid-cols-2 gap-3">
+
                 <div className="rounded-lg border bg-muted/40 p-3">
                   <p className="text-xs text-muted-foreground mb-1">Recebedor</p>
                   <p className="text-sm font-medium">{user?.user_metadata?.full_name || user?.email || "Corretor"}</p>
