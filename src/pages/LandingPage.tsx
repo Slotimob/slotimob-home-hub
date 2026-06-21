@@ -11,6 +11,7 @@ import { LpPainPoints } from '@/components/landing/v2/LpPainPoints';
 import { LpModules } from '@/components/landing/v2/LpModules';
 import SocialProofNumbers from '@/components/marketing/SocialProofNumbers';
 import { LpComparison } from '@/components/landing/v2/LpComparison';
+import { LpTestimonials } from '@/components/landing/v2/LpTestimonials';
 import { LpPricing } from '@/components/landing/v2/LpPricing';
 import { LpFaq } from '@/components/landing/v2/LpFaq';
 import { LpFinalCta } from '@/components/landing/v2/LpFinalCta';
@@ -147,12 +148,13 @@ export default function LandingPage() {
         <Suspense fallback={<div className="h-32" />}>
           <LpFeatures />
         </Suspense>
+        <LpComparison />
+        <LpTestimonials />
         <LpStats />
         <LpModules />
         <Suspense fallback={<div style={{ minHeight: 600 }} aria-hidden />}>
           <LpDemo />
         </Suspense>
-        <LpComparison />
         <LpPricing />
         <LpFaq />
         <LpFinalCta />
