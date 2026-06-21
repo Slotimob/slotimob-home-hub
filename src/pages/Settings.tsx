@@ -506,9 +506,18 @@ const Settings = () => {
           description="Dados do emissor para emissão de boletos"
           icon={Receipt}
         >
-          {asaasSaved && (
-            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400 border border-green-200 dark:border-green-800">
-              Dados salvos
+          {asaasAccountStatus === 'active' ? (
+            <div className="flex items-center gap-2">
+              <Badge className="bg-green-100 text-green-700 border border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800">
+                ✓ Subconta Asaas ativa
+              </Badge>
+              {asaasAccountId && (
+                <span className="text-xs text-muted-foreground font-mono">{asaasAccountId}</span>
+              )}
+            </div>
+          ) : (
+            <Badge variant="outline" className="text-muted-foreground">
+              Não configurada — preencha e salve para ativar
             </Badge>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
