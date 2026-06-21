@@ -79,8 +79,11 @@ export function ApprovalRequestsTab() {
     refetchInterval: 30_000,
   });
 
-  // Fetch profile names for requesters
-  const requesterIds = [...new Set((requests ?? []).map((r: any) => r.requested_by))];
+  // Fetch profile names for requesters and deciders
+  const requesterIds = [...new Set([
+    ...(requests ?? []).map((r: any) => r.requested_by),
+    ...(requests ?? []).filter((r: any) => r.decided_by).map((r: any) => r.decided_by),
+  ])];
   const { data: profiles } = useQuery({
     queryKey: ['profiles-for-approvals', requesterIds],
     queryFn: async () => {
