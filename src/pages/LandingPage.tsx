@@ -22,6 +22,9 @@ const LpDemo = lazy(() => import('@/components/landing/v2/LpDemo'));
 const LpFeatures = lazy(() =>
   import('@/components/landing/v2/LpFeatures').then(m => ({ default: m.LpFeatures }))
 );
+const LpBlogPreview = lazy(() =>
+  import('@/components/landing/v2/LpBlogPreview').then(m => ({ default: m.LpBlogPreview }))
+);
 
 const FONTS_HREF =
   'https://fonts.googleapis.com/css2?family=Sofia+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,500;1,700&family=Sofia+Sans+Condensed:wght@500;600;700&display=swap';
@@ -154,6 +157,9 @@ export default function LandingPage() {
         <LpModules />
         <Suspense fallback={<div style={{ minHeight: 600 }} aria-hidden />}>
           <LpDemo />
+        </Suspense>
+        <Suspense fallback={<div className="h-32" />}>
+          <LpBlogPreview />
         </Suspense>
         <LpPricing />
         <LpFaq />
