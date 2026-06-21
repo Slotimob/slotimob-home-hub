@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+
+const PAGE_SIZE = 9;
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useSearchParams } from 'react-router-dom';
