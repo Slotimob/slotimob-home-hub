@@ -207,7 +207,7 @@ export default function Blog() {
                 {(geoFilter || activeCat) && (
                   <button
                     onClick={() => { clearGeo(); setActiveCat(null); }}
-                    className="text-sm mt-2 text-primary hover:underline"
+                    className="text-sm mt-2 text-accent hover:underline"
                   >
                     Limpar filtros
                   </button>
