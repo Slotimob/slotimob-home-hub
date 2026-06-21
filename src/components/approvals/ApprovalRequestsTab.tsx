@@ -168,7 +168,7 @@ export function ApprovalRequestsTab() {
                   <TableHead>Itens</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Justificativa</TableHead>
+                  <TableHead>Detalhes</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
