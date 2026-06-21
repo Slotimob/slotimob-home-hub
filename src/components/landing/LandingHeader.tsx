@@ -231,6 +231,7 @@ export function LandingHeader({ showTrustBar = false }: { showTrustBar?: boolean
         </div>
       )}
     </header>
+    </div>
   );
 }
 
