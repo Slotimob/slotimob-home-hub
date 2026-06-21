@@ -1,89 +1,64 @@
-import { useState } from 'react';
-import { Plus, Minus } from 'lucide-react';
-import { Reveal } from './Reveal';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import SectionWrapper from '@/components/marketing/SectionWrapper';
 
-const FAQ = [
+const faqs = [
   {
-    q: 'preciso de cartão para o trial?',
-    a: 'Não. O plano Start é gratuito para sempre e já inclui 14 dias do Pro por padrão. Cartão só é exigido se você optar por continuar em um plano pago.',
+    q: 'Preciso de cartão de crédito para testar?',
+    a: 'Não. O trial de 7 dias é completamente gratuito e não exige cartão. Você só informa dados de pagamento quando decidir assinar um plano pago.',
   },
   {
-    q: 'o que acontece quando o trial acaba?',
-    a: 'Você volta automaticamente para o plano Start (gratuito) com os limites reduzidos. Seus dados continuam intactos — basta assinar para reativar os recursos do Pro.',
+    q: 'Como funciona o trial de 7 dias?',
+    a: 'Ao criar sua conta, você tem acesso completo ao plano PRO por 7 dias sem pagar nada. No 8º dia, sua conta é convertida automaticamente para o plano gratuito (Start) se você não assinar. Você não perde seus dados.',
   },
   {
-    q: 'consigo migrar de planilhas para o slotimob?',
-    a: 'Sim. Suportamos importação de contatos e imóveis via CSV. Se você usa um ERP atual, nosso time ajuda na migração na fase de onboarding.',
+    q: 'Posso cancelar quando quiser?',
+    a: 'Sim. Não há fidelidade. Você cancela em 1 clique nas configurações da conta, sem burocracia e sem multa.',
   },
   {
-    q: 'posso cancelar quando quiser?',
-    a: 'Sim, sem multa. O cancelamento mantém o acesso até o fim do ciclo já pago e você pode exportar seus dados a qualquer momento.',
+    q: 'O Slotimob funciona para quem tem só 1 ou 2 imóveis?',
+    a: 'Sim, foi feito para isso. O plano Start (gratuito) suporta até 5 imóveis. O PRO suporta até 50. Se você tem 1 imóvel e quer parar de cobrar pelo WhatsApp, o Slotimob resolve em 30 minutos.',
   },
   {
-    q: 'a equipe pode usar junto?',
-    a: 'O plano Business inclui até 4 usuários (1 Master + 3 membros) com papéis, permissões granulares e roleta de leads automática. Add-on de usuário extra disponível.',
+    q: 'O boleto é emitido pelo Slotimob ou pelo meu banco?',
+    a: 'Os boletos são emitidos via Asaas, parceiro financeiro homologado pelo Banco Central. O valor do aluguel cai direto na sua conta — o Slotimob não fica com o dinheiro em nenhum momento.',
   },
   {
-    q: 'meus dados estão seguros?',
-    a: 'Sim. Infraestrutura com criptografia em repouso e em trânsito, backups diários, isolamento por workspace via RLS no banco e auditoria completa de ações.',
+    q: 'Meus dados ficam seguros?',
+    a: 'Sim. Todos os dados são armazenados com criptografia em servidores no Brasil (AWS São Paulo). Seguimos a LGPD e não compartilhamos suas informações com terceiros.',
   },
 ];
 
 export function LpFaq() {
   return (
-    <section className="py-24 md:py-36" style={{ borderTop: '1px solid var(--lp-line)' }}>
-      <div className="max-w-[1280px] mx-auto px-5 md:px-10">
-        <div className="grid grid-cols-12 gap-6 mb-12 md:mb-16">
-          <div className="col-span-12 md:col-span-4">
-            <Reveal>
-              <p className="lp-eyebrow">07 — perguntas</p>
-            </Reveal>
-          </div>
-          <div className="col-span-12 md:col-span-8">
-            <Reveal delay={80}>
-              <h2 className="lp-display text-[40px] md:text-[72px]">
-                dúvidas
-                <br />
-                <em className="lp-serif" style={{ fontStyle: 'italic', color: 'var(--lp-accent)' }}>frequentes</em>.
-              </h2>
-            </Reveal>
-          </div>
-        </div>
-
-        <div className="max-w-[820px] mx-auto">
-          {FAQ.map((f, i) => (
-            <FaqItem key={i} q={f.q} a={f.a} />
-          ))}
-        </div>
+    <SectionWrapper background="white" id="faq">
+      <div className="text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+          Perguntas frequentes
+        </h2>
       </div>
-    </section>
-  );
-}
 
-function FaqItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{ borderTop: '1px solid var(--lp-line)' }}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full py-6 md:py-7 flex items-center justify-between text-left gap-6"
-        aria-expanded={open}
+      <Accordion
+        type="single"
+        collapsible
+        defaultValue="item-1"
+        className="max-w-3xl mx-auto mt-10"
       >
-        <span className="lp-serif text-xl md:text-2xl" style={{ color: 'var(--lp-ink)' }}>{q}</span>
-        <span className="shrink-0">
-          {open ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-        </span>
-      </button>
-      <div
-        style={{
-          maxHeight: open ? '300px' : '0',
-          opacity: open ? 1 : 0,
-          overflow: 'hidden',
-          transition: 'max-height .45s ease, opacity .3s ease',
-        }}
-      >
-        <p className="pb-7 pr-12 text-[15px] leading-relaxed" style={{ color: 'var(--lp-ink-soft)' }}>{a}</p>
-      </div>
-    </div>
+        {faqs.map((item, i) => (
+          <AccordionItem key={item.q} value={`item-${i + 1}`}>
+            <AccordionTrigger className="text-left font-semibold text-foreground hover:no-underline">
+              {item.q}
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground leading-relaxed">
+              {item.a}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </SectionWrapper>
   );
 }
