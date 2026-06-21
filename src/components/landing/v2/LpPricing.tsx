@@ -21,7 +21,7 @@ export function LpPricing() {
             </Reveal>
             <Reveal delay={140}>
               <p className="mt-6 max-w-[55ch] text-[15px] md:text-[16px]" style={{ color: 'var(--lp-ink-soft)' }}>
-                Comece grátis com o plano Start (inclui 14 dias do Pro). Faça upgrade só
+                Comece grátis com o plano Start (inclui 7 dias do Pro). Faça upgrade só
                 quando fizer sentido para o seu volume.
               </p>
             </Reveal>

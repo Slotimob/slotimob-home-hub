@@ -29,7 +29,7 @@ export function LpFinalCta() {
               className="lp-btn lp-btn-primary"
               style={{ background: '#FFFFFF', color: '#0B0073' }}
             >
-              testar 14 dias de pro grátis
+              testar 7 dias de pro grátis
               <ArrowUpRight className="w-4 h-4" />
             </Link>
             <Link to="/auth" className="lp-btn lp-btn-ghost">

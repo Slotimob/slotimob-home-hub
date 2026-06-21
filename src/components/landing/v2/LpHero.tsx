@@ -59,7 +59,7 @@ export function LpHero() {
           <div className="col-span-12 lg:col-span-6 lg:col-start-1 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <Reveal delay={200}>
               <Link to="/auth?trial=pro" className="lp-btn lp-btn-primary">
-                testar 14 dias de pro grátis
+                testar 7 dias de pro grátis
                 <ArrowUpRight className="w-4 h-4" />
               </Link>
             </Reveal>
@@ -84,7 +84,7 @@ export function LpHero() {
                 <p className="lp-eyebrow">crédito</p>
                 <div className="flex items-center gap-3 text-[13px]" style={{ color: 'var(--lp-ink-soft)' }}>
                   <span className="inline-flex w-1.5 h-1.5 rounded-full" style={{ background: 'var(--lp-accent)' }} />
-                  trial pro de 14 dias · sem cartão de crédito
+                  trial pro de 7 dias · sem cartão de crédito
                 </div>
                 {proRemaining !== null && proRemaining > 0 && (
                   <div className="flex items-center gap-3 text-[13px]" style={{ color: 'var(--lp-ink-soft)' }}>
