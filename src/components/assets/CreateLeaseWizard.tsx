@@ -1161,7 +1161,12 @@ export function CreateLeaseWizard({
           {/* Cobrança Step (Asaas) */}
           {step === "cobranca" && (
             <div className="space-y-4">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 flex gap-2">
+                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>A cobrança automática será ativada na página do contrato, após a assinatura.</span>
+              </div>
               <div className="grid grid-cols-2 gap-3">
+
                 <div className="rounded-lg border bg-muted/40 p-3">
                   <p className="text-xs text-muted-foreground mb-1">Recebedor</p>
                   <p className="text-sm font-medium">{user?.user_metadata?.full_name || user?.email || "Corretor"}</p>
