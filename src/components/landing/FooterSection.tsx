@@ -2,40 +2,31 @@ import { Link } from 'react-router-dom';
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { ShieldCheck } from 'lucide-react';
 
-const footerColumns = [
+type FooterLink = { label: string; href: string; isAnchor?: boolean };
+
+const footerColumns: { title: string; links: FooterLink[] }[] = [
   {
     title: 'Produto',
     links: [
-      { label: 'CRM & Vendas', href: '#modulo-crm' },
-      { label: 'Gestão Financeira', href: '#modulo-financeiro' },
-      { label: 'Controle de Imóveis', href: '#modulo-unidades' },
-      { label: 'WhatsApp & IA', href: '#modulo-whatsapp' },
-      { label: 'Calculadoras', href: '#modulo-calculadoras' },
+      { label: 'Funcionalidades', href: '#features', isAnchor: true },
+      { label: 'Planos e Preços', href: '/planos' },
+      { label: 'Demonstração', href: '/demo' },
+      { label: 'Blog', href: '/blog' },
     ],
   },
   {
-    title: 'Segmentos',
+    title: 'Empresa',
     links: [
-      { label: 'Para Imobiliárias', href: '#segmentos' },
-      { label: 'Para Corretores', href: '#segmentos' },
-      { label: 'Para Proprietários', href: '#segmentos' },
-      { label: 'Preços', href: '#pricing' },
-    ],
-  },
-  {
-    title: 'Ajuda',
-    links: [
-      { label: 'Blog', href: '/blog', isExternal: true },
-      { label: 'Central de Ajuda', href: '#features' },
-      { label: 'Demonstração', href: '#demo' },
+      { label: 'Sobre nós', href: '/sobre' },
+      { label: 'Contato', href: '/contato' },
     ],
   },
   {
     title: 'Legal',
     links: [
-      { label: 'Termos de Uso', href: '/legal?tab=terms', isExternal: true },
-      { label: 'Política de Privacidade', href: '/legal?tab=privacy', isExternal: true },
-      { label: 'Política de Reembolso', href: '/refund-policy', isExternal: true },
+      { label: 'Termos de Uso', href: '/termos-de-uso' },
+      { label: 'Política de Privacidade', href: '/politica-de-privacidade' },
+      { label: 'Política de Reembolso', href: '/refund-policy' },
     ],
   },
 ];
@@ -51,7 +42,7 @@ export function FooterSection() {
   return (
     <footer className="py-16 bg-foreground text-background/80">
       <div className="container mx-auto px-4">
-        <div className="grid gap-10 md:grid-cols-5">
+        <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
             <SlotiLogo className="h-10 w-auto mb-4 brightness-200" />
             <p className="text-sm text-background/60 max-w-xs mb-4">
@@ -69,11 +60,7 @@ export function FooterSection() {
               <ul className="space-y-2.5 text-sm">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    {link.isExternal ? (
-                      <Link to={link.href} className="text-background/60 hover:text-background transition-colors">
-                        {link.label}
-                      </Link>
-                    ) : (
+                    {link.isAnchor ? (
                       <a
                         href={link.href}
                         onClick={(e) => handleAnchor(e, link.href)}
@@ -81,6 +68,13 @@ export function FooterSection() {
                       >
                         {link.label}
                       </a>
+                    ) : (
+                      <Link
+                        to={link.href}
+                        className="text-background/60 hover:text-background transition-colors"
+                      >
+                        {link.label}
+                      </Link>
                     )}
                   </li>
                 ))}
