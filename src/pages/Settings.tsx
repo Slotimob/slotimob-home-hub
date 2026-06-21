@@ -262,17 +262,58 @@ const Settings = () => {
   };
 
   const saveAsaasConfig = async () => {
+    if (!asaasConfig.name || !asaasConfig.cpf_cnpj) {
+      toast({ title: 'Preencha nome e CPF/CNPJ', variant: 'destructive' });
+      return;
+    }
     setSavingAsaas(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ asaas_config: asaasConfig as any } as any)
-        .eq('id', user?.id);
-      if (error) throw error;
+      // Mapear person_type → companyType do Asaas
+      const companyTypeMap: Record<string, string> = {
+        FISICA: 'INDIVIDUAL',
+        MEI: 'MEI',
+        JURIDICA: 'LIMITED',
+      };
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/setup-asaas-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            name: asaasConfig.name,
+            email: user?.email,
+            cpfCnpj: asaasConfig.cpf_cnpj,
+            mobilePhone: asaasConfig.mobile_phone,
+            companyType: companyTypeMap[asaasConfig.person_type || ''] || 'INDIVIDUAL',
+            address: asaasConfig.address,
+            addressNumber: asaasConfig.address_number,
+            province: asaasConfig.province,
+            postalCode: asaasConfig.postal_code,
+            city: asaasConfig.city,
+            state: asaasConfig.state,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Erro ao configurar conta Asaas');
+
+      setAsaasAccountStatus('active');
+      setAsaasAccountId(json.asaas_account_id);
       setProfile((p: any) => ({ ...p, asaas_config: asaasConfig }));
-      toast({ title: 'Dados Asaas salvos!', description: 'Configuração de emissor atualizada.' });
+
+      toast({
+        title: json.already_exists ? 'Conta Asaas já configurada' : 'Conta Asaas criada!',
+        description: json.already_exists
+          ? 'Sua subconta já estava ativa no Asaas.'
+          : 'Sua subconta foi criada. Você já pode emitir boletos.',
+      });
     } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao configurar Asaas', description: error.message, variant: 'destructive' });
     } finally {
       setSavingAsaas(false);
     }
