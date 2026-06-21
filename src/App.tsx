@@ -70,6 +70,7 @@ const Proposals = React.lazy(() => import("./pages/Proposals"));
 const AdminApprovals = React.lazy(() => import("./pages/AdminApprovals"));
 const DataExport = React.lazy(() => import("./pages/DataExport"));
 const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
+const Plans = React.lazy(() => import("./pages/Plans"));
 
 const queryClient = new QueryClient();
 
