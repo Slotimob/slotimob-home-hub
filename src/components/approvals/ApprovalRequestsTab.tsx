@@ -202,8 +202,42 @@ export function ApprovalRequestsTab() {
                       <TableCell>
                         <Badge variant={badge.variant}>{badge.label}</Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                        {r.justification || '—'}
+                      <TableCell className="text-xs text-muted-foreground">
+                        {r.status === 'pending' && (
+                          <div>
+                            {r.expires_at && (
+                              <p className={new Date(r.expires_at) < new Date() ? 'text-destructive' : ''}>
+                                Expira {formatDistanceToNow(new Date(r.expires_at), { addSuffix: true, locale: ptBR })}
+                              </p>
+                            )}
+                            {r.justification && (
+                              <p className="text-[10px] opacity-70 italic max-w-[160px] truncate" title={r.justification}>
+                                "{r.justification}"
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {(r.status === 'approved' || r.status === 'rejected') && r.decided_at && (
+                          <div>
+                            <p>{formatDistanceToNow(new Date(r.decided_at), { addSuffix: true, locale: ptBR })}</p>
+                            {r.decided_by && profiles?.[r.decided_by]?.full_name && (
+                              <p className="text-[10px] opacity-70">por {profiles[r.decided_by].full_name}</p>
+                            )}
+                            {r.decision_note && (
+                              <p className="text-[10px] opacity-70 italic max-w-[140px] truncate" title={r.decision_note}>
+                                "{r.decision_note}"
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {r.status === 'consumed' && r.consumed_at && (
+                          <span>Consumida {formatDistanceToNow(new Date(r.consumed_at), { addSuffix: true, locale: ptBR })}</span>
+                        )}
+                        {r.status === 'expired' && r.expires_at && (
+                          <span className="text-destructive/70">
+                            Expirou {formatDistanceToNow(new Date(r.expires_at), { addSuffix: true, locale: ptBR })}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {r.status === 'pending' && (
