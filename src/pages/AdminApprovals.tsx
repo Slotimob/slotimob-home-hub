@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApprovalRequestsTab } from '@/components/approvals/ApprovalRequestsTab';
 import { ApprovalSettingsTab } from '@/components/approvals/ApprovalSettingsTab';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
 
 export default function AdminApprovals() {
