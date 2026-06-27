@@ -60,15 +60,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check permissions
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("is_super_admin")
-      .eq("id", user.id)
-      .single();
+    // Check permissions via canonical is_super_admin() RPC
+    const { data: isSuperAdminFlag } = await supabaseAdmin.rpc("is_super_admin", { p_user_id: user.id });
 
     const isOwner = request.organization_owner_id === user.id;
-    const isSuperAdmin = profile?.is_super_admin === true;
+    const isSuperAdmin = isSuperAdminFlag === true;
 
     if (!isOwner && !isSuperAdmin) {
       return new Response(JSON.stringify({ error: "Acesso negado" }), {
