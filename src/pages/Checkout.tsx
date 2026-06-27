@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { cn } from '@/lib/utils';
+import { useCepSearch } from '@/hooks/useCepSearch';
 
 // ============================================================================
 // Types & Meta
@@ -120,6 +121,17 @@ export default function Checkout() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Fiscal data
+  const [cpfCnpj, setCpfCnpj] = useState('');
+  const [phone, setPhone] = useState('');
+  const [cep, setCep] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [uf, setUf] = useState('');
+  const { cepData, isSearching: cepSearching, cepError, searchCep } = useCepSearch();
+
   // Checkout
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -140,6 +152,15 @@ export default function Checkout() {
       setIsAnnual(false);
     }
   }, [selectedPlan]);
+
+  useEffect(() => {
+    if (cepData) {
+      setStreet(cepData.logradouro || '');
+      setNeighborhood(cepData.bairro || '');
+      setCity(cepData.localidade || '');
+      setUf(cepData.uf || '');
+    }
+  }, [cepData]);
 
   const allPlans: PlanCardData[] = useMemo(
     () => [
@@ -284,6 +305,12 @@ export default function Checkout() {
         <div className="container mx-auto max-w-6xl px-4 py-3 flex items-center gap-3">
           <Link to="/" className="text-primary font-bold text-lg">
             Slotimob
+          </Link>
+          <Link
+            to="/"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            ← Voltar ao site
           </Link>
           <div className="flex-1" />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
