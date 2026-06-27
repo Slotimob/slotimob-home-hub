@@ -9,7 +9,7 @@ export function LpPricing() {
         <div className="grid grid-cols-12 gap-6 mb-12 md:mb-16">
           <div className="col-span-12 md:col-span-4">
             <Reveal>
-              <p className="lp-eyebrow">06 — planos</p>
+              <p className="lp-eyebrow">planos e preços</p>
             </Reveal>
           </div>
           <div className="col-span-12 md:col-span-8">
