@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { SlotiSymbol } from './SlotiSymbol';
 
-const NAV = [
-  { label: 'produto', href: '#modulos' },
-  { label: 'demo', href: '#demo' },
-  { label: 'comparativo', href: '#comparativo' },
-  { label: 'planos', href: '#planos' },
+const NAV: { label: string; href: string; route: boolean }[] = [
+  { label: 'Início',          href: '/',              route: true },
+  { label: 'Como Funciona',   href: '#como-funciona', route: false },
+  { label: 'Funcionalidades', href: '/presentation',  route: true },
+  { label: 'Comparativo',     href: '#comparativo',   route: false },
+  { label: 'Planos',          href: '/planos',        route: true },
+  { label: 'Blog',            href: '/blog',          route: true },
 ];
 
 export function LpHeader() {
