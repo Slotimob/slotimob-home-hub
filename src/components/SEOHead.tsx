@@ -2,8 +2,8 @@ import { Helmet, HelmetProvider } from 'react-helmet-async';
 
 const BASE_URL = 'https://slotimob.com.br';
 const DEFAULT_IMAGE = `${BASE_URL}/sloti-logo.png`;
-const DEFAULT_TITLE = 'SLOTIMOB - Gestão Imobiliária';
-const DEFAULT_DESCRIPTION = 'Sistema de gestão imobiliária completo para corretores';
+const DEFAULT_TITLE = 'Slotimob — gestão de aluguel para proprietários de imóveis';
+const DEFAULT_DESCRIPTION = 'Boleto automático, reajuste IGPM/IPCA e relatório de IR. Para donos de imóveis que querem parar de cobrar manualmente.';
 
 interface SEOHeadProps {
   title?: string;
@@ -12,6 +12,7 @@ interface SEOHeadProps {
   image?: string;
   type?: 'website' | 'article';
   noIndex?: boolean;
+  structuredData?: object[];
 }
 
 export function SEOHead({
@@ -21,9 +22,10 @@ export function SEOHead({
   image = DEFAULT_IMAGE,
   type = 'website',
   noIndex = false,
+  structuredData = [],
 }: SEOHeadProps) {
   const canonicalUrl = `${BASE_URL}${path}`;
-  const fullTitle = title === DEFAULT_TITLE ? title : `${title} | SLOTIMOB`;
+  const fullTitle = title === DEFAULT_TITLE ? title : `${title} | Slotimob`;
   const imageUrl = image.startsWith('http') ? image : `${BASE_URL}${image}`;
 
   return (
@@ -41,7 +43,7 @@ export function SEOHead({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={imageUrl} />
-      <meta property="og:site_name" content="SLOTIMOB" />
+      <meta property="og:site_name" content="Slotimob" />
       <meta property="og:locale" content="pt_BR" />
 
       {/* Twitter Card */}
@@ -51,6 +53,11 @@ export function SEOHead({
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={imageUrl} />
       <meta name="twitter:site" content="@SLOTIMOB" />
+      {structuredData?.map((schema, i) => (
+        <script key={i} type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      ))}
     </Helmet>
   );
 }
