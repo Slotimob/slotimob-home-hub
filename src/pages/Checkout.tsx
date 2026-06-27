@@ -613,6 +613,82 @@ export default function Checkout() {
               )}
             </div>
 
+            {/* Dados Fiscais */}
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+              <h3 className="font-semibold text-foreground">Dados fiscais</h3>
+              <p className="text-xs text-muted-foreground">
+                Necessário para emissão da nota fiscal e geração do boleto/pix via Asaas.
+              </p>
+
+              <div className="space-y-3">
+                <Input
+                  placeholder="CPF ou CNPJ"
+                  value={cpfCnpj}
+                  onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
+                  inputMode="numeric"
+                />
+
+                <Input
+                  placeholder="Telefone / WhatsApp"
+                  value={phone}
+                  onChange={(e) => setPhone(maskPhone(e.target.value))}
+                  inputMode="tel"
+                />
+
+                <div className="relative">
+                  <Input
+                    placeholder="CEP"
+                    value={cep}
+                    inputMode="numeric"
+                    onChange={(e) => {
+                      const masked = maskCep(e.target.value);
+                      setCep(masked);
+                      if (masked.replace(/\D/g, '').length === 8) {
+                        searchCep(masked);
+                      }
+                    }}
+                  />
+                  {cepSearching && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                  {cepError && <p className="text-xs text-destructive mt-1">{cepError}</p>}
+                </div>
+
+                <div className="grid grid-cols-[1fr_80px] gap-2">
+                  <Input
+                    placeholder="Rua / Avenida"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Nº"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                  />
+                </div>
+
+                <Input
+                  placeholder="Bairro"
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                />
+
+                <div className="grid grid-cols-[1fr_60px] gap-2">
+                  <Input
+                    placeholder="Cidade"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
+                  <Input
+                    placeholder="UF"
+                    value={uf}
+                    maxLength={2}
+                    onChange={(e) => setUf(e.target.value.toUpperCase())}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Payment methods info */}
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <p className="text-sm font-medium text-muted-foreground mb-3">
