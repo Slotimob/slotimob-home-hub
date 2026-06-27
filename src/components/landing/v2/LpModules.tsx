@@ -31,7 +31,7 @@ const MODULES = [
     desc: 'Templates prontos por categoria e geração automática em PDF, com armazenamento auditado por imóvel e contrato.',
   },
   {
-.    n: '06', icon: TrendingUp, color: '#059669', bg: 'rgba(5,150,105,0.08)',
+    n: '06', icon: TrendingUp, color: '#059669', bg: 'rgba(5,150,105,0.08)',
     name: 'relatórios',
     desc: 'Relatórios semanal, mensal e DIMOB para prestação de contas, obrigações fiscais e tomada de decisão.',
   },
