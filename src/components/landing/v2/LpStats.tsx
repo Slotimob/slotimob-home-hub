@@ -25,7 +25,7 @@ export function LpStats() {
   );
 }
 
-function StatItem({ num, suffix, label, last }: { num: number; suffix: string; label: string; last: boolean }) {
+function StatItem({ num, suffix, label, detail, last }: { num: number; suffix: string; label: string; detail: string; last: boolean }) {
   const { ref, value } = useCountUp(num);
   return (
     <div
@@ -39,6 +39,9 @@ function StatItem({ num, suffix, label, last }: { num: number; suffix: string; l
         <span style={{ color: 'var(--lp-accent)' }}>{suffix}</span>
       </p>
       <p className="text-[13px]" style={{ color: 'var(--lp-ink-soft)' }}>{label}</p>
+      <p className="text-[11px] mt-1 leading-snug max-w-[160px]" style={{ color: 'var(--lp-mute)' }}>
+        {detail}
+      </p>
     </div>
   );
 }
