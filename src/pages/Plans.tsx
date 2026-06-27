@@ -309,6 +309,19 @@ export default function Plans() {
         <PricingHero />
         <PricingSection />
         <AddonsSection />
+        <section className="py-12 px-4 bg-accent/5 border-y border-accent/20">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-sm font-semibold mb-4">
+              <span>💡</span> Diferencial Slotimob
+            </div>
+            <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+              Gestão Financeira Completa inclusa em todos os planos pagos
+            </h3>
+            <p className="text-muted-foreground text-base max-w-xl mx-auto">
+              DRE, conciliação bancária (OFX), DIMOB, relatórios mensais e anuais. Em outras plataformas isso é um módulo cobrado à parte. Na Slotimob está incluso na assinatura PRO e Business.
+            </p>
+          </div>
+        </section>
         <ComparisonTable />
         <PricingFaq />
       </main>
