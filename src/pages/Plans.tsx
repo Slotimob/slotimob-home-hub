@@ -143,9 +143,10 @@ const categories: Category[] = [
   {
     name: 'Cobranças',
     rows: [
-      { feature: 'Boletos automáticos', start: false, pro: true, business: true },
+      { feature: 'Boleto e Pix automático para inquilino', start: false, pro: true, business: true },
+      { feature: 'Régua de cobrança automática', start: false, pro: true, business: true },
       { feature: 'Multa e juros automáticos', start: false, pro: true, business: true },
-      { feature: 'Régua de cobrança', start: false, pro: true, business: true },
+      { feature: 'Reajuste IGPM/IPCA automático', start: false, pro: true, business: true },
     ],
   },
   {
@@ -167,6 +168,8 @@ const categories: Category[] = [
     rows: [
       { feature: 'Dashboard DRE', start: true, pro: true, business: true },
       { feature: 'Relatório IR', start: false, pro: true, business: true },
+      { feature: 'Conciliação bancária (OFX)', start: false, pro: true, business: true },
+      { feature: 'Exportação DIMOB', start: false, pro: true, business: true },
     ],
   },
   {
@@ -265,8 +268,8 @@ function PricingFaq() {
       a: 'Sim. Você pode fazer upgrade ou downgrade a qualquer momento. No upgrade, a diferença de valor é cobrada proporcionalmente.',
     },
     {
-      q: 'O preço Early Adopter é para sempre?',
-      a: 'Sim. O preço fica travado enquanto a assinatura estiver ativa. Se cancelar e reativar, pode perder o desconto.',
+      q: 'O preço da Promoção de Lançamento é para sempre?',
+      a: 'Sim. O preço fica travado enquanto a assinatura estiver ativa. Se cancelar e reativar, pode perder o desconto de lançamento.',
     },
     {
       q: 'Quais formas de pagamento são aceitas?',
@@ -306,6 +309,19 @@ export default function Plans() {
         <PricingHero />
         <PricingSection />
         <AddonsSection />
+        <section className="py-12 px-4 bg-accent/5 border-y border-accent/20">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-sm font-semibold mb-4">
+              <span>💡</span> Diferencial Slotimob
+            </div>
+            <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+              Gestão Financeira Completa inclusa em todos os planos pagos
+            </h3>
+            <p className="text-muted-foreground text-base max-w-xl mx-auto">
+              DRE, conciliação bancária (OFX), DIMOB, relatórios mensais e anuais. Em outras plataformas isso é um módulo cobrado à parte. Na Slotimob está incluso na assinatura PRO e Business.
+            </p>
+          </div>
+        </section>
         <ComparisonTable />
         <PricingFaq />
       </main>

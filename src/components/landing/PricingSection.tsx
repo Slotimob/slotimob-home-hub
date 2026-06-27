@@ -92,7 +92,7 @@ const plans: PlanDef[] = [
   'Integrações Avançadas',
   'Expansão sob demanda'],
 
-  cta: 'Garantir Vaga',
+  cta: 'Contratar Business',
   popular: false,
   bestValue: true
 }];
@@ -175,17 +175,12 @@ export function PricingSection() {
 
   const handleCheckout = async (planId: PlanId) => {
     if (planId === 'start') {
-      navigate('/auth?trial=pro');
+      navigate('/checkout?plan=pro&trial=true');
       return;
     }
     setLoadingPlan(planId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const cycle = isAnnual ? 'annual' : 'monthly';
-      if (!session) {
-        navigate(`/auth?redirect=checkout&plan=${planId}&cycle=${cycle}`);
-        return;
-      }
       navigate(`/checkout?plan=${planId}&cycle=${cycle}`);
     } catch (err) {
       console.error('Checkout error:', err);
@@ -321,7 +316,7 @@ export function PricingSection() {
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Zap className={cn('h-4 w-4', isPro ? 'text-accent' : 'text-muted-foreground')} />
                   <span className={cn('text-xs font-semibold uppercase', isPro ? 'text-accent' : 'text-muted-foreground')}>
-                    Early Adopter
+                    Promoção de Lançamento
                   </span>
                 </div>
                 {remaining !== null && remaining > 0 &&
@@ -444,7 +439,7 @@ export function PricingSection() {
         {/* Guarantee */}
         <div className="text-center mt-14">
           <p className="text-sm text-muted-foreground">
-            ✨ Preço de Early Adopter é <strong>vitalício</strong> enquanto sua assinatura estiver ativa
+            ✨ Preço de Promoção de Lançamento é <strong>vitalício</strong> enquanto sua assinatura estiver ativa
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             7 dias grátis em todos os planos. Cancele quando quiser.

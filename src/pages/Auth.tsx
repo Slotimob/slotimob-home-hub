@@ -992,75 +992,64 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  {/* Tab switcher */}
-                  <div className="flex rounded-lg bg-muted p-1">
-                    <button type="button"
-                      onClick={() => { setActiveTab('login'); setFieldErrors({}); }}
-                      className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${activeTab === 'login' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-                      Login
-                    </button>
-                    <button type="button"
-                      onClick={() => { setActiveTab('signup'); setFieldErrors({}); }}
-                      className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${activeTab === 'signup' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-                      Criar Conta
-                    </button>
-                  </div>
+                  {invitation ? (
+                    // Invitation flow: keep signup form
+                    <motion.div
+                      key="signup"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      {renderSignupForm()}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="login"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      {showForgotPassword ? (
+                        <form onSubmit={handleForgotPassword} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="reset-email">Email</Label>
+                            <Input id="reset-email" type="email" placeholder="seu@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
+                          </div>
+                          <p className="text-xs text-muted-foreground">Você receberá um link para redefinir sua senha.</p>
+                          <Button type="submit" className="w-full" disabled={resetLoading}>
+                            {resetLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</> : 'Enviar link de recuperação'}
+                          </Button>
+                          <Button type="button" variant="ghost" className="w-full" onClick={() => setShowForgotPassword(false)}>Voltar ao login</Button>
+                        </form>
+                      ) : (
+                        <form onSubmit={handleLogin} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="login-email">Email</Label>
+                            <Input id="login-email" type="email" placeholder="seu@email.com" value={loginForm.email} onChange={e => setLoginForm({ ...loginForm, email: e.target.value })} required />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="login-password">Senha</Label>
+                              <Button type="button" variant="link" className="h-auto p-0 text-xs text-muted-foreground hover:text-primary" onClick={() => setShowForgotPassword(true)}>
+                                Esqueceu a senha?
+                              </Button>
+                            </div>
+                            <Input id="login-password" type="password" placeholder="••••••••" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} required />
+                          </div>
+                          <Button type="submit" className="w-full h-11" disabled={loading || googleLoading}>
+                            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
+                          </Button>
+                        </form>
+                      )}
 
-                  {/* Forms with animated height transition */}
-                  <AnimatePresence mode="wait">
-                    {activeTab === 'login' ? (
-                      <motion.div
-                        key="login"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.25 }}
-                      >
-                        {showForgotPassword ? (
-                          <form onSubmit={handleForgotPassword} className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="reset-email">Email</Label>
-                              <Input id="reset-email" type="email" placeholder="seu@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
-                            </div>
-                            <p className="text-xs text-muted-foreground">Você receberá um link para redefinir sua senha.</p>
-                            <Button type="submit" className="w-full" disabled={resetLoading}>
-                              {resetLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</> : 'Enviar link de recuperação'}
-                            </Button>
-                            <Button type="button" variant="ghost" className="w-full" onClick={() => setShowForgotPassword(false)}>Voltar ao login</Button>
-                          </form>
-                        ) : (
-                          <form onSubmit={handleLogin} className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="login-email">Email</Label>
-                              <Input id="login-email" type="email" placeholder="seu@email.com" value={loginForm.email} onChange={e => setLoginForm({ ...loginForm, email: e.target.value })} required />
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Label htmlFor="login-password">Senha</Label>
-                                <Button type="button" variant="link" className="h-auto p-0 text-xs text-muted-foreground hover:text-primary" onClick={() => setShowForgotPassword(true)}>
-                                  Esqueceu a senha?
-                                </Button>
-                              </div>
-                              <Input id="login-password" type="password" placeholder="••••••••" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} required />
-                            </div>
-                            <Button type="submit" className="w-full h-11" disabled={loading || googleLoading}>
-                              {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
-                            </Button>
-                          </form>
-                        )}
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="signup"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.25 }}
-                      >
-                        {renderSignupForm()}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      <div className="mt-6 text-center text-sm text-muted-foreground">
+                        Ainda não tem conta?{' '}
+                        <Link to="/checkout" className="text-primary font-medium hover:underline">
+                          Comece grátis com 7 dias de PRO →
+                        </Link>
+                      </div>
+                    </motion.div>
+                  )}
 
                   <div className="text-center pt-2 space-x-3">
                     <Link to="/legal?tab=privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">
