@@ -145,7 +145,7 @@ export function LpHeader() {
                   key={n.href}
                   to={n.href}
                   onClick={() => setOpen(false)}
-                  className="lp-display text-[40px] py-3 border-b"
+                  className="lp-display text-[28px] sm:text-[40px] py-2 sm:py-3 border-b"
                   style={{
                     borderColor: 'var(--lp-line)',
                     color: active ? 'var(--lp-accent)' : 'var(--lp-ink)',
@@ -174,7 +174,7 @@ export function LpHeader() {
                   key={n.href}
                   href={n.href}
                   onClick={(e) => onAnchor(e, n.href)}
-                  className="lp-display text-[40px] py-3 border-b"
+                  className="lp-display text-[28px] sm:text-[40px] py-2 sm:py-3 border-b"
                   style={{
                     borderColor: 'var(--lp-line)',
                     color: 'var(--lp-ink)',
