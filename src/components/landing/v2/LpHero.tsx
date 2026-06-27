@@ -115,7 +115,7 @@ export function LpHero() {
 
             {/* Credibility badge */}
             <div
-              className="absolute -bottom-4 -right-4 sm:-right-6 rotate-3 bg-card border border-border shadow-lg rounded-xl px-4 py-2 flex items-center gap-2"
+              className="absolute -bottom-4 right-2 lg:-right-6 rotate-3 bg-card border border-border shadow-lg rounded-xl px-4 py-2 flex items-center gap-2"
             >
               <Star className="h-4 w-4 fill-accent text-accent" />
               <span className="text-sm font-semibold text-foreground">
