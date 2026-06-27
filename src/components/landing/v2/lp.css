@@ -119,10 +119,6 @@
   background: #0FC4A2;
   transform: translateY(-1px);
 }
-[data-lp="v2"] .lp-btn-primary:hover {
-  background: #27B49C;
-  transform: translateY(-1px);
-}
 [data-lp="v2"] .lp-btn-ghost {
   background: transparent;
   color: var(--lp-ink);
