@@ -152,7 +152,7 @@ const categories: Category[] = [
     name: 'Contratos',
     rows: [
       { feature: 'Contratos digitais', start: true, pro: true, business: true },
-      { feature: 'Assinatura eletrônica', start: true, pro: true, business: true },
+      { feature: 'Assinatura eletrônica (sem validade jurídica*)', start: true, pro: true, business: true },
       { feature: 'Reajuste automático IGPM', start: false, pro: true, business: true },
     ],
   },
