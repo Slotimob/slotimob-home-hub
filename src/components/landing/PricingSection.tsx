@@ -175,17 +175,12 @@ export function PricingSection() {
 
   const handleCheckout = async (planId: PlanId) => {
     if (planId === 'start') {
-      navigate('/auth?trial=pro');
+      navigate('/checkout?plan=pro&trial=true');
       return;
     }
     setLoadingPlan(planId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const cycle = isAnnual ? 'annual' : 'monthly';
-      if (!session) {
-        navigate(`/auth?redirect=checkout&plan=${planId}&cycle=${cycle}`);
-        return;
-      }
       navigate(`/checkout?plan=${planId}&cycle=${cycle}`);
     } catch (err) {
       console.error('Checkout error:', err);
