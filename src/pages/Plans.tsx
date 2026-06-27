@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { LpHeader } from '@/components/landing/v2/LpHeader';
 import { LpFooter } from '@/components/landing/v2/LpFooter';
+import { SEOHead } from '@/components/SEOHead';
 import '@/components/landing/v2/lp.css';
 import { PricingSection } from '@/components/landing/PricingSection';
 import {
@@ -299,6 +300,11 @@ function PricingFaq() {
 export default function Plans() {
   return (
     <div data-lp="v2" className="min-h-screen bg-background">
+      <SEOHead
+        title="Planos e preços — Slotimob para proprietários de imóveis"
+        description="Start grátis para até 5 imóveis. Pro a partir de R$ 59,90/mês com boleto automático, reajuste IGPM/IPCA, DRE e relatório IR. Teste 7 dias sem cartão."
+        path="/planos"
+      />
       <LpHeader />
       <main>
         <DiferencialSection />
