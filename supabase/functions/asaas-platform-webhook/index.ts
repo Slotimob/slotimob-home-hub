@@ -108,13 +108,14 @@ serve(async (req) => {
 
             await supabase.from("subscriptions").update({
               status: "active",
+              plan_id: type,
               current_period_start: now.toISOString(),
               current_period_end: periodEnd.toISOString(),
               billing_provider: "asaas",
               updated_at: now.toISOString(),
             }).eq("id", sub.id);
 
-            console.log(`Plano ativado para user ${sub.user_id} (${isYearly ? "+12 meses" : "+1 mês"})`);
+            console.log(`Plano ativado para user ${sub.user_id}: plan_id=${type} (${isYearly ? "+12 meses" : "+1 mês"})`);
           }
         }
         break;
