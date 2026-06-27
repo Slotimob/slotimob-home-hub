@@ -140,7 +140,7 @@ export default function Blog() {
         ]}
       />
       <Helmet>
-        <link rel="alternate" type="application/rss+xml" title="Slotimob Blog RSS" href="/rss.xml" />
+        <link rel="alternate" type="application/rss+xml" title="Slotimob Blog RSS" href="https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/rss-feed" />
       </Helmet>
 
       <div data-lp="v2" className="min-h-screen bg-background">
