@@ -25,9 +25,9 @@ const painPoints: PainPoint[] = [
     consequence: 'Até R$ 180 por ocorrência que a lei permite cobrar — e você deixa passar.',
   },
   {
-    icon: FileX,
-    question: 'Contrato de papel?',
-    consequence: 'Sem validade digital. Difícil de provar, impossível de assinar à distância.',
+    icon: Calculator,
+    question: 'Declaração de IR virou pesadelo?',
+    consequence: 'Sem relatório automático, você junta comprovante por comprovante todo ano. Com o Slotimob, o relatório sai pronto, em um clique.',
   },
 ];
 
