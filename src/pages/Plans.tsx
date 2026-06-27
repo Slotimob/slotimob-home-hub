@@ -106,35 +106,48 @@ function ComparisonTable() {
         </h2>
         <Collapsible open={open} onOpenChange={setOpen}>
           <CollapsibleTrigger asChild>
-            <Button variant="outline" className="gap-2 mb-6">
+            <Button
+              variant="outline"
+              className="gap-2 mb-6"
+              style={{ background: '#fff', borderColor: '#d1d5db', color: '#111827' }}
+            >
               {open ? 'Ocultar comparação' : 'Ver comparação completa'}
               <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} />
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="overflow-x-auto rounded-xl border border-border">
+            <div className="overflow-x-auto rounded-xl" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
               <table className="w-full text-sm min-w-[640px]">
                 <thead>
-                  <tr className="bg-muted">
-                    <th className="text-left p-4 font-semibold text-foreground">Recurso</th>
-                    <th className="p-4 font-semibold text-foreground text-center">Start</th>
-                    <th className="p-4 font-semibold text-foreground text-center bg-accent/10">Pro</th>
-                    <th className="p-4 font-semibold text-foreground text-center">Business</th>
+                  <tr style={{ background: '#f8fafc' }}>
+                    <th className="text-left p-4 font-semibold" style={{ color: '#0f172a' }}>Recurso</th>
+                    <th className="p-4 font-semibold text-center" style={{ color: '#0f172a' }}>Start</th>
+                    <th className="p-4 font-semibold text-center" style={{ color: '#0f172a', background: 'rgba(20,217,180,0.10)' }}>Pro</th>
+                    <th className="p-4 font-semibold text-center" style={{ color: '#0f172a' }}>Business</th>
                   </tr>
                 </thead>
                 <tbody>
                   {categories.map((cat) => (
                     <Fragment key={cat.name}>
                       <tr>
-                        <td colSpan={4} className="bg-muted font-semibold text-sm text-foreground px-4 py-2 border-t border-border">
+                        <td
+                          colSpan={4}
+                          className="font-semibold text-sm px-4 py-2"
+                          style={{ background: '#f1f5f9', color: '#374151', borderTop: '1px solid #e2e8f0' }}
+                        >
                           {cat.name}
                         </td>
                       </tr>
                       {cat.rows.map((row, idx) => (
-                        <tr key={`${cat.name}-${row.feature}`} className={cn(idx % 2 === 1 && 'bg-muted/30')}>
-                          <td className="p-4 text-muted-foreground">{row.feature}</td>
+                        <tr
+                          key={`${cat.name}-${row.feature}`}
+                          style={{ background: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}
+                        >
+                          <td className="p-4" style={{ color: '#374151' }}>{row.feature}</td>
                           <td className="p-4 text-center">{renderCell(row.start)}</td>
-                          <td className="p-4 text-center bg-accent/5">{renderCell(row.pro)}</td>
+                          <td className="p-4 text-center" style={{ background: idx % 2 === 1 ? 'rgba(20,217,180,0.07)' : 'rgba(20,217,180,0.04)' }}>
+                            {renderCell(row.pro)}
+                          </td>
                           <td className="p-4 text-center">{renderCell(row.business)}</td>
                         </tr>
                       ))}
@@ -142,7 +155,7 @@ function ComparisonTable() {
                   ))}
                 </tbody>
               </table>
-              <p className="px-4 py-3 text-xs text-muted-foreground">
+              <p className="px-4 py-3 text-xs" style={{ color: '#6b7280', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
                 * Assinatura eletrônica com validade jurídica está em desenvolvimento e será disponibilizada em breve.
               </p>
             </div>
