@@ -58,17 +58,28 @@ function injectJsonLdOnce() {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     description:
-      'Plataforma de gestão imobiliária para corretores e imobiliárias: CRM, financeiro, contratos, WhatsApp e IA em um único sistema.',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'BRL',
-      url: 'https://slotimob.com.br/',
-    },
+      'Gestão de aluguel automática para proprietários de imóveis: boleto no dia certo, reajuste IGPM/IPCA automático, DRE e relatório para o IR — tudo em um único sistema.',
+    url: 'https://slotimob.com.br/',
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Start',
+        price: '0',
+        priceCurrency: 'BRL',
+        description: 'Gratuito para até 5 imóveis',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Pro',
+        price: '59.90',
+        priceCurrency: 'BRL',
+        description: 'Até 50 imóveis com boleto automático, reajuste e relatório IR',
+      },
+    ],
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: '4.9',
-      reviewCount: '200',
+      reviewCount: '27',
     },
   });
   document.head.appendChild(script);
@@ -132,8 +143,8 @@ export default function LandingPage() {
   return (
     <div data-lp="v2" className="overflow-x-hidden">
       <SEOHead
-        title="Gestão imobiliária para corretores e imobiliárias"
-        description="CRM, financeiro, contratos, WhatsApp e IA em um único sistema. Trial PRO de 7 dias, sem cartão. Para corretores autônomos e imobiliárias."
+        title="Gestão de aluguel automática para proprietários de imóveis"
+        description="Boleto no dia certo, reajuste IGPM/IPCA aplicado sozinho e relatório de IR pronto. O Slotimob cuida do seu aluguel sem precisar de imobiliária. Teste grátis 7 dias."
         path={segment.slug ? `/lp/${segment.slug}` : '/'}
       />
       <LpHeader />
