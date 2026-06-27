@@ -298,6 +298,34 @@ export default function Checkout() {
   const ctaDisabled =
     isCheckingOut || (!user && (!name || !email || !password));
 
+  const maskCpfCnpj = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 14);
+    if (digits.length <= 11) {
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    return digits
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  };
+
+  const maskPhone = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 10) {
+      return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').trim();
+    }
+    return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').trim();
+  };
+
+  const maskCep = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 8);
+    return digits.replace(/(\d{5})(\d{0,3})/, '$1-$2').replace(/-$/, '');
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Header */}
