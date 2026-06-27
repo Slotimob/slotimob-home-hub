@@ -83,7 +83,7 @@ export default function Presentation() {
         description="Explore cada módulo do SLOTIMOB: CRM, Financeiro, Ativos e IA. Descubra como transformar sua gestão imobiliária."
         path="/presentation"
       />
-      <LandingHeader />
+      <LpHeader />
 
       <main className="min-h-screen bg-background">
         {/* Hero */}
