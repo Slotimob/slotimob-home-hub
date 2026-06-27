@@ -316,7 +316,7 @@ export function PricingSection() {
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Zap className={cn('h-4 w-4', isPro ? 'text-accent' : 'text-muted-foreground')} />
                   <span className={cn('text-xs font-semibold uppercase', isPro ? 'text-accent' : 'text-muted-foreground')}>
-                    Early Adopter
+                    Promoção de Lançamento
                   </span>
                 </div>
                 {remaining !== null && remaining > 0 &&
