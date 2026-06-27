@@ -2,10 +2,10 @@ import { useCountUp } from './useReveal';
 import { Reveal } from './Reveal';
 
 const STATS = [
-  { num: 10, suffix: '', label: 'módulos integrados' },
-  { num: 1, suffix: ' clique', label: 'para gerar DIMOB' },
-  { num: 100, suffix: '%', label: 'WhatsApp dentro do CRM' },
-  { num: 24, suffix: '/7', label: 'auditoria e backups' },
+  { num: 10, suffix: '+', label: 'módulos integrados', detail: 'CRM, financeiro, contratos, WhatsApp, IA e mais em um único sistema' },
+  { num: 15, suffix: 'min', label: 'para emitir todos os boletos', detail: 'Automatize cobranças que antes levavam horas toda virada de mês' },
+  { num: 100, suffix: '%', label: 'WhatsApp dentro do CRM', detail: 'Atenda inquilinos e leads sem sair da plataforma' },
+  { num: 24, suffix: '/7', label: 'backups e auditoria', detail: 'Seus dados protegidos e rastreáveis a qualquer momento' },
 ];
 
 export function LpStats() {
@@ -13,7 +13,7 @@ export function LpStats() {
     <section className="py-16 md:py-24" style={{ borderTop: '1px solid var(--lp-line)', borderBottom: '1px solid var(--lp-line)' }}>
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
         <Reveal>
-          <p className="lp-eyebrow mb-10">02 — em números</p>
+          <p className="lp-eyebrow mb-10">plataforma completa</p>
         </Reveal>
         <div className="grid grid-cols-2 md:grid-cols-4">
           {STATS.map((s, i) => (
@@ -25,7 +25,7 @@ export function LpStats() {
   );
 }
 
-function StatItem({ num, suffix, label, last }: { num: number; suffix: string; label: string; last: boolean }) {
+function StatItem({ num, suffix, label, detail, last }: { num: number; suffix: string; label: string; detail: string; last: boolean }) {
   const { ref, value } = useCountUp(num);
   return (
     <div
@@ -39,6 +39,9 @@ function StatItem({ num, suffix, label, last }: { num: number; suffix: string; l
         <span style={{ color: 'var(--lp-accent)' }}>{suffix}</span>
       </p>
       <p className="text-[13px]" style={{ color: 'var(--lp-ink-soft)' }}>{label}</p>
+      <p className="text-[11px] mt-1 leading-snug max-w-[160px]" style={{ color: 'var(--lp-mute)' }}>
+        {detail}
+      </p>
     </div>
   );
 }

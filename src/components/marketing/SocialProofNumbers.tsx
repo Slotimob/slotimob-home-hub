@@ -4,13 +4,34 @@ interface Metric {
   value: number;
   suffix: string;
   label: string;
+  detail: string;
 }
 
 const metrics: Metric[] = [
-  { value: 500, suffix: '+', label: 'proprietários ativos' },
-  { value: 2000, suffix: '+', label: 'imóveis gerenciados' },
-  { value: 30, suffix: '%', label: 'menos inadimplência' },
-  { value: 4, suffix: 'h', label: 'economizadas por mês' },
+  {
+    value: 312,
+    suffix: '+',
+    label: 'proprietários ativos',
+    detail: 'Gestores que já automatizaram cobranças e contratos na plataforma',
+  },
+  {
+    value: 1180,
+    suffix: '+',
+    label: 'imóveis gerenciados',
+    detail: 'Unidades com boletos, reajustes e inadimplência controlados pelo sistema',
+  },
+  {
+    value: 28,
+    suffix: '%',
+    label: 'menos inadimplência',
+    detail: 'Redução média obtida com régua de cobrança automática e lembretes via WhatsApp',
+  },
+  {
+    value: 6,
+    suffix: 'h',
+    label: 'economizadas por mês',
+    detail: 'Horas que o proprietário médio deixa de gastar com planilhas e cobranças manuais',
+  },
 ];
 
 function useCountUp(target: number, start: boolean, duration = 1500) {
@@ -42,6 +63,9 @@ function MetricCell({ metric, visible }: { metric: Metric; visible: boolean }) {
         <span className="text-accent">{metric.suffix}</span>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">{metric.label}</p>
+      <p className="mt-1 text-xs text-muted-foreground/70 leading-snug max-w-[180px] mx-auto">
+        {metric.detail}
+      </p>
     </div>
   );
 }

@@ -152,7 +152,7 @@ const categories: Category[] = [
     name: 'Contratos',
     rows: [
       { feature: 'Contratos digitais', start: true, pro: true, business: true },
-      { feature: 'Assinatura eletrônica', start: true, pro: true, business: true },
+      { feature: 'Assinatura eletrônica (sem validade jurídica*)', start: true, pro: true, business: true },
       { feature: 'Reajuste automático IGPM', start: false, pro: true, business: true },
     ],
   },
@@ -247,6 +247,9 @@ function ComparisonTable() {
                   ))}
                 </tbody>
               </table>
+              <p className="mt-3 text-xs text-muted-foreground text-center">
+                * A validação jurídica das assinaturas está em desenvolvimento e será disponibilizada em breve.
+              </p>
             </div>
           </CollapsibleContent>
         </Collapsible>
