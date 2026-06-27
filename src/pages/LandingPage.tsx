@@ -156,10 +156,53 @@ export default function LandingPage() {
             <LpFeatures />
           </Suspense>
         </div>
+
+        {/* Mid CTA 1 — após features */}
+        <section className="py-14" style={{ background: 'var(--lp-ink)' }}>
+          <div className="max-w-[1280px] mx-auto px-5 md:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <p className="lp-display text-[22px] md:text-[28px] leading-tight" style={{ color: '#fff' }}>
+                Pronto para organizar seus imóveis de verdade?
+              </p>
+              <p className="mt-1 text-sm md:text-base" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                7 dias grátis · sem cartão de crédito · cancele quando quiser
+              </p>
+            </div>
+            <a
+              href="/checkout?plan=pro&trial=true"
+              className="lp-btn lp-btn-primary shrink-0"
+              style={{ fontSize: '1rem', padding: '0.75rem 2rem' }}
+            >
+              começar grátis
+            </a>
+          </div>
+        </section>
+
         <LpComparison />
         <div style={{ background: 'var(--lp-bg-alt, #F3F2EE)' }}>
           <LpTestimonials />
         </div>
+
+        {/* Mid CTA 2 — após depoimentos */}
+        <section className="py-14" style={{ borderTop: '1px solid var(--lp-line)', borderBottom: '1px solid var(--lp-line)' }}>
+          <div className="max-w-[1280px] mx-auto px-5 md:px-10 text-center">
+            <p className="lp-eyebrow mb-3">junte-se a eles</p>
+            <p className="lp-display text-[26px] md:text-[36px] leading-tight mb-2" style={{ color: 'var(--lp-ink)' }}>
+              Gestão profissional ao alcance de qualquer proprietário
+            </p>
+            <p className="mb-8 text-base" style={{ color: 'var(--lp-mute)' }}>
+              Sem planilhas. Sem esquecimentos. Sem dor de cabeça.
+            </p>
+            <a
+              href="/checkout?plan=pro&trial=true"
+              className="lp-btn lp-btn-primary"
+              style={{ fontSize: '1rem', padding: '0.75rem 2rem' }}
+            >
+              testar 7 dias grátis
+            </a>
+          </div>
+        </section>
+
         <LpStats />
         <LpModules />
         <Suspense fallback={<div className="h-32" />}>
