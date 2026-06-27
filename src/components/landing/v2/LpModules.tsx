@@ -6,54 +6,54 @@ import { Reveal } from './Reveal';
 
 const MODULES = [
   {
-    n: '01', icon: Users, color: '#7B2FBE', bg: 'rgba(123,47,190,0.08)',
-    name: 'crm e pipeline',
-    desc: 'Kanban com drag-and-drop, estágios personalizados, histórico automático de cada negociação, ações em massa e temperatura de lead.',
+    n: '01', icon: Wallet, color: '#14D9B4', bg: 'rgba(20,217,180,0.10)',
+    name: 'cobranças e boletos',
+    desc: 'Boletos gerados e enviados automaticamente no dia do vencimento. Multa e juros aplicados sozinhos. Régua de cobrança por email e WhatsApp sem você precisar lembrar de nada.',
   },
   {
-    n: '02', icon: Building2, color: '#0B0073', bg: 'rgba(11,0,115,0.07)',
-    name: 'imóveis e unidades',
-    desc: 'Inventário completo por empreendimento, status de disponibilidade, fotos, documentos e limites por plano.',
-  },
-  {
-    n: '03', icon: Wallet, color: '#14D9B4', bg: 'rgba(20,217,180,0.10)',
-    name: 'financeiro',
-    desc: 'Transações, DRE por categoria, conciliação bancária OFX, matcher automático, recorrências, parcelas e exportação PDF/Excel.',
-  },
-  {
-    n: '04', icon: FileText, color: '#E05C2A', bg: 'rgba(224,92,42,0.08)',
+    n: '02', icon: FileText, color: '#E05C2A', bg: 'rgba(224,92,42,0.08)',
     name: 'contratos e locação',
-    desc: 'Geração automatizada de contratos em PDF com variáveis preenchidas a partir do imóvel, locatário e proprietário.',
+    desc: 'Contratos em PDF prontos em minutos. Reajuste IGPM ou IPCA aplicado na data certa, sozinho. Você recebe alerta antes do vencimento e sabe exatamente quando renovar.',
   },
   {
-    n: '05', icon: FolderOpen, color: '#2E7BEA', bg: 'rgba(46,123,234,0.08)',
+    n: '03', icon: TrendingUp, color: '#059669', bg: 'rgba(5,150,105,0.08)',
+    name: 'financeiro e DRE',
+    desc: 'Saiba exatamente quanto cada imóvel rende por mês. DRE completo, fluxo de caixa, conciliação bancária OFX e relatório formatado para declarar no Imposto de Renda.',
+  },
+  {
+    n: '04', icon: BarChart3, color: '#6366F1', bg: 'rgba(99,102,241,0.08)',
+    name: 'relatórios e DIMOB',
+    desc: 'Relatórios mensais e anuais prontos para baixar. DIMOB gerado automaticamente para cumprir a obrigação fiscal sem precisar de contador só para isso.',
+  },
+  {
+    n: '05', icon: Building2, color: '#0B0073', bg: 'rgba(11,0,115,0.07)',
+    name: 'imóveis e unidades',
+    desc: 'Cadastre empreendimentos, unidades, fotos e documentos em um lugar só. Veja o status de cada imóvel — vago, alugado ou em manutenção — sem precisar ligar para ninguém.',
+  },
+  {
+    n: '06', icon: MessageSquare, color: '#25D366', bg: 'rgba(37,211,102,0.10)',
+    name: 'whatsapp com inquilinos',
+    desc: 'Responda mensagens dos seus inquilinos sem misturar com o celular pessoal. Histórico de conversa, cobranças e documentos do mesmo contato em um único lugar.',
+  },
+  {
+    n: '07', icon: FolderOpen, color: '#2E7BEA', bg: 'rgba(46,123,234,0.08)',
     name: 'documentos',
-    desc: 'Templates prontos por categoria e geração automática em PDF, com armazenamento auditado por imóvel e contrato.',
+    desc: 'Templates de documentos prontos para cada situação: vistoria, rescisão, aditivo. Armazenamento organizado por imóvel e contrato, acessível de qualquer lugar.',
   },
   {
-    n: '06', icon: TrendingUp, color: '#059669', bg: 'rgba(5,150,105,0.08)',
-    name: 'relatórios',
-    desc: 'Relatórios semanal, mensal e DIMOB para prestação de contas, obrigações fiscais e tomada de decisão.',
+    n: '08', icon: CalendarDays, color: '#0B0073', bg: 'rgba(11,0,115,0.07)',
+    name: 'agenda de vencimentos',
+    desc: 'Nunca perca um prazo. Alertas de vencimento de contrato, vistorias, renovações e reajustes programados chegam antes que o problema apareça.',
   },
   {
-    n: '07', icon: MessageSquare, color: '#25D366', bg: 'rgba(37,211,102,0.10)',
-    name: 'whatsapp integrado',
-    desc: 'Instâncias conectadas via integração inteligente, painel de CRM ao lado do chat e controle de créditos.',
+    n: '09', icon: Users, color: '#7B2FBE', bg: 'rgba(123,47,190,0.08)',
+    name: 'inquilinos e contatos',
+    desc: 'Ficha completa de cada inquilino com histórico de pagamentos, contratos assinados e conversas. Tudo vinculado automaticamente, sem precisar procurar em vários lugares.',
   },
   {
-    n: '08', icon: Sparkles, color: '#F59E0B', bg: 'rgba(245,158,11,0.08)',
-    name: 'chat ia',
-    desc: 'Assistente de IA com créditos mensais para resumir conversas, gerar respostas e acelerar a rotina do corretor.',
-  },
-  {
-    n: '09', icon: BarChart3, color: '#6366F1', bg: 'rgba(99,102,241,0.08)',
-    name: 'contatos',
-    desc: 'Base centralizada com filtros avançados, vínculo automático com conversas, propostas e negociações em aberto.',
-  },
-  {
-    n: '10', icon: CalendarDays, color: '#0B0073', bg: 'rgba(11,0,115,0.07)',
-    name: 'agenda e equipe',
-    desc: 'Agenda integrada com visitas e prazos, gestão de equipe com papéis (plano Business), tema claro/escuro e PWA instalável.',
+    n: '10', icon: Sparkles, color: '#F59E0B', bg: 'rgba(245,158,11,0.08)',
+    name: 'assistente de IA',
+    desc: 'Tire dúvidas sobre a Lei do Inquilinato, calcule reajuste na hora e gere textos de cobrança ou cláusulas de contrato. Disponível 24 horas, sem fila de atendimento.',
   },
 ];
 
