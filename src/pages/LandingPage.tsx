@@ -142,22 +142,26 @@ export default function LandingPage() {
       <LpHeader />
       <main className="scroll-smooth">
         <LpHero />
+        <Suspense fallback={<div style={{ minHeight: 200 }} aria-hidden />}>
+          <LpDemo />
+        </Suspense>
         <section className="py-12 md:py-16 bg-muted/30 border-y border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <SocialProofNumbers />
           </div>
         </section>
         <LpPainPoints />
-        <Suspense fallback={<div className="h-32" />}>
-          <LpFeatures />
-        </Suspense>
+        <div style={{ background: 'var(--lp-bg-alt, #F3F2EE)' }}>
+          <Suspense fallback={<div className="h-32" />}>
+            <LpFeatures />
+          </Suspense>
+        </div>
         <LpComparison />
-        <LpTestimonials />
+        <div style={{ background: 'var(--lp-bg-alt, #F3F2EE)' }}>
+          <LpTestimonials />
+        </div>
         <LpStats />
         <LpModules />
-        <Suspense fallback={<div style={{ minHeight: 600 }} aria-hidden />}>
-          <LpDemo />
-        </Suspense>
         <Suspense fallback={<div className="h-32" />}>
           <LpBlogPreview />
         </Suspense>
