@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { LpHeader } from '@/components/landing/v2/LpHeader';
 import { LpFooter } from '@/components/landing/v2/LpFooter';
+import { SEOHead } from '@/components/SEOHead';
 import '@/components/landing/v2/lp.css';
 import { PricingSection } from '@/components/landing/PricingSection';
 import {
