@@ -146,6 +146,94 @@ export default function LandingPage() {
         title="Gestão de aluguel automática para proprietários de imóveis"
         description="Boleto no dia certo, reajuste IGPM/IPCA aplicado sozinho e relatório de IR pronto. O Slotimob cuida do seu aluguel sem precisar de imobiliária. Teste grátis 7 dias."
         path={segment.slug ? `/lp/${segment.slug}` : '/'}
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'Slotimob',
+            url: 'https://slotimob.com.br',
+            logo: 'https://slotimob.com.br/sloti-logo.png',
+            description: 'Plataforma de gestão de aluguel para proprietários de imóveis no Brasil.',
+            foundingDate: '2024',
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: 'Curitiba',
+              addressRegion: 'PR',
+              addressCountry: 'BR',
+            },
+            contactPoint: {
+              '@type': 'ContactPoint',
+              contactType: 'customer support',
+              availableLanguage: 'Portuguese',
+            },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'Slotimob',
+            url: 'https://slotimob.com.br',
+            description: 'Gestão de aluguel automática para proprietários de imóveis.',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: 'https://slotimob.com.br/blog?q={search_term_string}',
+              'query-input': 'required name=search_term_string',
+            },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: [
+              {
+                '@type': 'Question',
+                name: 'Preciso de cartão de crédito para testar?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Não. O trial de 7 dias é completamente gratuito e não exige cartão. Você só informa dados de pagamento quando decidir assinar um plano pago.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Como funciona o trial de 7 dias?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Ao criar sua conta, você tem acesso completo ao plano PRO por 7 dias sem pagar nada. No 8º dia, sua conta é convertida automaticamente para o plano gratuito (Start) se você não assinar. Você não perde seus dados.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Posso cancelar quando quiser?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Sim. Não há fidelidade. Você cancela em 1 clique nas configurações da conta, sem burocracia e sem multa.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'O Slotimob funciona para quem tem só 1 ou 2 imóveis?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Sim, foi feito para isso. O plano Start (gratuito) suporta até 5 imóveis. O PRO suporta até 50. Se você tem 1 imóvel e quer parar de cobrar pelo WhatsApp, o Slotimob resolve em 30 minutos.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'O boleto é emitido pelo Slotimob ou pelo meu banco?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Os boletos são emitidos via Asaas, parceiro financeiro homologado pelo Banco Central. O valor do aluguel cai direto na sua conta — o Slotimob não fica com o dinheiro em nenhum momento.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Meus dados ficam seguros?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Sim. Todos os dados são armazenados com criptografia em servidores no Brasil (AWS São Paulo). Seguimos a LGPD e não compartilhamos suas informações com terceiros.',
+                },
+              },
+            ],
+          },
+        ]}
       />
       <LpHeader />
       <main className="scroll-smooth">
