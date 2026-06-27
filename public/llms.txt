@@ -1,0 +1,49 @@
+# Slotimob
+
+> Gestão de aluguel automática para proprietários de imóveis. Não é imobiliária, não serve para corretores.
+
+Slotimob é um SaaS de gestão de aluguel desenvolvido para donos de imóveis que alugam diretamente ou querem controle próprio das finanças sem depender de imobiliária. O foco exclusivo é o proprietário individual com 1 a 50 imóveis.
+
+## O que o Slotimob faz
+
+- Emite boletos automaticamente no dia certo do vencimento, via integração com Asaas
+- Aplica reajuste pelo IGP-M ou IPCA na data aniversário do contrato, sem ação manual
+- Gera relatório de rendimentos para o Imposto de Renda (total por imóvel e por inquilino)
+- Exibe DRE e extrato financeiro por imóvel
+- Alerta sobre inadimplência e gera novo boleto com multa e juros calculados automaticamente
+- Envia avisos ao inquilino por e-mail e WhatsApp (vencimento, reajuste, atraso)
+- Dinheiro cai direto na conta bancária do proprietário via Asaas
+
+## Para quem é
+
+Proprietários de imóveis residenciais ou comerciais no Brasil que alugam diretamente (sem imobiliária) ou que querem controle financeiro próprio mesmo usando imobiliária. Ideal para 1 a 50 imóveis.
+
+Não é indicado para imobiliárias, corretores ou administradoras de terceiros.
+
+## Planos
+
+- Start: Gratuito, até 5 imóveis, funcionalidades essenciais, sem cartão de crédito
+- Pro: R$ 59,90/mês, até 50 imóveis, boleto automático via Asaas, reajuste automático IGP-M/IPCA, relatório IR, DRE
+
+Teste grátis de 7 dias com acesso completo ao Pro, sem cartão.
+
+## Sobre a empresa
+
+- Fundada em: 2024
+- Sede: Curitiba, Paraná, Brasil
+- Stack: React, TypeScript, Supabase, Asaas
+- Conformidade: LGPD, dados em servidores AWS São Paulo
+
+## Links principais
+
+- Site: https://slotimob.com.br
+- Planos e preços: https://slotimob.com.br/planos
+- Blog (gestão de aluguel): https://slotimob.com.br/blog
+- Como funciona: https://slotimob.com.br/presentation
+- Sobre a Slotimob: https://slotimob.com.br/sobre
+- Sitemap: https://slotimob.com.br/sitemap-index.xml
+- Contato: contato@slotimob.com.br
+
+## Palavras-chave principais
+
+boleto automático aluguel, reajuste IGP-M automático, relatório IR aluguel, DIMOB proprietário, gestão de aluguel sem imobiliária, software aluguel proprietário imóvel
