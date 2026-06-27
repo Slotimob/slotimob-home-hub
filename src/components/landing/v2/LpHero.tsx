@@ -26,7 +26,7 @@ export function LpHero() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium mb-6">
               <Home className="h-3.5 w-3.5" />
-              Para quem gere imóveis sozinho
+              Controle total dos seus imóveis alugados
             </div>
 
             {/* H1 */}
@@ -39,7 +39,7 @@ export function LpHero() {
             {/* Subhead */}
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl">
               Boletos, contratos, cobranças e reajustes no automático.
-              Para quem gere de 1 a 50 imóveis sem depender de imobiliária.
+              Para gestores e proprietários que buscam controle total dos seus imóveis, independentemente da quantidade.
             </p>
 
             {/* CTAs */}
