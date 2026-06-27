@@ -133,7 +133,7 @@ export default function Blog() {
         <link rel="alternate" type="application/rss+xml" title="Slotimob Blog RSS" href="/rss.xml" />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
+      <div data-lp="v2" className="min-h-screen bg-background">
         <LpHeader />
 
         <main className="pt-24 pb-16">
