@@ -92,7 +92,7 @@ const plans: PlanDef[] = [
   'Integrações Avançadas',
   'Expansão sob demanda'],
 
-  cta: 'Garantir Vaga',
+  cta: 'Contratar Business',
   popular: false,
   bestValue: true
 }];
