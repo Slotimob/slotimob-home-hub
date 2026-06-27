@@ -1,4 +1,4 @@
-import { MessageCircle, TrendingDown, AlertCircle, FileX, type LucideIcon } from 'lucide-react';
+import { MessageCircle, TrendingDown, AlertCircle, Calculator, type LucideIcon } from 'lucide-react';
 import SectionWrapper from '@/components/marketing/SectionWrapper';
 import { Reveal } from '../v2/Reveal';
 
