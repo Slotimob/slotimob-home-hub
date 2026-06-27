@@ -358,7 +358,7 @@ export function PricingSection() {
               'w-full',
               isPro ?
               'bg-accent hover:bg-accent/90 text-accent-foreground shadow-md' :
-              'border-border text-foreground hover:bg-muted'
+              'border-border text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors'
             )}
             onClick={() => handleCheckout(plan.id)}
             disabled={isLoading}>
