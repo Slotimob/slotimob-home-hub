@@ -60,7 +60,7 @@ export function LpModules() {
         <div className="grid grid-cols-12 gap-6 mb-16 md:mb-24">
           <div className="col-span-12 md:col-span-3">
             <Reveal>
-              <p className="lp-eyebrow">03 — produto</p>
+              <p className="lp-eyebrow">o que está incluído</p>
             </Reveal>
           </div>
           <div className="col-span-12 md:col-span-9">
