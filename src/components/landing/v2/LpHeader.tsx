@@ -57,16 +57,22 @@ export function LpHeader() {
         {/* Desktop — floating pill */}
         <div className="hidden md:flex items-center">
           <nav className="lp-pill" aria-label="Navegação principal">
-            {NAV.map((n) => (
-              <a
-                key={n.href}
-                href={n.href}
-                onClick={(e) => onAnchor(e, n.href)}
-                className="lp-pill-link"
-              >
-                {n.label}
-              </a>
-            ))}
+            {NAV.map((n) =>
+              n.route ? (
+                <Link key={n.href} to={n.href} className="lp-pill-link">
+                  {n.label}
+                </Link>
+              ) : (
+                <a
+                  key={n.href}
+                  href={n.href}
+                  onClick={(e) => onAnchor(e, n.href)}
+                  className="lp-pill-link"
+                >
+                  {n.label}
+                </a>
+              )
+            )}
 
             <span className="lp-pill-divider" aria-hidden="true" />
 
@@ -74,7 +80,7 @@ export function LpHeader() {
               entrar
             </Link>
 
-            <Link to="/auth?trial=pro" className="lp-btn lp-btn-primary">
+            <Link to="/checkout?plan=pro&trial=true" className="lp-btn lp-btn-primary">
               começar grátis
             </Link>
           </nav>
