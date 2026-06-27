@@ -29,8 +29,8 @@ export function LpComparison() {
             Quanto você perde fazendo manual?
           </h2>
           <p className="text-lg text-primary-foreground/70 mt-3 max-w-2xl mx-auto">
-            ⏱️ 4 horas/mês economizadas + até R$ 1.800/ano em reajustes que você
-            deixou de perder.
+            Controle financeiro que antes levava horas, agora em minutos. Sem
+            planilhas. Sem reajuste esquecido.
           </p>
         </div>
       </Reveal>
