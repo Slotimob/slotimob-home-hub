@@ -304,6 +304,16 @@ export default function Plans() {
         title="Planos e preços — Slotimob para proprietários de imóveis"
         description="Start grátis para até 5 imóveis. Pro a partir de R$ 59,90/mês com boleto automático, reajuste IGPM/IPCA, DRE e relatório IR. Teste 7 dias sem cartão."
         path="/planos"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://slotimob.com.br/' },
+              { '@type': 'ListItem', position: 2, name: 'Planos e Preços', item: 'https://slotimob.com.br/planos' },
+            ],
+          },
+        ]}
       />
       <LpHeader />
       <main>

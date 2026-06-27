@@ -21,6 +21,16 @@ export default function Presentation() {
           title="Como funciona o Slotimob — veja cada módulo em 2 minutos"
           description="Boleto automático, reajuste IGPM/IPCA, DRE, DIMOB e WhatsApp de cobrança. Explore como o Slotimob organiza a gestão do seu aluguel sem imobiliária."
           path="/apresentacao"
+          structuredData={[
+            {
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://slotimob.com.br/' },
+                { '@type': 'ListItem', position: 2, name: 'Como Funciona', item: 'https://slotimob.com.br/apresentacao' },
+              ],
+            },
+          ]}
         />
         <LpHeader />
 

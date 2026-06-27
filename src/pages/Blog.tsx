@@ -125,9 +125,19 @@ export default function Blog() {
   return (
     <>
       <SEOHead
-        title="Blog - Conteúdo para o Mercado Imobiliário"
+        title="Blog — Gestão de aluguel para proprietários de imóveis"
         description="Dicas e guias práticos para quem gere imóveis sem depender de imobiliária. Boletos, contratos, reajustes e gestão financeira."
         path="/blog"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://slotimob.com.br/' },
+              { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://slotimob.com.br/blog' },
+            ],
+          },
+        ]}
       />
       <Helmet>
         <link rel="alternate" type="application/rss+xml" title="Slotimob Blog RSS" href="/rss.xml" />
