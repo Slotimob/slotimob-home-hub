@@ -143,9 +143,10 @@ const categories: Category[] = [
   {
     name: 'Cobranças',
     rows: [
-      { feature: 'Boletos automáticos', start: false, pro: true, business: true },
+      { feature: 'Boleto e Pix automático para inquilino', start: false, pro: true, business: true },
+      { feature: 'Régua de cobrança automática', start: false, pro: true, business: true },
       { feature: 'Multa e juros automáticos', start: false, pro: true, business: true },
-      { feature: 'Régua de cobrança', start: false, pro: true, business: true },
+      { feature: 'Reajuste IGPM/IPCA automático', start: false, pro: true, business: true },
     ],
   },
   {
@@ -167,6 +168,8 @@ const categories: Category[] = [
     rows: [
       { feature: 'Dashboard DRE', start: true, pro: true, business: true },
       { feature: 'Relatório IR', start: false, pro: true, business: true },
+      { feature: 'Conciliação bancária (OFX)', start: false, pro: true, business: true },
+      { feature: 'Exportação DIMOB', start: false, pro: true, business: true },
     ],
   },
   {
