@@ -20,15 +20,15 @@ import { cn } from '@/lib/utils';
 /* ─── DIFERENCIAL ─── */
 function DiferencialSection() {
   return (
-    <section className="py-14 md:py-20" style={{ background: 'var(--lp-ink)', borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
+    <section className="py-14 md:py-20" style={{ background: '#fff', borderBottom: '1px solid var(--lp-line)' }}>
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
-        <p className="lp-eyebrow mb-4" style={{ color: 'var(--lp-accent)' }}>diferencial slotimob</p>
-        <h2 className="lp-display text-[32px] md:text-[56px] leading-tight mb-4" style={{ color: '#fff' }}>
+        <p className="lp-eyebrow mb-4">diferencial slotimob</p>
+        <h2 className="lp-display text-[32px] md:text-[56px] leading-tight mb-4" style={{ color: 'var(--lp-ink)' }}>
           Gestão Financeira Completa
           <br />
           <em className="lp-serif" style={{ fontStyle: 'italic', color: 'var(--lp-accent)' }}>inclusa</em> na assinatura.
         </h2>
-        <p className="text-[15px] md:text-[17px] max-w-[56ch] leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+        <p className="text-[15px] md:text-[17px] max-w-[56ch] leading-relaxed" style={{ color: 'var(--lp-ink-soft)' }}>
           DRE, conciliação bancária (OFX), DIMOB, relatórios mensais e anuais — sem cobrar módulo extra. Em outras plataformas isso custa a parte. Aqui está incluso nos planos pagos.
         </p>
       </div>
@@ -96,12 +96,12 @@ function renderCell(v: Cell) {
 }
 
 function ComparisonTable() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   return (
-    <section className="py-12 md:py-16" style={{ borderBottom: '1px solid var(--lp-line)' }}>
+    <section className="py-12 md:py-16" style={{ background: 'var(--lp-ink)', borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
-        <p className="lp-eyebrow mb-3">comparativo de recursos</p>
-        <h2 className="lp-display text-[28px] md:text-[40px] mb-8" style={{ color: 'var(--lp-ink)' }}>
+        <p className="lp-eyebrow mb-3" style={{ color: 'var(--lp-accent)' }}>comparativo de recursos</p>
+        <h2 className="lp-display text-[28px] md:text-[40px] mb-8" style={{ color: '#fff' }}>
           O que está incluso em cada plano
         </h2>
         <Collapsible open={open} onOpenChange={setOpen}>
