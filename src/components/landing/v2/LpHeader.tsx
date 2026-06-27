@@ -105,20 +105,32 @@ export function LpHeader() {
       >
         <div className="px-6 pt-10 pb-12 flex flex-col h-full">
           <nav className="flex flex-col gap-1" aria-label="Navegação mobile">
-            {NAV.map((n, i) => (
-              <a
-                key={n.href}
-                href={n.href}
-                onClick={(e) => onAnchor(e, n.href)}
-                className="lp-display text-[40px] py-3 border-b"
-                style={{ borderColor: 'var(--lp-line)', color: 'var(--lp-ink)', transitionDelay: `${i * 40}ms` }}
-              >
-                {n.label}
-              </a>
-            ))}
+            {NAV.map((n, i) =>
+              n.route ? (
+                <Link
+                  key={n.href}
+                  to={n.href}
+                  onClick={() => setOpen(false)}
+                  className="lp-display text-[40px] py-3 border-b"
+                  style={{ borderColor: 'var(--lp-line)', color: 'var(--lp-ink)', transitionDelay: `${i * 40}ms` }}
+                >
+                  {n.label}
+                </Link>
+              ) : (
+                <a
+                  key={n.href}
+                  href={n.href}
+                  onClick={(e) => onAnchor(e, n.href)}
+                  className="lp-display text-[40px] py-3 border-b"
+                  style={{ borderColor: 'var(--lp-line)', color: 'var(--lp-ink)', transitionDelay: `${i * 40}ms` }}
+                >
+                  {n.label}
+                </a>
+              )
+            )}
           </nav>
           <div className="mt-auto pt-10 flex flex-col gap-3">
-            <Link to="/auth?trial=pro" className="lp-btn lp-btn-primary justify-center w-full">
+            <Link to="/checkout?plan=pro&trial=true" className="lp-btn lp-btn-primary justify-center w-full">
               começar grátis
             </Link>
             <Link to="/auth" className="lp-btn lp-btn-ghost justify-center w-full">
