@@ -33,7 +33,7 @@ const painPoints: PainPoint[] = [
 
 export function LpPainPoints() {
   return (
-    <SectionWrapper background="white" id="dores">
+    <SectionWrapper background="white" id="como-funciona">
       <Reveal>
         <div className="max-w-3xl mx-auto text-center mb-12 md:mb-16">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">

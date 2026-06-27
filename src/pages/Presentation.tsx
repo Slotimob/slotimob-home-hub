@@ -5,7 +5,8 @@ import { ArrowRight, Play, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SEOHead } from '@/components/SEOHead';
 import { LandingThemeProvider } from '@/components/LandingThemeProvider';
-import { LandingHeader } from '@/components/landing/LandingHeader';
+import { LpHeader } from '@/components/landing/v2/LpHeader';
+import '@/components/landing/v2/lp.css';
 import { FooterSection } from '@/components/landing/FooterSection';
 import { modules } from '@/components/presentation/TourModuleData';
 import { TourModuleCard } from '@/components/presentation/TourModuleCard';
@@ -82,7 +83,7 @@ export default function Presentation() {
         description="Explore cada módulo do SLOTIMOB: CRM, Financeiro, Ativos e IA. Descubra como transformar sua gestão imobiliária."
         path="/presentation"
       />
-      <LandingHeader />
+      <LpHeader />
 
       <main className="min-h-screen bg-background">
         {/* Hero */}

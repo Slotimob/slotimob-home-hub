@@ -6,7 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SEOHead } from '@/components/SEOHead';
-import { LandingHeader } from '@/components/landing/LandingHeader';
+import { LpHeader } from '@/components/landing/v2/LpHeader';
+import '@/components/landing/v2/lp.css';
 import { FooterSection } from '@/components/landing/FooterSection';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, ArrowRight, Loader2, MapPin, X } from 'lucide-react';
@@ -133,7 +134,7 @@ export default function Blog() {
       </Helmet>
 
       <div className="min-h-screen bg-background">
-        <LandingHeader />
+        <LpHeader />
 
         <main className="pt-24 pb-16">
           <div className="container mx-auto px-4">

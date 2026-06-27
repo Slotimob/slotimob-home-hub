@@ -1,7 +1,8 @@
 import { Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, UserPlus, Sparkles, CheckCircle2, X, ChevronDown } from 'lucide-react';
-import { LandingHeader } from '@/components/landing/LandingHeader';
+import { LpHeader } from '@/components/landing/v2/LpHeader';
+import '@/components/landing/v2/lp.css';
 import { FooterSection } from '@/components/landing/FooterSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import { SectionWrapper } from '@/components/marketing';
@@ -297,7 +298,7 @@ function PricingFaq() {
 export default function Plans() {
   return (
     <div className="min-h-screen bg-background">
-      <LandingHeader showTrustBar />
+      <LpHeader />
       <main className="pt-24">
         <PricingHero />
         <PricingSection />
