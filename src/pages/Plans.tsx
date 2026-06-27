@@ -288,14 +288,14 @@ export default function Plans() {
     <div data-lp="v2" className="min-h-screen bg-background">
       <LpHeader />
       <main>
+        <DiferencialSection />
+        <ComparisonTable />
         <PricingHero />
         <div className="py-10 md:py-14" style={{ borderBottom: '1px solid var(--lp-line)' }}>
           <div className="max-w-[1280px] mx-auto px-5 md:px-10">
             <PricingSection />
           </div>
         </div>
-        <DiferencialSection />
-        <ComparisonTable />
         <AddonsSection />
         <PricingFaq />
       </main>
