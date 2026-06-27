@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { SlotiSymbol } from './SlotiSymbol';
 
@@ -12,7 +12,17 @@ const NAV: { label: string; href: string; route: boolean }[] = [
   { label: 'Blog',            href: '/blog',          route: true },
 ];
 
+function isNavActive(href: string, pathname: string): boolean {
+  if (!href.startsWith('/')) return false;
+  if (href === '/') return pathname === '/';
+  if (href === '/presentation') {
+    return pathname === '/apresentacao' || pathname === '/presentation';
+  }
+  return pathname === href || pathname.startsWith(href + '/');
+}
+
 export function LpHeader() {
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -31,13 +41,18 @@ export function LpHeader() {
   const onAnchor = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!href.startsWith('#')) return;
     e.preventDefault();
-    const el = document.querySelector(href);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (location.pathname === '/') {
+      const el = document.querySelector(href);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.location.href = '/' + href;
+    }
     setOpen(false);
   };
 
   return (
     <header
+      data-lp="v2"
       className="fixed inset-x-0 top-0 z-50 transition-all duration-300"
       style={{
         background: scrolled ? 'rgba(250, 248, 244, 0.65)' : 'transparent',
@@ -46,7 +61,7 @@ export function LpHeader() {
       }}
     >
       <div className="max-w-[1280px] mx-auto px-5 md:px-10 h-16 md:h-20 flex items-center justify-between">
-        {/* Logo — isolated, no background */}
+        {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Slotimob, ir para o início">
           <SlotiSymbol size={30} />
           <span className="lp-display text-[24px] md:text-[26px] leading-none" style={{ color: 'var(--lp-ink)' }}>
@@ -57,9 +72,27 @@ export function LpHeader() {
         {/* Desktop — floating pill */}
         <div className="hidden md:flex items-center">
           <nav className="lp-pill" aria-label="Navegação principal">
-            {NAV.map((n) =>
-              n.route ? (
-                <Link key={n.href} to={n.href} className="lp-pill-link">
+            {NAV.map((n) => {
+              const active = isNavActive(n.href, location.pathname);
+              return n.route ? (
+                <Link
+                  key={n.href}
+                  to={n.href}
+                  className="lp-pill-link"
+                  style={active ? { color: 'var(--lp-accent)', display: 'inline-flex', alignItems: 'center', gap: '5px' } : { display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
+                  {active && (
+                    <span
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        background: '#22c55e',
+                        flexShrink: 0,
+                        display: 'inline-block',
+                      }}
+                    />
+                  )}
                   {n.label}
                 </Link>
               ) : (
@@ -71,8 +104,8 @@ export function LpHeader() {
                 >
                   {n.label}
                 </a>
-              )
-            )}
+              );
+            })}
 
             <span className="lp-pill-divider" aria-hidden="true" />
 
@@ -100,20 +133,40 @@ export function LpHeader() {
       {/* Mobile full-screen menu */}
       <div
         className={`md:hidden fixed inset-0 top-16 transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{ background: 'var(--lp-bg)' }}
+        style={{ background: 'var(--lp-bg, #FAF8F4)' }}
         aria-hidden={!open}
       >
         <div className="px-6 pt-10 pb-12 flex flex-col h-full">
           <nav className="flex flex-col gap-1" aria-label="Navegação mobile">
-            {NAV.map((n, i) =>
-              n.route ? (
+            {NAV.map((n, i) => {
+              const active = isNavActive(n.href, location.pathname);
+              return n.route ? (
                 <Link
                   key={n.href}
                   to={n.href}
                   onClick={() => setOpen(false)}
                   className="lp-display text-[40px] py-3 border-b"
-                  style={{ borderColor: 'var(--lp-line)', color: 'var(--lp-ink)', transitionDelay: `${i * 40}ms` }}
+                  style={{
+                    borderColor: 'var(--lp-line)',
+                    color: active ? 'var(--lp-accent)' : 'var(--lp-ink)',
+                    transitionDelay: `${i * 40}ms`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
                 >
+                  {active && (
+                    <span
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: '#22c55e',
+                        flexShrink: 0,
+                        display: 'inline-block',
+                      }}
+                    />
+                  )}
                   {n.label}
                 </Link>
               ) : (
@@ -122,12 +175,16 @@ export function LpHeader() {
                   href={n.href}
                   onClick={(e) => onAnchor(e, n.href)}
                   className="lp-display text-[40px] py-3 border-b"
-                  style={{ borderColor: 'var(--lp-line)', color: 'var(--lp-ink)', transitionDelay: `${i * 40}ms` }}
+                  style={{
+                    borderColor: 'var(--lp-line)',
+                    color: 'var(--lp-ink)',
+                    transitionDelay: `${i * 40}ms`,
+                  }}
                 >
                   {n.label}
                 </a>
-              )
-            )}
+              );
+            })}
           </nav>
           <div className="mt-auto pt-10 flex flex-col gap-3">
             <Link to="/checkout?plan=pro&trial=true" className="lp-btn lp-btn-primary justify-center w-full">
