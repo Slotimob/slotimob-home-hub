@@ -63,6 +63,9 @@ function MetricCell({ metric, visible }: { metric: Metric; visible: boolean }) {
         <span className="text-accent">{metric.suffix}</span>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">{metric.label}</p>
+      <p className="mt-1 text-xs text-muted-foreground/70 leading-snug max-w-[180px] mx-auto">
+        {metric.detail}
+      </p>
     </div>
   );
 }
