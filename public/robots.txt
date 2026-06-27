@@ -5,4 +5,4 @@ Disallow: /dashboard
 Disallow: /checkout
 Disallow: /admin
 
-Sitemap: https://slotimob.com.br/sitemap.xml
+Sitemap: https://slotimob.com.br/sitemap-index.xml
