@@ -69,7 +69,7 @@ export function LpModules() {
           </div>
           <div className="col-span-12 md:col-span-9">
             <Reveal delay={80}>
-              <h2 className="lp-display text-[44px] md:text-[88px]">
+              <h2 className="lp-display text-[40px] md:text-[64px] xl:text-[88px]">
                 dez módulos.
                 <br />
                 <em className="lp-serif" style={{ fontStyle: 'italic', color: 'var(--lp-accent)' }}>uma</em> só plataforma.
