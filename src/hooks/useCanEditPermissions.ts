@@ -23,12 +23,14 @@ export function useCanEditPermissions(): CanEditPermissionsResult {
     queryKey: ['is-super-admin', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
-      const { data } = await supabase
-        .from('profiles')
-        .select('is_super_admin')
-        .eq('id', user.id)
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'super_admin')
         .maybeSingle();
-      return data?.is_super_admin === true;
+      if (error) return false;
+      return !!data;
     },
     enabled: !!user?.id,
     staleTime: 10 * 60 * 1000,

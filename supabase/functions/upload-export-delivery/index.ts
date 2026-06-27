@@ -40,13 +40,9 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("is_super_admin")
-      .eq("id", user.id)
-      .single();
+    const { data: isSuperAdminFlag } = await supabaseAdmin.rpc("is_super_admin", { p_user_id: user.id });
 
-    if (!profile?.is_super_admin) {
+    if (isSuperAdminFlag !== true) {
       return new Response(JSON.stringify({ error: "Acesso negado" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
