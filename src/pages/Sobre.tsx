@@ -134,7 +134,7 @@ export default function Sobre() {
                 variant="outline"
                 className="border-accent text-accent hover:bg-accent/10"
               >
-                <Link to="/contato">Ir para a página de contato</Link>
+                <a href="mailto:contato@slotimob.com.br">Enviar e-mail</a>
               </Button>
             </div>
           </section>
