@@ -58,7 +58,7 @@ export function LpHero() {
               <span className="opacity-40">·</span>
               <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4 text-accent" /> Cancele quando quiser</span>
               <span className="opacity-40">·</span>
-              <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4 text-accent" /> Setup em 5 minutos</span>
+              <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4 text-accent" /> Configuração em até 30 minutos</span>
             </div>
           </div>
 
