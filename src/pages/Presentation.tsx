@@ -18,8 +18,8 @@ export default function Presentation() {
     <LandingThemeProvider>
       <div data-lp="v2">
         <SEOHead
-          title="Product Tour — Slotimob"
-          description="Explore cada módulo do Slotimob: CRM, Financeiro, Contratos, WhatsApp e IA. Descubra como transformar sua gestão imobiliária."
+          title="Como funciona o Slotimob — veja cada módulo em 2 minutos"
+          description="Boleto automático, reajuste IGPM/IPCA, DRE, DIMOB e WhatsApp de cobrança. Explore como o Slotimob organiza a gestão do seu aluguel sem imobiliária."
           path="/apresentacao"
         />
         <LpHeader />
