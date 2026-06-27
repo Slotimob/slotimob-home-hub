@@ -13,7 +13,7 @@ export function LpStats() {
     <section className="py-16 md:py-24" style={{ borderTop: '1px solid var(--lp-line)', borderBottom: '1px solid var(--lp-line)' }}>
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
         <Reveal>
-          <p className="lp-eyebrow mb-10">02 — em números</p>
+          <p className="lp-eyebrow mb-10">plataforma completa</p>
         </Reveal>
         <div className="grid grid-cols-2 md:grid-cols-4">
           {STATS.map((s, i) => (
