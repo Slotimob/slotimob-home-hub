@@ -72,7 +72,7 @@ const DataExport = React.lazy(() => import("./pages/DataExport"));
 const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
 const Plans = React.lazy(() => import("./pages/Plans"));
 const Sobre = React.lazy(() => import("./pages/Sobre"));
-const Contato = React.lazy(() => import("./pages/Contato"));
+
 const TermosDeUso = React.lazy(() => import("./pages/TermosDeUso"));
 const PoliticaDePrivacidade = React.lazy(() => import("./pages/PoliticaDePrivacidade"));
 
@@ -124,7 +124,7 @@ const App = () => (
               <Route path="/checkout/success" element={<CheckoutSuccess />} />
              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
              <Route path="/sobre" element={<Sobre />} />
-             <Route path="/contato" element={<Contato />} />
+             
              <Route path="/termos-de-uso" element={<TermosDeUso />} />
              <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
 
