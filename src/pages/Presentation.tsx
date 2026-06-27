@@ -148,7 +148,7 @@ export default function Presentation() {
             size="lg"
             className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-5 text-base font-semibold shadow-2xl rounded-full"
           >
-            <Link to="/auth">
+            <Link to="/checkout?plan=pro&trial=true">
               Começar Agora
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
