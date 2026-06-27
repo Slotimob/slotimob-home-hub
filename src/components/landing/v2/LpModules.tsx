@@ -55,7 +55,7 @@ const MODULES = [
 
 export function LpModules() {
   return (
-    <section id="modulos" className="py-24 md:py-36">
+    <section id="modulos" className="py-16 md:py-24">
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
         <div className="grid grid-cols-12 gap-6 mb-16 md:mb-24">
           <div className="col-span-12 md:col-span-3">
@@ -81,42 +81,43 @@ export function LpModules() {
           </div>
         </div>
 
-        <ol className="space-y-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {MODULES.map((m, i) => (
-            <ModuleRow key={m.n} {...m} index={i} />
+            <Reveal key={m.n} delay={i * 35} y={20}>
+              <div
+                className="group relative flex flex-col gap-3 p-6 rounded-2xl border transition-all duration-300 cursor-default hover:shadow-lg hover:-translate-y-1"
+                style={{
+                  borderColor: 'var(--lp-line)',
+                  background: 'var(--lp-card)',
+                }}
+              >
+                <span
+                  className="lp-num lp-serif text-[13px]"
+                  style={{ color: 'var(--lp-mute)' }}
+                >
+                  {m.n}
+                </span>
+                <h3
+                  className="lp-serif text-[22px] leading-tight transition-colors duration-300 group-hover:text-[var(--lp-accent)]"
+                  style={{ color: 'var(--lp-ink)' }}
+                >
+                  {m.name}
+                </h3>
+                <p
+                  className="text-[13px] leading-relaxed flex-1"
+                  style={{ color: 'var(--lp-ink-soft)' }}
+                >
+                  {m.desc}
+                </p>
+                <span
+                  className="w-6 h-0.5 transition-all duration-300 group-hover:w-10"
+                  style={{ background: 'var(--lp-accent)' }}
+                />
+              </div>
+            </Reveal>
           ))}
-        </ol>
+        </div>
       </div>
     </section>
-  );
-}
-
-function ModuleRow({ n, name, desc, index }: { n: string; name: string; desc: string; index: number }) {
-  return (
-    <Reveal delay={index * 40} y={24}>
-      <li
-        className="grid grid-cols-12 gap-4 md:gap-8 py-8 md:py-12 group cursor-default"
-        style={{ borderTop: '1px solid var(--lp-line)' }}
-      >
-        <div className="col-span-2 md:col-span-1">
-          <span className="lp-num lp-serif text-[28px] md:text-[44px]" style={{ color: 'var(--lp-mute)' }}>
-            {n}
-          </span>
-        </div>
-        <div className="col-span-10 md:col-span-4">
-          <h3 className="lp-serif text-[26px] md:text-[40px]" style={{
-            color: 'var(--lp-ink)',
-            transition: 'color .3s ease',
-          }}>
-            {name}
-          </h3>
-        </div>
-        <div className="col-span-12 md:col-span-6 md:col-start-7">
-          <p className="text-[14px] md:text-[16px] leading-relaxed" style={{ color: 'var(--lp-ink-soft)' }}>
-            {desc}
-          </p>
-        </div>
-      </li>
-    </Reveal>
   );
 }
