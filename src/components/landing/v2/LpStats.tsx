@@ -2,10 +2,10 @@ import { useCountUp } from './useReveal';
 import { Reveal } from './Reveal';
 
 const STATS = [
-  { num: 10, suffix: '', label: 'módulos integrados' },
-  { num: 1, suffix: ' clique', label: 'para gerar DIMOB' },
-  { num: 100, suffix: '%', label: 'WhatsApp dentro do CRM' },
-  { num: 24, suffix: '/7', label: 'auditoria e backups' },
+  { num: 10, suffix: '+', label: 'módulos integrados', detail: 'CRM, financeiro, contratos, WhatsApp, IA e mais em um único sistema' },
+  { num: 15, suffix: 'min', label: 'para emitir todos os boletos', detail: 'Automatize cobranças que antes levavam horas toda virada de mês' },
+  { num: 100, suffix: '%', label: 'WhatsApp dentro do CRM', detail: 'Atenda inquilinos e leads sem sair da plataforma' },
+  { num: 24, suffix: '/7', label: 'backups e auditoria', detail: 'Seus dados protegidos e rastreáveis a qualquer momento' },
 ];
 
 export function LpStats() {
