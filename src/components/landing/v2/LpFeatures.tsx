@@ -433,10 +433,10 @@ export function LpFeatures() {
           icon={FileSignature}
           badge="Contratos"
           title="Contrato digital assinado em 5 minutos"
-          description="Crie contratos completos, envie para assinatura eletrônica e tenha validade jurídica garantida. Sem cartório, sem papel."
+          description="Crie contratos completos e envie para assinatura eletrônica. Sem cartório, sem papel."
           bullets={[
             'Modelos prontos de contrato de locação',
-            'Assinatura eletrônica com valor jurídico',
+            'Contratos digitais e documentos organizados no sistema',
             'Reajuste automático no vencimento (IGPM/IPCA)',
           ]}
           mockup={<MockContrato />}
