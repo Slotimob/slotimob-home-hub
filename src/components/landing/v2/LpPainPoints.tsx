@@ -17,7 +17,7 @@ const painPoints: PainPoint[] = [
   {
     icon: TrendingDown,
     question: 'Esqueceu de reajustar?',
-    consequence: 'R$ 1.800+/ano perdidos por imóvel. O IGPM não espera.',
+    consequence: 'R$ 1.500+/ano perdidos por imóvel. O IGPM não espera.',
   },
   {
     icon: AlertCircle,

@@ -9,14 +9,14 @@ interface Metric {
 
 const metrics: Metric[] = [
   {
-    value: 312,
-    suffix: '+',
+    value: 27,
+    suffix: '',
     label: 'proprietários ativos',
     detail: 'Gestores que já automatizaram cobranças e contratos na plataforma',
   },
   {
-    value: 1180,
-    suffix: '+',
+    value: 180,
+    suffix: '',
     label: 'imóveis gerenciados',
     detail: 'Unidades com boletos, reajustes e inadimplência controlados pelo sistema',
   },
