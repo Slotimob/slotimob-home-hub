@@ -4,9 +4,9 @@ import { PricingSection } from '../PricingSection';
 
 export function LpPricing() {
   return (
-    <section id="planos" className="py-24 md:py-36" style={{ borderTop: '1px solid var(--lp-line)' }}>
+    <section id="planos" className="py-14 md:py-20" style={{ borderTop: '1px solid var(--lp-line)' }}>
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
-        <div className="grid grid-cols-12 gap-6 mb-12 md:mb-16">
+        <div className="grid grid-cols-12 gap-6 mb-8 md:mb-10">
           <div className="col-span-12 md:col-span-4">
             <Reveal>
               <p className="lp-eyebrow">planos e preços</p>
@@ -35,7 +35,7 @@ export function LpPricing() {
         </div>
 
         <Reveal delay={200}>
-          <div className="mt-10 text-center space-y-3">
+          <div className="mt-6 text-center space-y-3">
             <p className="text-[12px]" style={{ color: 'var(--lp-mute)' }}>
               add-ons disponíveis · usuário extra · pack +50 unidades · créditos whatsapp · créditos ia
             </p>
