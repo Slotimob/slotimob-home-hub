@@ -17,6 +17,12 @@ export default function CheckoutCancel() {
       <header className="border-b bg-card">
         <div className="container mx-auto max-w-6xl px-4 py-3 flex items-center gap-3">
           <Link to="/" className="text-primary font-bold text-lg">Slotimob</Link>
+          <Link
+            to="/"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            ← Voltar ao site
+          </Link>
           <div className="flex-1" />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield className="h-3.5 w-3.5" />

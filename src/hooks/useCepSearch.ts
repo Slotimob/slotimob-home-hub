@@ -1,90 +1,56 @@
 import { useState, useCallback } from 'react';
-import { searchCep, CepData, formatCep } from '@/services/cepService';
-import { useToast } from '@/hooks/use-toast';
 
-export interface CepSearchResult extends CepData {
-  success: boolean;
+export interface CepData {
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  erro?: boolean;
 }
 
-interface UseCepSearchOptions {
-  /** Whether to include neighborhood in address field when there's no separate neighborhood field */
-  includeNeighborhoodInAddress?: boolean;
+export interface UseCepSearchReturn {
+  cepData: CepData | null;
+  isSearching: boolean;
+  cepError: string | null;
+  searchCep: (cep: string) => Promise<void>;
+  clearCepData: () => void;
 }
 
-export function useCepSearch(options: UseCepSearchOptions = {}) {
-  const { toast } = useToast();
-  const [isLoadingCep, setIsLoadingCep] = useState(false);
+export function useCepSearch(): UseCepSearchReturn {
+  const [cepData, setCepData] = useState<CepData | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
 
-  /**
-   * Search CEP and return address data
-   * Shows toast on error
-   */
-  const searchCepData = useCallback(async (cep: string): Promise<CepSearchResult | null> => {
-    const cleanCep = cep.replace(/\D/g, '');
-    
-    // Only search if we have 8 digits
-    if (cleanCep.length !== 8) {
-      return null;
-    }
+  const searchCep = useCallback(async (rawCep: string) => {
+    const digits = rawCep.replace(/\D/g, '');
+    if (digits.length !== 8) return;
 
-    setIsLoadingCep(true);
+    setIsSearching(true);
+    setCepError(null);
 
     try {
-      const data = await searchCep(cleanCep);
-      return { ...data, success: true };
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao buscar CEP',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return null;
-    } finally {
-      setIsLoadingCep(false);
-    }
-  }, [toast]);
-
-  /**
-   * Handle CEP blur event - searches and updates form data
-   * @param cep - Current CEP value
-   * @param updateFields - Function to update form fields
-   */
-  const handleCepBlur = useCallback(async (
-    cep: string,
-    updateFields: (data: {
-      address?: string;
-      neighborhood?: string;
-      city?: string;
-      state?: string;
-    }) => void
-  ) => {
-    const result = await searchCepData(cep);
-    
-    if (result) {
-      const updates: Record<string, string> = {
-        city: result.city,
-        state: result.state,
-      };
-
-      // If we have a neighborhood field, use it separately
-      // Otherwise, append to address
-      if (options.includeNeighborhoodInAddress && result.neighborhood) {
-        updates.address = result.address 
-          ? `${result.address}, ${result.neighborhood}` 
-          : result.neighborhood;
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      if (!res.ok) throw new Error('Erro na consulta');
+      const data: CepData = await res.json();
+      if (data.erro) {
+        setCepError('CEP não encontrado');
+        setCepData(null);
       } else {
-        updates.address = result.address;
-        updates.neighborhood = result.neighborhood;
+        setCepData(data);
+        setCepError(null);
       }
-
-      updateFields(updates);
+    } catch {
+      setCepError('Falha ao buscar CEP. Preencha manualmente.');
+      setCepData(null);
+    } finally {
+      setIsSearching(false);
     }
-  }, [searchCepData, options.includeNeighborhoodInAddress]);
+  }, []);
 
-  return {
-    isLoadingCep,
-    searchCepData,
-    handleCepBlur,
-    formatCep,
-  };
+  const clearCepData = useCallback(() => {
+    setCepData(null);
+    setCepError(null);
+  }, []);
+
+  return { cepData, isSearching, cepError, searchCep, clearCepData };
 }
