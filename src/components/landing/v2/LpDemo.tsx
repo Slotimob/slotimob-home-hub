@@ -27,17 +27,17 @@ export default function LpDemo() {
                 className="text-[15px] md:text-[17px] leading-relaxed mb-8 max-w-[48ch]"
                 style={{ color: 'rgba(255,255,255,0.7)' }}
               >
-                Em menos de 3 minutos você vê o CRM, o financeiro, os contratos e o
-                WhatsApp integrado funcionando de verdade.
+                Em menos de 3 minutos você vê boletos saindo no automático, reajuste
+                aplicado sem você pedir e quanto cada imóvel rendeu no mês.
               </p>
             </Reveal>
             <Reveal delay={140}>
               <ul className="space-y-3 mb-10">
                 {[
-                  'Pipeline kanban com drag-and-drop',
-                  'Financeiro com DRE e conciliação OFX',
-                  'Contratos em PDF gerados em um clique',
-                  'Chat WhatsApp integrado ao CRM',
+                  'Boleto gerado e enviado no dia certo — sem você tocar em nada',
+                  'Reajuste IGPM ou IPCA calculado e aplicado na data do contrato',
+                  'DRE com resultado líquido por imóvel, pronto para o IR',
+                  'Inquilino recebe cobrança e responde pelo WhatsApp do sistema',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-[14px]" style={{ color: 'rgba(255,255,255,0.75)' }}>
                     <span className="mt-1 w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(20,217,180,0.2)' }}>
