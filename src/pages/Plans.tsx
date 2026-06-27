@@ -247,6 +247,9 @@ function ComparisonTable() {
                   ))}
                 </tbody>
               </table>
+              <p className="mt-3 text-xs text-muted-foreground text-center">
+                * A validação jurídica das assinaturas está em desenvolvimento e será disponibilizada em breve.
+              </p>
             </div>
           </CollapsibleContent>
         </Collapsible>
