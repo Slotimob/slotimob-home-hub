@@ -36,12 +36,14 @@ const AdminDataRequests = () => {
   const { data: isSuperAdmin, isLoading: checkingAdmin } = useQuery({
     queryKey: ['is-super-admin', user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('is_super_admin')
-        .eq('id', user!.id)
-        .single();
-      return data?.is_super_admin === true;
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user!.id)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      if (error) return false;
+      return !!data;
     },
     enabled: !!user?.id,
   });
