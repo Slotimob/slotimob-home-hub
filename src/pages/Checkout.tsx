@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { cn } from '@/lib/utils';
+import { useCepSearch } from '@/hooks/useCepSearch';
 
 // ============================================================================
 // Types & Meta
@@ -120,6 +121,17 @@ export default function Checkout() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Fiscal data
+  const [cpfCnpj, setCpfCnpj] = useState('');
+  const [phone, setPhone] = useState('');
+  const [cep, setCep] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [uf, setUf] = useState('');
+  const { cepData, isSearching: cepSearching, cepError, searchCep } = useCepSearch();
+
   // Checkout
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -140,6 +152,15 @@ export default function Checkout() {
       setIsAnnual(false);
     }
   }, [selectedPlan]);
+
+  useEffect(() => {
+    if (cepData) {
+      setStreet(cepData.logradouro || '');
+      setNeighborhood(cepData.bairro || '');
+      setCity(cepData.localidade || '');
+      setUf(cepData.uf || '');
+    }
+  }, [cepData]);
 
   const allPlans: PlanCardData[] = useMemo(
     () => [
@@ -277,6 +298,34 @@ export default function Checkout() {
   const ctaDisabled =
     isCheckingOut || (!user && (!name || !email || !password));
 
+  const maskCpfCnpj = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 14);
+    if (digits.length <= 11) {
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    return digits
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  };
+
+  const maskPhone = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 10) {
+      return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').trim();
+    }
+    return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').trim();
+  };
+
+  const maskCep = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 8);
+    return digits.replace(/(\d{5})(\d{0,3})/, '$1-$2').replace(/-$/, '');
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Header */}
@@ -284,6 +333,12 @@ export default function Checkout() {
         <div className="container mx-auto max-w-6xl px-4 py-3 flex items-center gap-3">
           <Link to="/" className="text-primary font-bold text-lg">
             Slotimob
+          </Link>
+          <Link
+            to="/"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            ← Voltar ao site
           </Link>
           <div className="flex-1" />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -556,6 +611,82 @@ export default function Checkout() {
                   </p>
                 </>
               )}
+            </div>
+
+            {/* Dados Fiscais */}
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+              <h3 className="font-semibold text-foreground">Dados fiscais</h3>
+              <p className="text-xs text-muted-foreground">
+                Necessário para emissão da nota fiscal e geração do boleto/pix via Asaas.
+              </p>
+
+              <div className="space-y-3">
+                <Input
+                  placeholder="CPF ou CNPJ"
+                  value={cpfCnpj}
+                  onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
+                  inputMode="numeric"
+                />
+
+                <Input
+                  placeholder="Telefone / WhatsApp"
+                  value={phone}
+                  onChange={(e) => setPhone(maskPhone(e.target.value))}
+                  inputMode="tel"
+                />
+
+                <div className="relative">
+                  <Input
+                    placeholder="CEP"
+                    value={cep}
+                    inputMode="numeric"
+                    onChange={(e) => {
+                      const masked = maskCep(e.target.value);
+                      setCep(masked);
+                      if (masked.replace(/\D/g, '').length === 8) {
+                        searchCep(masked);
+                      }
+                    }}
+                  />
+                  {cepSearching && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                  {cepError && <p className="text-xs text-destructive mt-1">{cepError}</p>}
+                </div>
+
+                <div className="grid grid-cols-[1fr_80px] gap-2">
+                  <Input
+                    placeholder="Rua / Avenida"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Nº"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                  />
+                </div>
+
+                <Input
+                  placeholder="Bairro"
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                />
+
+                <div className="grid grid-cols-[1fr_60px] gap-2">
+                  <Input
+                    placeholder="Cidade"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
+                  <Input
+                    placeholder="UF"
+                    value={uf}
+                    maxLength={2}
+                    onChange={(e) => setUf(e.target.value.toUpperCase())}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Payment methods info */}
