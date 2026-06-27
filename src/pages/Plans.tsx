@@ -268,8 +268,8 @@ function PricingFaq() {
       a: 'Sim. Você pode fazer upgrade ou downgrade a qualquer momento. No upgrade, a diferença de valor é cobrada proporcionalmente.',
     },
     {
-      q: 'O preço Early Adopter é para sempre?',
-      a: 'Sim. O preço fica travado enquanto a assinatura estiver ativa. Se cancelar e reativar, pode perder o desconto.',
+      q: 'O preço da Promoção de Lançamento é para sempre?',
+      a: 'Sim. O preço fica travado enquanto a assinatura estiver ativa. Se cancelar e reativar, pode perder o desconto de lançamento.',
     },
     {
       q: 'Quais formas de pagamento são aceitas?',
