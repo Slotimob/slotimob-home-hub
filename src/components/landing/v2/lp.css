@@ -5,6 +5,10 @@
    Type: Sofia Sans (Google Fonts).
    ============================================================ */
 
+:root {
+  --lp-bg-alt: #F3F2EE;
+}
+
 [data-lp="v2"] {
   --lp-bg: #FFFFFF;
   --lp-bg-alt: #F5F4FB;
