@@ -464,7 +464,7 @@ export function LpFeatures() {
           title="Todos os seus inquilinos, contratos e vencimentos em um lugar"
           description="Pipeline visual de locações: saiba o status de cada contrato, qual vence em breve e quem está em atraso."
           bullets={[
-            'Pipeline Kanban por status de contrato',
+            'Painel com todos os contratos ativos, quem renova e quem está em atraso',
             'Alertas automáticos de vencimento',
             'Histórico completo por inquilino',
           ]}
