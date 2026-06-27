@@ -1,7 +1,6 @@
 /**
- * SLOTI brand symbol — organic isometric cube made of three blob-cell faces,
- * representing "o encaixe das diversas ferramentas em um único sistema".
- * Top face: turquesa #2FC9AF · Left face: roxo #6024B4 · Right face: azul-escuro #0B0073
+ * SLOTI brand symbol — globo orgânico em três faces coloridas.
+ * Top arc: turquesa #14D9B4 · Bottom-left: roxo #7B2FBE · Bottom-right: navy #0B0073
  */
 interface SlotiSymbolProps {
   size?: number;
@@ -24,37 +23,37 @@ export function SlotiSymbol({ size = 28, className = '', title = 'Sloti' }: Slot
       <title>{title}</title>
       <defs>
         <filter id="sloti-blob" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="b" />
           <feColorMatrix
             in="b"
             mode="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 14 -7"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8"
             result="g"
           />
           <feComposite in="SourceGraphic" in2="g" operator="atop" />
         </filter>
       </defs>
 
-      {/* Right face — azul-escuro */}
+      {/* Top arc — turquesa */}
+      <g filter="url(#sloti-blob)" fill="#14D9B4">
+        <ellipse cx="32" cy="14" rx="16" ry="8" />
+        <ellipse cx="32" cy="22" rx="18" ry="7" />
+        <ellipse cx="32" cy="29" rx="14" ry="6" />
+        <ellipse cx="32" cy="34" rx="9"  ry="4" />
+      </g>
+
+      {/* Bottom-left — roxo */}
+      <g filter="url(#sloti-blob)" fill="#7B2FBE">
+        <ellipse cx="20" cy="36" rx="12" ry="6" transform="rotate(-55 20 36)" />
+        <ellipse cx="15" cy="46" rx="11" ry="6" transform="rotate(-55 15 46)" />
+        <ellipse cx="25" cy="52" rx="9"  ry="5" transform="rotate(-55 25 52)" />
+      </g>
+
+      {/* Bottom-right — navy */}
       <g filter="url(#sloti-blob)" fill="#0B0073">
-        <ellipse cx="42" cy="34" rx="11" ry="7" transform="rotate(60 42 34)" />
-        <ellipse cx="44" cy="44" rx="9" ry="6" transform="rotate(60 44 44)" />
-        <ellipse cx="38" cy="50" rx="8" ry="5" transform="rotate(60 38 50)" />
-      </g>
-
-      {/* Left face — roxo */}
-      <g filter="url(#sloti-blob)" fill="#6024B4">
-        <ellipse cx="22" cy="34" rx="11" ry="7" transform="rotate(-60 22 34)" />
-        <ellipse cx="20" cy="44" rx="9" ry="6" transform="rotate(-60 20 44)" />
-        <ellipse cx="26" cy="50" rx="8" ry="5" transform="rotate(-60 26 50)" />
-      </g>
-
-      {/* Top face — turquesa */}
-      <g filter="url(#sloti-blob)" fill="#2FC9AF">
-        <ellipse cx="32" cy="22" rx="12" ry="7" />
-        <ellipse cx="24" cy="26" rx="8" ry="5" />
-        <ellipse cx="40" cy="26" rx="8" ry="5" />
-        <ellipse cx="32" cy="32" rx="9" ry="5" />
+        <ellipse cx="44" cy="36" rx="12" ry="6" transform="rotate(55 44 36)" />
+        <ellipse cx="49" cy="46" rx="11" ry="6" transform="rotate(55 49 46)" />
+        <ellipse cx="39" cy="52" rx="9"  ry="5" transform="rotate(55 39 52)" />
       </g>
     </svg>
   );

@@ -432,8 +432,8 @@ export function LpFeatures() {
           index={2}
           icon={FileSignature}
           badge="Contratos"
-          title="Contrato digital assinado em 5 minutos"
-          description="Crie contratos completos e envie para assinatura eletrônica. Sem cartório, sem papel."
+          title="Contratos e documentos"
+          description="Modelos prontos inclusos. Geração de PDF em um clique. Controle automático de vigências, reajustes e alertas de vencimento."
           bullets={[
             'Modelos prontos de contrato de locação',
             'Contratos digitais e documentos organizados no sistema',
