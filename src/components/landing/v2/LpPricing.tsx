@@ -4,7 +4,7 @@ import { PricingSection } from '../PricingSection';
 
 export function LpPricing() {
   return (
-    <section id="planos" className="py-24 md:py-36" style={{ borderTop: '1px solid var(--lp-line)' }}>
+    <section id="planos" className="py-14 md:py-20" style={{ borderTop: '1px solid var(--lp-line)' }}>
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
         <div className="grid grid-cols-12 gap-6 mb-8 md:mb-10">
           <div className="col-span-12 md:col-span-4">

@@ -49,7 +49,7 @@ export function LpFooter() {
               </span>
             </Link>
             <p className="mt-4 text-[14px] max-w-[36ch]" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              A gestão imobiliária inteira em um só sistema. Para corretores e imobiliárias.
+              A gestão imobiliária inteira em um só sistema. Para donos de imóveis, corretores e imobiliárias.
             </p>
           </div>
 
@@ -85,7 +85,7 @@ export function LpFooter() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.55)' }}
         >
           <p>© {year} slotimob — todos os direitos reservados.</p>
-          <p>feito no brasil · 🇧🇷</p>
+          <p>Nascido em Curitiba · 🇧🇷</p>
         </div>
       </div>
     </footer>
