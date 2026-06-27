@@ -298,7 +298,7 @@ function PricingFaq() {
 export default function Plans() {
   return (
     <div className="min-h-screen bg-background">
-      <LandingHeader showTrustBar />
+      <LpHeader />
       <main className="pt-24">
         <PricingHero />
         <PricingSection />
