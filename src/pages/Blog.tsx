@@ -8,7 +8,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { SEOHead } from '@/components/SEOHead';
 import { LpHeader } from '@/components/landing/v2/LpHeader';
 import '@/components/landing/v2/lp.css';
-import { FooterSection } from '@/components/landing/FooterSection';
+import { LpFooter } from '@/components/landing/v2/LpFooter';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, ArrowRight, Loader2, MapPin, X } from 'lucide-react';
 import { format } from 'date-fns';
@@ -364,7 +364,7 @@ export default function Blog() {
           </div>
         </main>
 
-        <FooterSection />
+        <LpFooter />
       </div>
     </>
   );
