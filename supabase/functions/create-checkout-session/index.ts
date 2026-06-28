@@ -185,8 +185,56 @@ serve(async (req) => {
         })
         .eq("user_id", userId);
 
+      // PIX: buscar QR code inline
+      if (asaasBillingType === "PIX") {
+        let firstPayment: any = null;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const paymentsData = await asaasRequest(`/subscriptions/${sub.id}/payments`);
+          if (paymentsData?.data?.length > 0) {
+            firstPayment = paymentsData.data[0];
+            break;
+          }
+          if (attempt < 4) await new Promise(r => setTimeout(r, 1500));
+        }
+        if (firstPayment) {
+          const pixData = await asaasRequest(`/payments/${firstPayment.id}/pixQrCode`);
+          return new Response(JSON.stringify({
+            type: "pix",
+            pix: {
+              encodedImage: pixData.encodedImage,
+              payload: pixData.payload,
+              expirationDate: pixData.expirationDate,
+            },
+          }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+
+      // BOLETO: buscar bankSlipUrl inline
+      if (asaasBillingType === "BOLETO") {
+        let firstPayment: any = null;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const paymentsData = await asaasRequest(`/subscriptions/${sub.id}/payments`);
+          if (paymentsData?.data?.length > 0) {
+            firstPayment = paymentsData.data[0];
+            break;
+          }
+          if (attempt < 4) await new Promise(r => setTimeout(r, 1500));
+        }
+        if (firstPayment) {
+          return new Response(JSON.stringify({
+            type: "boleto",
+            boleto: {
+              bankSlipUrl: firstPayment.bankSlipUrl,
+              barCode: firstPayment.barCode ?? null,
+              dueDate: firstPayment.dueDate,
+            },
+          }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+
+      // CREDIT_CARD ou fallback
       const invoiceUrl = sub.invoiceUrl || `https://www.asaas.com/s/${sub.id}`;
-      return new Response(JSON.stringify({ url: invoiceUrl }), {
+      return new Response(JSON.stringify({ type: "redirect", url: invoiceUrl }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
