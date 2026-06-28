@@ -1,46 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Target, Shield, Users, MessageCircle, MapPin, Calendar, Home, Check } from 'lucide-react';
+import { Target, Shield, Users, MessageCircle, MapPin, Calendar, Home } from 'lucide-react';
 import { SEOHead } from '@/components/SEOHead';
 import { LpHeader } from '@/components/landing/v2/LpHeader';
 import { LpFooter } from '@/components/landing/v2/LpFooter';
-
-const PLANS = [
-  {
-    name: 'Start',
-    price: 'Grátis',
-    sub: 'para sempre · sem cartão',
-    limit: 'Até 5 imóveis',
-    features: [
-      'Cadastro de imóveis e inquilinos',
-      'Contratos de locação',
-      'Boletos manuais',
-      'Dashboards financeiros',
-      'Relatório básico de IR',
-      '7 dias de acesso Pro completo',
-    ],
-    cta: 'Começar grátis',
-    href: '/auth',
-    highlight: false,
-  },
-  {
-    name: 'Pro',
-    price: 'R$ 59,90',
-    sub: 'por mês · cancele quando quiser',
-    limit: 'Até 50 imóveis',
-    features: [
-      'Tudo do Start, mais:',
-      'Boleto automático via Asaas',
-      'Reajuste automático IGP-M/IPCA',
-      'Relatório completo de IR',
-      'DRE por imóvel',
-      'WhatsApp integrado',
-      'Suporte prioritário',
-    ],
-    cta: 'Testar 7 dias grátis',
-    href: '/auth',
-    highlight: true,
-  },
-] as const;
+import { LpPricing } from '@/components/landing/v2/LpPricing';
+import '@/components/landing/v2/lp.css';
 
 export default function Sobre() {
   return (
@@ -65,7 +29,7 @@ export default function Sobre() {
         <LpHeader />
 
         {/* ── HERO ────────────────────────────────────────────── */}
-        <section className="lp-dark pt-32 pb-24">
+        <section className="lp-dark pt-32 pb-16">
           <div className="max-w-[1280px] mx-auto px-5 md:px-10 text-center">
             <p className="lp-eyebrow mb-5">sobre a slotimob</p>
             <h1
@@ -81,7 +45,7 @@ export default function Sobre() {
         </section>
 
         {/* ── HISTÓRIA ────────────────────────────────────────── */}
-        <section className="py-24 bg-background">
+        <section className="py-16 bg-background">
           <div className="max-w-3xl mx-auto px-5 md:px-10">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
@@ -96,7 +60,7 @@ export default function Sobre() {
         </section>
 
         {/* ── MISSÃO + PARA QUEM ─────────────────────────────── */}
-        <section className="py-24 bg-muted/30">
+        <section className="py-16 bg-muted/30">
           <div className="max-w-[1280px] mx-auto px-5 md:px-10">
             <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
               <div>
@@ -126,7 +90,7 @@ export default function Sobre() {
         </section>
 
         {/* ── NÚMEROS ─────────────────────────────────────────── */}
-        <section className="py-24 bg-background">
+        <section className="py-16 bg-background">
           <div className="max-w-[1280px] mx-auto px-5 md:px-10">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-12 text-center">
               Slotimob em números
@@ -158,7 +122,7 @@ export default function Sobre() {
         </section>
 
         {/* ── TECNOLOGIA E SEGURANÇA ──────────────────────────── */}
-        <section className="py-24 bg-muted/30">
+        <section className="py-16 bg-muted/30">
           <div className="max-w-3xl mx-auto px-5 md:px-10">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
@@ -172,67 +136,11 @@ export default function Sobre() {
           </div>
         </section>
 
-        {/* ── PLANOS ──────────────────────────────────────────── */}
-        <section className="py-24 bg-background">
-          <div className="max-w-[1280px] mx-auto px-5 md:px-10">
-            <div className="text-center mb-14">
-              <p className="lp-eyebrow mb-3">planos</p>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Simples assim</h2>
-              <p className="mt-3 text-muted-foreground max-w-sm mx-auto">
-                Comece grátis. Evolua quando precisar. Sem contrato, sem surpresa.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-              {PLANS.map((plan) => (
-                <div
-                  key={plan.name}
-                  className={`rounded-2xl border p-8 flex flex-col ${
-                    plan.highlight
-                      ? 'border-accent bg-accent/5 shadow-lg shadow-accent/10'
-                      : 'border-border bg-card'
-                  }`}
-                >
-                  {plan.highlight && (
-                    <span className="text-xs font-semibold text-accent bg-accent/10 rounded-full px-3 py-1 w-fit mb-5">
-                      mais escolhido
-                    </span>
-                  )}
-                  <p className="text-xl font-bold text-foreground">{plan.name}</p>
-                  <p className="text-3xl font-bold text-foreground mt-2">{plan.price}</p>
-                  <p className="text-sm text-muted-foreground">{plan.sub}</p>
-                  <p className="text-sm font-semibold text-accent mt-2 mb-6">{plan.limit}</p>
-                  <ul className="space-y-3 flex-1 mb-8">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                        <Check className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    to={plan.href}
-                    className={`w-full text-center py-3 px-6 rounded-xl font-semibold text-sm transition-all ${
-                      plan.highlight
-                        ? 'bg-accent text-white hover:opacity-90'
-                        : 'border border-accent text-accent hover:bg-accent/5'
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
-                </div>
-              ))}
-            </div>
-            <p className="text-center mt-10 text-sm text-muted-foreground">
-              Quer ver todos os detalhes?{' '}
-              <Link to="/planos" className="text-accent hover:underline font-medium">
-                Ver página de planos →
-              </Link>
-            </p>
-          </div>
-        </section>
+        {/* ── PLANOS (idêntico ao da homepage) ───────────────── */}
+        <LpPricing />
 
         {/* ── FALE COM A GENTE (WhatsApp) ─────────────────────── */}
-        <section className="lp-dark py-24">
+        <section className="lp-dark py-16">
           <div className="max-w-[1280px] mx-auto px-5 md:px-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center mx-auto mb-6">
               <MessageCircle className="h-8 w-8 text-green-400" />
