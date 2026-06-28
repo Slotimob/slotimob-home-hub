@@ -135,6 +135,7 @@ export default function Checkout() {
   // Checkout
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [billingType, setBillingType] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
 
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
   const { slots } = useEarlyAdopterCount();
@@ -333,6 +334,7 @@ export default function Checkout() {
           product_type: 'subscription',
           plan_id: selectedPlan,
           billing_cycle: isAnnual ? 'annual' : 'monthly',
+          billing_type: billingType,
         },
       });
 
@@ -747,24 +749,33 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Payment methods info */}
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-              <p className="text-sm font-medium text-muted-foreground mb-3">
-                Formas de pagamento aceitas
-              </p>
+
+            {/* Forma de pagamento */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-foreground mb-2">Forma de pagamento</p>
               <div className="grid grid-cols-3 gap-2">
-                {['Boleto', 'PIX', 'Cartão'].map((m) => (
-                  <div
-                    key={m}
-                    className="flex items-center justify-center rounded-lg border border-border bg-muted/30 py-3"
-                  >
-                    <span className="text-xs text-muted-foreground font-medium">{m}</span>
-                  </div>
-                ))}
+                {(['PIX', 'BOLETO', 'CREDIT_CARD'] as const).map((type) => {
+                  const labels: Record<typeof type, string> = {
+                    PIX: 'PIX',
+                    BOLETO: 'Boleto',
+                    CREDIT_CARD: 'Cartão',
+                  };
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setBillingType(type)}
+                      className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
+                        billingType === type
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:border-primary/50'
+                      }`}
+                    >
+                      {labels[type]}
+                    </button>
+                  );
+                })}
               </div>
-              <p className="text-xs text-muted-foreground mt-3 text-center">
-                Você escolhe a forma na próxima tela (Asaas)
-              </p>
             </div>
 
             {/* CTA */}
