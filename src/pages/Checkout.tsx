@@ -185,8 +185,7 @@ export default function Checkout() {
   );
 
   const isEarlyAdopterAvailable = (planId: PaidPlan): boolean => {
-    const slotData = slots[planId];
-    return !!slotData && slotData.remaining > 0;
+    return true; // Sempre usa preço de Promoção de Lançamento
   };
 
   const getDisplayPrice = (planId: PaidPlan): number => {

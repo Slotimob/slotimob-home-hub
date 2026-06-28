@@ -132,13 +132,8 @@ serve(async (req) => {
       }
 
       // Early adopter: já tem lock, ou verificar vagas restantes
-      const alreadyEa = !!(subscription?.price_locked || subscription?.is_early_adopter);
-      let earlyAdopterEligible = false;
-      if (!alreadyEa) {
-        const { data: remaining } = await supabase.rpc("get_early_adopter_remaining_slots", { p_plan_id: plan_id });
-        earlyAdopterEligible = Number(remaining ?? 0) > 0;
-      }
-      const useEarlyAdopter = alreadyEa || earlyAdopterEligible;
+      // Período de Promoção de Lançamento: sempre usa preço EA
+      const useEarlyAdopter = true;
 
       const isAnnual = billing_cycle === "annual";
       let value: number;
@@ -286,9 +281,10 @@ serve(async (req) => {
     });
 
   } catch (err) {
-    console.error("[create-checkout-session]", err);
+    const errMsg = err instanceof Error ? err.message : "Erro interno ao processar checkout";
+    console.error("[create-checkout-session]", errMsg);
     return new Response(
-      JSON.stringify({ error: "Erro interno ao processar checkout" }),
+      JSON.stringify({ error: errMsg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

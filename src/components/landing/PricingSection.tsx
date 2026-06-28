@@ -117,8 +117,7 @@ export function PricingSection() {
 
   const getEarlyAdopterAvailable = (planId: PlanId): boolean => {
     if (planId === 'start') return false;
-    const slotData = slots[planId as 'essencial' | 'pro' | 'business'];
-    return !!slotData && slotData.remaining > 0;
+    return true; // Sempre exibe preço de Promoção de Lançamento
   };
 
   const getRemainingSlots = (planId: PlanId): number | null => {
