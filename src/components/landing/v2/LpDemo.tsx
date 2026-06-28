@@ -12,9 +12,6 @@ export default function LpDemo() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left — texto */}
           <div>
-            <Reveal>
-              <p className="lp-eyebrow mb-4">04 — quick peek</p>
-            </Reveal>
             <Reveal delay={60}>
               <h2 className="lp-display text-[38px] md:text-[64px] leading-none mb-6">
                 veja o sistema
