@@ -235,6 +235,8 @@ export default function Checkout() {
     setCheckoutError(null);
     setAuthError(null);
 
+    let currentUserId = user?.id;
+
     // 1. Sign up if not logged in
     if (!user) {
       if (!name || !email || !password) {
@@ -257,8 +259,65 @@ export default function Checkout() {
         setIsCheckingOut(false);
         return;
       }
+      if (signUpData.user) {
+        currentUserId = signUpData.user.id;
+      }
       toast.success('Conta criada! Bem-vindo ao Slotimob 🎉');
     }
+
+    // ── Fiscal data: validar + salvar em profiles ─────────────────────
+    const cleanCpfCnpj = cpfCnpj.replace(/\D/g, '');
+
+    if (cleanCpfCnpj && currentUserId) {
+      setIsCheckingOut(true);
+
+      if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) {
+        setCheckoutError('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
+        setIsCheckingOut(false);
+        return;
+      }
+
+      const isCpf = cleanCpfCnpj.length === 11;
+      const personType = isCpf ? 'fisica' : 'juridica';
+
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq(isCpf ? 'cpf' : 'cnpj', cleanCpfCnpj)
+        .neq('id', currentUserId)
+        .maybeSingle();
+
+      if (existing) {
+        const tipo = isCpf ? 'CPF' : 'CNPJ';
+        setCheckoutError(`Este ${tipo} já está cadastrado em outra conta. Use outro ${tipo} ou entre na conta existente.`);
+        toast.error(`${tipo} já cadastrado em outra conta.`);
+        setIsCheckingOut(false);
+        return;
+      }
+
+      const fiscalUpdate: Record<string, string | null> = {
+        cpf: isCpf ? cleanCpfCnpj : null,
+        cnpj: !isCpf ? cleanCpfCnpj : null,
+        person_type: personType,
+      };
+      if (phone) fiscalUpdate.phone = phone.replace(/\D/g, '');
+      if (cep) fiscalUpdate.address_cep = cep.replace(/\D/g, '');
+      if (street) fiscalUpdate.address_street = street;
+      if (number) fiscalUpdate.address_number = number;
+      if (neighborhood) fiscalUpdate.address_neighborhood = neighborhood;
+      if (city) fiscalUpdate.address_city = city;
+      if (uf) fiscalUpdate.address_uf = uf;
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(fiscalUpdate as any)
+        .eq('id', currentUserId);
+
+      if (profileError) {
+        console.error('Erro ao salvar dados fiscais:', profileError);
+      }
+    }
+    // ── fim do bloco fiscal ───────────────────────────────────────────
 
     // 2. Start plan = no charge
     if (selectedPlan === 'start') {
