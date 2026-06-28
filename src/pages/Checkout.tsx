@@ -29,6 +29,12 @@ import { useCepSearch } from '@/hooks/useCepSearch';
 type PaidPlan = 'pro' | 'business';
 type AnyPlan = 'start' | PaidPlan;
 
+type PaymentResult =
+  | { type: 'pix'; pix: { encodedImage: string; payload: string; expirationDate: string } }
+  | { type: 'boleto'; boleto: { bankSlipUrl: string; barCode?: string | null; dueDate?: string } }
+  | { type: 'redirect'; url: string }
+  | null;
+
 interface PlanMeta {
   id: PaidPlan;
   name: string;
@@ -136,6 +142,7 @@ export default function Checkout() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [billingType, setBillingType] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
+  const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
 
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
   const { slots } = useEarlyAdopterCount();
@@ -338,14 +345,32 @@ export default function Checkout() {
         },
       });
 
-      if (fnError || !data?.url) {
-        const msg = data?.error || fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
+      if (fnError) {
+        const msg = fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
         setCheckoutError(msg);
         toast.error(msg);
         return;
       }
 
-      window.location.href = data.url;
+      if (data?.error) {
+        setCheckoutError(data.error);
+        toast.error(data.error);
+        return;
+      }
+
+      if (data?.type === 'redirect' && data?.url) {
+        window.open(data.url, '_blank');
+        setPaymentResult(data as PaymentResult);
+      } else if (data?.type === 'pix' || data?.type === 'boleto') {
+        setPaymentResult(data as PaymentResult);
+        toast.success('Pagamento gerado! Siga as instruções abaixo.');
+      } else if (data?.url) {
+        // backwards compat
+        window.open(data.url, '_blank');
+      } else {
+        setCheckoutError('Resposta inesperada do servidor.');
+        toast.error('Resposta inesperada do servidor.');
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro inesperado.';
       setCheckoutError(msg);
@@ -778,37 +803,158 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* CTA */}
-            <div className="space-y-3">
-              {checkoutError && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
-                  <p className="text-sm text-destructive text-center">{checkoutError}</p>
-                </div>
-              )}
-
-              <Button
-                size="lg"
-                className="w-full text-base h-14 bg-accent hover:bg-accent/90 text-accent-foreground"
-                onClick={() => handleCheckout()}
-                disabled={ctaDisabled}
-              >
-                {isCheckingOut ? (
+            {/* Resultado do pagamento (PIX / Boleto / Cartão) */}
+            {paymentResult ? (
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+                {paymentResult.type === 'pix' && (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Preparando...
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">✅</span>
+                      <h3 className="font-semibold text-foreground">PIX gerado!</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Escaneie o QR code ou copie o código para pagar.
+                    </p>
+                    <div className="flex justify-center">
+                      <img
+                        src={`data:image/png;base64,${paymentResult.pix.encodedImage}`}
+                        alt="QR Code PIX"
+                        className="w-48 h-48 rounded-lg border border-border"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(paymentResult.pix.payload);
+                        toast.success('Código PIX copiado!');
+                      }}
+                    >
+                      📋 Copiar código PIX (Copia e Cola)
+                    </Button>
+                    {paymentResult.pix.expirationDate && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Válido até{' '}
+                        {new Date(paymentResult.pix.expirationDate).toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg p-3">
+                      💡 Sua assinatura é ativada automaticamente após a confirmação do PIX (geralmente instantâneo).
+                    </p>
                   </>
-                ) : selectedPlan === 'start' ? (
-                  'Começar grátis →'
-                ) : (
-                  'Assinar agora →'
                 )}
-              </Button>
 
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <Lock className="h-3 w-3" />
-                <span>Você será redirecionado para o ambiente seguro do Asaas</span>
+                {paymentResult.type === 'boleto' && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">✅</span>
+                      <h3 className="font-semibold text-foreground">Boleto gerado!</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Abra o PDF e efetue o pagamento até a data de vencimento.
+                    </p>
+                    <Button
+                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+                      onClick={() => window.open(paymentResult.boleto.bankSlipUrl, '_blank')}
+                    >
+                      Abrir boleto em PDF →
+                    </Button>
+                    {paymentResult.boleto.barCode && (
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() => {
+                          navigator.clipboard.writeText(paymentResult.boleto.barCode as string);
+                          toast.success('Linha digitável copiada!');
+                        }}
+                      >
+                        📋 Copiar linha digitável
+                      </Button>
+                    )}
+                    {paymentResult.boleto.dueDate && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Vencimento:{' '}
+                        {new Date(paymentResult.boleto.dueDate).toLocaleDateString('pt-BR')}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg p-3">
+                      💡 Sua assinatura é ativada após a compensação do boleto (1 a 3 dias úteis).
+                    </p>
+                  </>
+                )}
+
+                {paymentResult.type === 'redirect' && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">✅</span>
+                      <h3 className="font-semibold text-foreground">Redirecionado para pagamento seguro</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Uma nova aba foi aberta com a página segura do Asaas. Se não abriu,{' '}
+                      <a
+                        href={paymentResult.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-accent underline"
+                      >
+                        clique aqui
+                      </a>.
+                    </p>
+                    <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg p-3">
+                      💡 Sua assinatura é ativada após a confirmação do pagamento pelo cartão.
+                    </p>
+                  </>
+                )}
               </div>
-            </div>
+            ) : (
+              /* CTA */
+              <div className="space-y-3">
+                {checkoutError && (
+                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
+                    <p className="text-sm text-destructive text-center">{checkoutError}</p>
+                  </div>
+                )}
+
+                <Button
+                  size="lg"
+                  className="w-full text-base h-14 bg-accent hover:bg-accent/90 text-accent-foreground"
+                  onClick={() => handleCheckout()}
+                  disabled={ctaDisabled}
+                >
+                  {isCheckingOut ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      {billingType === 'PIX'
+                        ? 'Gerando PIX...'
+                        : billingType === 'BOLETO'
+                        ? 'Gerando boleto...'
+                        : 'Preparando...'}
+                    </>
+                  ) : selectedPlan === 'start' ? (
+                    'Começar grátis →'
+                  ) : (
+                    'Assinar agora →'
+                  )}
+                </Button>
+
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Lock className="h-3 w-3" />
+                  <span>
+                    {billingType === 'CREDIT_CARD'
+                      ? 'Você será redirecionado para o ambiente seguro do Asaas'
+                      : billingType === 'BOLETO'
+                      ? 'O boleto será gerado e exibido aqui'
+                      : 'O QR code PIX será gerado e exibido aqui'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
