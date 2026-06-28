@@ -29,6 +29,12 @@ import { useCepSearch } from '@/hooks/useCepSearch';
 type PaidPlan = 'pro' | 'business';
 type AnyPlan = 'start' | PaidPlan;
 
+type PaymentResult =
+  | { type: 'pix'; pix: { encodedImage: string; payload: string; expirationDate: string } }
+  | { type: 'boleto'; boleto: { bankSlipUrl: string; barCode?: string | null; dueDate?: string } }
+  | { type: 'redirect'; url: string }
+  | null;
+
 interface PlanMeta {
   id: PaidPlan;
   name: string;
