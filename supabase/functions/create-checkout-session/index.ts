@@ -281,9 +281,10 @@ serve(async (req) => {
     });
 
   } catch (err) {
-    console.error("[create-checkout-session]", err);
+    const errMsg = err instanceof Error ? err.message : "Erro interno ao processar checkout";
+    console.error("[create-checkout-session]", errMsg);
     return new Response(
-      JSON.stringify({ error: "Erro interno ao processar checkout" }),
+      JSON.stringify({ error: errMsg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
