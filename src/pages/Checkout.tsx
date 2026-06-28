@@ -345,14 +345,32 @@ export default function Checkout() {
         },
       });
 
-      if (fnError || !data?.url) {
-        const msg = data?.error || fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
+      if (fnError) {
+        const msg = fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
         setCheckoutError(msg);
         toast.error(msg);
         return;
       }
 
-      window.location.href = data.url;
+      if (data?.error) {
+        setCheckoutError(data.error);
+        toast.error(data.error);
+        return;
+      }
+
+      if (data?.type === 'redirect' && data?.url) {
+        window.open(data.url, '_blank');
+        setPaymentResult(data as PaymentResult);
+      } else if (data?.type === 'pix' || data?.type === 'boleto') {
+        setPaymentResult(data as PaymentResult);
+        toast.success('Pagamento gerado! Siga as instruções abaixo.');
+      } else if (data?.url) {
+        // backwards compat
+        window.open(data.url, '_blank');
+      } else {
+        setCheckoutError('Resposta inesperada do servidor.');
+        toast.error('Resposta inesperada do servidor.');
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro inesperado.';
       setCheckoutError(msg);
