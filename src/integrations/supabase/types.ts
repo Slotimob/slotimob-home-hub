@@ -3446,6 +3446,12 @@ export type Database = {
       profiles: {
         Row: {
           accepted_terms: boolean | null
+          address_cep: string | null
+          address_city: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_street: string | null
+          address_uf: string | null
           agency_id: string | null
           asaas_config: Json | null
           author_role: string | null
@@ -3482,6 +3488,12 @@ export type Database = {
         }
         Insert: {
           accepted_terms?: boolean | null
+          address_cep?: string | null
+          address_city?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_street?: string | null
+          address_uf?: string | null
           agency_id?: string | null
           asaas_config?: Json | null
           author_role?: string | null
@@ -3518,6 +3530,12 @@ export type Database = {
         }
         Update: {
           accepted_terms?: boolean | null
+          address_cep?: string | null
+          address_city?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_street?: string | null
+          address_uf?: string | null
           agency_id?: string | null
           asaas_config?: Json | null
           author_role?: string | null
