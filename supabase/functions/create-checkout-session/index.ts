@@ -65,7 +65,8 @@ serve(async (req) => {
     const userId = user.id;
     const userEmail = user.email ?? "";
     const body = await req.json();
-    const { product_type, plan_id, billing_cycle, addon_id, credit_pack_id } = body;
+    const { product_type, plan_id, billing_cycle, billing_type, addon_id, credit_pack_id } = body;
+    console.log("[checkout] body recebido:", JSON.stringify({ product_type, plan_id, billing_cycle, billing_type }));
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -162,9 +163,11 @@ serve(async (req) => {
       }
 
       const planName = plan_id.charAt(0).toUpperCase() + plan_id.slice(1);
+      const asaasBillingType = billing_type || "BOLETO";
+      console.log("[checkout] billing_type recebido:", billing_type, "→ usando:", asaasBillingType);
       const sub = await asaasRequest("/subscriptions", "POST", {
         customer: asaasCustomerId,
-        billingType: "UNDEFINED",
+        billingType: asaasBillingType,
         value,
         nextDueDate: nextDueDateStr(1),
         cycle,
