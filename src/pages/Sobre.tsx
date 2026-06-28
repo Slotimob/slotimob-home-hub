@@ -1,16 +1,53 @@
 import { Link } from 'react-router-dom';
-import { Target, Shield, Users, Mail, MapPin, Calendar, Home, Landmark } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Target, Shield, Users, MessageCircle, MapPin, Calendar, Home, Check } from 'lucide-react';
 import { SEOHead } from '@/components/SEOHead';
-import { LandingHeader } from '@/components/landing/LandingHeader';
-import { FooterSection } from '@/components/landing/FooterSection';
+import { LpHeader } from '@/components/landing/v2/LpHeader';
+import { LpFooter } from '@/components/landing/v2/LpFooter';
+
+const PLANS = [
+  {
+    name: 'Start',
+    price: 'Grátis',
+    sub: 'para sempre · sem cartão',
+    limit: 'Até 5 imóveis',
+    features: [
+      'Cadastro de imóveis e inquilinos',
+      'Contratos de locação',
+      'Boletos manuais',
+      'Dashboards financeiros',
+      'Relatório básico de IR',
+      '7 dias de acesso Pro completo',
+    ],
+    cta: 'Começar grátis',
+    href: '/auth',
+    highlight: false,
+  },
+  {
+    name: 'Pro',
+    price: 'R$ 59,90',
+    sub: 'por mês · cancele quando quiser',
+    limit: 'Até 50 imóveis',
+    features: [
+      'Tudo do Start, mais:',
+      'Boleto automático via Asaas',
+      'Reajuste automático IGP-M/IPCA',
+      'Relatório completo de IR',
+      'DRE por imóvel',
+      'WhatsApp integrado',
+      'Suporte prioritário',
+    ],
+    cta: 'Testar 7 dias grátis',
+    href: '/auth',
+    highlight: true,
+  },
+] as const;
 
 export default function Sobre() {
   return (
     <>
       <SEOHead
         title="Sobre a Slotimob — gestão de aluguel para proprietários"
-        description="Conheça a Slotimob: empresa curitibana fundada em 2024 para automatizar a gestão de aluguel de proprietários de imóveis. Missão, time e valores."
+        description="Conheça a Slotimob: empresa curitibana fundada em 2026 para automatizar a gestão de aluguel de proprietários de imóveis. Missão, valores e planos."
         path="/sobre"
         structuredData={[
           {
@@ -23,124 +60,215 @@ export default function Sobre() {
           },
         ]}
       />
-      <div className="min-h-screen bg-background">
-        <LandingHeader />
 
-        <main className="pt-24 pb-16">
-          {/* Sobre a Slotimob */}
-          <section className="container mx-auto px-4 max-w-3xl">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+      <div className="min-h-screen">
+        <LpHeader />
+
+        {/* ── HERO ────────────────────────────────────────────── */}
+        <section className="lp-dark pt-32 pb-24">
+          <div className="max-w-[1280px] mx-auto px-5 md:px-10 text-center">
+            <p className="lp-eyebrow mb-5">sobre a slotimob</p>
+            <h1
+              className="lp-display text-4xl md:text-5xl lg:text-6xl mb-6 max-w-3xl mx-auto leading-tight"
+              style={{ color: 'var(--lp-bg)' }}
+            >
               Construímos o Slotimob porque somos proprietários também
             </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              A Slotimob nasceu em 2024 em Curitiba, Paraná, de uma frustração real: gerenciar aluguéis sem uma ferramenta decente. Planilhas quebravam, boletos saíam errados, reajustes eram esquecidos. Decidimos resolver isso para nós — e para todo proprietário que passa pelo mesmo.
+            <p className="text-lg max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.72)' }}>
+              Nascido em Curitiba em 2026. Fundado por quem viveu na pele o caos de gerenciar aluguel sem ferramenta adequada.
             </p>
-          </section>
+          </div>
+        </section>
 
-          {/* Missão */}
-          <section className="mt-16 bg-muted/30 py-16">
-            <div className="container mx-auto px-4 max-w-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-accent/10 text-accent">
-                  <Target className="h-6 w-6" />
-                </div>
-                <h2 className="text-2xl font-bold text-foreground">Nossa missão</h2>
+        {/* ── HISTÓRIA ────────────────────────────────────────── */}
+        <section className="py-24 bg-background">
+          <div className="max-w-3xl mx-auto px-5 md:px-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
+                <Calendar className="h-6 w-6" />
               </div>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Dar ao proprietário de imóvel o mesmo controle financeiro que uma imobiliária oferece ao inquilino — mas sem pagar comissão e sem abrir mão da autonomia. Boleto no dia certo, reajuste aplicado sozinho, relatório de IR pronto quando a Receita Federal chamar.
-              </p>
-            </div>
-          </section>
-
-          {/* Para quem construímos */}
-          <section className="container mx-auto px-4 py-16 max-w-3xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-accent/10 text-accent">
-                <Users className="h-6 w-6" />
-              </div>
-              <h2 className="text-2xl font-bold text-foreground">Para quem construímos o Slotimob</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Nossa história</h2>
             </div>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Para o dono de 1, 3 ou 10 imóveis que aluga diretamente. Para quem está cansado de ligar para o banco, de perder o reajuste por esquecer a data e de passar horas em março juntando comprovantes para o IR. O Slotimob não é para imobiliárias — é para você.
+              A Slotimob nasceu em 2026 em Curitiba, Paraná, de uma frustração real: gerenciar aluguéis sem uma ferramenta decente. Planilhas quebravam, boletos saíam errados, reajustes eram esquecidos. Decidimos resolver isso para nós — e para todo proprietário que passa pelo mesmo.
             </p>
-          </section>
+          </div>
+        </section>
 
-          {/* Números */}
-          <section className="bg-muted/30 py-16">
-            <div className="container mx-auto px-4 max-w-5xl">
-              <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
-                Slotimob em números
-              </h2>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="rounded-xl border border-border bg-card p-6 text-center">
-                  <div className="p-2 rounded-lg bg-accent/10 text-accent w-fit mx-auto mb-4">
-                    <Calendar className="h-5 w-5" />
+        {/* ── MISSÃO + PARA QUEM ─────────────────────────────── */}
+        <section className="py-24 bg-muted/30">
+          <div className="max-w-[1280px] mx-auto px-5 md:px-10">
+            <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
+                    <Target className="h-6 w-6" />
                   </div>
-                  <p className="text-2xl font-bold text-foreground mb-1">2024</p>
-                  <p className="text-sm text-muted-foreground">Fundada em Curitiba, PR</p>
+                  <h2 className="text-2xl font-bold text-foreground">Nossa missão</h2>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-6 text-center">
-                  <div className="p-2 rounded-lg bg-accent/10 text-accent w-fit mx-auto mb-4">
-                    <MapPin className="h-5 w-5" />
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                  Dar ao proprietário de imóvel o mesmo controle financeiro que uma imobiliária oferece — mas sem pagar comissão e sem abrir mão da autonomia. Boleto no dia certo, reajuste aplicado sozinho, relatório de IR pronto quando a Receita Federal chamar.
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
+                    <Users className="h-6 w-6" />
                   </div>
-                  <p className="text-2xl font-bold text-foreground mb-1">Curitiba</p>
-                  <p className="text-sm text-muted-foreground">Sede no Paraná, Brasil</p>
+                  <h2 className="text-2xl font-bold text-foreground">Para quem construímos</h2>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-6 text-center">
-                  <div className="p-2 rounded-lg bg-accent/10 text-accent w-fit mx-auto mb-4">
-                    <Home className="h-5 w-5" />
-                  </div>
-                  <p className="text-2xl font-bold text-foreground mb-1">Plano Start</p>
-                  <p className="text-sm text-muted-foreground">100% gratuito para até 5 imóveis</p>
-                </div>
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                  Para o dono de 1, 3 ou 10 imóveis que aluga diretamente. Para quem está cansado de perder o reajuste por esquecer a data e de passar horas em março juntando comprovantes para o IR. O Slotimob não é para imobiliárias — é para você.
+                </p>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* Tecnologia e segurança */}
-          <section className="container mx-auto px-4 py-16 max-w-3xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-accent/10 text-accent">
+        {/* ── NÚMEROS ─────────────────────────────────────────── */}
+        <section className="py-24 bg-background">
+          <div className="max-w-[1280px] mx-auto px-5 md:px-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-12 text-center">
+              Slotimob em números
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+              <div className="rounded-2xl border border-border bg-card p-8 text-center">
+                <div className="p-3 rounded-xl bg-accent/10 text-accent w-fit mx-auto mb-5">
+                  <Calendar className="h-6 w-6" />
+                </div>
+                <p className="text-3xl font-bold text-foreground mb-2">2026</p>
+                <p className="text-sm text-muted-foreground">Fundada em Curitiba, PR</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-card p-8 text-center">
+                <div className="p-3 rounded-xl bg-accent/10 text-accent w-fit mx-auto mb-5">
+                  <MapPin className="h-6 w-6" />
+                </div>
+                <p className="text-3xl font-bold text-foreground mb-2">Curitiba</p>
+                <p className="text-sm text-muted-foreground">Sede no Paraná, Brasil</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-card p-8 text-center">
+                <div className="p-3 rounded-xl bg-accent/10 text-accent w-fit mx-auto mb-5">
+                  <Home className="h-6 w-6" />
+                </div>
+                <p className="text-3xl font-bold text-foreground mb-2">Plano Start</p>
+                <p className="text-sm text-muted-foreground">100% gratuito para até 5 imóveis</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── TECNOLOGIA E SEGURANÇA ──────────────────────────── */}
+        <section className="py-24 bg-muted/30">
+          <div className="max-w-3xl mx-auto px-5 md:px-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
                 <Shield className="h-6 w-6" />
               </div>
-              <h2 className="text-2xl font-bold text-foreground">Tecnologia e segurança</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Tecnologia e segurança</h2>
             </div>
             <p className="text-lg text-muted-foreground leading-relaxed">
               Seus dados ficam em servidores AWS em São Paulo, com criptografia em trânsito e em repouso. A Slotimob segue a LGPD — nenhum dado é compartilhado com terceiros sem sua autorização. Pagamentos processados via Asaas, fintech regulamentada pelo Banco Central.
             </p>
-          </section>
+          </div>
+        </section>
 
-          {/* Contato */}
-          <section className="bg-muted/30 py-16">
-            <div className="container mx-auto px-4 max-w-3xl text-center">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-accent/10 text-accent">
-                  <Mail className="h-6 w-6" />
-                </div>
-                <h2 className="text-2xl font-bold text-foreground">Fale com a gente</h2>
-              </div>
-              <p className="text-lg text-muted-foreground mb-6">
-                Tem dúvidas ou quer saber mais? Envie um e-mail para{' '}
-                <a
-                  href="mailto:contato@slotimob.com.br"
-                  className="text-accent hover:underline font-medium"
-                >
-                  contato@slotimob.com.br
-                </a>
-                .
+        {/* ── PLANOS ──────────────────────────────────────────── */}
+        <section className="py-24 bg-background">
+          <div className="max-w-[1280px] mx-auto px-5 md:px-10">
+            <div className="text-center mb-14">
+              <p className="lp-eyebrow mb-3">planos</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Simples assim</h2>
+              <p className="mt-3 text-muted-foreground max-w-sm mx-auto">
+                Comece grátis. Evolua quando precisar. Sem contrato, sem surpresa.
               </p>
-              <Button
-                asChild
-                variant="outline"
-                className="border-accent text-accent hover:bg-accent/10"
-              >
-                <a href="mailto:contato@slotimob.com.br">Enviar e-mail</a>
-              </Button>
             </div>
-          </section>
-        </main>
+            <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+              {PLANS.map((plan) => (
+                <div
+                  key={plan.name}
+                  className={`rounded-2xl border p-8 flex flex-col ${
+                    plan.highlight
+                      ? 'border-accent bg-accent/5 shadow-lg shadow-accent/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  {plan.highlight && (
+                    <span className="text-xs font-semibold text-accent bg-accent/10 rounded-full px-3 py-1 w-fit mb-5">
+                      mais escolhido
+                    </span>
+                  )}
+                  <p className="text-xl font-bold text-foreground">{plan.name}</p>
+                  <p className="text-3xl font-bold text-foreground mt-2">{plan.price}</p>
+                  <p className="text-sm text-muted-foreground">{plan.sub}</p>
+                  <p className="text-sm font-semibold text-accent mt-2 mb-6">{plan.limit}</p>
+                  <ul className="space-y-3 flex-1 mb-8">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    to={plan.href}
+                    className={`w-full text-center py-3 px-6 rounded-xl font-semibold text-sm transition-all ${
+                      plan.highlight
+                        ? 'bg-accent text-white hover:opacity-90'
+                        : 'border border-accent text-accent hover:bg-accent/5'
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                </div>
+              ))}
+            </div>
+            <p className="text-center mt-10 text-sm text-muted-foreground">
+              Quer ver todos os detalhes?{' '}
+              <Link to="/planos" className="text-accent hover:underline font-medium">
+                Ver página de planos →
+              </Link>
+            </p>
+          </div>
+        </section>
 
-        <FooterSection />
+        {/* ── FALE COM A GENTE (WhatsApp) ─────────────────────── */}
+        <section className="lp-dark py-24">
+          <div className="max-w-[1280px] mx-auto px-5 md:px-10 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center mx-auto mb-6">
+              <MessageCircle className="h-8 w-8 text-green-400" />
+            </div>
+            <h2
+              className="lp-display text-3xl md:text-4xl mb-4"
+              style={{ color: 'var(--lp-bg)' }}
+            >
+              Fale com a gente
+            </h2>
+            <p className="text-lg mb-10 max-w-lg mx-auto" style={{ color: 'rgba(255,255,255,0.72)' }}>
+              Tem dúvidas? Prefere conversar antes de criar sua conta? Estamos no WhatsApp — resposta em minutos.
+            </p>
+            <a
+              href="https://wa.me/5511999999999"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-4 rounded-xl text-base transition-colors"
+            >
+              <MessageCircle className="h-5 w-5" />
+              Fale com a gente no WhatsApp
+            </a>
+            <p className="mt-8 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Ou por e-mail:{' '}
+              <a
+                href="mailto:contato@slotimob.com.br"
+                className="hover:underline"
+                style={{ color: 'rgba(255,255,255,0.7)' }}
+              >
+                contato@slotimob.com.br
+              </a>
+            </p>
+          </div>
+        </section>
+
+        <LpFooter />
       </div>
     </>
   );
