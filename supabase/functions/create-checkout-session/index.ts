@@ -69,7 +69,7 @@ serve(async (req) => {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, email, phone")
+      .select("full_name, email, phone, cpf, cnpj")
       .eq("id", userId)
       .single();
 
@@ -96,6 +96,10 @@ serve(async (req) => {
       };
       if (profile?.phone) {
         customerPayload.mobilePhone = profile.phone.replace(/\D/g, "");
+      }
+      const cpfCnpjValue = (profile as any)?.cpf || (profile as any)?.cnpj;
+      if (cpfCnpjValue) {
+        customerPayload.cpfCnpj = cpfCnpjValue.replace(/\D/g, "");
       }
       const customer = await asaasRequest("/customers", "POST", customerPayload);
       asaasCustomerId = customer.id;
