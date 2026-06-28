@@ -69,7 +69,7 @@ serve(async (req) => {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, email, phone")
+      .select("full_name, email, phone, cpf, cnpj")
       .eq("id", userId)
       .single();
 
