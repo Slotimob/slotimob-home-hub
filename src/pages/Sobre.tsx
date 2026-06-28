@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Target, Shield, Users, MessageCircle, MapPin, Calendar, Home } from 'lucide-react';
 import { SEOHead } from '@/components/SEOHead';
@@ -6,7 +7,33 @@ import { LpFooter } from '@/components/landing/v2/LpFooter';
 import { LpPricing } from '@/components/landing/v2/LpPricing';
 import '@/components/landing/v2/lp.css';
 
+const FONTS_HREF =
+  'https://fonts.googleapis.com/css2?family=Sofia+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,500;1,700&family=Sofia+Sans+Condensed:wght@500;600;700&display=swap';
+
+function injectFontsOnce() {
+  if (document.getElementById('lp-v2-fonts')) return;
+  const pc1 = document.createElement('link');
+  pc1.rel = 'preconnect';
+  pc1.href = 'https://fonts.googleapis.com';
+  document.head.appendChild(pc1);
+  const pc2 = document.createElement('link');
+  pc2.rel = 'preconnect';
+  pc2.href = 'https://fonts.gstatic.com';
+  pc2.crossOrigin = 'anonymous';
+  document.head.appendChild(pc2);
+  const link = document.createElement('link');
+  link.id = 'lp-v2-fonts';
+  link.rel = 'stylesheet';
+  link.href = FONTS_HREF;
+  document.head.appendChild(link);
+}
+
 export default function Sobre() {
+  useEffect(() => {
+    injectFontsOnce();
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
+
   return (
     <>
       <SEOHead
@@ -25,7 +52,7 @@ export default function Sobre() {
         ]}
       />
 
-      <div className="min-h-screen">
+      <div data-lp="v2" className="min-h-screen overflow-x-hidden">
         <LpHeader />
 
         {/* ── HERO ────────────────────────────────────────────── */}
