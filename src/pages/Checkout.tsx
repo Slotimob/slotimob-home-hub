@@ -624,38 +624,58 @@ export default function Checkout() {
             )}
 
             {/* Addons */}
-            {selectedPlan !== 'start' && (
+            {availableAddons.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Adicionais
+                  Adicionais <span className="normal-case">(opcional)</span>
                 </p>
-                {ADDONS.map((addon) => {
-                  const selected = selectedAddons.includes(addon.id);
+                {availableAddons.map((addon) => {
+                  const qty = addonQuantities[addon.id] ?? 0;
                   return (
-                    <button
+                    <div
                       key={addon.id}
-                      type="button"
-                      onClick={() => toggleAddon(addon.id)}
                       className={cn(
-                        'flex items-center justify-between w-full rounded-lg border px-3 py-2.5 text-sm transition-all',
-                        selected
+                        'flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-all',
+                        qty > 0
                           ? 'border-accent bg-accent/5 text-foreground'
-                          : 'border-border text-muted-foreground hover:border-accent/30'
+                          : 'border-border text-muted-foreground'
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <div
+                      <div className="flex flex-col min-w-0">
+                        <span className={cn('font-medium', qty > 0 ? 'text-foreground' : '')}>{addon.label}</span>
+                        <span className="text-xs text-muted-foreground">R$ {formatPrice(addon.price)}/pack/mês</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {qty > 0 && (
+                          <span className="text-xs font-medium text-accent mr-1">
+                            R$ {formatPrice(addon.price * qty)}/mês
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setAddonQty(addon.id, -1)}
+                          disabled={qty === 0}
                           className={cn(
-                            'h-4 w-4 rounded border-2 flex items-center justify-center',
-                            selected ? 'border-accent bg-accent' : 'border-border'
+                            'h-7 w-7 rounded-md border flex items-center justify-center text-base font-bold transition-all',
+                            qty > 0
+                              ? 'border-accent text-accent hover:bg-accent/10'
+                              : 'border-border text-muted-foreground opacity-40 cursor-not-allowed'
                           )}
                         >
-                          {selected && <Check className="h-2.5 w-2.5 text-accent-foreground" />}
-                        </div>
-                        <span>{addon.label}</span>
+                          −
+                        </button>
+                        <span className={cn('w-5 text-center text-sm font-semibold', qty > 0 ? 'text-foreground' : 'text-muted-foreground')}>
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setAddonQty(addon.id, +1)}
+                          className="h-7 w-7 rounded-md border border-accent text-accent flex items-center justify-center text-base font-bold hover:bg-accent/10 transition-all"
+                        >
+                          +
+                        </button>
                       </div>
-                      <span className="font-medium">+R$ {formatPrice(addon.price)}</span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -669,13 +689,14 @@ export default function Checkout() {
                   {selectedPlan === 'start' ? 'Grátis' : `R$ ${formatPrice(planPrice)}`}
                 </span>
               </div>
-              {selectedAddons.map((id) => {
+              {Object.entries(addonQuantities).map(([id, qty]) => {
+                if (qty <= 0) return null;
                 const addon = ADDONS.find((a) => a.id === id);
                 if (!addon) return null;
                 return (
                   <div key={id} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{addon.label}</span>
-                    <span>+R$ {formatPrice(addon.price)}</span>
+                    <span className="text-muted-foreground">{addon.label} ×{qty}</span>
+                    <span>+R$ {formatPrice(addon.price * qty)}/mês</span>
                   </div>
                 );
               })}
@@ -689,7 +710,9 @@ export default function Checkout() {
               </div>
               {isAnnual && selectedPlan !== 'start' && (
                 <p className="text-xs text-muted-foreground text-right">
-                  Cobrado R$ {formatPrice(totalPrice * 12)}/ano
+                  {addonsTotal > 0
+                    ? `Plano: R$ ${formatPrice(planPrice * 12)}/ano · Add-ons: R$ ${formatPrice(addonsTotal)}/mês`
+                    : `Cobrado R$ ${formatPrice(planPrice * 12)}/ano`}
                 </p>
               )}
             </div>
