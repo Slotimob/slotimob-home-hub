@@ -52,9 +52,11 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
   const { slots } = useEarlyAdopterCount();
   const navigate = useNavigate();
 
-  // Lógica de qual plano mostrar: se usuário é Pro, sempre mostra Business
-  const resolvedTarget: 'pro' | 'business' = targetPlanProp
-    ? (currentPlan === 'pro' && targetPlanProp !== 'pro' ? 'business' : targetPlanProp)
+  // Lógica de qual plano mostrar: se usuário é Pro, sempre mostra Business; 'essencial' (legado) cai para 'pro'
+  const normalizedTarget: 'pro' | 'business' | undefined =
+    targetPlanProp === 'essencial' ? 'pro' : targetPlanProp;
+  const resolvedTarget: 'pro' | 'business' = normalizedTarget
+    ? (currentPlan === 'pro' && normalizedTarget !== 'pro' ? 'business' : normalizedTarget)
     : (currentPlan === 'pro' ? 'business' : 'pro');
 
   const isPro = currentPlan === 'pro';
