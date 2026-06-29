@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 interface UpgradeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  targetPlan?: 'pro' | 'business';
+  targetPlan?: 'essencial' | 'pro' | 'business';
   feature?: string;
 }
 
