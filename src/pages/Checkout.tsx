@@ -116,7 +116,7 @@ export default function Checkout() {
     ['start', 'pro', 'business'].includes(initialPlan) ? initialPlan : 'pro'
   );
   const [isAnnual, setIsAnnual] = useState<boolean>(initialAnnual);
-  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
 
   // Account form (when not logged in)
   const [name, setName] = useState('');
