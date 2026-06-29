@@ -65,6 +65,8 @@ export const SubscriptionManagement = () => {
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
   const [addonUserQty, setAddonUserQty] = useState(1);
   const [addonUnitQty, setAddonUnitQty] = useState(1);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const navigate = useNavigate();
 
   if (isLoading) {
