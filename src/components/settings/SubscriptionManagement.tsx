@@ -17,7 +17,18 @@ import {
   Zap,
   Receipt,
   ShieldCheck,
+  XCircle,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useAICredits } from '@/hooks/useAICredits';
@@ -54,6 +65,8 @@ export const SubscriptionManagement = () => {
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
   const [addonUserQty, setAddonUserQty] = useState(1);
   const [addonUnitQty, setAddonUnitQty] = useState(1);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -92,7 +105,7 @@ export const SubscriptionManagement = () => {
         toast.error(data?.error || 'Erro ao contratar add-on');
         return;
       }
-      window.location.href = data.url;
+      window.open(data.url, '_blank', 'noopener,noreferrer');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro ao contratar add-on.';
       toast.error(message);
@@ -100,6 +113,26 @@ export const SubscriptionManagement = () => {
       setLoadingAction(null);
     }
   };
+
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    try {
+      const { data } = await supabase.functions.invoke('cancel-subscription');
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      toast.success('Assinatura cancelada. Acesso ativo até o fim do período atual.');
+      setShowCancelDialog(false);
+      await refetch();
+    } catch {
+      toast.error('Erro ao cancelar assinatura. Tente novamente.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+
 
 
   const extraUsers = subscription?.extra_users_count || 0;
@@ -212,7 +245,7 @@ export const SubscriptionManagement = () => {
 
           <Separator />
           <div className="flex flex-col sm:flex-row gap-2">
-            {isPaid && (
+            {hasStripe && (
               <Button
                 variant="outline"
                 className="flex-1 gap-2"
@@ -224,18 +257,17 @@ export const SubscriptionManagement = () => {
                 ) : (
                   <ExternalLink className="h-4 w-4" />
                 )}
-                {loadingAction === 'portal' ? 'Abrindo portal...' : 'Gerenciar Faturamento'}
+                Portal do Cliente (Stripe)
               </Button>
             )}
-            {hasStripe && (
+            {hasAsaas && isPaid && !subscription?.cancel_at_period_end && (
               <Button
                 variant="outline"
-                className="flex-1 gap-2"
-                onClick={handlePortal}
-                disabled={loadingAction === 'portal'}
+                className="flex-1 gap-2 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+                onClick={() => setShowCancelDialog(true)}
               >
-                <Receipt className="h-4 w-4" />
-                Portal do Cliente (Stripe)
+                <XCircle className="h-4 w-4" />
+                Cancelar Assinatura
               </Button>
             )}
             {!isPaid && !isTrialActive && (
@@ -250,63 +282,6 @@ export const SubscriptionManagement = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* AI Usage Card - before add-ons */}
-      {plan !== 'free' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              Uso do Chat IA
-            </CardTitle>
-            <CardDescription>Consumo de créditos de inteligência artificial</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoadingCredits ? (
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-2 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            ) : (() => {
-              const used = aiCredits?.used ?? 0;
-              const total = aiCredits?.limit ?? (plan === 'business' ? 750 : 250);
-              const bonus = aiCredits?.bonus_credits ?? 0;
-              const pct = total > 0 ? Math.round((used / total) * 100) : 0;
-              const colorClass = pct > 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
-              const barClass = pct > 90 ? '[&>div]:bg-red-500' : pct >= 70 ? '[&>div]:bg-amber-500' : '[&>div]:bg-emerald-500';
-              return (
-                <>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Créditos utilizados</span>
-                    <span className={cn('font-semibold', colorClass)}>
-                      {used} / {total}
-                    </span>
-                  </div>
-                  <Progress value={pct} className={cn('h-2', barClass)} />
-                  {bonus > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      + {bonus} créditos bônus comprados disponíveis
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Os créditos renovam automaticamente no seu próximo ciclo de faturamento.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full gap-2"
-                    onClick={() => setShowCreditsDialog(true)}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Comprar mais Créditos
-                  </Button>
-                </>
-              );
-            })()}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Add-ons - only for paid plans */}
       {(hasAsaas || hasStripe) && plan !== 'free' && (
@@ -412,34 +387,65 @@ export const SubscriptionManagement = () => {
         </Card>
       )}
 
-      {/* Credits Purchase — AI only */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Créditos de Consumo
-          </CardTitle>
-          <CardDescription>Compre créditos adicionais para IA</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-medium text-sm">Créditos IA</p>
-                <p className="text-xs text-muted-foreground">A partir de R$ 24,90 — Não expiram</p>
+      {/* Créditos de IA — card unificado */}
+      {plan !== 'free' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Créditos de IA
+            </CardTitle>
+            <CardDescription>
+              Compra pontual — não é uma assinatura recorrente. Créditos não expiram enquanto sua conta estiver ativa.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingCredits ? (
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-2 w-full" />
               </div>
-            </div>
+            ) : (() => {
+              const used = aiCredits?.used ?? 0;
+              const total = aiCredits?.limit ?? (plan === 'business' ? 750 : 250);
+              const bonus = aiCredits?.bonus_credits ?? 0;
+              const pct = total > 0 ? Math.round((used / total) * 100) : 0;
+              const colorClass = pct > 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
+              const barClass = pct > 90 ? '[&>div]:bg-red-500' : pct >= 70 ? '[&>div]:bg-amber-500' : '[&>div]:bg-emerald-500';
+              return (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Créditos mensais utilizados</span>
+                    <span className={cn('font-semibold', colorClass)}>{used} / {total}</span>
+                  </div>
+                  <Progress value={pct} className={cn('h-2', barClass)} />
+                  {bonus > 0 && (
+                    <div className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-lg">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        Créditos bônus pontuais
+                      </span>
+                      <span className="font-semibold text-emerald-500">+{bonus} disponíveis</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Os créditos mensais ({total}/mês) renovam automaticamente no início de cada ciclo de faturamento.
+                    Créditos bônus comprados não expiram e são consumidos após os créditos mensais.
+                  </p>
+                </>
+              );
+            })()}
             <Button
-              size="sm"
+              variant="outline"
+              className="w-full gap-2"
               onClick={() => setShowCreditsDialog(true)}
             >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Ver Pacotes
+              <Sparkles className="h-4 w-4" />
+              Comprar Créditos Pontuais
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add-ons for paid users without stripe_subscription_id - redirect to checkout */}
       {isPaid && !hasStripe && !hasAsaas && (
@@ -462,6 +468,54 @@ export const SubscriptionManagement = () => {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-destructive" />
+              Cancelar Assinatura
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                Tem certeza que deseja cancelar sua assinatura?
+              </span>
+              {subscription?.current_period_end && (
+                <span className="block">
+                  Você continuará com acesso completo até{' '}
+                  <strong className="text-foreground">
+                    {new Date(subscription.current_period_end).toLocaleDateString('pt-BR', {
+                      day: '2-digit', month: 'long', year: 'numeric',
+                    })}
+                  </strong>.
+                </span>
+              )}
+              <span className="block text-destructive/80">
+                Após essa data, sua conta será rebaixada automaticamente para o plano Start (gratuito).
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>
+              Manter minha Assinatura
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancelSubscription();
+              }}
+              disabled={isCancelling}
+            >
+              {isCancelling ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Cancelando...</>
+              ) : (
+                'Confirmar Cancelamento'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <BuyAICreditsDialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog} />
     </div>

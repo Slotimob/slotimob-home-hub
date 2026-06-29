@@ -40,7 +40,7 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
       if (error) throw error;
 
       if (data?.url) {
-        window.location.href = data.url;
+        window.open(data.url, '_blank', 'noopener,noreferrer');
         onOpenChange(false);
       } else if (data?.error) {
         toast.error(data.error);
@@ -67,6 +67,11 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
             Créditos extras para usar no Chat IA. Não expiram enquanto sua conta estiver ativa.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-lg text-xs text-muted-foreground">
+          <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+          Compra pontual — não é uma assinatura. Os créditos não expiram e são adicionados ao saldo existente.
+        </div>
 
         {credits && (
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm">
