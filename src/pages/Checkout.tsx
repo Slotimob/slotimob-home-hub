@@ -330,7 +330,7 @@ export default function Checkout() {
       return;
     }
 
-    if (selectedPlan !== 'start' && billingType === 'BOLETO' && !cpfCnpj.replace(/\D/g, '')) {
+    if (billingType === 'BOLETO' && !cpfCnpj.replace(/\D/g, '')) {
       setCheckoutError('Para boleto bancário, CPF ou CNPJ é obrigatório. Preencha o campo acima.');
       toast.error('CPF ou CNPJ obrigatório para boleto.');
       return;
