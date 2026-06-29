@@ -245,7 +245,7 @@ export const SubscriptionManagement = () => {
 
           <Separator />
           <div className="flex flex-col sm:flex-row gap-2">
-            {isPaid && (
+            {hasStripe && (
               <Button
                 variant="outline"
                 className="flex-1 gap-2"
@@ -257,18 +257,17 @@ export const SubscriptionManagement = () => {
                 ) : (
                   <ExternalLink className="h-4 w-4" />
                 )}
-                {loadingAction === 'portal' ? 'Abrindo portal...' : 'Gerenciar Faturamento'}
+                Portal do Cliente (Stripe)
               </Button>
             )}
-            {hasStripe && (
+            {hasAsaas && isPaid && !subscription?.cancel_at_period_end && (
               <Button
                 variant="outline"
-                className="flex-1 gap-2"
-                onClick={handlePortal}
-                disabled={loadingAction === 'portal'}
+                className="flex-1 gap-2 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+                onClick={() => setShowCancelDialog(true)}
               >
-                <Receipt className="h-4 w-4" />
-                Portal do Cliente (Stripe)
+                <XCircle className="h-4 w-4" />
+                Cancelar Assinatura
               </Button>
             )}
             {!isPaid && !isTrialActive && (
