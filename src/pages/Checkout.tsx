@@ -81,11 +81,8 @@ interface PlanCardData {
 }
 
 const ADDONS = [
-  { id: 'units_50', label: '+50 unidades', price: 39.9 },
-  { id: 'user_1', label: '+1 usuário', price: 49.9 },
-  { id: 'ai_sm', label: 'Créditos IA (S)', price: 24.9 },
-  { id: 'ai_md', label: 'Créditos IA (M)', price: 39.9 },
-  { id: 'ai_lg', label: 'Créditos IA (G)', price: 89.9 },
+  { id: 'extra-units-50', label: '+50 unidades', price: 39.9 },
+  { id: 'extra-user', label: '+1 usuário', price: 49.9 },
 ];
 
 // ============================================================================
@@ -333,6 +330,12 @@ export default function Checkout() {
       return;
     }
 
+    if (billingType === 'BOLETO' && !cpfCnpj.replace(/\D/g, '')) {
+      setCheckoutError('Para boleto bancário, CPF ou CNPJ é obrigatório. Preencha o campo acima.');
+      toast.error('CPF ou CNPJ obrigatório para boleto.');
+      return;
+    }
+
     // 3. Paid: call create-checkout-session
     setIsCheckingOut(true);
     try {
@@ -361,8 +364,42 @@ export default function Checkout() {
       if (data?.type === 'redirect' && data?.url) {
         window.open(data.url, '_blank');
         setPaymentResult(data as PaymentResult);
+        // Após processar o resultado principal da subscription:
+        if (selectedAddons.length > 0) {
+          for (const addonId of selectedAddons) {
+            const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
+              body: {
+                product_type: 'addon',
+                addon_id: addonId,
+                billing_type: billingType,
+              },
+            });
+            if (addonData?.error) {
+              console.warn('[addon] erro no add-on:', addonId, addonData.error);
+            } else if (addonData?.url) {
+              window.open(addonData.url, '_blank');
+            }
+          }
+        }
       } else if (data?.type === 'pix' || data?.type === 'boleto') {
         setPaymentResult(data as PaymentResult);
+        // Após processar o resultado principal da subscription:
+        if (selectedAddons.length > 0) {
+          for (const addonId of selectedAddons) {
+            const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
+              body: {
+                product_type: 'addon',
+                addon_id: addonId,
+                billing_type: billingType,
+              },
+            });
+            if (addonData?.error) {
+              console.warn('[addon] erro no add-on:', addonId, addonData.error);
+            } else if (addonData?.url) {
+              window.open(addonData.url, '_blank');
+            }
+          }
+        }
         toast.success('Pagamento gerado! Siga as instruções abaixo.');
       } else if (data?.url) {
         // backwards compat
