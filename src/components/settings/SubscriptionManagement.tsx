@@ -387,34 +387,65 @@ export const SubscriptionManagement = () => {
         </Card>
       )}
 
-      {/* Credits Purchase — AI only */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Créditos de Consumo
-          </CardTitle>
-          <CardDescription>Compre créditos adicionais para IA</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-3">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-medium text-sm">Créditos IA</p>
-                <p className="text-xs text-muted-foreground">A partir de R$ 24,90 — Não expiram</p>
+      {/* Créditos de IA — card unificado */}
+      {plan !== 'free' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Créditos de IA
+            </CardTitle>
+            <CardDescription>
+              Compra pontual — não é uma assinatura recorrente. Créditos não expiram enquanto sua conta estiver ativa.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingCredits ? (
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-2 w-full" />
               </div>
-            </div>
+            ) : (() => {
+              const used = aiCredits?.used ?? 0;
+              const total = aiCredits?.limit ?? (plan === 'business' ? 750 : 250);
+              const bonus = aiCredits?.bonus_credits ?? 0;
+              const pct = total > 0 ? Math.round((used / total) * 100) : 0;
+              const colorClass = pct > 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
+              const barClass = pct > 90 ? '[&>div]:bg-red-500' : pct >= 70 ? '[&>div]:bg-amber-500' : '[&>div]:bg-emerald-500';
+              return (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Créditos mensais utilizados</span>
+                    <span className={cn('font-semibold', colorClass)}>{used} / {total}</span>
+                  </div>
+                  <Progress value={pct} className={cn('h-2', barClass)} />
+                  {bonus > 0 && (
+                    <div className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-lg">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        Créditos bônus pontuais
+                      </span>
+                      <span className="font-semibold text-emerald-500">+{bonus} disponíveis</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Os créditos mensais ({total}/mês) renovam automaticamente no início de cada ciclo de faturamento.
+                    Créditos bônus comprados não expiram e são consumidos após os créditos mensais.
+                  </p>
+                </>
+              );
+            })()}
             <Button
-              size="sm"
+              variant="outline"
+              className="w-full gap-2"
               onClick={() => setShowCreditsDialog(true)}
             >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Ver Pacotes
+              <Sparkles className="h-4 w-4" />
+              Comprar Créditos Pontuais
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add-ons for paid users without stripe_subscription_id - redirect to checkout */}
       {isPaid && !hasStripe && !hasAsaas && (
