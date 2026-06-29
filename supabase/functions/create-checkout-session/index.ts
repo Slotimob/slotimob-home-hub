@@ -271,11 +271,11 @@ serve(async (req) => {
         });
       }
 
-      const extRef = `${userId}:addon:${addon_id}`;
+      const extRef = `${userId}:addon:${addon_id}:qty${quantity}`;
       const sub = await asaasRequest("/subscriptions", "POST", {
         customer: asaasCustomerId,
         billingType: "UNDEFINED",
-        value: Number(addon.price),
+        value: Number(addon.price) * quantity,
         nextDueDate: nextDueDateStr(1),
         cycle: "MONTHLY",
         description: `Slotimob Add-on: ${addon.name}`,
@@ -288,7 +288,7 @@ serve(async (req) => {
           broker_id: userId,
           addon_id: addon.id,
           asaas_subscription_id: sub.id,
-          quantity: 1,
+          quantity: quantity,
           status: "pending",
         });
 
