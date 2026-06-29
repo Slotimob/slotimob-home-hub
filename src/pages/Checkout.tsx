@@ -150,11 +150,17 @@ export default function Checkout() {
     setSearchParams({ plan: selectedPlan, cycle }, { replace: true });
   }, [selectedPlan, isAnnual, setSearchParams]);
 
-  // Reset addons + annual when switching to start
+  // Reset addons + annual when switching plan
   useEffect(() => {
     if (selectedPlan === 'start') {
-      setSelectedAddons([]);
+      setAddonQuantities({});
       setIsAnnual(false);
+    } else if (selectedPlan === 'pro') {
+      setAddonQuantities((prev) => {
+        const copy = { ...prev };
+        delete copy['extra-user'];
+        return copy;
+      });
     }
   }, [selectedPlan]);
 
@@ -202,19 +208,33 @@ export default function Checkout() {
     return isAnnual ? p.price_annual : p.price_original;
   };
 
+  const availableAddons = useMemo(() => {
+    if (selectedPlan === 'start') return [];
+    if (selectedPlan === 'pro') return ADDONS.filter((a) => a.id === 'extra-units-50');
+    return ADDONS;
+  }, [selectedPlan]);
+
   const planPrice = selectedPlan === 'start' ? 0 : getDisplayPrice(selectedPlan as PaidPlan);
-  const addonsTotal = selectedAddons.reduce((sum, id) => {
+  const addonsTotal = Object.entries(addonQuantities).reduce((sum, [id, qty]) => {
+    if (qty <= 0) return sum;
     const a = ADDONS.find((x) => x.id === id);
-    return sum + (a?.price ?? 0);
+    return sum + (a?.price ?? 0) * qty;
   }, 0);
   const totalPrice = planPrice + addonsTotal;
 
   const planNameSelected = allPlans.find((p) => p.id === selectedPlan)?.name ?? '';
 
-  const toggleAddon = (id: string) => {
-    setSelectedAddons((curr) =>
-      curr.includes(id) ? curr.filter((x) => x !== id) : [...curr, id]
-    );
+  const setAddonQty = (id: string, delta: number) => {
+    setAddonQuantities((prev) => {
+      const current = prev[id] ?? 0;
+      const next = Math.max(0, Math.min(current + delta, 20));
+      if (next === 0) {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      }
+      return { ...prev, [id]: next };
+    });
   };
 
   const handleSignOut = async () => {
