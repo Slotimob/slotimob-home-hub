@@ -17,7 +17,18 @@ import {
   Zap,
   Receipt,
   ShieldCheck,
+  XCircle,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useAICredits } from '@/hooks/useAICredits';
