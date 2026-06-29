@@ -68,6 +68,11 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-lg text-xs text-muted-foreground">
+          <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+          Compra pontual — não é uma assinatura. Os créditos não expiram e são adicionados ao saldo existente.
+        </div>
+
         {credits && (
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm">
             <span className="text-muted-foreground">Créditos disponíveis:</span>
