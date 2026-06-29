@@ -116,7 +116,7 @@ export default function Checkout() {
     ['start', 'pro', 'business'].includes(initialPlan) ? initialPlan : 'pro'
   );
   const [isAnnual, setIsAnnual] = useState<boolean>(initialAnnual);
-  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
 
   // Account form (when not logged in)
   const [name, setName] = useState('');
@@ -150,11 +150,17 @@ export default function Checkout() {
     setSearchParams({ plan: selectedPlan, cycle }, { replace: true });
   }, [selectedPlan, isAnnual, setSearchParams]);
 
-  // Reset addons + annual when switching to start
+  // Reset addons + annual when switching plan
   useEffect(() => {
     if (selectedPlan === 'start') {
-      setSelectedAddons([]);
+      setAddonQuantities({});
       setIsAnnual(false);
+    } else if (selectedPlan === 'pro') {
+      setAddonQuantities((prev) => {
+        const copy = { ...prev };
+        delete copy['extra-user'];
+        return copy;
+      });
     }
   }, [selectedPlan]);
 
@@ -202,19 +208,33 @@ export default function Checkout() {
     return isAnnual ? p.price_annual : p.price_original;
   };
 
+  const availableAddons = useMemo(() => {
+    if (selectedPlan === 'start') return [];
+    if (selectedPlan === 'pro') return ADDONS.filter((a) => a.id === 'extra-units-50');
+    return ADDONS;
+  }, [selectedPlan]);
+
   const planPrice = selectedPlan === 'start' ? 0 : getDisplayPrice(selectedPlan as PaidPlan);
-  const addonsTotal = selectedAddons.reduce((sum, id) => {
+  const addonsTotal = Object.entries(addonQuantities).reduce((sum, [id, qty]) => {
+    if (qty <= 0) return sum;
     const a = ADDONS.find((x) => x.id === id);
-    return sum + (a?.price ?? 0);
+    return sum + (a?.price ?? 0) * qty;
   }, 0);
   const totalPrice = planPrice + addonsTotal;
 
   const planNameSelected = allPlans.find((p) => p.id === selectedPlan)?.name ?? '';
 
-  const toggleAddon = (id: string) => {
-    setSelectedAddons((curr) =>
-      curr.includes(id) ? curr.filter((x) => x !== id) : [...curr, id]
-    );
+  const setAddonQty = (id: string, delta: number) => {
+    setAddonQuantities((prev) => {
+      const current = prev[id] ?? 0;
+      const next = Math.max(0, Math.min(current + delta, 20));
+      if (next === 0) {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      }
+      return { ...prev, [id]: next };
+    });
   };
 
   const handleSignOut = async () => {
@@ -269,17 +289,50 @@ export default function Checkout() {
       toast.success('Conta criada! Bem-vindo ao Slotimob 🎉');
     }
 
-    // ── Fiscal data: validar + salvar em profiles ─────────────────────
+    // ── Validação e salvamento de dados fiscais ─────────────────────────────
     const cleanCpfCnpj = cpfCnpj.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanCep = cep.replace(/\D/g, '');
 
-    if (cleanCpfCnpj && currentUserId) {
+    if (!cleanCpfCnpj) {
+      setCheckoutError('CPF ou CNPJ é obrigatório.');
+      return;
+    }
+    if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) {
+      setCheckoutError('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
+      return;
+    }
+    if (!cleanPhone) {
+      setCheckoutError('Telefone é obrigatório.');
+      return;
+    }
+    if (!cleanCep || cleanCep.length !== 8) {
+      setCheckoutError('CEP é obrigatório e deve ter 8 dígitos.');
+      return;
+    }
+    if (!street.trim()) {
+      setCheckoutError('Rua / Avenida é obrigatória.');
+      return;
+    }
+    if (!number.trim()) {
+      setCheckoutError('Número é obrigatório.');
+      return;
+    }
+    if (!neighborhood.trim()) {
+      setCheckoutError('Bairro é obrigatório.');
+      return;
+    }
+    if (!city.trim()) {
+      setCheckoutError('Cidade é obrigatória.');
+      return;
+    }
+    if (!uf.trim() || uf.trim().length !== 2) {
+      setCheckoutError('UF é obrigatória (2 letras).');
+      return;
+    }
+
+    if (currentUserId) {
       setIsCheckingOut(true);
-
-      if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) {
-        setCheckoutError('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
-        setIsCheckingOut(false);
-        return;
-      }
 
       const isCpf = cleanCpfCnpj.length === 11;
       const personType = isCpf ? 'fisica' : 'juridica';
@@ -303,14 +356,14 @@ export default function Checkout() {
         cpf: isCpf ? cleanCpfCnpj : null,
         cnpj: !isCpf ? cleanCpfCnpj : null,
         person_type: personType,
+        phone: cleanPhone,
+        address_cep: cleanCep,
+        address_street: street.trim(),
+        address_number: number.trim(),
+        address_neighborhood: neighborhood.trim(),
+        address_city: city.trim(),
+        address_uf: uf.trim().toUpperCase(),
       };
-      if (phone) fiscalUpdate.phone = phone.replace(/\D/g, '');
-      if (cep) fiscalUpdate.address_cep = cep.replace(/\D/g, '');
-      if (street) fiscalUpdate.address_street = street;
-      if (number) fiscalUpdate.address_number = number;
-      if (neighborhood) fiscalUpdate.address_neighborhood = neighborhood;
-      if (city) fiscalUpdate.address_city = city;
-      if (uf) fiscalUpdate.address_uf = uf;
 
       const { error: profileError } = await supabase
         .from('profiles')
@@ -318,10 +371,10 @@ export default function Checkout() {
         .eq('id', currentUserId);
 
       if (profileError) {
-        console.error('Erro ao salvar dados fiscais:', profileError);
+        console.error('[checkout] Erro ao salvar dados fiscais:', profileError);
       }
     }
-    // ── fim do bloco fiscal ───────────────────────────────────────────
+    // ── fim do bloco fiscal ───────────────────────────────────────────────
 
     // 2. Start plan = no charge
     if (selectedPlan === 'start') {
@@ -330,11 +383,6 @@ export default function Checkout() {
       return;
     }
 
-    if (billingType === 'BOLETO' && !cpfCnpj.replace(/\D/g, '')) {
-      setCheckoutError('Para boleto bancário, CPF ou CNPJ é obrigatório. Preencha o campo acima.');
-      toast.error('CPF ou CNPJ obrigatório para boleto.');
-      return;
-    }
 
     // 3. Paid: call create-checkout-session
     setIsCheckingOut(true);
@@ -365,12 +413,14 @@ export default function Checkout() {
         window.open(data.url, '_blank');
         setPaymentResult(data as PaymentResult);
         // Após processar o resultado principal da subscription:
-        if (selectedAddons.length > 0) {
-          for (const addonId of selectedAddons) {
+        if (Object.values(addonQuantities).some((q) => q > 0)) {
+          for (const [addonId, qty] of Object.entries(addonQuantities)) {
+            if (qty <= 0) continue;
             const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
               body: {
                 product_type: 'addon',
                 addon_id: addonId,
+                quantity: qty,
                 billing_type: billingType,
               },
             });
@@ -384,12 +434,14 @@ export default function Checkout() {
       } else if (data?.type === 'pix' || data?.type === 'boleto') {
         setPaymentResult(data as PaymentResult);
         // Após processar o resultado principal da subscription:
-        if (selectedAddons.length > 0) {
-          for (const addonId of selectedAddons) {
+        if (Object.values(addonQuantities).some((q) => q > 0)) {
+          for (const [addonId, qty] of Object.entries(addonQuantities)) {
+            if (qty <= 0) continue;
             const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
               body: {
                 product_type: 'addon',
                 addon_id: addonId,
+                quantity: qty,
                 billing_type: billingType,
               },
             });
@@ -572,38 +624,58 @@ export default function Checkout() {
             )}
 
             {/* Addons */}
-            {selectedPlan !== 'start' && (
+            {availableAddons.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Adicionais
+                  Adicionais <span className="normal-case">(opcional)</span>
                 </p>
-                {ADDONS.map((addon) => {
-                  const selected = selectedAddons.includes(addon.id);
+                {availableAddons.map((addon) => {
+                  const qty = addonQuantities[addon.id] ?? 0;
                   return (
-                    <button
+                    <div
                       key={addon.id}
-                      type="button"
-                      onClick={() => toggleAddon(addon.id)}
                       className={cn(
-                        'flex items-center justify-between w-full rounded-lg border px-3 py-2.5 text-sm transition-all',
-                        selected
+                        'flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-all',
+                        qty > 0
                           ? 'border-accent bg-accent/5 text-foreground'
-                          : 'border-border text-muted-foreground hover:border-accent/30'
+                          : 'border-border text-muted-foreground'
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <div
+                      <div className="flex flex-col min-w-0">
+                        <span className={cn('font-medium', qty > 0 ? 'text-foreground' : '')}>{addon.label}</span>
+                        <span className="text-xs text-muted-foreground">R$ {formatPrice(addon.price)}/pack/mês</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {qty > 0 && (
+                          <span className="text-xs font-medium text-accent mr-1">
+                            R$ {formatPrice(addon.price * qty)}/mês
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setAddonQty(addon.id, -1)}
+                          disabled={qty === 0}
                           className={cn(
-                            'h-4 w-4 rounded border-2 flex items-center justify-center',
-                            selected ? 'border-accent bg-accent' : 'border-border'
+                            'h-7 w-7 rounded-md border flex items-center justify-center text-base font-bold transition-all',
+                            qty > 0
+                              ? 'border-accent text-accent hover:bg-accent/10'
+                              : 'border-border text-muted-foreground opacity-40 cursor-not-allowed'
                           )}
                         >
-                          {selected && <Check className="h-2.5 w-2.5 text-accent-foreground" />}
-                        </div>
-                        <span>{addon.label}</span>
+                          −
+                        </button>
+                        <span className={cn('w-5 text-center text-sm font-semibold', qty > 0 ? 'text-foreground' : 'text-muted-foreground')}>
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setAddonQty(addon.id, +1)}
+                          className="h-7 w-7 rounded-md border border-accent text-accent flex items-center justify-center text-base font-bold hover:bg-accent/10 transition-all"
+                        >
+                          +
+                        </button>
                       </div>
-                      <span className="font-medium">+R$ {formatPrice(addon.price)}</span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -617,13 +689,14 @@ export default function Checkout() {
                   {selectedPlan === 'start' ? 'Grátis' : `R$ ${formatPrice(planPrice)}`}
                 </span>
               </div>
-              {selectedAddons.map((id) => {
+              {Object.entries(addonQuantities).map(([id, qty]) => {
+                if (qty <= 0) return null;
                 const addon = ADDONS.find((a) => a.id === id);
                 if (!addon) return null;
                 return (
                   <div key={id} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{addon.label}</span>
-                    <span>+R$ {formatPrice(addon.price)}</span>
+                    <span className="text-muted-foreground">{addon.label} ×{qty}</span>
+                    <span>+R$ {formatPrice(addon.price * qty)}/mês</span>
                   </div>
                 );
               })}
@@ -637,7 +710,9 @@ export default function Checkout() {
               </div>
               {isAnnual && selectedPlan !== 'start' && (
                 <p className="text-xs text-muted-foreground text-right">
-                  Cobrado R$ {formatPrice(totalPrice * 12)}/ano
+                  {addonsTotal > 0
+                    ? `Plano: R$ ${formatPrice(planPrice * 12)}/ano · Add-ons: R$ ${formatPrice(addonsTotal)}/mês`
+                    : `Cobrado R$ ${formatPrice(planPrice * 12)}/ano`}
                 </p>
               )}
             </div>
@@ -739,19 +814,19 @@ export default function Checkout() {
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
               <h3 className="font-semibold text-foreground">Dados fiscais</h3>
               <p className="text-xs text-muted-foreground">
-                Necessário para emissão da nota fiscal e geração do boleto/pix via Asaas.
+                Todos os campos são obrigatórios para emissão de nota fiscal (NFS-e) e cobrança via Asaas.
               </p>
 
               <div className="space-y-3">
                 <Input
-                  placeholder="CPF ou CNPJ"
+                  placeholder="CPF ou CNPJ *"
                   value={cpfCnpj}
                   onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
                   inputMode="numeric"
                 />
 
                 <Input
-                  placeholder="Telefone / WhatsApp"
+                  placeholder="Telefone / WhatsApp *"
                   value={phone}
                   onChange={(e) => setPhone(maskPhone(e.target.value))}
                   inputMode="tel"
@@ -759,7 +834,7 @@ export default function Checkout() {
 
                 <div className="relative">
                   <Input
-                    placeholder="CEP"
+                    placeholder="CEP *"
                     value={cep}
                     inputMode="numeric"
                     onChange={(e) => {
@@ -778,31 +853,31 @@ export default function Checkout() {
 
                 <div className="grid grid-cols-[1fr_80px] gap-2">
                   <Input
-                    placeholder="Rua / Avenida"
+                    placeholder="Rua / Avenida *"
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
                   />
                   <Input
-                    placeholder="Nº"
+                    placeholder="Nº *"
                     value={number}
                     onChange={(e) => setNumber(e.target.value)}
                   />
                 </div>
 
                 <Input
-                  placeholder="Bairro"
+                  placeholder="Bairro *"
                   value={neighborhood}
                   onChange={(e) => setNeighborhood(e.target.value)}
                 />
 
                 <div className="grid grid-cols-[1fr_60px] gap-2">
                   <Input
-                    placeholder="Cidade"
+                    placeholder="Cidade *"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
                   <Input
-                    placeholder="UF"
+                    placeholder="UF *"
                     value={uf}
                     maxLength={2}
                     onChange={(e) => setUf(e.target.value.toUpperCase())}
