@@ -289,17 +289,50 @@ export default function Checkout() {
       toast.success('Conta criada! Bem-vindo ao Slotimob 🎉');
     }
 
-    // ── Fiscal data: validar + salvar em profiles ─────────────────────
+    // ── Validação e salvamento de dados fiscais ─────────────────────────────
     const cleanCpfCnpj = cpfCnpj.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanCep = cep.replace(/\D/g, '');
 
-    if (cleanCpfCnpj && currentUserId) {
+    if (!cleanCpfCnpj) {
+      setCheckoutError('CPF ou CNPJ é obrigatório.');
+      return;
+    }
+    if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) {
+      setCheckoutError('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
+      return;
+    }
+    if (!cleanPhone) {
+      setCheckoutError('Telefone é obrigatório.');
+      return;
+    }
+    if (!cleanCep || cleanCep.length !== 8) {
+      setCheckoutError('CEP é obrigatório e deve ter 8 dígitos.');
+      return;
+    }
+    if (!street.trim()) {
+      setCheckoutError('Rua / Avenida é obrigatória.');
+      return;
+    }
+    if (!number.trim()) {
+      setCheckoutError('Número é obrigatório.');
+      return;
+    }
+    if (!neighborhood.trim()) {
+      setCheckoutError('Bairro é obrigatório.');
+      return;
+    }
+    if (!city.trim()) {
+      setCheckoutError('Cidade é obrigatória.');
+      return;
+    }
+    if (!uf.trim() || uf.trim().length !== 2) {
+      setCheckoutError('UF é obrigatória (2 letras).');
+      return;
+    }
+
+    if (currentUserId) {
       setIsCheckingOut(true);
-
-      if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) {
-        setCheckoutError('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
-        setIsCheckingOut(false);
-        return;
-      }
 
       const isCpf = cleanCpfCnpj.length === 11;
       const personType = isCpf ? 'fisica' : 'juridica';
@@ -323,14 +356,14 @@ export default function Checkout() {
         cpf: isCpf ? cleanCpfCnpj : null,
         cnpj: !isCpf ? cleanCpfCnpj : null,
         person_type: personType,
+        phone: cleanPhone,
+        address_cep: cleanCep,
+        address_street: street.trim(),
+        address_number: number.trim(),
+        address_neighborhood: neighborhood.trim(),
+        address_city: city.trim(),
+        address_uf: uf.trim().toUpperCase(),
       };
-      if (phone) fiscalUpdate.phone = phone.replace(/\D/g, '');
-      if (cep) fiscalUpdate.address_cep = cep.replace(/\D/g, '');
-      if (street) fiscalUpdate.address_street = street;
-      if (number) fiscalUpdate.address_number = number;
-      if (neighborhood) fiscalUpdate.address_neighborhood = neighborhood;
-      if (city) fiscalUpdate.address_city = city;
-      if (uf) fiscalUpdate.address_uf = uf;
 
       const { error: profileError } = await supabase
         .from('profiles')
@@ -338,10 +371,10 @@ export default function Checkout() {
         .eq('id', currentUserId);
 
       if (profileError) {
-        console.error('Erro ao salvar dados fiscais:', profileError);
+        console.error('[checkout] Erro ao salvar dados fiscais:', profileError);
       }
     }
-    // ── fim do bloco fiscal ───────────────────────────────────────────
+    // ── fim do bloco fiscal ───────────────────────────────────────────────
 
     // 2. Start plan = no charge
     if (selectedPlan === 'start') {
@@ -350,11 +383,6 @@ export default function Checkout() {
       return;
     }
 
-    if (billingType === 'BOLETO' && !cpfCnpj.replace(/\D/g, '')) {
-      setCheckoutError('Para boleto bancário, CPF ou CNPJ é obrigatório. Preencha o campo acima.');
-      toast.error('CPF ou CNPJ obrigatório para boleto.');
-      return;
-    }
 
     // 3. Paid: call create-checkout-session
     setIsCheckingOut(true);
