@@ -76,7 +76,7 @@ serve(async (req) => {
 
     const { data: subscription } = await supabase
       .from("subscriptions")
-      .select("billing_provider, asaas_customer_id, status, price_locked, is_early_adopter")
+      .select("billing_provider, asaas_customer_id, status, price_locked, is_early_adopter, plan_id, current_period_end, asaas_subscription_id")
       .eq("user_id", userId)
       .single();
 
