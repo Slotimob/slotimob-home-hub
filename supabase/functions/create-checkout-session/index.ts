@@ -250,6 +250,14 @@ serve(async (req) => {
         });
       }
 
+      const quantity = Math.max(1, Math.min(Number(body.quantity) || 1, 20));
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+        return new Response(
+          JSON.stringify({ error: "Quantidade de add-on inválida. Mínimo 1, máximo 20." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { data: addon } = await supabase
         .from("subscription_addons")
         .select("id, name, price")
@@ -263,11 +271,11 @@ serve(async (req) => {
         });
       }
 
-      const extRef = `${userId}:addon:${addon_id}`;
+      const extRef = `${userId}:addon:${addon_id}:qty${quantity}`;
       const sub = await asaasRequest("/subscriptions", "POST", {
         customer: asaasCustomerId,
         billingType: "UNDEFINED",
-        value: Number(addon.price),
+        value: Number(addon.price) * quantity,
         nextDueDate: nextDueDateStr(1),
         cycle: "MONTHLY",
         description: `Slotimob Add-on: ${addon.name}`,
@@ -280,7 +288,7 @@ serve(async (req) => {
           broker_id: userId,
           addon_id: addon.id,
           asaas_subscription_id: sub.id,
-          quantity: 1,
+          quantity: quantity,
           status: "pending",
         });
 
