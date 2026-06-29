@@ -283,63 +283,6 @@ export const SubscriptionManagement = () => {
         </CardContent>
       </Card>
 
-      {/* AI Usage Card - before add-ons */}
-      {plan !== 'free' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              Uso do Chat IA
-            </CardTitle>
-            <CardDescription>Consumo de créditos de inteligência artificial</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoadingCredits ? (
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-2 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            ) : (() => {
-              const used = aiCredits?.used ?? 0;
-              const total = aiCredits?.limit ?? (plan === 'business' ? 750 : 250);
-              const bonus = aiCredits?.bonus_credits ?? 0;
-              const pct = total > 0 ? Math.round((used / total) * 100) : 0;
-              const colorClass = pct > 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
-              const barClass = pct > 90 ? '[&>div]:bg-red-500' : pct >= 70 ? '[&>div]:bg-amber-500' : '[&>div]:bg-emerald-500';
-              return (
-                <>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Créditos utilizados</span>
-                    <span className={cn('font-semibold', colorClass)}>
-                      {used} / {total}
-                    </span>
-                  </div>
-                  <Progress value={pct} className={cn('h-2', barClass)} />
-                  {bonus > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      + {bonus} créditos bônus comprados disponíveis
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Os créditos renovam automaticamente no seu próximo ciclo de faturamento.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full gap-2"
-                    onClick={() => setShowCreditsDialog(true)}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Comprar mais Créditos
-                  </Button>
-                </>
-              );
-            })()}
-          </CardContent>
-        </Card>
-      )}
-
       {/* Add-ons - only for paid plans */}
       {(hasAsaas || hasStripe) && plan !== 'free' && (
         <Card>
