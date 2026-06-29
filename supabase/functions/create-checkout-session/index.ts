@@ -47,7 +47,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Autenticação necessária" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -57,7 +57,7 @@ serve(async (req) => {
     );
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Sessão inválida" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -79,13 +79,6 @@ serve(async (req) => {
       .select("billing_provider, asaas_customer_id, status, price_locked, is_early_adopter")
       .eq("user_id", userId)
       .single();
-
-    if (subscription?.billing_provider === "stripe") {
-      return new Response(JSON.stringify({ error: "Sua assinatura está gerenciada via Stripe. Entre em contato com o suporte." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Get or create Asaas customer
     let asaasCustomerId: string = subscription?.asaas_customer_id ?? "";
@@ -114,7 +107,7 @@ serve(async (req) => {
     if (product_type === "subscription") {
       if (!plan_id || !billing_cycle) {
         return new Response(JSON.stringify({ error: "plan_id e billing_cycle são obrigatórios" }), {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -127,7 +120,7 @@ serve(async (req) => {
 
       if (!plan) {
         return new Response(JSON.stringify({ error: "Plano não encontrado" }), {
-          status: 404,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -165,6 +158,15 @@ serve(async (req) => {
       const planName = plan_id.charAt(0).toUpperCase() + plan_id.slice(1);
       const asaasBillingType = billing_type || "BOLETO";
       console.log("[checkout] billing_type recebido:", billing_type, "→ usando:", asaasBillingType);
+
+      if (asaasBillingType === "BOLETO") {
+        const cpfCnpjRaw = (profile as any)?.cpf || (profile as any)?.cnpj;
+        if (!cpfCnpjRaw) {
+          return new Response(JSON.stringify({
+            error: "Para boleto bancário, CPF ou CNPJ é obrigatório. Preencha seus dados fiscais e tente novamente."
+          }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
       const sub = await asaasRequest("/subscriptions", "POST", {
         customer: asaasCustomerId,
         billingType: asaasBillingType,
@@ -243,7 +245,7 @@ serve(async (req) => {
     if (product_type === "addon") {
       if (!addon_id) {
         return new Response(JSON.stringify({ error: "addon_id é obrigatório" }), {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -256,7 +258,7 @@ serve(async (req) => {
 
       if (!addon) {
         return new Response(JSON.stringify({ error: "Add-on não encontrado" }), {
-          status: 404,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -292,7 +294,7 @@ serve(async (req) => {
     if (product_type === "ai_credits") {
       if (!credit_pack_id) {
         return new Response(JSON.stringify({ error: "credit_pack_id é obrigatório" }), {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -305,7 +307,7 @@ serve(async (req) => {
 
       if (!pack) {
         return new Response(JSON.stringify({ error: "Pack de créditos não encontrado" }), {
-          status: 404,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -327,7 +329,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ error: `product_type inválido: ${product_type}` }), {
-      status: 400,
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
@@ -336,7 +338,7 @@ serve(async (req) => {
     console.error("[create-checkout-session]", errMsg);
     return new Response(
       JSON.stringify({ error: errMsg }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
