@@ -814,19 +814,19 @@ export default function Checkout() {
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
               <h3 className="font-semibold text-foreground">Dados fiscais</h3>
               <p className="text-xs text-muted-foreground">
-                Necessário para emissão da nota fiscal e geração do boleto/pix via Asaas.
+                Todos os campos são obrigatórios para emissão de nota fiscal (NFS-e) e cobrança via Asaas.
               </p>
 
               <div className="space-y-3">
                 <Input
-                  placeholder="CPF ou CNPJ"
+                  placeholder="CPF ou CNPJ *"
                   value={cpfCnpj}
                   onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
                   inputMode="numeric"
                 />
 
                 <Input
-                  placeholder="Telefone / WhatsApp"
+                  placeholder="Telefone / WhatsApp *"
                   value={phone}
                   onChange={(e) => setPhone(maskPhone(e.target.value))}
                   inputMode="tel"
@@ -834,7 +834,7 @@ export default function Checkout() {
 
                 <div className="relative">
                   <Input
-                    placeholder="CEP"
+                    placeholder="CEP *"
                     value={cep}
                     inputMode="numeric"
                     onChange={(e) => {
@@ -853,31 +853,31 @@ export default function Checkout() {
 
                 <div className="grid grid-cols-[1fr_80px] gap-2">
                   <Input
-                    placeholder="Rua / Avenida"
+                    placeholder="Rua / Avenida *"
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
                   />
                   <Input
-                    placeholder="Nº"
+                    placeholder="Nº *"
                     value={number}
                     onChange={(e) => setNumber(e.target.value)}
                   />
                 </div>
 
                 <Input
-                  placeholder="Bairro"
+                  placeholder="Bairro *"
                   value={neighborhood}
                   onChange={(e) => setNeighborhood(e.target.value)}
                 />
 
                 <div className="grid grid-cols-[1fr_60px] gap-2">
                   <Input
-                    placeholder="Cidade"
+                    placeholder="Cidade *"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
                   <Input
-                    placeholder="UF"
+                    placeholder="UF *"
                     value={uf}
                     maxLength={2}
                     onChange={(e) => setUf(e.target.value.toUpperCase())}
