@@ -105,7 +105,7 @@ export const SubscriptionManagement = () => {
         toast.error(data?.error || 'Erro ao contratar add-on');
         return;
       }
-      window.location.href = data.url;
+      window.open(data.url, '_blank', 'noopener,noreferrer');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro ao contratar add-on.';
       toast.error(message);
@@ -113,6 +113,26 @@ export const SubscriptionManagement = () => {
       setLoadingAction(null);
     }
   };
+
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    try {
+      const { data } = await supabase.functions.invoke('cancel-subscription');
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      toast.success('Assinatura cancelada. Acesso ativo até o fim do período atual.');
+      setShowCancelDialog(false);
+      await refetch();
+    } catch {
+      toast.error('Erro ao cancelar assinatura. Tente novamente.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+
 
 
   const extraUsers = subscription?.extra_users_count || 0;
