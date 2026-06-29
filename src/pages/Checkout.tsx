@@ -81,11 +81,8 @@ interface PlanCardData {
 }
 
 const ADDONS = [
-  { id: 'units_50', label: '+50 unidades', price: 39.9 },
-  { id: 'user_1', label: '+1 usuário', price: 49.9 },
-  { id: 'ai_sm', label: 'Créditos IA (S)', price: 24.9 },
-  { id: 'ai_md', label: 'Créditos IA (M)', price: 39.9 },
-  { id: 'ai_lg', label: 'Créditos IA (G)', price: 89.9 },
+  { id: 'extra-units-50', label: '+50 unidades', price: 39.9 },
+  { id: 'extra-user', label: '+1 usuário', price: 49.9 },
 ];
 
 // ============================================================================
