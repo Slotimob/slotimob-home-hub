@@ -413,12 +413,14 @@ export default function Checkout() {
         window.open(data.url, '_blank');
         setPaymentResult(data as PaymentResult);
         // Após processar o resultado principal da subscription:
-        if (selectedAddons.length > 0) {
-          for (const addonId of selectedAddons) {
+        if (Object.values(addonQuantities).some((q) => q > 0)) {
+          for (const [addonId, qty] of Object.entries(addonQuantities)) {
+            if (qty <= 0) continue;
             const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
               body: {
                 product_type: 'addon',
                 addon_id: addonId,
+                quantity: qty,
                 billing_type: billingType,
               },
             });
