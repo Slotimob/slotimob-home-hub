@@ -469,6 +469,54 @@ export const SubscriptionManagement = () => {
         </Card>
       )}
 
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-destructive" />
+              Cancelar Assinatura
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                Tem certeza que deseja cancelar sua assinatura?
+              </span>
+              {subscription?.current_period_end && (
+                <span className="block">
+                  Você continuará com acesso completo até{' '}
+                  <strong className="text-foreground">
+                    {new Date(subscription.current_period_end).toLocaleDateString('pt-BR', {
+                      day: '2-digit', month: 'long', year: 'numeric',
+                    })}
+                  </strong>.
+                </span>
+              )}
+              <span className="block text-destructive/80">
+                Após essa data, sua conta será rebaixada automaticamente para o plano Start (gratuito).
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>
+              Manter minha Assinatura
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancelSubscription();
+              }}
+              disabled={isCancelling}
+            >
+              {isCancelling ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Cancelando...</>
+              ) : (
+                'Confirmar Cancelamento'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <BuyAICreditsDialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog} />
     </div>
   );
