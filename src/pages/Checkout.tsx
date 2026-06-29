@@ -364,8 +364,42 @@ export default function Checkout() {
       if (data?.type === 'redirect' && data?.url) {
         window.open(data.url, '_blank');
         setPaymentResult(data as PaymentResult);
+        // Após processar o resultado principal da subscription:
+        if (selectedAddons.length > 0) {
+          for (const addonId of selectedAddons) {
+            const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
+              body: {
+                product_type: 'addon',
+                addon_id: addonId,
+                billing_type: billingType,
+              },
+            });
+            if (addonData?.error) {
+              console.warn('[addon] erro no add-on:', addonId, addonData.error);
+            } else if (addonData?.url) {
+              window.open(addonData.url, '_blank');
+            }
+          }
+        }
       } else if (data?.type === 'pix' || data?.type === 'boleto') {
         setPaymentResult(data as PaymentResult);
+        // Após processar o resultado principal da subscription:
+        if (selectedAddons.length > 0) {
+          for (const addonId of selectedAddons) {
+            const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
+              body: {
+                product_type: 'addon',
+                addon_id: addonId,
+                billing_type: billingType,
+              },
+            });
+            if (addonData?.error) {
+              console.warn('[addon] erro no add-on:', addonId, addonData.error);
+            } else if (addonData?.url) {
+              window.open(addonData.url, '_blank');
+            }
+          }
+        }
         toast.success('Pagamento gerado! Siga as instruções abaixo.');
       } else if (data?.url) {
         // backwards compat
