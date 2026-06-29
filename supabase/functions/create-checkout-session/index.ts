@@ -76,7 +76,7 @@ serve(async (req) => {
 
     const { data: subscription } = await supabase
       .from("subscriptions")
-      .select("billing_provider, asaas_customer_id, status, price_locked, is_early_adopter")
+      .select("billing_provider, asaas_customer_id, status, price_locked, is_early_adopter, plan_id, current_period_end, asaas_subscription_id")
       .eq("user_id", userId)
       .single();
 
@@ -167,11 +167,39 @@ serve(async (req) => {
           }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
       }
+      // ── Upgrade de plano: cancelar subscription Asaas anterior se existir ──────
+      // Garante que o usuário não pague duplo ao fazer upgrade (Pro → Business)
+      const planHierarchy: Record<string, number> = { start: 0, free: 0, essencial: 1, pro: 2, business: 3 };
+      const currentPlanRank = planHierarchy[subscription?.plan_id ?? 'start'] ?? 0;
+      const newPlanRank = planHierarchy[plan_id] ?? 0;
+      const isUpgrade = newPlanRank > currentPlanRank && !!subscription?.asaas_subscription_id;
+
+      if (isUpgrade) {
+        console.log(`[checkout] Upgrade detectado: ${subscription?.plan_id} → ${plan_id}. Cancelando sub anterior: ${subscription?.asaas_subscription_id}`);
+        const cancelRes = await fetch(`${ASAAS_API_URL}/subscriptions/${subscription!.asaas_subscription_id}`, {
+          method: "DELETE",
+          headers: { "access_token": Deno.env.get("ASAAS_API_KEY")!, "Content-Type": "application/json" },
+        });
+        if (cancelRes.ok || cancelRes.status === 404) {
+          console.log("[checkout] Subscription anterior cancelada com sucesso.");
+        } else {
+          const errData = await cancelRes.json().catch(() => ({}));
+          console.warn("[checkout] Aviso: não foi possível cancelar subscription anterior:", errData?.errors?.[0]?.description);
+          // Não bloquear o upgrade por causa disso — continuar criando a nova subscription
+        }
+      }
+
+      // Se houver data de renovação do plano atual, usar como nextDueDate do novo (sem cobrança dupla)
+      const upgradeDueDate = isUpgrade && subscription?.current_period_end
+        ? new Date(subscription.current_period_end).toISOString().split("T")[0]
+        : nextDueDateStr(1);
+      // ── fim do bloco de upgrade ──────────────────────────────────────────────────
+
       const sub = await asaasRequest("/subscriptions", "POST", {
         customer: asaasCustomerId,
         billingType: asaasBillingType,
         value,
-        nextDueDate: nextDueDateStr(1),
+        nextDueDate: upgradeDueDate,
         cycle,
         description: `Slotimob ${planName} ${isAnnual ? "Anual" : "Mensal"}`,
         externalReference: extRef,
@@ -183,6 +211,8 @@ serve(async (req) => {
           asaas_subscription_id: sub.id,
           billing_provider: "asaas",
           asaas_customer_id: asaasCustomerId,
+          plan_id: plan_id,
+          cancel_at_period_end: false,
           ...(useEarlyAdopter ? { price_locked: true, is_early_adopter: true } : {}),
         })
         .eq("user_id", userId);
