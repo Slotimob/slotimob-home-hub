@@ -250,6 +250,14 @@ serve(async (req) => {
         });
       }
 
+      const quantity = Math.max(1, Math.min(Number(body.quantity) || 1, 20));
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+        return new Response(
+          JSON.stringify({ error: "Quantidade de add-on inválida. Mínimo 1, máximo 20." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { data: addon } = await supabase
         .from("subscription_addons")
         .select("id, name, price")
