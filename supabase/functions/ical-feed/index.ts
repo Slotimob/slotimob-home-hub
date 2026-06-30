@@ -118,8 +118,7 @@ Deno.serve(async (req) => {
         duration_minutes,
         activity_type,
         title,
-        notes,
-        location,
+        description,
         leads:lead_id (name, phone)
       `)
       .eq('broker_id', userId)
@@ -203,7 +202,7 @@ Deno.serve(async (req) => {
           activity.title,
           leadName ? `Contato: ${leadName}` : '',
           (activity.leads as any)?.phone ? `Tel: ${(activity.leads as any).phone}` : '',
-          activity.notes ? `Obs: ${activity.notes}` : '',
+          activity.description ? `Obs: ${activity.description}` : '',
         ].filter(Boolean).join('\\n');
 
         icalContent.push(
@@ -213,7 +212,7 @@ Deno.serve(async (req) => {
           `DTSTART:${formatDateToICal(startDate)}`,
           `DTEND:${formatDateToICal(endDate)}`,
           `SUMMARY:${escapeICalText(summary)}`,
-          activity.location ? `LOCATION:${escapeICalText(activity.location)}` : '',
+          
           `DESCRIPTION:${escapeICalText(description)}`,
           'STATUS:CONFIRMED',
           'END:VEVENT'
