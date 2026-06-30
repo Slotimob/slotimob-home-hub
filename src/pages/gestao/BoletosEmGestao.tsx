@@ -41,6 +41,7 @@ export default function BoletosEmGestao() {
   const [dateTo, setDateTo] = useState("");
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [emitirOpen, setEmitirOpen] = useState(false);
 
   // Dialogs: alterar vencimento e reajustar valor
   const [dueDateDialog, setDueDateDialog] = useState<{ id: string; current: string } | null>(null);
