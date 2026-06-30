@@ -75,7 +75,7 @@ const AdminCockpit = () => {
   const [limitsDialog, setLimitsDialog] = useState<Organization | null>(null);
   const [planDialog, setPlanDialog] = useState<Organization | null>(null);
   const [roleDialog, setRoleDialog] = useState<Organization | null>(null);
-  const [creditType, setCreditType] = useState('whatsapp');
+  const [creditType, setCreditType] = useState('ai');
   const [creditAmount, setCreditAmount] = useState('');
   const [creditReason, setCreditReason] = useState('');
   const [extraUsers, setExtraUsers] = useState(0);
