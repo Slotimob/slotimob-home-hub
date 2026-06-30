@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
           activity.title,
           leadName ? `Contato: ${leadName}` : '',
           (activity.leads as any)?.phone ? `Tel: ${(activity.leads as any).phone}` : '',
-          activity.notes ? `Obs: ${activity.notes}` : '',
+          activity.description ? `Obs: ${activity.description}` : '',
         ].filter(Boolean).join('\\n');
 
         icalContent.push(
