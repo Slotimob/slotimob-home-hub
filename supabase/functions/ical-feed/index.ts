@@ -118,8 +118,7 @@ Deno.serve(async (req) => {
         duration_minutes,
         activity_type,
         title,
-        notes,
-        location,
+        description,
         leads:lead_id (name, phone)
       `)
       .eq('broker_id', userId)
