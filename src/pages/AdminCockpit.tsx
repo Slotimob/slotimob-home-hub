@@ -559,7 +559,7 @@ const AdminCockpit = () => {
                   <p className="text-xs text-muted-foreground">
                     {role === 'super_admin' && 'Acesso total — gestão global e roles'}
                     {role === 'admin' && 'Planos, créditos e limites — sem roles'}
-                    {role === 'moderator' && 'CRUD de conteúdos na aba Treinamentos'}
+                    {role === 'moderator' && 'CRUD de conteúdos na página /treinamentos (fora do Cockpit)'}
                     {role === 'support' && 'Visualização de usuários e logs — somente leitura'}
                   </p>
                 </div>
