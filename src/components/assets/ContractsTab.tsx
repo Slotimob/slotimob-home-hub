@@ -200,6 +200,7 @@ export function ContractsTab() {
   const { data: allLeases } = useLeases();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [emitirLeaseId, setEmitirLeaseId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<ContractStatusFilter>("all");
   const [adjustmentFilter, setAdjustmentFilter] = useState<string>("all");
   const [selectedLease, setSelectedLease] = useState<LeaseWithDetails | null>(null);
