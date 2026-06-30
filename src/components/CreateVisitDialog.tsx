@@ -250,7 +250,7 @@ export function CreateVisitDialog({
                     selected={selectedDate}
                     onSelect={setSelectedDate}
                     locale={ptBR}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => date < startOfDay(new Date())}
                   />
                 </PopoverContent>
               </Popover>
