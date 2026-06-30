@@ -383,7 +383,7 @@ const AdminCockpit = () => {
                                           <Crown className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Adicionar Créditos"
-                                          onClick={() => { setCreditAmount(''); setCreditReason(''); setCreditType('whatsapp'); setCreditsDialog(org); }}>
+                                          onClick={() => { setCreditAmount(''); setCreditReason(''); setCreditType('ai'); setCreditsDialog(org); }}>
                                           <Plus className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Ajustar Limites"
