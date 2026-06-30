@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
           `DTSTART:${formatDateToICal(startDate)}`,
           `DTEND:${formatDateToICal(endDate)}`,
           `SUMMARY:${escapeICalText(summary)}`,
-          activity.location ? `LOCATION:${escapeICalText(activity.location)}` : '',
+          
           `DESCRIPTION:${escapeICalText(description)}`,
           'STATUS:CONFIRMED',
           'END:VEVENT'
