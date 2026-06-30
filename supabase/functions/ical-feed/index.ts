@@ -180,14 +180,12 @@ Deno.serve(async (req) => {
     // Add activities as events
     if (activities && activities.length > 0) {
       const activityEmojis: Record<string, string> = {
-        visit: '🏠',
-        call: '📞',
-        meeting: '🤝',
-        task: '✅',
-        followup: '🔄',
+        ligar: '📞',
         email: '📧',
-        document: '📄',
-        other: '📌',
+        reuniao: '🤝',
+        tarefa: '✅',
+        mensagem: '💬',
+        visita: '🏠',
       };
 
       for (const activity of activities) {
