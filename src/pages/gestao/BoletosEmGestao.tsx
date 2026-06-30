@@ -211,13 +211,26 @@ export default function BoletosEmGestao() {
     <AppLayout title="Boletos e Cobranças">
     <div className="space-y-6 p-4 sm:p-6">
 
-      <div>
-        <h1 className="text-xl font-semibold flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-primary" />
-          Boletos e Cobranças
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Gerencie as cobranças automáticas via Asaas</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-semibold flex items-center gap-2">
+            <Receipt className="h-5 w-5 text-primary" />
+            Boletos e Cobranças
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gerencie as cobranças automáticas via Asaas</p>
+        </div>
+        <Button onClick={() => setEmitirOpen(true)} size="sm" className="gap-1.5">
+          <Plus className="h-4 w-4" />
+          Nova Cobrança
+        </Button>
       </div>
+
+      <EmitirCobrancaDialog
+        open={emitirOpen}
+        onOpenChange={setEmitirOpen}
+        onSuccess={() => refetch()}
+      />
+
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
