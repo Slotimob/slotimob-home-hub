@@ -1378,6 +1378,12 @@ export function ContractsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EmitirCobrancaDialog
+        open={!!emitirLeaseId}
+        onOpenChange={(open) => !open && setEmitirLeaseId(null)}
+        preselectedLeaseId={emitirLeaseId ?? undefined}
+      />
     </div>
   );
 }
