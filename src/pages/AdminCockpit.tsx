@@ -22,7 +22,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Building2, CreditCard, Loader2, MessageSquare, Plus, Settings2,
+  Building2, CreditCard, Loader2, Plus, Settings2,
   Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon, FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -75,7 +75,7 @@ const AdminCockpit = () => {
   const [limitsDialog, setLimitsDialog] = useState<Organization | null>(null);
   const [planDialog, setPlanDialog] = useState<Organization | null>(null);
   const [roleDialog, setRoleDialog] = useState<Organization | null>(null);
-  const [creditType, setCreditType] = useState('whatsapp');
+  const [creditType, setCreditType] = useState('ai');
   const [creditAmount, setCreditAmount] = useState('');
   const [creditReason, setCreditReason] = useState('');
   const [extraUsers, setExtraUsers] = useState(0);
@@ -383,7 +383,7 @@ const AdminCockpit = () => {
                                           <Crown className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Adicionar Créditos"
-                                          onClick={() => { setCreditAmount(''); setCreditReason(''); setCreditType('whatsapp'); setCreditsDialog(org); }}>
+                                          onClick={() => { setCreditAmount(''); setCreditReason(''); setCreditType('ai'); setCreditsDialog(org); }}>
                                           <Plus className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Ajustar Limites"
@@ -559,7 +559,7 @@ const AdminCockpit = () => {
                   <p className="text-xs text-muted-foreground">
                     {role === 'super_admin' && 'Acesso total — gestão global e roles'}
                     {role === 'admin' && 'Planos, créditos e limites — sem roles'}
-                    {role === 'moderator' && 'CRUD de conteúdos na aba Treinamentos'}
+                    {role === 'moderator' && 'CRUD de conteúdos na página /treinamentos (fora do Cockpit)'}
                     {role === 'support' && 'Visualização de usuários e logs — somente leitura'}
                   </p>
                 </div>
@@ -594,9 +594,6 @@ const AdminCockpit = () => {
               <Select value={creditType} onValueChange={setCreditType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="whatsapp">
-                    <div className="flex items-center gap-2"><MessageSquare className="h-4 w-4" /> WhatsApp</div>
-                  </SelectItem>
                   <SelectItem value="ai">
                     <div className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> IA</div>
                   </SelectItem>
