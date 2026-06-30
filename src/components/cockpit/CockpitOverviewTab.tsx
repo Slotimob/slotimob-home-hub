@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, CreditCard, Sparkles, Wallet, TrendingUp } from 'lucide-react';
+import { Users, CreditCard, Sparkles, Wallet, TrendingUp, AlertTriangle } from 'lucide-react';
+import { TrainingCoverageCard } from './TrainingCoverageCard';
 
 interface Organization {
   user_id: string;
@@ -7,6 +8,9 @@ interface Organization {
   subscription_status: string;
   trial_ends_at: string | null;
   is_early_adopter: boolean;
+  is_staff?: boolean;
+  extra_users_count?: number;
+  extra_unit_packs?: number;
 }
 
 interface CockpitOverviewTabProps {
@@ -26,24 +30,35 @@ const EARLY_ADOPTER_PRICES: Record<string, number> = {
   business: 179,
 };
 
+const EXTRA_USER_PRICE = 19.90;
+const EXTRA_UNIT_PACK_PRICE = 29.90;
+
 export function CockpitOverviewTab({ organizations }: CockpitOverviewTabProps) {
-  const totalOrgs = organizations.length;
-  const activeOrgs = organizations.filter((o) => o.subscription_status === 'active').length;
-  const trialOrgs = organizations.filter(
+  // Contas da própria equipe (super_admin, admin, moderator, support) não são clientes
+  // pagantes reais e não devem entrar em nenhuma métrica financeira ou de crescimento.
+  const customerOrgs = organizations.filter((o) => !o.is_staff);
+
+  const totalOrgs = customerOrgs.length;
+  const activeOrgs = customerOrgs.filter((o) => o.subscription_status === 'active').length;
+  const trialOrgs = customerOrgs.filter(
     (o) => o.subscription_status === 'trialing' || (o.trial_ends_at && new Date(o.trial_ends_at) > new Date())
   ).length;
+  const pastDueOrgs = customerOrgs.filter((o) => o.subscription_status === 'past_due').length;
 
-  // Estimate MRR from active subscriptions
-  const estimatedMRR = organizations
+  // Estimate MRR from active subscriptions, incluindo receita de add-ons
+  const estimatedMRR = customerOrgs
     .filter((o) => o.subscription_status === 'active')
     .reduce((sum, o) => {
-      const price = o.is_early_adopter
+      const basePrice = o.is_early_adopter
         ? (EARLY_ADOPTER_PRICES[o.plan_id] || 0)
         : (PLAN_PRICES[o.plan_id] || 0);
-      return sum + price;
+      const addonsPrice =
+        (o.extra_users_count || 0) * EXTRA_USER_PRICE +
+        (o.extra_unit_packs || 0) * EXTRA_UNIT_PACK_PRICE;
+      return sum + basePrice + addonsPrice;
     }, 0);
 
-  const conversionRate = totalOrgs > 0
+  const activationRate = totalOrgs > 0
     ? Math.round((activeOrgs / totalOrgs) * 100)
     : 0;
 
@@ -87,7 +102,7 @@ export function CockpitOverviewTab({ organizations }: CockpitOverviewTabProps) {
       </div>
 
       {/* Financial metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -97,7 +112,7 @@ export function CockpitOverviewTab({ organizations }: CockpitOverviewTabProps) {
                   R$ {estimatedMRR.toFixed(2).replace('.', ',')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Baseado em {activeOrgs} assinatura{activeOrgs !== 1 ? 's' : ''} ativa{activeOrgs !== 1 ? 's' : ''}
+                  {activeOrgs} assinatura{activeOrgs !== 1 ? 's' : ''} ativa{activeOrgs !== 1 ? 's' : ''}, com add-ons
                 </p>
               </div>
               <Wallet className="h-8 w-8 text-muted-foreground/30" />
@@ -108,17 +123,34 @@ export function CockpitOverviewTab({ organizations }: CockpitOverviewTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Taxa de Conversão</p>
-                <p className="text-2xl font-bold">{conversionRate}%</p>
+                <p className="text-sm text-muted-foreground">Taxa de Ativação</p>
+                <p className="text-2xl font-bold">{activationRate}%</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Trial → Ativa ({activeOrgs} de {totalOrgs})
+                  Ativas de todas as orgs ({activeOrgs} de {totalOrgs})
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-muted-foreground/30" />
             </div>
           </CardContent>
         </Card>
+        <Card className={pastDueOrgs > 0 ? 'border-destructive/40' : undefined}>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Inadimplentes</p>
+                <p className={`text-2xl font-bold ${pastDueOrgs > 0 ? 'text-destructive' : ''}`}>{pastDueOrgs}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Pagamento em atraso
+                </p>
+              </div>
+              <AlertTriangle className={`h-8 w-8 ${pastDueOrgs > 0 ? 'text-destructive/60' : 'text-muted-foreground/30'}`} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Training coverage */}
+      <TrainingCoverageCard />
     </div>
   );
 }
