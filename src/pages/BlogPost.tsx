@@ -3,8 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SEOHead } from '@/components/SEOHead';
-import { LandingHeader } from '@/components/landing/LandingHeader';
-import { FooterSection } from '@/components/landing/FooterSection';
+import { LpHeader } from '@/components/landing/v2/LpHeader';
+import '@/components/landing/v2/lp.css';
+import { LpFooter } from '@/components/landing/v2/LpFooter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -182,8 +183,8 @@ export default function BlogPost() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <LandingHeader />
+      <div data-lp="v2" className="min-h-screen bg-background">
+        <LpHeader />
         <main className="pt-24 pb-16">
           <div className="container mx-auto px-4 max-w-5xl">
             <Skeleton className="h-6 w-32 mb-6" />
@@ -204,8 +205,8 @@ export default function BlogPost() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-background">
-        <LandingHeader />
+      <div data-lp="v2" className="min-h-screen bg-background">
+        <LpHeader />
         <div className="pt-24 text-center py-20">
           <h1 className="text-2xl font-bold mb-4">Artigo não encontrado</h1>
           <Button asChild variant="outline">
@@ -302,13 +303,13 @@ export default function BlogPost() {
         {post.geo_location && <meta name="geo.region" content={post.geo_location} />}
       </Helmet>
 
-      <div className="min-h-screen bg-background">
+      <div data-lp="v2" className="min-h-screen bg-background">
         {/* Reading progress bar */}
         <div className="fixed top-0 left-0 right-0 z-[60]">
           <Progress value={readProgress} className="h-1 rounded-none" />
         </div>
 
-        <LandingHeader />
+        <LpHeader />
 
         <main className="pt-24 pb-16">
           <div className="container mx-auto px-4">
@@ -536,7 +537,7 @@ export default function BlogPost() {
           </div>
         </main>
 
-        <FooterSection />
+        <LpFooter />
       </div>
     </>
   );
