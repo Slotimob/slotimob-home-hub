@@ -22,7 +22,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Building2, CreditCard, Loader2, MessageSquare, Plus, Settings2,
+  Building2, CreditCard, Loader2, Plus, Settings2,
   Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon, FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
