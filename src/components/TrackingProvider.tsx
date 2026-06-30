@@ -71,22 +71,24 @@ function injectPixel(id: string) {
   document.body.appendChild(noscript);
 }
 
-function injectGA(id: string) {
-  if (!isValidGaId(id)) return;
+function injectGtagIds(ids: string[]) {
+  const validIds = ids.filter((id) => id && isValidGaId(id));
+  if (validIds.length === 0) return;
   if (document.getElementById('ga-script')) return;
 
   const script = document.createElement('script');
   script.id = 'ga-script';
   script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${validIds[0]}`;
   document.head.appendChild(script);
 
+  const configCalls = validIds.map((id) => `gtag('config', '${id}');`).join('\n    ');
   const inline = document.createElement('script');
   inline.innerHTML = `
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', '${id}');
+    ${configCalls}
   `;
   document.head.appendChild(inline);
 }
@@ -150,6 +152,7 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
     const gtmId = settings.gtm_id || ENV_GTM_ID || '';
     const pixelId = settings.pixel_id || ENV_PIXEL_ID || '';
     const gaId = settings.ga_id || '';
+    const googleAdsId = settings.google_ads_id || '';
 
     if (gtmId && isValidGtmId(gtmId)) {
       injectGTM(gtmId);
@@ -163,10 +166,15 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
       console.warn('[Tracking] Pixel ID inválido, ignorado por segurança.');
     }
 
-    if (gaId && isValidGaId(gaId)) {
-      injectGA(gaId);
-    } else if (gaId) {
-      console.warn('[Tracking] GA ID inválido, ignorado por segurança.');
+    const gtagIds = [gaId, googleAdsId].filter(Boolean);
+    if (gtagIds.length > 0) {
+      const validGtagIds = gtagIds.filter((id) => isValidGaId(id));
+      if (validGtagIds.length > 0) {
+        injectGtagIds(validGtagIds);
+      }
+      gtagIds.filter((id) => !isValidGaId(id)).forEach(() => {
+        console.warn('[Tracking] ID gtag inválido, ignorado por segurança.');
+      });
     }
 
     setInjected(true);
