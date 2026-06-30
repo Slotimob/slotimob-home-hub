@@ -140,7 +140,6 @@ export function CockpitBlogTab() {
         is_published: publish,
         published_at: publish ? new Date().toISOString() : null,
         reading_time_min,
-        author_id: user!.id,
       };
 
       if (editingPost) {
@@ -152,7 +151,7 @@ export function CockpitBlogTab() {
       } else {
         const { error } = await supabase
           .from('blog_posts')
-          .insert(postData);
+          .insert({ ...postData, author_id: user!.id });
         if (error) throw error;
       }
     },
