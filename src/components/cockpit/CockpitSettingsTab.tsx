@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Save, Tag, BarChart3, Facebook } from 'lucide-react';
+import { Save, Tag, BarChart3, Facebook, Target } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SettingRow {
@@ -21,6 +21,7 @@ const MARKETING_KEYS = [
   { key: 'gtm_id', label: 'Google Tag Manager ID', placeholder: 'GTM-XXXXXXX', icon: Tag },
   { key: 'pixel_id', label: 'Facebook Pixel ID', placeholder: '123456789012345', icon: Facebook },
   { key: 'ga_id', label: 'Google Analytics ID', placeholder: 'G-XXXXXXXXXX', icon: BarChart3 },
+  { key: 'google_ads_id', label: 'Google Ads Conversion ID', placeholder: 'AW-XXXXXXXXX', icon: Target },
 ];
 
 export function CockpitSettingsTab() {
