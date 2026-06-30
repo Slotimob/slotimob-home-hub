@@ -594,9 +594,6 @@ const AdminCockpit = () => {
               <Select value={creditType} onValueChange={setCreditType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="whatsapp">
-                    <div className="flex items-center gap-2"><MessageSquare className="h-4 w-4" /> WhatsApp</div>
-                  </SelectItem>
                   <SelectItem value="ai">
                     <div className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> IA</div>
                   </SelectItem>
