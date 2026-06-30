@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ExternalLink, Copy, MoreHorizontal, Search, FileText, Loader2, Receipt, AlertCircle, RefreshCw, Mail, XCircle, CalendarClock, TrendingUp } from "lucide-react";
+import { ExternalLink, Copy, MoreHorizontal, Search, FileText, Loader2, Receipt, AlertCircle, RefreshCw, Mail, XCircle, CalendarClock, TrendingUp, Plus } from "lucide-react";
+import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ export default function BoletosEmGestao() {
   const [dateTo, setDateTo] = useState("");
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [emitirOpen, setEmitirOpen] = useState(false);
 
   // Dialogs: alterar vencimento e reajustar valor
   const [dueDateDialog, setDueDateDialog] = useState<{ id: string; current: string } | null>(null);
@@ -209,13 +211,26 @@ export default function BoletosEmGestao() {
     <AppLayout title="Boletos e Cobranças">
     <div className="space-y-6 p-4 sm:p-6">
 
-      <div>
-        <h1 className="text-xl font-semibold flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-primary" />
-          Boletos e Cobranças
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Gerencie as cobranças automáticas via Asaas</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-semibold flex items-center gap-2">
+            <Receipt className="h-5 w-5 text-primary" />
+            Boletos e Cobranças
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gerencie as cobranças automáticas via Asaas</p>
+        </div>
+        <Button onClick={() => setEmitirOpen(true)} size="sm" className="gap-1.5">
+          <Plus className="h-4 w-4" />
+          Nova Cobrança
+        </Button>
       </div>
+
+      <EmitirCobrancaDialog
+        open={emitirOpen}
+        onOpenChange={setEmitirOpen}
+        onSuccess={() => refetch()}
+      />
+
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[

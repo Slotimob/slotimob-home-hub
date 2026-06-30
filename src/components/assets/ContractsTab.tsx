@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
+import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -199,6 +200,7 @@ export function ContractsTab() {
   const { data: allLeases } = useLeases();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [emitirLeaseId, setEmitirLeaseId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<ContractStatusFilter>("all");
   const [adjustmentFilter, setAdjustmentFilter] = useState<string>("all");
   const [selectedLease, setSelectedLease] = useState<LeaseWithDetails | null>(null);
@@ -1031,6 +1033,15 @@ export function ContractsTab() {
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      setEmitirLeaseId(lease.id);
+                                    }}
+                                  >
+                                    <Receipt className="h-4 w-4 mr-2" />
+                                    Emitir Boleto/PIX
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       handleGenerateContract(lease.unit_id);
                                     }}
                                   >
@@ -1367,6 +1378,12 @@ export function ContractsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EmitirCobrancaDialog
+        open={!!emitirLeaseId}
+        onOpenChange={(open) => !open && setEmitirLeaseId(null)}
+        preselectedLeaseId={emitirLeaseId ?? undefined}
+      />
     </div>
   );
 }
