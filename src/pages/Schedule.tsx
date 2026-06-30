@@ -615,7 +615,7 @@ onActivityClick={handleActivityClick}
                   )}
 
                   {/* Visits Section */}
-                  {negotiationItems && negotiationItems.length > 0 && visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
+                  {visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
                     <div className="flex items-center gap-2 mb-3">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <h3 className="text-sm font-medium">Visitas</h3>
@@ -625,71 +625,121 @@ onActivityClick={handleActivityClick}
                     </div>
                   )}
                   
-                  {(!visitsOnSelectedDate || visitsOnSelectedDate.length === 0) && (!negotiationItems || negotiationItems.length === 0) ? (
+                  {(!visitsOnSelectedDate || visitsOnSelectedDate.length === 0) && (!negotiationItems || negotiationItems.length === 0) && (!activities || activities.length === 0) ? (
                     <div className="text-center py-12 text-muted-foreground">
                       <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum compromisso para esta data</p>
                     </div>
-                  ) : visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {visitsOnSelectedDate.map((visit: any) => (
-                        <Card key={visit.id} className="relative">
-                          {/* Confirmation indicator */}
-                          {visit.lead_confirmed && (
-                            <div className="absolute top-2 right-2">
-                              <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 dark:bg-green-950 px-2 py-1 rounded-full">
-                                <CheckCircle2 className="h-3 w-3" />
-                                <span>Cliente Informado</span>
-                              </div>
-                            </div>
-                          )}
-                          <CardContent className="pt-6">
-                            <div className="flex flex-wrap items-center gap-2 mb-4">
-                              <Badge className={getStatusColor(visit.status)}>
-                                {getStatusLabel(visit.status)}
-                              </Badge>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
-                                <Clock className="h-4 w-4" />
-                                {format(new Date(visit.scheduled_at), "HH:mm", { locale: ptBR })}
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="font-medium truncate">{visit.leads?.name}</span>
-                              </div>
-
-                              {visit.leads?.phone && (
-                                <p className="text-sm text-muted-foreground pl-6">
-                                  {visit.leads.phone}
-                                </p>
-                              )}
-
-                              {visit.properties && (
-                                <div className="flex items-start gap-2 text-sm">
-                                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                                  <span className="line-clamp-2">
-                                    {visit.properties.name}
-                                    {visit.units && ` - Un. ${visit.units.unit_number}`}
-                                  </span>
+                  ) : (
+                    <>
+                      {visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                          {visitsOnSelectedDate.map((visit: any) => (
+                            <Card key={visit.id} className="relative">
+                              {/* Confirmation indicator */}
+                              {visit.lead_confirmed && (
+                                <div className="absolute top-2 right-2">
+                                  <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 dark:bg-green-950 px-2 py-1 rounded-full">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    <span>Cliente Informado</span>
+                                  </div>
                                 </div>
                               )}
-
-                              {visit.units && (
-                                <div className="text-sm text-muted-foreground pl-6">
-                                  {visit.units.area}m² • {new Intl.NumberFormat("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL",
-                                    maximumFractionDigits: 0,
-                                  }).format(visit.units.price || 0)}
+                              <CardContent className="pt-6">
+                                <div className="flex flex-wrap items-center gap-2 mb-4">
+                                  <Badge className={getStatusColor(visit.status)}>
+                                    {getStatusLabel(visit.status)}
+                                  </Badge>
+                                  <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
+                                    <Clock className="h-4 w-4" />
+                                    {format(new Date(visit.scheduled_at), "HH:mm", { locale: ptBR })}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                    <span className="font-medium truncate">{visit.leads?.name}</span>
+                                  </div>
+
+                                  {visit.leads?.phone && (
+                                    <p className="text-sm text-muted-foreground pl-6">
+                                      {visit.leads.phone}
+                                    </p>
+                                  )}
+
+                                  {visit.properties && (
+                                    <div className="flex items-start gap-2 text-sm">
+                                      <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                                      <span className="line-clamp-2">
+                                        {visit.properties.name}
+                                        {visit.units && ` - Un. ${visit.units.unit_number}`}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {visit.units && (
+                                    <div className="text-sm text-muted-foreground pl-6">
+                                      {visit.units.area}m² • {new Intl.NumberFormat("pt-BR", {
+                                        style: "currency",
+                                        currency: "BRL",
+                                        maximumFractionDigits: 0,
+                                      }).format(visit.units.price || 0)}
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+
+                      {activities && activities.length > 0 && (
+                        <div className={(visitsOnSelectedDate && visitsOnSelectedDate.length > 0) ? "mt-6" : ""}>
+                          <div className="flex items-center gap-2 mb-3">
+                            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                            <h3 className="text-sm font-medium">Atividades</h3>
+                            <Badge variant="secondary" className="text-xs">
+                              {activities.length}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {activities.map((activity: any) => {
+                              const activityInfo = ACTIVITY_TYPES.find((a) => a.id === activity.activity_type);
+                              const Icon = activityInfo?.icon;
+                              return (
+                                <Card
+                                  key={activity.id}
+                                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                  onClick={() => handleActivityClick(activity)}
+                                >
+                                  <CardContent className="pt-6">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      {Icon && (
+                                        <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0", activityInfo?.color)}>
+                                          <Icon className="h-3.5 w-3.5" />
+                                        </div>
+                                      )}
+                                      <span className="font-medium truncate">{activity.title}</span>
+                                      <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto shrink-0">
+                                        <Clock className="h-4 w-4" />
+                                        {format(new Date(activity.scheduled_at), "HH:mm", { locale: ptBR })}
+                                      </div>
+                                    </div>
+                                    {activity.leads?.name && (
+                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <User className="h-4 w-4 shrink-0" />
+                                        <span className="truncate">{activity.leads.name}</span>
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
