@@ -144,7 +144,7 @@ export function ScheduleActivityDetailDialog({
     }
   };
 
-  const activityInfo = activity ? ACTIVITY_TYPES.find(a => a.id === activity.activity_type) : null;
+  const activityInfo = activity ? ACTIVITY_TYPES_ALL.find(a => a.id === activity.activity_type) : null;
 
   return (
     <>
