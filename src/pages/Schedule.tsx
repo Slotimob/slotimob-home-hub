@@ -736,7 +736,7 @@ export default function Schedule() {
                       {visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                           {visitsOnSelectedDate.map((visit: any) => (
-                            <Card key={visit.id} className="relative">
+                            <Card key={visit.id} className="relative cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleVisitClick(visit as VisitLike)}>
                               {/* Confirmation indicator */}
                               {visit.lead_confirmed && (
                                 <div className="absolute top-2 right-2">
