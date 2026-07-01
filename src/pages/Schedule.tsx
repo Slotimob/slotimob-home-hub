@@ -61,9 +61,19 @@ export default function Schedule() {
     activity: any | null;
   }>({ open: false, activity: null });
 
+  const [visitDetailDialog, setVisitDetailDialog] = useState<{ open: boolean; visit: VisitLike | null }>({
+    open: false,
+    visit: null,
+  });
+
   const handleActivityClick = (activity: any) => {
     setActivityDetailDialog({ open: true, activity });
   };
+
+  const handleVisitClick = (visit: VisitLike) => {
+    setVisitDetailDialog({ open: true, visit });
+  };
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
