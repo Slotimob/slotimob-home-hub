@@ -21,10 +21,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Building2, Home } from "lucide-react";
+import { CalendarIcon, Building2, Home, Check, ChevronsUpDown } from "lucide-react";
 import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -51,76 +59,71 @@ export function CreateVisitDialog({
   const [time, setTime] = useState("10:00");
   const [duration, setDuration] = useState("60");
   const [leadId, setLeadId] = useState("");
-  const [propertyId, setPropertyId] = useState("");
   const [unitId, setUnitId] = useState("");
   const [standaloneUnitId, setStandaloneUnitId] = useState("");
   const [notes, setNotes] = useState("");
   const [assetType, setAssetType] = useState<AssetType>("property");
   const [assignedUserId, setAssignedUserId] = useState("");
+  const [unitPickerOpen, setUnitPickerOpen] = useState(false);
 
   const { data: leads } = useQuery({
-    queryKey: ["leads", user?.id],
+    queryKey: ["leads", effectiveBrokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leads")
         .select("*")
-        .eq("broker_id", user?.id)
+        .eq("broker_id", effectiveBrokerId)
         .order("name");
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
-  });
-
-  const { data: properties } = useQuery({
-    queryKey: ["properties", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*")
-        .eq("broker_id", user?.id)
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
 
   const { data: units } = useQuery({
-    queryKey: ["units", propertyId],
+    queryKey: ["units-with-property", effectiveBrokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("units")
-        .select("*")
-        .eq("property_id", propertyId)
+        .select("id, unit_number, area, price, property_id, properties!units_property_id_fkey (name)")
+        .eq("broker_id", effectiveBrokerId)
         .eq("is_standalone", false)
         .order("unit_number");
       if (error) throw error;
-      return data;
+      return data as any[];
     },
-    enabled: !!propertyId,
+    enabled: !!effectiveBrokerId,
   });
 
   // Fetch standalone units (Imóveis Avulsos)
   const { data: standaloneUnits } = useQuery({
-    queryKey: ["standalone-units", user?.id],
+    queryKey: ["standalone-units", effectiveBrokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("units")
         .select("*")
-        .eq("broker_id", user?.id)
+        .eq("broker_id", effectiveBrokerId)
         .eq("is_standalone", true)
         .order("unit_number");
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveBrokerId,
   });
+
+  const formatPrice = (price: number | null) => {
+    if (!price) return "";
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(price);
+  };
+
+  const selectedUnit = units?.find((u) => u.id === unitId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate based on asset type
+
     if (!selectedDate || !leadId) {
       toast({
         title: "Campos obrigatórios",
@@ -130,10 +133,10 @@ export function CreateVisitDialog({
       return;
     }
 
-    if (assetType === "property" && !propertyId) {
+    if (assetType === "property" && !unitId) {
       toast({
         title: "Campos obrigatórios",
-        description: "Selecione um empreendimento",
+        description: "Selecione uma unidade",
         variant: "destructive",
       });
       return;
@@ -154,12 +157,11 @@ export function CreateVisitDialog({
       const scheduledAt = new Date(selectedDate);
       scheduledAt.setHours(hours, minutes, 0, 0);
 
-      // Determine which IDs to use based on asset type
       const visitData = {
         broker_id: effectiveBrokerId,
         lead_id: leadId,
-        property_id: assetType === "property" ? propertyId : null,
-        unit_id: assetType === "property" ? (unitId || null) : standaloneUnitId,
+        property_id: assetType === "property" ? (selectedUnit?.property_id ?? null) : null,
+        unit_id: assetType === "property" ? unitId : standaloneUnitId,
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: parseInt(duration),
         notes,
@@ -176,12 +178,10 @@ export function CreateVisitDialog({
         description: "A visita foi agendada com sucesso.",
       });
 
-      // Reset form
       setSelectedDate(undefined);
       setTime("10:00");
       setDuration("60");
       setLeadId("");
-      setPropertyId("");
       setUnitId("");
       setStandaloneUnitId("");
       setNotes("");
@@ -202,18 +202,8 @@ export function CreateVisitDialog({
 
   const handleAssetTypeChange = (value: string) => {
     setAssetType(value as AssetType);
-    // Reset selections when switching
-    setPropertyId("");
     setUnitId("");
     setStandaloneUnitId("");
-  };
-
-  const formatPrice = (price: number | null) => {
-    if (!price) return "";
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(price);
   };
 
   return (
@@ -299,14 +289,13 @@ export function CreateVisitDialog({
             </Select>
           </div>
 
-          {/* Asset Type Selection */}
           <div className="space-y-2">
             <Label>Tipo de Imóvel *</Label>
             <Tabs value={assetType} onValueChange={handleAssetTypeChange} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="property" className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
-                  Empreendimento
+                  Unidade
                 </TabsTrigger>
                 <TabsTrigger value="standalone" className="flex items-center gap-2">
                   <Home className="h-4 w-4" />
@@ -316,44 +305,77 @@ export function CreateVisitDialog({
 
               <TabsContent value="property" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="property">Empreendimento *</Label>
-                  <Select
-                    value={propertyId}
-                    onValueChange={(value) => {
-                      setPropertyId(value);
-                      setUnitId("");
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o empreendimento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {properties?.map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Unidade *</Label>
+                  <Popover open={unitPickerOpen} onOpenChange={setUnitPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={unitPickerOpen}
+                        className="w-full justify-between font-normal"
+                      >
+                        {selectedUnit ? (
+                          <span className="truncate">
+                            {selectedUnit.properties?.name ?? "—"} — Un. {selectedUnit.unit_number}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Selecione a unidade (buscar por empreendimento ou número)
+                          </span>
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command
+                        filter={(value, search) =>
+                          value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                        }
+                      >
+                        <CommandInput placeholder="Buscar empreendimento ou nº unidade..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhuma unidade encontrada.</CommandEmpty>
+                          <CommandGroup>
+                            {units?.map((unit) => {
+                              const propName = unit.properties?.name ?? "—";
+                              const label = `${propName} — Un. ${unit.unit_number}`;
+                              return (
+                                <CommandItem
+                                  key={unit.id}
+                                  value={`${propName} ${unit.unit_number}`}
+                                  onSelect={() => {
+                                    setUnitId(unit.id);
+                                    setUnitPickerOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      unitId === unit.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{label}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {unit.area ? `${unit.area}m²` : ""}
+                                      {unit.price ? ` • ${formatPrice(unit.price)}` : ""}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {(!units || units.length === 0) && (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhuma unidade cadastrada.
+                    </p>
+                  )}
                 </div>
-
-                {propertyId && units && units.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="unit">Unidade (opcional)</Label>
-                    <Select value={unitId} onValueChange={setUnitId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a unidade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {units.map((unit) => (
-                          <SelectItem key={unit.id} value={unit.id}>
-                            Unidade {unit.unit_number} - {unit.area}m² - {formatPrice(unit.price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
               </TabsContent>
 
               <TabsContent value="standalone" className="space-y-4 mt-4">
