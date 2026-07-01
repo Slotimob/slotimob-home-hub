@@ -12,11 +12,23 @@ import { FileText, Loader2, Download, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   generateLegalContractPDF,
+  validateContractData,
+  type ContractPendency,
   LegalContractData
 } from "@/utils/legalContractPdfGenerator";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
  
  interface ContractGeneratorDialogProps {
    open: boolean;
