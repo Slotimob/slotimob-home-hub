@@ -24,11 +24,13 @@ export function TimeSlot({
   hour, 
   date, 
   activities, 
+  visits = [],
   negotiationItems = [],
   hourHeight = 60, 
   onActivityClick, 
   onActivityResize,
-  onNegotiationItemClick 
+  onNegotiationItemClick,
+  onVisitClick,
 }: TimeSlotProps) {
   const slotId = `slot-${format(date, 'yyyy-MM-dd')}-${hour}`;
   
@@ -43,6 +45,11 @@ export function TimeSlot({
   const slotActivities = activities.filter((activity) => {
     const activityDate = new Date(activity.scheduled_at);
     return isSameDay(activityDate, date) && activityDate.getHours() === hour;
+  });
+
+  const slotVisits = visits.filter((v) => {
+    const d = new Date(v.scheduled_at);
+    return isSameDay(d, date) && d.getHours() === hour;
   });
 
   const slotNegotiationItems = negotiationItems.filter((item) => {
