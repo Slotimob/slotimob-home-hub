@@ -57,3 +57,12 @@ verify_jwt = false
 
 [functions.asaas-payment-action]
 verify_jwt = true
+
+[functions.xml-feed]
+verify_jwt = false
+
+[functions.blog-sitemap]
+verify_jwt = false
+
+[functions.rss-feed]
+verify_jwt = false
