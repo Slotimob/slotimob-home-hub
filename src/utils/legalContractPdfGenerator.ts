@@ -820,8 +820,19 @@ function getGarantiaTexto(data: LegalContractData): string {
   switch (data.contrato.garantia) {
     case 'fiador':
       return `Como garantia das obrigações assumidas neste contrato, o LOCATÁRIO apresenta como FIADOR(es) a(s) pessoa(s) qualificada(s) no preâmbulo deste instrumento, que assume(m) solidariamente a responsabilidade por todas as obrigações decorrentes desta locação.`;
-    case 'caucao':
-      return `Como garantia das obrigações assumidas neste contrato, o LOCATÁRIO efetua neste ato o depósito de caução no valor de ${formatCurrency(data.contrato.valorCaucao || 0)} (${currencyToWords(data.contrato.valorCaucao || 0)}), equivalente a 3 (três) meses de aluguel, que será devolvido ao término da locação, após quitação integral de todas as obrigações e vistoria final do imóvel.`;
+    case 'caucao': {
+      const val = data.contrato.valorCaucao || 0;
+      const aluguel = data.contrato.valorAluguel || 0;
+      let equivalencia = '';
+      if (aluguel > 0 && val > 0) {
+        const razao = val / aluguel;
+        const meses = Math.round(razao);
+        if (meses >= 1 && meses <= 3 && Math.abs(razao - meses) / meses <= 0.05) {
+          equivalencia = `, equivalente a ${meses} (${numberToWords(meses)}) ${meses === 1 ? 'mês' : 'meses'} de aluguel`;
+        }
+      }
+      return `Como garantia das obrigações assumidas neste contrato, o LOCATÁRIO efetua neste ato o depósito de caução no valor de ${formatCurrency(val)} (${currencyToWords(val)})${equivalencia}, que será devolvido ao término da locação, após quitação integral de todas as obrigações e vistoria final do imóvel.`;
+    }
     case 'seguro_fianca':
       return `Como garantia das obrigações assumidas neste contrato, o LOCATÁRIO apresenta apólice de seguro-fiança locatícia, cujo comprovante faz parte integrante deste instrumento.`;
     case 'titulo_capitalizacao':
@@ -831,40 +842,171 @@ function getGarantiaTexto(data: LegalContractData): string {
   }
 }
 
-function numberToWords(num: number): string {
-  const units = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
-  const teens = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
-  const tens = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
-  
-  if (num === 0) return 'zero';
-  if (num < 10) return units[num];
-  if (num < 20) return teens[num - 10];
-  if (num < 100) {
-    const ten = Math.floor(num / 10);
-    const unit = num % 10;
-    return tens[ten] + (unit ? ' e ' + units[unit] : '');
+// ============================================================================
+// EXTENSO PT-BR (até bilhões)
+// ============================================================================
+
+const _UNIDADES = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+const _ESPECIAIS = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+const _DEZENAS = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+const _CENTENAS = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+
+function _under1000(n: number): string {
+  if (n === 0) return '';
+  if (n === 100) return 'cem';
+  const c = Math.floor(n / 100);
+  const r = n % 100;
+  const parts: string[] = [];
+  if (c) parts.push(_CENTENAS[c]);
+  if (r) {
+    let rt = '';
+    if (r < 10) rt = _UNIDADES[r];
+    else if (r < 20) rt = _ESPECIAIS[r - 10];
+    else {
+      const d = Math.floor(r / 10);
+      const u = r % 10;
+      rt = _DEZENAS[d] + (u ? ' e ' + _UNIDADES[u] : '');
+    }
+    parts.push(rt);
   }
-  return num.toString();
+  return parts.join(' e ');
+}
+
+function numberToWords(num: number): string {
+  if (num === 0) return 'zero';
+  if (num < 0) return 'menos ' + numberToWords(-num);
+  num = Math.floor(num);
+
+  const bi = Math.floor(num / 1_000_000_000);
+  const mi = Math.floor((num % 1_000_000_000) / 1_000_000);
+  const mil = Math.floor((num % 1_000_000) / 1000);
+  const un = num % 1000;
+
+  const groups: Array<{ value: number; text: string }> = [];
+  if (bi) groups.push({ value: bi * 1_000_000_000, text: bi === 1 ? 'um bilhão' : _under1000(bi) + ' bilhões' });
+  if (mi) groups.push({ value: mi * 1_000_000, text: mi === 1 ? 'um milhão' : _under1000(mi) + ' milhões' });
+  if (mil) groups.push({ value: mil * 1000, text: mil === 1 ? 'mil' : _under1000(mil) + ' mil' });
+  if (un) groups.push({ value: un, text: _under1000(un) });
+
+  if (!groups.length) return 'zero';
+  let out = groups[0].text;
+  for (let i = 1; i < groups.length; i++) {
+    const cur = groups[i];
+    // " e " quando o último grupo for menor que 100 OU for centena redonda (100, 200, …, 900)
+    const useE = cur.value < 100 || (cur.value < 1000 && cur.value % 100 === 0);
+    out += (useE ? ' e ' : ', ') + cur.text;
+  }
+  return out;
 }
 
 function currencyToWords(value: number): string {
   const reais = Math.floor(value);
   const centavos = Math.round((value - reais) * 100);
-  
-  let result = '';
-  
-  if (reais > 0) {
-    result = numberToWords(reais) + (reais === 1 ? ' real' : ' reais');
-  }
-  
-  if (centavos > 0) {
-    result += (reais > 0 ? ' e ' : '') + numberToWords(centavos) + (centavos === 1 ? ' centavo' : ' centavos');
-  }
-  
-  return result || 'zero reais';
+  const parts: string[] = [];
+  if (reais > 0) parts.push(numberToWords(reais) + (reais === 1 ? ' real' : ' reais'));
+  if (centavos > 0) parts.push(numberToWords(centavos) + (centavos === 1 ? ' centavo' : ' centavos'));
+  if (!parts.length) return 'zero reais';
+  return parts.join(' e ');
 }
 
-// Exportação para uso com contratos existentes
+// ============================================================================
+// QUALIFICAÇÃO ADAPTATIVA (omite fragmentos vazios)
+// ============================================================================
+
+interface QualificacaoParty {
+  nome?: string;
+  nacionalidade?: string;
+  estadoCivil?: string;
+  profissao?: string;
+  rg?: string;
+  cpf?: string;
+  cnpj?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  email?: string;
+}
+
+function buildQualificacao(role: string, p: QualificacaoParty): string {
+  const nome = pdfSafeText(p.nome || '').toUpperCase();
+  const bits: string[] = [`${role}: **${nome}**`];
+  const cnpjDigits = (p.cnpj || '').replace(/\D/g, '');
+  const cpfDigits = (p.cpf || '').replace(/\D/g, '');
+  const treatAsCnpj = cnpjDigits.length === 14 || (!p.cnpj && cpfDigits.length === 14);
+
+  if (treatAsCnpj) {
+    const doc = cnpjDigits.length === 14 ? cnpjDigits : cpfDigits;
+    bits.push(`pessoa jurídica inscrita no CNPJ sob o nº ${formatCNPJ(doc)}`);
+  } else {
+    if (p.nacionalidade) bits.push(p.nacionalidade);
+    if (p.estadoCivil) bits.push(p.estadoCivil);
+    if (p.profissao) bits.push(p.profissao);
+    if (p.rg) bits.push(`portador(a) do RG nº ${formatRG(p.rg)}`);
+    if (cpfDigits) bits.push(`inscrito(a) no CPF sob o nº ${formatCPF(p.cpf!)}`);
+  }
+
+  let base = bits.join(', ');
+  if (p.endereco) {
+    base += `, residente e domiciliado(a) em ${p.endereco}${p.cidade ? `, ${p.cidade}` : ''}${p.estado ? `/${p.estado}` : ''}${p.cep ? `, CEP ${p.cep}` : ''}`;
+  }
+  if (p.email) base += `, e-mail: ${p.email}`;
+  return base + '.';
+}
+
+function signatureDocLabel(p: { cpf?: string; cnpj?: string }): string {
+  const cnpj = (p.cnpj || '').replace(/\D/g, '');
+  if (cnpj.length === 14) return `CNPJ: ${formatCNPJ(cnpj)}`;
+  const cpf = (p.cpf || '').replace(/\D/g, '');
+  if (cpf.length === 14) return `CNPJ: ${formatCNPJ(cpf)}`;
+  if (cpf) return `CPF: ${formatCPF(cpf)}`;
+  return '';
+}
+
+// ============================================================================
+// VALIDAÇÃO DE COMPLETUDE
+// ============================================================================
+
+export interface ContractPendency {
+  campo: string;
+  rotulo: string;
+  onde_corrigir: string;
+}
+
+export function validateContractData(data: LegalContractData): ContractPendency[] {
+  const pend: ContractPendency[] = [];
+  const ownerDoc = ((data.locador.cpf || '') + (data.locador.cnpj || '')).replace(/\D/g, '');
+  const tenantCpf = (data.locatario.cpf || '').replace(/\D/g, '');
+
+  if (!data.locador.nome?.trim()) pend.push({ campo: 'locador.nome', rotulo: 'Nome do proprietário', onde_corrigir: 'edite o contato do proprietário em Contatos → Proprietários' });
+  if (!ownerDoc) pend.push({ campo: 'locador.documento', rotulo: 'CPF/CNPJ do proprietário', onde_corrigir: 'edite o contato do proprietário em Contatos → Proprietários' });
+
+  if (!data.locatario.nome?.trim()) pend.push({ campo: 'locatario.nome', rotulo: 'Nome do inquilino', onde_corrigir: 'edite o contato do inquilino em Contatos → Inquilinos' });
+  if (!tenantCpf) pend.push({ campo: 'locatario.cpf', rotulo: 'CPF do inquilino', onde_corrigir: 'edite o contato do inquilino em Contatos → Inquilinos' });
+
+  if (!data.imovel.endereco?.trim()) pend.push({ campo: 'imovel.endereco', rotulo: 'Endereço do imóvel', onde_corrigir: 'edite a unidade em Imóveis' });
+  if (!data.imovel.cidade?.trim()) pend.push({ campo: 'imovel.cidade', rotulo: 'Cidade do imóvel', onde_corrigir: 'edite a unidade em Imóveis' });
+  if (!data.imovel.estado?.trim()) pend.push({ campo: 'imovel.estado', rotulo: 'Estado do imóvel', onde_corrigir: 'edite a unidade em Imóveis' });
+
+  if (!(data.contrato.valorAluguel > 0)) pend.push({ campo: 'contrato.valorAluguel', rotulo: 'Valor do aluguel', onde_corrigir: 'edite o contrato → seção Financeiro' });
+  if (!data.contrato.dataInicio) pend.push({ campo: 'contrato.dataInicio', rotulo: 'Data de início do contrato', onde_corrigir: 'edite o contrato → seção Financeiro' });
+
+  if (data.contrato.garantia === 'caucao') {
+    if (!(data.contrato.valorCaucao && data.contrato.valorCaucao > 0)) {
+      pend.push({ campo: 'contrato.valorCaucao', rotulo: 'Valor da caução', onde_corrigir: 'edite o contrato → seção Garantia' });
+    }
+  }
+  if (data.contrato.garantia === 'fiador') {
+    if (!data.fiador?.nome?.trim()) pend.push({ campo: 'fiador.nome', rotulo: 'Nome do fiador', onde_corrigir: 'edite o contrato → seção Garantia' });
+    if (!(data.fiador?.cpf || '').replace(/\D/g, '')) pend.push({ campo: 'fiador.cpf', rotulo: 'CPF do fiador', onde_corrigir: 'edite o contrato → seção Garantia' });
+  }
+  return pend;
+}
+
+// ============================================================================
+// GERAÇÃO A PARTIR DE LEASE
+// ============================================================================
+
 export const generateLegalContractFromLease = async (lease: any): Promise<void> => {
   const guarantorData = typeof lease.guarantor_data === 'string'
     ? JSON.parse(lease.guarantor_data || '{}')
@@ -880,15 +1022,26 @@ export const generateLegalContractFromLease = async (lease: any): Promise<void> 
 
   const billingContact = billingAutomation.billing_contact || {};
 
+  const owner = lease.owner || lease.unit?.owner || {};
+  const ownerMeta = owner.metadata || {};
+  const ownerDoc = (owner.document_number || '').replace(/\D/g, '');
+  const ownerIsCnpj = ownerDoc.length === 14;
+
   const data: LegalContractData = {
     locador: {
-      nome: lease.owner?.name || lease.unit?.owner?.name || '_______________',
-      cpf: lease.owner?.document_number || lease.unit?.owner?.document_number || '',
-      email: lease.owner?.email || lease.unit?.owner?.email || '',
-      telefone: lease.owner?.phone || lease.unit?.owner?.phone || '',
-      endereco: lease.owner?.address || lease.unit?.owner?.address || '',
-      cidade: lease.owner?.city || lease.unit?.owner?.city || '',
-      estado: lease.owner?.state || lease.unit?.owner?.state || '',
+      nome: owner.name || '_______________',
+      cpf: !ownerIsCnpj ? (owner.document_number || '') : '',
+      cnpj: ownerIsCnpj ? (owner.document_number || '') : '',
+      email: owner.email || '',
+      telefone: owner.phone || '',
+      endereco: owner.address || '',
+      cidade: owner.city || '',
+      estado: owner.state || '',
+      cep: owner.postal_code || '',
+      nacionalidade: ownerMeta.nacionalidade || 'brasileiro(a)',
+      estadoCivil: ownerMeta.estadoCivil || '',
+      profissao: ownerMeta.profissao || '',
+      rg: ownerMeta.rg || '',
     },
     locatario: {
       nome: lease.tenant?.name || '_______________',
@@ -933,6 +1086,8 @@ export const generateLegalContractFromLease = async (lease: any): Promise<void> 
       garantia: (lease.guarantee_type as any) || 'nenhuma',
       valorCaucao: lease.deposit_amount,
       finalidade: 'residencial',
+      multaPercent: Number(billingAutomation.multa_percent) || Number(billingAutomation.multaPercent) || undefined,
+      jurosPercent: Number(billingAutomation.juros_percent) || Number(billingAutomation.jurosPercent) || undefined,
     },
     pagamento: paymentInfo.pix || paymentInfo.banco ? {
       pix: paymentInfo.pix,
@@ -953,7 +1108,15 @@ export const generateLegalContractFromLease = async (lease: any): Promise<void> 
 };
 
 function calculateMonthsDiff(startDate: string, endDate: string): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const parse = (v: string): Date => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      const [y, m, d] = v.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    return new Date(v);
+  };
+  const start = parse(startDate);
+  const end = parse(endDate);
   return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
 }
+
