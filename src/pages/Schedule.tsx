@@ -414,6 +414,20 @@ export default function Schedule() {
       return;
     }
 
+    // Existing visit being moved
+    if (active.data.current?.type === 'existing-visit') {
+      const visitId = active.data.current.visitId;
+      if (slotData?.hour !== undefined && slotData?.date) {
+        rescheduleVisit.mutate({
+          visitId,
+          newDate: slotData.date,
+          newHour: slotData.hour,
+        });
+      }
+      return;
+    }
+
+
     // Otherwise it's a new activity being created from palette
     const activityType = active.data.current?.activityType;
 
