@@ -878,6 +878,18 @@ export default function Schedule() {
             }}
           />
 
+          <VisitDetailDialog
+            visit={visitDetailDialog.visit}
+            open={visitDetailDialog.open}
+            onOpenChange={(open) => setVisitDetailDialog(prev => ({ ...prev, open }))}
+            onSuccess={() => {
+              refetchPeriodVisits();
+              queryClient.invalidateQueries({ queryKey: ["all-visits"] });
+            }}
+          />
+
+
+
           {/* Drag Overlay */}
           <DragOverlay>
             {draggedActivity && (
