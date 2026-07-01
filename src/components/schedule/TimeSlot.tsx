@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DraggableActivity } from './DraggableActivity';
+import { DraggableVisit, type VisitLike } from './DraggableVisit';
 import { Briefcase, CheckSquare, Target } from 'lucide-react';
 import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItems';
 
@@ -10,11 +11,13 @@ interface TimeSlotProps {
   hour: number;
   date: Date;
   activities: any[];
+  visits?: VisitLike[];
   negotiationItems?: NegotiationScheduleItem[];
   hourHeight?: number;
   onActivityClick?: (activity: any) => void;
   onActivityResize?: (activityId: string, newDuration: number) => void;
   onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
+  onVisitClick?: (visit: VisitLike) => void;
 }
 
 export function TimeSlot({ 
