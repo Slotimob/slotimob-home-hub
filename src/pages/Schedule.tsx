@@ -609,11 +609,13 @@ export default function Schedule() {
               <WeekScheduleGrid 
                 selectedDate={selectedDate}
                 activities={activities || []}
+                visits={periodVisits || []}
                 negotiationItems={negotiationItems || []}
                 onActivityClick={handleActivityClick}
                 onActivityResize={handleActivityResize}
                 onDateChange={setSelectedDate}
                 onNegotiationItemClick={() => navigate('/pipeline')}
+                onVisitClick={handleVisitClick}
               />
             </div>
           ) : (
