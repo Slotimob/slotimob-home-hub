@@ -57,6 +57,8 @@ Deno.serve(async (req) => {
       const updatePayload: Record<string, unknown> = { status: newStatus };
       if (payment.bankSlipUrl) updatePayload.bank_slip_url = payment.bankSlipUrl;
       if (payment.invoiceUrl) updatePayload.invoice_url = payment.invoiceUrl;
+      if (payment.dueDate) updatePayload.due_date = payment.dueDate;
+      if (payment.value !== undefined && payment.value !== null) updatePayload.value = payment.value;
 
       const { error: updateErr } = await supabase
         .from("asaas_payments")
@@ -69,7 +71,45 @@ Deno.serve(async (req) => {
         console.log(`[asaas-webhook] Payment ${payment.id} updated to ${newStatus}`);
       }
     } else {
-      console.warn(`[asaas-webhook] Payment ${payment.id} not found locally. Event: ${event}`);
+      // Resolve lease: prefer subscription lookup, fallback to externalReference
+      let leaseRow: { id: string; broker_id: string } | null = null;
+
+      if (payment.subscription) {
+        const { data: bySub } = await supabase
+          .from("leases")
+          .select("id, broker_id, billing_automation")
+          .eq("billing_automation->asaas_subscription->>id", payment.subscription)
+          .maybeSingle();
+        if (bySub) leaseRow = { id: bySub.id, broker_id: bySub.broker_id };
+      }
+
+      if (!leaseRow && payment.externalReference) {
+        const { data: byExt } = await supabase
+          .from("leases")
+          .select("id, broker_id")
+          .eq("id", payment.externalReference)
+          .maybeSingle();
+        if (byExt) leaseRow = { id: byExt.id, broker_id: byExt.broker_id };
+      }
+
+      if (leaseRow) {
+        const { error: insErr } = await supabase.from("asaas_payments").insert({
+          broker_id: leaseRow.broker_id,
+          lease_id: leaseRow.id,
+          asaas_payment_id: payment.id,
+          asaas_subscription_id: payment.subscription ?? null,
+          billing_type: payment.billingType ?? "UNDEFINED",
+          value: payment.value,
+          due_date: payment.dueDate,
+          status: newStatus,
+          bank_slip_url: payment.bankSlipUrl ?? null,
+          invoice_url: payment.invoiceUrl ?? null,
+        });
+        if (insErr) console.error("[asaas-webhook] Insert error:", insErr);
+        else console.log(`[asaas-webhook] Payment ${payment.id} inserted (lease ${leaseRow.id})`);
+      } else {
+        console.warn(`[asaas-webhook] Payment ${payment.id} not found locally and could not resolve lease. Event: ${event}`);
+      }
     }
 
     return ok();
