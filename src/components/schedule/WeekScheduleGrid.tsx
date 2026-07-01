@@ -39,10 +39,12 @@ function WeekSlot({
   hour, 
   date, 
   activities, 
+  visits,
   negotiationItems,
   onActivityClick, 
   onActivityResize,
-  onNegotiationItemClick 
+  onNegotiationItemClick,
+  onVisitClick,
 }: WeekSlotProps) {
   const slotId = `week-slot-${format(date, 'yyyy-MM-dd')}-${hour}`;
   
@@ -57,6 +59,11 @@ function WeekSlot({
   const slotActivities = activities.filter((activity) => {
     const activityDate = new Date(activity.scheduled_at);
     return isSameDay(activityDate, date) && activityDate.getHours() === hour;
+  });
+
+  const slotVisits = visits.filter((v) => {
+    const d = new Date(v.scheduled_at);
+    return isSameDay(d, date) && d.getHours() === hour;
   });
 
   const slotNegotiationItems = negotiationItems.filter((item) => {
