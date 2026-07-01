@@ -301,6 +301,77 @@ export default function Schedule() {
     },
   });
 
+  // Fetch visits for the visible period (day or week)
+  const { data: periodVisits, refetch: refetchPeriodVisits } = useQuery({
+    queryKey: ["visits-period", effectiveBrokerId, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode, teamFilter],
+    queryFn: async () => {
+      let startDate: Date;
+      let endDate: Date;
+
+      if (viewMode === 'week') {
+        startDate = new Date(weekStart);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(weekEnd);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        startDate = new Date(selectedDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(selectedDate);
+        endDate.setHours(23, 59, 59, 999);
+      }
+
+      let query = supabase
+        .from("visits")
+        .select(`
+          id,
+          scheduled_at,
+          status,
+          lead_confirmed,
+          notes,
+          duration_minutes,
+          assigned_user_id,
+          leads!visits_lead_id_fkey (name, phone, email),
+          units!visits_unit_id_fkey (unit_number, price, area),
+          properties!visits_property_id_fkey (name, address)
+        `)
+        .eq("broker_id", effectiveBrokerId!)
+        .gte("scheduled_at", startDate.toISOString())
+        .lte("scheduled_at", endDate.toISOString())
+        .order("scheduled_at", { ascending: true });
+
+      query = applyTeamFilter(query);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as any as VisitLike[];
+    },
+    enabled: !!effectiveBrokerId && viewMode !== 'calendar',
+  });
+
+  // Mutation for rescheduling a visit (drag and drop)
+  const rescheduleVisit = useMutation({
+    mutationFn: async ({ visitId, newDate, newHour }: { visitId: string; newDate: Date; newHour: number }) => {
+      const newScheduledAt = new Date(newDate);
+      newScheduledAt.setHours(newHour, 0, 0, 0);
+
+      const { error } = await supabase
+        .from("visits")
+        .update({ scheduled_at: newScheduledAt.toISOString() })
+        .eq("id", visitId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchPeriodVisits();
+      queryClient.invalidateQueries({ queryKey: ["all-visits"] });
+      toast.success("Visita reagendada");
+    },
+    onError: () => {
+      toast.error("Erro ao reagendar visita");
+    },
+  });
+
+
   // Filter visits for selected date
   const visitsOnSelectedDate = allVisits?.filter((visit: any) => {
     const matchesDate = isSameDay(new Date(visit.scheduled_at), selectedDate);
