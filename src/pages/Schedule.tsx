@@ -806,7 +806,7 @@ export default function Schedule() {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                             {activities.map((activity: any) => {
-                              const activityInfo = ACTIVITY_TYPES.find((a) => a.id === activity.activity_type);
+                              const activityInfo = ACTIVITY_TYPES_ALL.find((a) => a.id === activity.activity_type);
                               const Icon = activityInfo?.icon;
                               return (
                                 <Card
