@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, CheckCircle2, Briefcase, RefreshCw } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, MapPin, User, CheckCircle2, Briefcase, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { HeaderButton } from "@/components/ui/header-button";
-import { format, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
+import { format, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, subMonths, addDays } from "date-fns";
+
 import { ptBR } from "date-fns/locale";
 import { CreateVisitDialog } from "@/components/CreateVisitDialog";
 import { AppLayout } from "@/components/AppLayout";
@@ -28,6 +29,8 @@ import { ScheduleActivityDetailDialog } from "@/components/schedule/ScheduleActi
 import { CalendarSyncDialog } from "@/components/schedule/CalendarSyncDialog";
 import { NegotiationScheduleCard } from "@/components/schedule/NegotiationScheduleCard";
 import { ScheduleCalendar } from "@/components/schedule/ScheduleCalendar";
+import { MonthScheduleGrid, ScheduleLegend } from "@/components/schedule/MonthScheduleGrid";
+
 import { useNegotiationScheduleItems } from "@/hooks/useNegotiationScheduleItems";
 import { useScheduleEventCounts } from "@/hooks/useScheduleEventCounts";
 import { cn } from "@/lib/utils";
@@ -479,6 +482,59 @@ export default function Schedule() {
     setCurrentMonth(month);
   };
 
+  // Toolbar navigation
+  const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+  const goToday = () => {
+    const now = new Date();
+    setSelectedDate(now);
+    setCurrentMonth(now);
+  };
+  const goPrev = () => {
+    if (viewMode === 'day') setSelectedDate(addDays(selectedDate, -1));
+    else if (viewMode === 'week') setSelectedDate(addDays(selectedDate, -7));
+    else {
+      const nm = subMonths(currentMonth, 1);
+      setCurrentMonth(nm);
+      setSelectedDate(nm);
+    }
+  };
+  const goNext = () => {
+    if (viewMode === 'day') setSelectedDate(addDays(selectedDate, 1));
+    else if (viewMode === 'week') setSelectedDate(addDays(selectedDate, 7));
+    else {
+      const nm = addMonths(currentMonth, 1);
+      setCurrentMonth(nm);
+      setSelectedDate(nm);
+    }
+  };
+  const periodLabel = (() => {
+    if (viewMode === 'day') return capitalize(format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR }));
+    if (viewMode === 'week') {
+      const ws = startOfWeek(selectedDate, { weekStartsOn: 0 });
+      const we = endOfWeek(selectedDate, { weekStartsOn: 0 });
+      return `${format(ws, 'd MMM', { locale: ptBR })} – ${format(we, 'd MMM', { locale: ptBR })}`;
+    }
+    return capitalize(format(currentMonth, 'MMMM yyyy', { locale: ptBR }));
+  })();
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['all-visits'] });
+    queryClient.invalidateQueries({ queryKey: ['all-schedule-activities'] });
+    queryClient.invalidateQueries({ queryKey: ['all-negotiation-items'] });
+    queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
+    queryClient.invalidateQueries({ queryKey: ['visits-period'] });
+    queryClient.invalidateQueries({ queryKey: ['negotiation-schedule-items'] });
+    toast.success('Agenda atualizada');
+  };
+
+  const hasAnyDayEvent =
+    (visitsOnSelectedDate?.length ?? 0) > 0 ||
+    (activities?.length ?? 0) > 0 ||
+    (negotiationItems?.length ?? 0) > 0 ||
+    (periodVisits?.length ?? 0) > 0;
+
+
+
   return (
     <AppLayout
       title="Agenda"
@@ -499,46 +555,42 @@ export default function Schedule() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <p className="text-muted-foreground">Gerencie suas atividades e visitas</p>
-              <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
+        <div className="space-y-4">
+          {/* UNIFIED TOOLBAR */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-card border rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" onClick={goPrev} title="Anterior">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={goToday}>
+                  Hoje
+                </Button>
+                <Button variant="outline" size="icon" onClick={goNext} title="Próximo">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <h2 className="text-base sm:text-lg font-semibold ml-1 capitalize">{periodLabel}</h2>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'calendar' | 'day' | 'week')}>
                 <TabsList>
                   <TabsTrigger value="day">Dia</TabsTrigger>
                   <TabsTrigger value="week">Semana</TabsTrigger>
-                  <TabsTrigger value="calendar">Calendário</TabsTrigger>
+                  <TabsTrigger value="calendar">Mês</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  queryClient.invalidateQueries({ queryKey: ["all-visits"] });
-                  queryClient.invalidateQueries({ queryKey: ["all-schedule-activities"] });
-                  queryClient.invalidateQueries({ queryKey: ["all-negotiation-items"] });
-                  queryClient.invalidateQueries({ queryKey: ["schedule-activities"] });
-                  queryClient.invalidateQueries({ queryKey: ["negotiation-schedule-items"] });
-                  toast.success("Agenda atualizada");
-                }}
-                title="Atualizar agenda"
-              >
+              <Button variant="outline" size="icon" onClick={handleRefresh} title="Atualizar agenda">
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {viewMode === 'day' ? (
-            <div className="flex flex-col gap-6">
-              {/* Top Section: Templates and Calendar side by side */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Activity Palette */}
-                <ActivityPalette />
-                
-                {/* Mini Calendar */}
+          {(viewMode === 'day' || viewMode === 'week') ? (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              {/* Sidebar */}
+              <aside className="lg:col-span-1 order-first lg:order-last space-y-4">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -560,87 +612,74 @@ export default function Schedule() {
                     />
                   </CardContent>
                 </Card>
-              </div>
+                <ActivityPalette compact />
+                <ScheduleLegend />
+              </aside>
 
-              {/* Bottom Section: Day Schedule Grid */}
-              <DayScheduleGrid 
-                date={selectedDate} 
-                activities={activities || []}
-                visits={periodVisits || []}
-                negotiationItems={negotiationItems || []}
-                onActivityClick={handleActivityClick}
-                onActivityResize={handleActivityResize}
-                onNegotiationItemClick={() => navigate('/pipeline')}
-                onVisitClick={handleVisitClick}
-              />
-            </div>
-          ) : viewMode === 'week' ? (
-            <div className="flex flex-col gap-6">
-              {/* Top Section: Templates and Calendar side by side */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Activity Palette */}
-                <ActivityPalette />
-                
-                {/* Mini Calendar */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      Calendário
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <ScheduleCalendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
-                      month={currentMonth}
-                      onMonthChange={handleMonthChange}
-                      getEventCount={getEventCount}
-                      locale={ptBR}
-                      compact
-                      className="rounded-md w-full"
-                    />
-                  </CardContent>
-                </Card>
+              {/* Main grid */}
+              <div className="lg:col-span-3 space-y-4">
+                {!hasAnyDayEvent && (
+                  <div className="border border-dashed rounded-lg p-6 text-center bg-muted/20">
+                    <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-60" />
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Nenhum compromisso {viewMode === 'day' ? 'para este dia' : 'para esta semana'}.
+                    </p>
+                    <PermissionGate permission="crm_schedule.create">
+                      <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                        <Plus className="h-4 w-4 mr-1" /> Agendar Visita
+                      </Button>
+                    </PermissionGate>
+                  </div>
+                )}
+                {viewMode === 'day' ? (
+                  <DayScheduleGrid
+                    date={selectedDate}
+                    activities={activities || []}
+                    visits={periodVisits || []}
+                    negotiationItems={negotiationItems || []}
+                    onActivityClick={handleActivityClick}
+                    onActivityResize={handleActivityResize}
+                    onNegotiationItemClick={() => navigate('/pipeline')}
+                    onVisitClick={handleVisitClick}
+                  />
+                ) : (
+                  <WeekScheduleGrid
+                    selectedDate={selectedDate}
+                    activities={activities || []}
+                    visits={periodVisits || []}
+                    negotiationItems={negotiationItems || []}
+                    onActivityClick={handleActivityClick}
+                    onActivityResize={handleActivityResize}
+                    onDateChange={setSelectedDate}
+                    onNegotiationItemClick={() => navigate('/pipeline')}
+                    onVisitClick={handleVisitClick}
+                  />
+                )}
               </div>
-
-              {/* Bottom Section: Week Schedule Grid */}
-              <WeekScheduleGrid 
-                selectedDate={selectedDate}
-                activities={activities || []}
-                visits={periodVisits || []}
-                negotiationItems={negotiationItems || []}
-                onActivityClick={handleActivityClick}
-                onActivityResize={handleActivityResize}
-                onDateChange={setSelectedDate}
-                onNegotiationItemClick={() => navigate('/pipeline')}
-                onVisitClick={handleVisitClick}
-              />
             </div>
           ) : (
-            <div className="flex flex-col gap-6">
-              {/* Row 1: Compact Calendar */}
-              <Card>
-                <CardContent className="p-4">
-                  <ScheduleCalendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => date && setSelectedDate(date)}
-                    month={currentMonth}
-                    onMonthChange={handleMonthChange}
-                    getEventCount={getEventCount}
-                    locale={ptBR}
-                    className="rounded-md w-full"
-                  />
-                </CardContent>
-              </Card>
+            <div className="flex flex-col gap-4">
+              {/* Month Grid */}
+              <MonthScheduleGrid
+                currentMonth={currentMonth}
+                selectedDate={selectedDate}
+                visits={allVisits || []}
+                activities={allActivities || []}
+                negotiationItems={[]}
+                onDayClick={(d) => {
+                  setSelectedDate(d);
+                  if (d.getMonth() !== currentMonth.getMonth()) setCurrentMonth(d);
+                }}
+                onVisitClick={(v) => handleVisitClick(v as VisitLike)}
+                onActivityClick={handleActivityClick}
+                onNegotiationClick={() => navigate('/pipeline')}
+              />
 
-              {/* Row 2: Visits for Selected Date */}
+              {/* Day panel below the grid */}
               <Card>
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg sm:text-xl">
-                    Visitas em {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  <CardTitle className="text-lg sm:text-xl capitalize">
+                    Compromissos em {format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
                   </CardTitle>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Badge
@@ -693,43 +732,38 @@ export default function Schedule() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {/* Negotiation Items Section */}
                   {negotiationItems && negotiationItems.length > 0 && (
                     <div className="mb-6">
                       <div className="flex items-center gap-2 mb-3">
                         <Briefcase className="h-4 w-4 text-primary" />
                         <h3 className="text-sm font-medium">Itens de Negociações</h3>
-                        <Badge variant="secondary" className="text-xs">
-                          {negotiationItems.length}
-                        </Badge>
+                        <Badge variant="secondary" className="text-xs">{negotiationItems.length}</Badge>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {negotiationItems.map((item) => (
-                          <NegotiationScheduleCard
-                            key={item.id}
-                            item={item}
-                            onClick={() => navigate(`/pipeline`)}
-                          />
+                          <NegotiationScheduleCard key={item.id} item={item} onClick={() => navigate(`/pipeline`)} />
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Visits Section */}
                   {visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
                     <div className="flex items-center gap-2 mb-3">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <h3 className="text-sm font-medium">Visitas</h3>
-                      <Badge variant="secondary" className="text-xs">
-                        {visitsOnSelectedDate.length}
-                      </Badge>
+                      <Badge variant="secondary" className="text-xs">{visitsOnSelectedDate.length}</Badge>
                     </div>
                   )}
-                  
+
                   {(!visitsOnSelectedDate || visitsOnSelectedDate.length === 0) && (!negotiationItems || negotiationItems.length === 0) && (!activities || activities.length === 0) ? (
                     <div className="text-center py-12 text-muted-foreground">
                       <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhum compromisso para esta data</p>
+                      <p className="mb-4">Nenhum compromisso para esta data</p>
+                      <PermissionGate permission="crm_schedule.create">
+                        <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                          <Plus className="h-4 w-4 mr-1" /> Agendar Visita
+                        </Button>
+                      </PermissionGate>
                     </div>
                   ) : (
                     <>
@@ -737,7 +771,6 @@ export default function Schedule() {
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                           {visitsOnSelectedDate.map((visit: any) => (
                             <Card key={visit.id} className="relative cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleVisitClick(visit as VisitLike)}>
-                              {/* Confirmation indicator */}
                               {visit.lead_confirmed && (
                                 <div className="absolute top-2 right-2">
                                   <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 dark:bg-green-950 px-2 py-1 rounded-full">
@@ -748,27 +781,20 @@ export default function Schedule() {
                               )}
                               <CardContent className="pt-6">
                                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                                  <Badge className={getStatusColor(visit.status)}>
-                                    {getStatusLabel(visit.status)}
-                                  </Badge>
+                                  <Badge className={getStatusColor(visit.status)}>{getStatusLabel(visit.status)}</Badge>
                                   <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
                                     <Clock className="h-4 w-4" />
                                     {format(new Date(visit.scheduled_at), "HH:mm", { locale: ptBR })}
                                   </div>
                                 </div>
-
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2">
                                     <User className="h-4 w-4 text-muted-foreground shrink-0" />
                                     <span className="font-medium truncate">{visit.leads?.name}</span>
                                   </div>
-
                                   {visit.leads?.phone && (
-                                    <p className="text-sm text-muted-foreground pl-6">
-                                      {visit.leads.phone}
-                                    </p>
+                                    <p className="text-sm text-muted-foreground pl-6">{visit.leads.phone}</p>
                                   )}
-
                                   {visit.properties && (
                                     <div className="flex items-start gap-2 text-sm">
                                       <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -778,7 +804,6 @@ export default function Schedule() {
                                       </span>
                                     </div>
                                   )}
-
                                   {visit.units && (
                                     <div className="text-sm text-muted-foreground pl-6">
                                       {visit.units.area}m² • {new Intl.NumberFormat("pt-BR", {
@@ -800,9 +825,7 @@ export default function Schedule() {
                           <div className="flex items-center gap-2 mb-3">
                             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                             <h3 className="text-sm font-medium">Atividades</h3>
-                            <Badge variant="secondary" className="text-xs">
-                              {activities.length}
-                            </Badge>
+                            <Badge variant="secondary" className="text-xs">{activities.length}</Badge>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                             {activities.map((activity: any) => {
@@ -846,6 +869,8 @@ export default function Schedule() {
               </Card>
             </div>
           )}
+
+
 
           <CreateVisitDialog
             open={isCreateDialogOpen}
