@@ -614,6 +614,8 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   
   addSubClause('3.3', 'Caso o índice pactuado seja extinto ou tenha sua aplicação vedada por lei, as partes adotarão outro índice oficial que reflita a variação do poder aquisitivo da moeda nacional.');
 
+  addSubClause('3.4', 'Na hipótese de a variação acumulada do índice de reajuste ser negativa no período, o valor do aluguel vigente será integralmente mantido, não havendo redução, permanecendo inalterado até o reajuste positivo subsequente.');
+
   // CLÁUSULA QUARTA - DO PAGAMENTO
   addClauseHeader('QUARTA', 'DA FORMA DE PAGAMENTO');
   
