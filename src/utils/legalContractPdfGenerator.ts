@@ -438,7 +438,7 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
         doc.setFontSize(fonts.signature.size);
         doc.text(normalizeText((data.conjugeLocador?.nome || '').toUpperCase()), margins.left, currentY);
         currentY += 4;
-        doc.text(`CPF: ${formatCPF(data.conjugeLocador?.cpf || '')}`, margins.left, currentY);
+        { const l = signatureDocLabel(data.conjugeLocador || {}); if (l) doc.text(l, margins.left, currentY); }
       }
 
       if (hasConjugeLocatario) {
