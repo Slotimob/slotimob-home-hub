@@ -97,6 +97,13 @@ function WeekSlot({
         />
       ))}
 
+      {/* Visits */}
+      {slotVisits.map((v) => (
+        <DraggableVisit key={v.id} visit={v} hourHeight={HOUR_HEIGHT} onClick={onVisitClick} />
+      ))}
+
+
+
       {/* Negotiation items */}
       {slotNegotiationItems.map((item) => {
         const Icon = getTypeIcon(item.type);
