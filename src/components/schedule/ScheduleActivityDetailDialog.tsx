@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
-import { ACTIVITY_TYPES } from './ActivityPalette';
+import { ACTIVITY_TYPES, ACTIVITY_TYPES_ALL } from './ActivityPalette';
 import {
   AlertDialog,
   AlertDialogAction,
