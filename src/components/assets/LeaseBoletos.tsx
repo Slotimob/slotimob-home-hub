@@ -113,7 +113,7 @@ function billingLabel(t: string | null | undefined) {
 }
 
 export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dueDateDialog, setDueDateDialog] = useState<{ id: string; current: string } | null>(
