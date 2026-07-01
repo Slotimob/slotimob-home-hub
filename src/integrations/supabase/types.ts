@@ -776,6 +776,45 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs_2026_09: {
+        Row: {
+          action: string | null
+          actor_user_id: string | null
+          broker_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string | null
+          actor_user_id?: string | null
+          broker_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
       audit_logs_default: {
         Row: {
           action: string | null
