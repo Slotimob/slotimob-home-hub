@@ -566,10 +566,12 @@ export default function Schedule() {
               <DayScheduleGrid 
                 date={selectedDate} 
                 activities={activities || []}
+                visits={periodVisits || []}
                 negotiationItems={negotiationItems || []}
-onActivityClick={handleActivityClick}
+                onActivityClick={handleActivityClick}
                 onActivityResize={handleActivityResize}
                 onNegotiationItemClick={() => navigate('/pipeline')}
+                onVisitClick={handleVisitClick}
               />
             </div>
           ) : viewMode === 'week' ? (
