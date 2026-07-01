@@ -66,6 +66,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { LeaseJourneyTab } from "@/components/assets/LeaseJourneyTab";
 import { LeaseBoletos } from "@/components/assets/LeaseBoletos";
+import { AsaasSubscriptionCard } from "@/components/assets/AsaasSubscriptionCard";
 import { DimobStatusCard } from "@/components/assets/DimobStatusCard";
 import { TenantStatementDialog } from "@/components/assets/TenantStatementDialog";
 import { OwnerReportDialog } from "@/components/assets/OwnerReportDialog";
@@ -649,15 +650,23 @@ export default function ContratoDetalhe() {
 
         {/* Billing */}
         <TabsContent value="billing" className="space-y-4 mt-4">
-          {/* Card 1: Automação de Cobrança */}
+          {/* Bloco novo: Cobrança automática Asaas (subscription) */}
+          <AsaasSubscriptionCard
+            leaseId={lease.id}
+            rentAmount={Number(lease.rent_amount) || 0}
+            dueDay={lease.due_day ?? null}
+            billingAutomation={(lease.billing_automation as Record<string, any>) || null}
+          />
+
+          {/* Card 1: Automação de Cobrança (Lembretes por e-mail/WhatsApp) */}
           <Card>
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Zap className="h-4 w-4 text-amber-500" />
-                Automação de Cobrança
+                <Mail className="h-4 w-4 text-blue-500" />
+                Lembretes por e-mail e WhatsApp
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Configure os canais e destinatários para envio automático das cobranças.
+                Independente da cobrança automática do Asaas, envie lembretes personalizados nos canais configurados.
               </p>
             </CardHeader>
             <CardContent className="py-2 px-4 space-y-4">
@@ -1149,6 +1158,7 @@ export default function ContratoDetalhe() {
           <LeaseBoletos
             leaseId={lease.id}
             brokerId={effectiveBrokerId || user!.id}
+            onGoToBillingTab={() => setActiveTab("billing")}
           />
         </TabsContent>
 
