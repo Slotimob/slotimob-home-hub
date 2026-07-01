@@ -100,6 +100,13 @@ export function TimeSlot({
           )
         ))}
 
+        {/* Visits */}
+        {slotVisits.map((v) => (
+          <DraggableVisit key={v.id} visit={v} hourHeight={hourHeight} onClick={onVisitClick} />
+        ))}
+
+
+
         {/* Negotiation items (from Pipeline) */}
         {slotNegotiationItems.map((item) => {
           const Icon = getTypeIcon(item.type);
