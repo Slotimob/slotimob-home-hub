@@ -66,6 +66,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { LeaseJourneyTab } from "@/components/assets/LeaseJourneyTab";
 import { LeaseBoletos } from "@/components/assets/LeaseBoletos";
+import { AsaasSubscriptionCard } from "@/components/assets/AsaasSubscriptionCard";
 import { DimobStatusCard } from "@/components/assets/DimobStatusCard";
 import { TenantStatementDialog } from "@/components/assets/TenantStatementDialog";
 import { OwnerReportDialog } from "@/components/assets/OwnerReportDialog";
