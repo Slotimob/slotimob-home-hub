@@ -1158,6 +1158,7 @@ export default function ContratoDetalhe() {
           <LeaseBoletos
             leaseId={lease.id}
             brokerId={effectiveBrokerId || user!.id}
+            onGoToBillingTab={() => setActiveTab("billing")}
           />
         </TabsContent>
 
