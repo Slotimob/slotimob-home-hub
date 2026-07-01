@@ -131,11 +131,13 @@ function WeekSlot({
 export function WeekScheduleGrid({ 
   selectedDate, 
   activities, 
+  visits = [],
   negotiationItems = [],
   onActivityClick, 
   onActivityResize, 
   onDateChange,
-  onNegotiationItemClick 
+  onNegotiationItemClick,
+  onVisitClick,
 }: WeekScheduleGridProps) {
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 }); // Sunday
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
