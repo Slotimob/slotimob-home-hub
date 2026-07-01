@@ -475,7 +475,7 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
       doc.setFontSize(fonts.signature.size);
       doc.text(normalizeText(data.fiador.nome.toUpperCase()), margins.left, currentY);
       currentY += 4;
-      doc.text(`CPF: ${formatCPF(data.fiador.cpf || '')}`, margins.left, currentY);
+      { const l = signatureDocLabel(data.fiador || {}); if (l) doc.text(l, margins.left, currentY); }
 
       // Cônjuge do fiador
       if (data.conjugeFiador?.nome) {
