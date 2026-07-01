@@ -563,49 +563,19 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   // =========================================================================
 
   // LOCADOR
-  let locadorQualificacao = `LOCADOR: **${pdfSafeText(data.locador.nome).toUpperCase()}**, ${safeField(data.locador.nacionalidade, '_______________')}, ${safeField(data.locador.estadoCivil, '_______________')}, ${safeField(data.locador.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.locador.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.locador.cpf || '')}`;
-  
-  if (data.locador.endereco) {
-    locadorQualificacao += `, residente e domiciliado(a) em ${data.locador.endereco}${data.locador.cidade ? `, ${data.locador.cidade}` : ''}${data.locador.estado ? `/${data.locador.estado}` : ''}${data.locador.cep ? `, CEP ${data.locador.cep}` : ''}`;
-  }
-  
-  if (data.locador.email) {
-    locadorQualificacao += `, e-mail: ${data.locador.email}`;
-  }
-  
-  locadorQualificacao += '.';
-  
-  // Renderiza com negrito inline
+  const locadorQualificacao = buildQualificacao('LOCADOR', data.locador);
   renderParagraphWithBold(doc, locadorQualificacao, margins.left, currentY, contentWidth, fonts.body.size, colors.black);
   currentY += calculateTextHeight(doc, locadorQualificacao, contentWidth, fonts.body.size) + 4;
 
   // LOCATÁRIO
-  let locatarioQualificacao = `LOCATÁRIO: **${pdfSafeText(data.locatario.nome).toUpperCase()}**, ${safeField(data.locatario.nacionalidade, '_______________')}, ${safeField(data.locatario.estadoCivil, '_______________')}, ${safeField(data.locatario.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.locatario.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.locatario.cpf || '')}`;
-  
-  if (data.locatario.endereco) {
-    locatarioQualificacao += `, residente e domiciliado(a) em ${data.locatario.endereco}${data.locatario.cidade ? `, ${data.locatario.cidade}` : ''}${data.locatario.estado ? `/${data.locatario.estado}` : ''}${data.locatario.cep ? `, CEP ${data.locatario.cep}` : ''}`;
-  }
-  
-  if (data.locatario.email) {
-    locatarioQualificacao += `, e-mail: ${data.locatario.email}`;
-  }
-  
-  locatarioQualificacao += '.';
-  
+  const locatarioQualificacao = buildQualificacao('LOCATÁRIO', data.locatario);
   checkPageBreak(20);
   renderParagraphWithBold(doc, locatarioQualificacao, margins.left, currentY, contentWidth, fonts.body.size, colors.black);
   currentY += calculateTextHeight(doc, locatarioQualificacao, contentWidth, fonts.body.size) + 4;
 
   // FIADOR (se aplicável)
   if (data.contrato.garantia === 'fiador' && data.fiador?.nome) {
-    let fiadorQualificacao = `FIADOR: **${pdfSafeText(data.fiador.nome).toUpperCase()}**, ${safeField(data.fiador.nacionalidade, '_______________')}, ${safeField(data.fiador.estadoCivil, '_______________')}, ${safeField(data.fiador.profissao, '_______________')}, portador(a) do RG nº ${formatRG(data.fiador.rg || '')}, inscrito(a) no CPF sob o nº ${formatCPF(data.fiador.cpf || '')}`;
-    
-    if (data.fiador.endereco) {
-      fiadorQualificacao += `, residente e domiciliado(a) em ${data.fiador.endereco}${data.fiador.cidade ? `, ${data.fiador.cidade}` : ''}${data.fiador.estado ? `/${data.fiador.estado}` : ''}${data.fiador.cep ? `, CEP ${data.fiador.cep}` : ''}`;
-    }
-    
-    fiadorQualificacao += '.';
-    
+    const fiadorQualificacao = buildQualificacao('FIADOR', data.fiador);
     checkPageBreak(20);
     renderParagraphWithBold(doc, fiadorQualificacao, margins.left, currentY, contentWidth, fonts.body.size, colors.black);
     currentY += calculateTextHeight(doc, fiadorQualificacao, contentWidth, fonts.body.size) + 4;
