@@ -47,15 +47,23 @@ export const formatCurrency = (value: string | number): string => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
 };
 
+// Safe parser: treat date-only ISO strings as local (evita bug de UTC voltando 1 dia)
+const parseDateSafe = (value: string): Date => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(value);
+};
+
 export const formatDate = (value: string): string => {
   if (!value) return '___/___/______';
-  const date = new Date(value);
-  return date.toLocaleDateString('pt-BR');
+  return parseDateSafe(value).toLocaleDateString('pt-BR');
 };
 
 export const formatDateExtended = (value: string): string => {
   if (!value) return '___ de _______________ de ______';
-  const date = new Date(value);
+  const date = parseDateSafe(value);
   const months = [
     'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
     'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
