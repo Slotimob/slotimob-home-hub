@@ -27,9 +27,10 @@ export const ACTIVITY_TYPES_ALL: ActivityType[] = [
 
 interface DraggableActivityProps {
   activity: ActivityType;
+  compact?: boolean;
 }
 
-function DraggableActivity({ activity }: DraggableActivityProps) {
+function DraggableActivity({ activity, compact }: DraggableActivityProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `palette-${activity.id}`,
     data: {
@@ -52,29 +53,43 @@ function DraggableActivity({ activity }: DraggableActivityProps) {
       style={style}
       {...listeners}
       {...attributes}
+      title={activity.label}
       className={cn(
-        'flex flex-col items-center justify-center p-3 rounded-lg cursor-grab active:cursor-grabbing transition-all',
+        'flex flex-col items-center justify-center rounded-lg cursor-grab active:cursor-grabbing transition-all',
         'border border-border bg-card hover:bg-muted',
+        compact ? 'p-1.5' : 'p-3',
         isDragging && 'opacity-50 scale-95 shadow-lg z-50'
       )}
     >
-      <div className={cn('w-10 h-10 rounded-full flex items-center justify-center text-white', activity.color)}>
-        <Icon className="h-5 w-5" />
+      <div
+        className={cn(
+          'rounded-full flex items-center justify-center text-white',
+          compact ? 'w-7 h-7' : 'w-10 h-10',
+          activity.color
+        )}
+      >
+        <Icon className={compact ? 'h-3.5 w-3.5' : 'h-5 w-5'} />
       </div>
-      <span className="text-xs font-medium mt-2">{activity.label}</span>
+      {!compact && <span className="text-xs font-medium mt-2">{activity.label}</span>}
+      {compact && <span className="text-[10px] font-medium mt-1 leading-none">{activity.label}</span>}
     </div>
   );
 }
 
-export function ActivityPalette() {
+interface ActivityPaletteProps {
+  compact?: boolean;
+}
+
+export function ActivityPalette({ compact }: ActivityPaletteProps = {}) {
   return (
-    <div className="bg-card rounded-lg border p-4">
-      <h3 className="font-semibold text-sm mb-3">Arraste para agendar</h3>
-      <div className="grid grid-cols-3 gap-2">
+    <div className={cn('bg-card rounded-lg border', compact ? 'p-3' : 'p-4')}>
+      <h3 className={cn('font-semibold mb-2', compact ? 'text-xs' : 'text-sm mb-3')}>Arraste para agendar</h3>
+      <div className={cn('grid gap-2', compact ? 'grid-cols-5' : 'grid-cols-3')}>
         {ACTIVITY_TYPES.map((activity) => (
-          <DraggableActivity key={activity.id} activity={activity} />
+          <DraggableActivity key={activity.id} activity={activity} compact={compact} />
         ))}
       </div>
     </div>
   );
 }
+
