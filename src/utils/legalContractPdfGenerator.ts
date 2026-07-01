@@ -398,7 +398,7 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
     doc.setFontSize(fonts.signature.size);
     doc.text(normalizeText(data.locador.nome.toUpperCase()), margins.left, currentY);
     currentY += 4;
-    doc.text(`CPF: ${formatCPF(data.locador.cpf || '')}`, margins.left, currentY);
+    { const l = signatureDocLabel(data.locador); if (l) doc.text(l, margins.left, currentY); }
 
     // LOCATÁRIO (mesma linha que locador)
     const col2X = margins.left + colWidth + 20;
