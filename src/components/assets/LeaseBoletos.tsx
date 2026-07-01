@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ENV } from "@/config/env";
