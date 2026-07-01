@@ -29,6 +29,8 @@ import { ScheduleActivityDetailDialog } from "@/components/schedule/ScheduleActi
 import { CalendarSyncDialog } from "@/components/schedule/CalendarSyncDialog";
 import { NegotiationScheduleCard } from "@/components/schedule/NegotiationScheduleCard";
 import { ScheduleCalendar } from "@/components/schedule/ScheduleCalendar";
+import { MonthScheduleGrid, ScheduleLegend } from "@/components/schedule/MonthScheduleGrid";
+
 import { useNegotiationScheduleItems } from "@/hooks/useNegotiationScheduleItems";
 import { useScheduleEventCounts } from "@/hooks/useScheduleEventCounts";
 import { cn } from "@/lib/utils";
