@@ -281,7 +281,53 @@ import {
              Baixar PDF
            </Button>
          </div>
-       </DialogContent>
-     </Dialog>
-   );
- }
+      </DialogContent>
+
+      <AlertDialog
+        open={pendencies.length > 0}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPendencies([]);
+            setPendingData(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Campos pendentes no contrato
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Os campos abaixo não estão preenchidos. Sem eles o PDF sairá com omissões.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-72 overflow-y-auto rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+            {pendencies.map((p) => (
+              <div key={p.campo} className="border-b last:border-b-0 pb-2 last:pb-0">
+                <div className="font-medium">{p.rotulo}</div>
+                <div className="text-xs text-muted-foreground">Onde corrigir: {p.onde_corrigir}</div>
+              </div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Corrigir depois</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingData) {
+                  const data = pendingData;
+                  const fn = pendingFileName;
+                  setPendencies([]);
+                  setPendingData(null);
+                  void runGeneration(data, fn);
+                }
+              }}
+            >
+              Gerar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Dialog>
+  );
+}
