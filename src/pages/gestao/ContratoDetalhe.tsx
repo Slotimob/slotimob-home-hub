@@ -662,11 +662,11 @@ export default function ContratoDetalhe() {
           <Card>
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Zap className="h-4 w-4 text-amber-500" />
-                Automação de Cobrança
+                <Mail className="h-4 w-4 text-blue-500" />
+                Lembretes por e-mail e WhatsApp
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Configure os canais e destinatários para envio automático das cobranças.
+                Independente da cobrança automática do Asaas, envie lembretes personalizados nos canais configurados.
               </p>
             </CardHeader>
             <CardContent className="py-2 px-4 space-y-4">
