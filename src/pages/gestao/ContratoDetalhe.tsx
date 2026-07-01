@@ -649,7 +649,15 @@ export default function ContratoDetalhe() {
 
         {/* Billing */}
         <TabsContent value="billing" className="space-y-4 mt-4">
-          {/* Card 1: Automação de Cobrança */}
+          {/* Bloco novo: Cobrança automática Asaas (subscription) */}
+          <AsaasSubscriptionCard
+            leaseId={lease.id}
+            rentAmount={Number(lease.rent_amount) || 0}
+            dueDay={lease.due_day ?? null}
+            billingAutomation={(lease.billing_automation as Record<string, any>) || null}
+          />
+
+          {/* Card 1: Automação de Cobrança (Lembretes por e-mail/WhatsApp) */}
           <Card>
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
