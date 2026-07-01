@@ -18,7 +18,9 @@ import { CreateVisitDialog } from "@/components/CreateVisitDialog";
 import { AppLayout } from "@/components/AppLayout";
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
-import { ActivityPalette, ACTIVITY_TYPES } from "@/components/schedule/ActivityPalette";
+import { ActivityPalette, ACTIVITY_TYPES, ACTIVITY_TYPES_ALL } from "@/components/schedule/ActivityPalette";
+import { VisitDetailDialog } from "@/components/schedule/VisitDetailDialog";
+import type { VisitLike } from "@/components/schedule/DraggableVisit";
 import { DayScheduleGrid } from "@/components/schedule/DayScheduleGrid";
 import { WeekScheduleGrid } from "@/components/schedule/WeekScheduleGrid";
 import { CreateActivityDialog } from "@/components/schedule/CreateActivityDialog";
@@ -59,9 +61,19 @@ export default function Schedule() {
     activity: any | null;
   }>({ open: false, activity: null });
 
+  const [visitDetailDialog, setVisitDetailDialog] = useState<{ open: boolean; visit: VisitLike | null }>({
+    open: false,
+    visit: null,
+  });
+
   const handleActivityClick = (activity: any) => {
     setActivityDetailDialog({ open: true, activity });
   };
+
+  const handleVisitClick = (visit: VisitLike) => {
+    setVisitDetailDialog({ open: true, visit });
+  };
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -289,6 +301,77 @@ export default function Schedule() {
     },
   });
 
+  // Fetch visits for the visible period (day or week)
+  const { data: periodVisits, refetch: refetchPeriodVisits } = useQuery({
+    queryKey: ["visits-period", effectiveBrokerId, viewMode === 'week' ? weekStart.toISOString() : selectedDate.toISOString(), viewMode, teamFilter],
+    queryFn: async () => {
+      let startDate: Date;
+      let endDate: Date;
+
+      if (viewMode === 'week') {
+        startDate = new Date(weekStart);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(weekEnd);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        startDate = new Date(selectedDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(selectedDate);
+        endDate.setHours(23, 59, 59, 999);
+      }
+
+      let query = supabase
+        .from("visits")
+        .select(`
+          id,
+          scheduled_at,
+          status,
+          lead_confirmed,
+          notes,
+          duration_minutes,
+          assigned_user_id,
+          leads!visits_lead_id_fkey (name, phone, email),
+          units!visits_unit_id_fkey (unit_number, price, area),
+          properties!visits_property_id_fkey (name, address)
+        `)
+        .eq("broker_id", effectiveBrokerId!)
+        .gte("scheduled_at", startDate.toISOString())
+        .lte("scheduled_at", endDate.toISOString())
+        .order("scheduled_at", { ascending: true });
+
+      query = applyTeamFilter(query);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as any as VisitLike[];
+    },
+    enabled: !!effectiveBrokerId && viewMode !== 'calendar',
+  });
+
+  // Mutation for rescheduling a visit (drag and drop)
+  const rescheduleVisit = useMutation({
+    mutationFn: async ({ visitId, newDate, newHour }: { visitId: string; newDate: Date; newHour: number }) => {
+      const newScheduledAt = new Date(newDate);
+      newScheduledAt.setHours(newHour, 0, 0, 0);
+
+      const { error } = await supabase
+        .from("visits")
+        .update({ scheduled_at: newScheduledAt.toISOString() })
+        .eq("id", visitId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchPeriodVisits();
+      queryClient.invalidateQueries({ queryKey: ["all-visits"] });
+      toast.success("Visita reagendada");
+    },
+    onError: () => {
+      toast.error("Erro ao reagendar visita");
+    },
+  });
+
+
   // Filter visits for selected date
   const visitsOnSelectedDate = allVisits?.filter((visit: any) => {
     const matchesDate = isSameDay(new Date(visit.scheduled_at), selectedDate);
@@ -330,6 +413,20 @@ export default function Schedule() {
       }
       return;
     }
+
+    // Existing visit being moved
+    if (active.data.current?.type === 'existing-visit') {
+      const visitId = active.data.current.visitId;
+      if (slotData?.hour !== undefined && slotData?.date) {
+        rescheduleVisit.mutate({
+          visitId,
+          newDate: slotData.date,
+          newHour: slotData.hour,
+        });
+      }
+      return;
+    }
+
 
     // Otherwise it's a new activity being created from palette
     const activityType = active.data.current?.activityType;
@@ -469,10 +566,12 @@ export default function Schedule() {
               <DayScheduleGrid 
                 date={selectedDate} 
                 activities={activities || []}
+                visits={periodVisits || []}
                 negotiationItems={negotiationItems || []}
-onActivityClick={handleActivityClick}
+                onActivityClick={handleActivityClick}
                 onActivityResize={handleActivityResize}
                 onNegotiationItemClick={() => navigate('/pipeline')}
+                onVisitClick={handleVisitClick}
               />
             </div>
           ) : viewMode === 'week' ? (
@@ -510,11 +609,13 @@ onActivityClick={handleActivityClick}
               <WeekScheduleGrid 
                 selectedDate={selectedDate}
                 activities={activities || []}
+                visits={periodVisits || []}
                 negotiationItems={negotiationItems || []}
                 onActivityClick={handleActivityClick}
                 onActivityResize={handleActivityResize}
                 onDateChange={setSelectedDate}
                 onNegotiationItemClick={() => navigate('/pipeline')}
+                onVisitClick={handleVisitClick}
               />
             </div>
           ) : (
@@ -635,7 +736,7 @@ onActivityClick={handleActivityClick}
                       {visitsOnSelectedDate && visitsOnSelectedDate.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                           {visitsOnSelectedDate.map((visit: any) => (
-                            <Card key={visit.id} className="relative">
+                            <Card key={visit.id} className="relative cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleVisitClick(visit as VisitLike)}>
                               {/* Confirmation indicator */}
                               {visit.lead_confirmed && (
                                 <div className="absolute top-2 right-2">
@@ -705,7 +806,7 @@ onActivityClick={handleActivityClick}
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                             {activities.map((activity: any) => {
-                              const activityInfo = ACTIVITY_TYPES.find((a) => a.id === activity.activity_type);
+                              const activityInfo = ACTIVITY_TYPES_ALL.find((a) => a.id === activity.activity_type);
                               const Icon = activityInfo?.icon;
                               return (
                                 <Card
@@ -776,6 +877,18 @@ onActivityClick={handleActivityClick}
               queryClient.invalidateQueries({ queryKey: ["all-schedule-activities"] });
             }}
           />
+
+          <VisitDetailDialog
+            visit={visitDetailDialog.visit}
+            open={visitDetailDialog.open}
+            onOpenChange={(open) => setVisitDetailDialog(prev => ({ ...prev, open }))}
+            onSuccess={() => {
+              refetchPeriodVisits();
+              queryClient.invalidateQueries({ queryKey: ["all-visits"] });
+            }}
+          />
+
+
 
           {/* Drag Overlay */}
           <DragOverlay>

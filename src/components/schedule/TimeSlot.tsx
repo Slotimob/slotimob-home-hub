@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DraggableActivity } from './DraggableActivity';
+import { DraggableVisit, type VisitLike } from './DraggableVisit';
 import { Briefcase, CheckSquare, Target } from 'lucide-react';
 import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItems';
 
@@ -10,22 +11,26 @@ interface TimeSlotProps {
   hour: number;
   date: Date;
   activities: any[];
+  visits?: VisitLike[];
   negotiationItems?: NegotiationScheduleItem[];
   hourHeight?: number;
   onActivityClick?: (activity: any) => void;
   onActivityResize?: (activityId: string, newDuration: number) => void;
   onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
+  onVisitClick?: (visit: VisitLike) => void;
 }
 
 export function TimeSlot({ 
   hour, 
   date, 
   activities, 
+  visits = [],
   negotiationItems = [],
   hourHeight = 60, 
   onActivityClick, 
   onActivityResize,
-  onNegotiationItemClick 
+  onNegotiationItemClick,
+  onVisitClick,
 }: TimeSlotProps) {
   const slotId = `slot-${format(date, 'yyyy-MM-dd')}-${hour}`;
   
@@ -40,6 +45,11 @@ export function TimeSlot({
   const slotActivities = activities.filter((activity) => {
     const activityDate = new Date(activity.scheduled_at);
     return isSameDay(activityDate, date) && activityDate.getHours() === hour;
+  });
+
+  const slotVisits = visits.filter((v) => {
+    const d = new Date(v.scheduled_at);
+    return isSameDay(d, date) && d.getHours() === hour;
   });
 
   const slotNegotiationItems = negotiationItems.filter((item) => {
@@ -89,6 +99,13 @@ export function TimeSlot({
             </div>
           )
         ))}
+
+        {/* Visits */}
+        {slotVisits.map((v) => (
+          <DraggableVisit key={v.id} visit={v} hourHeight={hourHeight} onClick={onVisitClick} />
+        ))}
+
+
 
         {/* Negotiation items (from Pipeline) */}
         {slotNegotiationItems.map((item) => {

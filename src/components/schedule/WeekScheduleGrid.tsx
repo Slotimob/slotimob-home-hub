@@ -3,6 +3,7 @@ import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DraggableActivity } from './DraggableActivity';
+import { DraggableVisit, type VisitLike } from './DraggableVisit';
 import { WeekNavigation } from './WeekNavigation';
 import { Briefcase, CheckSquare, Target } from 'lucide-react';
 import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItems';
@@ -10,11 +11,13 @@ import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItem
 interface WeekScheduleGridProps {
   selectedDate: Date;
   activities: any[];
+  visits?: VisitLike[];
   negotiationItems?: NegotiationScheduleItem[];
   onActivityClick?: (activity: any) => void;
   onActivityResize: (activityId: string, newDuration: number) => void;
   onDateChange?: (date: Date) => void;
   onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
+  onVisitClick?: (visit: VisitLike) => void;
 }
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
@@ -24,20 +27,24 @@ interface WeekSlotProps {
   hour: number;
   date: Date;
   activities: any[];
+  visits: VisitLike[];
   negotiationItems: NegotiationScheduleItem[];
   onActivityClick?: (activity: any) => void;
   onActivityResize: (activityId: string, newDuration: number) => void;
   onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
+  onVisitClick?: (visit: VisitLike) => void;
 }
 
 function WeekSlot({ 
   hour, 
   date, 
   activities, 
+  visits,
   negotiationItems,
   onActivityClick, 
   onActivityResize,
-  onNegotiationItemClick 
+  onNegotiationItemClick,
+  onVisitClick,
 }: WeekSlotProps) {
   const slotId = `week-slot-${format(date, 'yyyy-MM-dd')}-${hour}`;
   
@@ -52,6 +59,11 @@ function WeekSlot({
   const slotActivities = activities.filter((activity) => {
     const activityDate = new Date(activity.scheduled_at);
     return isSameDay(activityDate, date) && activityDate.getHours() === hour;
+  });
+
+  const slotVisits = visits.filter((v) => {
+    const d = new Date(v.scheduled_at);
+    return isSameDay(d, date) && d.getHours() === hour;
   });
 
   const slotNegotiationItems = negotiationItems.filter((item) => {
@@ -85,6 +97,13 @@ function WeekSlot({
         />
       ))}
 
+      {/* Visits */}
+      {slotVisits.map((v) => (
+        <DraggableVisit key={v.id} visit={v} hourHeight={HOUR_HEIGHT} onClick={onVisitClick} />
+      ))}
+
+
+
       {/* Negotiation items */}
       {slotNegotiationItems.map((item) => {
         const Icon = getTypeIcon(item.type);
@@ -112,11 +131,13 @@ function WeekSlot({
 export function WeekScheduleGrid({ 
   selectedDate, 
   activities, 
+  visits = [],
   negotiationItems = [],
   onActivityClick, 
   onActivityResize, 
   onDateChange,
-  onNegotiationItemClick 
+  onNegotiationItemClick,
+  onVisitClick,
 }: WeekScheduleGridProps) {
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 }); // Sunday
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -167,10 +188,12 @@ export function WeekScheduleGrid({
                   hour={hour}
                   date={day}
                   activities={activities}
+                  visits={visits}
                   negotiationItems={negotiationItems}
                   onActivityClick={onActivityClick}
                   onActivityResize={onActivityResize}
                   onNegotiationItemClick={onNegotiationItemClick}
+                  onVisitClick={onVisitClick}
                 />
               ))}
             </div>

@@ -10,12 +10,18 @@ interface ActivityType {
   color: string;
 }
 
+// Paleta de arrastar: visita foi removida (agora só via botão "Agendar Visita").
 export const ACTIVITY_TYPES: ActivityType[] = [
   { id: 'ligar', label: 'Ligar', icon: Phone, color: 'bg-blue-500' },
   { id: 'email', label: 'Email', icon: Mail, color: 'bg-purple-500' },
   { id: 'reuniao', label: 'Reunião', icon: Users, color: 'bg-green-500' },
   { id: 'tarefa', label: 'Tarefa', icon: CheckSquare, color: 'bg-yellow-500' },
   { id: 'mensagem', label: 'Mensagem', icon: MessageCircle, color: 'bg-pink-500' },
+];
+
+// Lista completa (inclui 'visita') para renderizar registros legados.
+export const ACTIVITY_TYPES_ALL: ActivityType[] = [
+  ...ACTIVITY_TYPES,
   { id: 'visita', label: 'Visita', icon: MapPin, color: 'bg-orange-500' },
 ];
 
