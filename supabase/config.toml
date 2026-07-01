@@ -3,8 +3,6 @@ project_id = "nelmmrqdiycmdhhslxfz"
 [functions.ical-feed]
 verify_jwt = false
 
-[functions.stripe-webhook]
-verify_jwt = false
 
 [functions.check-permission]
 verify_jwt = false
