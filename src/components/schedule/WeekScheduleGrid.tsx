@@ -3,6 +3,7 @@ import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DraggableActivity } from './DraggableActivity';
+import { DraggableVisit, type VisitLike } from './DraggableVisit';
 import { WeekNavigation } from './WeekNavigation';
 import { Briefcase, CheckSquare, Target } from 'lucide-react';
 import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItems';
@@ -10,11 +11,13 @@ import type { NegotiationScheduleItem } from '@/hooks/useNegotiationScheduleItem
 interface WeekScheduleGridProps {
   selectedDate: Date;
   activities: any[];
+  visits?: VisitLike[];
   negotiationItems?: NegotiationScheduleItem[];
   onActivityClick?: (activity: any) => void;
   onActivityResize: (activityId: string, newDuration: number) => void;
   onDateChange?: (date: Date) => void;
   onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
+  onVisitClick?: (visit: VisitLike) => void;
 }
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
@@ -24,10 +27,12 @@ interface WeekSlotProps {
   hour: number;
   date: Date;
   activities: any[];
+  visits: VisitLike[];
   negotiationItems: NegotiationScheduleItem[];
   onActivityClick?: (activity: any) => void;
   onActivityResize: (activityId: string, newDuration: number) => void;
   onNegotiationItemClick?: (item: NegotiationScheduleItem) => void;
+  onVisitClick?: (visit: VisitLike) => void;
 }
 
 function WeekSlot({ 
