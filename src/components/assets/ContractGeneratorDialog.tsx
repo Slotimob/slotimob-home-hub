@@ -12,11 +12,23 @@ import { FileText, Loader2, Download, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   generateLegalContractPDF,
+  validateContractData,
+  type ContractPendency,
   LegalContractData
 } from "@/utils/legalContractPdfGenerator";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
  
  interface ContractGeneratorDialogProps {
    open: boolean;
@@ -91,96 +103,111 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
      enabled: open,
    });
  
-  const handleGenerateContract = async () => {
-    if (!activeLease?.lease) {
-      toast.error("Nenhum contrato ativo encontrado");
-      return;
-    }
+  const [pendencies, setPendencies] = useState<ContractPendency[]>([]);
+  const [pendingData, setPendingData] = useState<LegalContractData | null>(null);
+  const [pendingFileName, setPendingFileName] = useState<string>("");
+
+  const buildContractData = (): { data: LegalContractData; fileName: string } | null => {
+    if (!activeLease?.lease) return null;
+    const lease = activeLease.lease;
+    const guaranteeType = (lease.guarantee_type || 'nenhuma') as 'fiador' | 'caucao' | 'seguro_fianca' | 'titulo_capitalizacao' | 'nenhuma';
+    const savedGuarantorData = typeof lease.guarantor_data === 'string'
+      ? JSON.parse(lease.guarantor_data || '{}')
+      : (lease.guarantor_data || {});
+    const paymentInfo = typeof lease.payment_info === 'string'
+      ? JSON.parse(lease.payment_info || '{}')
+      : (lease.payment_info || {});
+
+    // Prazo em meses (usando parse local para evitar bug de timezone)
+    const parseLocal = (v: string): Date => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        const [y, m, d] = v.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      }
+      return new Date(v);
+    };
+    const startDate = parseLocal(lease.start_date);
+    const endDate = lease.end_date ? parseLocal(lease.end_date) : null;
+    const prazoMeses = endDate
+      ? (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth())
+      : 30;
+
+    const ownerDocDigits = (ownerContact?.document_number || '').replace(/\D/g, '');
+    const ownerIsCnpj = ownerDocDigits.length === 14;
+
+    const contractData: LegalContractData = {
+      locador: {
+        nome: ownerContact?.name || '',
+        cpf: !ownerIsCnpj ? (ownerContact?.document_number || '') : '',
+        cnpj: ownerIsCnpj ? (ownerContact?.document_number || '') : '',
+        endereco: ownerContact?.address || '',
+        cidade: ownerContact?.city || unitData?.city || '',
+        estado: ownerContact?.state || unitData?.state || '',
+        cep: ownerContact?.postal_code || '',
+        telefone: ownerContact?.phone || '',
+        email: ownerContact?.email || '',
+        nacionalidade: 'brasileiro(a)',
+      },
+      locatario: {
+        nome: activeLease?.tenant?.name || '',
+        cpf: activeLease?.tenant?.document_number || '',
+        endereco: activeLease?.tenant?.address || '',
+        cidade: activeLease?.tenant?.city || '',
+        estado: activeLease?.tenant?.state || '',
+        cep: activeLease?.tenant?.postal_code || '',
+        telefone: activeLease?.tenant?.phone || '',
+        email: activeLease?.tenant?.email || '',
+        nacionalidade: 'brasileiro(a)',
+      },
+      fiador: guaranteeType === 'fiador' && savedGuarantorData?.nome ? {
+        nome: savedGuarantorData.nome || '',
+        cpf: savedGuarantorData.cpf || '',
+        rg: savedGuarantorData.rg || '',
+        endereco: savedGuarantorData.endereco || '',
+        cidade: savedGuarantorData.cidade || '',
+        estado: savedGuarantorData.estado || '',
+        profissao: savedGuarantorData.profissao || '',
+        nacionalidade: 'brasileiro(a)',
+        estadoCivil: savedGuarantorData.estadoCivil || '',
+      } : undefined,
+      imovel: {
+        endereco: unitData?.address || '',
+        bairro: unitData?.neighborhood || '',
+        cidade: unitData?.city || '',
+        estado: unitData?.state || '',
+        cep: unitData?.postal_code || '',
+        matricula: unitData?.registration_number || '',
+        cib: unitData?.cib || '',
+      },
+      contrato: {
+        valorAluguel: lease.rent_amount || 0,
+        diaVencimento: lease.due_day || 10,
+        dataInicio: lease.start_date,
+        dataFim: lease.end_date || undefined,
+        prazoMeses,
+        indiceReajuste: lease.adjustment_index || 'IGP-M/FGV',
+        garantia: guaranteeType,
+        valorCaucao: lease.deposit_amount || undefined,
+        finalidade: 'residencial',
+      },
+      pagamento: paymentInfo?.pix || paymentInfo?.banco ? {
+        pix: paymentInfo.pix || '',
+        banco: paymentInfo.banco || '',
+        agencia: paymentInfo.agencia || '',
+        conta: paymentInfo.conta || '',
+        tipoConta: paymentInfo.tipoConta || '',
+        beneficiario: paymentInfo.beneficiario || ownerContact?.name || '',
+      } : undefined,
+    };
+
+    const fileName = `Contrato_Locacao_${unitData?.address?.replace(/\s+/g, '_') || 'Imovel'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    return { data: contractData, fileName };
+  };
+
+  const runGeneration = async (data: LegalContractData, fileName: string) => {
     setIsGenerating(true);
     try {
-      const lease = activeLease.lease;
-      const guaranteeType = (lease.guarantee_type || 'nenhuma') as 'fiador' | 'caucao' | 'seguro_fianca' | 'titulo_capitalizacao' | 'nenhuma';
-      const savedGuarantorData = typeof lease.guarantor_data === 'string' 
-        ? JSON.parse(lease.guarantor_data || '{}') 
-        : (lease.guarantor_data || {});
-      const paymentInfo = typeof lease.payment_info === 'string'
-        ? JSON.parse(lease.payment_info || '{}')
-        : (lease.payment_info || {});
-
-      // Calcular prazo em meses
-      const startDate = new Date(lease.start_date);
-      const endDate = lease.end_date ? new Date(lease.end_date) : null;
-      const prazoMeses = endDate 
-        ? (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth())
-        : 30;
-
-      const contractData: LegalContractData = {
-        locador: {
-          nome: ownerContact?.name || '',
-          cpf: ownerContact?.document_number || '',
-          endereco: ownerContact?.address || '',
-          cidade: ownerContact?.city || unitData?.city || '',
-          estado: ownerContact?.state || unitData?.state || '',
-          cep: ownerContact?.postal_code || '',
-          telefone: ownerContact?.phone || '',
-          email: ownerContact?.email || '',
-          nacionalidade: 'brasileiro(a)',
-        },
-        locatario: {
-          nome: activeLease?.tenant?.name || '',
-          cpf: activeLease?.tenant?.document_number || '',
-          endereco: activeLease?.tenant?.address || '',
-          cidade: activeLease?.tenant?.city || '',
-          estado: activeLease?.tenant?.state || '',
-          cep: activeLease?.tenant?.postal_code || '',
-          telefone: activeLease?.tenant?.phone || '',
-          email: activeLease?.tenant?.email || '',
-          nacionalidade: 'brasileiro(a)',
-        },
-        fiador: guaranteeType === 'fiador' && savedGuarantorData?.nome ? {
-          nome: savedGuarantorData.nome || '',
-          cpf: savedGuarantorData.cpf || '',
-          rg: savedGuarantorData.rg || '',
-          endereco: savedGuarantorData.endereco || '',
-          cidade: savedGuarantorData.cidade || '',
-          estado: savedGuarantorData.estado || '',
-          profissao: savedGuarantorData.profissao || '',
-          nacionalidade: 'brasileiro(a)',
-          estadoCivil: savedGuarantorData.estadoCivil || '',
-        } : undefined,
-        imovel: {
-          endereco: unitData?.address || '',
-          bairro: unitData?.neighborhood || '',
-          cidade: unitData?.city || '',
-          estado: unitData?.state || '',
-          cep: unitData?.postal_code || '',
-          matricula: unitData?.registration_number || '',
-          cib: unitData?.cib || '',
-        },
-        contrato: {
-          valorAluguel: lease.rent_amount || 0,
-          diaVencimento: lease.due_day || 10,
-          dataInicio: lease.start_date,
-          dataFim: lease.end_date || undefined,
-          prazoMeses: prazoMeses,
-          indiceReajuste: lease.adjustment_index || 'IGP-M/FGV',
-          garantia: guaranteeType,
-          valorCaucao: lease.deposit_amount || undefined,
-          finalidade: 'residencial',
-        },
-        pagamento: paymentInfo?.pix || paymentInfo?.banco ? {
-          pix: paymentInfo.pix || '',
-          banco: paymentInfo.banco || '',
-          agencia: paymentInfo.agencia || '',
-          conta: paymentInfo.conta || '',
-          tipoConta: paymentInfo.tipoConta || '',
-          beneficiario: paymentInfo.beneficiario || ownerContact?.name || '',
-        } : undefined,
-      };
-
-      const fileName = `Contrato_Locacao_${unitData?.address?.replace(/\s+/g, '_') || 'Imovel'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-      generateLegalContractPDF(contractData, fileName);
-      
+      await generateLegalContractPDF(data, fileName);
       toast.success("Contrato jurídico gerado com sucesso!");
       onSuccess?.();
       onOpenChange(false);
@@ -189,8 +216,28 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
       toast.error("Erro ao gerar contrato");
     } finally {
       setIsGenerating(false);
+      setPendingData(null);
+      setPendencies([]);
     }
   };
+
+  const handleGenerateContract = async () => {
+    if (!activeLease?.lease) {
+      toast.error("Nenhum contrato ativo encontrado");
+      return;
+    }
+    const built = buildContractData();
+    if (!built) return;
+    const issues = validateContractData(built.data);
+    if (issues.length > 0) {
+      setPendingData(built.data);
+      setPendingFileName(built.fileName);
+      setPendencies(issues);
+      return;
+    }
+    await runGeneration(built.data, built.fileName);
+  };
+
  
    const isLoading = isLoadingUnit || isLoadingLease;
    const hasActiveLease = !!activeLease?.lease;
@@ -234,7 +281,53 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
              Baixar PDF
            </Button>
          </div>
-       </DialogContent>
-     </Dialog>
-   );
- }
+      </DialogContent>
+
+      <AlertDialog
+        open={pendencies.length > 0}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPendencies([]);
+            setPendingData(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Campos pendentes no contrato
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Os campos abaixo não estão preenchidos. Sem eles o PDF sairá com omissões.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-72 overflow-y-auto rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+            {pendencies.map((p) => (
+              <div key={p.campo} className="border-b last:border-b-0 pb-2 last:pb-0">
+                <div className="font-medium">{p.rotulo}</div>
+                <div className="text-xs text-muted-foreground">Onde corrigir: {p.onde_corrigir}</div>
+              </div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Corrigir depois</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingData) {
+                  const data = pendingData;
+                  const fn = pendingFileName;
+                  setPendencies([]);
+                  setPendingData(null);
+                  void runGeneration(data, fn);
+                }
+              }}
+            >
+              Gerar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Dialog>
+  );
+}
