@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Package, UserPlus, Sparkles, MessageSquare,
+  Package, UserPlus, Sparkles,
   CheckCircle2, X, ChevronDown,
 } from 'lucide-react';
 import { LpHeader } from '@/components/landing/v2/LpHeader';
@@ -211,15 +211,6 @@ function AddonsSection() {
       bg: 'rgba(11,0,115,0.07)',
     },
     {
-      icon: MessageSquare,
-      title: 'Créditos de WhatsApp',
-      desc: 'Amplie sua capacidade de disparos automáticos, notificações de cobrança e atendimento via WhatsApp.',
-      price: 'A partir de R$ 19,90',
-      plans: 'Pro e Business',
-      color: '#25D366',
-      bg: 'rgba(37,211,102,0.10)',
-    },
-    {
       icon: Sparkles,
       title: 'Créditos de IA',
       desc: 'Amplie os créditos de IA para resumir conversas, gerar textos e acelerar a rotina do corretor.',
@@ -237,7 +228,7 @@ function AddonsSection() {
         <h2 className="lp-display text-[28px] md:text-[44px] mb-10" style={{ color: 'var(--lp-ink)' }}>
           Turbine seu plano quando precisar
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {addons.map((a) => {
             const Icon = a.icon;
             return (
