@@ -482,6 +482,59 @@ export default function Schedule() {
     setCurrentMonth(month);
   };
 
+  // Toolbar navigation
+  const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+  const goToday = () => {
+    const now = new Date();
+    setSelectedDate(now);
+    setCurrentMonth(now);
+  };
+  const goPrev = () => {
+    if (viewMode === 'day') setSelectedDate(addDays(selectedDate, -1));
+    else if (viewMode === 'week') setSelectedDate(addDays(selectedDate, -7));
+    else {
+      const nm = subMonths(currentMonth, 1);
+      setCurrentMonth(nm);
+      setSelectedDate(nm);
+    }
+  };
+  const goNext = () => {
+    if (viewMode === 'day') setSelectedDate(addDays(selectedDate, 1));
+    else if (viewMode === 'week') setSelectedDate(addDays(selectedDate, 7));
+    else {
+      const nm = addMonths(currentMonth, 1);
+      setCurrentMonth(nm);
+      setSelectedDate(nm);
+    }
+  };
+  const periodLabel = (() => {
+    if (viewMode === 'day') return capitalize(format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR }));
+    if (viewMode === 'week') {
+      const ws = startOfWeek(selectedDate, { weekStartsOn: 0 });
+      const we = endOfWeek(selectedDate, { weekStartsOn: 0 });
+      return `${format(ws, 'd MMM', { locale: ptBR })} – ${format(we, 'd MMM', { locale: ptBR })}`;
+    }
+    return capitalize(format(currentMonth, 'MMMM yyyy', { locale: ptBR }));
+  })();
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['all-visits'] });
+    queryClient.invalidateQueries({ queryKey: ['all-schedule-activities'] });
+    queryClient.invalidateQueries({ queryKey: ['all-negotiation-items'] });
+    queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
+    queryClient.invalidateQueries({ queryKey: ['visits-period'] });
+    queryClient.invalidateQueries({ queryKey: ['negotiation-schedule-items'] });
+    toast.success('Agenda atualizada');
+  };
+
+  const hasAnyDayEvent =
+    (visitsOnSelectedDate?.length ?? 0) > 0 ||
+    (activities?.length ?? 0) > 0 ||
+    (negotiationItems?.length ?? 0) > 0 ||
+    (periodVisits?.length ?? 0) > 0;
+
+
+
   return (
     <AppLayout
       title="Agenda"
