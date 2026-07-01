@@ -208,6 +208,8 @@ export interface LegalContractData {
     garantia: 'fiador' | 'caucao' | 'seguro_fianca' | 'titulo_capitalizacao' | 'nenhuma';
     valorCaucao?: number;
     finalidade: 'residencial' | 'comercial';
+    multaPercent?: number;
+    jurosPercent?: number;
   };
   // Pagamento
   pagamento?: {
