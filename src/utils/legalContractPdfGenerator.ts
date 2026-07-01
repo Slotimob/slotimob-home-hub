@@ -627,9 +627,11 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
     addSubClause('4.1', 'O pagamento do aluguel e demais encargos deverá ser efetuado em conta bancária a ser indicada pelo LOCADOR ou seu representante legal.');
   }
   
+  const multaPct = data.contrato.multaPercent && data.contrato.multaPercent > 0 ? data.contrato.multaPercent : 10;
+  const jurosPct = data.contrato.jurosPercent && data.contrato.jurosPercent > 0 ? data.contrato.jurosPercent : 1;
   addSubClause('4.2', 'O atraso no pagamento do aluguel e encargos implicará em:');
-  addRomanItem('I', 'Multa de 10% (dez por cento) sobre o valor devido;');
-  addRomanItem('II', 'Juros de mora de 1% (um por cento) ao mês, calculados pro rata die;');
+  addRomanItem('I', `Multa de ${multaPct}% (${numberToWords(Math.round(multaPct))} por cento) sobre o valor devido;`);
+  addRomanItem('II', `Juros de mora de ${jurosPct}% (${numberToWords(Math.round(jurosPct))} por cento) ao mês, calculados pro rata die;`);
   addRomanItem('III', 'Correção monetária pelo mesmo índice de reajuste do aluguel.');
 
   // CLÁUSULA QUINTA - DAS NOTIFICAÇÕES E COMUNICAÇÕES DIGITAIS
