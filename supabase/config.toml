@@ -54,3 +54,6 @@ verify_jwt = false
 
 [functions.create-asaas-charge]
 verify_jwt = false
+
+[functions.asaas-payment-action]
+verify_jwt = true
