@@ -188,10 +188,12 @@ export function WeekScheduleGrid({
                   hour={hour}
                   date={day}
                   activities={activities}
+                  visits={visits}
                   negotiationItems={negotiationItems}
                   onActivityClick={onActivityClick}
                   onActivityResize={onActivityResize}
                   onNegotiationItemClick={onNegotiationItemClick}
+                  onVisitClick={onVisitClick}
                 />
               ))}
             </div>
