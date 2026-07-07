@@ -1081,9 +1081,13 @@ export default function Checkout() {
       </main>
 
       <footer className="border-t bg-card py-4 mt-8">
-        <p className="text-center text-xs text-muted-foreground">
-          © Slotimob · Pagamento processado pelo Asaas
-        </p>
+        <div className="flex flex-col items-center gap-3">
+          <AsaasFinancialSeal size="sm" />
+          <AsaasTransparencyNote className="text-center max-w-2xl mx-auto" />
+          <p className="text-center text-xs text-muted-foreground">
+            © Slotimob
+          </p>
+        </div>
       </footer>
     </div>
   );
