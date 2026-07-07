@@ -1,6 +1,7 @@
 import { SEOHead } from '@/components/SEOHead';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { FooterSection } from '@/components/landing/FooterSection';
+import { AsaasFinancialSeal } from '@/components/asaas/AsaasFinancialSeal';
 
 export default function TermosDeUso() {
   return (
@@ -100,6 +101,20 @@ export default function TermosDeUso() {
               da Comarca de São Paulo/SP para dirimir quaisquer litígios decorrentes deste
               instrumento, com renúncia a qualquer outro, por mais privilegiado que seja.
             </p>
+
+            <h2>11. Prestação de Serviços Financeiros</h2>
+            <p>
+              Os serviços financeiros e de pagamentos disponibilizados por meio da presente plataforma, incluindo abertura e manutenção de conta de pagamento, processamento de transações, emissão de boletos, transferências, pagamentos e demais movimentações de valores, são prestados pelo ASAAS GESTÃO FINANCEIRA INSTITUIÇÃO DE PAGAMENTOS S.A., instituição de pagamento autorizada a funcionar pelo Banco Central do Brasil.
+            </p>
+            <p>
+              A Slotimob atua exclusivamente como integradora tecnológica e distribuidora da experiência do produto, não sendo instituição financeira ou de pagamento, nem realizando intermediação financeira em nome próprio.
+            </p>
+            <p>
+              O cliente declara ciência de que o relacionamento financeiro/de pagamentos e a responsabilidade regulatória pelos serviços acima descritos são do ASAAS GESTÃO FINANCEIRA S.A., nos termos da regulamentação vigente.
+            </p>
+            <div className="mt-4">
+              <AsaasFinancialSeal size="sm" />
+            </div>
           </article>
         </main>
 

@@ -634,6 +634,8 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addRomanItem('II', `Juros de mora de ${jurosPct}% (${numberToWords(Math.round(jurosPct))} por cento) ao mês, calculados pro rata die;`);
   addRomanItem('III', 'Correção monetária pelo mesmo índice de reajuste do aluguel.');
 
+  addParagraph('Parágrafo único: As cobranças de aluguel emitidas por meio da plataforma Slotimob (boletos, PIX e demais meios de pagamento) são processadas pelo ASAAS GESTÃO FINANCEIRA INSTITUIÇÃO DE PAGAMENTOS S.A., instituição de pagamento autorizada a funcionar pelo Banco Central do Brasil, responsável pela prestação dos serviços financeiros de pagamento.');
+
   // CLÁUSULA QUINTA - DAS NOTIFICAÇÕES E COMUNICAÇÕES DIGITAIS
   addClauseHeader('QUINTA', 'DAS NOTIFICAÇÕES E COMUNICAÇÕES DIGITAIS');
 
