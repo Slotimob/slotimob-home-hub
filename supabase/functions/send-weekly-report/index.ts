@@ -34,7 +34,43 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, reportData, userName }: WeeklyReportRequest = await req.json();
+    const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization");
+    const token = authHeader?.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "não autenticado" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: userData, error: userErr } = await anonClient.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "não autenticado" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const adminClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: profile, error: profileErr } = await adminClient
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+
+    if (profileErr || !profile?.email) {
+      return new Response(JSON.stringify({ error: "Perfil sem e-mail cadastrado. Atualize seu perfil para receber o relatório." }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const email = profile.email as string;
+    const userName = (profile.full_name as string | null) ?? email;
+
+    const { reportData }: WeeklyReportRequest = await req.json();
 
     console.log("Sending weekly report to:", email);
 
