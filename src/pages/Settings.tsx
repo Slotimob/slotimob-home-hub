@@ -28,6 +28,7 @@ import { NotificationSettings } from '@/components/NotificationSettings';
 import { AppLayout } from '@/components/AppLayout';
 import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
 import { DeleteAccountSection } from '@/components/settings/DeleteAccountSection';
+import { AsaasFinancialSeal, AsaasTransparencyNote } from '@/components/asaas/AsaasFinancialSeal';
 
 const UF_OPTIONS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB',
