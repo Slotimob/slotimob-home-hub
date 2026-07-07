@@ -1,6 +1,7 @@
 import { SEOHead } from '@/components/SEOHead';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { FooterSection } from '@/components/landing/FooterSection';
+import { AsaasFinancialSeal } from '@/components/asaas/AsaasFinancialSeal';
 
 export default function TermosDeUso() {
   return (
