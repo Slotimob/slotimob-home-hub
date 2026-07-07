@@ -627,6 +627,13 @@ const Settings = () => {
               ? '✓ Conta já configurada'
               : 'Criar subconta e ativar cobrança'}
           </Button>
+
+          <Separator />
+
+          <div className="mt-4 space-y-3">
+            <AsaasFinancialSeal size="sm" />
+            <AsaasTransparencyNote />
+          </div>
         </SettingsSection>
 
         {/* 3 — Segurança */}
