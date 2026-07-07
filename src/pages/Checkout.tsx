@@ -1029,6 +1029,9 @@ export default function Checkout() {
                     </p>
                   </>
                 )}
+                <div className="border-t pt-3">
+                  <AsaasFinancialSeal size="sm" />
+                </div>
               </div>
             ) : (
               /* CTA */
