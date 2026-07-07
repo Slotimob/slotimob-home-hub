@@ -11,11 +11,21 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  const cronSecret = req.headers.get("x-cron-secret");
+  const { data: isValidCron, error: cronCheckError } = await supabase.rpc("verify_cron_secret", { p_secret: cronSecret });
+  if (cronCheckError || !isValidCron) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     const { error } = await supabase.rpc("maintain_audit_partitions");
 

@@ -12,11 +12,21 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  const cronSecret = req.headers.get("x-cron-secret");
+  const { data: isValidCron, error: cronCheckError } = await supabaseAdmin.rpc("verify_cron_secret", { p_secret: cronSecret });
+  if (cronCheckError || !isValidCron) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     // Find expired deliveries with files still present
     const { data: expired, error } = await supabaseAdmin
