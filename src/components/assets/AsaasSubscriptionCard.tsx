@@ -45,6 +45,7 @@ import {
   Settings,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
 
 type BillingType = "UNDEFINED" | "BOLETO" | "PIX";
 

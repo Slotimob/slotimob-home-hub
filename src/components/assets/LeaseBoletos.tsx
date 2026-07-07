@@ -61,6 +61,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
+import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/AsaasFinancialSeal";
 
 const STATUS_MAP: Record<
   string,

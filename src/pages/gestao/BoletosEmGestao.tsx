@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ExternalLink, Copy, MoreHorizontal, Search, FileText, Loader2, Receipt, AlertCircle, RefreshCw, Mail, XCircle, CalendarClock, TrendingUp, Plus } from "lucide-react";
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
+import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/AsaasFinancialSeal";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
