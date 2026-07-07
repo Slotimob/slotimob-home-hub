@@ -9,7 +9,6 @@ const corsHeaders = {
 };
 
 interface WeeklyReportRequest {
-  email: string;
   reportData: {
     period: string;
     totalSales: number;
@@ -23,7 +22,6 @@ interface WeeklyReportRequest {
     topProperties: Array<{ name: string; deals: number }>;
     upcomingActivities: number;
   };
-  userName: string;
 }
 
 const formatCurrency = (value: number) => {
