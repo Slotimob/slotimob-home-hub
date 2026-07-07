@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { AsaasFinancialSeal } from '@/components/asaas/AsaasFinancialSeal';
 import SectionWrapper from '@/components/marketing/SectionWrapper';
 
 const faqs = [
