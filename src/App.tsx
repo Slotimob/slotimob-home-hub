@@ -32,7 +32,7 @@ const ActivityHistory = React.lazy(() => import("./pages/ActivityHistory"));
 const Settings = React.lazy(() => import("./pages/Settings"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Legal = React.lazy(() => import("./pages/Legal"));
-const RefundPolicy = React.lazy(() => import("./pages/RefundPolicy"));
+
 const TermsAdmin = React.lazy(() => import("./pages/TermsAdmin"));
 const UsersAdmin = React.lazy(() => import("./pages/UsersAdmin"));
 const Presentation = React.lazy(() => import("./pages/Presentation"));
