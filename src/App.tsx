@@ -113,7 +113,7 @@ const App = () => (
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/legal" element={<Legal />} />
-              <Route path="/refund-policy" element={<RefundPolicy />} />
+              <Route path="/refund-policy" element={<Navigate to="/legal?tab=refund" replace />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/apresentacao" element={<Presentation />} />
