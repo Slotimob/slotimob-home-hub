@@ -918,6 +918,7 @@ export default function Checkout() {
                   );
                 })}
               </div>
+              <AsaasFinancialSeal size="sm" className="mt-3" />
             </div>
 
             {/* Resultado do pagamento (PIX / Boleto / Cartão) */}
