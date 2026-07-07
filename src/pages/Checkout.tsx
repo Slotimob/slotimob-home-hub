@@ -522,6 +522,7 @@ export default function Checkout() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield className="h-3.5 w-3.5" />
             <span>Pagamento seguro via Asaas</span>
+            <AsaasFinancialSeal size="sm" className="hidden sm:inline-block" />
           </div>
         </div>
       </header>
