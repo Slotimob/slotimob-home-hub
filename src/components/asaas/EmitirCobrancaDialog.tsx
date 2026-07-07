@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Copy, ExternalLink, AlertCircle, CheckCircle2, Receipt } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
 
 interface EmitirCobrancaDialogProps {
   open: boolean;
@@ -415,6 +416,10 @@ export function EmitirCobrancaDialog({
             </>
           )}
         </DialogFooter>
+
+        <div className="border-t pt-3 flex justify-start">
+          <AsaasFinancialSeal size="sm" />
+        </div>
       </DialogContent>
     </Dialog>
   );

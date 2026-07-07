@@ -61,6 +61,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
+import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/AsaasFinancialSeal";
 
 const STATUS_MAP: Record<
   string,
@@ -448,6 +449,11 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
           </Table>
         </div>
       )}
+
+      <div className="mt-6 border-t pt-4 space-y-3">
+        <AsaasFinancialSeal size="sm" />
+        <AsaasTransparencyNote />
+      </div>
 
       {/* Alterar vencimento */}
       <Dialog open={!!dueDateDialog} onOpenChange={(o) => !o && setDueDateDialog(null)}>
