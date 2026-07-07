@@ -3510,7 +3510,6 @@ export type Database = {
           ical_token: string | null
           id: string
           instagram_url: string | null
-          is_super_admin: boolean
           linkedin_url: string | null
           notification_sound_enabled: boolean | null
           notification_vibration_enabled: boolean | null
@@ -3552,7 +3551,6 @@ export type Database = {
           ical_token?: string | null
           id: string
           instagram_url?: string | null
-          is_super_admin?: boolean
           linkedin_url?: string | null
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
@@ -3594,7 +3592,6 @@ export type Database = {
           ical_token?: string | null
           id?: string
           instagram_url?: string | null
-          is_super_admin?: boolean
           linkedin_url?: string | null
           notification_sound_enabled?: boolean | null
           notification_vibration_enabled?: boolean | null
