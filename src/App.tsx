@@ -124,8 +124,8 @@ const App = () => (
              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
              <Route path="/sobre" element={<Sobre />} />
              
-             <Route path="/termos-de-uso" element={<TermosDeUso />} />
-             <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
+             <Route path="/termos-de-uso" element={<Navigate to="/legal?tab=terms" replace />} />
+             <Route path="/politica-de-privacidade" element={<Navigate to="/legal?tab=privacy" replace />} />
 
 
               {/* Protected routes — wrapped with AuthGuard */}
