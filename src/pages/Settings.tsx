@@ -28,6 +28,7 @@ import { NotificationSettings } from '@/components/NotificationSettings';
 import { AppLayout } from '@/components/AppLayout';
 import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
 import { DeleteAccountSection } from '@/components/settings/DeleteAccountSection';
+import { AsaasFinancialSeal, AsaasTransparencyNote } from '@/components/asaas/AsaasFinancialSeal';
 
 const UF_OPTIONS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB',
@@ -626,6 +627,13 @@ const Settings = () => {
               ? '✓ Conta já configurada'
               : 'Criar subconta e ativar cobrança'}
           </Button>
+
+          <Separator />
+
+          <div className="mt-4 space-y-3">
+            <AsaasFinancialSeal size="sm" />
+            <AsaasTransparencyNote />
+          </div>
         </SettingsSection>
 
         {/* 3 — Segurança */}
