@@ -23,9 +23,9 @@ const COLS = [
   {
     title: 'legal',
     links: [
-      { l: 'termos de uso', h: '/legal', ext: true },
-      { l: 'política de reembolso', h: '/refund-policy', ext: true },
-      { l: 'privacidade', h: '/legal', ext: true },
+      { l: 'termos de uso', h: '/legal?tab=terms', ext: true },
+      { l: 'política de privacidade', h: '/legal?tab=privacy', ext: true },
+      { l: 'política de reembolso', h: '/legal?tab=refund', ext: true },
     ],
   },
 ];
