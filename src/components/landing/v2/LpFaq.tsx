@@ -26,7 +26,12 @@ const faqs = [
   },
   {
     q: 'O boleto é emitido pelo Slotimob ou pelo meu banco?',
-    a: 'Os boletos são emitidos via Asaas, parceiro financeiro homologado pelo Banco Central. O valor do aluguel cai direto na sua conta — o Slotimob não fica com o dinheiro em nenhum momento.',
+    a: (
+      <>
+        Nenhum dos dois: os boletos e cobranças PIX são emitidos por meio do Asaas, instituição de pagamento autorizada pelo Banco Central do Brasil. Ao ativar as cobranças no Slotimob, é criada uma conta de pagamento (subconta) de sua titularidade junto ao Asaas, sem custo de abertura. Os boletos saem em seu nome, o inquilino paga, o valor cai na sua conta de pagamento e você transfere para o banco que preferir. O Slotimob é a plataforma que orquestra tudo isso: quem presta o serviço financeiro é o Asaas, e o status de cada cobrança é atualizado automaticamente dentro do sistema.
+        <AsaasFinancialSeal size="sm" variant="positivo" />
+      </>
+    ),
   },
   {
     q: 'Meus dados ficam seguros?',
