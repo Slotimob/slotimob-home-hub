@@ -3,6 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
+  AsaasFinancialSeal,
+  AsaasTransparencyNote,
+} from '@/components/asaas/AsaasFinancialSeal';
+import {
   Loader2,
   Check,
   Zap,
@@ -518,6 +522,7 @@ export default function Checkout() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield className="h-3.5 w-3.5" />
             <span>Pagamento seguro via Asaas</span>
+            <AsaasFinancialSeal size="sm" className="hidden sm:inline-block" />
           </div>
         </div>
       </header>
@@ -913,6 +918,7 @@ export default function Checkout() {
                   );
                 })}
               </div>
+              <AsaasFinancialSeal size="sm" className="mt-3" />
             </div>
 
             {/* Resultado do pagamento (PIX / Boleto / Cartão) */}
@@ -1023,6 +1029,9 @@ export default function Checkout() {
                     </p>
                   </>
                 )}
+                <div className="border-t pt-3">
+                  <AsaasFinancialSeal size="sm" />
+                </div>
               </div>
             ) : (
               /* CTA */
@@ -1072,9 +1081,13 @@ export default function Checkout() {
       </main>
 
       <footer className="border-t bg-card py-4 mt-8">
-        <p className="text-center text-xs text-muted-foreground">
-          © Slotimob · Pagamento processado pelo Asaas
-        </p>
+        <div className="flex flex-col items-center gap-3">
+          <AsaasFinancialSeal size="sm" />
+          <AsaasTransparencyNote className="text-center max-w-2xl mx-auto" />
+          <p className="text-center text-xs text-muted-foreground">
+            © Slotimob
+          </p>
+        </div>
       </footer>
     </div>
   );
