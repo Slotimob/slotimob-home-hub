@@ -443,6 +443,9 @@ export function PricingSection() {
           <p className="text-xs text-muted-foreground mt-1">
             7 dias grátis em todos os planos. Cancele quando quiser.
           </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Emissão de boletos e PIX de aluguel via subconta Asaas, instituição autorizada pelo Banco Central.
+          </p>
         </div>
       </div>
     </section>);
