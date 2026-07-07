@@ -436,6 +436,10 @@ export function AsaasSubscriptionCard({
           <p className="text-[11px] text-muted-foreground">
             As cobranças emitidas aparecem na aba <span className="font-medium">Boletos</span>.
           </p>
+
+          <div className="border-t pt-3 mt-4">
+            <AsaasFinancialSeal size="sm" />
+          </div>
         </CardContent>
       </Card>
 
