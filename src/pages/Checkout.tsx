@@ -3,6 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
+  AsaasFinancialSeal,
+  AsaasTransparencyNote,
+} from '@/components/asaas/AsaasFinancialSeal';
+import {
   Loader2,
   Check,
   Zap,
