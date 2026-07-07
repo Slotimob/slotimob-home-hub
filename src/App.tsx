@@ -32,7 +32,7 @@ const ActivityHistory = React.lazy(() => import("./pages/ActivityHistory"));
 const Settings = React.lazy(() => import("./pages/Settings"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Legal = React.lazy(() => import("./pages/Legal"));
-const RefundPolicy = React.lazy(() => import("./pages/RefundPolicy"));
+
 const TermsAdmin = React.lazy(() => import("./pages/TermsAdmin"));
 const UsersAdmin = React.lazy(() => import("./pages/UsersAdmin"));
 const Presentation = React.lazy(() => import("./pages/Presentation"));
@@ -73,8 +73,7 @@ const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
 const Plans = React.lazy(() => import("./pages/Plans"));
 const Sobre = React.lazy(() => import("./pages/Sobre"));
 
-const TermosDeUso = React.lazy(() => import("./pages/TermosDeUso"));
-const PoliticaDePrivacidade = React.lazy(() => import("./pages/PoliticaDePrivacidade"));
+
 
 const queryClient = new QueryClient();
 
@@ -114,7 +113,7 @@ const App = () => (
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/legal" element={<Legal />} />
-              <Route path="/refund-policy" element={<RefundPolicy />} />
+              <Route path="/refund-policy" element={<Navigate to="/legal?tab=refund" replace />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/apresentacao" element={<Presentation />} />
@@ -125,8 +124,8 @@ const App = () => (
              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
              <Route path="/sobre" element={<Sobre />} />
              
-             <Route path="/termos-de-uso" element={<TermosDeUso />} />
-             <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
+             <Route path="/termos-de-uso" element={<Navigate to="/legal?tab=terms" replace />} />
+             <Route path="/politica-de-privacidade" element={<Navigate to="/legal?tab=privacy" replace />} />
 
 
               {/* Protected routes — wrapped with AuthGuard */}
