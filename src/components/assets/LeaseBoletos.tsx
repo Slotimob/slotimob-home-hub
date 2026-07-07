@@ -450,6 +450,11 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
         </div>
       )}
 
+      <div className="mt-6 border-t pt-4 space-y-3">
+        <AsaasFinancialSeal size="sm" />
+        <AsaasTransparencyNote />
+      </div>
+
       {/* Alterar vencimento */}
       <Dialog open={!!dueDateDialog} onOpenChange={(o) => !o && setDueDateDialog(null)}>
         <DialogContent>

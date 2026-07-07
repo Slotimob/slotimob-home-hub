@@ -410,6 +410,11 @@ export default function BoletosEmGestao() {
           </Table>
         </div>
       )}
+
+      <div className="mt-6 border-t pt-4 space-y-3">
+        <AsaasFinancialSeal size="sm" />
+        <AsaasTransparencyNote />
+      </div>
     </div>
 
     {/* Dialog: Alterar vencimento */}

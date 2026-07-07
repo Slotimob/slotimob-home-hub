@@ -416,6 +416,10 @@ export function EmitirCobrancaDialog({
             </>
           )}
         </DialogFooter>
+
+        <div className="border-t pt-3 flex justify-start">
+          <AsaasFinancialSeal size="sm" />
+        </div>
       </DialogContent>
     </Dialog>
   );

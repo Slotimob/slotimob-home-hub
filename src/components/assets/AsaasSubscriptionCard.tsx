@@ -356,6 +356,10 @@ export function AsaasSubscriptionCard({
               </>
             )}
           </Button>
+
+          <div className="border-t pt-3 mt-4">
+            <AsaasFinancialSeal size="sm" />
+          </div>
         </CardContent>
       </Card>
     );
