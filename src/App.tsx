@@ -73,8 +73,7 @@ const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
 const Plans = React.lazy(() => import("./pages/Plans"));
 const Sobre = React.lazy(() => import("./pages/Sobre"));
 
-const TermosDeUso = React.lazy(() => import("./pages/TermosDeUso"));
-const PoliticaDePrivacidade = React.lazy(() => import("./pages/PoliticaDePrivacidade"));
+
 
 const queryClient = new QueryClient();
 
