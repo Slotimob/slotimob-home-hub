@@ -5618,6 +5618,7 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_early_adopter_slot: { Args: { p_plan_id: string }; Returns: Json }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       consume_approval: { Args: { p_request_id: string }; Returns: boolean }
       get_ai_credits_balance: { Args: { p_user_id: string }; Returns: Json }
@@ -5667,6 +5668,7 @@ export type Database = {
         Args: { p_editor: string; p_new: Json; p_old: Json; p_target: string }
         Returns: boolean
       }
+      verify_cron_secret: { Args: { p_secret: string }; Returns: boolean }
     }
     Enums: {
       app_role:
