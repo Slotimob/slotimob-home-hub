@@ -24,9 +24,9 @@ const footerColumns: { title: string; links: FooterLink[] }[] = [
   {
     title: 'Legal',
     links: [
-      { label: 'Termos de Uso', href: '/termos-de-uso' },
-      { label: 'Política de Privacidade', href: '/politica-de-privacidade' },
-      { label: 'Política de Reembolso', href: '/refund-policy' },
+      { label: 'Termos de Uso', href: '/legal?tab=terms' },
+      { label: 'Política de Privacidade', href: '/legal?tab=privacy' },
+      { label: 'Política de Reembolso', href: '/legal?tab=refund' },
     ],
   },
 ];
