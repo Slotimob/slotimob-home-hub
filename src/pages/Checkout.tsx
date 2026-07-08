@@ -279,7 +279,7 @@ export default function Checkout() {
         options: { data: { full_name: name } },
       });
       if (signUpError) {
-        setAuthError(signUpError.message);
+        setAuthError(translateAuthError(signUpError.message));
         setIsCheckingOut(false);
         return;
       }
