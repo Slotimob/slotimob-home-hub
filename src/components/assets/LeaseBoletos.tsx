@@ -317,6 +317,7 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
                 variant="outline"
                 size="sm"
                 onClick={() => setEmitirOpen(true)}
+                disabled={!hasPermission("management_boletos", "create")}
                 className="gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
