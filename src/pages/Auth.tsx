@@ -324,7 +324,7 @@ const Auth = () => {
       setShowForgotPassword(false);
       setResetEmail('');
     } catch (error: any) {
-      toast({ title: 'Erro ao enviar email', description: error.message || 'Tente novamente', variant: 'destructive' });
+      toast({ title: 'Erro ao enviar email', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
     } finally {
       setResetLoading(false);
     }
@@ -395,7 +395,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl } });
       if (error) throw error;
     } catch (error: any) {
-      toast({ title: 'Erro ao entrar com Google', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao entrar com Google', description: translateAuthError(error.message), variant: 'destructive' });
       setGoogleLoading(false);
     }
   };
@@ -542,7 +542,7 @@ const Auth = () => {
       if (error instanceof z.ZodError) {
         toast({ title: 'Erro de validação', description: error.errors[0].message, variant: 'destructive' });
       } else {
-        toast({ title: 'Erro ao criar conta', description: error.message || 'Tente novamente', variant: 'destructive' });
+        toast({ title: 'Erro ao criar conta', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
       }
     } finally {
       setLoading(false);
@@ -597,7 +597,7 @@ const Auth = () => {
       if (error) throw error;
       toast({ title: 'Email reenviado!', description: 'Verifique sua caixa de entrada.' });
     } catch (error: any) {
-      toast({ title: 'Erro ao reenviar', description: error.message || 'Tente novamente', variant: 'destructive' });
+      toast({ title: 'Erro ao reenviar', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
