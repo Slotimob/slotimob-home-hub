@@ -142,12 +142,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get profile info before deletion
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("full_name")
-      .eq("id", userId)
-      .single();
+    // (profile already fetched above)
+
 
     // Get subscription info
     const { data: subscription } = await supabaseAdmin
