@@ -43,6 +43,20 @@ Deno.serve(async (req) => {
     const userEmail = user.email as string;
     logStep("User authenticated", { email: userEmail });
 
+    // Bloqueia membros convidados: portal de cobrança é do dono da conta
+    const { data: membership } = await supabaseAdmin
+      .from("organization_members")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (membership) {
+      return new Response(JSON.stringify({
+        error: "Você é um usuário convidado. O portal de cobrança é gerenciado pelo administrador (proprietário) da conta principal."
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // Find or create customer by email

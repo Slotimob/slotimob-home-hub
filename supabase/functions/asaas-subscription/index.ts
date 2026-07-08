@@ -132,15 +132,11 @@ Deno.serve(async (req) => {
       return resp({ error: `action inválida. Use: ${VALID_ACTIONS.join(", ")}` });
     }
 
-    // super_admin override
+    // super_admin override — usa a função canônica is_super_admin (fonte: user_roles)
     let effectiveBrokerId = user.id;
     if (brokerIdOverride && brokerIdOverride !== user.id) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      if (profile?.role === "super_admin") {
+      const { data: isSuperAdmin } = await supabase.rpc("is_super_admin", { p_user_id: user.id });
+      if (isSuperAdmin === true) {
         effectiveBrokerId = brokerIdOverride;
       }
     }

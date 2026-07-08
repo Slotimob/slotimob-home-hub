@@ -830,9 +830,19 @@ const Settings = () => {
         </SettingsSection>
 
         {/* 6 — Assinatura */}
-        {!isAgent && (
+        {!isAgent && !isMember && (
           <SettingsSection title="Gerenciar Assinatura" description="Plano, créditos IA e add-ons" icon={CreditCard}>
             <SubscriptionManagement />
+          </SettingsSection>
+        )}
+        {isMember && (
+          <SettingsSection title="Gerenciar Assinatura" description="Plano, créditos IA e add-ons" icon={CreditCard}>
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
+              <CreditCard className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                A assinatura da plataforma é gerenciada pelo administrador (proprietário) da sua conta.
+              </p>
+            </div>
           </SettingsSection>
         )}
 

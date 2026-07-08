@@ -64,6 +64,21 @@ serve(async (req) => {
 
     const userId = user.id;
     const userEmail = user.email ?? "";
+
+    // Bloqueia membros convidados: apenas o dono da conta gerencia a assinatura da plataforma
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (membership) {
+      return new Response(JSON.stringify({
+        error: "Você é um usuário convidado. Assinaturas e planos da plataforma são gerenciados pelo administrador (proprietário) da conta principal."
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const body = await req.json();
     const { product_type, plan_id, billing_cycle, billing_type, addon_id, credit_pack_id } = body;
     console.log("[checkout] body recebido:", JSON.stringify({ product_type, plan_id, billing_cycle, billing_type }));
