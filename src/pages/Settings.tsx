@@ -20,7 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Camera, FileText, Loader2, Linkedin, Instagram, PenLine,
   ChevronDown, Building2, Receipt, Shield, Bell, CreditCard,
-  Scale, Download, AlertTriangle, User,
+  Scale, Download, AlertTriangle, User, Eye, EyeOff,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { NotificationSettings } from '@/components/NotificationSettings';
