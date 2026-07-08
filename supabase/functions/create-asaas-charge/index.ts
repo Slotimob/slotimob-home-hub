@@ -37,14 +37,28 @@ Deno.serve(async (req) => {
       return resp({ error: "billing_type deve ser BOLETO ou PIX." });
     }
 
+    // Resolve effective broker: members act under the owner's Asaas subaccount.
     let effectiveBrokerId = user.id;
-    if (brokerIdOverride && brokerIdOverride !== user.id) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      if (profile?.role === "super_admin") {
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organization_owner_id, permissions")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (membership) {
+      effectiveBrokerId = membership.organization_owner_id as string;
+      const perms = (membership.permissions as any) || {};
+      const boletos = perms.management_boletos || {};
+      if (boletos.create !== true) {
+        return resp({ error: "Você não tem permissão para emitir cobranças. Fale com o administrador da sua conta." });
+      }
+    }
+
+    // super_admin override (canonical: is_super_admin via user_roles) — applies on top.
+    if (brokerIdOverride && brokerIdOverride !== effectiveBrokerId) {
+      const { data: isSuperAdmin } = await supabase.rpc("is_super_admin", { p_user_id: user.id });
+      if (isSuperAdmin === true) {
         effectiveBrokerId = brokerIdOverride;
       }
     }
