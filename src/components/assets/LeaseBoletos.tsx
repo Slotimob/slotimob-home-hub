@@ -448,14 +448,18 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
                               Alterar valor
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setCancelPayment({ id: b.id })}
-                          >
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Cancelar cobrança
-                          </DropdownMenuItem>
+                          {hasPermission("management_boletos", "delete") && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setCancelPayment({ id: b.id })}
+                              >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Cancelar cobrança
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
