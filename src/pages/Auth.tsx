@@ -15,7 +15,7 @@ import { SEOHead } from '@/components/SEOHead';
 import { toast as sonnerToast } from 'sonner';
 import { trackLeadSignup, trackStartTrial } from '@/components/TrackingProvider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus, ArrowLeft, BarChart3, MessageSquare, Wallet, Building2, Loader2 } from 'lucide-react';
+import { UserPlus, ArrowLeft, BarChart3, MessageSquare, Wallet, Building2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SITE_URL = window.location.origin;
