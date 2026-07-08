@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Usuário não autenticado" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     if (confirmation_text !== "EXCLUIR MINHA CONTA") {
       return new Response(
         JSON.stringify({ error: "Texto de confirmação inválido" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
       if (!recentExport || recentExport.length === 0) {
         return new Response(
           JSON.stringify({ error: "Solicite uma exportação dos seus dados ou confirme explicitamente que não precisa." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
       console.error("Failed to delete auth user:", deleteAuthError.message);
       return new Response(
         JSON.stringify({ error: "Erro ao excluir conta de autenticação. Contate o suporte." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
     console.error("delete-account error:", err);
     return new Response(
       JSON.stringify({ error: "Erro interno ao processar exclusão." }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
