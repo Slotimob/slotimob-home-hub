@@ -271,13 +271,13 @@ const Auth = () => {
 
   useEffect(() => {
     if (trialPro) {
-      sonnerToast.info('Você está criando sua conta no Plano Start. Aproveite seus 14 dias de acesso PRO liberados agora!');
+      sonnerToast.info('Você está criando sua conta no Plano Start. Aproveite seus 7 dias de acesso PRO liberados agora!');
       if (activeTab !== 'signup') setActiveTab('signup');
     } else if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
       const planNames: Record<string, string> = { essencial: 'Essencial', pro: 'Pro', business: 'Business' };
       const msg = redirectToCheckout
         ? `Faça login ou crie uma conta para assinar o plano ${planNames[pendingPlan] || pendingPlan}`
-        : `Crie sua conta para testar o plano ${planNames[pendingPlan] || pendingPlan} grátis por 14 dias`;
+        : `Crie sua conta para testar o plano ${planNames[pendingPlan] || pendingPlan} grátis por 7 dias`;
       sonnerToast.info(msg);
     }
   }, [pendingPlan, redirectToCheckout, trialPro]);

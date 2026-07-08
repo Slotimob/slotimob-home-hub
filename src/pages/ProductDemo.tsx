@@ -124,7 +124,7 @@ export default function ProductDemo() {
                   Pronto para transformar sua gestão imobiliária?
                 </h2>
                 <p className="text-muted-foreground mb-8">
-                  Comece agora mesmo, sem custos. Experimente todas as funcionalidades por 14 dias.
+                  Comece agora mesmo, sem custos. Experimente todas as funcionalidades por 7 dias.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button asChild size="lg" className="px-8">

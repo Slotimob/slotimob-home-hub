@@ -149,7 +149,7 @@ export const SubscriptionManagement = () => {
             </div>
             <div className="flex-1 space-y-2">
               <p className="font-semibold text-foreground">
-                Você está aproveitando 14 dias de Plano PRO Grátis
+                Você está aproveitando 7 dias de Plano PRO Grátis
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
