@@ -240,6 +240,9 @@ export function AsaasSubscriptionCard({
     }
   }
 
+  // Hide entirely if the user cannot even view boletos.
+  if (!canView) return null;
+
   // ------------------------------ INACTIVE STATE ------------------------------
   if (!isActive) {
     return (
