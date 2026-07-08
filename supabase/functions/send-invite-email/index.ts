@@ -116,29 +116,55 @@ Deno.serve(async (req) => {
       targetUserId = existingProfile.id;
       isExistingUser = true;
     } else {
-      // New user — invite via Supabase Auth
-      const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-        normalizedEmail,
-        {
+      const redirectTo = `${Deno.env.get('SITE_URL') ?? 'https://app.slotimob.com.br'}/reset-password`;
+
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: "invite",
+        email: normalizedEmail,
+        options: {
           data: {
             full_name: member_name || role_label || "Agente",
             invited_by: user.id,
             role_label: role_label || "Agente",
           },
-          redirectTo: `${Deno.env.get('SITE_URL') ?? 'https://app.slotimob.com.br'}/reset-password`,
+          redirectTo,
+        },
+      });
 
-        }
-      );
-
-      if (inviteError) {
-        throw new Error(inviteError.message || "Erro ao enviar convite");
+      if (linkError) {
+        throw new Error(linkError.message || "Erro ao gerar convite");
       }
 
-      if (!authData?.user?.id) {
-        throw new Error("Erro inesperado: utilizador não criado pelo convite.");
+      if (!linkData?.user?.id || !linkData?.properties?.action_link) {
+        throw new Error("Erro inesperado: convite não gerado corretamente.");
       }
 
-      targetUserId = authData.user.id;
+      targetUserId = linkData.user.id;
+      const actionLink = linkData.properties.action_link;
+
+      // Envia o convite via Resend (não depende do mailer nativo do Supabase)
+      const inviterName = member_name || "Um administrador";
+      try {
+        await resend.emails.send({
+          from: "Equipe SlotiMob <contato@slotimob.com.br>",
+          to: [normalizedEmail],
+          subject: "Você foi convidado para uma equipe na SlotiMob",
+          html: `
+            <div style="font-family: 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #333;">
+              <h1 style="color: #170075; font-size: 22px; margin-bottom: 16px;">Você foi convidado para uma equipe na SlotiMob</h1>
+              <p>Você foi convidado para ingressar como <strong>${role_label || 'Agente'}</strong> numa equipe da SlotiMob.</p>
+              <p>Clique no botão abaixo para criar sua senha e acessar a plataforma. Este link expira em 24 horas.</p>
+              <p style="margin: 28px 0;">
+                <a href="${actionLink}" target="_blank" style="background:#170075;color:#fff;text-decoration:none;font-weight:600;padding:14px 32px;border-radius:8px;display:inline-block;">Criar minha conta</a>
+              </p>
+              <p style="color:#6b6e99;font-size:13px;">Se você não esperava este convite, pode ignorar este e-mail.</p>
+            </div>
+          `,
+        });
+      } catch (emailErr) {
+        console.error("[send-invite-email] Falha ao enviar via Resend:", emailErr);
+        throw new Error("Convite criado, mas não foi possível enviar o e-mail. Tente novamente ou contate o suporte.");
+      }
     }
 
     // --- Add to organization_members ---
