@@ -27,6 +27,17 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !user) return resp({ error: "Token inválido" });
 
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (membership) {
+      return resp({ error: "Você é um usuário convidado. A configuração da conta Asaas deve ser feita pelo administrador (proprietário) da conta principal." });
+    }
+
     const body = await req.json();
     const { name, email, cpfCnpj, mobilePhone, companyType, address, addressNumber, province, postalCode, city, state } = body;
 
