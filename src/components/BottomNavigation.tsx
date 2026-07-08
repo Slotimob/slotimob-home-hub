@@ -29,6 +29,7 @@ import { SlotiLogo } from '@/components/SlotiLogo';
 import { NavLink } from '@/components/NavLink';
 import { useNotificationBadges } from '@/hooks/useNotificationBadges';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { Separator } from '@/components/ui/separator';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 import { PRIMARY_TABS, NAV_GROUPS, type NavItem, type NavGroup } from '@/config/navigationItems';
@@ -48,7 +49,8 @@ export function BottomNavigation() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const badges = useNotificationBadges();
-  const { plan, isTrialActive, canUse, features } = useSubscriptionLimits();
+  const { plan, isTrialActive, canUse, features, isLoading: isSubscriptionLoading } = useSubscriptionLimits();
+  const { isMember } = useWorkspace();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
@@ -56,6 +58,7 @@ export function BottomNavigation() {
   const isPlanProOrAbove = plan === 'pro' || plan === 'business';
 
   const isNavItemLocked = (url: string): boolean => {
+    if (isSubscriptionLoading || isMember) return false;
     // Gestão group
     if (url.startsWith('/gestao/') || url === '/gestao/alugueis') return !isPlanProOrAbove && !isTrialActive;
     // Reports
