@@ -49,10 +49,24 @@ Deno.serve(async (req) => {
       throw new Error("Invalid user context");
     }
     const userEmail = user.email as string;
-    const userEmail = claimsData.claims.email as string;
     logStep("User authenticated", { userId });
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Bloqueia membros convidados: add-ons e créditos são gerenciados pelo dono
+    const { data: membership } = await supabaseAdmin
+      .from("organization_members")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (membership) {
+      return new Response(JSON.stringify({
+        error: "Você é um usuário convidado. Add-ons e créditos da plataforma são gerenciados pelo administrador (proprietário) da conta principal."
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     const { action, addon_type, quantity = 1 } = await req.json();
