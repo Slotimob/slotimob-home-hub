@@ -1064,7 +1064,8 @@ const Auth = () => {
                             <Input id="reset-email" type="email" placeholder="seu@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
                           </div>
                           <p className="text-xs text-muted-foreground">Você receberá um link para redefinir sua senha.</p>
-                          <Button type="submit" className="w-full" disabled={resetLoading}>
+                          <TurnstileWidget onVerify={setResetCaptchaToken} onExpire={() => setResetCaptchaToken(null)} />
+                          <Button type="submit" className="w-full" disabled={resetLoading || !resetCaptchaToken}>
                             {resetLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</> : 'Enviar link de recuperação'}
                           </Button>
                           <Button type="button" variant="ghost" className="w-full" onClick={() => setShowForgotPassword(false)}>Voltar ao login</Button>
