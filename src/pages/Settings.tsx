@@ -119,6 +119,10 @@ const Settings = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadingCreci, setUploadingCreci] = useState(false);
   const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [savingPhone, setSavingPhone] = useState(false);
   const [savingAuthor, setSavingAuthor] = useState(false);
