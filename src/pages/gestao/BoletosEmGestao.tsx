@@ -226,11 +226,21 @@ export default function BoletosEmGestao() {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gerencie as cobranças automáticas via Asaas</p>
         </div>
-        <Button onClick={() => setEmitirOpen(true)} size="sm" className="gap-1.5">
-          <Plus className="h-4 w-4" />
-          Nova Cobrança
-        </Button>
+        {canCreate && (
+          <Button onClick={() => setEmitirOpen(true)} size="sm" className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            Nova Cobrança
+          </Button>
+        )}
       </div>
+
+      {!canView ? (
+        <div className="text-center py-16 border rounded-lg">
+          <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+          <p className="text-sm font-medium">Você não tem permissão para visualizar boletos.</p>
+          <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+        </div>
+      ) : (<>
 
       <EmitirCobrancaDialog
         open={emitirOpen}
