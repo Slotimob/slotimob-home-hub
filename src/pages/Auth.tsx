@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { translateAuthError } from '@/lib/authErrors';
 import { z } from 'zod';
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { Separator } from '@/components/ui/separator';
@@ -159,7 +160,7 @@ const getAuthErrorMessage = (error: any): { title: string; description: string }
   if (errorMessage.includes('user not found') || errorCode === 'user_not_found') {
     return { title: 'Email não cadastrado', description: 'Este email não está registrado. Crie uma conta primeiro.' };
   }
-  return { title: 'Erro ao fazer login', description: error?.message || 'Verifique suas credenciais e tente novamente.' };
+  return { title: 'Erro ao fazer login', description: translateAuthError(error?.message || '') || 'Verifique suas credenciais e tente novamente.' };
 };
 
 // ─── Mask helpers ───
@@ -323,7 +324,7 @@ const Auth = () => {
       setShowForgotPassword(false);
       setResetEmail('');
     } catch (error: any) {
-      toast({ title: 'Erro ao enviar email', description: error.message || 'Tente novamente', variant: 'destructive' });
+      toast({ title: 'Erro ao enviar email', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
     } finally {
       setResetLoading(false);
     }
@@ -394,7 +395,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl } });
       if (error) throw error;
     } catch (error: any) {
-      toast({ title: 'Erro ao entrar com Google', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao entrar com Google', description: translateAuthError(error.message), variant: 'destructive' });
       setGoogleLoading(false);
     }
   };
@@ -541,7 +542,7 @@ const Auth = () => {
       if (error instanceof z.ZodError) {
         toast({ title: 'Erro de validação', description: error.errors[0].message, variant: 'destructive' });
       } else {
-        toast({ title: 'Erro ao criar conta', description: error.message || 'Tente novamente', variant: 'destructive' });
+        toast({ title: 'Erro ao criar conta', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
       }
     } finally {
       setLoading(false);
@@ -596,7 +597,7 @@ const Auth = () => {
       if (error) throw error;
       toast({ title: 'Email reenviado!', description: 'Verifique sua caixa de entrada.' });
     } catch (error: any) {
-      toast({ title: 'Erro ao reenviar', description: error.message || 'Tente novamente', variant: 'destructive' });
+      toast({ title: 'Erro ao reenviar', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

@@ -25,6 +25,7 @@ import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
+import { translateAuthError } from '@/lib/authErrors';
 
 // ============================================================================
 // Types & Meta
@@ -278,7 +279,7 @@ export default function Checkout() {
         options: { data: { full_name: name } },
       });
       if (signUpError) {
-        setAuthError(signUpError.message);
+        setAuthError(translateAuthError(signUpError.message));
         setIsCheckingOut(false);
         return;
       }
