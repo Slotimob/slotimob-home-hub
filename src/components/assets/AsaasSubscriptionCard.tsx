@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type BillingType = "UNDEFINED" | "BOLETO" | "PIX";
 
