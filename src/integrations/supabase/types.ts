@@ -4558,6 +4558,7 @@ export type Database = {
         Row: {
           body_markdown: string | null
           category: string | null
+          checkout_url: string | null
           content_type: string
           created_at: string
           description: string | null
@@ -4565,7 +4566,9 @@ export type Database = {
           duration_minutes: number | null
           feature_key: string | null
           id: string
+          is_premium: boolean
           is_published: boolean | null
+          price: number | null
           short_description: string | null
           thumbnail_url: string | null
           title: string
@@ -4574,6 +4577,7 @@ export type Database = {
         Insert: {
           body_markdown?: string | null
           category?: string | null
+          checkout_url?: string | null
           content_type: string
           created_at?: string
           description?: string | null
@@ -4581,7 +4585,9 @@ export type Database = {
           duration_minutes?: number | null
           feature_key?: string | null
           id?: string
+          is_premium?: boolean
           is_published?: boolean | null
+          price?: number | null
           short_description?: string | null
           thumbnail_url?: string | null
           title: string
@@ -4590,6 +4596,7 @@ export type Database = {
         Update: {
           body_markdown?: string | null
           category?: string | null
+          checkout_url?: string | null
           content_type?: string
           created_at?: string
           description?: string | null
@@ -4597,7 +4604,9 @@ export type Database = {
           duration_minutes?: number | null
           feature_key?: string | null
           id?: string
+          is_premium?: boolean
           is_published?: boolean | null
+          price?: number | null
           short_description?: string | null
           thumbnail_url?: string | null
           title?: string
