@@ -39,12 +39,11 @@ export function ReauthPasswordDialog({
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: user.email,
+      const { data: isValid, error } = await supabase.rpc('verify_current_password', {
         password: password.trim(),
       });
 
-      if (error) {
+      if (error || !isValid) {
         toast.error('Senha incorreta. Tente novamente.', { duration: 1000 });
         return;
       }
