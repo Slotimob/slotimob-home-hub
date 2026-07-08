@@ -89,7 +89,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const collapsed = state === 'collapsed' && !isMobile;
   const { isAgent } = useUserRole();
-  const { plan, isTrialActive, canUse, features } = useSubscriptionLimits();
+  const { plan, isTrialActive, canUse, features, isLoading: isSubscriptionLoading } = useSubscriptionLimits();
   const { hasCockpitAccess } = useCockpitAccess();
   const { isMember } = useWorkspace();
   const { isOwner: isPermOwner, hasPermission } = usePermissions();
@@ -103,6 +103,7 @@ export function AppSidebar() {
 
   // Determine which sub-items are locked
   const isSubItemLocked = (url: string, title: string): boolean => {
+    if (isSubscriptionLoading || isMember) return false;
     if (url === '/finance/dre' || url === '/finance/reconciliation') return !canUse('finance_full');
     if (url === '/whatsapp' || title === 'Mensagens') return !features || (features.whatsapp_instances_limit ?? 0) <= 0;
     if (url === '/ai-chat') return !canUse('ai_chat');
@@ -126,6 +127,7 @@ export function AppSidebar() {
 
   // Check if a top-level item (without sub-items) is locked
   const isTopItemLocked = (item: MenuItem): boolean => {
+    if (isSubscriptionLoading || isMember) return false;
     if (item.url === '/ai-chat') return !canUse('ai_chat');
     if (item.url === '/reports') return !isPlanProOrAbove && !isTrialActive;
     return false;
@@ -239,6 +241,7 @@ export function AppSidebar() {
         if (item.moduleKey && !hasPermission(item.moduleKey, 'view')) return false;
       }
       if (item.hiddenOnPlan?.includes(plan)) {
+        if (isSubscriptionLoading) return true;
         if (item.trialVisible && isTrialActive) return true;
         if (item.url === '/ai-chat') return true;
         return false;

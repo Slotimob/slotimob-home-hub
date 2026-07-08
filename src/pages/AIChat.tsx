@@ -474,7 +474,7 @@ export default function AIChat() {
   // Owners always have access; members need chat.view permission
   const gatedContent = isOwner ? chatContent : (
     <PermissionGate
-      permission="chat.use"
+      permission="chat.view"
       fallback={
         <div className="flex items-center justify-center h-[60vh]">
           <div className="text-center p-6">

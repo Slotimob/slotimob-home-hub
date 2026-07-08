@@ -4,7 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Rocket, Building2, Zap, Clock, ArrowRight } from 'lucide-react';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useNavigate } from 'react-router-dom';
+import { MemberFeatureDenied } from './MemberFeatureDenied';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -49,8 +51,22 @@ const proBenefits = [
 
 export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, feature }: UpgradeModalProps) => {
   const { plan: currentPlan } = useSubscriptionLimits();
+  const { isMember } = useWorkspace();
   const { slots } = useEarlyAdopterCount();
   const navigate = useNavigate();
+
+  if (isMember) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg">
+          <MemberFeatureDenied overlay={false} />
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full">
+            Entendi
+          </Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Lógica de qual plano mostrar: se usuário é Pro, sempre mostra Business; 'essencial' (legado) cai para 'pro'
   const normalizedTarget: 'pro' | 'business' | undefined =

@@ -94,12 +94,12 @@ const featureDescriptions: Record<string, { name: string; upgradeMessage: string
 
 export const useSubscriptionLimits = (): SubscriptionLimits => {
   const { user } = useAuth();
-  const { effectiveBrokerId } = useWorkspace();
+  const { effectiveBrokerId, isLoading: isWorkspaceLoading } = useWorkspace();
 
   // Use effectiveBrokerId so members inherit the owner's plan features
-  const resolvedUserId = effectiveBrokerId || user?.id;
+  const resolvedUserId = user?.id && !isWorkspaceLoading ? (effectiveBrokerId || user.id) : null;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading: isPlanLoading } = useQuery({
     queryKey: ['user-plan-features', resolvedUserId],
     queryFn: async () => {
       if (!resolvedUserId) return null;
@@ -120,24 +120,24 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
   });
 
   // Fetch add-on counts from subscriptions (use effective broker for members)
-  const { data: addonData } = useQuery({
-    queryKey: ['subscription-addons', effectiveBrokerId],
+  const { data: addonData, isLoading: isAddonLoading } = useQuery({
+    queryKey: ['subscription-addons', resolvedUserId],
     queryFn: async () => {
-      if (!effectiveBrokerId) return null;
+      if (!resolvedUserId) return null;
       const { data, error } = await supabase
         .from('subscriptions')
         .select('extra_users_count, extra_unit_packs')
-        .eq('user_id', effectiveBrokerId)
+        .eq('user_id', resolvedUserId)
         .maybeSingle();
       if (error) return null;
       return data;
     },
-    enabled: !!effectiveBrokerId,
+    enabled: !!resolvedUserId,
     staleTime: 5 * 60 * 1000,
   });
 
   // Fetch trial status for free users
-  const { data: trialData } = useQuery({
+  const { data: trialData, isLoading: isTrialLoading } = useQuery({
     queryKey: ['trial-status-limits', resolvedUserId],
     queryFn: async () => {
       if (!resolvedUserId) return null;
@@ -227,6 +227,8 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
   const getUpgradeReason = (feature: keyof PlanFeatures): string => {
     return featureDescriptions[feature]?.upgradeMessage || 'Faça upgrade para desbloquear esta funcionalidade';
   };
+
+  const isLoading = isWorkspaceLoading || isPlanLoading || isTrialLoading || isAddonLoading;
 
   return { plan, isEarlyAdopter, isTrialActive: !!effectiveTrialing, features, isLoading, canUse, checkLimit, getUpgradeReason };
 };
