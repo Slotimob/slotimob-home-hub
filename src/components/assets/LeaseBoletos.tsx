@@ -228,6 +228,15 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
   ).length;
   const overdueCount = list.filter((b) => b.status === "OVERDUE").length;
 
+  if (!hasPermission("management_boletos", "view")) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+        <Receipt className="h-10 w-10 text-muted-foreground opacity-40" />
+        <p className="text-sm font-medium">Você não tem permissão para visualizar boletos</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
