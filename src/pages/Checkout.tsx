@@ -339,44 +339,25 @@ export default function Checkout() {
     if (currentUserId) {
       setIsCheckingOut(true);
 
-      const isCpf = cleanCpfCnpj.length === 11;
-      const personType = isCpf ? 'fisica' : 'juridica';
+      const { data: fiscalData, error: fiscalFnError } = await supabase.functions.invoke('save-fiscal-data', {
+        body: {
+          cpf_cnpj: cleanCpfCnpj,
+          phone: cleanPhone,
+          cep: cleanCep,
+          street: street.trim(),
+          number: number.trim(),
+          neighborhood: neighborhood.trim(),
+          city: city.trim(),
+          uf: uf.trim().toUpperCase(),
+        },
+      });
 
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq(isCpf ? 'cpf' : 'cnpj', cleanCpfCnpj)
-        .neq('id', currentUserId)
-        .maybeSingle();
-
-      if (existing) {
-        const tipo = isCpf ? 'CPF' : 'CNPJ';
-        setCheckoutError(`Este ${tipo} já está cadastrado em outra conta. Use outro ${tipo} ou entre na conta existente.`);
-        toast.error(`${tipo} já cadastrado em outra conta.`);
+      if (fiscalFnError || fiscalData?.error) {
+        const msg = fiscalData?.error || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
+        setCheckoutError(msg);
+        toast.error(msg);
         setIsCheckingOut(false);
         return;
-      }
-
-      const fiscalUpdate: Record<string, string | null> = {
-        cpf: isCpf ? cleanCpfCnpj : null,
-        cnpj: !isCpf ? cleanCpfCnpj : null,
-        person_type: personType,
-        phone: cleanPhone,
-        address_cep: cleanCep,
-        address_street: street.trim(),
-        address_number: number.trim(),
-        address_neighborhood: neighborhood.trim(),
-        address_city: city.trim(),
-        address_uf: uf.trim().toUpperCase(),
-      };
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update(fiscalUpdate as any)
-        .eq('id', currentUserId);
-
-      if (profileError) {
-        console.error('[checkout] Erro ao salvar dados fiscais:', profileError);
       }
     }
     // ── fim do bloco fiscal ───────────────────────────────────────────────
