@@ -667,12 +667,65 @@ const Settings = () => {
 
           <p className="text-sm text-muted-foreground">
             {user?.app_metadata?.provider === 'google'
-              ? 'Ao criar uma senha, você poderá fazer login tanto pelo Google quanto por email e senha. Enviaremos um link seguro para o seu email.'
-              : <>Por questões de segurança, enviaremos um email de confirmação para <strong>{email}</strong> antes de permitir a alteração da senha.</>}
+              ? 'Ao criar uma senha, você poderá fazer login tanto pelo Google quanto por email e senha.'
+              : 'Defina uma nova senha para sua conta. A troca é imediata.'}
           </p>
-          <Button onClick={requestPasswordChange} disabled={sendingPasswordReset}>
+
+          <div className="space-y-2">
+            <Label htmlFor="settings-new-password">Nova senha</Label>
+            <div className="relative">
+              <Input
+                id="settings-new-password"
+                type={showNewPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                minLength={6}
+                autoComplete="new-password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={showNewPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">a senha precisa ter no mínimo 6 caracteres.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="settings-confirm-password">Confirmar nova senha</Label>
+            <div className="relative">
+              <Input
+                id="settings-confirm-password"
+                type={showConfirmNewPassword ? 'text' : 'password'}
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Digite a senha novamente"
+                minLength={6}
+                autoComplete="new-password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmNewPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={showConfirmNewPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <Button
+            onClick={requestPasswordChange}
+            disabled={sendingPasswordReset || !newPassword || !confirmNewPassword}
+          >
             {sendingPasswordReset ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Enviando email...</>
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</>
             ) : user?.app_metadata?.provider === 'google' ? 'Criar senha de acesso' : 'Alterar Senha'}
           </Button>
         </SettingsSection>
