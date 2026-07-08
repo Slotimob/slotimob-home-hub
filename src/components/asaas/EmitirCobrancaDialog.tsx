@@ -90,6 +90,10 @@ export function EmitirCobrancaDialog({
 
   const brokerId = effectiveBrokerId || user?.id;
 
+  if (!hasPermission("management_boletos", "create")) {
+    return null;
+  }
+
   const { data: leases, isLoading: leasesLoading } = useQuery({
     queryKey: ["leases-for-charge", brokerId],
     queryFn: async (): Promise<LeaseOption[]> => {
