@@ -38,6 +38,7 @@ export const PERMISSION_MODULES_KEYS = [
   'management_proposals',
   'management_rentals',
   'management_contracts',
+  'management_boletos',
   'management_reports',
   'management_tasks',
   // Ativos

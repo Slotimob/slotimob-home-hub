@@ -40,6 +40,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   { key: 'management_proposals', label: 'Propostas Comerciais', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_rentals', label: 'Aluguéis', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_contracts', label: 'Contratos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'management_boletos', label: 'Boletos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_reports', label: 'Gerencial', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_tasks', label: 'Afazeres', actions: ['view', 'create', 'edit', 'delete'], indent: true },
 

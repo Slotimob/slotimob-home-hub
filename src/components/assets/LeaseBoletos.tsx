@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/AsaasFinancialSeal";
 
@@ -125,6 +126,7 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
   const [cancelPayment, setCancelPayment] = useState<{ id: string } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [emitirOpen, setEmitirOpen] = useState(false);
+  const { hasPermission } = usePermissions();
 
   const { data: session } = useQuery({
     queryKey: ["session"],
@@ -226,6 +228,15 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
   ).length;
   const overdueCount = list.filter((b) => b.status === "OVERDUE").length;
 
+  if (!hasPermission("management_boletos", "view")) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+        <Receipt className="h-10 w-10 text-muted-foreground opacity-40" />
+        <p className="text-sm font-medium">Você não tem permissão para visualizar boletos</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -255,6 +266,7 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
               variant="outline"
               size="sm"
               onClick={() => setEmitirOpen(true)}
+              disabled={!hasPermission("management_boletos", "create")}
               className="gap-1.5"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -305,6 +317,7 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
                 variant="outline"
                 size="sm"
                 onClick={() => setEmitirOpen(true)}
+                disabled={!hasPermission("management_boletos", "create")}
                 className="gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -413,32 +426,40 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
                             <Mail className="mr-2 h-4 w-4" />
                             Reenviar por e-mail
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setNewDueDate(b.due_date || "");
-                              setDueDateDialog({ id: b.id, current: b.due_date || "" });
-                            }}
-                          >
-                            <CalendarClock className="mr-2 h-4 w-4" />
-                            Alterar vencimento
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setNewValue(String(b.value ?? ""));
-                              setValueDialog({ id: b.id, current: Number(b.value) });
-                            }}
-                          >
-                            <TrendingUp className="mr-2 h-4 w-4" />
-                            Alterar valor
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setCancelPayment({ id: b.id })}
-                          >
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Cancelar cobrança
-                          </DropdownMenuItem>
+                          {hasPermission("management_boletos", "edit") && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setNewDueDate(b.due_date || "");
+                                setDueDateDialog({ id: b.id, current: b.due_date || "" });
+                              }}
+                            >
+                              <CalendarClock className="mr-2 h-4 w-4" />
+                              Alterar vencimento
+                            </DropdownMenuItem>
+                          )}
+                          {hasPermission("management_boletos", "edit") && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setNewValue(String(b.value ?? ""));
+                                setValueDialog({ id: b.id, current: Number(b.value) });
+                              }}
+                            >
+                              <TrendingUp className="mr-2 h-4 w-4" />
+                              Alterar valor
+                            </DropdownMenuItem>
+                          )}
+                          {hasPermission("management_boletos", "delete") && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setCancelPayment({ id: b.id })}
+                              >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Cancelar cobrança
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

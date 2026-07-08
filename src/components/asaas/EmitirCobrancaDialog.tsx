@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Dialog,
   DialogContent,
@@ -76,6 +77,7 @@ export function EmitirCobrancaDialog({
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
+  const { hasPermission } = usePermissions();
 
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>("");
   const [billingType, setBillingType] = useState<"BOLETO" | "PIX">("BOLETO");
@@ -87,6 +89,10 @@ export function EmitirCobrancaDialog({
   const [notConfigured, setNotConfigured] = useState(false);
 
   const brokerId = effectiveBrokerId || user?.id;
+
+  if (!hasPermission("management_boletos", "create")) {
+    return null;
+  }
 
   const { data: leases, isLoading: leasesLoading } = useQuery({
     queryKey: ["leases-for-charge", brokerId],
