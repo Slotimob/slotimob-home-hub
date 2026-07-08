@@ -876,34 +876,35 @@ export default function Checkout() {
             </div>
 
 
-            {/* Forma de pagamento */}
-            <div className="mb-4">
-              <p className="text-sm font-medium text-foreground mb-2">Forma de pagamento</p>
-              <div className="grid grid-cols-3 gap-2">
-                {(['PIX', 'BOLETO', 'CREDIT_CARD'] as const).map((type) => {
-                  const labels: Record<typeof type, string> = {
-                    PIX: 'PIX',
-                    BOLETO: 'Boleto',
-                    CREDIT_CARD: 'Cartão',
-                  };
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setBillingType(type)}
-                      className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
-                        billingType === type
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-muted-foreground hover:border-primary/50'
-                      }`}
-                    >
-                      {labels[type]}
-                    </button>
-                  );
-                })}
+            {selectedPlan !== 'start' && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-foreground mb-2">Forma de pagamento</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['PIX', 'BOLETO', 'CREDIT_CARD'] as const).map((type) => {
+                    const labels: Record<typeof type, string> = {
+                      PIX: 'PIX',
+                      BOLETO: 'Boleto',
+                      CREDIT_CARD: 'Cartão',
+                    };
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setBillingType(type)}
+                        className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
+                          billingType === type
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border text-muted-foreground hover:border-primary/50'
+                        }`}
+                      >
+                        {labels[type]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <AsaasFinancialSeal size="sm" className="mt-3" />
               </div>
-              <AsaasFinancialSeal size="sm" className="mt-3" />
-            </div>
+            )}
 
             {/* Resultado do pagamento (PIX / Boleto / Cartão) */}
             {paymentResult ? (
