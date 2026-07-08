@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
