@@ -15,6 +15,8 @@ import {
   Shield,
   User,
   Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -127,6 +129,7 @@ export default function Checkout() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Fiscal data
@@ -774,14 +777,25 @@ export default function Checkout() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
-                    <Input
-                      type="password"
-                      placeholder="Senha (mín. 6 caracteres)"
-                      minLength={6}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showCheckoutPassword ? 'text' : 'password'}
+                        placeholder="Senha (mín. 6 caracteres)"
+                        minLength={6}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCheckoutPassword(v => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        {showCheckoutPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">a senha precisa ter no mínimo 6 caracteres.</p>
                   </div>
 
                   {authError && <p className="text-destructive text-sm">{authError}</p>}
