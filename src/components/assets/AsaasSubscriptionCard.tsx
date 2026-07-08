@@ -91,6 +91,11 @@ export function AsaasSubscriptionCard({
 }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { hasPermission } = usePermissions();
+  const canCreate = hasPermission("management_boletos", "create");
+  const canEdit = hasPermission("management_boletos", "edit");
+  const canDelete = hasPermission("management_boletos", "delete");
+  const canView = hasPermission("management_boletos", "view");
 
   const sub: AsaasSubscriptionSnapshot | null =
     billingAutomation?.asaas_subscription ?? null;
