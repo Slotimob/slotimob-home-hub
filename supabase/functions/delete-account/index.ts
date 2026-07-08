@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
       if (!recentExport || recentExport.length === 0) {
         return new Response(
           JSON.stringify({ error: "Solicite uma exportação dos seus dados ou confirme explicitamente que não precisa." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
