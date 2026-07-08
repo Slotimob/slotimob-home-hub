@@ -9,6 +9,13 @@ const corsHeaders = {
 const ASAAS_BASE_URL = Deno.env.get("ASAAS_BASE_URL") ?? "https://www.asaas.com/api/v3";
 
 // actions suportadas: get_slip_url | send_email | cancel | update_due_date | update_value
+function resp(body: object, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -16,7 +23,7 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Sem Authorization header");
+    if (!authHeader) return resp({ error: "Sem Authorization header" });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -29,41 +36,72 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    if (authError || !user) throw new Error("Usuário não autenticado");
+    if (authError || !user) return resp({ error: "Usuário não autenticado" });
 
     const body = await req.json();
     const { payment_id, action } = body;
-    if (!payment_id || !action) throw new Error("payment_id e action são obrigatórios");
+    if (!payment_id || !action) return resp({ error: "payment_id e action são obrigatórios" });
 
-    // Buscar payment e verificar que pertence ao broker via lease
+    // Resolve effective broker: members act under the owner's subaccount + require permission.
+    let effectiveBrokerId = user.id;
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organization_owner_id, permissions")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (membership) {
+      effectiveBrokerId = membership.organization_owner_id as string;
+      const perms = (membership.permissions as any) || {};
+      const boletos = perms.management_boletos || {};
+      const required: Record<string, "view" | "create" | "edit" | "delete"> = {
+        get_slip_url: "view",
+        send_email: "edit",
+        cancel: "delete",
+        update_due_date: "edit",
+        update_value: "edit",
+      };
+      const need = required[action];
+      if (need && boletos[need] !== true) {
+        const label =
+          need === "view" ? "consultar a cobrança" :
+          need === "edit" ? "atualizar a cobrança" :
+          need === "delete" ? "cancelar a cobrança" :
+          "executar esta ação";
+        return resp({ error: `Você não tem permissão para ${label}. Fale com o administrador da sua conta.` });
+      }
+    }
+
+    // Buscar payment e verificar que pertence ao broker efetivo via lease
     const { data: payment, error: payErr } = await supabase
       .from("asaas_payments")
       .select("id, asaas_payment_id, lease_id, status, bank_slip_url")
       .eq("id", payment_id)
       .single();
-    if (payErr || !payment) throw new Error("Pagamento não encontrado");
+    if (payErr || !payment) return resp({ error: "Pagamento não encontrado" });
 
     const { data: lease, error: leaseErr } = await supabase
       .from("leases")
       .select("broker_id")
       .eq("id", payment.lease_id)
       .single();
-    if (leaseErr || !lease || lease.broker_id !== user.id) {
-      throw new Error("Sem permissão para este pagamento");
+    if (leaseErr || !lease || lease.broker_id !== effectiveBrokerId) {
+      return resp({ error: "Sem permissão para este pagamento" });
     }
 
-    // Buscar API key do broker
+    // Buscar API key do broker efetivo (dono da subconta)
     const { data: asaasAccount, error: asaasErr } = await supabase
       .from("asaas_accounts")
       .select("asaas_api_key")
-      .eq("broker_id", user.id)
+      .eq("broker_id", effectiveBrokerId)
       .eq("status", "active")
       .single();
-    if (asaasErr || !asaasAccount) throw new Error("Conta Asaas não encontrada");
+    if (asaasErr || !asaasAccount) return resp({ error: "Conta Asaas não encontrada" });
 
     const apiKey = asaasAccount.asaas_api_key;
     const asaasId = payment.asaas_payment_id;
-    if (!asaasId) throw new Error("Pagamento não tem ID Asaas associado");
+    if (!asaasId) return resp({ error: "Pagamento não tem ID Asaas associado" });
 
     if (action === "get_slip_url") {
       const res = await fetch(`${ASAAS_BASE_URL}/payments/${asaasId}`, {

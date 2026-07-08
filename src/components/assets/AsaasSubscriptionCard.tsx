@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type BillingType = "UNDEFINED" | "BOLETO" | "PIX";
 
@@ -90,6 +91,11 @@ export function AsaasSubscriptionCard({
 }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { hasPermission } = usePermissions();
+  const canCreate = hasPermission("management_boletos", "create");
+  const canEdit = hasPermission("management_boletos", "edit");
+  const canDelete = hasPermission("management_boletos", "delete");
+  const canView = hasPermission("management_boletos", "view");
 
   const sub: AsaasSubscriptionSnapshot | null =
     billingAutomation?.asaas_subscription ?? null;
@@ -234,6 +240,9 @@ export function AsaasSubscriptionCard({
     }
   }
 
+  // Hide entirely if the user cannot even view boletos.
+  if (!canView) return null;
+
   // ------------------------------ INACTIVE STATE ------------------------------
   if (!isActive) {
     return (
@@ -342,7 +351,7 @@ export function AsaasSubscriptionCard({
           <Button
             className="w-full"
             onClick={handleActivate}
-            disabled={activating || !hasSubconta}
+            disabled={activating || !hasSubconta || !canCreate}
           >
             {activating ? (
               <>
@@ -410,10 +419,12 @@ export function AsaasSubscriptionCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              <Pencil className="h-3.5 w-3.5 mr-1.5" />
-              Editar
-            </Button>
+            {canEdit && (
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                Editar
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
               {refreshing ? (
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
@@ -422,15 +433,17 @@ export function AsaasSubscriptionCard({
               )}
               Atualizar status
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive border-destructive/30 hover:bg-destructive/10"
-              onClick={() => setCancelOpen(true)}
-            >
-              <PowerOff className="h-3.5 w-3.5 mr-1.5" />
-              Cancelar cobrança automática
-            </Button>
+            {canDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => setCancelOpen(true)}
+              >
+                <PowerOff className="h-3.5 w-3.5 mr-1.5" />
+                Cancelar cobrança automática
+              </Button>
+            )}
           </div>
 
           <p className="text-[11px] text-muted-foreground">

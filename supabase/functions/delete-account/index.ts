@@ -45,19 +45,91 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Service role client for export check
-    const supabaseCheck = createClient(
+    // Service role client for lookups and deletions
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const userId = user.id;
+    const userEmail = user.email || "";
+
+    // Detect if the caller is a team member (not the account owner)
+    const { data: membership } = await supabaseAdmin
+      .from("organization_members")
+      .select("id, organization_owner_id")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const isTeamMember = !!membership;
+
+    // Get profile info (used for logging in both flows)
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", userId)
+      .single();
+
+    // ---------------------------------------------------------------------
+    // TEAM MEMBER FLOW — "leave team", not "delete owner account"
+    // ---------------------------------------------------------------------
+    if (isTeamMember) {
+      // Log as a team-leave event (skip export guard: no owned business data)
+      await supabaseAdmin.from("account_deletion_logs").insert({
+        user_id: userId,
+        user_email: userEmail,
+        user_name: profile?.full_name || null,
+        plan_id: null,
+        deletion_reason: reason || null,
+        ip_address: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null,
+        user_agent: req.headers.get("user-agent") || null,
+        metadata: {
+          event: "team_member_leave",
+          organization_owner_id: membership!.organization_owner_id,
+          deleted_at: new Date().toISOString(),
+        },
+      });
+
+      // Remove membership row
+      const { error: memErr } = await supabaseAdmin
+        .from("organization_members")
+        .delete()
+        .eq("user_id", userId);
+      if (memErr) safeWarn("Warning: failed to delete organization_members row: %s", memErr.message);
+
+      // Best-effort cleanup of caller-owned rows that are personal, not business data
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+      await supabaseAdmin.from("consent_logs").delete().eq("user_id", userId);
+      await supabaseAdmin.from("profiles").delete().eq("id", userId);
+
+      // Delete the auth user
+      const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (deleteAuthError) {
+        console.error("Failed to delete auth user (team member):", deleteAuthError.message);
+        return new Response(
+          JSON.stringify({ error: "Erro ao remover sua conta de autenticação. Contate o suporte." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, left_team: true, message: "Você saiu da equipe." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ---------------------------------------------------------------------
+    // OWNER FLOW — full account deletion (unchanged behavior)
+    // ---------------------------------------------------------------------
+
     // Export guard: require recent delivered export OR explicit skip
     if (!skip_export_check) {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: recentExport } = await supabaseCheck
+      const { data: recentExport } = await supabaseAdmin
         .from("data_export_requests")
         .select("id")
-        .eq("organization_owner_id", user.id)
+        .eq("organization_owner_id", userId)
         .eq("status", "delivered")
         .gte("delivered_at", thirtyDaysAgo)
         .limit(1);
@@ -70,21 +142,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Service role client for deletions
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // (profile already fetched above)
 
-    const userId = user.id;
-    const userEmail = user.email || "";
-
-    // Get profile info before deletion
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("full_name")
-      .eq("id", userId)
-      .single();
 
     // Get subscription info
     const { data: subscription } = await supabaseAdmin
