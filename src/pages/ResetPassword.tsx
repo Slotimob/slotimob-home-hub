@@ -28,6 +28,7 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isValidSession, setIsValidSession] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [flowType, setFlowType] = useState<string | null>(null);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -36,8 +37,9 @@ const ResetPassword = () => {
       // Check if this is a password recovery session
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const type = hashParams.get('type');
-      
-      if (session || type === 'recovery') {
+      setFlowType(type);
+
+      if (session || type === 'recovery' || type === 'invite' || type === 'signup') {
         setIsValidSession(true);
       } else {
         toast({
@@ -110,9 +112,13 @@ const ResetPassword = () => {
           <div className="mx-auto mb-4 flex items-center justify-center">
             <SlotiLogo size="lg" />
           </div>
-          <CardTitle className="text-2xl">Redefinir Senha</CardTitle>
+          <CardTitle className="text-2xl">
+            {flowType === 'invite' ? 'Defina sua senha de acesso' : 'Redefinir Senha'}
+          </CardTitle>
           <CardDescription>
-            Digite sua nova senha abaixo
+            {flowType === 'invite'
+              ? 'Crie uma senha para acessar sua conta na SlotiMob pela primeira vez'
+              : 'Digite sua nova senha abaixo'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -140,7 +146,11 @@ const ResetPassword = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Atualizando...' : 'Atualizar Senha'}
+              {loading
+                ? 'Atualizando...'
+                : flowType === 'invite'
+                  ? 'Criar minha senha'
+                  : 'Atualizar Senha'}
             </Button>
           </form>
 
