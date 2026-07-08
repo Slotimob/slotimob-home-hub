@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/AsaasFinancialSeal";
 
