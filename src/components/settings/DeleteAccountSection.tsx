@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,6 +25,7 @@ export const DeleteAccountSection = () => {
   const [confirmText, setConfirmText] = useState('');
   const [reason, setReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [skipExportCheck, setSkipExportCheck] = useState(false);
 
   const isConfirmed = confirmText === 'EXCLUIR MINHA CONTA';
 
@@ -33,7 +35,7 @@ export const DeleteAccountSection = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('delete-account', {
-        body: { confirmation_text: confirmText, reason },
+        body: { confirmation_text: confirmText, reason, skip_export_check: skipExportCheck },
       });
 
       if (error) throw error;
@@ -64,7 +66,7 @@ export const DeleteAccountSection = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setConfirmText(''); setReason(''); } }}>
+        <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setConfirmText(''); setReason(''); setSkipExportCheck(false); } }}>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" className="w-full gap-2">
               <Trash2 className="h-4 w-4" />
@@ -109,6 +111,18 @@ export const DeleteAccountSection = () => {
                   className="resize-none"
                   rows={2}
                 />
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="skip-export"
+                  checked={skipExportCheck}
+                  onCheckedChange={(checked) => setSkipExportCheck(checked === true)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="skip-export" className="text-sm text-muted-foreground cursor-pointer">
+                  Não preciso de uma exportação dos meus dados antes de excluir
+                </Label>
               </div>
 
               <div className="space-y-2">
