@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
