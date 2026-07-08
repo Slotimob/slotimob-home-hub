@@ -351,7 +351,7 @@ export function AsaasSubscriptionCard({
           <Button
             className="w-full"
             onClick={handleActivate}
-            disabled={activating || !hasSubconta}
+            disabled={activating || !hasSubconta || !canCreate}
           >
             {activating ? (
               <>
