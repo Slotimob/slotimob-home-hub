@@ -51,11 +51,14 @@ const proBenefits = [
 
 export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, feature }: UpgradeModalProps) => {
   const { plan: currentPlan } = useSubscriptionLimits();
-  const { isMember } = useWorkspace();
+  const { isMember, isLoading: isWorkspaceLoading } = useWorkspace();
   const { slots } = useEarlyAdopterCount();
   const navigate = useNavigate();
 
-  if (isMember) {
+  // Enquanto o workspace ainda está carregando, isMember default é `false` —
+  // isso causaria um flash da UI de upgrade para um convidado. Enquanto
+  // carrega OU se confirmado convidado, mostra a mensagem de permissão.
+  if (isWorkspaceLoading || isMember) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
