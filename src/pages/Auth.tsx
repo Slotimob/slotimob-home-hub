@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -240,6 +241,7 @@ const Auth = () => {
     personType: 'pf' as 'pf' | 'pj', cpf: '', cnpj: '', businessName: ''
   });
   const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('complete_profile') === 'true');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState('');
   const [formLoadTime] = useState(() => Date.now());
 
@@ -465,6 +467,11 @@ const Auth = () => {
       return;
     }
 
+    if (!captchaToken) {
+      toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+      return;
+    }
+
     try {
       setLoading(true);
       // Anti-spam
@@ -485,6 +492,7 @@ const Auth = () => {
         password: signupForm.password,
         options: {
           emailRedirectTo: redirectUrl,
+          captchaToken,
           data: {
             full_name: signupForm.fullName,
             phone: signupForm.phone,
@@ -851,8 +859,10 @@ const Auth = () => {
         </Label>
       </div>
 
+      <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+
       {/* Submit */}
-      <Button type="submit" className="w-full h-11" disabled={loading || !acceptedTerms}>
+      <Button type="submit" className="w-full h-11" disabled={loading || !acceptedTerms || !captchaToken}>
         {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...</> : 'Criar minha conta'}
       </Button>
 
