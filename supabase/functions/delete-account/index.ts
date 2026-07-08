@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
