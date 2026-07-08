@@ -66,7 +66,7 @@ export const DeleteAccountSection = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setConfirmText(''); setReason(''); } }}>
+        <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setConfirmText(''); setReason(''); setSkipExportCheck(false); } }}>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" className="w-full gap-2">
               <Trash2 className="h-4 w-4" />
