@@ -242,6 +242,9 @@ const Auth = () => {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('complete_profile') === 'true');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(null);
+  const [resetCaptchaToken, setResetCaptchaToken] = useState<string | null>(null);
+  const [resendCaptchaToken, setResendCaptchaToken] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState('');
   const [formLoadTime] = useState(() => Date.now());
 
@@ -322,8 +325,12 @@ const Auth = () => {
       return;
     }
     try {
+      if (!resetCaptchaToken) {
+        toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+        return;
+      }
       setResetLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: `${SITE_URL}/reset-password` });
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: `${SITE_URL}/reset-password`, captchaToken: resetCaptchaToken });
       if (error) throw error;
       toast({ title: 'Email enviado!', description: 'Verifique sua caixa de entrada para redefinir sua senha.' });
       setShowForgotPassword(false);
@@ -409,8 +416,12 @@ const Auth = () => {
     e.preventDefault();
     try {
       loginSchema.parse(loginForm);
+      if (!loginCaptchaToken) {
+        toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+        return;
+      }
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password });
+      const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password, options: { captchaToken: loginCaptchaToken } });
       if (error) throw error;
       toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
       if (inviteToken) await handleAcceptInvite();
@@ -603,8 +614,12 @@ const Auth = () => {
   const handleResendVerification = async () => {
     if (!pendingVerificationEmail) return;
     try {
+      if (!resendCaptchaToken) {
+        toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+        return;
+      }
       setLoading(true);
-      const { error } = await supabase.auth.resend({ type: 'signup', email: pendingVerificationEmail, options: { emailRedirectTo: `${SITE_URL}/` } });
+      const { error } = await supabase.auth.resend({ type: 'signup', email: pendingVerificationEmail, options: { emailRedirectTo: `${SITE_URL}/`, captchaToken: resendCaptchaToken } });
       if (error) throw error;
       toast({ title: 'Email reenviado!', description: 'Verifique sua caixa de entrada.' });
     } catch (error: any) {
@@ -631,7 +646,8 @@ const Auth = () => {
         </p>
       </div>
       <div className="space-y-2">
-        <Button variant="outline" className="w-full" onClick={handleResendVerification} disabled={loading}>
+        <TurnstileWidget onVerify={setResendCaptchaToken} onExpire={() => setResendCaptchaToken(null)} />
+        <Button variant="outline" className="w-full" onClick={handleResendVerification} disabled={loading || !resendCaptchaToken}>
           {loading ? 'Reenviando...' : 'Reenviar email de verificação'}
         </Button>
         <Button variant="ghost" className="w-full" onClick={() => { setShowVerificationMessage(false); setPendingVerificationEmail(''); setActiveTab('login'); }}>
@@ -1048,7 +1064,8 @@ const Auth = () => {
                             <Input id="reset-email" type="email" placeholder="seu@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
                           </div>
                           <p className="text-xs text-muted-foreground">Você receberá um link para redefinir sua senha.</p>
-                          <Button type="submit" className="w-full" disabled={resetLoading}>
+                          <TurnstileWidget onVerify={setResetCaptchaToken} onExpire={() => setResetCaptchaToken(null)} />
+                          <Button type="submit" className="w-full" disabled={resetLoading || !resetCaptchaToken}>
                             {resetLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</> : 'Enviar link de recuperação'}
                           </Button>
                           <Button type="button" variant="ghost" className="w-full" onClick={() => setShowForgotPassword(false)}>Voltar ao login</Button>
@@ -1077,7 +1094,8 @@ const Auth = () => {
                               </button>
                             </div>
                           </div>
-                          <Button type="submit" className="w-full h-11" disabled={loading || googleLoading}>
+                          <TurnstileWidget onVerify={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken(null)} />
+                          <Button type="submit" className="w-full h-11" disabled={loading || googleLoading || !loginCaptchaToken}>
                             {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
                           </Button>
                         </form>
