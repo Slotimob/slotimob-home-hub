@@ -787,31 +787,49 @@ const Auth = () => {
       {/* Password */}
       <div className="space-y-2">
         <Label htmlFor="signup-password">Senha</Label>
-        <Input
-          id="signup-password"
-          type="password"
-          placeholder="Mínimo 6 caracteres"
-          value={signupForm.password}
-          onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
-          className={fieldErrors.password ? 'border-destructive' : ''}
-          required
-        />
+        <div className="relative">
+          <Input
+            id="signup-password"
+            type={showSignupPassword ? 'text' : 'password'}
+            placeholder="Mínimo 6 caracteres"
+            value={signupForm.password}
+            onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
+            className={fieldErrors.password ? 'border-destructive pr-10' : 'pr-10'}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowSignupPassword(v => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2"
+          >
+            {showSignupPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+          </button>
+        </div>
         {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
       </div>
 
       {/* Confirm Password */}
       <div className="space-y-2">
         <Label htmlFor="signup-confirmPassword">Confirmar Senha</Label>
-        <Input
-          id="signup-confirmPassword"
-          type="password"
-          placeholder="Digite a senha novamente"
-          value={signupForm.confirmPassword}
-          onChange={e => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
-          onPaste={e => e.preventDefault()}
-          className={fieldErrors.confirmPassword ? 'border-destructive' : ''}
-          required
-        />
+        <div className="relative">
+          <Input
+            id="signup-confirmPassword"
+            type={showConfirmPassword ? 'text' : 'password'}
+            placeholder="Digite a senha novamente"
+            value={signupForm.confirmPassword}
+            onChange={e => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
+            onPaste={e => e.preventDefault()}
+            className={fieldErrors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(v => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2"
+          >
+            {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+          </button>
+        </div>
         {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
       </div>
 
@@ -1038,7 +1056,16 @@ const Auth = () => {
                                 Esqueceu a senha?
                               </Button>
                             </div>
-                            <Input id="login-password" type="password" placeholder="••••••••" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} required />
+                            <div className="relative">
+                              <Input id="login-password" type={showLoginPassword ? 'text' : 'password'} placeholder="••••••••" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} className="pr-10" required />
+                              <button
+                                type="button"
+                                onClick={() => setShowLoginPassword(v => !v)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2"
+                              >
+                                {showLoginPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                              </button>
+                            </div>
                           </div>
                           <Button type="submit" className="w-full h-11" disabled={loading || googleLoading}>
                             {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
