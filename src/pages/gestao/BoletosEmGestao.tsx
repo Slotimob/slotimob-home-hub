@@ -369,27 +369,35 @@ export default function BoletosEmGestao() {
                             <RefreshCw className="mr-2 h-4 w-4" />
                             Reemitir boleto
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handlePaymentAction(boleto.id, 'send_email')}
-                          >
-                            <Mail className="mr-2 h-4 w-4" />
-                            Enviar por e-mail
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openChangeDueDateDialog(boleto)}>
-                            <CalendarClock className="mr-2 h-4 w-4" />
-                            Alterar vencimento
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openReajusteDialog(boleto)}>
-                            <TrendingUp className="mr-2 h-4 w-4" />
-                            Reajustar valor
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handlePaymentAction(boleto.id, 'cancel')}
-                            className="text-destructive"
-                          >
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Cancelar cobrança
-                          </DropdownMenuItem>
+                          {canEdit && (
+                            <DropdownMenuItem
+                              onClick={() => handlePaymentAction(boleto.id, 'send_email')}
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Enviar por e-mail
+                            </DropdownMenuItem>
+                          )}
+                          {canEdit && (
+                            <DropdownMenuItem onClick={() => openChangeDueDateDialog(boleto)}>
+                              <CalendarClock className="mr-2 h-4 w-4" />
+                              Alterar vencimento
+                            </DropdownMenuItem>
+                          )}
+                          {canEdit && (
+                            <DropdownMenuItem onClick={() => openReajusteDialog(boleto)}>
+                              <TrendingUp className="mr-2 h-4 w-4" />
+                              Reajustar valor
+                            </DropdownMenuItem>
+                          )}
+                          {canDelete && (
+                            <DropdownMenuItem
+                              onClick={() => handlePaymentAction(boleto.id, 'cancel')}
+                              className="text-destructive"
+                            >
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Cancelar cobrança
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
 
                           {boleto.bank_slip_url && (
