@@ -486,6 +486,7 @@ const Auth = () => {
         }
       } catch { /* fail open */ }
 
+      const redirectUrl = invitation ? `${SITE_URL}/auth?token=${inviteToken}` : `${SITE_URL}/`;
       const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
         password: signupForm.password,
@@ -858,8 +859,10 @@ const Auth = () => {
         </Label>
       </div>
 
+      <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+
       {/* Submit */}
-      <Button type="submit" className="w-full h-11" disabled={loading || !acceptedTerms}>
+      <Button type="submit" className="w-full h-11" disabled={loading || !acceptedTerms || !captchaToken}>
         {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...</> : 'Criar minha conta'}
       </Button>
 
