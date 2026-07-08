@@ -131,6 +131,7 @@ export default function Checkout() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Fiscal data
@@ -276,11 +277,16 @@ export default function Checkout() {
         setAuthError('Preencha todos os campos');
         return;
       }
+      if (!captchaToken) {
+        setAuthError('Confirme que você não é um robô.');
+        setIsCheckingOut(false);
+        return;
+      }
       setIsCheckingOut(true);
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name } },
+        options: { data: { full_name: name }, captchaToken },
       });
       if (signUpError) {
         setAuthError(translateAuthError(signUpError.message));
@@ -460,7 +466,7 @@ export default function Checkout() {
   };
 
   const ctaDisabled =
-    isCheckingOut || (!user && (!name || !email || !password));
+    isCheckingOut || (!user && (!name || !email || !password || !captchaToken));
 
   const maskCpfCnpj = (v: string) => {
     const digits = v.replace(/\D/g, '').slice(0, 14);
@@ -795,6 +801,7 @@ export default function Checkout() {
                       </button>
                     </div>
                     <p className="text-xs text-muted-foreground">a senha precisa ter no mínimo 6 caracteres.</p>
+                    <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                   </div>
 
                   {authError && <p className="text-destructive text-sm">{authError}</p>}
