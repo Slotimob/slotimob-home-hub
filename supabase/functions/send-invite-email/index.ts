@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
       // Envia o convite via Resend (não depende do mailer nativo do Supabase)
       const inviterName = member_name || "Um administrador";
       try {
-        await resend.emails.send({
+        const { data: sendData, error: sendError } = await resend.emails.send({
           from: "Equipe SlotiMob <contato@slotimob.com.br>",
           to: [normalizedEmail],
           subject: "Você foi convidado para uma equipe na SlotiMob",
@@ -161,6 +161,10 @@ Deno.serve(async (req) => {
             </div>
           `,
         });
+        if (sendError) {
+          console.error('[send-invite-email] Resend rejeitou o envio:', sendError);
+          throw new Error('Convite criado, mas não foi possível enviar o e-mail. Verifique o domínio no Resend ou tente novamente.');
+        }
       } catch (emailErr) {
         console.error("[send-invite-email] Falha ao enviar via Resend:", emailErr);
         throw new Error("Convite criado, mas não foi possível enviar o e-mail. Tente novamente ou contate o suporte.");
