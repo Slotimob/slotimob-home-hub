@@ -160,7 +160,7 @@ const getAuthErrorMessage = (error: any): { title: string; description: string }
   if (errorMessage.includes('user not found') || errorCode === 'user_not_found') {
     return { title: 'Email não cadastrado', description: 'Este email não está registrado. Crie uma conta primeiro.' };
   }
-  return { title: 'Erro ao fazer login', description: error?.message || 'Verifique suas credenciais e tente novamente.' };
+  return { title: 'Erro ao fazer login', description: translateAuthError(error?.message || '') || 'Verifique suas credenciais e tente novamente.' };
 };
 
 // ─── Mask helpers ───
