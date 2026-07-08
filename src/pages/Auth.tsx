@@ -416,8 +416,12 @@ const Auth = () => {
     e.preventDefault();
     try {
       loginSchema.parse(loginForm);
+      if (!loginCaptchaToken) {
+        toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+        return;
+      }
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password });
+      const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password, options: { captchaToken: loginCaptchaToken } });
       if (error) throw error;
       toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
       if (inviteToken) await handleAcceptInvite();
