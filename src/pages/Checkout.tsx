@@ -129,6 +129,7 @@ export default function Checkout() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Fiscal data

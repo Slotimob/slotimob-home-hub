@@ -229,6 +229,9 @@ const Auth = () => {
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isCompleteProfileMode] = useState(searchParams.get('complete_profile') === 'true');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
