@@ -363,23 +363,28 @@ const Settings = () => {
   };
 
   const requestPasswordChange = async () => {
-    if (!email) {
-      toast({ title: 'Erro', description: 'Email não encontrado.', variant: 'destructive' });
+    if (newPassword.length < 6) {
+      toast({ title: 'Senha muito curta', description: 'A senha precisa ter no mínimo 6 caracteres.', variant: 'destructive' });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({ title: 'Senhas não conferem', description: 'A confirmação precisa ser igual à nova senha.', variant: 'destructive' });
       return;
     }
     setSendingPasswordReset(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      toast({ title: 'Email enviado!', description: `Enviamos um link para ${email}.` });
+      toast({ title: 'Senha alterada!', description: 'Sua nova senha já está ativa.' });
+      setNewPassword('');
+      setConfirmNewPassword('');
     } catch (error: any) {
-      toast({ title: 'Erro ao enviar email', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao alterar senha', description: error.message, variant: 'destructive' });
     } finally {
       setSendingPasswordReset(false);
     }
   };
+
 
   const MAX_CRECI_SIZE_MB = 10;
   const MAX_CRECI_SIZE_BYTES = MAX_CRECI_SIZE_MB * 1024 * 1024;
