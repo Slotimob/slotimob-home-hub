@@ -325,8 +325,12 @@ const Auth = () => {
       return;
     }
     try {
+      if (!resetCaptchaToken) {
+        toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+        return;
+      }
       setResetLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: `${SITE_URL}/reset-password` });
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: `${SITE_URL}/reset-password`, captchaToken: resetCaptchaToken });
       if (error) throw error;
       toast({ title: 'Email enviado!', description: 'Verifique sua caixa de entrada para redefinir sua senha.' });
       setShowForgotPassword(false);
