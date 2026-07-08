@@ -426,24 +426,28 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
                             <Mail className="mr-2 h-4 w-4" />
                             Reenviar por e-mail
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setNewDueDate(b.due_date || "");
-                              setDueDateDialog({ id: b.id, current: b.due_date || "" });
-                            }}
-                          >
-                            <CalendarClock className="mr-2 h-4 w-4" />
-                            Alterar vencimento
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setNewValue(String(b.value ?? ""));
-                              setValueDialog({ id: b.id, current: Number(b.value) });
-                            }}
-                          >
-                            <TrendingUp className="mr-2 h-4 w-4" />
-                            Alterar valor
-                          </DropdownMenuItem>
+                          {hasPermission("management_boletos", "edit") && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setNewDueDate(b.due_date || "");
+                                setDueDateDialog({ id: b.id, current: b.due_date || "" });
+                              }}
+                            >
+                              <CalendarClock className="mr-2 h-4 w-4" />
+                              Alterar vencimento
+                            </DropdownMenuItem>
+                          )}
+                          {hasPermission("management_boletos", "edit") && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setNewValue(String(b.value ?? ""));
+                                setValueDialog({ id: b.id, current: Number(b.value) });
+                              }}
+                            >
+                              <TrendingUp className="mr-2 h-4 w-4" />
+                              Alterar valor
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
