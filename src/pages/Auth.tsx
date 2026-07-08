@@ -1094,7 +1094,8 @@ const Auth = () => {
                               </button>
                             </div>
                           </div>
-                          <Button type="submit" className="w-full h-11" disabled={loading || googleLoading}>
+                          <TurnstileWidget onVerify={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken(null)} />
+                          <Button type="submit" className="w-full h-11" disabled={loading || googleLoading || !loginCaptchaToken}>
                             {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
                           </Button>
                         </form>
