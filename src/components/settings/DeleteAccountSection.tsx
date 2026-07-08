@@ -113,6 +113,18 @@ export const DeleteAccountSection = () => {
                 />
               </div>
 
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="skip-export"
+                  checked={skipExportCheck}
+                  onCheckedChange={(checked) => setSkipExportCheck(checked === true)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="skip-export" className="text-sm text-muted-foreground cursor-pointer">
+                  Não preciso de uma exportação dos meus dados antes de excluir
+                </Label>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="confirm" className="text-sm font-medium">
                   Digite <span className="font-bold text-destructive">EXCLUIR MINHA CONTA</span> para confirmar:
