@@ -126,6 +126,7 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
   const [cancelPayment, setCancelPayment] = useState<{ id: string } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [emitirOpen, setEmitirOpen] = useState(false);
+  const { hasPermission } = usePermissions();
 
   const { data: session } = useQuery({
     queryKey: ["session"],
