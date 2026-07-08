@@ -5675,6 +5675,7 @@ export type Database = {
         Returns: boolean
       }
       verify_cron_secret: { Args: { p_secret: string }; Returns: boolean }
+      verify_current_password: { Args: { password: string }; Returns: boolean }
     }
     Enums: {
       app_role:
