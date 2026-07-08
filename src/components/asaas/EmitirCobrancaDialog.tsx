@@ -77,6 +77,7 @@ export function EmitirCobrancaDialog({
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
+  const { hasPermission } = usePermissions();
 
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>("");
   const [billingType, setBillingType] = useState<"BOLETO" | "PIX">("BOLETO");
