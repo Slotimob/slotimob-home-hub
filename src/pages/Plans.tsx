@@ -79,7 +79,7 @@ const categories: Category[] = [
   {
     name: 'Comunicação',
     rows: [
-      { feature: 'WhatsApp integrado', start: false, pro: '1 instância', business: 'Múltiplas' },
+      { feature: 'WhatsApp integrado', start: false, pro: '1 instância', business: 'Múltiplas **' },
     ],
   },
   {
@@ -158,6 +158,9 @@ function ComparisonTable() {
               </table>
               <p className="px-4 py-3 text-xs" style={{ color: '#6b7280', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
                 * Assinatura eletrônica com validade jurídica está em desenvolvimento e será disponibilizada em breve.
+              </p>
+              <p className="px-4 py-3 text-xs" style={{ color: '#6b7280', background: '#f8fafc' }}>
+                ** No Business não há conexão de mais de um número de WhatsApp. O usuário principal (ou um usuário com essa permissão) direciona quais conversas cada membro da equipe pode visualizar.
               </p>
             </div>
           </CollapsibleContent>
