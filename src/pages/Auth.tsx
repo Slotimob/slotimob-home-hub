@@ -646,7 +646,8 @@ const Auth = () => {
         </p>
       </div>
       <div className="space-y-2">
-        <Button variant="outline" className="w-full" onClick={handleResendVerification} disabled={loading}>
+        <TurnstileWidget onVerify={setResendCaptchaToken} onExpire={() => setResendCaptchaToken(null)} />
+        <Button variant="outline" className="w-full" onClick={handleResendVerification} disabled={loading || !resendCaptchaToken}>
           {loading ? 'Reenviando...' : 'Reenviar email de verificação'}
         </Button>
         <Button variant="ghost" className="w-full" onClick={() => { setShowVerificationMessage(false); setPendingVerificationEmail(''); setActiveTab('login'); }}>
