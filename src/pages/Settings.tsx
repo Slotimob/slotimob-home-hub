@@ -516,133 +516,144 @@ const Settings = () => {
           description="Dados do emissor para emissão de boletos"
           icon={Receipt}
         >
-          {asaasAccountStatus === 'active' ? (
-            <div className="flex items-center gap-2">
-              <Badge className="bg-green-100 text-green-700 border border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800">
-                ✓ Subconta Asaas ativa
-              </Badge>
-              {asaasAccountId && (
-                <span className="text-xs text-muted-foreground font-mono">{asaasAccountId}</span>
-              )}
+          {isMember ? (
+            <div className="flex items-start gap-2 p-3 bg-muted/50 border border-border rounded-lg">
+              <Receipt className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                Você é um usuário convidado. A configuração da conta Asaas para emissão de boletos deve ser feita pelo administrador (proprietário) da conta principal.
+              </p>
             </div>
           ) : (
-            <Badge variant="outline" className="text-muted-foreground">
-              Não configurada — preencha e salve para ativar
-            </Badge>
+            <>
+              {asaasAccountStatus === 'active' ? (
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-green-100 text-green-700 border border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800">
+                    ✓ Subconta Asaas ativa
+                  </Badge>
+                  {asaasAccountId && (
+                    <span className="text-xs text-muted-foreground font-mono">{asaasAccountId}</span>
+                  )}
+                </div>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Não configurada — preencha e salve para ativar
+                </Badge>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Nome / Razão Social</Label>
+                  <Input
+                    value={asaasConfig.name || ''}
+                    onChange={(e) => setAsaasConfig({ ...asaasConfig, name: e.target.value })}
+                    placeholder="Nome do emissor"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>CPF ou CNPJ</Label>
+                  <Input
+                    value={asaasConfig.cpf_cnpj || ''}
+                    onChange={(e) => setAsaasConfig({ ...asaasConfig, cpf_cnpj: e.target.value })}
+                    placeholder="000.000.000-00 ou 00.000.000/0001-00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo de Pessoa</Label>
+                  <Select
+                    value={asaasConfig.person_type || ''}
+                    onValueChange={(v) => setAsaasConfig({ ...asaasConfig, person_type: v as AsaasConfig['person_type'] })}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FISICA">Pessoa Física</SelectItem>
+                      <SelectItem value="MEI">MEI</SelectItem>
+                      <SelectItem value="JURIDICA">Empresa (LTDA/SA)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Celular</Label>
+                  <Input
+                    value={asaasConfig.mobile_phone || ''}
+                    onChange={(e) => setAsaasConfig({ ...asaasConfig, mobile_phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>CEP {fetchingCep && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}</Label>
+                  <Input
+                    value={asaasConfig.postal_code || ''}
+                    onChange={(e) => setAsaasConfig({ ...asaasConfig, postal_code: e.target.value })}
+                    onBlur={handleCepBlur}
+                    placeholder="00000-000"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Logradouro</Label>
+                  <Input
+                    value={asaasConfig.address || ''}
+                    onChange={(e) => setAsaasConfig({ ...asaasConfig, address: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Número</Label>
+                  <Input
+                    value={asaasConfig.address_number || ''}
+                    onChange={(e) => setAsaasConfig({ ...asaasConfig, address_number: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bairro</Label>
+                  <Input
+                    value={asaasConfig.province || ''}
+                    onChange={(e) => setAsaasConfig({ ...asaasConfig, province: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cidade</Label>
+                  <Input
+                    value={asaasConfig.city || ''}
+                    onChange={(e) => setAsaasConfig({ ...asaasConfig, city: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Estado</Label>
+                  <Select
+                    value={asaasConfig.state || ''}
+                    onValueChange={(v) => setAsaasConfig({ ...asaasConfig, state: v })}
+                  >
+                    <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>
+                      {UF_OPTIONS.map((uf) => (
+                        <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
+                <Receipt className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-600 dark:text-blue-500">
+                  Estes dados são usados para criar sua subconta no <strong>Asaas</strong> — https://www.asaas.com e identificar o emissor nos boletos.
+                </p>
+              </div>
+
+              <Button onClick={saveAsaasConfig} disabled={savingAsaas || asaasAccountStatus === 'active'}>
+                {savingAsaas
+                  ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Criando subconta...</>
+                  : asaasAccountStatus === 'active'
+                  ? '✓ Conta já configurada'
+                  : 'Criar subconta e ativar cobrança'}
+              </Button>
+
+              <Separator />
+
+              <div className="mt-4 space-y-3">
+                <AsaasFinancialSeal size="sm" />
+                <AsaasTransparencyNote />
+              </div>
+            </>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Nome / Razão Social</Label>
-              <Input
-                value={asaasConfig.name || ''}
-                onChange={(e) => setAsaasConfig({ ...asaasConfig, name: e.target.value })}
-                placeholder="Nome do emissor"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>CPF ou CNPJ</Label>
-              <Input
-                value={asaasConfig.cpf_cnpj || ''}
-                onChange={(e) => setAsaasConfig({ ...asaasConfig, cpf_cnpj: e.target.value })}
-                placeholder="000.000.000-00 ou 00.000.000/0001-00"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo de Pessoa</Label>
-              <Select
-                value={asaasConfig.person_type || ''}
-                onValueChange={(v) => setAsaasConfig({ ...asaasConfig, person_type: v as AsaasConfig['person_type'] })}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FISICA">Pessoa Física</SelectItem>
-                  <SelectItem value="MEI">MEI</SelectItem>
-                  <SelectItem value="JURIDICA">Empresa (LTDA/SA)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Celular</Label>
-              <Input
-                value={asaasConfig.mobile_phone || ''}
-                onChange={(e) => setAsaasConfig({ ...asaasConfig, mobile_phone: e.target.value })}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>CEP {fetchingCep && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}</Label>
-              <Input
-                value={asaasConfig.postal_code || ''}
-                onChange={(e) => setAsaasConfig({ ...asaasConfig, postal_code: e.target.value })}
-                onBlur={handleCepBlur}
-                placeholder="00000-000"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Logradouro</Label>
-              <Input
-                value={asaasConfig.address || ''}
-                onChange={(e) => setAsaasConfig({ ...asaasConfig, address: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Número</Label>
-              <Input
-                value={asaasConfig.address_number || ''}
-                onChange={(e) => setAsaasConfig({ ...asaasConfig, address_number: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Bairro</Label>
-              <Input
-                value={asaasConfig.province || ''}
-                onChange={(e) => setAsaasConfig({ ...asaasConfig, province: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Cidade</Label>
-              <Input
-                value={asaasConfig.city || ''}
-                onChange={(e) => setAsaasConfig({ ...asaasConfig, city: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Estado</Label>
-              <Select
-                value={asaasConfig.state || ''}
-                onValueChange={(v) => setAsaasConfig({ ...asaasConfig, state: v })}
-              >
-                <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
-                <SelectContent>
-                  {UF_OPTIONS.map((uf) => (
-                    <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
-            <Receipt className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-blue-600 dark:text-blue-500">
-              Estes dados são usados para criar sua subconta no <strong>Asaas</strong> — https://www.asaas.com e identificar o emissor nos boletos.
-            </p>
-          </div>
-
-          <Button onClick={saveAsaasConfig} disabled={savingAsaas || asaasAccountStatus === 'active'}>
-            {savingAsaas
-              ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Criando subconta...</>
-              : asaasAccountStatus === 'active'
-              ? '✓ Conta já configurada'
-              : 'Criar subconta e ativar cobrança'}
-          </Button>
-
-          <Separator />
-
-          <div className="mt-4 space-y-3">
-            <AsaasFinancialSeal size="sm" />
-            <AsaasTransparencyNote />
-          </div>
         </SettingsSection>
 
         {/* 3 — Segurança */}
