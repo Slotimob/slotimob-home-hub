@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { useSubscriptionLimits, PlanFeatures } from '@/hooks/useSubscriptionLimits';
-import { Lock, Rocket, Building2, Briefcase } from 'lucide-react';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { Lock, Rocket, Building2, Briefcase, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -12,22 +13,49 @@ interface FeatureGateProps {
   requiredPlan?: 'essencial' | 'pro' | 'business';
 }
 
-export const FeatureGate = ({ 
-  feature, 
-  children, 
+export const FeatureGate = ({
+  feature,
+  children,
   fallback,
   showUpgradeOverlay = true,
   requiredPlan,
 }: FeatureGateProps) => {
   const { canUse, getUpgradeReason, plan, isLoading } = useSubscriptionLimits();
+  const { isMember, isLoading: isLoadingWorkspace } = useWorkspace();
 
-  if (isLoading) return <>{children}</>;
+  if (isLoading || isLoadingWorkspace) return <>{children}</>;
 
   if (canUse(feature)) return <>{children}</>;
 
   if (fallback) return <>{fallback}</>;
 
   if (!showUpgradeOverlay) return null;
+
+  // Membros convidados não podem fazer upgrade — a decisão é do dono da conta.
+  // Mostra mensagem de permissão em vez do CTA de upgrade.
+  if (isMember) {
+    return (
+      <div className="relative">
+        <div className="blur-sm pointer-events-none select-none opacity-50">
+          {children}
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+          <div className="text-center p-6 max-w-md">
+            <div className="mx-auto mb-4 text-muted-foreground">
+              <ShieldAlert className="h-8 w-8 mx-auto" />
+            </div>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Lock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Acesso restrito</span>
+            </div>
+            <p className="text-foreground font-medium">
+              Você não tem permissão para acessar este módulo. Fale com o administrador da sua conta.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const targetPlan = requiredPlan || (plan === 'free' ? 'essencial' : plan === 'essencial' ? 'pro' : 'business');
   const planIcon = targetPlan === 'business' ? <Building2 className="h-8 w-8" /> : targetPlan === 'pro' ? <Rocket className="h-8 w-8" /> : <Briefcase className="h-8 w-8" />;
