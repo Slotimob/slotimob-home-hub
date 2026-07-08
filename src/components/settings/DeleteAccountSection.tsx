@@ -25,6 +25,7 @@ export const DeleteAccountSection = () => {
   const [confirmText, setConfirmText] = useState('');
   const [reason, setReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [skipExportCheck, setSkipExportCheck] = useState(false);
 
   const isConfirmed = confirmText === 'EXCLUIR MINHA CONTA';
 
