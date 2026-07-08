@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     if (confirmation_text !== "EXCLUIR MINHA CONTA") {
       return new Response(
         JSON.stringify({ error: "Texto de confirmação inválido" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
