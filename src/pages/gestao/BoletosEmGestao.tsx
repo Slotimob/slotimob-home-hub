@@ -17,6 +17,7 @@ import { ExternalLink, Copy, MoreHorizontal, Search, FileText, Loader2, Receipt,
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/AsaasFinancialSeal";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 
 
