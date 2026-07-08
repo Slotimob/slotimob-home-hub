@@ -35,6 +35,11 @@ export default function BoletosEmGestao() {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_boletos", "view");
+  const canCreate = hasPermission("management_boletos", "create");
+  const canEdit = hasPermission("management_boletos", "edit");
+  const canDelete = hasPermission("management_boletos", "delete");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
