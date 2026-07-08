@@ -16,12 +16,12 @@ export const SEGMENTS: Record<string, LandingSegment> = {
     utmSource: 'lp_geral',
     seo: {
       title: 'SLOTIMOB - A inteligência que sua imobiliária precisava',
-      description: 'CRM, ERP e WhatsApp com IA integrados. Organize leads, imóveis e documentos. Comece grátis com 2 unidades e 14 dias de Pro.',
+      description: 'CRM, ERP e WhatsApp com IA integrados. Organize leads, imóveis e documentos. Comece grátis com 2 unidades e 7 dias de Pro.',
     },
     hero: {
       headline: 'A inteligência que sua imobiliária',
       highlightLine: 'precisava para escalar.',
-      subtitle: 'CRM, ERP e WhatsApp com IA integrados em um único lugar. Comece com 2 unidades grátis e sinta o poder do Plano Pro por 14 dias.',
+      subtitle: 'CRM, ERP e WhatsApp com IA integrados em um único lugar. Comece com 2 unidades grátis e sinta o poder do Plano Pro por 7 dias.',
     },
     socialProof: ['+200 corretores ativos', '4.9★ de satisfação', 'Suporte em <2h'],
   },
