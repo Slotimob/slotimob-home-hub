@@ -242,6 +242,9 @@ const Auth = () => {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('complete_profile') === 'true');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(null);
+  const [resetCaptchaToken, setResetCaptchaToken] = useState<string | null>(null);
+  const [resendCaptchaToken, setResendCaptchaToken] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState('');
   const [formLoadTime] = useState(() => Date.now());
 
