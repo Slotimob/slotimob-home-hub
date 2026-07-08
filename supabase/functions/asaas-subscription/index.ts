@@ -132,9 +132,39 @@ Deno.serve(async (req) => {
       return resp({ error: `action inválida. Use: ${VALID_ACTIONS.join(", ")}` });
     }
 
-    // super_admin override — usa a função canônica is_super_admin (fonte: user_roles)
+    // Resolve effective broker: members act under the owner's Asaas subaccount.
     let effectiveBrokerId = user.id;
-    if (brokerIdOverride && brokerIdOverride !== user.id) {
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organization_owner_id, permissions")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (membership) {
+      effectiveBrokerId = membership.organization_owner_id as string;
+      const perms = (membership.permissions as any) || {};
+      const boletos = perms.management_boletos || {};
+      const required: Record<string, "view" | "create" | "edit" | "delete"> = {
+        create: "create",
+        update: "edit",
+        cancel: "delete",
+        get: "view",
+        sync_payments: "view",
+      };
+      const need = required[action];
+      if (need && boletos[need] !== true) {
+        const label =
+          need === "create" ? "criar assinatura de cobrança" :
+          need === "edit" ? "atualizar a assinatura de cobrança" :
+          need === "delete" ? "cancelar a assinatura de cobrança" :
+          "consultar a assinatura de cobrança";
+        return resp({ error: `Você não tem permissão para ${label}. Fale com o administrador da sua conta.` });
+      }
+    }
+
+    // super_admin override (canonical: is_super_admin via user_roles) — applies on top.
+    if (brokerIdOverride && brokerIdOverride !== effectiveBrokerId) {
       const { data: isSuperAdmin } = await supabase.rpc("is_super_admin", { p_user_id: user.id });
       if (isSuperAdmin === true) {
         effectiveBrokerId = brokerIdOverride;
