@@ -331,11 +331,7 @@ export const WeeklySummaryReport = () => {
       setIsSending(true);
 
       const { data, error } = await supabase.functions.invoke('send-weekly-report', {
-        body: {
-          email,
-          reportData: weeklyData,
-          userName,
-        },
+        body: { reportType: 'weekly' },
       });
 
       if (error) throw error;
