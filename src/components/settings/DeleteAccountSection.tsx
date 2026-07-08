@@ -35,7 +35,7 @@ export const DeleteAccountSection = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('delete-account', {
-        body: { confirmation_text: confirmText, reason },
+        body: { confirmation_text: confirmText, reason, skip_export_check: skipExportCheck },
       });
 
       if (error) throw error;
