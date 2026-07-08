@@ -614,8 +614,12 @@ const Auth = () => {
   const handleResendVerification = async () => {
     if (!pendingVerificationEmail) return;
     try {
+      if (!resendCaptchaToken) {
+        toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+        return;
+      }
       setLoading(true);
-      const { error } = await supabase.auth.resend({ type: 'signup', email: pendingVerificationEmail, options: { emailRedirectTo: `${SITE_URL}/` } });
+      const { error } = await supabase.auth.resend({ type: 'signup', email: pendingVerificationEmail, options: { emailRedirectTo: `${SITE_URL}/`, captchaToken: resendCaptchaToken } });
       if (error) throw error;
       toast({ title: 'Email reenviado!', description: 'Verifique sua caixa de entrada.' });
     } catch (error: any) {
