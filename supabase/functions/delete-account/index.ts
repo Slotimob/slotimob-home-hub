@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
     console.error("delete-account error:", err);
     return new Response(
       JSON.stringify({ error: "Erro interno ao processar exclusão." }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
