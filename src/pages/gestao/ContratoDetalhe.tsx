@@ -429,35 +429,43 @@ export default function ContratoDetalhe() {
                 <Receipt className="h-4 w-4 mr-1.5" />
                 Registrar Pagamento
               </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}>
-                <Edit3 className="h-4 w-4 mr-1.5" />
-                Editar
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    disabled={lease.status === "terminated"}
-                    onClick={() => setTerminateDialogOpen(true)}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Encerrar Locação
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir Contrato
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canEdit && (
+                <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}>
+                  <Edit3 className="h-4 w-4 mr-1.5" />
+                  Editar
+                </Button>
+              )}
+              {(canEdit || canDelete) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-9 w-9">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canEdit && (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        disabled={lease.status === "terminated"}
+                        onClick={() => setTerminateDialogOpen(true)}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Encerrar Locação
+                      </DropdownMenuItem>
+                    )}
+                    {canEdit && canDelete && <DropdownMenuSeparator />}
+                    {canDelete && (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => setDeleteDialogOpen(true)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir Contrato
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </CardContent>
