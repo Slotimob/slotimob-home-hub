@@ -462,6 +462,7 @@ export default function Proposals() {
                   )}
                 </CardContent>
               </Card>
+              </>)}
             </div>
           </main>
           <BottomNavigation />
