@@ -371,6 +371,8 @@ export default function Proposals() {
                               onDownloadPdf={handleDownloadPdf}
                               pdfDownloading={pdfDownloading}
                               onToggleStatus={handleToggleStatus}
+                              canEdit={canEdit}
+                              canDelete={canDelete}
                             />
 
                           </div>
