@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 export type ResolveType = 
   | 'cib' 
   | 'registration' 
+  | 'address'
   | 'owner_document' 
   | 'tenant_document' 
   | 'lease';
