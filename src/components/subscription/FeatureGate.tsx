@@ -26,7 +26,12 @@ export const FeatureGate = ({
 
   if (isLoading || isLoadingWorkspace) return <>{children}</>;
 
-  if (canUse(feature)) return <>{children}</>;
+  // [TEMP DEBUG — AI Chat gating investigation] remove after diagnosis
+  const _canUse = canUse(feature);
+  // eslint-disable-next-line no-console
+  console.log('[DEBUG FeatureGate]', { feature, canUse: _canUse, plan, isMember });
+
+  if (_canUse) return <>{children}</>;
 
   // Membros convidados não podem fazer upgrade — a decisão é do dono da conta.
   // Esta checagem precisa vir antes de qualquer fallback customizado legado.
