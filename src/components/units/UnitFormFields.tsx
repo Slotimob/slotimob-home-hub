@@ -828,3 +828,106 @@ export const UnitFormFields = ({
     </div>
   );
 };
+
+interface InheritedAddressBlockProps {
+  propertyId?: string;
+  properties: Property[];
+  formData: UnitFormData;
+  setFormData: (data: UnitFormData) => void;
+}
+
+const InheritedAddressBlock = ({
+  propertyId,
+  properties,
+  formData,
+  setFormData,
+}: InheritedAddressBlockProps) => {
+  const [loading, setLoading] = useState(false);
+  const [fetched, setFetched] = useState<{
+    address: string | null;
+    neighborhood: string | null;
+    city: string | null;
+    state: string | null;
+    postal_code: string | null;
+  } | null>(null);
+  const lastFetchedIdRef = useRef<string | null>(null);
+  // Keep latest formData in a ref to avoid re-running the effect on every keystroke
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+
+  useEffect(() => {
+    if (!propertyId) {
+      setFetched(null);
+      lastFetchedIdRef.current = null;
+      return;
+    }
+    if (lastFetchedIdRef.current === propertyId) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('address, neighborhood, city, state, postal_code')
+        .eq('id', propertyId)
+        .maybeSingle();
+      if (cancelled) return;
+      setLoading(false);
+      if (error || !data) {
+        setFetched(null);
+        return;
+      }
+      lastFetchedIdRef.current = propertyId;
+      setFetched(data);
+      const current = formDataRef.current;
+      setFormData({
+        ...current,
+        address: data.address || '',
+        neighborhood: data.neighborhood || '',
+        city: data.city || '',
+        state: data.state || '',
+        postal_code: data.postal_code || '',
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [propertyId, setFormData]);
+
+  if (!propertyId) return null;
+
+  const propertyName = properties.find((p) => p.id === propertyId)?.name;
+  const hasAny =
+    fetched &&
+    (fetched.address || fetched.neighborhood || fetched.city || fetched.state || fetched.postal_code);
+
+  return (
+    <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <MapPin className="h-4 w-4" />
+        Endereço herdado do Empreendimento{propertyName ? ` "${propertyName}"` : ''}
+      </div>
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Carregando endereço…</p>
+      ) : hasAny ? (
+        <div className="text-sm text-foreground space-y-0.5">
+          {fetched?.address && <div>{fetched.address}</div>}
+          {(fetched?.neighborhood || fetched?.city || fetched?.state) && (
+            <div>
+              {[fetched?.neighborhood, fetched?.city, fetched?.state]
+                .filter(Boolean)
+                .join(' - ')}
+            </div>
+          )}
+          {fetched?.postal_code && <div>CEP: {fetched.postal_code}</div>}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          O Empreendimento selecionado ainda não tem endereço cadastrado. Edite o Empreendimento para preencher o endereço — ele será herdado automaticamente por esta unidade.
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground pt-1">
+        Para alterar, edite o cadastro do Empreendimento — a Unidade herda automaticamente.
+      </p>
+    </div>
+  );
+};
