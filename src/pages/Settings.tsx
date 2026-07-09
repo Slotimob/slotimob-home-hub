@@ -706,7 +706,7 @@ const Settings = () => {
                 {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">a senha precisa ter no mínimo 6 caracteres.</p>
+            <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>
           </div>
 
           <div className="space-y-2">
