@@ -384,9 +384,11 @@ const AfazeresEmGestao = () => {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
-                      Anexar Assinatura
-                    </Button>
+                    {canEdit && (
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                        Anexar Assinatura
+                      </Button>
+                    )}
                   </div>
                 ))}
               </CardContent>
