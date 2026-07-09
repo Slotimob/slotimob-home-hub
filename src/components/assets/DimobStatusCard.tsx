@@ -102,7 +102,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
         message: hasFullAddress
           ? `${unit.address}, ${unit.neighborhood} - ${unit.city}/${unit.state}`
           : 'Endereço incompleto (logradouro, bairro, cidade e UF obrigatórios)',
-        resolveType: 'cib',
+        resolveType: 'address',
       });
 
       // 2. Check owner document
