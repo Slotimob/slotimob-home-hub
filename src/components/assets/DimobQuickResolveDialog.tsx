@@ -237,6 +237,42 @@ export function DimobQuickResolveDialog({
     );
   }
 
+  // Special handling for address - redirect to edit unit (composite field, can't be resolved via a single input)
+  if (resolveType === 'address') {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <Icon className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <DialogTitle>{config.title}</DialogTitle>
+                <DialogDescription className="mt-1">
+                  {config.description}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 mt-4">
+            <Button onClick={() => {
+              onOpenChange(false);
+              onEditUnit?.();
+            }}>
+              Editar Imóvel
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+
   // For document types without contact - redirect to edit unit
   if ((resolveType === 'owner_document' || resolveType === 'tenant_document') && !contactId) {
     return (
