@@ -514,6 +514,7 @@ export default function ContratoDetalhe() {
             onConfigureObligations={() => setShowObligationsDialog(true)}
             onDownloadPdf={() => setShowContractDialog(true)}
             onTerminate={canEdit ? () => setTerminateDialogOpen(true) : undefined}
+            canEdit={canEdit}
           />
         </TabsContent>
 
@@ -659,8 +660,9 @@ export default function ContratoDetalhe() {
         <TabsContent value="fiscal" className="space-y-4 mt-4">
           <DimobStatusCard
             unitId={lease.unit_id}
-            onEditUnit={() => navigate(`/units?edit=${lease.unit_id}`)}
+            onEditUnit={canEdit ? () => navigate(`/units?edit=${lease.unit_id}`) : undefined}
             onCreateLease={() => {}}
+            canEdit={canEdit}
           />
         </TabsContent>
 
@@ -673,6 +675,9 @@ export default function ContratoDetalhe() {
             dueDay={lease.due_day ?? null}
             billingAutomation={(lease.billing_automation as Record<string, any>) || null}
           />
+          {/* Contract-level billing config — read-only when user lacks management_contracts:edit.
+              Uses <fieldset disabled> to natively disable every descendant Switch/Input/Button. */}
+          <fieldset disabled={!canEdit} className="contents">
 
           {/* Card 1: Automação de Cobrança (Lembretes por e-mail/WhatsApp) */}
           <Card>
@@ -694,11 +699,13 @@ export default function ContratoDetalhe() {
                       {billingContactConfig.email || "sem email"} · {billingContactConfig.whatsapp || "sem WhatsApp"}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-xs h-7 px-2 shrink-0" asChild>
-                    <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
-                      Editar
-                    </a>
-                  </Button>
+                  {canEdit && (
+                    <Button variant="ghost" size="sm" className="text-xs h-7 px-2 shrink-0" asChild>
+                      <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
+                        Editar
+                      </a>
+                    </Button>
+                  )}
                 </div>
               )}
               {/* Email panel */}
@@ -821,9 +828,11 @@ export default function ContratoDetalhe() {
                           <p className="font-medium">{billingContactName}</p>
                           <p className="text-xs text-muted-foreground">{tenantWhatsApp}</p>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
-                          <a href="/crm/contatos">Editar contato</a>
-                        </Button>
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
+                            <a href="/crm/contatos">Editar contato</a>
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-start gap-2 text-amber-700">
@@ -843,12 +852,14 @@ export default function ContratoDetalhe() {
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                  <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
-                    <Pencil className="h-3.5 w-3.5" />
-                    Editar contato de cobrança
-                  </a>
-                </Button>
+                {canEdit && (
+                  <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                    <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar contato de cobrança
+                    </a>
+                  </Button>
+                )}
                 <Button size="sm" onClick={handleSaveAutomation} disabled={savingAutomation}>
                   {savingAutomation ? (
                     <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
@@ -1167,6 +1178,7 @@ export default function ContratoDetalhe() {
               })()}
             </CardContent>
           </Card>
+          </fieldset>
         </TabsContent>
 
         {/* Boletos */}

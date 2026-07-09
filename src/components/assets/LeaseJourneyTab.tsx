@@ -89,6 +89,10 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
      tenant?: { name: string } | null;
     initial_rent?: number;
    } | null;
+  /** When false, all write actions (edit dates, upload/delete files, apply
+   *  adjustment, configure obligations) are hidden and the tab becomes
+   *  view-only. Defaults to true to preserve existing consumers. */
+  canEdit?: boolean;
  }
  
  type StepStatus = "completed" | "pending" | "disabled";
@@ -116,6 +120,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
   onDownloadPdf,
   onTerminate,
  fullLeaseData,
+ canEdit = true,
  }: LeaseJourneyTabProps) {
    const { user } = useAuth();
    const queryClient = useQueryClient();
@@ -508,7 +513,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                <Calendar className="h-4 w-4 text-primary" />
                <span className="text-sm font-medium">Início do Contrato</span>
              </div>
-             {!editingStartDate ? (
+             {canEdit && (!editingStartDate ? (
                <Button
                  variant="ghost"
                  size="sm"
@@ -558,7 +563,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                    {savingStartDate ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
                  </Button>
                </div>
-             )}
+             ))}
            </div>
            {editingStartDate ? (
              <Input
@@ -648,28 +653,30 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-8 text-xs"
-                  onClick={() => setShowEditAdjustmentDate(true)}
-                >
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Alterar Data
-                </Button>
-                <Button
-                  size="sm"
-                  className={cn(
-                    "flex-1 h-8 text-xs",
-                    isOverdue && "bg-red-500 hover:bg-red-600 text-white"
-                  )}
-                  onClick={() => setShowAdjustmentCalculator(true)}
-                >
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  {isOverdue ? "Aplicar Reajuste (Vencido!)" : "Aplicar Reajuste"}
-                </Button>
-              </div>
+              {canEdit && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
+                    onClick={() => setShowEditAdjustmentDate(true)}
+                  >
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Alterar Data
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={cn(
+                      "flex-1 h-8 text-xs",
+                      isOverdue && "bg-red-500 hover:bg-red-600 text-white"
+                    )}
+                    onClick={() => setShowAdjustmentCalculator(true)}
+                  >
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    {isOverdue ? "Aplicar Reajuste (Vencido!)" : "Aplicar Reajuste"}
+                  </Button>
+                </div>
+              )}
             </div>
           );
         })()}
@@ -745,20 +752,22 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                  <div className="flex flex-wrap gap-2">
                    {step.uploadKey && (
                      <>
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         className="h-7 text-xs"
-                         onClick={() => handleUpload(step.uploadKey!)}
-                        disabled={uploadingStep === step.uploadKey || deletingFile === step.uploadKey}
-                       >
-                         {uploadingStep === step.uploadKey ? (
-                           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                         ) : (
-                           <Upload className="h-3 w-3 mr-1" />
-                         )}
-                        {step.filePath ? "Substituir" : "Upload"}
-                       </Button>
+                       {canEdit && (
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           className="h-7 text-xs"
+                           onClick={() => handleUpload(step.uploadKey!)}
+                          disabled={uploadingStep === step.uploadKey || deletingFile === step.uploadKey}
+                         >
+                           {uploadingStep === step.uploadKey ? (
+                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                           ) : (
+                             <Upload className="h-3 w-3 mr-1" />
+                           )}
+                          {step.filePath ? "Substituir" : "Upload"}
+                         </Button>
+                       )}
                        {step.filePath && (
                         <>
                           <Button
@@ -770,7 +779,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                             <DownloadIcon className="h-3 w-3 mr-1" />
                             Baixar
                           </Button>
-                          {step.canDelete && (
+                          {canEdit && step.canDelete && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -790,7 +799,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                        )}
                      </>
                    )}
-                   {step.action && (
+                   {canEdit && step.action && (
                      <Button
                        variant="outline"
                        size="sm"

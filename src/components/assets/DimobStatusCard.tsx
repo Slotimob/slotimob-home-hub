@@ -24,9 +24,11 @@ interface DimobStatusCardProps {
   onFocusField?: (fieldName: string) => void;
   onEditUnit?: () => void;
   onCreateLease?: () => void;
+  /** When false, "Resolver" write actions are hidden and the card is view-only. */
+  canEdit?: boolean;
 }
 
-export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStatusCardProps) => {
+export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = true }: DimobStatusCardProps) => {
   const [validations, setValidations] = useState<DimobValidation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [overallStatus, setOverallStatus] = useState<'ok' | 'pending' | 'error'>('pending');
@@ -342,7 +344,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease }: DimobStat
                     </p>
                   </div>
                 </div>
-                {validation.status === 'pending' && validation.resolveType && (
+                {canEdit && validation.status === 'pending' && validation.resolveType && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
