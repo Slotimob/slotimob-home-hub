@@ -372,6 +372,7 @@ Abraço! 🤝`;
                 <ProposalFollowupItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   isMarking={markingFollowupId === item.id}
                   onFollowup={() => handleProposalFollowup(item)}
                   onMarkDone={() => handleMarkFollowupDone(item)}
