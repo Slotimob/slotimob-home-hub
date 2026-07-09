@@ -816,7 +816,7 @@ const Auth = () => {
           <Input
             id="signup-password"
             type={showSignupPassword ? 'text' : 'password'}
-            placeholder="Mínimo 6 caracteres"
+            placeholder="••••••••"
             value={signupForm.password}
             onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
             className={fieldErrors.password ? 'border-destructive pr-10' : 'pr-10'}
@@ -830,7 +830,9 @@ const Auth = () => {
             {showSignupPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
           </button>
         </div>
-        {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+        {fieldErrors.password
+          ? <p className="text-xs text-destructive">{fieldErrors.password}</p>
+          : <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>}
       </div>
 
       {/* Confirm Password */}
