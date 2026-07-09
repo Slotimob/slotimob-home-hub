@@ -77,6 +77,7 @@ import { EditStartDateDialog } from "@/components/assets/EditStartDateDialog";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useUpdateLease, generateBillingMessage, type BillingLog, type BillingAutomation } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,6 +102,9 @@ export default function ContratoDetalhe() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateLease = useUpdateLease();
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission("management_contracts", "edit");
+  const canDelete = hasPermission("management_contracts", "delete");
 
   const [activeTab, setActiveTab] = useState("journey");
   const [showTenantStatement, setShowTenantStatement] = useState(false);
@@ -425,35 +429,43 @@ export default function ContratoDetalhe() {
                 <Receipt className="h-4 w-4 mr-1.5" />
                 Registrar Pagamento
               </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}>
-                <Edit3 className="h-4 w-4 mr-1.5" />
-                Editar
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    disabled={lease.status === "terminated"}
-                    onClick={() => setTerminateDialogOpen(true)}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Encerrar Locação
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir Contrato
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canEdit && (
+                <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}>
+                  <Edit3 className="h-4 w-4 mr-1.5" />
+                  Editar
+                </Button>
+              )}
+              {(canEdit || canDelete) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-9 w-9">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canEdit && (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        disabled={lease.status === "terminated"}
+                        onClick={() => setTerminateDialogOpen(true)}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Encerrar Locação
+                      </DropdownMenuItem>
+                    )}
+                    {canEdit && canDelete && <DropdownMenuSeparator />}
+                    {canDelete && (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => setDeleteDialogOpen(true)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir Contrato
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </CardContent>
@@ -498,10 +510,10 @@ export default function ContratoDetalhe() {
               unit: unit,
               tenant: tenant,
             }}
-            onEditContract={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}
+            onEditContract={canEdit ? () => navigate(`/gestao/contratos/novo?edit=${lease.id}`) : undefined}
             onConfigureObligations={() => setShowObligationsDialog(true)}
             onDownloadPdf={() => setShowContractDialog(true)}
-            onTerminate={() => setTerminateDialogOpen(true)}
+            onTerminate={canEdit ? () => setTerminateDialogOpen(true) : undefined}
           />
         </TabsContent>
 
@@ -534,10 +546,12 @@ export default function ContratoDetalhe() {
                     <p className="text-muted-foreground text-xs">Início do Contrato</p>
                     <p className="font-semibold text-sm">{format(new Date(lease.start_date), "dd/MM/yyyy")}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowEditStartDateDialog(true)}>
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
+                  {canEdit && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowEditStartDateDialog(true)}>
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Editar
+                    </Button>
+                  )}
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">Aluguel</p>
@@ -578,20 +592,22 @@ export default function ContratoDetalhe() {
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => {
-                    if (isEditingCib) handleSaveCib();
-                    else {
-                      setEditedCib(lease.cib || "");
-                      setIsEditingCib(true);
-                    }
-                  }}
-                >
-                  {isEditingCib ? "Salvar" : "Editar"}
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      if (isEditingCib) handleSaveCib();
+                      else {
+                        setEditedCib(lease.cib || "");
+                        setIsEditingCib(true);
+                      }
+                    }}
+                  >
+                    {isEditingCib ? "Salvar" : "Editar"}
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="py-2 px-4">

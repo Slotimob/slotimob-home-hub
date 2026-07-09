@@ -75,7 +75,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
  interface LeaseJourneyTabProps {
    lease: LeaseData | null;
    unitId: string;
-   onEditContract: () => void;
+   onEditContract?: () => void;
    onConfigureObligations: () => void;
   onDownloadPdf?: () => void;
   onTerminate?: () => void;
