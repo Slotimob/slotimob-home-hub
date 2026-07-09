@@ -282,6 +282,7 @@ Abraço! 🤝`;
                 <ReceivableItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   onWhatsAppClick={() => handleWhatsAppCollection(item)}
                 />
               ))
