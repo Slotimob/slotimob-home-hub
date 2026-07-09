@@ -3650,6 +3650,7 @@ export type Database = {
           lead_id: string | null
           market_value: number | null
           name: string
+          neighborhood: string | null
           number_of_towers: number | null
           postal_code: string | null
           registration_number: string | null
@@ -3689,6 +3690,7 @@ export type Database = {
           lead_id?: string | null
           market_value?: number | null
           name: string
+          neighborhood?: string | null
           number_of_towers?: number | null
           postal_code?: string | null
           registration_number?: string | null
@@ -3728,6 +3730,7 @@ export type Database = {
           lead_id?: string | null
           market_value?: number | null
           name?: string
+          neighborhood?: string | null
           number_of_towers?: number | null
           postal_code?: string | null
           registration_number?: string | null
