@@ -718,7 +718,7 @@ const Settings = () => {
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                 placeholder="Digite a senha novamente"
-                minLength={6}
+                minLength={8}
                 autoComplete="new-password"
                 className="pr-10"
               />
