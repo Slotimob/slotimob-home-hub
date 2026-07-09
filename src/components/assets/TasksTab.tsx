@@ -438,9 +438,11 @@ Abraço! 🤝`;
 // Sub-component: Receivable Item
 function ReceivableItem({
   item,
+  canEdit,
   onWhatsAppClick,
 }: {
   item: PendingReceivable;
+  canEdit: boolean;
   onWhatsAppClick: () => void;
 }) {
   return (
@@ -473,15 +475,17 @@ function ReceivableItem({
           </Badge>
         </div>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        className="shrink-0 h-8 w-8 p-0"
-        onClick={onWhatsAppClick}
-        title="Cobrar via WhatsApp"
-      >
-        <MessageCircle className="h-4 w-4 text-emerald-600" />
-      </Button>
+      {canEdit && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 h-8 w-8 p-0"
+          onClick={onWhatsAppClick}
+          title="Cobrar via WhatsApp"
+        >
+          <MessageCircle className="h-4 w-4 text-emerald-600" />
+        </Button>
+      )}
     </div>
   );
 }
