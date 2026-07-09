@@ -60,7 +60,7 @@ const ResetPassword = () => {
     e.preventDefault();
 
     try {
-      passwordSchema.parse({ password, confirmPassword });
+      formSchema.parse({ password, confirmPassword });
       setLoading(true);
 
       const { error } = await supabase.auth.updateUser({
