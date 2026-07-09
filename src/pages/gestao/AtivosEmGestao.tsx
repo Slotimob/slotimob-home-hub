@@ -220,6 +220,14 @@ const AtivosEmGestao = () => {
   };
 
   const handleLinkClick = (asset: AssetHealthType, obligation: ObligationHealth) => {
+    if (!canCreate) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para vincular lançamentos. Fale com o administrador.",
+        variant: "destructive",
+      });
+      return;
+    }
     setLinkUnitId(asset.unitId);
     setLinkUnitName(asset.unitNumber);
     setLinkObligation(obligation);
