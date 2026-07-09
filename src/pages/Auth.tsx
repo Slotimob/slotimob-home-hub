@@ -47,13 +47,13 @@ const OAuthLoadingOverlay = () => (
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
-  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' })
+  password: z.string().min(1, { message: 'Informe sua senha' })
 });
 
 // Unified signup schema (single step)
 const signupSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
-  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' }),
+  password: passwordSchema,
   confirmPassword: z.string().min(1, { message: 'Confirme sua senha' }),
   fullName: z.string().min(2, { message: 'Nome deve ter no mínimo 2 caracteres' }),
   phone: z.string().optional(),
