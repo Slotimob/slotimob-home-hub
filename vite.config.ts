@@ -59,6 +59,22 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkOnly",
           },
           {
+            // Authorization-critical RPCs: never cache. Serving a stale plan/role
+            // response can lock a paying user out of gated features (e.g. Chat IA
+            // after upgrading from free/trial to business).
+            urlPattern: ({ url }) => {
+              return (
+                url.hostname.endsWith('.supabase.co') &&
+                (url.pathname.includes('/rest/v1/rpc/get_user_plan_features') ||
+                 url.pathname.includes('/rest/v1/rpc/get_user_trial_status') ||
+                 url.pathname.includes('/rest/v1/rpc/has_role') ||
+                 url.pathname.includes('/rest/v1/rpc/get_effective_broker_id') ||
+                 url.pathname.includes('/rest/v1/rpc/is_super_admin'))
+              );
+            },
+            handler: "NetworkOnly",
+          },
+          {
             // Supabase data requests (exclude auth)
             urlPattern: ({ url }) => {
               return (
