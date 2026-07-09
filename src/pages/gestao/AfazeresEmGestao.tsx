@@ -208,22 +208,24 @@ const AfazeresEmGestao = () => {
                         )}
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        updateProposalStatus.mutate(
-                          { id: p.id, status: 'sent' },
-                          {
-                            onSuccess: () => toast.success('Proposta marcada como enviada'),
-                          }
-                        )
-                      }
-                      disabled={updateProposalStatus.isPending}
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1.5" />
-                      Marcar enviada
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          updateProposalStatus.mutate(
+                            { id: p.id, status: 'sent' },
+                            {
+                              onSuccess: () => toast.success('Proposta marcada como enviada'),
+                            }
+                          )
+                        }
+                        disabled={updateProposalStatus.isPending}
+                      >
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        Marcar enviada
+                      </Button>
+                    )}
                   </div>
                 ))}
               </CardContent>
