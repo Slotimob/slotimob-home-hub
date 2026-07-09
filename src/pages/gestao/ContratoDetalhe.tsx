@@ -102,6 +102,9 @@ export default function ContratoDetalhe() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateLease = useUpdateLease();
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission("management_contracts", "edit");
+  const canDelete = hasPermission("management_contracts", "delete");
 
   const [activeTab, setActiveTab] = useState("journey");
   const [showTenantStatement, setShowTenantStatement] = useState(false);
