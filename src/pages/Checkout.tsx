@@ -806,7 +806,7 @@ export default function Checkout() {
                         {showCheckoutPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                       </button>
                     </div>
-                    <p className="text-xs text-muted-foreground">a senha precisa ter no mínimo 6 caracteres.</p>
+                    <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>
                     <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                   </div>
 
