@@ -493,10 +493,12 @@ function ReceivableItem({
 // Sub-component: Payable Item
 function PayableItem({
   item,
+  canEdit,
   isMarking,
   onMarkPaid,
 }: {
   item: PendingPayable;
+  canEdit: boolean;
   isMarking: boolean;
   onMarkPaid: () => void;
 }) {
@@ -530,20 +532,22 @@ function PayableItem({
           </Badge>
         </div>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        className="shrink-0 h-8 gap-1"
-        onClick={onMarkPaid}
-        disabled={isMarking}
-      >
-        {isMarking ? (
-          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Check className="h-3.5 w-3.5 text-emerald-600" />
-        )}
-        <span className="text-xs">Pago</span>
-      </Button>
+      {canEdit && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 h-8 gap-1"
+          onClick={onMarkPaid}
+          disabled={isMarking}
+        >
+          {isMarking ? (
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5 text-emerald-600" />
+          )}
+          <span className="text-xs">Pago</span>
+        </Button>
+      )}
     </div>
   );
 }
