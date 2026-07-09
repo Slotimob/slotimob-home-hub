@@ -675,6 +675,9 @@ export default function ContratoDetalhe() {
             dueDay={lease.due_day ?? null}
             billingAutomation={(lease.billing_automation as Record<string, any>) || null}
           />
+          {/* Contract-level billing config — read-only when user lacks management_contracts:edit.
+              Uses <fieldset disabled> to natively disable every descendant Switch/Input/Button. */}
+          <fieldset disabled={!canEdit} className="contents">
 
           {/* Card 1: Automação de Cobrança (Lembretes por e-mail/WhatsApp) */}
           <Card>
