@@ -289,6 +289,7 @@ export function PropertyForm({
     name: formData.name.trim(),
     description: formData.description.trim() || null,
     address: formData.address.trim() || null,
+    neighborhood: formData.neighborhood.trim() || null,
     city: formData.city.trim() || null,
     state: formData.state.trim().toUpperCase() || null,
     postal_code: formData.postal_code.trim() || null,
