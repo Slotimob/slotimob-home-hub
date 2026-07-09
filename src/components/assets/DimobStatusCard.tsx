@@ -344,7 +344,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
                     </p>
                   </div>
                 </div>
-                {validation.status === 'pending' && validation.resolveType && (
+                {canEdit && validation.status === 'pending' && validation.resolveType && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
