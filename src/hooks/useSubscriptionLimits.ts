@@ -94,7 +94,7 @@ const featureDescriptions: Record<string, { name: string; upgradeMessage: string
 
 export const useSubscriptionLimits = (): SubscriptionLimits => {
   const { user } = useAuth();
-  const { effectiveBrokerId, isLoading: isWorkspaceLoading } = useWorkspace();
+  const { effectiveBrokerId, isMember, isLoading: isWorkspaceLoading } = useWorkspace();
 
   // Use effectiveBrokerId so members inherit the owner's plan features
   const resolvedUserId = user?.id && !isWorkspaceLoading ? (effectiveBrokerId || user.id) : null;
