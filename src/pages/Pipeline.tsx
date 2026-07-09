@@ -81,6 +81,7 @@ const Pipeline = () => {
   const { effectiveBrokerId } = useWorkspace();
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
+  const canCreatePipeline = isOwner || hasPermission('crm_pipeline', 'create');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
