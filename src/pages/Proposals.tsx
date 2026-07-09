@@ -49,13 +49,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   FileText, Plus, Calculator, User, Building2, Clock, Pencil, Send, Trash2,
-  Eye, Copy, Search, Loader2, Download, CheckCircle2, MoreHorizontal,
+  Eye, Copy, Search, Loader2, Download, CheckCircle2, MoreHorizontal, AlertCircle,
 } from 'lucide-react';
 
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { usePermissions } from '@/hooks/usePermissions';
 
 
 const formatBRL = (v: number | null | undefined) =>
@@ -113,6 +114,11 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function Proposals() {
   const { proposals, isLoading, updateProposalStatus, deleteProposal } = useProposals();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_proposals", "view");
+  const canCreate = hasPermission("management_proposals", "create");
+  const canEdit = hasPermission("management_proposals", "edit");
+  const canDelete = hasPermission("management_proposals", "delete");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [duplicatingProposal, setDuplicatingProposal] = useState<Proposal | null>(null);
@@ -249,11 +255,21 @@ export default function Proposals() {
                     Gere e gerencie propostas premium para seus clientes.
                   </p>
                 </div>
-                <Button onClick={() => { setEditingProposal(null); setDuplicatingProposal(null); setSheetOpen(true); }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Proposta
-                </Button>
+                {canCreate && (
+                  <Button onClick={() => { setEditingProposal(null); setDuplicatingProposal(null); setSheetOpen(true); }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nova Proposta
+                  </Button>
+                )}
               </div>
+
+              {!canView ? (
+                <div className="text-center py-16 border rounded-lg">
+                  <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+                  <p className="text-sm font-medium">Você não tem permissão para visualizar propostas.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+                </div>
+              ) : (<>
 
               {/* Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -305,10 +321,12 @@ export default function Proposals() {
                       <p className="text-sm text-muted-foreground mt-1 mb-4">
                         Crie sua primeira proposta comercial premium.
                       </p>
-                      <Button onClick={() => setSheetOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Criar Proposta
-                      </Button>
+                      {canCreate && (
+                        <Button onClick={() => setSheetOpen(true)}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Criar Proposta
+                        </Button>
+                      )}
                     </div>
                   ) : filtered.length === 0 ? (
                     <div className="text-center py-12 text-sm text-muted-foreground">
@@ -353,6 +371,8 @@ export default function Proposals() {
                               onDownloadPdf={handleDownloadPdf}
                               pdfDownloading={pdfDownloading}
                               onToggleStatus={handleToggleStatus}
+                              canEdit={canEdit}
+                              canDelete={canDelete}
                             />
 
                           </div>
@@ -434,6 +454,8 @@ export default function Proposals() {
                                     onDownloadPdf={handleDownloadPdf}
                                     pdfDownloading={pdfDownloading}
                                     onToggleStatus={handleToggleStatus}
+                                    canEdit={canEdit}
+                                    canDelete={canDelete}
                                   />
 
                                 </TableCell>
@@ -446,6 +468,7 @@ export default function Proposals() {
                   )}
                 </CardContent>
               </Card>
+              </>)}
             </div>
           </main>
           <BottomNavigation />
@@ -527,6 +550,8 @@ function RowActions({
   onDownloadPdf,
   pdfDownloading,
   onToggleStatus,
+  canEdit,
+  canDelete,
 }: {
   proposal: Proposal;
   onEdit: (p: Proposal) => void;
@@ -535,6 +560,8 @@ function RowActions({
   onDownloadPdf: (p: Proposal) => void;
   pdfDownloading: string | null;
   onToggleStatus: (p: Proposal) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }) {
   const hasPdf = !!proposal.pdf_url;
   const isDownloading = pdfDownloading === proposal.id;
@@ -557,16 +584,20 @@ function RowActions({
               Ver proposta
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem onClick={() => onEdit(proposal)}>
-            <Pencil className="h-4 w-4 mr-2" />
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onDuplicate(proposal)}>
-            <Copy className="h-4 w-4 mr-2" />
-            Duplicar
-          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem onClick={() => onEdit(proposal)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+          )}
+          {canEdit && (
+            <DropdownMenuItem onClick={() => onDuplicate(proposal)}>
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicar
+            </DropdownMenuItem>
+          )}
 
-          {canMarkSent && (
+          {canEdit && canMarkSent && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onToggleStatus(proposal)}>
@@ -576,7 +607,7 @@ function RowActions({
             </>
           )}
 
-          {proposal.status === 'sent' && (
+          {canEdit && proposal.status === 'sent' && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onToggleStatus(proposal)}>
@@ -586,14 +617,18 @@ function RowActions({
             </>
           )}
 
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => onDelete(proposal.id)}
-            className="text-destructive focus:text-destructive"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Excluir
-          </DropdownMenuItem>
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(proposal.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
