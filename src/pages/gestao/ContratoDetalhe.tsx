@@ -510,10 +510,10 @@ export default function ContratoDetalhe() {
               unit: unit,
               tenant: tenant,
             }}
-            onEditContract={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}
+            onEditContract={canEdit ? () => navigate(`/gestao/contratos/novo?edit=${lease.id}`) : undefined}
             onConfigureObligations={() => setShowObligationsDialog(true)}
             onDownloadPdf={() => setShowContractDialog(true)}
-            onTerminate={() => setTerminateDialogOpen(true)}
+            onTerminate={canEdit ? () => setTerminateDialogOpen(true) : undefined}
           />
         </TabsContent>
 
