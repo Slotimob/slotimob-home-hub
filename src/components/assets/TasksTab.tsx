@@ -34,12 +34,15 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export function TasksTab() {
   const navigate = useNavigate();
   const { receivables, payables, contracts, proposalFollowups, totalCount, isLoading } = useActionCenterPending();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission("management_tasks", "edit");
 
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const [selectedLease, setSelectedLease] = useState<PendingContract | null>(null);
@@ -279,6 +282,7 @@ Abraço! 🤝`;
                 <ReceivableItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   onWhatsAppClick={() => handleWhatsAppCollection(item)}
                 />
               ))
@@ -310,6 +314,7 @@ Abraço! 🤝`;
                 <ContractItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   onAdjustClick={() => handleOpenAdjustment(item)}
                 />
               ))
@@ -341,6 +346,7 @@ Abraço! 🤝`;
                 <ContractItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   onAdjustClick={() => handleOpenAdjustment(item)}
                 />
               ))
@@ -366,6 +372,7 @@ Abraço! 🤝`;
                 <ProposalFollowupItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   isMarking={markingFollowupId === item.id}
                   onFollowup={() => handleProposalFollowup(item)}
                   onMarkDone={() => handleMarkFollowupDone(item)}
@@ -393,6 +400,7 @@ Abraço! 🤝`;
                 <PayableItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   isMarking={markingPaidId === item.id}
                   onMarkPaid={() => handleMarkAsPaid(item)}
                 />
@@ -430,9 +438,11 @@ Abraço! 🤝`;
 // Sub-component: Receivable Item
 function ReceivableItem({
   item,
+  canEdit,
   onWhatsAppClick,
 }: {
   item: PendingReceivable;
+  canEdit: boolean;
   onWhatsAppClick: () => void;
 }) {
   return (
@@ -465,15 +475,17 @@ function ReceivableItem({
           </Badge>
         </div>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        className="shrink-0 h-8 w-8 p-0"
-        onClick={onWhatsAppClick}
-        title="Cobrar via WhatsApp"
-      >
-        <MessageCircle className="h-4 w-4 text-emerald-600" />
-      </Button>
+      {canEdit && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 h-8 w-8 p-0"
+          onClick={onWhatsAppClick}
+          title="Cobrar via WhatsApp"
+        >
+          <MessageCircle className="h-4 w-4 text-emerald-600" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -481,10 +493,12 @@ function ReceivableItem({
 // Sub-component: Payable Item
 function PayableItem({
   item,
+  canEdit,
   isMarking,
   onMarkPaid,
 }: {
   item: PendingPayable;
+  canEdit: boolean;
   isMarking: boolean;
   onMarkPaid: () => void;
 }) {
@@ -518,20 +532,22 @@ function PayableItem({
           </Badge>
         </div>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        className="shrink-0 h-8 gap-1"
-        onClick={onMarkPaid}
-        disabled={isMarking}
-      >
-        {isMarking ? (
-          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Check className="h-3.5 w-3.5 text-emerald-600" />
-        )}
-        <span className="text-xs">Pago</span>
-      </Button>
+      {canEdit && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 h-8 gap-1"
+          onClick={onMarkPaid}
+          disabled={isMarking}
+        >
+          {isMarking ? (
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5 text-emerald-600" />
+          )}
+          <span className="text-xs">Pago</span>
+        </Button>
+      )}
     </div>
   );
 }
@@ -539,9 +555,11 @@ function PayableItem({
 // Sub-component: Contract Item
 function ContractItem({
   item,
+  canEdit,
   onAdjustClick,
 }: {
   item: PendingContract;
+  canEdit: boolean;
   onAdjustClick: () => void;
 }) {
   const isSignature = item.issue_type === "pending_signature";
@@ -579,7 +597,7 @@ function ContractItem({
           </Badge>
         </div>
       </div>
-      {!isSignature && (
+      {!isSignature && canEdit && (
         <Button
           variant="outline"
           size="sm"
@@ -597,11 +615,13 @@ function ContractItem({
 // Sub-component: Proposal Follow-up Item
 function ProposalFollowupItem({
   item,
+  canEdit,
   isMarking,
   onFollowup,
   onMarkDone,
 }: {
   item: PendingProposalFollowup;
+  canEdit: boolean;
   isMarking: boolean;
   onFollowup: () => void;
   onMarkDone: () => void;
@@ -625,32 +645,34 @@ function ProposalFollowupItem({
           </Badge>
         </div>
       </div>
-      <div className="flex items-center gap-1 shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1"
-          onClick={onFollowup}
-          title="Fazer follow-up via WhatsApp"
-        >
-          <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
-          <span className="text-xs hidden sm:inline">Follow-up</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={onMarkDone}
-          disabled={isMarking}
-          title="Marcar como concluído"
-        >
-          {isMarking ? (
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Check className="h-3.5 w-3.5 text-emerald-600" />
-          )}
-        </Button>
-      </div>
+      {canEdit && (
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={onFollowup}
+            title="Fazer follow-up via WhatsApp"
+          >
+            <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+            <span className="text-xs hidden sm:inline">Follow-up</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={onMarkDone}
+            disabled={isMarking}
+            title="Marcar como concluído"
+          >
+            {isMarking ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

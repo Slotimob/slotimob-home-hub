@@ -11,10 +11,11 @@ import { useLeases, generateBillingMessage, type Lease } from "@/hooks/useLeases
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquareWarning, Send, CalendarClock, PenLine, AlertTriangle } from "lucide-react";
+import { FileText, MessageSquareWarning, Send, CalendarClock, PenLine, AlertTriangle, AlertCircle } from "lucide-react";
 import { addDays, addMonths, format, startOfDay, isAfter, isBefore, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type BillingFollowup = {
   id: string;
@@ -71,6 +72,9 @@ const AfazeresEmGestao = () => {
   const navigate = useNavigate();
   const { proposals, updateProposalStatus } = useProposals();
   const { data: leases = [] } = useLeases();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_tasks", "view");
+  const canEdit = hasPermission("management_tasks", "edit");
 
   const draftProposals = proposals.filter(
     (p) => p.status === "draft" || !p.status
@@ -161,6 +165,13 @@ const AfazeresEmGestao = () => {
             </p>
           </div>
 
+          {!canView ? (
+            <div className="text-center py-16 border rounded-lg">
+              <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+              <p className="text-sm font-medium">Você não tem permissão para visualizar afazeres.</p>
+              <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+            </div>
+          ) : (<>
           {/* Draft Proposals */}
           {draftProposals.length > 0 && (
             <Card>
@@ -197,22 +208,24 @@ const AfazeresEmGestao = () => {
                         )}
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        updateProposalStatus.mutate(
-                          { id: p.id, status: 'sent' },
-                          {
-                            onSuccess: () => toast.success('Proposta marcada como enviada'),
-                          }
-                        )
-                      }
-                      disabled={updateProposalStatus.isPending}
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1.5" />
-                      Marcar enviada
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          updateProposalStatus.mutate(
+                            { id: p.id, status: 'sent' },
+                            {
+                              onSuccess: () => toast.success('Proposta marcada como enviada'),
+                            }
+                          )
+                        }
+                        disabled={updateProposalStatus.isPending}
+                      >
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        Marcar enviada
+                      </Button>
+                    )}
                   </div>
                 ))}
               </CardContent>
@@ -254,18 +267,20 @@ const AfazeresEmGestao = () => {
                         {format(item.dueDate, "dd/MM/yyyy", { locale: ptBR })}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        navigate(
-                          `/whatsapp?phone=${formatPhoneForWhatsApp(item.phone)}&text=${encodeURIComponent(item.message)}`
-                        )
-                      }
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1.5" />
-                      Cobrar
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          navigate(
+                            `/whatsapp?phone=${formatPhoneForWhatsApp(item.phone)}&text=${encodeURIComponent(item.message)}`
+                          )
+                        }
+                      >
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        Cobrar
+                      </Button>
+                    )}
                   </div>
                 ))}
               </CardContent>
@@ -369,9 +384,11 @@ const AfazeresEmGestao = () => {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
-                      Anexar Assinatura
-                    </Button>
+                    {canEdit && (
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                        Anexar Assinatura
+                      </Button>
+                    )}
                   </div>
                 ))}
               </CardContent>
@@ -379,6 +396,7 @@ const AfazeresEmGestao = () => {
           )}
 
           <TasksTab />
+          </>)}
         </div>
       </AppLayout>
     </>
