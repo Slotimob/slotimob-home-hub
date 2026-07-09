@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
 
     if (membership) {
       const perms = membership.permissions as Record<string, Record<string, boolean>> | null;
-      if (perms?.chat?.use !== true) {
+      if (perms?.chat?.view !== true) {
         return new Response(
           JSON.stringify({ error: "Você não tem permissão para usar o Chat IA. Solicite ao administrador." }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
