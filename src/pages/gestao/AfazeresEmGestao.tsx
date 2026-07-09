@@ -267,18 +267,20 @@ const AfazeresEmGestao = () => {
                         {format(item.dueDate, "dd/MM/yyyy", { locale: ptBR })}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        navigate(
-                          `/whatsapp?phone=${formatPhoneForWhatsApp(item.phone)}&text=${encodeURIComponent(item.message)}`
-                        )
-                      }
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1.5" />
-                      Cobrar
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          navigate(
+                            `/whatsapp?phone=${formatPhoneForWhatsApp(item.phone)}&text=${encodeURIComponent(item.message)}`
+                          )
+                        }
+                      >
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        Cobrar
+                      </Button>
+                    )}
                   </div>
                 ))}
               </CardContent>
