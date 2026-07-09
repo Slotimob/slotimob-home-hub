@@ -573,7 +573,7 @@ export default function Schedule() {
               <h2 className="text-base sm:text-lg font-semibold ml-1 capitalize">{periodLabel}</h2>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
+              {!isMember && <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />}
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'calendar' | 'day' | 'week')}>
                 <TabsList>
                   <TabsTrigger value="day">Dia</TabsTrigger>
