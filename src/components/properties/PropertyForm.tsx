@@ -35,6 +35,7 @@ export const propertySchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome deve ter no máximo 100 caracteres'),
   description: z.string().trim().max(500, 'Descrição deve ter no máximo 500 caracteres').optional().nullable(),
   address: z.string().trim().max(200, 'Endereço deve ter no máximo 200 caracteres').optional().nullable(),
+  neighborhood: z.string().trim().max(100, 'Bairro deve ter no máximo 100 caracteres').optional().nullable(),
   city: z.string().trim().max(100, 'Cidade deve ter no máximo 100 caracteres').optional().nullable(),
   state: z.string().trim().max(2, 'Estado deve ter no máximo 2 caracteres').optional().nullable(),
   postal_code: z.string().trim().max(9, 'CEP deve ter no máximo 9 caracteres').optional().nullable(),
