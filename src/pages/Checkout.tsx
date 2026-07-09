@@ -278,6 +278,11 @@ export default function Checkout() {
         setAuthError('Preencha todos os campos');
         return;
       }
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        setAuthError(passwordError);
+        return;
+      }
       if (!captchaToken) {
         setAuthError('Confirme que você não é um robô.');
         setIsCheckingOut(false);
