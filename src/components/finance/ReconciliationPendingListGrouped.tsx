@@ -371,18 +371,20 @@ export function ReconciliationPendingListGrouped({
         {transaction.type === "income" ? "+" : "-"}
         {formatCurrency(transaction.amount)}
       </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-5 w-5 flex-shrink-0 text-muted-foreground hover:text-destructive"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDeleteClick(transaction);
-        }}
-        title="Excluir"
-      >
-        <Trash2 className="h-3 w-3" />
-      </Button>
+      {canDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 flex-shrink-0 text-muted-foreground hover:text-destructive"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteClick(transaction);
+          }}
+          title="Excluir"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 
