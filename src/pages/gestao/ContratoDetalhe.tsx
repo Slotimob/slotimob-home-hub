@@ -546,10 +546,12 @@ export default function ContratoDetalhe() {
                     <p className="text-muted-foreground text-xs">Início do Contrato</p>
                     <p className="font-semibold text-sm">{format(new Date(lease.start_date), "dd/MM/yyyy")}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowEditStartDateDialog(true)}>
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
+                  {canEdit && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowEditStartDateDialog(true)}>
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Editar
+                    </Button>
+                  )}
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">Aluguel</p>
