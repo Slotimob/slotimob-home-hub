@@ -61,6 +61,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useObligationCategoryMapping } from "@/hooks/useObligationCategoryMapping";
 import {
   useAssetHealth,
