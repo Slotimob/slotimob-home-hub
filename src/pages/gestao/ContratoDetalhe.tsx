@@ -660,8 +660,9 @@ export default function ContratoDetalhe() {
         <TabsContent value="fiscal" className="space-y-4 mt-4">
           <DimobStatusCard
             unitId={lease.unit_id}
-            onEditUnit={() => navigate(`/units?edit=${lease.unit_id}`)}
+            onEditUnit={canEdit ? () => navigate(`/units?edit=${lease.unit_id}`) : undefined}
             onCreateLease={() => {}}
+            canEdit={canEdit}
           />
         </TabsContent>
 
