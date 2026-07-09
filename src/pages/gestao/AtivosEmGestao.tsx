@@ -248,6 +248,19 @@ const AtivosEmGestao = () => {
 
   if (!user) return null;
 
+  if (!canView) {
+    return (
+      <AppLayout title="Aluguéis">
+        <div className="text-center py-16 border rounded-lg">
+          <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+          <p className="text-sm font-medium">Você não tem permissão para visualizar aluguéis.</p>
+          <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+
   return (
     <>
       <SEOHead
