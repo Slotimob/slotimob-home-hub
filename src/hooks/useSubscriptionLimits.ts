@@ -116,7 +116,9 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
       return data as unknown as { plan: string; is_early_adopter: boolean; features: PlanFeatures };
     },
     enabled: !!resolvedUserId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Fetch add-on counts from subscriptions (use effective broker for members)
