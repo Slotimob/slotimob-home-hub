@@ -232,5 +232,23 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
 
   const isLoading = isWorkspaceLoading || isPlanLoading || isTrialLoading || isAddonLoading;
 
+  // [TEMP DEBUG — AI Chat gating investigation] remove after diagnosis
+  if (typeof window !== 'undefined' && !isLoading) {
+    // eslint-disable-next-line no-console
+    console.log('[DEBUG useSubscriptionLimits]', {
+      userId: user?.id,
+      resolvedUserId,
+      effectiveBrokerId,
+      isMember,
+      isWorkspaceLoading,
+      rawPlan,
+      plan,
+      isTrialActive,
+      effectiveTrialing,
+      ai_chat: features?.ai_chat,
+      featuresIsDefault: features === defaultFeatures,
+    });
+  }
+
   return { plan, isEarlyAdopter, isTrialActive: !!effectiveTrialing, features, isLoading, canUse, checkLimit, getUpgradeReason };
 };
