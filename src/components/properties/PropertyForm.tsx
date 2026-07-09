@@ -131,6 +131,7 @@ const DEFAULT_FORM_DATA: PropertyFormData = {
   name: '',
   description: '',
   address: '',
+  neighborhood: '',
   city: '',
   state: '',
   postal_code: '',
