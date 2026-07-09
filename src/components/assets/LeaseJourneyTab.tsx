@@ -653,28 +653,30 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-8 text-xs"
-                  onClick={() => setShowEditAdjustmentDate(true)}
-                >
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Alterar Data
-                </Button>
-                <Button
-                  size="sm"
-                  className={cn(
-                    "flex-1 h-8 text-xs",
-                    isOverdue && "bg-red-500 hover:bg-red-600 text-white"
-                  )}
-                  onClick={() => setShowAdjustmentCalculator(true)}
-                >
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  {isOverdue ? "Aplicar Reajuste (Vencido!)" : "Aplicar Reajuste"}
-                </Button>
-              </div>
+              {canEdit && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
+                    onClick={() => setShowEditAdjustmentDate(true)}
+                  >
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Alterar Data
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={cn(
+                      "flex-1 h-8 text-xs",
+                      isOverdue && "bg-red-500 hover:bg-red-600 text-white"
+                    )}
+                    onClick={() => setShowAdjustmentCalculator(true)}
+                  >
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    {isOverdue ? "Aplicar Reajuste (Vencido!)" : "Aplicar Reajuste"}
+                  </Button>
+                </div>
+              )}
             </div>
           );
         })()}
