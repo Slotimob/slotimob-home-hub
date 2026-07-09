@@ -89,6 +89,10 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
      tenant?: { name: string } | null;
     initial_rent?: number;
    } | null;
+  /** When false, all write actions (edit dates, upload/delete files, apply
+   *  adjustment, configure obligations) are hidden and the tab becomes
+   *  view-only. Defaults to true to preserve existing consumers. */
+  canEdit?: boolean;
  }
  
  type StepStatus = "completed" | "pending" | "disabled";
@@ -116,6 +120,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
   onDownloadPdf,
   onTerminate,
  fullLeaseData,
+ canEdit = true,
  }: LeaseJourneyTabProps) {
    const { user } = useAuth();
    const queryClient = useQueryClient();
