@@ -513,7 +513,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                <Calendar className="h-4 w-4 text-primary" />
                <span className="text-sm font-medium">Início do Contrato</span>
              </div>
-             {!editingStartDate ? (
+             {canEdit && (!editingStartDate ? (
                <Button
                  variant="ghost"
                  size="sm"
@@ -563,7 +563,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                    {savingStartDate ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
                  </Button>
                </div>
-             )}
+             ))}
            </div>
            {editingStartDate ? (
              <Input
