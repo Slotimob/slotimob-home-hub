@@ -26,6 +26,7 @@ import { CreateTransactionDialog, TransactionPrefill } from "./CreateTransaction
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 
 interface Entry {
@@ -79,6 +80,8 @@ export function ReconciliationPendingListGrouped({
 }: ReconciliationPendingListGroupedProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isOwner, hasPermission } = usePermissions();
+  const canDelete = isOwner || hasPermission("finance_reconciliation", "delete");
   const isMobile = useIsMobile();
   const [mobileStep, setMobileStep] = useState<"entry" | "transaction">("entry");
   const [searchTerm, setSearchTerm] = useState("");
@@ -368,18 +371,20 @@ export function ReconciliationPendingListGrouped({
         {transaction.type === "income" ? "+" : "-"}
         {formatCurrency(transaction.amount)}
       </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-5 w-5 flex-shrink-0 text-muted-foreground hover:text-destructive"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDeleteClick(transaction);
-        }}
-        title="Excluir"
-      >
-        <Trash2 className="h-3 w-3" />
-      </Button>
+      {canDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 flex-shrink-0 text-muted-foreground hover:text-destructive"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteClick(transaction);
+          }}
+          title="Excluir"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 
