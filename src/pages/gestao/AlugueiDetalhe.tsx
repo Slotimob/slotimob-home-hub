@@ -808,14 +808,16 @@ const AlugueiDetalhe = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditDialogOpen(true)}
-                >
-                  <Pencil className="h-4 w-4 mr-1.5" />
-                  Editar Imóvel
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditDialogOpen(true)}
+                  >
+                    <Pencil className="h-4 w-4 mr-1.5" />
+                    Editar Imóvel
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -834,14 +836,16 @@ const AlugueiDetalhe = () => {
                   <Receipt className="h-4 w-4 mr-1.5" />
                   Lançamentos
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setLeaseWizardOpen(true)}
-                >
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  Nova Locação
-                </Button>
+                {canCreate && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLeaseWizardOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Nova Locação
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
