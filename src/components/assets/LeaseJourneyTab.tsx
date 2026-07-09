@@ -752,20 +752,22 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                  <div className="flex flex-wrap gap-2">
                    {step.uploadKey && (
                      <>
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         className="h-7 text-xs"
-                         onClick={() => handleUpload(step.uploadKey!)}
-                        disabled={uploadingStep === step.uploadKey || deletingFile === step.uploadKey}
-                       >
-                         {uploadingStep === step.uploadKey ? (
-                           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                         ) : (
-                           <Upload className="h-3 w-3 mr-1" />
-                         )}
-                        {step.filePath ? "Substituir" : "Upload"}
-                       </Button>
+                       {canEdit && (
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           className="h-7 text-xs"
+                           onClick={() => handleUpload(step.uploadKey!)}
+                          disabled={uploadingStep === step.uploadKey || deletingFile === step.uploadKey}
+                         >
+                           {uploadingStep === step.uploadKey ? (
+                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                           ) : (
+                             <Upload className="h-3 w-3 mr-1" />
+                           )}
+                          {step.filePath ? "Substituir" : "Upload"}
+                         </Button>
+                       )}
                        {step.filePath && (
                         <>
                           <Button
@@ -777,7 +779,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                             <DownloadIcon className="h-3 w-3 mr-1" />
                             Baixar
                           </Button>
-                          {step.canDelete && (
+                          {canEdit && step.canDelete && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -797,7 +799,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                        )}
                      </>
                    )}
-                   {step.action && (
+                   {canEdit && step.action && (
                      <Button
                        variant="outline"
                        size="sm"
