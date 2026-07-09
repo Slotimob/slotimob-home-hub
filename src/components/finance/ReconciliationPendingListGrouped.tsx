@@ -80,6 +80,8 @@ export function ReconciliationPendingListGrouped({
 }: ReconciliationPendingListGroupedProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isOwner, hasPermission } = usePermissions();
+  const canDelete = isOwner || hasPermission("finance_reconciliation", "delete");
   const isMobile = useIsMobile();
   const [mobileStep, setMobileStep] = useState<"entry" | "transaction">("entry");
   const [searchTerm, setSearchTerm] = useState("");
