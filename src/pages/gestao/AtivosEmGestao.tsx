@@ -72,6 +72,10 @@ const AtivosEmGestao = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_rentals", "view");
+  const canCreate = hasPermission("management_rentals", "create");
+  const canEdit = hasPermission("management_rentals", "edit");
 
   const { consumeConversionContext, clearContext } = useLeaseConversionContext();
   const [crmConversionData, setCrmConversionData] = useState<LeaseConversionContext | null>(null);
