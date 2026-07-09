@@ -255,11 +255,21 @@ export default function Proposals() {
                     Gere e gerencie propostas premium para seus clientes.
                   </p>
                 </div>
-                <Button onClick={() => { setEditingProposal(null); setDuplicatingProposal(null); setSheetOpen(true); }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Proposta
-                </Button>
+                {canCreate && (
+                  <Button onClick={() => { setEditingProposal(null); setDuplicatingProposal(null); setSheetOpen(true); }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nova Proposta
+                  </Button>
+                )}
               </div>
+
+              {!canView ? (
+                <div className="text-center py-16 border rounded-lg">
+                  <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+                  <p className="text-sm font-medium">Você não tem permissão para visualizar propostas.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+                </div>
+              ) : (<>
 
               {/* Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
