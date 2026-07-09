@@ -647,7 +647,7 @@ export function PropertyForm({
             data={{
               postal_code: formData.postal_code,
               address: formData.address,
-              neighborhood: '', // PropertyForm doesn't use neighborhood separately
+              neighborhood: formData.neighborhood,
               city: formData.city,
               state: formData.state,
             }}
@@ -655,12 +655,11 @@ export function PropertyForm({
               ...formData,
               postal_code: addressData.postal_code,
               address: addressData.address,
+              neighborhood: addressData.neighborhood,
               city: addressData.city,
               state: addressData.state,
             })}
-            layout="compact"
-            showNeighborhood={false}
-            includeNeighborhoodInAddress={true}
+            layout="full"
           />
 
           <div className="space-y-2">
