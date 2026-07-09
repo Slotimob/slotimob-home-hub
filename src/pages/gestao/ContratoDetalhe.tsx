@@ -699,11 +699,13 @@ export default function ContratoDetalhe() {
                       {billingContactConfig.email || "sem email"} · {billingContactConfig.whatsapp || "sem WhatsApp"}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-xs h-7 px-2 shrink-0" asChild>
-                    <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
-                      Editar
-                    </a>
-                  </Button>
+                  {canEdit && (
+                    <Button variant="ghost" size="sm" className="text-xs h-7 px-2 shrink-0" asChild>
+                      <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
+                        Editar
+                      </a>
+                    </Button>
+                  )}
                 </div>
               )}
               {/* Email panel */}
