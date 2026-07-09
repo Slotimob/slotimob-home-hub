@@ -38,7 +38,7 @@ import { toast } from "sonner";
 
 export default function Schedule() {
   const { user } = useAuth();
-  const { effectiveBrokerId } = useWorkspace();
+  const { effectiveBrokerId, isMember } = useWorkspace();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -46,7 +46,7 @@ export default function Schedule() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'day' | 'week'>('day');
-  const [teamFilter, setTeamFilter] = useState<string>('all');
+  const [teamFilter, setTeamFilter] = useState<string>(isMember ? 'mine' : 'all');
   
   // Drag and drop state
   const [isDragging, setIsDragging] = useState(false);
@@ -573,7 +573,7 @@ export default function Schedule() {
               <h2 className="text-base sm:text-lg font-semibold ml-1 capitalize">{periodLabel}</h2>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />
+              {!isMember && <TeamFilter value={teamFilter} onValueChange={setTeamFilter} />}
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'calendar' | 'day' | 'week')}>
                 <TabsList>
                   <TabsTrigger value="day">Dia</TabsTrigger>
