@@ -828,9 +828,11 @@ export default function ContratoDetalhe() {
                           <p className="font-medium">{billingContactName}</p>
                           <p className="text-xs text-muted-foreground">{tenantWhatsApp}</p>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
-                          <a href="/crm/contatos">Editar contato</a>
-                        </Button>
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
+                            <a href="/crm/contatos">Editar contato</a>
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-start gap-2 text-amber-700">
