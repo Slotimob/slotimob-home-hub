@@ -364,8 +364,9 @@ const Settings = () => {
   };
 
   const requestPasswordChange = async () => {
-    if (newPassword.length < 6) {
-      toast({ title: 'Senha muito curta', description: 'A senha precisa ter no mínimo 6 caracteres.', variant: 'destructive' });
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast({ title: 'Senha fraca', description: passwordError, variant: 'destructive' });
       return;
     }
     if (newPassword !== confirmNewPassword) {
