@@ -390,6 +390,7 @@ const AfazeresEmGestao = () => {
           )}
 
           <TasksTab />
+          </>)}
         </div>
       </AppLayout>
     </>
