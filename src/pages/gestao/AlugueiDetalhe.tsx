@@ -176,6 +176,10 @@ const AlugueiDetalhe = () => {
   const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_rentals", "view");
+  const canCreate = hasPermission("management_rentals", "create");
+  const canEdit = hasPermission("management_rentals", "edit");
   const { findCategoryForObligation, getTransactionTypeForObligation } =
     useObligationCategoryMapping();
 
