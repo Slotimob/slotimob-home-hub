@@ -70,7 +70,6 @@ export const CustomTemplatesTab = () => {
       const { data, error } = await supabase
         .from('contract_templates')
         .select('*')
-        .eq('broker_id', user?.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
