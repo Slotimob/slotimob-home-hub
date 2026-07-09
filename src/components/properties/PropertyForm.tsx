@@ -65,6 +65,7 @@ export type PropertyFormData = {
   name: string;
   description: string;
   address: string;
+  neighborhood: string;
   city: string;
   state: string;
   postal_code: string;
