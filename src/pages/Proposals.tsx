@@ -550,6 +550,8 @@ function RowActions({
   onDownloadPdf,
   pdfDownloading,
   onToggleStatus,
+  canEdit,
+  canDelete,
 }: {
   proposal: Proposal;
   onEdit: (p: Proposal) => void;
@@ -558,6 +560,8 @@ function RowActions({
   onDownloadPdf: (p: Proposal) => void;
   pdfDownloading: string | null;
   onToggleStatus: (p: Proposal) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }) {
   const hasPdf = !!proposal.pdf_url;
   const isDownloading = pdfDownloading === proposal.id;
@@ -580,16 +584,20 @@ function RowActions({
               Ver proposta
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem onClick={() => onEdit(proposal)}>
-            <Pencil className="h-4 w-4 mr-2" />
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onDuplicate(proposal)}>
-            <Copy className="h-4 w-4 mr-2" />
-            Duplicar
-          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem onClick={() => onEdit(proposal)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+          )}
+          {canEdit && (
+            <DropdownMenuItem onClick={() => onDuplicate(proposal)}>
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicar
+            </DropdownMenuItem>
+          )}
 
-          {canMarkSent && (
+          {canEdit && canMarkSent && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onToggleStatus(proposal)}>
@@ -599,7 +607,7 @@ function RowActions({
             </>
           )}
 
-          {proposal.status === 'sent' && (
+          {canEdit && proposal.status === 'sent' && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onToggleStatus(proposal)}>
@@ -609,14 +617,18 @@ function RowActions({
             </>
           )}
 
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => onDelete(proposal.id)}
-            className="text-destructive focus:text-destructive"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Excluir
-          </DropdownMenuItem>
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(proposal.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
