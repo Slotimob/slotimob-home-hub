@@ -400,6 +400,7 @@ Abraço! 🤝`;
                 <PayableItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   isMarking={markingPaidId === item.id}
                   onMarkPaid={() => handleMarkAsPaid(item)}
                 />
