@@ -568,8 +568,8 @@ export const UnitFormFields = ({
           />
         </div>
 
-        {/* Address section - only show for standalone units */}
-        {isStandalone && (
+        {/* Address section - editable for standalone units, inherited from Property otherwise */}
+        {isStandalone ? (
           <AddressFields
             data={{
               postal_code: formData.postal_code,
@@ -583,6 +583,13 @@ export const UnitFormFields = ({
               ...addressData,
             })}
             layout="full"
+          />
+        ) : (
+          <InheritedAddressBlock
+            propertyId={formData.property_id}
+            properties={properties}
+            formData={formData}
+            setFormData={setFormData}
           />
         )}
       </div>
