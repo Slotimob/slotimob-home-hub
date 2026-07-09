@@ -991,16 +991,24 @@ const AlugueiDetalhe = () => {
             </div>
 
             {obligationsView === "config" && (
-              <ObligationsConfigForm
-                unitId={unitId}
-                unitName={asset.unitNumber}
-                onSaved={() => {
-                  queryClient.invalidateQueries({
-                    queryKey: ["unit-obligations-config", unitId],
-                  });
-                  queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-                }}
-              />
+              canEdit ? (
+                <ObligationsConfigForm
+                  unitId={unitId}
+                  unitName={asset.unitNumber}
+                  onSaved={() => {
+                    queryClient.invalidateQueries({
+                      queryKey: ["unit-obligations-config", unitId],
+                    });
+                    queryClient.invalidateQueries({ queryKey: ["asset-health"] });
+                  }}
+                />
+              ) : (
+                <div className="text-center py-10 border rounded-lg">
+                  <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-40" />
+                  <p className="text-sm font-medium">Você não tem permissão para configurar obrigações.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+                </div>
+              )
             )}
 
             {obligationsView === "status" && (
