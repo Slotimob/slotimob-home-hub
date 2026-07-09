@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { translateAuthError } from '@/lib/authErrors';
 import { z } from 'zod';
+import { passwordSchema, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { Separator } from '@/components/ui/separator';
 import { SEOHead } from '@/components/SEOHead';
