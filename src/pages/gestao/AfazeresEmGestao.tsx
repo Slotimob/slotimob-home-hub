@@ -11,10 +11,11 @@ import { useLeases, generateBillingMessage, type Lease } from "@/hooks/useLeases
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquareWarning, Send, CalendarClock, PenLine, AlertTriangle } from "lucide-react";
+import { FileText, MessageSquareWarning, Send, CalendarClock, PenLine, AlertTriangle, AlertCircle } from "lucide-react";
 import { addDays, addMonths, format, startOfDay, isAfter, isBefore, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type BillingFollowup = {
   id: string;
