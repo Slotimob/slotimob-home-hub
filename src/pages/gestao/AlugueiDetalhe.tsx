@@ -1096,7 +1096,7 @@ const AlugueiDetalhe = () => {
                                     </p>
                                   </div>
                                 ) : (
-                                  obligation.status !== "ignored" && (
+                                  obligation.status !== "ignored" && canCreate && (
                                     <div className="flex gap-2 mt-2">
                                       <Button
                                         variant="outline"
