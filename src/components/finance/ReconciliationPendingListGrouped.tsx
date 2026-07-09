@@ -26,6 +26,7 @@ import { CreateTransactionDialog, TransactionPrefill } from "./CreateTransaction
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 
 interface Entry {
