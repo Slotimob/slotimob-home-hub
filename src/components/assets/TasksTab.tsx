@@ -615,11 +615,13 @@ function ContractItem({
 // Sub-component: Proposal Follow-up Item
 function ProposalFollowupItem({
   item,
+  canEdit,
   isMarking,
   onFollowup,
   onMarkDone,
 }: {
   item: PendingProposalFollowup;
+  canEdit: boolean;
   isMarking: boolean;
   onFollowup: () => void;
   onMarkDone: () => void;
@@ -643,32 +645,34 @@ function ProposalFollowupItem({
           </Badge>
         </div>
       </div>
-      <div className="flex items-center gap-1 shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1"
-          onClick={onFollowup}
-          title="Fazer follow-up via WhatsApp"
-        >
-          <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
-          <span className="text-xs hidden sm:inline">Follow-up</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={onMarkDone}
-          disabled={isMarking}
-          title="Marcar como concluído"
-        >
-          {isMarking ? (
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Check className="h-3.5 w-3.5 text-emerald-600" />
-          )}
-        </Button>
-      </div>
+      {canEdit && (
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={onFollowup}
+            title="Fazer follow-up via WhatsApp"
+          >
+            <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+            <span className="text-xs hidden sm:inline">Follow-up</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={onMarkDone}
+            disabled={isMarking}
+            title="Marcar como concluído"
+          >
+            {isMarking ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
