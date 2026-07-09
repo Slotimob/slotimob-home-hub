@@ -55,6 +55,13 @@ const RESOLVE_CONFIG: Record<ResolveType, {
     fieldLabel: 'Número da Matrícula',
     fieldPlaceholder: 'Ex: 12345',
   },
+  address: {
+    title: 'Completar Endereço do Imóvel',
+    description: 'O endereço completo (logradouro, bairro, cidade e UF) é obrigatório para DIMOB. Edite o imóvel para preencher os campos.',
+    icon: Home,
+    fieldLabel: '',
+    fieldPlaceholder: '',
+  },
   owner_document: {
     title: 'Documento do Proprietário',
     description: 'Informe o CPF ou CNPJ do proprietário para fins fiscais.',
