@@ -321,10 +321,12 @@ export default function Proposals() {
                       <p className="text-sm text-muted-foreground mt-1 mb-4">
                         Crie sua primeira proposta comercial premium.
                       </p>
-                      <Button onClick={() => setSheetOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Criar Proposta
-                      </Button>
+                      {canCreate && (
+                        <Button onClick={() => setSheetOpen(true)}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Criar Proposta
+                        </Button>
+                      )}
                     </div>
                   ) : filtered.length === 0 ? (
                     <div className="text-center py-12 text-sm text-muted-foreground">
