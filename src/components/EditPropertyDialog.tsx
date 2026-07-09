@@ -35,6 +35,7 @@ interface Property {
   name: string;
   description: string | null;
   address: string | null;
+  neighborhood?: string | null;
   city: string | null;
   state: string | null;
   postal_code: string | null;
@@ -71,6 +72,7 @@ const propertyToFormData = (prop: Property): PropertyFormData => ({
   name: prop.name,
   description: prop.description || '',
   address: prop.address || '',
+  neighborhood: prop.neighborhood || '',
   city: prop.city || '',
   state: prop.state || '',
   postal_code: prop.postal_code || '',
