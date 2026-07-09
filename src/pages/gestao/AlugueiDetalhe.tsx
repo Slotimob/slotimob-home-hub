@@ -61,6 +61,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useObligationCategoryMapping } from "@/hooks/useObligationCategoryMapping";
 import {
   useAssetHealth,
@@ -175,6 +176,10 @@ const AlugueiDetalhe = () => {
   const { effectiveBrokerId } = useWorkspace();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_rentals", "view");
+  const canCreate = hasPermission("management_rentals", "create");
+  const canEdit = hasPermission("management_rentals", "edit");
   const { findCategoryForObligation, getTransactionTypeForObligation } =
     useObligationCategoryMapping();
 
@@ -732,6 +737,18 @@ const AlugueiDetalhe = () => {
     );
   }
 
+  if (!canView) {
+    return (
+      <AppLayout title="Aluguéis">
+        <div className="text-center py-16 border rounded-lg">
+          <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+          <p className="text-sm font-medium">Você não tem permissão para visualizar aluguéis.</p>
+          <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
   const title = asset.propertyName
     ? `${asset.unitNumber} — ${asset.propertyName}`
     : asset.unitNumber;
@@ -791,14 +808,16 @@ const AlugueiDetalhe = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditDialogOpen(true)}
-                >
-                  <Pencil className="h-4 w-4 mr-1.5" />
-                  Editar Imóvel
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditDialogOpen(true)}
+                  >
+                    <Pencil className="h-4 w-4 mr-1.5" />
+                    Editar Imóvel
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -817,14 +836,16 @@ const AlugueiDetalhe = () => {
                   <Receipt className="h-4 w-4 mr-1.5" />
                   Lançamentos
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setLeaseWizardOpen(true)}
-                >
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  Nova Locação
-                </Button>
+                {canCreate && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLeaseWizardOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Nova Locação
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -970,16 +991,24 @@ const AlugueiDetalhe = () => {
             </div>
 
             {obligationsView === "config" && (
-              <ObligationsConfigForm
-                unitId={unitId}
-                unitName={asset.unitNumber}
-                onSaved={() => {
-                  queryClient.invalidateQueries({
-                    queryKey: ["unit-obligations-config", unitId],
-                  });
-                  queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-                }}
-              />
+              canEdit ? (
+                <ObligationsConfigForm
+                  unitId={unitId}
+                  unitName={asset.unitNumber}
+                  onSaved={() => {
+                    queryClient.invalidateQueries({
+                      queryKey: ["unit-obligations-config", unitId],
+                    });
+                    queryClient.invalidateQueries({ queryKey: ["asset-health"] });
+                  }}
+                />
+              ) : (
+                <div className="text-center py-10 border rounded-lg">
+                  <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-40" />
+                  <p className="text-sm font-medium">Você não tem permissão para configurar obrigações.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+                </div>
+              )
             )}
 
             {obligationsView === "status" && (
@@ -1067,7 +1096,7 @@ const AlugueiDetalhe = () => {
                                     </p>
                                   </div>
                                 ) : (
-                                  obligation.status !== "ignored" && (
+                                  obligation.status !== "ignored" && canCreate && (
                                     <div className="flex gap-2 mt-2">
                                       <Button
                                         variant="outline"
@@ -1208,7 +1237,7 @@ const AlugueiDetalhe = () => {
                       )}
                     </div>
 
-                    {!unitData?.cib && !editingCib && (
+                    {!unitData?.cib && !editingCib && canEdit && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -1252,7 +1281,7 @@ const AlugueiDetalhe = () => {
                       </div>
                     )}
 
-                    {unitData?.cib && !editingCib && (
+                    {unitData?.cib && !editingCib && canEdit && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -1336,19 +1365,21 @@ const AlugueiDetalhe = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowNewForm((v) => !v)}
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Nova atividade
-                  </Button>
+                  {canCreate && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowNewForm((v) => !v)}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Nova atividade
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
 
-            {showNewForm && (
+            {showNewForm && canCreate && (
               <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">

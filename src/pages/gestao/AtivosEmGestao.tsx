@@ -60,6 +60,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type ViewMode = "grid" | "list";
 type StatusFilter = "all" | "healthy" | "attention" | "critical";
@@ -71,6 +72,10 @@ const AtivosEmGestao = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_rentals", "view");
+  const canCreate = hasPermission("management_rentals", "create");
+  const canEdit = hasPermission("management_rentals", "edit");
 
   const { consumeConversionContext, clearContext } = useLeaseConversionContext();
   const [crmConversionData, setCrmConversionData] = useState<LeaseConversionContext | null>(null);
@@ -150,6 +155,14 @@ const AtivosEmGestao = () => {
   }, [assets]);
 
   const handleConfigureClick = (unitId: string) => {
+    if (!canEdit) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para configurar obrigações. Fale com o administrador.",
+        variant: "destructive",
+      });
+      return;
+    }
     const asset = assets?.find((a) => a.unitId === unitId);
     if (asset) {
       setSelectedUnit({ id: unitId, name: asset.unitNumber });
@@ -207,6 +220,14 @@ const AtivosEmGestao = () => {
   };
 
   const handleLinkClick = (asset: AssetHealthType, obligation: ObligationHealth) => {
+    if (!canCreate) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para vincular lançamentos. Fale com o administrador.",
+        variant: "destructive",
+      });
+      return;
+    }
     setLinkUnitId(asset.unitId);
     setLinkUnitName(asset.unitNumber);
     setLinkObligation(obligation);
@@ -226,6 +247,19 @@ const AtivosEmGestao = () => {
   }
 
   if (!user) return null;
+
+  if (!canView) {
+    return (
+      <AppLayout title="Aluguéis">
+        <div className="text-center py-16 border rounded-lg">
+          <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+          <p className="text-sm font-medium">Você não tem permissão para visualizar aluguéis.</p>
+          <p className="text-xs text-muted-foreground mt-1">Fale com o administrador da sua conta.</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
 
   return (
     <>
