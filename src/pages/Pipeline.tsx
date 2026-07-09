@@ -81,6 +81,7 @@ const Pipeline = () => {
   const { effectiveBrokerId } = useWorkspace();
   const { isOwner, hasPermission } = usePermissions();
   const canEdit = isOwner || hasPermission('crm_pipeline', 'edit');
+  const canCreatePipeline = isOwner || hasPermission('crm_pipeline', 'create');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -734,15 +735,17 @@ const Pipeline = () => {
               Nova Negociação
             </HeaderButton>
           </PermissionGate>
-          <HeaderButton
-            variant="outline"
-            iconOnly
-            showTextAt="lg"
-            icon={<FolderPlus className="h-4 w-4" />}
-            onClick={() => setIsCreatePipelineOpen(true)}
-          >
-            Novo Pipeline
-          </HeaderButton>
+          {canCreatePipeline && (
+            <HeaderButton
+              variant="outline"
+              iconOnly
+              showTextAt="lg"
+              icon={<FolderPlus className="h-4 w-4" />}
+              onClick={() => setIsCreatePipelineOpen(true)}
+            >
+              Novo Pipeline
+            </HeaderButton>
+          )}
           <HeaderButton
             variant={showMetrics ? 'secondary' : 'outline'}
             iconOnly
