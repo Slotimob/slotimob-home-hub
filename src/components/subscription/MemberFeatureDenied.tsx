@@ -18,6 +18,8 @@ export function MemberFeatureDenied({
   overlay = true,
   className,
 }: MemberFeatureDeniedProps) {
+  const navigate = useNavigate();
+
   const content = (
     <div className={cn('text-center p-6 max-w-md', className)}>
       <div className="mx-auto mb-4 text-muted-foreground">
@@ -32,7 +34,15 @@ export function MemberFeatureDenied({
   );
 
   if (!overlay || !children) {
-    return <div className="flex min-h-[60vh] items-center justify-center">{content}</div>;
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+        {content}
+        <Button variant="outline" onClick={() => navigate('/dashboard')}>
+          <Home className="h-4 w-4 mr-2" />
+          Voltar ao início
+        </Button>
+      </div>
+    );
   }
 
   return (
