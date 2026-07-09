@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { translateAuthError } from '@/lib/authErrors';
 import { z } from 'zod';
+import { passwordSchema, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { Separator } from '@/components/ui/separator';
 import { SEOHead } from '@/components/SEOHead';
@@ -47,13 +48,13 @@ const OAuthLoadingOverlay = () => (
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
-  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' })
+  password: z.string().min(1, { message: 'Informe sua senha' })
 });
 
 // Unified signup schema (single step)
 const signupSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
-  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' }),
+  password: passwordSchema,
   confirmPassword: z.string().min(1, { message: 'Confirme sua senha' }),
   fullName: z.string().min(2, { message: 'Nome deve ter no mínimo 2 caracteres' }),
   phone: z.string().optional(),
@@ -815,7 +816,7 @@ const Auth = () => {
           <Input
             id="signup-password"
             type={showSignupPassword ? 'text' : 'password'}
-            placeholder="Mínimo 6 caracteres"
+            placeholder="••••••••"
             value={signupForm.password}
             onChange={e => setSignupForm({ ...signupForm, password: e.target.value })}
             className={fieldErrors.password ? 'border-destructive pr-10' : 'pr-10'}
@@ -829,7 +830,9 @@ const Auth = () => {
             {showSignupPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
           </button>
         </div>
-        {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+        {fieldErrors.password
+          ? <p className="text-xs text-destructive">{fieldErrors.password}</p>
+          : <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>}
       </div>
 
       {/* Confirm Password */}

@@ -9,10 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { ArrowLeft } from 'lucide-react';
+import { passwordSchema, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
 
-const passwordSchema = z.object({
-  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' }),
-  confirmPassword: z.string().min(6, { message: 'Confirmação deve ter no mínimo 6 caracteres' }),
+const formSchema = z.object({
+  password: passwordSchema,
+  confirmPassword: z.string().min(1, { message: 'Confirme sua senha' }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
   path: ['confirmPassword'],
@@ -59,7 +60,7 @@ const ResetPassword = () => {
     e.preventDefault();
 
     try {
-      passwordSchema.parse({ password, confirmPassword });
+      formSchema.parse({ password, confirmPassword });
       setLoading(true);
 
       const { error } = await supabase.auth.updateUser({
@@ -133,6 +134,7 @@ const ResetPassword = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Senha</Label>

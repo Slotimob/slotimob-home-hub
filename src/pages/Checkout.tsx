@@ -29,6 +29,7 @@ import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { translateAuthError } from '@/lib/authErrors';
+import { validatePassword, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
 
 // ============================================================================
 // Types & Meta
@@ -275,6 +276,11 @@ export default function Checkout() {
     if (!user) {
       if (!name || !email || !password) {
         setAuthError('Preencha todos os campos');
+        return;
+      }
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        setAuthError(passwordError);
         return;
       }
       if (!captchaToken) {
@@ -800,7 +806,7 @@ export default function Checkout() {
                         {showCheckoutPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                       </button>
                     </div>
-                    <p className="text-xs text-muted-foreground">a senha precisa ter no mínimo 6 caracteres.</p>
+                    <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>
                     <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                   </div>
 

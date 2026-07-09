@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
+import { validatePassword, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -363,8 +364,9 @@ const Settings = () => {
   };
 
   const requestPasswordChange = async () => {
-    if (newPassword.length < 6) {
-      toast({ title: 'Senha muito curta', description: 'A senha precisa ter no mínimo 6 caracteres.', variant: 'destructive' });
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast({ title: 'Senha fraca', description: passwordError, variant: 'destructive' });
       return;
     }
     if (newPassword !== confirmNewPassword) {
@@ -690,8 +692,8 @@ const Settings = () => {
                 type={showNewPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                minLength={6}
+                placeholder="••••••••"
+                minLength={8}
                 autoComplete="new-password"
                 className="pr-10"
               />
@@ -704,7 +706,7 @@ const Settings = () => {
                 {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">a senha precisa ter no mínimo 6 caracteres.</p>
+            <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>
           </div>
 
           <div className="space-y-2">
@@ -716,7 +718,7 @@ const Settings = () => {
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                 placeholder="Digite a senha novamente"
-                minLength={6}
+                minLength={8}
                 autoComplete="new-password"
                 className="pr-10"
               />
