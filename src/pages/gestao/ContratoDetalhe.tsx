@@ -514,6 +514,7 @@ export default function ContratoDetalhe() {
             onConfigureObligations={() => setShowObligationsDialog(true)}
             onDownloadPdf={() => setShowContractDialog(true)}
             onTerminate={canEdit ? () => setTerminateDialogOpen(true) : undefined}
+            canEdit={canEdit}
           />
         </TabsContent>
 
