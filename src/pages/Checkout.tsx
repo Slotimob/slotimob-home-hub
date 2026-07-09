@@ -29,6 +29,7 @@ import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { translateAuthError } from '@/lib/authErrors';
+import { validatePassword, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
 
 // ============================================================================
 // Types & Meta
