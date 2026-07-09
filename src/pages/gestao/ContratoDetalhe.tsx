@@ -852,12 +852,14 @@ export default function ContratoDetalhe() {
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                  <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
-                    <Pencil className="h-3.5 w-3.5" />
-                    Editar contato de cobrança
-                  </a>
-                </Button>
+                {canEdit && (
+                  <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                    <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar contato de cobrança
+                    </a>
+                  </Button>
+                )}
                 <Button size="sm" onClick={handleSaveAutomation} disabled={savingAutomation}>
                   {savingAutomation ? (
                     <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
