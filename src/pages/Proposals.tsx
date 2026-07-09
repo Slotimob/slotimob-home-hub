@@ -114,6 +114,11 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function Proposals() {
   const { proposals, isLoading, updateProposalStatus, deleteProposal } = useProposals();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_proposals", "view");
+  const canCreate = hasPermission("management_proposals", "create");
+  const canEdit = hasPermission("management_proposals", "edit");
+  const canDelete = hasPermission("management_proposals", "delete");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [duplicatingProposal, setDuplicatingProposal] = useState<Proposal | null>(null);
