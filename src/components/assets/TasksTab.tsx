@@ -314,6 +314,7 @@ Abraço! 🤝`;
                 <ContractItem
                   key={item.id}
                   item={item}
+                  canEdit={canEdit}
                   onAdjustClick={() => handleOpenAdjustment(item)}
                 />
               ))
