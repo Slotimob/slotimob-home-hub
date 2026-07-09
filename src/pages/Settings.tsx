@@ -692,8 +692,8 @@ const Settings = () => {
                 type={showNewPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                minLength={6}
+                placeholder="••••••••"
+                minLength={8}
                 autoComplete="new-password"
                 className="pr-10"
               />
