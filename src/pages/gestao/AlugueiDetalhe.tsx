@@ -1365,19 +1365,21 @@ const AlugueiDetalhe = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowNewForm((v) => !v)}
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Nova atividade
-                  </Button>
+                  {canCreate && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowNewForm((v) => !v)}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Nova atividade
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
 
-            {showNewForm && (
+            {showNewForm && canCreate && (
               <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
