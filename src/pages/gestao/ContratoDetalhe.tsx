@@ -592,20 +592,22 @@ export default function ContratoDetalhe() {
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => {
-                    if (isEditingCib) handleSaveCib();
-                    else {
-                      setEditedCib(lease.cib || "");
-                      setIsEditingCib(true);
-                    }
-                  }}
-                >
-                  {isEditingCib ? "Salvar" : "Editar"}
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      if (isEditingCib) handleSaveCib();
+                      else {
+                        setEditedCib(lease.cib || "");
+                        setIsEditingCib(true);
+                      }
+                    }}
+                  >
+                    {isEditingCib ? "Salvar" : "Editar"}
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="py-2 px-4">
