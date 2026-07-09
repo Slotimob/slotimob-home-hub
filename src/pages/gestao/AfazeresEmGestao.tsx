@@ -72,6 +72,9 @@ const AfazeresEmGestao = () => {
   const navigate = useNavigate();
   const { proposals, updateProposalStatus } = useProposals();
   const { data: leases = [] } = useLeases();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission("management_tasks", "view");
+  const canEdit = hasPermission("management_tasks", "edit");
 
   const draftProposals = proposals.filter(
     (p) => p.status === "draft" || !p.status
