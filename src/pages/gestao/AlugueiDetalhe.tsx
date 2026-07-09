@@ -1237,7 +1237,7 @@ const AlugueiDetalhe = () => {
                       )}
                     </div>
 
-                    {!unitData?.cib && !editingCib && (
+                    {!unitData?.cib && !editingCib && canEdit && (
                       <Button
                         variant="outline"
                         size="sm"
