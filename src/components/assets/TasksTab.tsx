@@ -555,9 +555,11 @@ function PayableItem({
 // Sub-component: Contract Item
 function ContractItem({
   item,
+  canEdit,
   onAdjustClick,
 }: {
   item: PendingContract;
+  canEdit: boolean;
   onAdjustClick: () => void;
 }) {
   const isSignature = item.issue_type === "pending_signature";
@@ -595,7 +597,7 @@ function ContractItem({
           </Badge>
         </div>
       </div>
-      {!isSignature && (
+      {!isSignature && canEdit && (
         <Button
           variant="outline"
           size="sm"
