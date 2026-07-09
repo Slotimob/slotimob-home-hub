@@ -171,12 +171,16 @@ const Properties = () => {
               <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <h3 className="mb-2 text-lg font-semibold">Nenhum empreendimento cadastrado</h3>
               <p className="mb-4 text-sm text-muted-foreground">
-                Comece criando seu primeiro empreendimento
+                {canCreate
+                  ? 'Comece criando seu primeiro empreendimento'
+                  : 'Você não tem permissão para criar empreendimentos. Fale com o administrador da sua conta.'}
               </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Empreendimento
-              </Button>
+              {canCreate && (
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Empreendimento
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : getSortedProperties().length === 0 ? (
