@@ -1172,6 +1172,7 @@ export default function ContratoDetalhe() {
               })()}
             </CardContent>
           </Card>
+          </fieldset>
         </TabsContent>
 
         {/* Boletos */}
