@@ -155,6 +155,14 @@ const AtivosEmGestao = () => {
   }, [assets]);
 
   const handleConfigureClick = (unitId: string) => {
+    if (!canEdit) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para configurar obrigações. Fale com o administrador.",
+        variant: "destructive",
+      });
+      return;
+    }
     const asset = assets?.find((a) => a.unitId === unitId);
     if (asset) {
       setSelectedUnit({ id: unitId, name: asset.unitNumber });
