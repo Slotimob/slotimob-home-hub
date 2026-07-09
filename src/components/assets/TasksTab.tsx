@@ -34,12 +34,15 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export function TasksTab() {
   const navigate = useNavigate();
   const { receivables, payables, contracts, proposalFollowups, totalCount, isLoading } = useActionCenterPending();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission("management_tasks", "edit");
 
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const [selectedLease, setSelectedLease] = useState<PendingContract | null>(null);
