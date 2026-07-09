@@ -72,6 +72,7 @@ const propertyToFormData = (prop: Property): PropertyFormData => ({
   name: prop.name,
   description: prop.description || '',
   address: prop.address || '',
+  neighborhood: prop.neighborhood || '',
   city: prop.city || '',
   state: prop.state || '',
   postal_code: prop.postal_code || '',
