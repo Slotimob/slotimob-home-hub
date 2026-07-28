@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_review_cycles: {
+        Row: {
+          broker_id: string
+          completed_at: string | null
+          completed_by: string | null
+          completion_snapshot: Json | null
+          created_at: string
+          due_date: string
+          id: string
+          members_count: number
+          members_snapshot: Json
+          notes: string | null
+          period_label: string
+          period_start: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          broker_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_snapshot?: Json | null
+          created_at?: string
+          due_date: string
+          id?: string
+          members_count?: number
+          members_snapshot?: Json
+          notes?: string | null
+          period_label: string
+          period_start: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_snapshot?: Json | null
+          created_at?: string
+          due_date?: string
+          id?: string
+          members_count?: number
+          members_snapshot?: Json
+          notes?: string | null
+          period_label?: string
+          period_start?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       account_deletion_logs: {
         Row: {
           accepted_at: string
@@ -5629,7 +5680,20 @@ export type Database = {
       }
       claim_early_adopter_slot: { Args: { p_plan_id: string }; Returns: Json }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      complete_access_review: {
+        Args: { p_cycle_id: string; p_notes?: string }
+        Returns: Json
+      }
       consume_approval: { Args: { p_request_id: string }; Returns: boolean }
+      current_access_review_period: {
+        Args: { p_ref?: string }
+        Returns: {
+          due_date: string
+          period_label: string
+          period_start: string
+        }[]
+      }
+      get_access_review_overview: { Args: never; Returns: Json }
       get_ai_credits_balance: { Args: { p_user_id: string }; Returns: Json }
       get_cockpit_organizations: { Args: never; Returns: Json }
       get_early_adopter_count: { Args: { p_plan_id: string }; Returns: number }
@@ -5640,6 +5704,7 @@ export type Database = {
       get_effective_broker_id: { Args: { p_user_id: string }; Returns: string }
       get_effective_limits: { Args: { p_user_id: string }; Returns: Json }
       get_invitation_by_token: { Args: { p_token: string }; Returns: Json }
+      get_pending_access_review: { Args: never; Returns: Json }
       get_user_audit_logs: {
         Args: { p_limit?: number; p_target_user_id: string }
         Returns: Json
@@ -5662,6 +5727,8 @@ export type Database = {
       is_crm_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
       maintain_audit_partitions: { Args: never; Returns: undefined }
+      mark_overdue_access_reviews: { Args: never; Returns: Json }
+      open_access_review_cycles: { Args: never; Returns: Json }
       realtime_topic_allowed: { Args: { p_topic: string }; Returns: boolean }
       regenerate_feed_token: { Args: { p_user_id: string }; Returns: string }
       regenerate_ical_token: { Args: { user_id: string }; Returns: string }
