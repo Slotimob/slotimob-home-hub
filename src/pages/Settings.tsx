@@ -30,6 +30,8 @@ import { AppLayout } from '@/components/AppLayout';
 import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
 import { DeleteAccountSection } from '@/components/settings/DeleteAccountSection';
 import { AsaasFinancialSeal, AsaasTransparencyNote } from '@/components/asaas/AsaasFinancialSeal';
+import { MfaSettingsCard } from '@/components/security/MfaSettingsCard';
+
 
 const UF_OPTIONS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB',
@@ -741,7 +743,10 @@ const Settings = () => {
               <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</>
             ) : user?.app_metadata?.provider === 'google' ? 'Criar senha de acesso' : 'Alterar Senha'}
           </Button>
+
+          <MfaSettingsCard />
         </SettingsSection>
+
 
         {/* 4 — Documentos */}
         <SettingsSection title="Documentos" description="CRECI e perfil profissional" icon={FileText}>
