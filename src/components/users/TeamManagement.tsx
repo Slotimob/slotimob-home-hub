@@ -23,46 +23,8 @@ export function TeamManagement() {
   const { features, checkLimit } = useSubscriptionLimits();
   const { canEdit, scope } = useCanEditPermissions();
 
-  const { data: members, isLoading } = useQuery({
-    queryKey: ['organization-members', effectiveBrokerId],
-    queryFn: async () => {
-      if (!effectiveBrokerId) return [];
+  const { members, isLoading } = useOrganizationMembers();
 
-      const { data, error } = await supabase
-        .from('organization_members')
-        .select('*')
-        .eq('organization_owner_id', effectiveBrokerId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-
-      const userIds = (data || []).map((m: any) => m.user_id);
-      if (userIds.length === 0) return [];
-
-      const { data: profiles, error: profilesError } = await (supabase as any)
-        .from('profile_directory')
-        .select('id, full_name, email')
-        .in('id', userIds);
-      if (profilesError) throw profilesError;
-
-      const profileMap = new Map<string, any>((profiles || []).map((p: any) => [p.id, p]));
-
-      return (data || []).map((m: any) => {
-        const profile = profileMap.get(m.user_id);
-        const resolvedEmail = profile?.email?.trim() || null;
-        const resolvedName = profile?.full_name?.trim() || resolvedEmail || 'Membro sem nome definido';
-
-        return {
-          ...m,
-          permissions: (m.permissions || {}) as Permissions,
-          profile: {
-            full_name: resolvedName,
-            email: resolvedEmail,
-          },
-        };
-      });
-    },
-    enabled: !!effectiveBrokerId,
-  });
 
   const { data: ownerProfile, isLoading: isOwnerProfileLoading } = useQuery({
     queryKey: ['organization-owner-profile', effectiveBrokerId],
