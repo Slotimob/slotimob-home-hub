@@ -413,6 +413,22 @@ const Auth = () => {
     }
   };
 
+  /** Navegação pós-login (reaproveitada pelo login direto e pelo desafio 2FA). */
+  const finishLogin = async () => {
+    if (inviteToken) await handleAcceptInvite();
+    if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
+      handlePostAuthRedirect(pendingPlan);
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  const handleCancelMfa = async () => {
+    await supabase.auth.signOut();
+    setMfaPending(false);
+    setLoginForm({ email: '', password: '' });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -424,13 +440,16 @@ const Auth = () => {
       setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password, options: { captchaToken: loginCaptchaToken } });
       if (error) throw error;
-      toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
-      if (inviteToken) await handleAcceptInvite();
-      if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
-        handlePostAuthRedirect(pendingPlan);
-      } else {
-        navigate('/dashboard');
+
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+        setMfaPending(true);
+        return;
       }
+
+      toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
+      await finishLogin();
+
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({ title: 'Erro de validação', description: error.errors[0].message, variant: 'destructive' });
