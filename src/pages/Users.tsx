@@ -23,7 +23,10 @@ const Users = () => {
   if (plan === 'business') {
     return (
       <AppLayout title="Usuários" titleExtra={<HelpTooltip featureKey="settings.team" />}>
-        <TeamManagement />
+        <div className="space-y-4">
+          <AccessReviewBanner />
+          <TeamManagement />
+        </div>
       </AppLayout>
     );
   }
