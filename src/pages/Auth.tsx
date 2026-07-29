@@ -14,6 +14,8 @@ import { passwordSchema, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSch
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { Separator } from '@/components/ui/separator';
 import { SEOHead } from '@/components/SEOHead';
+import { MfaChallengeForm } from '@/components/security/MfaChallengeForm';
+
 import { toast as sonnerToast } from 'sonner';
 import { trackLeadSignup, trackStartTrial } from '@/components/TrackingProvider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
