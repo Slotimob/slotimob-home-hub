@@ -1015,9 +1015,22 @@ const Auth = () => {
                     {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : 'Concluir Cadastro'}
                   </Button>
                 </form>
+              ) : mfaPending ? (
+                <div className="rounded-lg border border-border p-6">
+                  <MfaChallengeForm
+                    title="Verificação em duas etapas"
+                    description="Digite o código de 6 dígitos do seu aplicativo autenticador."
+                    onSuccess={() => {
+                      setMfaPending(false);
+                      void finishLogin();
+                    }}
+                    onCancel={handleCancelMfa}
+                  />
+                </div>
               ) : showVerificationMessage ? (
                 renderVerificationMessage()
               ) : (
+
                 <>
                   {/* Google OAuth */}
                   <Button type="button" variant="outline" className="w-full h-12 gap-2 text-sm font-medium" onClick={handleGoogleLogin} disabled={googleLoading || loading}>
