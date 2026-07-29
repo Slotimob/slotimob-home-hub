@@ -382,14 +382,24 @@ const Auth = () => {
           clearInterval(pollInterval);
           subscription.unsubscribe();
           if (!popup.closed) popup.close();
-          if (inviteToken) {
-            handleAcceptInvite().then(() => navigate('/dashboard'));
-          } else if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
-            handlePostAuthRedirect(pendingPlan || undefined);
-          } else {
-            navigate('/dashboard');
-          }
+          void (async () => {
+            const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+            if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+              setGoogleLoading(false);
+              setMfaPending(true);
+              return;
+            }
+            if (inviteToken) {
+              await handleAcceptInvite();
+              navigate('/dashboard');
+            } else if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
+              handlePostAuthRedirect(pendingPlan || undefined);
+            } else {
+              navigate('/dashboard');
+            }
+          })();
         }
+
       });
     } catch (error: any) {
       const msg = error?.message?.toLowerCase() || '';
