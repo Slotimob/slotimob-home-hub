@@ -1,10 +1,11 @@
-import { useEffect, useRef, useId } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef } from 'react';
 
 declare global {
   interface Window {
     turnstile?: {
       render: (container: string | HTMLElement, options: Record<string, unknown>) => string;
       remove: (widgetId: string) => void;
+      reset: (widgetId?: string) => void;
     };
   }
 }
@@ -30,42 +31,73 @@ function loadTurnstileScript(): Promise<void> {
   });
 }
 
+export interface TurnstileWidgetHandle {
+  /** Descarta o token atual e gera um novo desafio. */
+  reset: () => void;
+}
+
 interface TurnstileWidgetProps {
   onVerify: (token: string) => void;
   onExpire?: () => void;
+  onError?: (code: string) => void;
 }
 
-export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
-  const elementId = useId().replace(/:/g, '');
-  const siteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) ?? '0x4AAAAAADyKpJZs_JkMGKBR';
+export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
+  function TurnstileWidget({ onVerify, onExpire, onError }, ref) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const widgetIdRef = useRef<string | null>(null);
+    const elementId = useId().replace(/:/g, '');
+    const siteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) ?? '0x4AAAAAADyKpJZs_JkMGKBR';
 
-  useEffect(() => {
-    if (!siteKey) {
-      console.warn('[TurnstileWidget] VITE_TURNSTILE_SITE_KEY não configurado — captcha desativado.');
-      return;
-    }
-    let cancelled = false;
-    loadTurnstileScript().then(() => {
-      if (cancelled || !containerRef.current || !window.turnstile) return;
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
-        callback: (token: string) => onVerify(token),
-        'expired-callback': () => onExpire?.(),
-        'error-callback': () => onExpire?.(),
-      });
-    });
-    return () => {
-      cancelled = true;
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
+    // Callbacks sempre atualizados sem re-renderizar o widget.
+    const onVerifyRef = useRef(onVerify);
+    const onExpireRef = useRef(onExpire);
+    const onErrorRef = useRef(onError);
+    onVerifyRef.current = onVerify;
+    onExpireRef.current = onExpire;
+    onErrorRef.current = onError;
+
+    useImperativeHandle(ref, () => ({
+      reset: () => {
+        if (widgetIdRef.current && window.turnstile) {
+          window.turnstile.reset(widgetIdRef.current);
+        }
+      },
+    }));
+
+    useEffect(() => {
+      if (!siteKey) {
+        console.warn('[TurnstileWidget] VITE_TURNSTILE_SITE_KEY não configurado — captcha desativado.');
+        return;
       }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      let cancelled = false;
+      loadTurnstileScript().then(() => {
+        if (cancelled || !containerRef.current || !window.turnstile) return;
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          // O próprio Turnstile renova o token quando ele expira (~300s).
+          'refresh-expired': 'auto',
+          callback: (token: string) => onVerifyRef.current(token),
+          // onExpire/onError devem deixar o token do pai nulo: o token antigo
+          // é de uso único e não pode mais ser enviado ao Supabase.
+          'expired-callback': () => onExpireRef.current?.(),
+          'error-callback': (code: string) => {
+            onErrorRef.current?.(code);
+            onExpireRef.current?.();
+          },
+        });
+      });
+      return () => {
+        cancelled = true;
+        if (widgetIdRef.current && window.turnstile) {
+          window.turnstile.remove(widgetIdRef.current);
+        }
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-  if (!siteKey) return null;
+    if (!siteKey) return null;
 
-  return <div ref={containerRef} id={elementId} className="flex justify-center" />;
-}
+    return <div ref={containerRef} id={elementId} className="flex justify-center" />;
+  }
+);
