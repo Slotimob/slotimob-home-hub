@@ -9,6 +9,7 @@ import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 import { TeamManagement } from '@/components/users/TeamManagement';
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { AccessReviewBanner } from '@/components/security/AccessReviewBanner';
 
 const Users = () => {
   const { plan } = useSubscriptionLimits();
