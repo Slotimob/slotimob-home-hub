@@ -65,16 +65,21 @@ Deno.serve(async (req) => {
 
     const { data: account } = await supabase
       .from("asaas_accounts")
-      .select("asaas_api_key, status")
+      .select("asaas_api_key_encrypted, status")
       .eq("broker_id", effectiveBrokerId)
       .eq("status", "active")
       .maybeSingle();
 
-    if (!account?.asaas_api_key) {
+    if (!account?.asaas_api_key_encrypted) {
       return resp({ error: "Subconta Asaas não configurada. Acesse Configurações > Integração Asaas para ativar." });
     }
 
-    const subKey = account.asaas_api_key;
+    const { data: decryptedKey, error: decryptErr } = await supabase.rpc("decrypt_asaas_api_key", { p_encrypted: account.asaas_api_key_encrypted });
+    if (decryptErr || !decryptedKey) {
+      console.error("[create-asaas-charge] Decrypt error:", decryptErr);
+      return resp({ error: "Erro ao acessar a chave da subconta Asaas." });
+    }
+    const subKey = decryptedKey as string;
 
     const { data: lease, error: leaseErr } = await supabase
       .from("leases")
