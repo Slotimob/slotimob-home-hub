@@ -18,7 +18,7 @@ const Legal = () => {
   const companyName = "SLOTI";
   const cnpj = "42.323.823/0001-06";
   const appName = "SLOTIMOB";
-  const contactEmail = "ops@sloti.com.br";
+  const contactEmail = "contato@slotimob.com.br";
   const lastUpdate = "07 de julho de 2026";
 
   const handleTabChange = (value: string) => {

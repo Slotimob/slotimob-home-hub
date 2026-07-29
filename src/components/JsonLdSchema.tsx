@@ -18,7 +18,7 @@ const organizationSchema = {
   },
   "contactPoint": {
     "@type": "ContactPoint",
-    "email": "ops@sloti.com.br",
+    "email": "contato@slotimob.com.br",
     "contactType": "customer service",
     "availableLanguage": ["Portuguese"]
   },
