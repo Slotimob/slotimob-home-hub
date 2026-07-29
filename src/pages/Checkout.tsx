@@ -134,6 +134,11 @@ export default function Checkout() {
   const [password, setPassword] = useState('');
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const resetCaptcha = useCallback(() => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  }, []);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Fiscal data
