@@ -30,6 +30,7 @@ import {
   DateRange,
 } from '@/components/dashboard';
 import { TrialBanner } from '@/components/dashboard/TrialBanner';
+import { AccessReviewBanner } from '@/components/security/AccessReviewBanner';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 
 const Dashboard = () => {
@@ -194,6 +195,8 @@ const Dashboard = () => {
                 {/* ═══════════════════════════════════════════════════════════════
                     TRIAL BANNER (Free users only)
                    ═══════════════════════════════════════════════════════════════ */}
+                <AccessReviewBanner />
+
                 <TrialBanner />
 
                 {/* ═══════════════════════════════════════════════════════════════
