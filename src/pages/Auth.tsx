@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
+import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget';
+import { translateCaptchaError } from '@/lib/captchaErrors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -248,6 +249,14 @@ const Auth = () => {
   const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(null);
   const [resetCaptchaToken, setResetCaptchaToken] = useState<string | null>(null);
   const [resendCaptchaToken, setResendCaptchaToken] = useState<string | null>(null);
+  const signupTurnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const loginTurnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const resetTurnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const resendTurnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const resetSignupCaptcha = useCallback(() => { setCaptchaToken(null); signupTurnstileRef.current?.reset(); }, []);
+  const resetLoginCaptcha = useCallback(() => { setLoginCaptchaToken(null); loginTurnstileRef.current?.reset(); }, []);
+  const resetForgotCaptcha = useCallback(() => { setResetCaptchaToken(null); resetTurnstileRef.current?.reset(); }, []);
+  const resetResendCaptcha = useCallback(() => { setResendCaptchaToken(null); resendTurnstileRef.current?.reset(); }, []);
   const [honeypot, setHoneypot] = useState('');
   const [formLoadTime] = useState(() => Date.now());
 
@@ -364,10 +373,17 @@ const Auth = () => {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, { redirectTo: `${SITE_URL}/reset-password`, captchaToken: resetCaptchaToken });
       if (error) throw error;
       toast({ title: 'Email enviado!', description: 'Verifique sua caixa de entrada para redefinir sua senha.' });
+      resetForgotCaptcha();
       setShowForgotPassword(false);
       setResetEmail('');
     } catch (error: any) {
-      toast({ title: 'Erro ao enviar email', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
+      const captchaMessage = translateCaptchaError(error);
+      if (captchaMessage) {
+        toast({ title: 'Verificação de segurança', description: captchaMessage, variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro ao enviar email', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
+      }
+      resetForgotCaptcha();
     } finally {
       setResetLoading(false);
     }
@@ -475,6 +491,7 @@ const Auth = () => {
       loginSchema.parse(loginForm);
       if (!loginCaptchaToken) {
         toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+        resetLoginCaptcha();
         return;
       }
       setLoading(true);
@@ -491,12 +508,16 @@ const Auth = () => {
       await finishLogin();
 
     } catch (error: any) {
+      const captchaMessage = translateCaptchaError(error);
       if (error instanceof z.ZodError) {
         toast({ title: 'Erro de validação', description: error.errors[0].message, variant: 'destructive' });
+      } else if (captchaMessage) {
+        toast({ title: 'Verificação de segurança', description: captchaMessage, variant: 'destructive' });
       } else {
         const friendlyError = getAuthErrorMessage(error);
         toast({ title: friendlyError.title, description: friendlyError.description, variant: 'destructive' });
       }
+      resetLoginCaptcha();
     } finally {
       setLoading(false);
     }
@@ -524,6 +545,7 @@ const Auth = () => {
       const errors: Record<string, string> = {};
       result.error.errors.forEach((e) => { if (e.path[0]) errors[String(e.path[0])] = e.message; });
       setFieldErrors(errors);
+      resetSignupCaptcha();
       // Find the first error field and scroll to it
       const firstKey = Object.keys(errors)[0];
       if (firstKey) {
@@ -535,11 +557,13 @@ const Auth = () => {
 
     if (!acceptedTerms) {
       toast({ title: 'Termos não aceitos', description: 'Aceite os Termos de Uso para continuar.', variant: 'destructive' });
+      resetSignupCaptcha();
       return;
     }
 
     if (!captchaToken) {
       toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+      resetSignupCaptcha();
       return;
     }
 
@@ -553,6 +577,7 @@ const Auth = () => {
         if (!validationError && validationResult && !validationResult.allowed) {
           toast({ title: 'Não foi possível criar conta', description: validationResult.message || 'Tente novamente mais tarde.', variant: 'destructive' });
           setLoading(false);
+          resetSignupCaptcha();
           return;
         }
       } catch { /* fail open */ }
@@ -609,6 +634,7 @@ const Auth = () => {
         setShowVerificationMessage(true);
         setSignupForm({ email: '', password: '', confirmPassword: '', fullName: '', phone: '', companyName: '', creci: '', personType: 'pf', cpf: '', cnpj: '', businessName: '' });
         setAcceptedTerms(false);
+        resetSignupCaptcha();
       } else {
         if (inviteToken) await handleAcceptInvite();
         trackLeadSignup(pendingPlan || 'organic');
@@ -621,11 +647,15 @@ const Auth = () => {
         }
       }
     } catch (error: any) {
+      const captchaMessage = translateCaptchaError(error);
       if (error instanceof z.ZodError) {
         toast({ title: 'Erro de validação', description: error.errors[0].message, variant: 'destructive' });
+      } else if (captchaMessage) {
+        toast({ title: 'Verificação de segurança', description: captchaMessage, variant: 'destructive' });
       } else {
         toast({ title: 'Erro ao criar conta', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
       }
+      resetSignupCaptcha();
     } finally {
       setLoading(false);
     }
@@ -676,14 +706,22 @@ const Auth = () => {
     try {
       if (!resendCaptchaToken) {
         toast({ title: 'Confirme que você não é um robô', description: 'Complete a verificação de segurança para continuar.', variant: 'destructive' });
+        resetResendCaptcha();
         return;
       }
       setLoading(true);
       const { error } = await supabase.auth.resend({ type: 'signup', email: pendingVerificationEmail, options: { emailRedirectTo: `${SITE_URL}/`, captchaToken: resendCaptchaToken } });
       if (error) throw error;
       toast({ title: 'Email reenviado!', description: 'Verifique sua caixa de entrada.' });
+      resetResendCaptcha();
     } catch (error: any) {
-      toast({ title: 'Erro ao reenviar', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
+      const captchaMessage = translateCaptchaError(error);
+      if (captchaMessage) {
+        toast({ title: 'Verificação de segurança', description: captchaMessage, variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro ao reenviar', description: translateAuthError(error.message || '') || 'Tente novamente', variant: 'destructive' });
+      }
+      resetResendCaptcha();
     } finally {
       setLoading(false);
     }
@@ -706,7 +744,7 @@ const Auth = () => {
         </p>
       </div>
       <div className="space-y-2">
-        <TurnstileWidget onVerify={setResendCaptchaToken} onExpire={() => setResendCaptchaToken(null)} />
+        <TurnstileWidget ref={resendTurnstileRef} onVerify={setResendCaptchaToken} onExpire={() => setResendCaptchaToken(null)} />
         <Button variant="outline" className="w-full" onClick={handleResendVerification} disabled={loading || !resendCaptchaToken}>
           {loading ? 'Reenviando...' : 'Reenviar email de verificação'}
         </Button>
@@ -937,7 +975,7 @@ const Auth = () => {
         </Label>
       </div>
 
-      <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+      <TurnstileWidget ref={signupTurnstileRef} onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
 
       {/* Submit */}
       <Button type="submit" className="w-full h-11" disabled={loading || !acceptedTerms || !captchaToken}>
@@ -1149,7 +1187,7 @@ const Auth = () => {
                             <Input id="reset-email" type="email" placeholder="seu@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
                           </div>
                           <p className="text-xs text-muted-foreground">Você receberá um link para redefinir sua senha.</p>
-                          <TurnstileWidget onVerify={setResetCaptchaToken} onExpire={() => setResetCaptchaToken(null)} />
+                          <TurnstileWidget ref={resetTurnstileRef} onVerify={setResetCaptchaToken} onExpire={() => setResetCaptchaToken(null)} />
                           <Button type="submit" className="w-full" disabled={resetLoading || !resetCaptchaToken}>
                             {resetLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</> : 'Enviar link de recuperação'}
                           </Button>
@@ -1179,7 +1217,7 @@ const Auth = () => {
                               </button>
                             </div>
                           </div>
-                          <TurnstileWidget onVerify={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken(null)} />
+                          <TurnstileWidget ref={loginTurnstileRef} onVerify={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken(null)} />
                           <Button type="submit" className="w-full h-11" disabled={loading || googleLoading || !loginCaptchaToken}>
                             {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
                           </Button>
