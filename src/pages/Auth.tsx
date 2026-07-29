@@ -256,6 +256,32 @@ const Auth = () => {
   const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [mfaPending, setMfaPending] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Retoma o desafio 2FA após refresh: sessão em aal1 que exige aal2.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!active) return;
+        if (session) {
+          const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (!active) return;
+          if (aal?.nextLevel === 'aal2' && aal.currentLevel === 'aal1') {
+            setMfaPending(true);
+          }
+        }
+      } catch {
+        // silencioso: mantém o formulário padrão
+      } finally {
+        if (active) setCheckingSession(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+
 
 
   useEffect(() => {
@@ -925,6 +951,16 @@ const Auth = () => {
   );
 
   // ─── Main render ───
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+
 
   return (
     <>
