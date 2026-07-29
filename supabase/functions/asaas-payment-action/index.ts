@@ -90,16 +90,22 @@ serve(async (req) => {
       return resp({ error: "Sem permissão para este pagamento" });
     }
 
-    // Buscar API key do broker efetivo (dono da subconta)
+    // Buscar API key cifrada do broker efetivo (dono da subconta) e decriptar
     const { data: asaasAccount, error: asaasErr } = await supabase
       .from("asaas_accounts")
-      .select("asaas_api_key")
+      .select("asaas_api_key_encrypted")
       .eq("broker_id", effectiveBrokerId)
       .eq("status", "active")
       .single();
     if (asaasErr || !asaasAccount) return resp({ error: "Conta Asaas não encontrada" });
 
-    const apiKey = asaasAccount.asaas_api_key;
+    const { data: decryptedKey, error: decryptErr } = await supabase.rpc("decrypt_asaas_api_key", { p_encrypted: asaasAccount.asaas_api_key_encrypted });
+    if (decryptErr || !decryptedKey) {
+      console.error("[asaas-payment-action] Decrypt error:", decryptErr);
+      return resp({ error: "Erro ao acessar a chave da subconta Asaas" });
+    }
+
+    const apiKey = decryptedKey as string;
     const asaasId = payment.asaas_payment_id;
     if (!asaasId) return resp({ error: "Pagamento não tem ID Asaas associado" });
 
