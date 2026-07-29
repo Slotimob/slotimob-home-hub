@@ -20,30 +20,47 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       return;
     }
 
-    // Check if user signed up via Google and is missing fiscal data
-    const provider = user.app_metadata?.provider;
-    if (provider === 'google') {
-      const checkProfile = async () => {
+    let cancelled = false;
+
+    const runChecks = async () => {
+      // Block sessions still at aal1 when the user has a verified TOTP factor
+      try {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.nextLevel === 'aal2' && aal.currentLevel === 'aal1') {
+          if (!cancelled) navigate('/auth', { replace: true });
+          return;
+        }
+      } catch {
+        // fail open
+      }
+
+      // Check if user signed up via Google and is missing fiscal data
+      const provider = user.app_metadata?.provider;
+      if (provider === 'google') {
         try {
           const { data } = await supabase
             .from('profiles')
             .select('cpf, cnpj, person_type')
             .eq('id', user.id)
             .maybeSingle();
-          if (data && !data.cpf && !data.cnpj) {
+          if (data && !data.cpf && !data.cnpj && !cancelled) {
             navigate('/auth?complete_profile=true', { replace: true });
           }
         } catch {
           // fail open
-        } finally {
-          setProfileChecked(true);
         }
-      };
-      checkProfile();
-    } else {
-      setProfileChecked(true);
-    }
+      }
+
+      if (!cancelled) setProfileChecked(true);
+    };
+
+    void runChecks();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isAuthReady, user, navigate]);
+
 
   if (!isAuthReady || !profileChecked) {
     return (
