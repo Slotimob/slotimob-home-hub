@@ -332,40 +332,45 @@ export default function Checkout() {
     const cleanPhone = phone.replace(/\D/g, '');
     const cleanCep = cep.replace(/\D/g, '');
 
+    const failFiscal = (msg: string) => {
+      setCheckoutError(msg);
+      resetCaptcha();
+    };
+
     if (!cleanCpfCnpj) {
-      setCheckoutError('CPF ou CNPJ é obrigatório.');
+      failFiscal('CPF ou CNPJ é obrigatório.');
       return;
     }
     if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) {
-      setCheckoutError('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
+      failFiscal('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
       return;
     }
     if (!cleanPhone) {
-      setCheckoutError('Telefone é obrigatório.');
+      failFiscal('Telefone é obrigatório.');
       return;
     }
     if (!cleanCep || cleanCep.length !== 8) {
-      setCheckoutError('CEP é obrigatório e deve ter 8 dígitos.');
+      failFiscal('CEP é obrigatório e deve ter 8 dígitos.');
       return;
     }
     if (!street.trim()) {
-      setCheckoutError('Rua / Avenida é obrigatória.');
+      failFiscal('Rua / Avenida é obrigatória.');
       return;
     }
     if (!number.trim()) {
-      setCheckoutError('Número é obrigatório.');
+      failFiscal('Número é obrigatório.');
       return;
     }
     if (!neighborhood.trim()) {
-      setCheckoutError('Bairro é obrigatório.');
+      failFiscal('Bairro é obrigatório.');
       return;
     }
     if (!city.trim()) {
-      setCheckoutError('Cidade é obrigatória.');
+      failFiscal('Cidade é obrigatória.');
       return;
     }
     if (!uf.trim() || uf.trim().length !== 2) {
-      setCheckoutError('UF é obrigatória (2 letras).');
+      failFiscal('UF é obrigatória (2 letras).');
       return;
     }
 
