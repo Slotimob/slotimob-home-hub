@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
 import { useCanEditPermissions } from '@/hooks/useCanEditPermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
