@@ -491,11 +491,18 @@ export default function Checkout() {
       } else {
         setCheckoutError('Resposta inesperada do servidor.');
         toast.error('Resposta inesperada do servidor.');
+        resetCaptcha();
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro inesperado.';
+      const captchaMessage = translateCaptchaError(err);
+      const msg = captchaMessage || (err instanceof Error ? err.message : 'Erro inesperado.');
       setCheckoutError(msg);
-      toast.error(msg);
+      if (captchaMessage) {
+        toast.error('Verificação de segurança', { description: captchaMessage });
+      } else {
+        toast.error(msg);
+      }
+      resetCaptcha();
     } finally {
       setIsCheckingOut(false);
     }
@@ -837,7 +844,7 @@ export default function Checkout() {
                       </button>
                     </div>
                     <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>
-                    <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+                    <TurnstileWidget ref={turnstileRef} onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                   </div>
 
                   {authError && <p className="text-destructive text-sm">{authError}</p>}
