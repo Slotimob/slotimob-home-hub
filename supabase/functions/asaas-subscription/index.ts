@@ -193,15 +193,21 @@ Deno.serve(async (req) => {
     // Load asaas account of broker (marketplace subaccount key)
     const { data: account } = await supabase
       .from("asaas_accounts")
-      .select("asaas_api_key, status")
+      .select("asaas_api_key_encrypted, status")
       .eq("broker_id", effectiveBrokerId)
       .eq("status", "active")
       .maybeSingle();
 
-    if (!account?.asaas_api_key) {
+    if (!account?.asaas_api_key_encrypted) {
       return resp({ error: "Subconta Asaas não configurada. Acesse /settings > Integração Asaas para ativar." });
     }
-    const subKey = account.asaas_api_key as string;
+
+    const { data: decryptedKey, error: decryptErr } = await supabase.rpc("decrypt_asaas_api_key", { p_encrypted: account.asaas_api_key_encrypted });
+    if (decryptErr || !decryptedKey) {
+      console.error("[asaas-subscription] Decrypt error:", decryptErr);
+      return resp({ error: "Erro ao acessar a chave da subconta Asaas." });
+    }
+    const subKey = decryptedKey as string;
 
     const currentAutomation: Record<string, any> =
       (lease as any).billing_automation && typeof (lease as any).billing_automation === "object"
