@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
-import { useUserRole } from '@/hooks/useUserRole';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
 import { useCanEditPermissions } from '@/hooks/useCanEditPermissions';
@@ -17,8 +15,6 @@ import { InviteMemberDialog } from './InviteMemberDialog';
 import type { Permissions } from '@/hooks/usePermissions';
 
 export function TeamManagement() {
-  const { user } = useAuth();
-  const { isOwner } = useUserRole();
   const { effectiveBrokerId, isMember } = useWorkspace();
   const [showInvite, setShowInvite] = useState(false);
   const { features, checkLimit } = useSubscriptionLimits();
