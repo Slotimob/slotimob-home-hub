@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, FormEvent } from 'react';
-import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
+import { useState, useEffect, useMemo, useRef, useCallback, FormEvent } from 'react';
+import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget';
+import { translateCaptchaError } from '@/lib/captchaErrors';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -133,6 +134,11 @@ export default function Checkout() {
   const [password, setPassword] = useState('');
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const resetCaptcha = useCallback(() => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  }, []);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Fiscal data
@@ -276,16 +282,19 @@ export default function Checkout() {
     if (!user) {
       if (!name || !email || !password) {
         setAuthError('Preencha todos os campos');
+        resetCaptcha();
         return;
       }
       const passwordError = validatePassword(password);
       if (passwordError) {
         setAuthError(passwordError);
+        resetCaptcha();
         return;
       }
       if (!captchaToken) {
         setAuthError('Confirme que você não é um robô.');
         setIsCheckingOut(false);
+        resetCaptcha();
         return;
       }
       setIsCheckingOut(true);
@@ -295,13 +304,21 @@ export default function Checkout() {
         options: { data: { full_name: name }, captchaToken },
       });
       if (signUpError) {
-        setAuthError(translateAuthError(signUpError.message));
+        const captchaMessage = translateCaptchaError(signUpError);
+        if (captchaMessage) {
+          setAuthError(captchaMessage);
+          toast.error('Verificação de segurança', { description: captchaMessage });
+        } else {
+          setAuthError(translateAuthError(signUpError.message));
+        }
         setIsCheckingOut(false);
+        resetCaptcha();
         return;
       }
       if (signUpData.user && !signUpData.session) {
         toast.info('Verifique seu email para continuar');
         setIsCheckingOut(false);
+        resetCaptcha();
         return;
       }
       if (signUpData.user) {
@@ -315,40 +332,45 @@ export default function Checkout() {
     const cleanPhone = phone.replace(/\D/g, '');
     const cleanCep = cep.replace(/\D/g, '');
 
+    const failFiscal = (msg: string) => {
+      setCheckoutError(msg);
+      resetCaptcha();
+    };
+
     if (!cleanCpfCnpj) {
-      setCheckoutError('CPF ou CNPJ é obrigatório.');
+      failFiscal('CPF ou CNPJ é obrigatório.');
       return;
     }
     if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) {
-      setCheckoutError('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
+      failFiscal('CPF inválido (11 dígitos) ou CNPJ inválido (14 dígitos).');
       return;
     }
     if (!cleanPhone) {
-      setCheckoutError('Telefone é obrigatório.');
+      failFiscal('Telefone é obrigatório.');
       return;
     }
     if (!cleanCep || cleanCep.length !== 8) {
-      setCheckoutError('CEP é obrigatório e deve ter 8 dígitos.');
+      failFiscal('CEP é obrigatório e deve ter 8 dígitos.');
       return;
     }
     if (!street.trim()) {
-      setCheckoutError('Rua / Avenida é obrigatória.');
+      failFiscal('Rua / Avenida é obrigatória.');
       return;
     }
     if (!number.trim()) {
-      setCheckoutError('Número é obrigatório.');
+      failFiscal('Número é obrigatório.');
       return;
     }
     if (!neighborhood.trim()) {
-      setCheckoutError('Bairro é obrigatório.');
+      failFiscal('Bairro é obrigatório.');
       return;
     }
     if (!city.trim()) {
-      setCheckoutError('Cidade é obrigatória.');
+      failFiscal('Cidade é obrigatória.');
       return;
     }
     if (!uf.trim() || uf.trim().length !== 2) {
-      setCheckoutError('UF é obrigatória (2 letras).');
+      failFiscal('UF é obrigatória (2 letras).');
       return;
     }
 
@@ -369,10 +391,16 @@ export default function Checkout() {
       });
 
       if (fiscalFnError || fiscalData?.error) {
-        const msg = fiscalData?.error || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
+        const captchaMessage = translateCaptchaError(fiscalFnError) ?? translateCaptchaError(fiscalData?.error);
+        const msg = captchaMessage || fiscalData?.error || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
         setCheckoutError(msg);
-        toast.error(msg);
+        if (captchaMessage) {
+          toast.error('Verificação de segurança', { description: captchaMessage });
+        } else {
+          toast.error(msg);
+        }
         setIsCheckingOut(false);
+        resetCaptcha();
         return;
       }
     }
@@ -402,12 +430,14 @@ export default function Checkout() {
         const msg = fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
         setCheckoutError(msg);
         toast.error(msg);
+        resetCaptcha();
         return;
       }
 
       if (data?.error) {
         setCheckoutError(data.error);
         toast.error(data.error);
+        resetCaptcha();
         return;
       }
 
@@ -461,11 +491,18 @@ export default function Checkout() {
       } else {
         setCheckoutError('Resposta inesperada do servidor.');
         toast.error('Resposta inesperada do servidor.');
+        resetCaptcha();
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro inesperado.';
+      const captchaMessage = translateCaptchaError(err);
+      const msg = captchaMessage || (err instanceof Error ? err.message : 'Erro inesperado.');
       setCheckoutError(msg);
-      toast.error(msg);
+      if (captchaMessage) {
+        toast.error('Verificação de segurança', { description: captchaMessage });
+      } else {
+        toast.error(msg);
+      }
+      resetCaptcha();
     } finally {
       setIsCheckingOut(false);
     }
@@ -807,7 +844,7 @@ export default function Checkout() {
                       </button>
                     </div>
                     <p className="text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_MESSAGE}</p>
-                    <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+                    <TurnstileWidget ref={turnstileRef} onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                   </div>
 
                   {authError && <p className="text-destructive text-sm">{authError}</p>}
