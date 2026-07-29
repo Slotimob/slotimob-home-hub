@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { MfaChallengeForm } from '@/components/security/MfaChallengeForm';
 
 /**
  * Silent OAuth callback page.
@@ -9,11 +10,24 @@ import { Loader2 } from 'lucide-react';
  * then closes itself. The parent tab's onAuthStateChange listener
  * picks up the SIGNED_IN event via shared storage.
  *
- * If opened as a regular navigation (no opener), it redirects to /dashboard.
+ * If opened as a regular navigation (no opener), it redirects to /dashboard
+ * — unless the account requires a second factor, in which case the TOTP
+ * challenge is rendered before completing the redirect.
  */
 const AuthCallback = () => {
+  const [needsMfa, setNeedsMfa] = useState(false);
+
   useEffect(() => {
     const isPopup = !!window.opener;
+
+    const requiresMfa = async (): Promise<boolean> => {
+      try {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        return aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel;
+      } catch {
+        return false;
+      }
+    };
 
     const handleSession = async () => {
       // Supabase client auto-parses the hash fragment and sets the session.
@@ -23,6 +37,11 @@ const AuthCallback = () => {
       if (isPopup) {
         // Session is set in shared storage; parent tab will detect it.
         window.close();
+        return;
+      }
+
+      if (session && (await requiresMfa())) {
+        setNeedsMfa(true);
         return;
       }
 
@@ -44,6 +63,26 @@ const AuthCallback = () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  const handleCancel = async () => {
+    await supabase.auth.signOut();
+    window.location.replace('/auth');
+  };
+
+  if (needsMfa) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm rounded-lg border border-border p-6">
+          <MfaChallengeForm
+            title="Verificação em duas etapas"
+            description="Digite o código de 6 dígitos do seu aplicativo autenticador."
+            onSuccess={() => window.location.replace('/dashboard')}
+            onCancel={handleCancel}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">

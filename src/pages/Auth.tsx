@@ -14,6 +14,8 @@ import { passwordSchema, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSch
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { Separator } from '@/components/ui/separator';
 import { SEOHead } from '@/components/SEOHead';
+import { MfaChallengeForm } from '@/components/security/MfaChallengeForm';
+
 import { toast as sonnerToast } from 'sonner';
 import { trackLeadSignup, trackStartTrial } from '@/components/TrackingProvider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -253,6 +255,8 @@ const Auth = () => {
   const [invitation, setInvitation] = useState<{ email: string; invited_by_name: string; organization_owner_id: string } | null>(null);
   const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
   const [popupBlocked, setPopupBlocked] = useState(false);
+  const [mfaPending, setMfaPending] = useState(false);
+
 
   useEffect(() => {
     if (!inviteToken) return;
@@ -378,14 +382,24 @@ const Auth = () => {
           clearInterval(pollInterval);
           subscription.unsubscribe();
           if (!popup.closed) popup.close();
-          if (inviteToken) {
-            handleAcceptInvite().then(() => navigate('/dashboard'));
-          } else if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
-            handlePostAuthRedirect(pendingPlan || undefined);
-          } else {
-            navigate('/dashboard');
-          }
+          void (async () => {
+            const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+            if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+              setGoogleLoading(false);
+              setMfaPending(true);
+              return;
+            }
+            if (inviteToken) {
+              await handleAcceptInvite();
+              navigate('/dashboard');
+            } else if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
+              handlePostAuthRedirect(pendingPlan || undefined);
+            } else {
+              navigate('/dashboard');
+            }
+          })();
         }
+
       });
     } catch (error: any) {
       const msg = error?.message?.toLowerCase() || '';
@@ -413,6 +427,22 @@ const Auth = () => {
     }
   };
 
+  /** Navegação pós-login (reaproveitada pelo login direto e pelo desafio 2FA). */
+  const finishLogin = async () => {
+    if (inviteToken) await handleAcceptInvite();
+    if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
+      handlePostAuthRedirect(pendingPlan);
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  const handleCancelMfa = async () => {
+    await supabase.auth.signOut();
+    setMfaPending(false);
+    setLoginForm({ email: '', password: '' });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -424,13 +454,16 @@ const Auth = () => {
       setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password, options: { captchaToken: loginCaptchaToken } });
       if (error) throw error;
-      toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
-      if (inviteToken) await handleAcceptInvite();
-      if (pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)) {
-        handlePostAuthRedirect(pendingPlan);
-      } else {
-        navigate('/dashboard');
+
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+        setMfaPending(true);
+        return;
       }
+
+      toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
+      await finishLogin();
+
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({ title: 'Erro de validação', description: error.errors[0].message, variant: 'destructive' });
@@ -1015,9 +1048,22 @@ const Auth = () => {
                     {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : 'Concluir Cadastro'}
                   </Button>
                 </form>
+              ) : mfaPending ? (
+                <div className="rounded-lg border border-border p-6">
+                  <MfaChallengeForm
+                    title="Verificação em duas etapas"
+                    description="Digite o código de 6 dígitos do seu aplicativo autenticador."
+                    onSuccess={() => {
+                      setMfaPending(false);
+                      void finishLogin();
+                    }}
+                    onCancel={handleCancelMfa}
+                  />
+                </div>
               ) : showVerificationMessage ? (
                 renderVerificationMessage()
               ) : (
+
                 <>
                   {/* Google OAuth */}
                   <Button type="button" variant="outline" className="w-full h-12 gap-2 text-sm font-medium" onClick={handleGoogleLogin} disabled={googleLoading || loading}>
