@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, FormEvent } from 'react';
-import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
+import { useState, useEffect, useMemo, useRef, useCallback, FormEvent } from 'react';
+import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget';
+import { translateCaptchaError } from '@/lib/captchaErrors';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
