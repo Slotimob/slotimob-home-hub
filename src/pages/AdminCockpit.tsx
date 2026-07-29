@@ -287,6 +287,11 @@ const AdminCockpit = () => {
                 <Settings2 className="h-4 w-4" /> Configurações
               </TabsTrigger>
             )}
+            {isSuperAdmin && (
+              <TabsTrigger value="governance" className="gap-2 min-h-[44px]">
+                <ShieldCheck className="h-4 w-4" /> Governança
+              </TabsTrigger>
+            )}
           </ScrollableTabsList>
 
           {/* Overview Tab */}
@@ -499,6 +504,13 @@ const AdminCockpit = () => {
           {isSuperAdmin && (
             <TabsContent value="settings">
               <CockpitSettingsTab />
+            </TabsContent>
+          )}
+
+          {/* Governance Tab - super_admin only */}
+          {isSuperAdmin && (
+            <TabsContent value="governance">
+              <CockpitGovernanceTab />
             </TabsContent>
           )}
         </Tabs>
