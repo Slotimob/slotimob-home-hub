@@ -282,16 +282,19 @@ export default function Checkout() {
     if (!user) {
       if (!name || !email || !password) {
         setAuthError('Preencha todos os campos');
+        resetCaptcha();
         return;
       }
       const passwordError = validatePassword(password);
       if (passwordError) {
         setAuthError(passwordError);
+        resetCaptcha();
         return;
       }
       if (!captchaToken) {
         setAuthError('Confirme que você não é um robô.');
         setIsCheckingOut(false);
+        resetCaptcha();
         return;
       }
       setIsCheckingOut(true);
@@ -301,13 +304,21 @@ export default function Checkout() {
         options: { data: { full_name: name }, captchaToken },
       });
       if (signUpError) {
-        setAuthError(translateAuthError(signUpError.message));
+        const captchaMessage = translateCaptchaError(signUpError);
+        if (captchaMessage) {
+          setAuthError(captchaMessage);
+          toast.error('Verificação de segurança', { description: captchaMessage });
+        } else {
+          setAuthError(translateAuthError(signUpError.message));
+        }
         setIsCheckingOut(false);
+        resetCaptcha();
         return;
       }
       if (signUpData.user && !signUpData.session) {
         toast.info('Verifique seu email para continuar');
         setIsCheckingOut(false);
+        resetCaptcha();
         return;
       }
       if (signUpData.user) {
