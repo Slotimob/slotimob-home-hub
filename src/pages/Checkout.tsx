@@ -430,12 +430,14 @@ export default function Checkout() {
         const msg = fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
         setCheckoutError(msg);
         toast.error(msg);
+        resetCaptcha();
         return;
       }
 
       if (data?.error) {
         setCheckoutError(data.error);
         toast.error(data.error);
+        resetCaptcha();
         return;
       }
 
