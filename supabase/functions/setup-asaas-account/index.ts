@@ -87,10 +87,20 @@ Deno.serve(async (req) => {
 
     const { id: asaasAccountId, apiKey: subKey, walletId } = asaasData;
 
+    let encryptedKey: string | null = null;
+    if (subKey) {
+      const { data: encData, error: encryptErr } = await supabase.rpc("encrypt_asaas_api_key", { p_plain: subKey });
+      if (encryptErr || !encData) {
+        console.error("[setup-asaas-account] Encrypt error:", encryptErr);
+        return resp({ error: "Subconta criada no Asaas mas erro ao proteger a chave: " + (encryptErr?.message || "erro desconhecido") });
+      }
+      encryptedKey = encData as string;
+    }
+
     if (existing) {
       await supabase.from("asaas_accounts").update({
         asaas_account_id: asaasAccountId,
-        asaas_api_key: subKey,
+        asaas_api_key_encrypted: encryptedKey,
         wallet_id: walletId ?? null,
         status: "active",
         cpf_cnpj: cleanCpf,
@@ -99,7 +109,7 @@ Deno.serve(async (req) => {
       const { error: insertErr } = await supabase.from("asaas_accounts").insert({
         broker_id: user.id,
         asaas_account_id: asaasAccountId,
-        asaas_api_key: subKey,
+        asaas_api_key_encrypted: encryptedKey,
         wallet_id: walletId ?? null,
         status: "active",
         cpf_cnpj: cleanCpf,
