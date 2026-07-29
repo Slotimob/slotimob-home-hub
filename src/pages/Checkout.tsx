@@ -391,10 +391,16 @@ export default function Checkout() {
       });
 
       if (fiscalFnError || fiscalData?.error) {
-        const msg = fiscalData?.error || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
+        const captchaMessage = translateCaptchaError(fiscalFnError) ?? translateCaptchaError(fiscalData?.error);
+        const msg = captchaMessage || fiscalData?.error || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
         setCheckoutError(msg);
-        toast.error(msg);
+        if (captchaMessage) {
+          toast.error('Verificação de segurança', { description: captchaMessage });
+        } else {
+          toast.error(msg);
+        }
         setIsCheckingOut(false);
+        resetCaptcha();
         return;
       }
     }
