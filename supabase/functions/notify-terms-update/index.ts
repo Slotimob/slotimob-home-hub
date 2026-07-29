@@ -3,6 +3,7 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const FROM_DEFAULT = "Equipe SlotiMob <contato@slotimob.com.br>";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -117,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
       const emailPromises = batch.map(async (profile) => {
         try {
           const emailResponse = await resend.emails.send({
-            from: "SLOTIMOB <onboarding@resend.dev>",
+            from: FROM_DEFAULT,
             to: [profile.email],
             subject: `Atualização dos Termos de Uso - ${title}`,
             html: `
