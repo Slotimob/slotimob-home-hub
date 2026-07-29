@@ -3,6 +3,7 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { safeLog, safeWarn, safeError } from '../_shared/safe-log.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const FROM_DEFAULT = "Equipe SlotiMob <contato@slotimob.com.br>";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -159,7 +160,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email
     const emailResponse = await resend.emails.send({
-      from: "Imobiliária <onboarding@resend.dev>",
+      from: FROM_DEFAULT,
       to: [visit.leads.email],
       subject: `Lembrete: Visita agendada ${reminderText}`,
       html: `
