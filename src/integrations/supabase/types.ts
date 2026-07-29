@@ -320,7 +320,7 @@ export type Database = {
       asaas_accounts: {
         Row: {
           asaas_account_id: string
-          asaas_api_key: string
+          asaas_api_key_encrypted: string | null
           broker_id: string
           cpf_cnpj: string | null
           created_at: string | null
@@ -331,7 +331,7 @@ export type Database = {
         }
         Insert: {
           asaas_account_id: string
-          asaas_api_key: string
+          asaas_api_key_encrypted?: string | null
           broker_id: string
           cpf_cnpj?: string | null
           created_at?: string | null
@@ -342,7 +342,7 @@ export type Database = {
         }
         Update: {
           asaas_account_id?: string
-          asaas_api_key?: string
+          asaas_api_key_encrypted?: string | null
           broker_id?: string
           cpf_cnpj?: string | null
           created_at?: string | null
@@ -5693,6 +5693,8 @@ export type Database = {
           period_start: string
         }[]
       }
+      decrypt_asaas_api_key: { Args: { p_encrypted: string }; Returns: string }
+      encrypt_asaas_api_key: { Args: { p_plain: string }; Returns: string }
       get_access_review_overview: { Args: never; Returns: Json }
       get_ai_credits_balance: { Args: { p_user_id: string }; Returns: Json }
       get_cockpit_organizations: { Args: never; Returns: Json }
