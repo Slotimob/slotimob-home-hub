@@ -253,6 +253,8 @@ const Auth = () => {
   const [invitation, setInvitation] = useState<{ email: string; invited_by_name: string; organization_owner_id: string } | null>(null);
   const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
   const [popupBlocked, setPopupBlocked] = useState(false);
+  const [mfaPending, setMfaPending] = useState(false);
+
 
   useEffect(() => {
     if (!inviteToken) return;
