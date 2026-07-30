@@ -721,13 +721,26 @@ const RealEstate = () => {
                         {CONDITION_LABELS[unit.condition] || unit.condition}
                       </p>
                     )}
-                    {unit.price && (
+                    {showSalePrice(unit.intent_type) && unit.price && (
                       <div className="text-lg font-bold text-primary">
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
                           maximumFractionDigits: 0,
                         }).format(unit.price)}
+                      </div>
+                    )}
+                    {showRentalPrice(unit.intent_type) && unit.rent_price && (
+                      <div className={showSalePrice(unit.intent_type) && unit.price
+                        ? "text-sm font-medium text-blue-600"
+                        : "text-lg font-bold text-blue-600"}>
+                        {showSalePrice(unit.intent_type) && unit.price ? 'Aluguel: ' : ''}
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                          maximumFractionDigits: 0,
+                        }).format(unit.rent_price)}
+                        {!(showSalePrice(unit.intent_type) && unit.price) && <span className="text-xs font-normal">/mês</span>}
                       </div>
                     )}
                     

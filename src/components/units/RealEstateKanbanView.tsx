@@ -161,9 +161,14 @@ const SortableUnitCard = ({
               <p className="font-medium text-sm truncate">{unit.unit_number}</p>
 
               {/* Price */}
-              {unit.price && (
+              {showSalePrice(unit.intent_type) && unit.price && (
                 <p className="text-xs font-semibold text-primary">
                   {formatCurrency(unit.price)}
+                </p>
+              )}
+              {showRentalPrice(unit.intent_type) && unit.rent_price && (
+                <p className="text-xs font-semibold text-blue-600">
+                  Aluguel: {formatCurrency(unit.rent_price)}
                 </p>
               )}
 
@@ -332,9 +337,14 @@ const DragOverlayCard = ({ unit }: { unit: RealEstateUnit }) => {
 
           <div className="space-y-1">
             <p className="font-medium text-sm truncate">{unit.unit_number}</p>
-            {unit.price && (
+            {showSalePrice(unit.intent_type) && unit.price && (
               <p className="text-xs font-semibold text-primary">
                 R$ {unit.price.toLocaleString('pt-BR')}
+              </p>
+            )}
+            {showRentalPrice(unit.intent_type) && unit.rent_price && (
+              <p className="text-xs font-semibold text-blue-600">
+                Aluguel: R$ {unit.rent_price.toLocaleString('pt-BR')}
               </p>
             )}
           </div>
