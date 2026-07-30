@@ -925,6 +925,13 @@ const Units = () => {
           </>
         )
       )}
+
+      <ImageLightbox
+        src={lightboxImage?.src}
+        alt={lightboxImage?.alt}
+        open={!!lightboxImage}
+        onOpenChange={(o) => !o && setLightboxImage(null)}
+      />
     </AppLayout>
   );
 };

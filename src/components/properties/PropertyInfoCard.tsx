@@ -399,6 +399,13 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
           </div>
         </DialogContent>
       </Dialog>
+
+      <ImageLightbox
+        src={property.image_url || galleryImages[0]}
+        alt={property.name ?? 'Imóvel'}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </Card>
   );
 };
