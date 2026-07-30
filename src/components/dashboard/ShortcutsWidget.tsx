@@ -88,10 +88,10 @@ export function ShortcutsWidget({ shortcuts, isLoading }: ShortcutsWidgetProps) 
         setCreateContactOpen(true);
         break;
       case 'new-unit':
-        setCreateUnitOpen(true);
+        navigate('/units/novo');
         break;
       case 'new-property':
-        setCreateRealEstateOpen(true);
+        navigate('/real-estate/novo');
         break;
       case 'new-transaction':
         setCreateTransactionOpen(true);

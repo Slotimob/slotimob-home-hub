@@ -677,7 +677,7 @@ const Units = () => {
                 </Button>
               )}
               {!searchTerm && activeFiltersCount === 0 && !isAllUnitsView && (
-                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Button onClick={() => navigate(propertyId ? `/units/novo?propertyId=${propertyId}` : '/units/novo')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Criar Unidade
                 </Button>

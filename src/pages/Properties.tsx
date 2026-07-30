@@ -123,7 +123,7 @@ const Properties = () => {
         <div className="flex items-center gap-1 sm:gap-1.5">
           {canCreate && (
             <>
-              <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3" onClick={() => setIsDialogOpen(true)}>
+              <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3" onClick={() => navigate('/properties/novo')}>
                 <Plus className="h-4 w-4" />
                 <span className="hidden md:inline md:ml-2">Novo Empreendimento</span>
               </Button>
@@ -178,7 +178,7 @@ const Properties = () => {
                   : 'Você não tem permissão para criar empreendimentos. Fale com o administrador da sua conta.'}
               </p>
               {canCreate && (
-                <Button onClick={() => setIsDialogOpen(true)}>
+                <Button onClick={() => navigate('/properties/novo')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Criar Empreendimento
                 </Button>

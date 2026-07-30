@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateUnitDialog } from '@/components/CreateUnitDialog';
@@ -31,6 +32,7 @@ export function AddAssetButton({
   onSuccess,
   className,
 }: AddAssetButtonProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const { user } = useAuth();
@@ -63,7 +65,7 @@ export function AddAssetButton({
       setUpgradeOpen(true);
       return;
     }
-    setOpen(true);
+    navigate(standalone ? '/real-estate/novo' : (propertyId ? `/units/novo?propertyId=${propertyId}` : '/units/novo'));
   };
 
   const handleSuccess = () => {
