@@ -1,12 +1,14 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Rocket, Building2, Zap, Clock, ArrowRight } from 'lucide-react';
+import { Check, Rocket, Building2, Zap, Clock, ArrowRight, Loader2 } from 'lucide-react';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useAddonCheckout } from '@/hooks/useAddonCheckout';
 import { useNavigate } from 'react-router-dom';
 import { MemberFeatureDenied } from './MemberFeatureDenied';
+
 
 interface UpgradeModalProps {
   open: boolean;
@@ -54,6 +56,8 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
   const { isMember, isLoading: isWorkspaceLoading } = useWorkspace();
   const { slots } = useEarlyAdopterCount();
   const navigate = useNavigate();
+  const { buyAddon, loadingAddonId } = useAddonCheckout();
+
 
   // Enquanto o workspace ainda está carregando, isMember default é `false` —
   // isso causaria um flash da UI de upgrade para um convidado. Enquanto
