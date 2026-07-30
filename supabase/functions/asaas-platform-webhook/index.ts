@@ -111,6 +111,7 @@ serve(async (req) => {
               plan_id: type,
               current_period_start: now.toISOString(),
               current_period_end: periodEnd.toISOString(),
+              trial_ends_at: null,
               billing_provider: "asaas",
               updated_at: now.toISOString(),
             }).eq("id", sub.id);
@@ -162,6 +163,7 @@ serve(async (req) => {
           plan_id: "start",
           cancel_at_period_end: false,
           asaas_subscription_id: null,
+          trial_ends_at: null,
           updated_at: new Date().toISOString(),
         }).eq("asaas_subscription_id", subscription.id);
 
