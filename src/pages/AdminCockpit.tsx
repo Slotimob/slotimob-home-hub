@@ -331,7 +331,7 @@ const AdminCockpit = () => {
                             <TableHead>Plano</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-center">Unidades</TableHead>
-                            <TableHead className="text-center">WhatsApp</TableHead>
+                            <TableHead className="text-center">Usuários</TableHead>
                             <TableHead className="text-center">IA</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                           </TableRow>
