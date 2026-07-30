@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import { UNIT_STATUS_STYLES, ALL_UNIT_STATUSES } from '@/utils/uiConstants';
+import { showSalePrice, showRentalPrice } from '@/utils/unitPricing';
 import { usePermissions } from '@/hooks/usePermissions';
 
 type UnitStatus = Database['public']['Enums']['unit_status'];
@@ -36,6 +37,8 @@ interface RealEstateUnit {
   condition: string | null;
   price: number | null;
   rent_price: number | null;
+  intent_type?: string | null;
+  market_value?: number | null;
   area: number | null;
   area_total?: number | null;
   bedrooms: number | null;
