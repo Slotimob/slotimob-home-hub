@@ -245,7 +245,12 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">Área</Label>
-                        <p className="text-sm">{unit.area ? `${unit.area}m²` : '-'}</p>
+                        <p className="text-sm">
+                          {[
+                            unit.area_total ? `${unit.area_total}m² total` : null,
+                            unit.area ? `${unit.area}m² útil` : null,
+                          ].filter(Boolean).join(' · ') || '-'}
+                        </p>
                       </div>
                     </div>
 
