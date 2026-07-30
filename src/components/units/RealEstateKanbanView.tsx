@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import { UNIT_STATUS_STYLES, ALL_UNIT_STATUSES } from '@/utils/uiConstants';
+import { showSalePrice, showRentalPrice } from '@/utils/unitPricing';
 import { usePermissions } from '@/hooks/usePermissions';
 
 type UnitStatus = Database['public']['Enums']['unit_status'];
@@ -36,6 +37,8 @@ interface RealEstateUnit {
   condition: string | null;
   price: number | null;
   rent_price: number | null;
+  intent_type?: string | null;
+  market_value?: number | null;
   area: number | null;
   area_total?: number | null;
   bedrooms: number | null;
@@ -158,9 +161,14 @@ const SortableUnitCard = ({
               <p className="font-medium text-sm truncate">{unit.unit_number}</p>
 
               {/* Price */}
-              {unit.price && (
+              {showSalePrice(unit.intent_type) && unit.price && (
                 <p className="text-xs font-semibold text-primary">
                   {formatCurrency(unit.price)}
+                </p>
+              )}
+              {showRentalPrice(unit.intent_type) && unit.rent_price && (
+                <p className="text-xs font-semibold text-blue-600">
+                  Aluguel: {formatCurrency(unit.rent_price)}
                 </p>
               )}
 
@@ -329,9 +337,14 @@ const DragOverlayCard = ({ unit }: { unit: RealEstateUnit }) => {
 
           <div className="space-y-1">
             <p className="font-medium text-sm truncate">{unit.unit_number}</p>
-            {unit.price && (
+            {showSalePrice(unit.intent_type) && unit.price && (
               <p className="text-xs font-semibold text-primary">
                 R$ {unit.price.toLocaleString('pt-BR')}
+              </p>
+            )}
+            {showRentalPrice(unit.intent_type) && unit.rent_price && (
+              <p className="text-xs font-semibold text-blue-600">
+                Aluguel: R$ {unit.rent_price.toLocaleString('pt-BR')}
               </p>
             )}
           </div>

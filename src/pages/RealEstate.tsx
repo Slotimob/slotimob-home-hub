@@ -49,6 +49,8 @@ interface RealEstateUnit {
   condition: string | null;
   price: number | null;
   rent_price: number | null;
+  intent_type?: string | null;
+  market_value?: number | null;
   area: number | null;
   area_total?: number | null;
   bedrooms: number | null;
@@ -111,6 +113,7 @@ const initialFilters: UnitsFiltersState = {
 };
 
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from '@/utils/uiConstants';
+import { showSalePrice, showRentalPrice } from '@/utils/unitPricing';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -535,14 +538,16 @@ const RealEstate = () => {
                       <TableHead className="w-[140px] sm:w-[180px]">Identificação</TableHead>
                       <TableHead className="w-[90px] sm:w-[100px]">Status</TableHead>
                       <TableHead className="hidden sm:table-cell w-[100px]">Tipo</TableHead>
-                      <TableHead className="text-right w-[100px] sm:w-[120px]">Preço</TableHead>
-                      <TableHead className="text-right w-[100px] sm:w-[120px]">Aluguel</TableHead>
+                      <TableHead className="text-right w-[90px] sm:w-[110px]">Valor Imóvel</TableHead>
+                      <TableHead className="text-right w-[90px] sm:w-[110px]">Preço Venda</TableHead>
+                      <TableHead className="text-right w-[90px] sm:w-[110px]">R$ Aluguel</TableHead>
                       <TableHead className="w-[80px] sm:w-[100px] text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUnits.map((unit) => {
-                      const shouldShowRent = unit.status === 'rented' || unit.rent_price;
+                      const canShowSale = showSalePrice(unit.intent_type) && unit.price != null;
+                      const canShowRent = showRentalPrice(unit.intent_type) && unit.rent_price != null;
                       return (
                         <TableRow 
                           key={unit.id} 
@@ -577,7 +582,20 @@ const RealEstate = () => {
                             )}
                           </TableCell>
                           <TableCell className="text-right py-2 sm:py-4">
-                            {unit.price ? (
+                            {unit.market_value != null ? (
+                              <span className="font-medium text-xs sm:text-sm">
+                                {new Intl.NumberFormat("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL",
+                                  maximumFractionDigits: 0,
+                                }).format(unit.market_value)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right py-2 sm:py-4">
+                            {canShowSale ? (
                               <span className="font-medium text-xs sm:text-sm">
                                 {new Intl.NumberFormat("pt-BR", {
                                   style: "currency",
@@ -590,7 +608,7 @@ const RealEstate = () => {
                             )}
                           </TableCell>
                           <TableCell className="text-right py-2 sm:py-4">
-                            {shouldShowRent && unit.rent_price ? (
+                            {canShowRent ? (
                               <span className="font-medium text-xs sm:text-sm text-blue-600">
                                 {new Intl.NumberFormat("pt-BR", {
                                   style: "currency",
@@ -703,13 +721,26 @@ const RealEstate = () => {
                         {CONDITION_LABELS[unit.condition] || unit.condition}
                       </p>
                     )}
-                    {unit.price && (
+                    {showSalePrice(unit.intent_type) && unit.price && (
                       <div className="text-lg font-bold text-primary">
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
                           maximumFractionDigits: 0,
                         }).format(unit.price)}
+                      </div>
+                    )}
+                    {showRentalPrice(unit.intent_type) && unit.rent_price && (
+                      <div className={showSalePrice(unit.intent_type) && unit.price
+                        ? "text-sm font-medium text-blue-600"
+                        : "text-lg font-bold text-blue-600"}>
+                        {showSalePrice(unit.intent_type) && unit.price ? 'Aluguel: ' : ''}
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                          maximumFractionDigits: 0,
+                        }).format(unit.rent_price)}
+                        {!(showSalePrice(unit.intent_type) && unit.price) && <span className="text-xs font-normal">/mês</span>}
                       </div>
                     )}
                     
