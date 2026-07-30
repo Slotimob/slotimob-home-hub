@@ -19,7 +19,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { UnitCard } from "./UnitCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { Database } from "@/integrations/supabase/types";
-import { UNIT_STATUS_STYLES } from "@/utils/uiConstants";
+import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 

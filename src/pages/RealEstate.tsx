@@ -109,7 +109,7 @@ const initialFilters: UnitsFiltersState = {
   management: 'all',
 };
 
-import { UNIT_STATUS_STYLES } from '@/utils/uiConstants';
+import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from '@/utils/uiConstants';
 
 const STATUS_LABELS: Record<string, string> = {
   available: 'Disponível',
