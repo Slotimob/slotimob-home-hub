@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Share2, Home, Ruler, Bed, Rss } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
+import { showSalePrice, showRentalPrice } from "@/utils/unitPricing";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 
@@ -20,6 +21,7 @@ interface Unit {
   bathrooms: number | null;
   rent_price?: number | null;
   intent_type?: string | null;
+  market_value?: number | null;
   property_type?: string | null;
   cover_image_url: string | null;
   is_published_portal?: boolean | null;
