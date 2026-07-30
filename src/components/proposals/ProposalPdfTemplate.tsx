@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { Bed, Bath, Car, Maximize, Sun, Sofa, Hammer, Building2, MapPin, Calculator } from 'lucide-react';
 import type { PDFAssetData, AgentInfo, CustomSimulation } from '@/utils/propertyPdfGenerator';
+import { normalizePropertyImageUrl } from '@/lib/imageUtils';
 
 interface ProposalPdfTemplateProps {
   data: PDFAssetData;
@@ -33,7 +34,7 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
 export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplateProps>(
   ({ data, agent }, ref) => {
     const { unit, parentProperty, title, financingSimulation, customSimulation } = data;
-    const coverImg = unit.cover_image_url || parentProperty?.image_url || null;
+    const coverImg = normalizePropertyImageUrl(unit.cover_image_url || parentProperty?.image_url);
     const allGallery = (unit.gallery || parentProperty?.gallery_images || []);
     const gallery = allGallery.slice(0, 8);
     const location = [unit.neighborhood, unit.city, unit.state].filter(Boolean).join(' · ');
@@ -208,7 +209,7 @@ export const ProposalPdfTemplate = forwardRef<HTMLDivElement, ProposalPdfTemplat
                   }}
                 >
                   <img
-                    src={img}
+                    src={normalizePropertyImageUrl(img) ?? img}
                     alt={`Foto ${i + 1}`}
                     crossOrigin="anonymous"
                     style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { normalizePropertyImageUrl } from '@/lib/imageUtils';
 
 interface UnitImageUploadProps {
   unitId?: string;
@@ -38,11 +39,12 @@ export const UnitImageUpload = ({
 
   // Sync preview with currentImageUrl when it changes externally
   useEffect(() => {
-    if (currentImageUrl) {
+    const normalizedCurrent = normalizePropertyImageUrl(currentImageUrl);
+    if (normalizedCurrent) {
       // Add cache-busting for external URL changes
-      const url = currentImageUrl.includes('?') 
-        ? currentImageUrl 
-        : `${currentImageUrl}?t=${Date.now()}`;
+      const url = normalizedCurrent.includes('?')
+        ? normalizedCurrent
+        : `${normalizedCurrent}?t=${Date.now()}`;
       setPreview(url);
     } else {
       setPreview(null);

@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Building2, MapPin, Package, Percent, Flame, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { normalizePropertyImageUrl } from '@/lib/imageUtils';
 
 interface Property {
   id: string;
@@ -118,7 +119,7 @@ export function PropertiesTableView({
                   <TableCell className="p-2">
                     {property.image_url ? (
                       <img
-                        src={property.image_url}
+                        src={normalizePropertyImageUrl(property.image_url) ?? undefined}
                         alt={property.name}
                         className="w-10 h-10 rounded object-cover"
                       />

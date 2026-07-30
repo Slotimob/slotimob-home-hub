@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/notifications';
+import { normalizePropertyImageUrl } from '@/lib/imageUtils';
 
 interface AssetImageUploadProps {
   /** Current image URL */
@@ -66,10 +67,11 @@ export function AssetImageUpload({
 
   // Sync preview with currentImageUrl
   useEffect(() => {
-    if (currentImageUrl) {
-      const url = currentImageUrl.includes('?')
-        ? currentImageUrl
-        : `${currentImageUrl}?t=${Date.now()}`;
+    const normalizedCurrent = normalizePropertyImageUrl(currentImageUrl);
+    if (normalizedCurrent) {
+      const url = normalizedCurrent.includes('?')
+        ? normalizedCurrent
+        : `${normalizedCurrent}?t=${Date.now()}`;
       setPreview(url);
     } else {
       setPreview(null);

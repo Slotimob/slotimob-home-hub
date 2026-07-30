@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
+import { normalizePropertyImageUrl } from '@/lib/imageUtils';
 
 interface PropertyImageUploadProps {
   propertyId?: string;
@@ -28,7 +29,7 @@ export const PropertyImageUpload = ({
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const [preview, setPreview] = useState<string | null>(currentImageUrl);
+  const [preview, setPreview] = useState<string | null>(normalizePropertyImageUrl(currentImageUrl));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isSavingRef = useRef(false);
 
