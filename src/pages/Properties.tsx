@@ -19,6 +19,7 @@ import { AddAssetButton } from '@/components/units/AddAssetButton';
 import { PropertiesTableView } from '@/components/properties/PropertiesTableView';
 import { ViewModeTabs } from '@/components/ui/view-mode-tabs';
 import { usePropertyUnitsCount } from '@/hooks/usePropertyUnitsCount';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 interface Property {
   id: string;
@@ -222,7 +223,11 @@ const Properties = () => {
                   <PropertyImage
                     src={property.image_url}
                     alt={property.name ?? 'Imóvel'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxImage({ src: property.image_url, alt: property.name ?? 'Imóvel' });
+                    }}
                   />
                 </div>
                 <CardHeader className="pb-2">
