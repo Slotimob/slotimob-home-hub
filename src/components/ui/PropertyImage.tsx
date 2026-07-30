@@ -7,6 +7,7 @@ interface PropertyImageProps {
   alt: string;
   className?: string;
   fallbackClassName?: string;
+  onClick?: React.MouseEventHandler<HTMLImageElement>;
 }
 
 export function PropertyImage({
@@ -14,6 +15,7 @@ export function PropertyImage({
   alt,
   className = '',
   fallbackClassName = '',
+  onClick,
 }: PropertyImageProps) {
   const normalizedSrc = normalizePropertyImageUrl(src);
   const [hasError, setHasError] = useState(false);
