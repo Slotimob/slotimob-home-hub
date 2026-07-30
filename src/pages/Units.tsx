@@ -152,6 +152,7 @@ const Units = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<UnitsFiltersState>(initialFilters);
   const [sortBy, setSortBy] = useState<SortOption>('unit_number_asc');

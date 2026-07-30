@@ -66,6 +66,7 @@ const CONSTRUCTION_STAGE_COLORS: Record<string, string> = {
 
 export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCardProps) => {
   const [showGallery, setShowGallery] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { user } = useAuth();

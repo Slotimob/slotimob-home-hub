@@ -64,6 +64,7 @@ const Properties = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [isImportOpen, setIsImportOpen] = useState(false);

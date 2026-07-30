@@ -140,6 +140,7 @@ const RealEstate = () => {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   
   const [selectedUnit, setSelectedUnit] = useState<RealEstateUnit | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem('real-estate-view-mode');
     return (saved === 'grid' || saved === 'table' || saved === 'kanban') ? saved : 'table';
