@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import { UNIT_STATUS_STYLES, ALL_UNIT_STATUSES } from '@/utils/uiConstants';
+import { showSalePrice, showRentalPrice } from '@/utils/unitPricing';
 import { generatePropertyPDF, buildPDFDataFromUnit } from '@/utils/propertyPdfGenerator';
 import { usePermissions } from '@/hooks/usePermissions';
 

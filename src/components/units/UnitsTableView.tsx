@@ -214,12 +214,25 @@ export function UnitsTableView({
                   )}
                 </TableCell>
                 <TableCell className="text-right py-2 sm:py-4">
-                  <span className="font-medium text-xs sm:text-sm">
-                    {formatCurrency(unit.price)}
-                  </span>
+                  {unit.market_value != null ? (
+                    <span className="font-medium text-xs sm:text-sm">
+                      {formatCurrency(unit.market_value)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right py-2 sm:py-4">
-                  {shouldShowRent(unit) && unit.rent_price ? (
+                  {showSalePrice(unit.intent_type) && unit.price != null ? (
+                    <span className="font-medium text-xs sm:text-sm">
+                      {formatCurrency(unit.price)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right py-2 sm:py-4">
+                  {showRentalPrice(unit.intent_type) && unit.rent_price != null ? (
                     <span className="font-medium text-xs sm:text-sm text-blue-600">
                       {formatCurrency(unit.rent_price)}
                     </span>
