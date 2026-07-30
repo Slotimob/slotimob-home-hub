@@ -286,6 +286,7 @@ export const EditUnitDialog = ({
         price: formData.price ? parseFloat(formData.price) : null,
         rent_price: formData.rent_price ? parseFloat(formData.rent_price) : null,
         area: formData.area ? parseFloat(formData.area) : null,
+        area_total: formData.area_total ? parseFloat(formData.area_total) : null,
         bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
         suites: formData.suites ? parseInt(formData.suites) : null,
         bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
