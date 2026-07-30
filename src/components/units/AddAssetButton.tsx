@@ -78,7 +78,7 @@ export function AddAssetButton({
       ? 'h-8 w-8 sm:h-9 sm:w-9' 
       : 'h-8 sm:h-9 px-2 sm:px-3';
 
-  const targetPlan = plan === 'free' ? 'essencial' : plan === 'essencial' ? 'pro' : 'business';
+  const targetPlan = plan === 'business' ? 'business' : plan === 'pro' ? 'business' : 'pro';
 
   return (
     <>
