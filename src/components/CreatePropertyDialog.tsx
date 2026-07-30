@@ -1,7 +1,3 @@
-import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useWorkspace } from '@/hooks/useWorkspace';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { Building2 } from 'lucide-react';
 import { PropertyForm, PropertyPayload } from '@/components/properties/PropertyForm';
+import { useCreateProperty } from '@/hooks/useCreateProperty';
 
 interface CreatePropertyDialogProps {
   open: boolean;
@@ -20,39 +16,13 @@ interface CreatePropertyDialogProps {
 }
 
 export const CreatePropertyDialog = ({ open, onOpenChange, onSuccess }: CreatePropertyDialogProps) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const { effectiveBrokerId } = useWorkspace();
-  const [saving, setSaving] = useState(false);
+  const { createProperty, saving } = useCreateProperty();
 
   const handleSubmit = async (payload: PropertyPayload) => {
-    try {
-      setSaving(true);
-
-      const { error } = await supabase.from('properties').insert([
-        {
-          broker_id: effectiveBrokerId,
-          ...payload,
-        },
-      ]);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Empreendimento criado!',
-        description: 'O empreendimento foi cadastrado com sucesso.',
-      });
-
+    const ok = await createProperty(payload);
+    if (ok) {
       onOpenChange(false);
       onSuccess();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao criar empreendimento',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
     }
   };
 

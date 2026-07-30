@@ -72,6 +72,7 @@ const DataExport = React.lazy(() => import("./pages/DataExport"));
 const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
 const Plans = React.lazy(() => import("./pages/Plans"));
 const Sobre = React.lazy(() => import("./pages/Sobre"));
+const NovoEmpreendimento = React.lazy(() => import("./pages/NovoEmpreendimento"));
 
 
 
@@ -131,6 +132,7 @@ const App = () => (
               {/* Protected routes — wrapped with AuthGuard */}
               <Route path="/dashboard" element={guarded(<Dashboard />)} />
               <Route path="/properties" element={guarded(<Properties />)} />
+              <Route path="/properties/novo" element={guarded(<NovoEmpreendimento />)} />
               <Route path="/units" element={guarded(<Units />)} />
               <Route path="/real-estate" element={guarded(<RealEstate />)} />
               <Route path="/pipeline" element={guarded(<Pipeline />)} />
