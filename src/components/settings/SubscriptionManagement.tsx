@@ -314,15 +314,16 @@ export const SubscriptionManagement = () => {
                 </Button>
                 <Button
                   size="sm"
-                  disabled={!!loadingAction}
-                  onClick={() => handleAddAddon('extra-user')}
+                  disabled={!!loadingAction || !!loadingAddonId}
+                  onClick={() => buyAddon('extra-user', addonUserQty)}
                 >
-                  {loadingAction === 'addon-extra-user' ? (
+                  {loadingAddonId === 'extra-user' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     'Adicionar'
                   )}
                 </Button>
+
               </div>
             </div>
 
