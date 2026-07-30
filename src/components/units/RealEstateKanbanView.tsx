@@ -37,6 +37,7 @@ interface RealEstateUnit {
   price: number | null;
   rent_price: number | null;
   area: number | null;
+  area_total?: number | null;
   bedrooms: number | null;
   suites: number | null;
   bathrooms: number | null;
@@ -175,10 +176,14 @@ const SortableUnitCard = ({
 
               {/* Area and Bedrooms */}
               <div className="flex gap-2 text-xs text-muted-foreground">
-                {unit.area && (
+                {(unit.area || unit.area_total) && (
                   <div className="flex items-center gap-1">
                     <Square className="h-3 w-3" />
-                    <span>{unit.area}m²</span>
+                    <span>
+                      {unit.area_total && `${unit.area_total}m² total`}
+                      {unit.area_total && unit.area && ' · '}
+                      {unit.area && `${unit.area}m² útil`}
+                    </span>
                   </div>
                 )}
                 {unit.bedrooms !== null && <span>{unit.bedrooms}q</span>}

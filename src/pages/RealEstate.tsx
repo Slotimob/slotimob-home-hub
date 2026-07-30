@@ -50,6 +50,7 @@ interface RealEstateUnit {
   price: number | null;
   rent_price: number | null;
   area: number | null;
+  area_total?: number | null;
   bedrooms: number | null;
   suites: number | null;
   bathrooms: number | null;
@@ -549,9 +550,11 @@ const RealEstate = () => {
                           <TableCell className="font-medium py-2 sm:py-4">
                             <div className="flex flex-col">
                               <span className="truncate max-w-[120px] sm:max-w-[160px] text-sm">{unit.unit_number}</span>
-                              {unit.area && (
+                              {(unit.area || unit.area_total) && (
                                 <span className="text-xs text-muted-foreground">
-                                  {unit.area} m²
+                                  {unit.area_total && `${unit.area_total} m² total`}
+                                  {unit.area_total && unit.area && ' · '}
+                                  {unit.area && `${unit.area} m² útil`}
                                   {unit.bedrooms !== null && ` • ${unit.bedrooms}q`}
                                 </span>
                               )}
@@ -723,10 +726,14 @@ const RealEstate = () => {
                           <span>{unit.parking_spots}</span>
                         </div>
                       )}
-                      {unit.area && (
+                      {(unit.area || unit.area_total) && (
                         <div className="flex items-center gap-1">
                           <Square className="h-4 w-4" />
-                          <span>{unit.area} m²</span>
+                          <span>
+                            {unit.area_total && `${unit.area_total} m² total`}
+                            {unit.area_total && unit.area && ' · '}
+                            {unit.area && `${unit.area} m² útil`}
+                          </span>
                         </div>
                       )}
                     </div>

@@ -59,6 +59,7 @@ export interface Unit {
   status: UnitStatus;
   price: number | null;
   area: number | null;
+  area_total?: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
   iptu: number | null;
@@ -757,7 +758,13 @@ const Units = () => {
                           {unit.bathrooms !== 1 ? 's' : ''}
                         </span>
                       )}
-                      {unit.area && <span className="block text-xs">{unit.area}m²</span>}
+                      {(unit.area || unit.area_total) && (
+                        <span className="block text-xs">
+                          {unit.area_total && `${unit.area_total}m² total`}
+                          {unit.area_total && unit.area && ' · '}
+                          {unit.area && `${unit.area}m² útil`}
+                        </span>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 pt-0">

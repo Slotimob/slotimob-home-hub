@@ -15,6 +15,7 @@ interface Unit {
   status: UnitStatus;
   price: number | null;
   area: number | null;
+  area_total?: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
   rent_price?: number | null;
@@ -93,10 +94,12 @@ export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: Unit
 
         {/* Unit Details */}
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          {unit.area && (
+          {(unit.area || unit.area_total) && (
             <span className="flex items-center gap-1">
               <Ruler className="h-3.5 w-3.5" />
-              {unit.area} m²
+              {unit.area_total && unit.area
+                ? `${unit.area_total} m² total · ${unit.area} m² útil`
+                : `${unit.area ?? unit.area_total} m²${unit.area_total && !unit.area ? ' total' : ''}`}
             </span>
           )}
           {unit.bedrooms !== null && (
