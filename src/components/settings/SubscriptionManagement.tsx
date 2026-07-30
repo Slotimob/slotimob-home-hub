@@ -39,6 +39,8 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { Rocket, Clock, Crown } from 'lucide-react';
 import { BuyAICreditsDialog } from './BuyAICreditsDialog';
+import { useAddonCheckout } from '@/hooks/useAddonCheckout';
+
 const planLabels: Record<string, string> = {
   start: 'Start',
   free: 'Gratuito',
