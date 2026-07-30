@@ -35,16 +35,6 @@ interface UnitCardProps {
   showProperty?: boolean;
 }
 
-const PROPERTY_TYPE_LABELS: Record<string, string> = {
-  apartamento: "Apartamento",
-  casa: "Casa",
-  terreno: "Terreno",
-  sala_comercial: "Sala Comercial",
-  loja: "Loja",
-  galpao: "Galpão",
-  rural: "Rural",
-  outros: "Outros",
-};
 
 const formatCurrency = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return "-";

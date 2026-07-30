@@ -118,16 +118,6 @@ const STATUS_LABELS: Record<string, string> = {
   sold: 'Vendido',
 };
 
-const PROPERTY_TYPE_LABELS: Record<string, string> = {
-  apartamento: 'Apartamento',
-  casa: 'Casa',
-  terreno: 'Terreno',
-  sala_comercial: 'Sala Comercial',
-  loja: 'Loja',
-  galpao: 'Galpão',
-  rural: 'Rural',
-  outros: 'Outros',
-};
 
 const CONDITION_LABELS: Record<string, string> = {
   construcao: 'Em Construção',

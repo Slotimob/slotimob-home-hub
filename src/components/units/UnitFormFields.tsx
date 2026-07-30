@@ -400,14 +400,11 @@ export const UnitFormFields = ({
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="apartamento">Apartamento</SelectItem>
-                <SelectItem value="casa">Casa</SelectItem>
-                <SelectItem value="terreno">Terreno</SelectItem>
-                <SelectItem value="sala_comercial">Sala Comercial</SelectItem>
-                <SelectItem value="loja">Loja</SelectItem>
-                <SelectItem value="galpao">Galpão</SelectItem>
-                <SelectItem value="rural">Rural</SelectItem>
-                <SelectItem value="outros">Outros</SelectItem>
+                {ALL_PROPERTY_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {PROPERTY_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
