@@ -538,14 +538,16 @@ const RealEstate = () => {
                       <TableHead className="w-[140px] sm:w-[180px]">Identificação</TableHead>
                       <TableHead className="w-[90px] sm:w-[100px]">Status</TableHead>
                       <TableHead className="hidden sm:table-cell w-[100px]">Tipo</TableHead>
-                      <TableHead className="text-right w-[100px] sm:w-[120px]">Preço</TableHead>
-                      <TableHead className="text-right w-[100px] sm:w-[120px]">Aluguel</TableHead>
+                      <TableHead className="text-right w-[90px] sm:w-[110px]">Valor Imóvel</TableHead>
+                      <TableHead className="text-right w-[90px] sm:w-[110px]">Preço Venda</TableHead>
+                      <TableHead className="text-right w-[90px] sm:w-[110px]">R$ Aluguel</TableHead>
                       <TableHead className="w-[80px] sm:w-[100px] text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUnits.map((unit) => {
-                      const shouldShowRent = unit.status === 'rented' || unit.rent_price;
+                      const canShowSale = showSalePrice(unit.intent_type) && unit.price != null;
+                      const canShowRent = showRentalPrice(unit.intent_type) && unit.rent_price != null;
                       return (
                         <TableRow 
                           key={unit.id} 
