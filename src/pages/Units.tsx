@@ -774,9 +774,18 @@ const Units = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 pt-0">
-                    {unit.price && (
+                    {showSalePrice(unit.intent_type) && unit.price && (
                       <div className="text-lg font-bold text-primary">
                         R$ {unit.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    )}
+                    {showRentalPrice(unit.intent_type) && unit.rent_price && (
+                      <div className={showSalePrice(unit.intent_type) && unit.price
+                        ? "text-sm font-medium text-blue-600"
+                        : "text-lg font-bold text-blue-600"}>
+                        {showSalePrice(unit.intent_type) && unit.price ? 'Aluguel: ' : ''}
+                        R$ {unit.rent_price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {!(showSalePrice(unit.intent_type) && unit.price) && <span className="text-xs font-normal">/mês</span>}
                       </div>
                     )}
                     <div className="space-y-1 text-xs text-muted-foreground">
