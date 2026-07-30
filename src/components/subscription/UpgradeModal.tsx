@@ -1,12 +1,14 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Rocket, Building2, Zap, Clock, ArrowRight } from 'lucide-react';
+import { Check, Rocket, Building2, Zap, Clock, ArrowRight, Loader2 } from 'lucide-react';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useAddonCheckout } from '@/hooks/useAddonCheckout';
 import { useNavigate } from 'react-router-dom';
 import { MemberFeatureDenied } from './MemberFeatureDenied';
+
 
 interface UpgradeModalProps {
   open: boolean;
@@ -54,6 +56,8 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
   const { isMember, isLoading: isWorkspaceLoading } = useWorkspace();
   const { slots } = useEarlyAdopterCount();
   const navigate = useNavigate();
+  const { buyAddon, loadingAddonId } = useAddonCheckout();
+
 
   // Enquanto o workspace ainda está carregando, isMember default é `false` —
   // isso causaria um flash da UI de upgrade para um convidado. Enquanto
@@ -80,6 +84,76 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
 
   const isPro = currentPlan === 'pro';
   const isUpgradeFromPro = isPro && resolvedTarget === 'business';
+
+  // Usuário já é Business e bateu no limite: a expansão é via add-on, não upgrade
+  if (currentPlan === 'business' && resolvedTarget === 'business') {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 className="h-6 w-6 text-purple-500" />
+              <DialogTitle className="text-lg">Adicione mais unidades ao seu Business</DialogTitle>
+            </div>
+            <DialogDescription>
+              Você já está no plano mais alto (Business) e atingiu o limite de unidades
+              incluído nele. Para expandir, não existe upgrade de plano — a forma de
+              crescer é contratar um add-on de unidades, que é somado ao seu limite atual.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg border-2 border-purple-500 bg-card">
+              <div className="flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">Pack de Unidades (+50)</p>
+                  <p className="text-xs text-muted-foreground">R$ 39,90/mês cada</p>
+                </div>
+              </div>
+            </div>
+
+            <ul className="space-y-2">
+              <li className="flex items-start gap-2 text-sm">
+                <Check className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                <span>+50 unidades gerenciadas somadas ao seu limite atual</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm">
+                <Check className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                <span>Cobrança recorrente mensal, cancele quando quiser</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm">
+                <Check className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                <span>Você mantém todos os recursos do Business</span>
+              </li>
+            </ul>
+
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+                Agora não
+              </Button>
+              <Button
+                className="flex-1 bg-purple-500 hover:opacity-90 gap-2"
+                disabled={!!loadingAddonId}
+                onClick={async () => {
+                  const url = await buyAddon('extra-units-50', 1);
+                  if (url) onOpenChange(false);
+                }}
+              >
+                {loadingAddonId === 'extra-units-50' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Zap className="h-4 w-4" />
+                )}
+                Adicionar +50 unidades
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
 
   const earlyAdopterSlots = slots[resolvedTarget];
   const hasEarlyAdopterSlots = earlyAdopterSlots && earlyAdopterSlots.remaining > 0;

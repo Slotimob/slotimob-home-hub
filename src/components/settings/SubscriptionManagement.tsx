@@ -39,6 +39,8 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { Rocket, Clock, Crown } from 'lucide-react';
 import { BuyAICreditsDialog } from './BuyAICreditsDialog';
+import { useAddonCheckout } from '@/hooks/useAddonCheckout';
+
 const planLabels: Record<string, string> = {
   start: 'Start',
   free: 'Gratuito',
@@ -68,6 +70,8 @@ export const SubscriptionManagement = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const navigate = useNavigate();
+  const { buyAddon, loadingAddonId } = useAddonCheckout();
+
 
   if (isLoading) {
     return (
@@ -95,24 +99,8 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  const handleAddAddon = async (addonId: 'extra-units-50' | 'extra-user') => {
-    setLoadingAction(`addon-${addonId}`);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { product_type: 'addon', addon_id: addonId },
-      });
-      if (error || !data?.url) {
-        toast.error(data?.error || 'Erro ao contratar add-on');
-        return;
-      }
-      window.open(data.url, '_blank', 'noopener,noreferrer');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao contratar add-on.';
-      toast.error(message);
-    } finally {
-      setLoadingAction(null);
-    }
-  };
+
+
 
   const handleCancelSubscription = async () => {
     setIsCancelling(true);
@@ -330,15 +318,16 @@ export const SubscriptionManagement = () => {
                 </Button>
                 <Button
                   size="sm"
-                  disabled={!!loadingAction}
-                  onClick={() => handleAddAddon('extra-user')}
+                  disabled={!!loadingAction || !!loadingAddonId}
+                  onClick={() => buyAddon('extra-user', addonUserQty)}
                 >
-                  {loadingAction === 'addon-extra-user' ? (
+                  {loadingAddonId === 'extra-user' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     'Adicionar'
                   )}
                 </Button>
+
               </div>
             </div>
 
@@ -372,15 +361,16 @@ export const SubscriptionManagement = () => {
                 </Button>
                 <Button
                   size="sm"
-                  disabled={!!loadingAction}
-                  onClick={() => handleAddAddon('extra-units-50')}
+                  disabled={!!loadingAction || !!loadingAddonId}
+                  onClick={() => buyAddon('extra-units-50', addonUnitQty)}
                 >
-                  {loadingAction === 'addon-extra-units-50' ? (
+                  {loadingAddonId === 'extra-units-50' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     'Adicionar'
                   )}
                 </Button>
+
               </div>
             </div>
           </CardContent>
