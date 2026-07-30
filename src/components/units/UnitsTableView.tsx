@@ -105,9 +105,9 @@ export function UnitsTableView({
     );
   }
 
-  // Check if unit should show rent price (rented or intent_type is rent)
+  // Check if unit should show rent price (rented or intent_type is rental)
   const shouldShowRent = (unit: Unit): boolean => {
-    return unit.status === 'rented' || unit.intent_type === 'rent' || unit.intent_type === 'both';
+    return unit.status === 'rented' || unit.intent_type === 'rental' || unit.intent_type === 'both';
   };
 
   // Mobile: Card View
