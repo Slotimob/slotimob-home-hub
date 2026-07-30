@@ -30,6 +30,7 @@ interface Unit {
   status: UnitStatus;
   price: number | null;
   area: number | null;
+  area_total?: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
   iptu: number | null;

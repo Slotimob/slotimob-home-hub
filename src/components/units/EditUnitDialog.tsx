@@ -39,6 +39,7 @@ const unitSchema = z.object({
   price: z.number().min(0, 'Preço deve ser maior ou igual a zero').optional().nullable(),
   rent_price: z.number().min(0, 'Preço locação deve ser maior ou igual a zero').optional().nullable(),
   area: z.number().min(0, 'Área deve ser maior ou igual a zero').optional().nullable(),
+  area_total: z.number().min(0, 'Área total deve ser maior ou igual a zero').optional().nullable(),
   bedrooms: z.number().int().min(0, 'Quartos deve ser >= 0').optional().nullable(),
   suites: z.number().int().min(0, 'Suítes deve ser >= 0').optional().nullable(),
   bathrooms: z.number().int().min(0, 'Banheiros deve ser >= 0').optional().nullable(),
@@ -67,6 +68,7 @@ interface Unit {
   price: number | null;
   rent_price: number | null;
   area: number | null;
+  area_total?: number | null;
   bedrooms: number | null;
   suites: number | null;
   bathrooms: number | null;
@@ -120,6 +122,7 @@ function mapUnitToFormData(u: Unit): UnitFormData {
     price: u.price?.toString() || '',
     rent_price: u.rent_price?.toString() || '',
     area: u.area?.toString() || '',
+    area_total: (u as any).area_total?.toString() || '',
     bedrooms: u.bedrooms?.toString() || '',
     suites: u.suites?.toString() || '',
     bathrooms: u.bathrooms?.toString() || '',
