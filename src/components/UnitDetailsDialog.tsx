@@ -44,6 +44,7 @@ import { UnitDocuments } from '@/components/units/UnitDocuments';
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 
 import { UNIT_STATUS_STYLES } from '@/utils/uiConstants';
+import { showSalePrice, showRentalPrice } from '@/utils/unitPricing';
 
 type UnitStatus = Database['public']['Enums']['unit_status'];
 
