@@ -47,9 +47,11 @@ interface Organization {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   units_count: number;
+  units_limit: number;
   contacts_count: number;
-  whatsapp_credits: number;
-  whatsapp_sent_month: number;
+  users_limit: number;
+  users_current: number;
+  users_extra: number;
   ai_credits: number;
   roles: string[];
 }
