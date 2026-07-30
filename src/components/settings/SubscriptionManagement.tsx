@@ -70,6 +70,8 @@ export const SubscriptionManagement = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const navigate = useNavigate();
+  const { buyAddon, loadingAddonId } = useAddonCheckout();
+
 
   if (isLoading) {
     return (
