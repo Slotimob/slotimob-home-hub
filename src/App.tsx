@@ -135,6 +135,7 @@ const App = () => (
               <Route path="/properties" element={guarded(<Properties />)} />
               <Route path="/properties/novo" element={guarded(<NovoEmpreendimento />)} />
               <Route path="/units" element={guarded(<Units />)} />
+              <Route path="/units/novo" element={guarded(<NovaUnidade />)} />
               <Route path="/real-estate" element={guarded(<RealEstate />)} />
               <Route path="/pipeline" element={guarded(<Pipeline />)} />
               <Route path="/contacts" element={guarded(<ContactsUnified />)} />
