@@ -43,7 +43,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { Database } from '@/integrations/supabase/types';
-import { ALL_UNIT_STATUSES, getStatusLabel } from '@/utils/uiConstants';
+import { ALL_UNIT_STATUSES, getStatusLabel, PROPERTY_TYPE_LABELS, ALL_PROPERTY_TYPES } from '@/utils/uiConstants';
 
 type UnitStatus = Database['public']['Enums']['unit_status'];
 type IntentType = 'sale' | 'rental' | 'both';
@@ -400,14 +400,11 @@ export const UnitFormFields = ({
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="apartamento">Apartamento</SelectItem>
-                <SelectItem value="casa">Casa</SelectItem>
-                <SelectItem value="terreno">Terreno</SelectItem>
-                <SelectItem value="sala_comercial">Sala Comercial</SelectItem>
-                <SelectItem value="loja">Loja</SelectItem>
-                <SelectItem value="galpao">Galpão</SelectItem>
-                <SelectItem value="rural">Rural</SelectItem>
-                <SelectItem value="outros">Outros</SelectItem>
+                {ALL_PROPERTY_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {PROPERTY_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

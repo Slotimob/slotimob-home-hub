@@ -63,3 +63,19 @@ export const getStatusColor = (status: UnitStatus): string => {
 
 // All available statuses in order
 export const ALL_UNIT_STATUSES: UnitStatus[] = ['available', 'reserved', 'rented', 'sold'];
+
+// Single Source of Truth for property type labels used across units and real estate
+export const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  apartamento: 'Apartamento',
+  casa: 'Casa',
+  sobrado: 'Sobrado',
+  kitnet: 'Kitnet',
+  terreno: 'Terreno',
+  sala_comercial: 'Sala Comercial',
+  loja: 'Loja',
+  galpao: 'Galpão',
+  rural: 'Rural',
+  outros: 'Outros',
+};
+
+export const ALL_PROPERTY_TYPES: string[] = Object.keys(PROPERTY_TYPE_LABELS);

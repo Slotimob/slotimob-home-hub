@@ -19,7 +19,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { UnitCard } from "./UnitCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { Database } from "@/integrations/supabase/types";
-import { UNIT_STATUS_STYLES } from "@/utils/uiConstants";
+import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 
@@ -64,16 +64,6 @@ interface UnitsTableViewProps {
   onClearFilters?: () => void;
 }
 
-const PROPERTY_TYPE_LABELS: Record<string, string> = {
-  apartamento: "Apartamento",
-  casa: "Casa",
-  terreno: "Terreno",
-  sala_comercial: "Sala Comercial",
-  loja: "Loja",
-  galpao: "Galpão",
-  rural: "Rural",
-  outros: "Outros",
-};
 
 const formatCurrency = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return "-";

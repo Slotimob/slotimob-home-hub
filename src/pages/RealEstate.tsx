@@ -109,7 +109,7 @@ const initialFilters: UnitsFiltersState = {
   management: 'all',
 };
 
-import { UNIT_STATUS_STYLES } from '@/utils/uiConstants';
+import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from '@/utils/uiConstants';
 
 const STATUS_LABELS: Record<string, string> = {
   available: 'Disponível',
@@ -118,16 +118,6 @@ const STATUS_LABELS: Record<string, string> = {
   sold: 'Vendido',
 };
 
-const PROPERTY_TYPE_LABELS: Record<string, string> = {
-  apartamento: 'Apartamento',
-  casa: 'Casa',
-  terreno: 'Terreno',
-  sala_comercial: 'Sala Comercial',
-  loja: 'Loja',
-  galpao: 'Galpão',
-  rural: 'Rural',
-  outros: 'Outros',
-};
 
 const CONDITION_LABELS: Record<string, string> = {
   construcao: 'Em Construção',
