@@ -73,6 +73,7 @@ const AdminDataRequests = React.lazy(() => import("./pages/AdminDataRequests"));
 const Plans = React.lazy(() => import("./pages/Plans"));
 const Sobre = React.lazy(() => import("./pages/Sobre"));
 const NovoEmpreendimento = React.lazy(() => import("./pages/NovoEmpreendimento"));
+const NovaUnidade = React.lazy(() => import("./pages/NovaUnidade"));
 
 
 
