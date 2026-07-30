@@ -47,9 +47,11 @@ interface Organization {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   units_count: number;
+  units_limit: number;
   contacts_count: number;
-  whatsapp_credits: number;
-  whatsapp_sent_month: number;
+  users_limit: number;
+  users_current: number;
+  users_extra: number;
   ai_credits: number;
   roles: string[];
 }
@@ -329,7 +331,7 @@ const AdminCockpit = () => {
                             <TableHead>Plano</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-center">Unidades</TableHead>
-                            <TableHead className="text-center">WhatsApp</TableHead>
+                            <TableHead className="text-center">Usuários</TableHead>
                             <TableHead className="text-center">IA</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                           </TableRow>
@@ -364,17 +366,14 @@ const AdminCockpit = () => {
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <span className="text-sm font-medium">{org.units_count}</span>
+                                  <span className="text-sm font-medium">{org.units_limit} / {org.units_count}</span>
                                   {org.extra_unit_packs > 0 && (
-                                    <span className="text-xs text-muted-foreground ml-1">(+{org.extra_unit_packs * 50})</span>
+                                    <span className="text-xs text-muted-foreground ml-1">+{org.extra_unit_packs * 50}</span>
                                   )}
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <div className="text-sm">
-                                    <span className="font-medium">{org.whatsapp_credits}</span>
-                                    <span className="text-xs text-muted-foreground ml-1">créditos</span>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">{org.whatsapp_sent_month} enviadas/mês</p>
+                                  <span className="text-sm font-medium">{org.users_limit} / {org.users_current}</span>
+                                  <span className="text-xs text-muted-foreground ml-1">+{org.users_extra}</span>
                                 </TableCell>
                                 <TableCell className="text-center">
                                   <span className="text-sm font-medium">{org.ai_credits}</span>
