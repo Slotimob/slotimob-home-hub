@@ -460,9 +460,20 @@ export const UnitFormFields = ({
         </div>
 
         {/* Characteristics */}
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="area">Área (m²)</Label>
+            <Label htmlFor="area_total">Área Total (m²)</Label>
+            <Input
+              id="area_total"
+              type="number"
+              step="0.01"
+              value={formData.area_total}
+              onChange={(e) => setFormData({ ...formData, area_total: e.target.value })}
+              placeholder="0,00"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="area">Área Útil (m²)</Label>
             <Input
               id="area"
               type="number"
@@ -472,6 +483,8 @@ export const UnitFormFields = ({
               placeholder="0,00"
             />
           </div>
+        </div>
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="bedrooms">Quartos</Label>
             <Input
