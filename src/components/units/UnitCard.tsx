@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Share2, Home, Ruler, Bed, Rss } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
+import { showSalePrice, showRentalPrice } from "@/utils/unitPricing";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 
@@ -20,6 +21,7 @@ interface Unit {
   bathrooms: number | null;
   rent_price?: number | null;
   intent_type?: string | null;
+  market_value?: number | null;
   property_type?: string | null;
   cover_image_url: string | null;
   is_published_portal?: boolean | null;
@@ -48,7 +50,8 @@ const formatCurrency = (value: number | null | undefined): string => {
 
 export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: UnitCardProps) {
   const navigate = useNavigate();
-  const shouldShowRent = unit.status === 'rented' || unit.intent_type === 'rental' || unit.intent_type === 'both';
+  const canShowSale = showSalePrice(unit.intent_type) && unit.price != null;
+  const canShowRent = showRentalPrice(unit.intent_type) && unit.rent_price != null;
 
   return (
     <Card 
@@ -112,14 +115,22 @@ export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: Unit
 
         {/* Pricing */}
         <div className="flex items-center justify-between pt-2 border-t">
-          <div>
-            <p className="text-xs text-muted-foreground">Venda</p>
-            <p className="font-semibold">{formatCurrency(unit.price)}</p>
-          </div>
-          {shouldShowRent && unit.rent_price && (
-            <div className="text-right">
+          {canShowSale && (
+            <div>
+              <p className="text-xs text-muted-foreground">Venda</p>
+              <p className="font-semibold">{formatCurrency(unit.price)}</p>
+            </div>
+          )}
+          {canShowRent && (
+            <div className={canShowSale ? "text-right" : undefined}>
               <p className="text-xs text-muted-foreground">Aluguel</p>
               <p className="font-semibold text-blue-600">{formatCurrency(unit.rent_price)}</p>
+            </div>
+          )}
+          {!canShowSale && !canShowRent && unit.market_value != null && (
+            <div>
+              <p className="text-xs text-muted-foreground">Valor Imóvel</p>
+              <p className="font-semibold">{formatCurrency(unit.market_value)}</p>
             </div>
           )}
         </div>

@@ -20,6 +20,7 @@ import { UnitCard } from "./UnitCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
+import { showSalePrice, showRentalPrice } from "@/utils/unitPricing";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 
@@ -139,8 +140,9 @@ export function UnitsTableView({
               <TableHead className="w-[90px] sm:w-[100px]">Status</TableHead>
               {showProperty && <TableHead className="hidden md:table-cell min-w-[150px]">Empreendimento</TableHead>}
               <TableHead className="hidden sm:table-cell w-[100px]">Tipo</TableHead>
-              <TableHead className="text-right w-[100px] sm:w-[120px]">Preço</TableHead>
-              <TableHead className="text-right w-[100px] sm:w-[120px]">Aluguel</TableHead>
+              <TableHead className="text-right w-[90px] sm:w-[110px]">Valor Imóvel</TableHead>
+              <TableHead className="text-right w-[90px] sm:w-[110px]">Preço Venda</TableHead>
+              <TableHead className="text-right w-[90px] sm:w-[110px]">R$ Aluguel</TableHead>
               <TableHead className="w-[60px] sm:w-[80px] text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -213,12 +215,25 @@ export function UnitsTableView({
                   )}
                 </TableCell>
                 <TableCell className="text-right py-2 sm:py-4">
-                  <span className="font-medium text-xs sm:text-sm">
-                    {formatCurrency(unit.price)}
-                  </span>
+                  {unit.market_value != null ? (
+                    <span className="font-medium text-xs sm:text-sm">
+                      {formatCurrency(unit.market_value)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right py-2 sm:py-4">
-                  {shouldShowRent(unit) && unit.rent_price ? (
+                  {showSalePrice(unit.intent_type) && unit.price != null ? (
+                    <span className="font-medium text-xs sm:text-sm">
+                      {formatCurrency(unit.price)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right py-2 sm:py-4">
+                  {showRentalPrice(unit.intent_type) && unit.rent_price != null ? (
                     <span className="font-medium text-xs sm:text-sm text-blue-600">
                       {formatCurrency(unit.rent_price)}
                     </span>

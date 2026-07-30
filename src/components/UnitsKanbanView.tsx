@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 import { UNIT_STATUS_STYLES, ALL_UNIT_STATUSES } from '@/utils/uiConstants';
+import { showSalePrice, showRentalPrice } from '@/utils/unitPricing';
 import { generatePropertyPDF, buildPDFDataFromUnit } from '@/utils/propertyPdfGenerator';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -156,8 +157,13 @@ const SortableUnitCard = ({
               {isAllUnitsView && unit.property && <p className="text-xs text-muted-foreground truncate">
                   {unit.property.name}
                 </p>}
-              {unit.price && <p className="text-xs font-semibold text-primary">
+              {showSalePrice(unit.intent_type) && unit.price && <p className="text-xs font-semibold text-primary">
                   R$ {unit.price.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2
+              })}
+                </p>}
+              {showRentalPrice(unit.intent_type) && unit.rent_price && <p className="text-xs font-semibold text-blue-600">
+                  Aluguel: R$ {unit.rent_price.toLocaleString('pt-BR', {
                 minimumFractionDigits: 2
               })}
                 </p>}
@@ -318,8 +324,13 @@ const DragOverlayCard = ({
             {isAllUnitsView && unit.property && <p className="text-xs text-muted-foreground truncate">
                 {unit.property.name}
               </p>}
-            {unit.price && <p className="text-xs font-semibold text-primary">
+            {showSalePrice(unit.intent_type) && unit.price && <p className="text-xs font-semibold text-primary">
                 R$ {unit.price.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2
+            })}
+              </p>}
+            {showRentalPrice(unit.intent_type) && unit.rent_price && <p className="text-xs font-semibold text-blue-600">
+                Aluguel: R$ {unit.rent_price.toLocaleString('pt-BR', {
               minimumFractionDigits: 2
             })}
               </p>}
