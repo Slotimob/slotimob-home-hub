@@ -211,15 +211,41 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Preço Venda</Label>
-                        <p className="text-lg font-bold text-primary">
-                          {unit.price
-                            ? `R$ ${unit.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                            : 'Não informado'}
-                        </p>
-                      </div>
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                      {showSalePrice(unit.intent_type) && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Preço Venda</Label>
+                          <p className="text-lg font-bold text-primary">
+                            {unit.price
+                              ? `R$ ${unit.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : 'Não informado'}
+                          </p>
+                        </div>
+                      )}
+                      {showRentalPrice(unit.intent_type) && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">R$ Aluguel</Label>
+                          <p className="text-lg font-bold text-primary">
+                            {unit.rent_price
+                              ? `R$ ${unit.rent_price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : 'Não informado'}
+                          </p>
+                        </div>
+                      )}
+                      {unit.market_value && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Valor Imóvel</Label>
+                          <p className="text-lg font-bold text-primary">
+                            {`R$ ${unit.market_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                          </p>
+                        </div>
+                      )}
+                      {!showSalePrice(unit.intent_type) && !showRentalPrice(unit.intent_type) && !unit.market_value && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Valor</Label>
+                          <p className="text-lg font-bold text-primary">Não informado</p>
+                        </div>
+                      )}
                       <div>
                         <Label className="text-xs text-muted-foreground">Área</Label>
                         <p className="text-sm font-medium">
