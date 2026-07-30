@@ -61,6 +61,7 @@ export interface UnitFormData {
   price: string;
   rent_price: string;
   area: string;
+  area_total: string;
   bedrooms: string;
   suites: string;
   bathrooms: string;
@@ -102,6 +103,7 @@ export const getInitialFormData = (): UnitFormData => ({
   price: '',
   rent_price: '',
   area: '',
+  area_total: '',
   bedrooms: '',
   suites: '',
   bathrooms: '',
