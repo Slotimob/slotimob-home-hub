@@ -4728,6 +4728,7 @@ export type Database = {
           acquisition_value: number | null
           address: string | null
           area: number | null
+          area_total: number | null
           assigned_user_id: string | null
           bathrooms: number | null
           bedrooms: number | null
@@ -4781,6 +4782,7 @@ export type Database = {
           acquisition_value?: number | null
           address?: string | null
           area?: number | null
+          area_total?: number | null
           assigned_user_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -4834,6 +4836,7 @@ export type Database = {
           acquisition_value?: number | null
           address?: string | null
           area?: number | null
+          area_total?: number | null
           assigned_user_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
