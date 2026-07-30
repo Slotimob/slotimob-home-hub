@@ -95,24 +95,8 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  const handleAddAddon = async (addonId: 'extra-units-50' | 'extra-user') => {
-    setLoadingAction(`addon-${addonId}`);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { product_type: 'addon', addon_id: addonId },
-      });
-      if (error || !data?.url) {
-        toast.error(data?.error || 'Erro ao contratar add-on');
-        return;
-      }
-      window.open(data.url, '_blank', 'noopener,noreferrer');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao contratar add-on.';
-      toast.error(message);
-    } finally {
-      setLoadingAction(null);
-    }
-  };
+
+
 
   const handleCancelSubscription = async () => {
     setIsCancelling(true);
