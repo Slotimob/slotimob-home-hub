@@ -310,6 +310,13 @@ export function AssetImageUpload({
         className="hidden"
         disabled={isLoading}
       />
+
+      <ImageLightbox
+        src={preview}
+        alt="Imagem do imóvel"
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </div>
   );
 }

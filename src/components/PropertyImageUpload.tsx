@@ -283,6 +283,13 @@ export const PropertyImageUpload = ({
           </Button>
         )}
       </div>
+
+      <ImageLightbox
+        src={preview}
+        alt="Imagem do imóvel"
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </div>
   );
 };
