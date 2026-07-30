@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { normalizePropertyImageUrl } from '@/lib/imageUtils';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 interface UnitImageUploadProps {
   unitId?: string;
@@ -38,11 +40,12 @@ export const UnitImageUpload = ({
 
   // Sync preview with currentImageUrl when it changes externally
   useEffect(() => {
-    if (currentImageUrl) {
+    const normalizedCurrent = normalizePropertyImageUrl(currentImageUrl);
+    if (normalizedCurrent) {
       // Add cache-busting for external URL changes
-      const url = currentImageUrl.includes('?') 
-        ? currentImageUrl 
-        : `${currentImageUrl}?t=${Date.now()}`;
+      const url = normalizedCurrent.includes('?')
+        ? normalizedCurrent
+        : `${normalizedCurrent}?t=${Date.now()}`;
       setPreview(url);
     } else {
       setPreview(null);
@@ -248,6 +251,8 @@ export const UnitImageUpload = ({
     }
   };
 
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const isLoading = uploading || removing;
 
   return (
@@ -260,7 +265,8 @@ export const UnitImageUpload = ({
             <img
               src={preview}
               alt="Preview da unidade"
-              className="w-full h-48 object-cover"
+              className="w-full h-48 object-cover cursor-zoom-in"
+              onClick={() => setLightboxOpen(true)}
               key={preview} // Force re-render when URL changes
             />
             <div className="absolute top-2 right-2 flex gap-2">
@@ -328,6 +334,13 @@ export const UnitImageUpload = ({
         onChange={handleFileSelect}
         className="hidden"
         disabled={isLoading}
+      />
+
+      <ImageLightbox
+        src={preview}
+        alt="Imagem do imóvel"
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
       />
     </div>
   );

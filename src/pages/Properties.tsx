@@ -19,6 +19,7 @@ import { AddAssetButton } from '@/components/units/AddAssetButton';
 import { PropertiesTableView } from '@/components/properties/PropertiesTableView';
 import { ViewModeTabs } from '@/components/ui/view-mode-tabs';
 import { usePropertyUnitsCount } from '@/hooks/usePropertyUnitsCount';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 interface Property {
   id: string;
@@ -63,6 +64,7 @@ const Properties = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -222,7 +224,11 @@ const Properties = () => {
                   <PropertyImage
                     src={property.image_url}
                     alt={property.name ?? 'Imóvel'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxImage({ src: property.image_url, alt: property.name ?? 'Imóvel' });
+                    }}
                   />
                 </div>
                 <CardHeader className="pb-2">
@@ -292,6 +298,13 @@ const Properties = () => {
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['properties'] })}
+      />
+
+      <ImageLightbox
+        src={lightboxImage?.src}
+        alt={lightboxImage?.alt}
+        open={!!lightboxImage}
+        onOpenChange={(o) => !o && setLightboxImage(null)}
       />
     </AppLayout>
   );

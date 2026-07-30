@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/notifications';
+import { normalizePropertyImageUrl } from '@/lib/imageUtils';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 interface AssetImageUploadProps {
   /** Current image URL */
@@ -66,10 +68,11 @@ export function AssetImageUpload({
 
   // Sync preview with currentImageUrl
   useEffect(() => {
-    if (currentImageUrl) {
-      const url = currentImageUrl.includes('?')
-        ? currentImageUrl
-        : `${currentImageUrl}?t=${Date.now()}`;
+    const normalizedCurrent = normalizePropertyImageUrl(currentImageUrl);
+    if (normalizedCurrent) {
+      const url = normalizedCurrent.includes('?')
+        ? normalizedCurrent
+        : `${normalizedCurrent}?t=${Date.now()}`;
       setPreview(url);
     } else {
       setPreview(null);
@@ -223,6 +226,8 @@ export function AssetImageUpload({
     }
   };
 
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const isLoading = uploading || removing;
 
   return (
@@ -235,7 +240,8 @@ export function AssetImageUpload({
             <img
               src={preview}
               alt="Preview"
-              className="w-full h-48 object-cover"
+              className="w-full h-48 object-cover cursor-zoom-in"
+              onClick={() => setLightboxOpen(true)}
               key={preview}
             />
             <div className="absolute top-2 right-2 flex gap-2">
@@ -303,6 +309,13 @@ export function AssetImageUpload({
         onChange={handleFileSelect}
         className="hidden"
         disabled={isLoading}
+      />
+
+      <ImageLightbox
+        src={preview}
+        alt="Imagem do imóvel"
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
       />
     </div>
   );

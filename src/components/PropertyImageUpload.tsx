@@ -4,6 +4,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
+import { normalizePropertyImageUrl } from '@/lib/imageUtils';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 interface PropertyImageUploadProps {
   propertyId?: string;
@@ -28,7 +30,7 @@ export const PropertyImageUpload = ({
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const [preview, setPreview] = useState<string | null>(currentImageUrl);
+  const [preview, setPreview] = useState<string | null>(normalizePropertyImageUrl(currentImageUrl));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isSavingRef = useRef(false);
 
@@ -202,6 +204,8 @@ export const PropertyImageUpload = ({
     }
   };
 
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const isLoading = uploading || removing;
 
   return (
@@ -213,7 +217,8 @@ export const PropertyImageUpload = ({
             <img 
               src={preview} 
               alt="Preview" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-zoom-in"
+              onClick={() => setLightboxOpen(true)}
               key={preview} // Force re-render when URL changes
             />
             <Button
@@ -278,6 +283,13 @@ export const PropertyImageUpload = ({
           </Button>
         )}
       </div>
+
+      <ImageLightbox
+        src={preview}
+        alt="Imagem do imóvel"
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </div>
   );
 };

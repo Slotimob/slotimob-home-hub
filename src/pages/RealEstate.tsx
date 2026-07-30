@@ -111,6 +111,7 @@ const initialFilters: UnitsFiltersState = {
 };
 
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from '@/utils/uiConstants';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 const STATUS_LABELS: Record<string, string> = {
   available: 'Disponível',
@@ -139,6 +140,7 @@ const RealEstate = () => {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   
   const [selectedUnit, setSelectedUnit] = useState<RealEstateUnit | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem('real-estate-view-mode');
     return (saved === 'grid' || saved === 'table' || saved === 'kanban') ? saved : 'table';
@@ -663,7 +665,11 @@ const RealEstate = () => {
                     <PropertyImage
                       src={unit.cover_image_url}
                       alt={unit.unit_number ?? 'Imóvel'}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover cursor-zoom-in"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxImage({ src: unit.cover_image_url, alt: unit.unit_number ?? 'Imóvel' });
+                      }}
                     />
                     <Badge className={`absolute top-2 right-2 ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}>
                       {STATUS_LABELS[unit.status]}
@@ -802,6 +808,13 @@ const RealEstate = () => {
         )}
 
         {/* ShareAssetDialog replaced by Proposals deep-link */}
+
+      <ImageLightbox
+        src={lightboxImage?.src}
+        alt={lightboxImage?.alt}
+        open={!!lightboxImage}
+        onOpenChange={(o) => !o && setLightboxImage(null)}
+      />
       </AppLayout>
     </>
   );

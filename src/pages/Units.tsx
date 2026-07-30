@@ -99,6 +99,7 @@ const initialFilters: UnitsFiltersState = {
 };
 
 import { UNIT_STATUS_STYLES, ALL_UNIT_STATUSES } from '@/utils/uiConstants';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 const Units = () => {
   const [searchParams] = useSearchParams();
@@ -151,6 +152,7 @@ const Units = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<UnitsFiltersState>(initialFilters);
   const [sortBy, setSortBy] = useState<SortOption>('unit_number_asc');
@@ -734,7 +736,11 @@ const Units = () => {
                     <PropertyImage
                       src={unit.cover_image_url}
                       alt={`Unidade ${unit.unit_number}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover cursor-zoom-in"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxImage({ src: unit.cover_image_url, alt: `Unidade ${unit.unit_number}` });
+                      }}
                     />
                     <Badge 
                       className={`absolute top-2 right-2 ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
@@ -919,6 +925,13 @@ const Units = () => {
           </>
         )
       )}
+
+      <ImageLightbox
+        src={lightboxImage?.src}
+        alt={lightboxImage?.alt}
+        open={!!lightboxImage}
+        onOpenChange={(o) => !o && setLightboxImage(null)}
+      />
     </AppLayout>
   );
 };

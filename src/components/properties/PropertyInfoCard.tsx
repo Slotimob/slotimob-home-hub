@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { generatePropertyPDF, buildPDFDataFromStandalone, type AgentInfo } from '@/utils/propertyPdfGenerator';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 interface PropertyData {
   id: string;
@@ -65,6 +66,7 @@ const CONSTRUCTION_STAGE_COLORS: Record<string, string> = {
 
 export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCardProps) => {
   const [showGallery, setShowGallery] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { user } = useAuth();
@@ -239,7 +241,8 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
             <PropertyImage
               src={property.image_url || galleryImages[0]}
               alt={property.name ?? 'Imóvel'}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-zoom-in"
+              onClick={() => setLightboxOpen(true)}
             />
             {galleryImages.length > 0 && (
               <Button
@@ -396,6 +399,13 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
           </div>
         </DialogContent>
       </Dialog>
+
+      <ImageLightbox
+        src={property.image_url || galleryImages[0]}
+        alt={property.name ?? 'Imóvel'}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </Card>
   );
 };
