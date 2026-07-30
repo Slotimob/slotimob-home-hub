@@ -28,6 +28,7 @@ export function PropertyImage({
       <img
         src={normalizedSrc}
         alt={alt}
+        onClick={onClick}
         className={className}
         onError={() => setHasError(true)}
         loading="lazy"
