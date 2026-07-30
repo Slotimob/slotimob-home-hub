@@ -50,6 +50,7 @@ interface RealEstateUnit {
   price: number | null;
   rent_price: number | null;
   area: number | null;
+  area_total?: number | null;
   bedrooms: number | null;
   suites: number | null;
   bathrooms: number | null;

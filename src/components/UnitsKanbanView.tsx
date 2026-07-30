@@ -31,6 +31,7 @@ interface Unit {
   status: UnitStatus;
   price: number | null;
   area: number | null;
+  area_total?: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
   iptu: number | null;
@@ -162,7 +163,8 @@ const SortableUnitCard = ({
                 </p>}
               <div className="flex gap-2 text-xs text-muted-foreground">
                 {unit.bedrooms !== null && <span>{unit.bedrooms}q</span>}
-                {unit.area && <span>{unit.area}m²</span>}
+                {unit.area && <span title="Área útil">{unit.area}m² útil</span>}
+                {unit.area_total && <span title="Área total">{unit.area_total}m² total</span>}
               </div>
             </div>
           </div>
