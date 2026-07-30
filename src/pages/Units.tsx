@@ -99,6 +99,7 @@ const initialFilters: UnitsFiltersState = {
 };
 
 import { UNIT_STATUS_STYLES, ALL_UNIT_STATUSES } from '@/utils/uiConstants';
+import { showSalePrice, showRentalPrice } from '@/utils/unitPricing';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 const Units = () => {
