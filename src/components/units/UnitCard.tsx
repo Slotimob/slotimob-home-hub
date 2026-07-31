@@ -51,7 +51,7 @@ const formatCurrency = (value: number | null | undefined): string => {
   }).format(value);
 };
 
-export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: UnitCardProps) {
+export function UnitCard({ unit, onUnitClick, onShareClick, onDuplicate, onDelete, showProperty }: UnitCardProps) {
   const navigate = useNavigate();
   const canShowSale = showSalePrice(unit.intent_type) && unit.price != null;
   const canShowRent = showRentalPrice(unit.intent_type) && unit.rent_price != null;
