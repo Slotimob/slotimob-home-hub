@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { CONTACT_CATEGORIES, ContactCategory, CATEGORY_ICONS } from './ContactCategoryFilter';
+import { UnitSelector, type UnitOption } from '@/components/units/UnitSelector';
 import { Loader2 } from 'lucide-react';
 
 interface CreateContactDialogProps {
@@ -79,6 +80,7 @@ export const CreateContactDialog = ({
   const queryClient = useQueryClient();
   
   const [saving, setSaving] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState<UnitOption | null>(null);
   
   // Initial form state - does NOT depend on props to avoid render loops
   const getInitialFormData = useCallback(() => ({
@@ -117,6 +119,7 @@ export const CreateContactDialog = ({
     if (justOpened) {
       // Reset form when dialog opens
       setFormData(getInitialFormData());
+      setSelectedUnit(null);
       appliedDefaultRef.current = null;
       
       // Apply initialPhone if provided
@@ -187,6 +190,9 @@ export const CreateContactDialog = ({
         ? prev.categories.filter(c => c !== category)
         : [...prev.categories, category],
     }));
+    if (category === 'Inquilino') {
+      setSelectedUnit(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -253,6 +259,25 @@ export const CreateContactDialog = ({
 
       if (error) throw error;
 
+      // Optional: link this new contact as the tenant of a selected unit
+      if (formData.categories.includes('Inquilino') && selectedUnit) {
+        const { error: unitError } = await supabase
+          .from('units')
+          .update({ tenant_contact_id: data.id, is_occupied: true })
+          .eq('id', selectedUnit.id);
+
+        if (unitError) {
+          toast({
+            title: 'Contato criado, mas houve erro ao vincular ao imóvel',
+            description: unitError.message,
+            variant: 'destructive',
+          });
+        }
+        queryClient.invalidateQueries({ queryKey: ['units'] });
+        queryClient.invalidateQueries({ queryKey: ['unit-detalhe'] });
+        queryClient.invalidateQueries({ queryKey: ['asset-health'] });
+      }
+
       // Invalidate all relevant caches so panels update reactively
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['whatsapp-contacts'] });
@@ -272,6 +297,7 @@ export const CreateContactDialog = ({
 
   const isLead = formData.categories.includes('Lead');
   const isEmpresa = formData.categories.includes('Empresa');
+  const isTenant = formData.categories.includes('Inquilino');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -339,31 +365,6 @@ export const CreateContactDialog = ({
             </div>
           </div>
 
-          {/* Phone fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handlePhoneChange('phone', e.target.value)}
-                placeholder="(00) 00000-0000"
-                inputMode="tel"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp">WhatsApp</Label>
-              <Input
-                id="whatsapp"
-                value={formData.whatsapp}
-                onChange={(e) => handlePhoneChange('whatsapp', e.target.value)}
-                placeholder="(00) 00000-0000"
-                inputMode="tel"
-              />
-              <p className="text-xs text-muted-foreground">Se não informado, será usado o telefone</p>
-            </div>
-          </div>
-
           {/* Document */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
@@ -391,6 +392,31 @@ export const CreateContactDialog = ({
                 placeholder={formData.document_type === 'CNPJ' ? '00.000.000/0000-00' : '000.000.000-00'}
                 inputMode="numeric"
               />
+            </div>
+          </div>
+
+          {/* Phone fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                placeholder="(00) 00000-0000"
+                inputMode="tel"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Input
+                id="whatsapp"
+                value={formData.whatsapp}
+                onChange={(e) => handlePhoneChange('whatsapp', e.target.value)}
+                placeholder="(00) 00000-0000"
+                inputMode="tel"
+              />
+              <p className="text-xs text-muted-foreground">Se não informado, será usado o telefone</p>
             </div>
           </div>
 
@@ -528,6 +554,28 @@ export const CreateContactDialog = ({
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Tenant-specific: link directly to a unit/property - use key to ensure stable mounting */}
+          {isTenant && (
+            <div key="inquilino-fields" className="space-y-3 p-4 rounded-lg border bg-muted/30">
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Vincular a um Imóvel (opcional)</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Se este inquilino já vai ocupar uma unidade cadastrada, selecione abaixo. O imóvel já fica com o inquilino preenchido, sem precisar editar depois.
+                </p>
+              </div>
+              <UnitSelector
+                value={selectedUnit?.id ?? null}
+                onChange={setSelectedUnit}
+                placeholder="Buscar unidade ou imóvel avulso..."
+              />
+              {selectedUnit?.tenant_contact_id && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Esta unidade já possui um inquilino vinculado. Ao salvar, ele será substituído — o histórico de inquilinos registra a troca automaticamente.
+                </p>
+              )}
             </div>
           )}
 
