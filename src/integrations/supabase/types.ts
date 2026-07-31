@@ -2179,6 +2179,7 @@ export type Database = {
           lead_id: string | null
           mime_type: string | null
           parent_id: string | null
+          property_id: string | null
           source_type: string
           title: string
           unit_id: string | null
@@ -2199,6 +2200,7 @@ export type Database = {
           lead_id?: string | null
           mime_type?: string | null
           parent_id?: string | null
+          property_id?: string | null
           source_type?: string
           title: string
           unit_id?: string | null
@@ -2219,6 +2221,7 @@ export type Database = {
           lead_id?: string | null
           mime_type?: string | null
           parent_id?: string | null
+          property_id?: string | null
           source_type?: string
           title?: string
           unit_id?: string | null
@@ -2259,6 +2262,13 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
