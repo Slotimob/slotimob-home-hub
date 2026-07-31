@@ -21,6 +21,16 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -37,6 +47,8 @@ import {
   BarChart3,
   Plus,
   StickyNote,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
 import { format } from 'date-fns';
@@ -196,6 +208,12 @@ export const AssetActivityTimeline = ({
   const [noteTitle, setNoteTitle] = useState('');
   const [noteDate, setNoteDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [savingNote, setSavingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editNoteTitle, setEditNoteTitle] = useState('');
+  const [editNoteDate, setEditNoteDate] = useState('');
+  const [savingEditNote, setSavingEditNote] = useState(false);
+  const [deleteNoteTarget, setDeleteNoteTarget] = useState<ManualNote | null>(null);
+  const [deletingNote, setDeletingNote] = useState(false);
 
   // Build date filter
   const periodStartDate = useMemo(() => {
@@ -309,6 +327,58 @@ export const AssetActivityTimeline = ({
       toast({ title: 'Erro ao salvar atividade', description: e.message, variant: 'destructive' });
     } finally {
       setSavingNote(false);
+    }
+  };
+
+  const startEditNote = (note: ManualNote) => {
+    setEditingNoteId(note.id);
+    setEditNoteTitle(note.title || '');
+    const base = note.scheduled_at || note.created_at;
+    setEditNoteDate(base ? new Date(base).toISOString().split('T')[0] : '');
+  };
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null);
+    setEditNoteTitle('');
+    setEditNoteDate('');
+  };
+
+  const saveEditNote = async () => {
+    if (!editingNoteId || !editNoteTitle.trim()) return;
+    setSavingEditNote(true);
+    try {
+      const { error } = await (supabase as any)
+        .from('property_activities')
+        .update({
+          title: editNoteTitle.trim(),
+          scheduled_at: editNoteDate ? new Date(editNoteDate + 'T12:00:00').toISOString() : null,
+        })
+        .eq('id', editingNoteId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes', assetType, assetId] });
+      cancelEditNote();
+    } catch (e: any) {
+      toast({ title: 'Erro ao atualizar atividade', description: e.message, variant: 'destructive' });
+    } finally {
+      setSavingEditNote(false);
+    }
+  };
+
+  const confirmDeleteNote = async () => {
+    if (!deleteNoteTarget) return;
+    setDeletingNote(true);
+    try {
+      const { error } = await (supabase as any)
+        .from('property_activities')
+        .delete()
+        .eq('id', deleteNoteTarget.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes', assetType, assetId] });
+      setDeleteNoteTarget(null);
+    } catch (e: any) {
+      toast({ title: 'Erro ao excluir atividade', description: e.message, variant: 'destructive' });
+    } finally {
+      setDeletingNote(false);
     }
   };
 
@@ -643,6 +713,48 @@ export const AssetActivityTimeline = ({
 
                   if (isManualNote(item)) {
                     const authorName = profileMap[item.broker_id] || 'Usuário';
+                    const canManageNote = item.broker_id === brokerId;
+
+                    if (editingNoteId === item.id) {
+                      return (
+                        <div
+                          key={item.id}
+                          className="rounded-lg border border-border bg-muted/30 p-3 space-y-2"
+                        >
+                          <p className="text-xs font-medium text-muted-foreground">Editar atividade manual</p>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Input
+                              placeholder="Descrição"
+                              value={editNoteTitle}
+                              onChange={e => setEditNoteTitle(e.target.value)}
+                              className="h-8 text-sm flex-1"
+                              onKeyDown={e => { if (e.key === 'Enter') saveEditNote(); }}
+                              autoFocus
+                            />
+                            <input
+                              type="date"
+                              value={editNoteDate}
+                              onChange={e => setEditNoteDate(e.target.value)}
+                              className="h-8 text-sm rounded-md border border-input bg-background px-2 shrink-0 w-full sm:w-[140px]"
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={cancelEditNote}>
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={saveEditNote}
+                              disabled={!editNoteTitle.trim() || savingEditNote}
+                            >
+                              {savingEditNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Salvar'}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div
                         key={item.id}
@@ -672,6 +784,28 @@ export const AssetActivityTimeline = ({
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+                        {canManageNote && (
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground"
+                              title="Editar atividade"
+                              onClick={() => startEditNote(item)}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive"
+                              title="Excluir atividade"
+                              onClick={() => setDeleteNoteTarget(item)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     );
                   }
@@ -763,7 +897,29 @@ export const AssetActivityTimeline = ({
         preSelectedAssetIds={[assetId]}
         formatLabel="PDF"
       />
+
+      <AlertDialog open={!!deleteNoteTarget} onOpenChange={(o) => { if (!o) setDeleteNoteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir atividade manual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A atividade "{deleteNoteTarget?.title}" será removida permanentemente do histórico.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingNote}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDeleteNote(); }}
+              disabled={deletingNote}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingNote ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 };
 
