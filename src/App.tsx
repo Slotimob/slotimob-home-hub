@@ -25,6 +25,7 @@ const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const Properties = React.lazy(() => import("./pages/Properties"));
 const Pipeline = React.lazy(() => import("./pages/Pipeline"));
 const Units = React.lazy(() => import("./pages/Units"));
+const UnitDetalhe = React.lazy(() => import("./pages/UnitDetalhe"));
 const Documents = React.lazy(() => import("./pages/Documents"));
 const Simulator = React.lazy(() => import("./pages/Simulator"));
 const Schedule = React.lazy(() => import("./pages/Schedule"));
@@ -87,6 +88,13 @@ const ContratosRoute = () => {
   const [searchParams] = useSearchParams();
   return searchParams.get("id") ? <ContratoDetalhe /> : <ContratosEmGestao />;
 };
+
+/** Renders unit detail when ?id= is present, otherwise the list page */
+const UnitsRoute = () => {
+  const [searchParams] = useSearchParams();
+  return searchParams.get("id") ? <UnitDetalhe /> : <Units />;
+};
+
 
 /** Renders asset detail when ?id= is present, otherwise the list page */
 const AlugueiRoute = () => {
