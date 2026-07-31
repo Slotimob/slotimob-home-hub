@@ -23,8 +23,17 @@ export interface Improvement {
   completed_at: string;
   invoice_doc_path: string | null;
   affects_market_value: boolean;
+  financial_transaction_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AssetExpenseTransaction {
+  id: string;
+  description: string | null;
+  amount: number;
+  transaction_date: string;
+  status: string | null;
 }
 
 export interface MarketValueEntry {
@@ -173,6 +182,49 @@ export function useDeleteImprovement() {
       const { error } = await supabase
         .from('asset_improvements')
         .delete()
+        .eq('id', payload.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['asset-improvements', vars.assetType, vars.assetId] });
+    },
+  });
+}
+
+export function useUnitFinancialTransactions(
+  assetType: AssetType,
+  assetId: string | undefined
+) {
+  return useQuery({
+    queryKey: ['asset-expense-transactions', assetType, assetId],
+    queryFn: async () => {
+      if (!assetId) return [];
+      const col = fkColumn(assetType);
+      const { data, error } = await supabase
+        .from('financial_transactions')
+        .select('id, description, amount, transaction_date, status')
+        .eq('type', 'expense')
+        .eq(col, assetId)
+        .order('transaction_date', { ascending: false });
+      if (error) throw error;
+      return (data || []) as AssetExpenseTransaction[];
+    },
+    enabled: !!assetId,
+  });
+}
+
+export function useReconcileImprovement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      assetType: AssetType;
+      assetId: string;
+      financial_transaction_id: string | null;
+    }) => {
+      const { error } = await supabase
+        .from('asset_improvements')
+        .update({ financial_transaction_id: payload.financial_transaction_id } as any)
         .eq('id', payload.id);
       if (error) throw error;
     },

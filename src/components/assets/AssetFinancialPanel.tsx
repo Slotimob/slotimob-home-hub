@@ -30,6 +30,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Tooltip as UITooltip,
+  TooltipContent as UITooltipContent,
+  TooltipProvider as UITooltipProvider,
+  TooltipTrigger as UITooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import {
   LineChart,
@@ -50,6 +57,8 @@ import {
   Hammer,
   Loader2,
   BarChart3,
+  Link2,
+  Link2Off,
 } from 'lucide-react';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -62,6 +71,8 @@ import {
   useCreateImprovement,
   useUpdateImprovement,
   useDeleteImprovement,
+  useUnitFinancialTransactions,
+  useReconcileImprovement,
   useMarketValueHistory,
   useRecordMarketValue,
   type Improvement,
@@ -485,6 +496,30 @@ function ImprovementsBlock({
   const createMutation = useCreateImprovement();
   const updateMutation = useUpdateImprovement();
   const deleteMutation = useDeleteImprovement();
+  const { data: expenseTransactions = [] } = useUnitFinancialTransactions(assetType, assetId);
+  const reconcileMutation = useReconcileImprovement();
+  const [reconcileOpenFor, setReconcileOpenFor] = useState<string | null>(null);
+
+  const findTransaction = (txId: string | null) =>
+    txId ? expenseTransactions.find((t) => t.id === txId) : undefined;
+
+  const handleReconcile = async (imp: Improvement, financialTransactionId: string | null) => {
+    try {
+      await reconcileMutation.mutateAsync({
+        id: imp.id,
+        assetType,
+        assetId,
+        financial_transaction_id: financialTransactionId,
+      });
+      toast({
+        title: financialTransactionId ? 'Benfeitoria conciliada' : 'Vínculo removido',
+        duration: 1000,
+      });
+      setReconcileOpenFor(null);
+    } catch {
+      toast({ title: 'Erro ao conciliar', variant: 'destructive', duration: 1000 });
+    }
+  };
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Improvement | null>(null);
@@ -595,6 +630,7 @@ function ImprovementsBlock({
                   <th className="pb-2 pr-3 font-medium hidden sm:table-cell">Descrição</th>
                   <th className="pb-2 pr-3 font-medium text-right">Custo</th>
                   <th className="pb-2 pr-3 font-medium text-center hidden sm:table-cell">Afeta VM?</th>
+                  <th className="pb-2 pr-3 font-medium hidden md:table-cell">Conciliação</th>
                   {!disabled && <th className="pb-2 font-medium text-right">Ações</th>}
                 </tr>
               </thead>
@@ -608,6 +644,21 @@ function ImprovementsBlock({
                       <Badge variant="secondary" className="text-xs font-normal">
                         {IMPROVEMENT_TYPE_LABELS[imp.improvement_type] || imp.improvement_type}
                       </Badge>
+                      {/* Status de conciliação no mobile (coluna dedicada fica oculta) */}
+                      <div className="md:hidden mt-1">
+                        {imp.financial_transaction_id ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-normal border-emerald-500/40 text-emerald-600 bg-emerald-500/10"
+                          >
+                            Conciliado
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
+                            Não conciliado
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2 pr-3 hidden sm:table-cell max-w-[200px] truncate">
                       {imp.description}
@@ -617,6 +668,90 @@ function ImprovementsBlock({
                     </td>
                     <td className="py-2 pr-3 text-center hidden sm:table-cell">
                       {imp.affects_market_value ? '✓' : '—'}
+                    </td>
+                    <td className="py-2 pr-3 hidden md:table-cell">
+                      {imp.financial_transaction_id ? (
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Badge
+                            variant="outline"
+                            className="text-xs font-normal border-emerald-500/40 text-emerald-600 bg-emerald-500/10 whitespace-nowrap"
+                          >
+                            Conciliado
+                          </Badge>
+                          <span className="text-xs text-muted-foreground truncate max-w-[140px]">
+                            {findTransaction(imp.financial_transaction_id)?.description || 'Lançamento vinculado'}
+                          </span>
+                          {!disabled && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground"
+                              title="Desvincular"
+                              onClick={() => handleReconcile(imp, null)}
+                            >
+                              <Link2Off className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                            Não conciliado
+                          </Badge>
+                          {!disabled && (
+                            expenseTransactions.length === 0 ? (
+                              <UITooltipProvider>
+                                <UITooltip>
+                                  <UITooltipTrigger asChild>
+                                    <span>
+                                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" disabled>
+                                        <Link2 className="h-3.5 w-3.5 mr-1" />
+                                        Conciliar
+                                      </Button>
+                                    </span>
+                                  </UITooltipTrigger>
+                                  <UITooltipContent>
+                                    Nenhum lançamento de despesa encontrado para este imóvel em Financeiro &gt; Lançamentos
+                                  </UITooltipContent>
+                                </UITooltip>
+                              </UITooltipProvider>
+                            ) : (
+                              <Popover
+                                open={reconcileOpenFor === imp.id}
+                                onOpenChange={(o) => setReconcileOpenFor(o ? imp.id : null)}
+                              >
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                                    <Link2 className="h-3.5 w-3.5 mr-1" />
+                                    Conciliar
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent align="end" className="w-80 p-0">
+                                  <div className="px-3 py-2 border-b text-xs font-medium text-muted-foreground">
+                                    Lançamentos de despesa deste imóvel
+                                  </div>
+                                  <div className="max-h-64 overflow-y-auto">
+                                    {expenseTransactions.map((tx) => (
+                                      <button
+                                        key={tx.id}
+                                        type="button"
+                                        className="w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors"
+                                        onClick={() => handleReconcile(imp, tx.id)}
+                                      >
+                                        <div className="text-sm truncate">{tx.description || 'Sem descrição'}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {fmtCurrency(tx.amount)} ·{' '}
+                                          {format(new Date(tx.transaction_date), 'dd/MM/yyyy')}
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            )
+                          )}
+                        </div>
+                      )}
                     </td>
                     {!disabled && (
                       <td className="py-2 text-right whitespace-nowrap">
