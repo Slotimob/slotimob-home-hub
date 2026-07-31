@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/button';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Home, Wallet, Bed, Bath, Car, Square, Upload, Share2, Eye, RefreshCw } from 'lucide-react';
+import { Home, Wallet, Bed, Bath, Car, Square, Upload, Share2, RefreshCw } from 'lucide-react';
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useAssetActions } from '@/hooks/useAssetActions';
 import { ImportUnitsDialog } from '@/components/ImportUnitsDialog';
 import { ExportUnitsButton } from '@/components/ExportUnitsButton';
 import { UnitsFilters, type UnitsFiltersState } from '@/components/UnitsFilters';
@@ -31,15 +33,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { RealEstateKanbanView } from '@/components/units/RealEstateKanbanView';
+import { UnitCard } from '@/components/units/UnitCard';
+import { UnitActionsMenu } from '@/components/units/UnitActionsMenu';
 
 interface RealEstateUnit {
   id: string;
@@ -169,6 +167,24 @@ const RealEstate = () => {
 
   const reloadRealEstateUnits = () => {
     queryClient.invalidateQueries({ queryKey: ['units'] });
+  };
+
+  const { isOwner, hasPermission } = usePermissions();
+  const canDuplicate = isOwner || hasPermission('assets_standalone', 'create');
+  const canDelete = isOwner || hasPermission('assets_standalone', 'delete');
+  const { duplicateUnit, deleteUnit } = useAssetActions();
+
+  const handleDuplicateUnit = async (unitId: string) => {
+    const newUnit = await duplicateUnit(unitId);
+    if (newUnit) reloadRealEstateUnits();
+  };
+
+  const handleDeleteUnit = async (unitId: string) => {
+    const ok = await deleteUnit(unitId);
+    if (ok) {
+      toast({ title: 'Imóvel excluído com sucesso' });
+      reloadRealEstateUnits();
+    }
   };
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
@@ -528,7 +544,19 @@ const RealEstate = () => {
               onSuccess={reloadRealEstateUnits}
             />
           ) : viewMode === 'table' ? (
-            <TooltipProvider delayDuration={0}>
+            isMobile ? (
+              <div className="grid gap-3 animate-fade-in">
+                {filteredUnits.map((unit) => (
+                  <UnitCard
+                    key={unit.id}
+                    unit={unit}
+                    onUnitClick={(u) => navigate(`/real-estate?id=${u.id}`)}
+                    onDuplicate={canDuplicate ? (u) => handleDuplicateUnit(u.id) : undefined}
+                    onDelete={canDelete ? (u) => handleDeleteUnit(u.id) : undefined}
+                  />
+                ))}
+              </div>
+            ) : (
               <div className="rounded-lg border bg-card animate-fade-in overflow-x-auto">
                 <Table className="min-w-[600px]">
                   <TableHeader>
@@ -539,7 +567,7 @@ const RealEstate = () => {
                       <TableHead className="text-right w-[90px] sm:w-[110px]">Valor Imóvel</TableHead>
                       <TableHead className="text-right w-[90px] sm:w-[110px]">Preço Venda</TableHead>
                       <TableHead className="text-right w-[90px] sm:w-[110px]">R$ Aluguel</TableHead>
-                      <TableHead className="w-[80px] sm:w-[100px] text-right">Ações</TableHead>
+                      <TableHead className="w-[60px] sm:w-[80px] text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -619,47 +647,15 @@ const RealEstate = () => {
                             )}
                           </TableCell>
                           <TableCell className="text-right py-2 sm:py-4">
-                            <div className="flex justify-end gap-1">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
-                                    }}
-                                  >
-                                    <Share2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                {!isMobile && (
-                                  <TooltipContent>
-                                    <p>Proposta</p>
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/real-estate?id=${unit.id}`);
-                                    }}
-                                  >
-                                    <Eye className="h-3.5 w-3.5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                {!isMobile && (
-                                  <TooltipContent>
-                                    <p>Ver detalhes</p>
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
+                            <div className="flex justify-end">
+                              <UnitActionsMenu
+                                unitLabel={unit.unit_number}
+                                onView={() => navigate(`/real-estate?id=${unit.id}`)}
+                                onShare={() => navigate(`/gestao/propostas?create=true&unitId=${unit.id}`)}
+                                shareLabel="Proposta"
+                                onDuplicate={canDuplicate ? () => handleDuplicateUnit(unit.id) : undefined}
+                                onDelete={canDelete ? () => handleDeleteUnit(unit.id) : undefined}
+                              />
                             </div>
                           </TableCell>
                         </TableRow>
@@ -668,7 +664,7 @@ const RealEstate = () => {
                   </TableBody>
                 </Table>
               </div>
-            </TooltipProvider>
+            )
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-fade-in">
               {filteredUnits.map((unit) => (
