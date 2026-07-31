@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Wallet,
   Trash2,
+  Copy,
   Building2,
   Users,
 } from 'lucide-react';
@@ -45,6 +46,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
+import { useAssetActions } from '@/hooks/useAssetActions';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { UNIT_STATUS_STYLES } from '@/utils/uiConstants';
@@ -150,6 +152,7 @@ export default function UnitDetalhe() {
   const moduleKey = isStandalone ? 'assets_standalone' : 'assets_units';
   const canEdit = isPermOwner || hasPermission(moduleKey, 'edit');
   const canDelete = isPermOwner || hasPermission(moduleKey, 'delete');
+  const canDuplicate = isPermOwner || hasPermission(moduleKey, 'create');
   const showPropertySelector = !isStandalone;
 
   const backTo = (() => {
@@ -208,31 +211,35 @@ export default function UnitDetalhe() {
     } catch {}
   };
 
+  const { duplicateUnit, deleteUnit } = useAssetActions();
+  const [duplicating, setDuplicating] = useState(false);
+
+  const handleDuplicate = async () => {
+    if (!unit) return;
+    setDuplicating(true);
+    const newUnit = await duplicateUnit(unit.id);
+    setDuplicating(false);
+    if (newUnit) {
+      invalidate();
+      const target = isStandalone
+        ? `/real-estate?id=${newUnit.id}`
+        : `/units?id=${newUnit.id}${propertyIdParam ? `&propertyId=${propertyIdParam}` : ''}`;
+      navigate(target);
+    }
+  };
+
   const handleDelete = async () => {
     if (!unit) return;
     setDeleting(true);
-    try {
-      const { error } = await supabase.from('units').delete().eq('id', unit.id);
-      if (error) throw error;
+    const ok = await deleteUnit(unit.id);
+    if (ok) {
       invalidate();
       toast({ title: 'Imóvel excluído com sucesso' });
       clearDraft();
       navigate(backTo);
-    } catch (error: any) {
-      if (error?.code === '23503') {
-        toast({
-          title: 'Não é possível excluir esta unidade',
-          description:
-            'Existem contratos, propostas ou visitas vinculadas a esta unidade. Encerre ou exclua esses registros primeiro.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
-      }
-    } finally {
-      setDeleting(false);
-      setShowDeleteDialog(false);
     }
+    setDeleting(false);
+    setShowDeleteDialog(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -418,12 +425,20 @@ export default function UnitDetalhe() {
               </div>
             </div>
 
-            {canDelete && (
+            {(canDuplicate || canDelete) && (
               <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Excluir
-                </Button>
+                {canDuplicate && (
+                  <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating}>
+                    <Copy className="h-4 w-4 mr-1" />
+                    {duplicating ? 'Duplicando...' : 'Duplicar'}
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir
+                  </Button>
+                )}
               </div>
             )}
           </div>
