@@ -15,7 +15,6 @@ import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
 import { ImportUnitsDialog } from '@/components/ImportUnitsDialog';
 import { ExportUnitsButton } from '@/components/ExportUnitsButton';
-import { EditUnitDialog } from '@/components/units/EditUnitDialog';
 import { UnitsFilters, type UnitsFiltersState } from '@/components/UnitsFilters';
 
 import { SEOHead } from '@/components/SEOHead';
@@ -142,7 +141,6 @@ const RealEstate = () => {
   const [sortBy, setSortBy] = useState<SortOption>('created_at_desc');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   
-  const [selectedUnit, setSelectedUnit] = useState<RealEstateUnit | null>(null);
   const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem('real-estate-view-mode');
@@ -526,7 +524,7 @@ const RealEstate = () => {
           ) : viewMode === 'kanban' ? (
             <RealEstateKanbanView
               units={filteredUnits}
-              onUnitClick={(unit) => setSelectedUnit(unit)}
+              onUnitClick={(unit) => navigate(`/real-estate?id=${unit.id}`)}
               onSuccess={reloadRealEstateUnits}
             />
           ) : viewMode === 'table' ? (
@@ -552,7 +550,7 @@ const RealEstate = () => {
                         <TableRow 
                           key={unit.id} 
                           className="cursor-pointer"
-                          onClick={() => setSelectedUnit(unit)}
+                          onClick={() => navigate(`/real-estate?id=${unit.id}`)}
                         >
                           <TableCell className="font-medium py-2 sm:py-4">
                             <div className="flex flex-col">
@@ -650,7 +648,7 @@ const RealEstate = () => {
                                     className="h-7 w-7"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setSelectedUnit(unit);
+                                      navigate(`/real-estate?id=${unit.id}`);
                                     }}
                                   >
                                     <Eye className="h-3.5 w-3.5" />
@@ -677,7 +675,7 @@ const RealEstate = () => {
                 <Card 
                   key={unit.id} 
                   className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
-                  onClick={() => setSelectedUnit(unit)}
+                  onClick={() => navigate(`/real-estate?id=${unit.id}`)}
                 >
                   <div className="aspect-video bg-muted relative">
                     <PropertyImage
@@ -828,15 +826,6 @@ const RealEstate = () => {
           standalone={true}
         />
 
-
-        {selectedUnit && (
-          <EditUnitDialog
-            unit={selectedUnit as any}
-            open={!!selectedUnit}
-            onOpenChange={(open) => !open && setSelectedUnit(null)}
-            onSuccess={reloadRealEstateUnits}
-          />
-        )}
 
         {/* ShareAssetDialog replaced by Proposals deep-link */}
 
