@@ -83,6 +83,8 @@ export function UnitsTableView({
   units,
   onUnitClick,
   onShareClick,
+  onDuplicate,
+  onDelete,
   showProperty = false,
   hasFiltersApplied = false,
   onClearFilters,
