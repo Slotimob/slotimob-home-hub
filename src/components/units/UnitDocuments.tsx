@@ -160,7 +160,7 @@ export const UnitDocuments = ({ unitId, userId }: UnitDocumentsProps) => {
       const filePath = `${userId}/${unitId}/documents/${timestamp}-${file.name}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('unit-media')
+        .from('documents')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
@@ -257,7 +257,7 @@ export const UnitDocuments = ({ unitId, userId }: UnitDocumentsProps) => {
     try {
       // Only delete from storage if it's an upload
       if (deleteDoc.source_type === 'upload' && deleteDoc.file_path) {
-        await supabase.storage.from('unit-media').remove([deleteDoc.file_path]);
+        await supabase.storage.from('documents').remove([deleteDoc.file_path]);
       }
 
       const { error: dbError } = await supabase
@@ -279,7 +279,7 @@ export const UnitDocuments = ({ unitId, userId }: UnitDocumentsProps) => {
     if (!doc.file_path) return;
     try {
       const { data, error } = await supabase.storage
-        .from('unit-media')
+        .from('documents')
         .download(doc.file_path);
 
       if (error) throw error;
