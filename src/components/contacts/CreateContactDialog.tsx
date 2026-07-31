@@ -12,7 +12,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { CONTACT_CATEGORIES, ContactCategory, CATEGORY_ICONS } from './ContactCategoryFilter';
-import { UnitSelector, type UnitOption } from '@/components/units/UnitSelector';
+import { UnitMultiSelector } from '@/components/units/UnitMultiSelector';
+import type { UnitOption } from '@/components/units/UnitSelector';
 import { Loader2 } from 'lucide-react';
 
 interface CreateContactDialogProps {
@@ -80,7 +81,7 @@ export const CreateContactDialog = ({
   const queryClient = useQueryClient();
   
   const [saving, setSaving] = useState(false);
-  const [selectedUnit, setSelectedUnit] = useState<UnitOption | null>(null);
+  const [selectedUnits, setSelectedUnits] = useState<UnitOption[]>([]);
   
   // Initial form state - does NOT depend on props to avoid render loops
   const getInitialFormData = useCallback(() => ({
@@ -119,7 +120,7 @@ export const CreateContactDialog = ({
     if (justOpened) {
       // Reset form when dialog opens
       setFormData(getInitialFormData());
-      setSelectedUnit(null);
+      setSelectedUnits([]);
       appliedDefaultRef.current = null;
       
       // Apply initialPhone if provided
@@ -191,7 +192,7 @@ export const CreateContactDialog = ({
         : [...prev.categories, category],
     }));
     if (category === 'Inquilino') {
-      setSelectedUnit(null);
+      setSelectedUnits([]);
     }
   };
 
@@ -259,16 +260,19 @@ export const CreateContactDialog = ({
 
       if (error) throw error;
 
-      // Optional: link this new contact as the tenant of a selected unit
-      if (formData.categories.includes('Inquilino') && selectedUnit) {
+      // Optional: link this new contact as the tenant of one or more selected units.
+      // Setting status to 'rented' alongside tenant_contact_id/is_occupied is intentional:
+      // this flow means the tenant is moving in now, so the unit should reflect that immediately.
+      if (formData.categories.includes('Inquilino') && selectedUnits.length > 0) {
+        const unitIds = selectedUnits.map((u) => u.id);
         const { error: unitError } = await supabase
           .from('units')
-          .update({ tenant_contact_id: data.id, is_occupied: true })
-          .eq('id', selectedUnit.id);
+          .update({ tenant_contact_id: data.id, is_occupied: true, status: 'rented' })
+          .in('id', unitIds);
 
         if (unitError) {
           toast({
-            title: 'Contato criado, mas houve erro ao vincular ao imóvel',
+            title: 'Contato criado, mas houve erro ao vincular aos imóveis',
             description: unitError.message,
             variant: 'destructive',
           });
@@ -298,6 +302,7 @@ export const CreateContactDialog = ({
   const isLead = formData.categories.includes('Lead');
   const isEmpresa = formData.categories.includes('Empresa');
   const isTenant = formData.categories.includes('Inquilino');
+  const occupiedSelectedCount = selectedUnits.filter((u) => u.tenant_contact_id).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -557,23 +562,26 @@ export const CreateContactDialog = ({
             </div>
           )}
 
-          {/* Tenant-specific: link directly to a unit/property - use key to ensure stable mounting */}
+          {/* Tenant-specific: link directly to one or more units/properties - use key to ensure stable mounting */}
           {isTenant && (
             <div key="inquilino-fields" className="space-y-3 p-4 rounded-lg border bg-muted/30">
               <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Vincular a um Imóvel (opcional)</h4>
+                <h4 className="font-medium text-sm text-muted-foreground">Vincular a Imóveis (opcional)</h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Se este inquilino já vai ocupar uma unidade cadastrada, selecione abaixo. O imóvel já fica com o inquilino preenchido, sem precisar editar depois.
+                  Se este inquilino já vai ocupar uma ou mais unidades cadastradas, selecione abaixo. Cada imóvel selecionado já fica com o inquilino preenchido e o status muda para "alugado", sem precisar editar depois.
                 </p>
               </div>
-              <UnitSelector
-                value={selectedUnit?.id ?? null}
-                onChange={setSelectedUnit}
-                placeholder="Buscar unidade ou imóvel avulso..."
+              <UnitMultiSelector
+                value={selectedUnits}
+                onChange={setSelectedUnits}
+                placeholder="Buscar unidades ou imóveis avulsos..."
               />
-              {selectedUnit?.tenant_contact_id && (
+              {occupiedSelectedCount > 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                  Esta unidade já possui um inquilino vinculado. Ao salvar, ele será substituído — o histórico de inquilinos registra a troca automaticamente.
+                  {occupiedSelectedCount === 1
+                    ? 'Uma das unidades selecionadas já possui inquilino vinculado.'
+                    : `${occupiedSelectedCount} das unidades selecionadas já possuem inquilino vinculado.`}
+                  {' '}Ao salvar, será substituído — o histórico de inquilinos registra a troca automaticamente.
                 </p>
               )}
             </div>
