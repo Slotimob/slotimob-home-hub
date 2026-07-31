@@ -13,6 +13,7 @@ import {
   Wallet,
   Trash2,
   Building2,
+  Users,
 } from 'lucide-react';
 
 import { AppLayout } from '@/components/AppLayout';
