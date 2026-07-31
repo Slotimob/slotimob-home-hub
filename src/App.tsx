@@ -25,6 +25,7 @@ const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const Properties = React.lazy(() => import("./pages/Properties"));
 const Pipeline = React.lazy(() => import("./pages/Pipeline"));
 const Units = React.lazy(() => import("./pages/Units"));
+const UnitDetalhe = React.lazy(() => import("./pages/UnitDetalhe"));
 const Documents = React.lazy(() => import("./pages/Documents"));
 const Simulator = React.lazy(() => import("./pages/Simulator"));
 const Schedule = React.lazy(() => import("./pages/Schedule"));
@@ -88,6 +89,13 @@ const ContratosRoute = () => {
   return searchParams.get("id") ? <ContratoDetalhe /> : <ContratosEmGestao />;
 };
 
+/** Renders unit detail when ?id= is present, otherwise the list page */
+const UnitsRoute = () => {
+  const [searchParams] = useSearchParams();
+  return searchParams.get("id") ? <UnitDetalhe /> : <Units />;
+};
+
+
 /** Renders asset detail when ?id= is present, otherwise the list page */
 const AlugueiRoute = () => {
   const [searchParams] = useSearchParams();
@@ -134,7 +142,7 @@ const App = () => (
               <Route path="/dashboard" element={guarded(<Dashboard />)} />
               <Route path="/properties" element={guarded(<Properties />)} />
               <Route path="/properties/novo" element={guarded(<NovoEmpreendimento />)} />
-              <Route path="/units" element={guarded(<Units />)} />
+              <Route path="/units" element={guarded(<UnitsRoute />)} />
               <Route path="/units/novo" element={guarded(<NovaUnidade />)} />
               <Route path="/real-estate" element={guarded(<RealEstate />)} />
               <Route path="/real-estate/novo" element={guarded(<NovaUnidade standalone />)} />
