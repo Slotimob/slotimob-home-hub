@@ -164,6 +164,15 @@ export function UnitCard({ unit, onUnitClick, onShareClick, onDuplicate, onDelet
             <Eye className="h-3.5 w-3.5" />
             Ver Detalhes
           </Button>
+          {(onDuplicate || onDelete) && (
+            <UnitActionsMenu
+              unitLabel={unit.unit_number}
+              onView={() => onUnitClick(unit)}
+              onDuplicate={onDuplicate ? () => onDuplicate(unit) : undefined}
+              onDelete={onDelete ? () => onDelete(unit) : undefined}
+              triggerClassName="h-9 w-9 flex-shrink-0"
+            />
+          )}
         </div>
       </CardContent>
     </Card>
