@@ -11,7 +11,7 @@ import { Home, Upload, X, ChevronLeft, ChevronRight, CheckSquare, Square, Plus, 
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
 import { CreateUnitDialog } from '@/components/CreateUnitDialog';
-import { UnitDetailsDialog } from '@/components/UnitDetailsDialog';
+
 import { ImportUnitsDialog } from '@/components/ImportUnitsDialog';
 import { ExportUnitsButton } from '@/components/ExportUnitsButton';
 import { UnitsBulkActionsBar } from '@/components/UnitsBulkActionsBar';
