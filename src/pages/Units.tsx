@@ -152,7 +152,9 @@ const Units = () => {
   const [property, setProperty] = useState<Property | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  const openUnitDetail = (unit: Unit) => {
+    navigate(`/units?id=${unit.id}${propertyId ? `&propertyId=${propertyId}` : ''}`);
+  };
   const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<UnitsFiltersState>(initialFilters);
