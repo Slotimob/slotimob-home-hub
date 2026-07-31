@@ -368,6 +368,21 @@ const Units = () => {
     queryClient.invalidateQueries({ queryKey: ['units'] });
   };
 
+  const { duplicateUnit, deleteUnit } = useAssetActions();
+
+  const handleDuplicateUnit = async (unit: Unit) => {
+    const newUnit = await duplicateUnit(unit.id);
+    if (newUnit) reloadUnits();
+  };
+
+  const handleDeleteUnit = async (unit: Unit) => {
+    const ok = await deleteUnit(unit.id);
+    if (ok) {
+      toast({ title: 'Unidade excluída com sucesso' });
+      reloadUnits();
+    }
+  };
+
   if (loading || loadingUnits || (!isAllUnitsView && !property)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
