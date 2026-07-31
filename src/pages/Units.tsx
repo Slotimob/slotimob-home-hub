@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
+import { useAssetActions } from '@/hooks/useAssetActions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Home, Upload, X, ChevronLeft, ChevronRight, CheckSquare, Square, Plus, Share2, RefreshCw } from 'lucide-react';
@@ -108,6 +109,7 @@ const Units = () => {
   const { user, loading } = useAuth();
   const { isOwner, hasPermission } = usePermissions();
   const canCreate = isOwner || hasPermission('assets_units', 'create');
+  const canDelete = isOwner || hasPermission('assets_units', 'delete');
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -364,6 +366,21 @@ const Units = () => {
 
   const reloadUnits = () => {
     queryClient.invalidateQueries({ queryKey: ['units'] });
+  };
+
+  const { duplicateUnit, deleteUnit } = useAssetActions();
+
+  const handleDuplicateUnit = async (unit: Unit) => {
+    const newUnit = await duplicateUnit(unit.id);
+    if (newUnit) reloadUnits();
+  };
+
+  const handleDeleteUnit = async (unit: Unit) => {
+    const ok = await deleteUnit(unit.id);
+    if (ok) {
+      toast({ title: 'Unidade excluída com sucesso' });
+      reloadUnits();
+    }
   };
 
   if (loading || loadingUnits || (!isAllUnitsView && !property)) {
@@ -705,6 +722,8 @@ const Units = () => {
               onShareClick={(unit) => {
                 navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
               }}
+              onDuplicate={canCreate ? handleDuplicateUnit : undefined}
+              onDelete={canDelete ? handleDeleteUnit : undefined}
               showProperty={isAllUnitsView}
             />
           </div>
