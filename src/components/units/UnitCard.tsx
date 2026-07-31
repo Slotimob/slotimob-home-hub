@@ -27,7 +27,7 @@ interface Unit {
   cover_image_url: string | null;
   is_published_portal?: boolean | null;
   property?: {
-    id: string;
+    id?: string;
     name: string;
   } | null;
 }
@@ -36,6 +36,8 @@ interface UnitCardProps {
   unit: Unit;
   onUnitClick: (unit: Unit) => void;
   onShareClick?: (unit: Unit) => void;
+  onDuplicate?: (unit: Unit) => void | Promise<void>;
+  onDelete?: (unit: Unit) => void | Promise<void>;
   showProperty?: boolean;
 }
 
