@@ -4730,6 +4730,70 @@ export type Database = {
           },
         ]
       }
+      unit_tenant_history: {
+        Row: {
+          broker_id: string
+          created_at: string
+          id: string
+          lease_id: string | null
+          moved_in_at: string
+          moved_out_at: string | null
+          notes: string | null
+          source: string
+          tenant_contact_id: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string
+          id?: string
+          lease_id?: string | null
+          moved_in_at?: string
+          moved_out_at?: string | null
+          notes?: string | null
+          source?: string
+          tenant_contact_id: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string
+          id?: string
+          lease_id?: string | null
+          moved_in_at?: string
+          moved_out_at?: string | null
+          notes?: string | null
+          source?: string
+          tenant_contact_id?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_tenant_history_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_tenant_history_tenant_contact_id_fkey"
+            columns: ["tenant_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_tenant_history_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
           acquisition_costs: number | null
