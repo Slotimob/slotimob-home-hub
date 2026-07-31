@@ -127,6 +127,8 @@ export function UnitsTableView({
             unit={unit}
             onUnitClick={onUnitClick}
             onShareClick={onShareClick}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
             showProperty={showProperty}
           />
         ))}
