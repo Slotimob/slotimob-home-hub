@@ -72,3 +72,6 @@ verify_jwt = false
 
 [functions.save-fiscal-data]
 verify_jwt = false
+
+[functions.migrate-legacy-unit-documents]
+verify_jwt = false
