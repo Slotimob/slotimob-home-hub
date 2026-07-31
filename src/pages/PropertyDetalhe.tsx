@@ -9,6 +9,7 @@ import {
   Settings2,
   Wallet,
   Trash2,
+  Copy,
   Building2,
 } from 'lucide-react';
 
@@ -37,6 +38,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
+import { useAssetActions } from '@/hooks/useAssetActions';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Property {
@@ -109,6 +111,7 @@ export default function PropertyDetalhe() {
 
   const canEdit = isOwner || hasPermission('assets_properties', 'edit');
   const canDelete = isOwner || hasPermission('assets_properties', 'delete');
+  const canDuplicate = isOwner || hasPermission('assets_properties', 'create');
 
   const [activeTab, setActiveTab] = useState<string>('details');
   const [saving, setSaving] = useState(false);
@@ -198,50 +201,33 @@ export default function PropertyDetalhe() {
     }
   };
 
+  const { duplicateProperty, deleteProperty } = useAssetActions();
+  const [duplicating, setDuplicating] = useState(false);
+
+  const handleDuplicate = async () => {
+    if (!id) return;
+    setDuplicating(true);
+    const newProperty = await duplicateProperty(id);
+    setDuplicating(false);
+    if (newProperty) {
+      invalidate();
+      navigate(`/properties?id=${newProperty.id}`);
+    }
+  };
+
   const handleDelete = async () => {
     if (!id) return;
-    try {
-      const { count, error: countError } = await supabase
-        .from('units')
-        .select('*', { count: 'exact', head: true })
-        .eq('property_id', id);
-
-      if (countError) throw countError;
-
-      if (count && count > 0) {
-        toast({
-          title: 'Não é possível excluir',
-          description: `Este empreendimento possui ${count} unidade${count > 1 ? 's' : ''} cadastrada${count > 1 ? 's' : ''}. Exclua-as primeiro.`,
-          variant: 'destructive',
-        });
-        setShowDeleteDialog(false);
-        return;
-      }
-
-      const { error } = await supabase
-        .from('properties')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+    const ok = await deleteProperty(id);
+    if (ok) {
       invalidate();
       clearDraft();
-
       toast({
         title: 'Empreendimento excluído!',
         description: 'O empreendimento foi removido com sucesso.',
       });
-
       navigate('/properties');
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao excluir empreendimento',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setShowDeleteDialog(false);
     }
+    setShowDeleteDialog(false);
   };
 
   const handleCancel = () => {
@@ -324,12 +310,20 @@ export default function PropertyDetalhe() {
               </div>
             </div>
 
-            {canDelete && (
+            {(canDuplicate || canDelete) && (
               <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Excluir
-                </Button>
+                {canDuplicate && (
+                  <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating}>
+                    <Copy className="h-4 w-4 mr-1" />
+                    {duplicating ? 'Duplicando...' : 'Duplicar'}
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir
+                  </Button>
+                )}
               </div>
             )}
           </div>
