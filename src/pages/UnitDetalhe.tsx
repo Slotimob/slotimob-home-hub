@@ -38,7 +38,7 @@ import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline
 import { AssetFinancialPanel } from '@/components/assets/AssetFinancialPanel';
 import { UnitFormFields, UnitFormData } from '@/components/units/UnitFormFields';
 import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
-import { UnitDocuments } from '@/components/units/UnitDocuments';
+import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -534,7 +534,7 @@ export default function UnitDetalhe() {
 
         {/* Documentos */}
         <TabsContent value="documents" className="mt-4">
-          {user && <UnitDocuments unitId={unit.id} userId={user.id} />}
+          {user && <AssetDocuments assetType="unit" assetId={unit.id} userId={user.id} />}
         </TabsContent>
 
         {/* Atividades */}
