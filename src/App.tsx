@@ -95,6 +95,12 @@ const UnitsRoute = () => {
   return searchParams.get("id") ? <UnitDetalhe /> : <Units />;
 };
 
+/** Renders unit detail when ?id= is present, otherwise the standalone list page */
+const RealEstateRoute = () => {
+  const [searchParams] = useSearchParams();
+  return searchParams.get("id") ? <UnitDetalhe /> : <RealEstate />;
+};
+
 
 /** Renders asset detail when ?id= is present, otherwise the list page */
 const AlugueiRoute = () => {
@@ -144,7 +150,7 @@ const App = () => (
               <Route path="/properties/novo" element={guarded(<NovoEmpreendimento />)} />
               <Route path="/units" element={guarded(<UnitsRoute />)} />
               <Route path="/units/novo" element={guarded(<NovaUnidade />)} />
-              <Route path="/real-estate" element={guarded(<RealEstate />)} />
+              <Route path="/real-estate" element={guarded(<RealEstateRoute />)} />
               <Route path="/real-estate/novo" element={guarded(<NovaUnidade standalone />)} />
               <Route path="/pipeline" element={guarded(<Pipeline />)} />
               <Route path="/contacts" element={guarded(<ContactsUnified />)} />
