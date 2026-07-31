@@ -693,7 +693,7 @@ const Units = () => {
               units={filteredUnits}
               isAllUnitsView={isAllUnitsView}
               properties={allProperties}
-              onUnitClick={setSelectedUnit}
+              onUnitClick={openUnitDetail}
               onSuccess={reloadUnits}
             />
           </div>
@@ -701,7 +701,7 @@ const Units = () => {
           <div key="table-view" className="animate-fade-in">
             <UnitsTableView
               units={paginatedUnits}
-              onUnitClick={setSelectedUnit}
+              onUnitClick={openUnitDetail}
               onShareClick={(unit) => {
                 navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
               }}
@@ -716,7 +716,7 @@ const Units = () => {
                   key={unit.id}
                   className={`cursor-pointer overflow-hidden transition-all hover:shadow-md animate-scale-in ${selectedUnits.has(unit.id) ? 'ring-2 ring-primary' : ''}`}
                   style={{ animationDelay: `${index * 25}ms` }}
-                  onClick={() => isSelectMode ? toggleUnitSelection(unit.id, { stopPropagation: () => {} } as React.MouseEvent) : setSelectedUnit(unit)}
+                  onClick={() => isSelectMode ? toggleUnitSelection(unit.id, { stopPropagation: () => {} } as React.MouseEvent) : openUnitDetail(unit)}
                 >
                   {/* Thumbnail */}
                   <div className="relative h-32 bg-muted">
@@ -887,15 +887,7 @@ const Units = () => {
             onSuccess={reloadUnits}
           />
 
-          {selectedUnit && (
-            <UnitDetailsDialog
-              unit={selectedUnit}
-              propertyName={selectedUnit.property?.name || 'Empreendimento'}
-              open={!!selectedUnit}
-              onOpenChange={(open) => !open && setSelectedUnit(null)}
-              onSuccess={reloadUnits}
-            />
-          )}
+
 
           <ImportUnitsDialog
             propertyId={undefined}
