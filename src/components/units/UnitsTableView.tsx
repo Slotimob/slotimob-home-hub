@@ -14,9 +14,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Eye, Share2, Home, Rss } from "lucide-react";
+import { Home, Rss } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UnitCard } from "./UnitCard";
+import { UnitActionsMenu } from "./UnitActionsMenu";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
