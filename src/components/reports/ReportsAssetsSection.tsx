@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ReportRow } from './ReportRow';
 import { ReportsTable } from './ReportsTable';
 import { RAReportConfigDialog } from './RAReportConfigDialog';
-import { Building2, TrendingUp, Shield, Receipt, FileText, BarChart3 } from 'lucide-react';
+import { Building2, TrendingUp, Shield, Receipt, FileText, BarChart3, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
@@ -16,7 +16,7 @@ import { generateAssetReportExcel } from '@/utils/assetReportExcelGenerator';
 import { generateAssetReportCsv } from '@/utils/assetReportCsvGenerator';
 import type { AssetReportData } from '@/lib/asset-report-data';
 import { useToast } from '@/hooks/use-toast';
-import { differenceInDays, format, subMonths } from 'date-fns';
+import { differenceInDays, differenceInMonths, format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -221,6 +221,92 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
     } catch (error: any) { toast({ title: 'Erro ao gerar Excel', description: error.message, variant: 'destructive' }); }
   };
 
+  // === Histórico de Inquilinos ===
+  const buildTenantHistoryData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+    let query = (supabase as any)
+      .from('unit_tenant_history')
+      .select(`id, unit_id, tenant_contact_id, moved_in_at, moved_out_at, source, notes, unit:units(unit_number, property:properties(name)), tenant:contacts(name)`)
+      .eq('broker_id', user.id)
+      .order('moved_in_at', { ascending: false });
+    if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const fromStr = dateRange.from.toISOString().split('T')[0];
+    const toStr = dateRange.to.toISOString().split('T')[0];
+    const records = (data || []).filter((r: any) => {
+      if (!r.moved_out_at) return true; // registros em aberto sempre entram
+      const movedIn = (r.moved_in_at || '').split('T')[0];
+      return movedIn >= fromStr && movedIn <= toStr;
+    });
+
+    const tableData = records.map((r: any) => {
+      const isCurrent = !r.moved_out_at;
+      const start = r.moved_in_at ? new Date(`${String(r.moved_in_at).split('T')[0]}T12:00:00`) : null;
+      const end = r.moved_out_at ? new Date(`${String(r.moved_out_at).split('T')[0]}T12:00:00`) : new Date();
+      const months = start ? Math.max(0, differenceInMonths(end, start)) : 0;
+      return [
+        r.unit?.unit_number || (r.unit_id ? String(r.unit_id).substring(0, 8) : '-'),
+        r.unit?.property?.name || 'Imóvel Avulso',
+        r.tenant?.name || '-',
+        r.moved_in_at ? formatDate(r.moved_in_at) : '-',
+        r.moved_out_at ? formatDate(r.moved_out_at) : '-',
+        String(months),
+        isCurrent ? 'Atual' : 'Encerrado',
+      ];
+    });
+
+    const currentCount = records.filter((r: any) => !r.moved_out_at).length;
+    const columns = ['Unidade', 'Empreendimento', 'Inquilino', 'Data de Entrada', 'Data de Saída', 'Duração (meses)', 'Status'];
+    const summary = [
+      { label: 'Total de Registros', value: records.length.toString() },
+      { label: 'Inquilinos Atuais', value: currentCount.toString() },
+      { label: 'Ocupações Encerradas', value: (records.length - currentCount).toString() },
+    ];
+    return { tableData, columns, summary };
+  };
+
+  const handleTenantHistoryPdf = async () => {
+    try {
+      const { tableData, columns, summary } = await buildTenantHistoryData();
+      await generateReportPdf({
+        title: 'Histórico de Inquilinos', subtitle: 'Entradas e saídas de inquilinos por unidade',
+        userName, dateRange, columns, data: tableData, filename: 'historico-inquilinos', landscape: true, summary,
+      });
+      toast({ title: 'PDF gerado com sucesso!' });
+    } catch (error: any) { toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' }); }
+  };
+
+  const handleTenantHistoryCsv = async () => {
+    try {
+      const { tableData, columns } = await buildTenantHistoryData();
+      generateReportCsv({
+        columns,
+        data: tableData.map((row: string[]) => [row[0], row[1], row[2], cleanDateValue(row[3]), cleanDateValue(row[4]), cleanNumericValue(Number(row[5]) || 0), row[6]]),
+        filename: 'historico-inquilinos',
+      });
+      toast({ title: 'CSV baixado com sucesso!' });
+    } catch (error: any) { toast({ title: 'Erro ao baixar CSV', description: error.message, variant: 'destructive' }); }
+  };
+
+  const handleTenantHistoryDocx = async () => {
+    try {
+      const { tableData, columns, summary } = await buildTenantHistoryData();
+      await downloadReportDocx({ title: 'Histórico de Inquilinos', reportKey: 'historico-inquilinos', dateRange, columnLabels: columns, data: tableData, summary });
+      toast({ title: 'Word gerado com sucesso!' });
+    } catch (error: any) { toast({ title: 'Erro ao gerar Word', description: error.message, variant: 'destructive' }); }
+  };
+
+  const handleTenantHistoryExcel = async () => {
+    try {
+      const { tableData, columns, summary } = await buildTenantHistoryData();
+      await downloadReportExcel({ title: 'Histórico de Inquilinos', reportKey: 'historico-inquilinos', dateRange, columnLabels: columns, data: tableData, summary });
+      toast({ title: 'Excel gerado com sucesso!' });
+    } catch (error: any) { toast({ title: 'Erro ao gerar Excel', description: error.message, variant: 'destructive' }); }
+  };
+
   // === Reajustes ===
   const buildReajustesData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -373,6 +459,15 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
           onGeneratePDF={handleSegurosPdf}
           onDownloadCSV={handleSegurosCsv}
           warningMessage="Em desenvolvimento"
+        />
+        <ReportRow
+          title="Histórico de Inquilinos"
+          description="Registro de entrada e saída de inquilinos por unidade, com duração de ocupação."
+          icon={<Users className="h-4 w-4" />}
+          onGeneratePDF={handleTenantHistoryPdf}
+          onDownloadCSV={handleTenantHistoryCsv}
+          onDownloadDocx={handleTenantHistoryDocx}
+          onDownloadExcel={handleTenantHistoryExcel}
         />
       </ReportsTable>
 
