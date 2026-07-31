@@ -908,15 +908,7 @@ const Units = () => {
               onSuccess={reloadUnits}
             />
 
-            {selectedUnit && property && (
-              <UnitDetailsDialog
-                unit={selectedUnit}
-                propertyName={property.name}
-                open={!!selectedUnit}
-                onOpenChange={(open) => !open && setSelectedUnit(null)}
-                onSuccess={reloadUnits}
-              />
-            )}
+
 
             <ImportUnitsDialog
               propertyId={propertyId}
