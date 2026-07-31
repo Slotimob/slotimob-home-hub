@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Share2, Home, Ruler, Bed, Rss } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { UnitActionsMenu } from "./UnitActionsMenu";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
 import { showSalePrice, showRentalPrice } from "@/utils/unitPricing";
 
@@ -26,7 +27,7 @@ interface Unit {
   cover_image_url: string | null;
   is_published_portal?: boolean | null;
   property?: {
-    id: string;
+    id?: string;
     name: string;
   } | null;
 }
@@ -35,6 +36,8 @@ interface UnitCardProps {
   unit: Unit;
   onUnitClick: (unit: Unit) => void;
   onShareClick?: (unit: Unit) => void;
+  onDuplicate?: (unit: Unit) => void | Promise<void>;
+  onDelete?: (unit: Unit) => void | Promise<void>;
   showProperty?: boolean;
 }
 
@@ -48,7 +51,7 @@ const formatCurrency = (value: number | null | undefined): string => {
   }).format(value);
 };
 
-export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: UnitCardProps) {
+export function UnitCard({ unit, onUnitClick, onShareClick, onDuplicate, onDelete, showProperty }: UnitCardProps) {
   const navigate = useNavigate();
   const canShowSale = showSalePrice(unit.intent_type) && unit.price != null;
   const canShowRent = showRentalPrice(unit.intent_type) && unit.rent_price != null;
@@ -161,6 +164,15 @@ export function UnitCard({ unit, onUnitClick, onShareClick, showProperty }: Unit
             <Eye className="h-3.5 w-3.5" />
             Ver Detalhes
           </Button>
+          {(onDuplicate || onDelete) && (
+            <UnitActionsMenu
+              unitLabel={unit.unit_number}
+              onView={() => onUnitClick(unit)}
+              onDuplicate={onDuplicate ? () => onDuplicate(unit) : undefined}
+              onDelete={onDelete ? () => onDelete(unit) : undefined}
+              triggerClassName="h-9 w-9 flex-shrink-0"
+            />
+          )}
         </div>
       </CardContent>
     </Card>
