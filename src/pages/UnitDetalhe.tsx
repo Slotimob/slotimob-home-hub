@@ -38,6 +38,7 @@ import { AssetFinancialPanel } from '@/components/assets/AssetFinancialPanel';
 import { UnitFormFields, UnitFormData } from '@/components/units/UnitFormFields';
 import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
 import { UnitDocuments } from '@/components/units/UnitDocuments';
+import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
 
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -441,7 +442,7 @@ export default function UnitDetalhe() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="info" className="text-xs sm:text-sm">
             <Info className="h-4 w-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Informações</span>
@@ -466,6 +467,11 @@ export default function UnitDetalhe() {
             <ClipboardList className="h-4 w-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Atividades</span>
             <span className="sm:hidden">Log</span>
+          </TabsTrigger>
+          <TabsTrigger value="tenants" className="text-xs sm:text-sm">
+            <Users className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Inquilinos</span>
+            <span className="sm:hidden">Inq.</span>
           </TabsTrigger>
         </TabsList>
 
@@ -533,6 +539,11 @@ export default function UnitDetalhe() {
         {/* Atividades */}
         <TabsContent value="activities" className="mt-4">
           {user && <AssetActivityTimeline assetType="unit" assetId={unit.id} brokerId={user.id} />}
+        </TabsContent>
+
+        {/* Inquilinos */}
+        <TabsContent value="tenants" className="mt-4">
+          <TenantHistoryPanel unitId={unit.id} />
         </TabsContent>
       </Tabs>
 
