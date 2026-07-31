@@ -722,6 +722,8 @@ const Units = () => {
               onShareClick={(unit) => {
                 navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
               }}
+              onDuplicate={canCreate ? handleDuplicateUnit : undefined}
+              onDelete={canDelete ? handleDeleteUnit : undefined}
               showProperty={isAllUnitsView}
             />
           </div>
