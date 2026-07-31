@@ -109,6 +109,7 @@ const Units = () => {
   const { user, loading } = useAuth();
   const { isOwner, hasPermission } = usePermissions();
   const canCreate = isOwner || hasPermission('assets_units', 'create');
+  const canDelete = isOwner || hasPermission('assets_units', 'delete');
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
