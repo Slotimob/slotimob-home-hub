@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Plus, MapPin, Package, Upload, Percent, Flame } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { EditPropertyDialog } from '@/components/EditPropertyDialog';
 import { AppLayout } from '@/components/AppLayout';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { CreatePropertyDialog } from '@/components/CreatePropertyDialog';
@@ -63,9 +62,7 @@ const Properties = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [lightboxImage, setLightboxImage] = useState<{ src: string | null; alt: string } | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -202,10 +199,7 @@ const Properties = () => {
           <PropertiesTableView
             properties={getSortedProperties()}
             unitCounts={unitCounts}
-            onPropertyClick={(property) => {
-              setSelectedProperty(property);
-              setIsEditDialogOpen(true);
-            }}
+            onPropertyClick={(property) => navigate(`/properties?id=${property.id}`)}
             onManageUnits={(propertyId) => navigate(`/units?propertyId=${propertyId}`)}
           />
         ) : (
@@ -214,10 +208,7 @@ const Properties = () => {
               <Card 
                 key={property.id} 
                 className="cursor-pointer group"
-                onClick={() => {
-                  setSelectedProperty(property);
-                  setIsEditDialogOpen(true);
-                }}
+                onClick={() => navigate(`/properties?id=${property.id}`)}
               >
                 {/* Thumbnail */}
                 <div className="aspect-video w-full overflow-hidden rounded-t-lg">
@@ -281,18 +272,6 @@ const Properties = () => {
           </div>
         )}
       </div>
-
-      {selectedProperty && (
-        <EditPropertyDialog
-          property={selectedProperty}
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['properties'] });
-            setSelectedProperty(null);
-          }}
-        />
-      )}
 
       <ImportUnitsDialog
         open={isImportOpen}
