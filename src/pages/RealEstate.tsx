@@ -169,6 +169,24 @@ const RealEstate = () => {
     queryClient.invalidateQueries({ queryKey: ['units'] });
   };
 
+  const { isOwner, hasPermission } = usePermissions();
+  const canDuplicate = isOwner || hasPermission('assets_standalone', 'create');
+  const canDelete = isOwner || hasPermission('assets_standalone', 'delete');
+  const { duplicateUnit, deleteUnit } = useAssetActions();
+
+  const handleDuplicateUnit = async (unitId: string) => {
+    const newUnit = await duplicateUnit(unitId);
+    if (newUnit) reloadRealEstateUnits();
+  };
+
+  const handleDeleteUnit = async (unitId: string) => {
+    const ok = await deleteUnit(unitId);
+    if (ok) {
+      toast({ title: 'Imóvel excluído com sucesso' });
+      reloadRealEstateUnits();
+    }
+  };
+
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
     localStorage.setItem('real-estate-view-mode', mode);
