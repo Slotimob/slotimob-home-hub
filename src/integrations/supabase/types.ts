@@ -564,6 +564,7 @@ export type Database = {
           cost: number
           created_at: string
           description: string
+          financial_transaction_id: string | null
           id: string
           improvement_type: string
           invoice_doc_path: string | null
@@ -579,6 +580,7 @@ export type Database = {
           cost: number
           created_at?: string
           description: string
+          financial_transaction_id?: string | null
           id?: string
           improvement_type: string
           invoice_doc_path?: string | null
@@ -594,6 +596,7 @@ export type Database = {
           cost?: number
           created_at?: string
           description?: string
+          financial_transaction_id?: string | null
           id?: string
           improvement_type?: string
           invoice_doc_path?: string | null
@@ -614,6 +617,13 @@ export type Database = {
             columns: ["broker_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_improvements_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
             referencedColumns: ["id"]
           },
           {
