@@ -24,15 +24,7 @@ export interface UnitOption {
   property_name: string | null;
 }
 
-interface UnitSelectorProps {
-  value: string | null;
-  onChange: (unit: UnitOption | null) => void;
-  placeholder?: string;
-}
-
-export const UnitSelector = ({ value, onChange, placeholder = 'Buscar unidade...' }: UnitSelectorProps) => {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
+export function useUnitOptions() {
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -62,10 +54,25 @@ export const UnitSelector = ({ value, onChange, placeholder = 'Buscar unidade...
     };
   }, []);
 
-  const selected = units.find((u) => u.id === value) ?? null;
+  return { units, loading };
+}
 
-  const label = (u: UnitOption) =>
-    u.is_standalone ? u.unit_number : `${u.unit_number} — ${u.property_name ?? 'Empreendimento'}`;
+export function unitLabel(u: UnitOption): string {
+  return u.is_standalone ? u.unit_number : `${u.unit_number} — ${u.property_name ?? 'Empreendimento'}`;
+}
+
+interface UnitSelectorProps {
+  value: string | null;
+  onChange: (unit: UnitOption | null) => void;
+  placeholder?: string;
+}
+
+export const UnitSelector = ({ value, onChange, placeholder = 'Buscar unidade...' }: UnitSelectorProps) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const { units, loading } = useUnitOptions();
+
+  const selected = units.find((u) => u.id === value) ?? null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -77,7 +84,7 @@ export const UnitSelector = ({ value, onChange, placeholder = 'Buscar unidade...
           aria-expanded={open}
           className="w-full justify-between font-normal"
         >
-          {selected ? label(selected) : placeholder}
+          {selected ? unitLabel(selected) : placeholder}
           <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -109,7 +116,7 @@ export const UnitSelector = ({ value, onChange, placeholder = 'Buscar unidade...
               {units.map((u) => (
                 <CommandItem
                   key={u.id}
-                  value={label(u)}
+                  value={unitLabel(u)}
                   onSelect={() => {
                     onChange(u);
                     setOpen(false);
@@ -122,7 +129,7 @@ export const UnitSelector = ({ value, onChange, placeholder = 'Buscar unidade...
                   ) : (
                     <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
                   )}
-                  {label(u)}
+                  {unitLabel(u)}
                   {u.tenant_contact_id && (
                     <span className="ml-auto text-[10px] text-amber-600 dark:text-amber-400">ocupado</span>
                   )}
