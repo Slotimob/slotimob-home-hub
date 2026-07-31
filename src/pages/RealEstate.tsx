@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/button';
 import { PermissionGate } from '@/components/subscription/PermissionGate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Home, Wallet, Bed, Bath, Car, Square, Upload, Share2, Eye, RefreshCw } from 'lucide-react';
+import { Home, Wallet, Bed, Bath, Car, Square, Upload, Share2, RefreshCw } from 'lucide-react';
 import { HeaderButton } from '@/components/ui/header-button';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useAssetActions } from '@/hooks/useAssetActions';
 import { ImportUnitsDialog } from '@/components/ImportUnitsDialog';
 import { ExportUnitsButton } from '@/components/ExportUnitsButton';
 import { UnitsFilters, type UnitsFiltersState } from '@/components/UnitsFilters';
@@ -31,15 +33,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { RealEstateKanbanView } from '@/components/units/RealEstateKanbanView';
+import { UnitCard } from '@/components/units/UnitCard';
+import { UnitActionsMenu } from '@/components/units/UnitActionsMenu';
 
 interface RealEstateUnit {
   id: string;
