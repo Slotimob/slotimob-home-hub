@@ -61,6 +61,8 @@ interface UnitsTableViewProps {
   units: Unit[];
   onUnitClick: (unit: Unit) => void;
   onShareClick?: (unit: Unit) => void;
+  onDuplicate?: (unit: Unit) => void | Promise<void>;
+  onDelete?: (unit: Unit) => void | Promise<void>;
   showProperty?: boolean;
   showOwner?: boolean;
   hasFiltersApplied?: boolean;
