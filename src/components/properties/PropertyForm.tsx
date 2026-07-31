@@ -27,7 +27,7 @@ import { AssetImageUpload } from '@/components/shared/AssetImageUpload';
 import { AddressFields, AddressData } from '@/components/shared/AddressFields';
 import { PropertyAmenitiesSelect } from '@/components/properties/PropertyAmenitiesSelect';
 import { PropertyGalleryUpload } from '@/components/properties/PropertyGalleryUpload';
-import { PropertyDocuments } from '@/components/PropertyDocuments';
+import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { ContactSelector } from '@/components/ContactSelector';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -777,7 +777,7 @@ export function PropertyForm({
         {showDocumentsTab && (
           <TabsContent value="documents" className="mt-4">
             {user && propertyId && (
-              <PropertyDocuments propertyId={propertyId} userId={user.id} />
+              <AssetDocuments assetType="property" assetId={propertyId} userId={user.id} />
             )}
           </TabsContent>
         )}
