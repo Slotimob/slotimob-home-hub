@@ -249,49 +249,14 @@ export function UnitsTableView({
                   )}
                 </TableCell>
                 <TableCell className="text-right py-2 sm:py-4">
-                  <div className="flex justify-end gap-1">
-                    {onShareClick && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onShareClick(unit);
-                            }}
-                          >
-                            <Share2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        {!isMobile && (
-                          <TooltipContent>
-                            <p>Compartilhar</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    )}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onUnitClick(unit);
-                          }}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      {!isMobile && (
-                        <TooltipContent>
-                          <p>Ver detalhes</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
+                  <div className="flex justify-end">
+                    <UnitActionsMenu
+                      unitLabel={unit.unit_number}
+                      onView={() => onUnitClick(unit)}
+                      onShare={onShareClick ? () => onShareClick(unit) : undefined}
+                      onDuplicate={onDuplicate ? () => onDuplicate(unit) : undefined}
+                      onDelete={onDelete ? () => onDelete(unit) : undefined}
+                    />
                   </div>
                 </TableCell>
               </TableRow>
