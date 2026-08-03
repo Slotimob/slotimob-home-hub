@@ -16,28 +16,17 @@ A versão `jspdf@4.x` em uso ainda contém a vulnerabilidade reportada
 Esta mitigação reduz drasticamente a superfície de ataque. Reavaliar
 quando jspdf publicar versão com fix oficial.
 
-## Vulnerabilidades aceitas (build-time only)
+## Vulnerabilidades aceitas
 
-Após `npm audit fix`, restam vulnerabilidades em ferramentas de
-build/desenvolvimento (vite, esbuild, rollup, workbox-build, exceljs,
-serialize-javascript). Nenhuma afeta código que roda em produção
-para o usuário final. Aceitas como risco controlado.
-
-## Vulnerabilidades aceitas (impacto build-time / dev-time)
-
-Após `npm audit fix --legacy-peer-deps`, restam 7 vulnerabilidades em 
-ferramentas de build e desenvolvimento. Nenhuma afeta código que roda 
-em produção para o usuário final.
+Última auditoria real (`npm audit`): 2026-08-03. 18 vulnerabilidades corrigidas via `npm audit fix --legacy-peer-deps` (commit `29706da0`), 6 remanescentes listadas abaixo, todas com fix disponível apenas via breaking change.
 
 | Pacote | Severidade | Onde atua | Por que aceitamos |
-|---|---|---|---|
-| `esbuild` | moderate | dev server | Vetor exige expor `npm run dev` à internet pública, que nunca fazemos. |
-| `vite` | moderate | dev server | Depende do esbuild acima, mesmo cenário. |
-| `serialize-javascript` (RCE) | high | build pipeline | Vetor exige rodar build de código não confiável; build é sempre executado por nós ou pela esteira do Lovable. |
-| `serialize-javascript` (DoS) | moderate | build pipeline | Mesmo cenário acima. |
-| `@rollup/plugin-terser` | high | build pipeline | Depende do `serialize-javascript`, mesmo cenário. |
-| `workbox-build` | high | build pipeline | Depende do `@rollup/plugin-terser`, mesmo cenário. |
-| `uuid` (via exceljs) | moderate | runtime | Atinge apenas `uuid.v3/v5/v6` com buffer customizado, que não usamos. Atualizar exigiria downgrade de exceljs (breaking). |
+|---|---|---|---|---|
+| `esbuild` | moderate | dev server | Vetor exige expor `npm run dev` à internet pública, que nunca fazemos. Fix exige `vite@8.x` (breaking). |
+| `vite` | moderate | dev server | Depende do esbuild acima, mesmo cenário. Hoje travado em `^5.4.19` por compatibilidade com o resto do projeto. |
+| `serialize-javascript` / `@rollup/plugin-terser` / `workbox-build` | high | build pipeline | Corrigidas em 2026-08-03 via `npm audit fix --legacy-peer-deps`. Se reaparecerem em auditoria futura, mesmo raciocínio: vetor exige build de código não confiável. |
+| `uuid` (via `exceljs`) | moderate | runtime | Atinge apenas `uuid.v3/v5/v6` com buffer customizado, que não usamos. Corrigir exigiria downgrade de `exceljs` pra `3.x` (breaking). |
+| `react-router` / `react-router-dom` | moderate | runtime | Fix só existe a partir da `7.18.0` (major, hoje o projeto está em `^6.30.1`). Avaliar upgrade pra v7 como item de roadmap separado, não como hotfix de dependência. |
 
 Monitoramento contínuo via Dependabot. Reavaliar quando upstream 
 publicar patches sem breaking changes.
