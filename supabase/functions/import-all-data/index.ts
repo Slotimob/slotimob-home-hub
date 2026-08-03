@@ -55,6 +55,26 @@ Deno.serve(async (req) => {
     const { tables } = importData;
     const results: Record<string, { inserted: number; errors: string[] }> = {};
 
+    // SECURITY: an imported record may carry an `id` that already exists and belongs
+    // to another tenant. Upserting it would overwrite that tenant's row (ID hijack).
+    // Before writing, verify that any pre-existing row with the same id is owned by
+    // the caller; otherwise skip the record.
+    const isHijack = async (
+      tableName: string,
+      id: unknown,
+      ownerColumn: string
+    ): Promise<boolean> => {
+      if (!id) return false;
+      const { data: existing, error } = await supabaseAdmin
+        .from(tableName)
+        .select(ownerColumn)
+        .eq('id', id)
+        .maybeSingle();
+      if (error) return true; // fail closed
+      if (!existing) return false;
+      return (existing as Record<string, unknown>)[ownerColumn] !== brokerId;
+    };
+
     // Helper function to upsert data with broker_id override
     const upsertTable = async (
       tableName: string, 
@@ -71,6 +91,11 @@ Deno.serve(async (req) => {
 
       for (const record of data) {
         try {
+          if (await isHijack(tableName, record[idColumn], ownerColumn)) {
+            tableResults.errors.push(`${record[idColumn]}: skipped, record belongs to another account`);
+            continue;
+          }
+
           // Override owner column to current user's ID for security
           const sanitizedRecord = { ...record, [ownerColumn]: brokerId };
           
@@ -103,6 +128,11 @@ Deno.serve(async (req) => {
 
       for (const record of data) {
         try {
+          if (await isHijack(tableName, record.id, 'user_id')) {
+            tableResults.errors.push(`${record.id}: skipped, record belongs to another account`);
+            continue;
+          }
+
           const sanitizedRecord = { ...record, user_id: brokerId };
           
           const { error } = await supabaseAdmin
@@ -122,6 +152,7 @@ Deno.serve(async (req) => {
       
       results[tableName] = tableResults;
     };
+
 
     // Import in order respecting foreign key dependencies
     // Level 1: No dependencies (profiles first)
