@@ -635,6 +635,22 @@ Deno.serve(async (req) => {
         });
       }
 
+      // SECURITY: conversationId comes from the client — make sure it belongs to this
+      // broker's connection (and matches the requested remoteJid) before touching it.
+      const { data: ownedConversation } = await supabaseAdmin
+        .from('whatsapp_conversations')
+        .select('id, remote_jid')
+        .eq('id', conversationId)
+        .eq('connection_id', conn.id)
+        .maybeSingle();
+
+      if (!ownedConversation || ownedConversation.remote_jid !== remoteJid) {
+        return new Response(JSON.stringify({ error: 'Conversation not found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+
       try {
         // Fetch messages from Evolution API (POST with JSON body for v2.x)
         const messagesUrl = `${evolutionApiUrl}/chat/findMessages/${conn.instance_name}`;
