@@ -56,7 +56,7 @@ export function AssetImageUpload({
   autoSave = false,
   onRefresh,
 }: AssetImageUploadProps) {
-  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
