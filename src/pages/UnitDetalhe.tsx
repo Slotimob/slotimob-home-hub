@@ -43,6 +43,7 @@ import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
@@ -126,6 +127,7 @@ export default function UnitDetalhe() {
   const propertyIdParam = searchParams.get('propertyId');
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isOwner: isPermOwner, hasPermission } = usePermissions();
@@ -536,7 +538,7 @@ export default function UnitDetalhe() {
           {user && (
             <UnitGalleryUpload
               unitId={unit.id}
-              userId={user.id}
+              userId={effectiveBrokerId}
               images={galleryImages}
               onImagesChange={setGalleryImages}
               maxImages={20}
