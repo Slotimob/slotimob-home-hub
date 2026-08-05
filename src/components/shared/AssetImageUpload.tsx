@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,7 +56,7 @@ export function AssetImageUpload({
   autoSave = false,
   onRefresh,
 }: AssetImageUploadProps) {
-  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -160,7 +160,7 @@ export function AssetImageUpload({
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
 
-      const folder = assetId ? `${user?.id}/${assetId}` : `${user?.id}/temp`;
+      const folder = assetId ? `${effectiveBrokerId}/${assetId}` : `${effectiveBrokerId}/temp`;
       const fileName = `cover-${timestamp}-${random}.${fileExt}`;
       const filePath = `${folder}/${fileName}`;
 
