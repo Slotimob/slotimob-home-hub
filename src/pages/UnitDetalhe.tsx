@@ -551,7 +551,7 @@ export default function UnitDetalhe() {
 
         {/* Documentos */}
         <TabsContent value="documents" className="mt-4">
-          {user && <AssetDocuments assetType="unit" assetId={unit.id} userId={user.id} />}
+          {user && <AssetDocuments assetType="unit" assetId={unit.id} userId={effectiveBrokerId} />}
         </TabsContent>
 
         {/* Atividades */}
