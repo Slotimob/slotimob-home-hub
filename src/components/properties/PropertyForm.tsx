@@ -779,7 +779,7 @@ export function PropertyForm({
         {showDocumentsTab && (
           <TabsContent value="documents" className="mt-4">
             {user && propertyId && (
-              <AssetDocuments assetType="property" assetId={propertyId} userId={user.id} />
+              <AssetDocuments assetType="property" assetId={propertyId} userId={effectiveBrokerId} />
             )}
           </TabsContent>
         )}
