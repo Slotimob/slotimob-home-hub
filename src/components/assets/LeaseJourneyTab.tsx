@@ -38,7 +38,8 @@ import {
  } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { supabase } from "@/integrations/supabase/client";
- import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
  import { toast } from "sonner";
  import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -122,7 +123,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
  fullLeaseData,
  canEdit = true,
  }: LeaseJourneyTabProps) {
-   const { user } = useAuth();
+  const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
    const queryClient = useQueryClient();
    const [uploadingStep, setUploadingStep] = useState<string | null>(null);
    const fileInputRef = useRef<HTMLInputElement>(null);
@@ -278,7 +280,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
      try {
        const fileExt = file.name.split(".").pop();
        const fileName = `${lease.id}/${currentUploadKey}_${Date.now()}.${fileExt}`;
-       const filePath = `${user.id}/${fileName}`;
+       const filePath = `${effectiveBrokerId}/${fileName}`;
  
        // Upload to storage
        const { error: uploadError } = await supabase.storage
