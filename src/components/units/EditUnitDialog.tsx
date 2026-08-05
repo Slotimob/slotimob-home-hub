@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -165,6 +166,7 @@ export const EditUnitDialog = ({
   defaultTab = 'info',
 }: EditUnitDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const { isOwner: isPermOwner, hasPermission } = usePermissions();
   const [saving, setSaving] = useState(false);
@@ -493,7 +495,7 @@ export const EditUnitDialog = ({
             {user && (
               <UnitGalleryUpload
                 unitId={unit.id}
-                userId={user.id}
+                userId={effectiveBrokerId}
                 images={galleryImages}
                 onImagesChange={setGalleryImages}
                 maxImages={20}
@@ -507,7 +509,7 @@ export const EditUnitDialog = ({
           {/* Documents Tab */}
           <TabsContent value="documents" className="mt-4">
             {user && (
-              <UnitDocuments unitId={unit.id} userId={user.id} />
+              <UnitDocuments unitId={unit.id} userId={effectiveBrokerId} />
             )}
           </TabsContent>
 
