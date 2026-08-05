@@ -160,7 +160,7 @@ export function AssetImageUpload({
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
 
-      const folder = assetId ? `${user?.id}/${assetId}` : `${user?.id}/temp`;
+      const folder = assetId ? `${effectiveBrokerId}/${assetId}` : `${effectiveBrokerId}/temp`;
       const fileName = `cover-${timestamp}-${random}.${fileExt}`;
       const filePath = `${folder}/${fileName}`;
 
