@@ -30,6 +30,7 @@ import { PropertyGalleryUpload } from '@/components/properties/PropertyGalleryUp
 import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { ContactSelector } from '@/components/ContactSelector';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export const propertySchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome deve ter no máximo 100 caracteres'),
@@ -193,6 +194,7 @@ export function PropertyForm({
   disabled = false,
 }: PropertyFormProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const [activeTab, setActiveTab] = useState('info');
   
   // Internal state for when not managed externally - must be declared FIRST
@@ -758,7 +760,7 @@ export function PropertyForm({
           {user && (
             <PropertyGalleryUpload
               propertyId={propertyId}
-              userId={user.id}
+              userId={effectiveBrokerId}
               images={formData.gallery_images}
               onImagesChange={(images) => setFormData({ ...formData, gallery_images: images })}
               maxImages={10}
