@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Reveal } from './Reveal';
 
 // Substitua YOUTUBE_VIDEO_ID pelo ID real do vídeo quando disponível
-const YOUTUBE_VIDEO_ID = 'dQw4w9WgXcQ';
+const YOUTUBE_VIDEO_ID = 'OEuA9evem7M';
 
 export default function LpDemo() {
   return (
