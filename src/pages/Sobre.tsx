@@ -182,7 +182,7 @@ export default function Sobre() {
               Tem dúvidas? Prefere conversar antes de criar sua conta? Estamos no WhatsApp — resposta em minutos.
             </p>
             <a
-              href="https://wa.me/5511999999999"
+              href="https://wa.me/554137987325?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Slotimob%20e%20queria%20saber%20mais."
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-4 rounded-xl text-base transition-colors"
