@@ -281,17 +281,26 @@ export default function WhatsApp() {
   }, [selectedConversation]);
 
   const handleSendMedia = useCallback(async (file: File) => {
-    if (!selectedConversation || !user) return;
+    if (!selectedConversation || !user || !effectiveBrokerId) return;
 
     const ext = file.name.split('.').pop() || 'bin';
-    const filePath = `${user.id}/${selectedConversation.id}/${Date.now()}.${ext}`;
+
+    // path determinístico por conteúdo (hash SHA-256): reenviar o mesmo arquivo
+    // (ex: retry manual após falha de rede) reaproveita o mesmo path via upsert,
+    // em vez de criar um blob novo e órfão no storage a cada tentativa
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashHex = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    const filePath = `${effectiveBrokerId}/${selectedConversation.id}/${hashHex}.${ext}`;
 
     toast({ title: 'Enviando arquivo...', description: file.name });
 
     // 1. Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('whatsapp-media')
-      .upload(filePath, file, { contentType: file.type });
+      .upload(filePath, file, { contentType: file.type, upsert: true });
 
     if (uploadError) {
       toast({ title: 'Erro ao enviar arquivo', description: uploadError.message, variant: 'destructive' });
@@ -329,7 +338,7 @@ export default function WhatsApp() {
     } else {
       toast({ title: 'Arquivo enviado!' });
     }
-  }, [selectedConversation, user, toast]);
+  }, [selectedConversation, user, effectiveBrokerId, toast]);
 
   if (authLoading || connectionLoading) {
     return (
