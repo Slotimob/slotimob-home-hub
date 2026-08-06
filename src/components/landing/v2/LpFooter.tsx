@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { SlotiSymbol } from './SlotiSymbol';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
+
 
 const COLS = [
   {
@@ -89,6 +91,8 @@ export function LpFooter() {
           <p>Nascido em Curitiba · 🇧🇷</p>
         </div>
       </div>
+
+      <WhatsAppButton />
     </footer>
   );
 }
