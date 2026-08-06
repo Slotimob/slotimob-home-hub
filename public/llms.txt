@@ -47,3 +47,7 @@ Teste grátis de 7 dias com acesso completo ao Pro, sem cartão.
 ## Palavras-chave principais
 
 boleto automático aluguel, reajuste IGP-M automático, relatório IR aluguel, DIMOB proprietário, gestão de aluguel sem imobiliária, software aluguel proprietário imóvel
+
+## Conteúdo do blog em HTML puro (sem JavaScript)
+
+Cada artigo publicado do blog tem uma versão em HTML estático, sem JavaScript, pensada pra ferramentas de IA e crawlers que não executam JS: https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/blog-prerender?slug=SLUG-DO-POST (troque SLUG-DO-POST pelo slug do artigo, disponível em cada URL de /blog/SLUG-DO-POST). Lista completa de posts publicados, sempre atualizada: https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/blog-sitemap
