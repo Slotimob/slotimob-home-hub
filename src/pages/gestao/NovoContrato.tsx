@@ -199,6 +199,27 @@ export default function NovoContrato() {
     enabled: !!user && !!effectiveUnitId && !isEditMode && !selectedUnitInfo,
   });
 
+  // Frações (subdivisões) da unidade — só relevante quando a unit tem has_subdivisions
+  const { data: unitSubdivisionFlag } = useQuery({
+    queryKey: ["unit-has-subdivisions", effectiveUnitId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("units")
+        .select("has_subdivisions")
+        .eq("id", effectiveUnitId)
+        .maybeSingle();
+      return !!(data as any)?.has_subdivisions;
+    },
+    enabled: !!user && !!effectiveUnitId,
+  });
+
+  const { data: subdivisions = [] } = useUnitSubdivisions(
+    unitSubdivisionFlag ? effectiveUnitId : ""
+  );
+  const showSubdivisionSelect = !!unitSubdivisionFlag && subdivisions.length > 0;
+
+
+
   // Conta Asaas do broker (para validar emissão automática)
   const { data: asaasAccount } = useQuery({
     queryKey: ["asaas-account-status", effectiveBrokerId, user?.id],
