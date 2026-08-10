@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { FileText, FileSignature, AlertTriangle, AlertCircle, Loader2 } from 'lucide-react';
+import { FileText, FileSignature, AlertTriangle, AlertCircle, Loader2, Link2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -67,10 +68,24 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
           <p className="text-muted-foreground">
             Nenhum contrato cadastrado para este imóvel ainda.
           </p>
-          <Button onClick={() => navigate(`/gestao/contratos/novo?unitId=${unitId}`)}>
-            <FileSignature className="h-4 w-4 mr-2" />
-            Criar Contrato
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={() => navigate(`/gestao/contratos/novo?unitId=${unitId}`)}>
+              <FileSignature className="h-4 w-4 mr-2" />
+              Criar Contrato
+            </Button>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(true)}>
+              <Link2 className="h-4 w-4 mr-2" />
+              Vincular a Contrato Existente
+            </Button>
+          </div>
+          <LeaseLinkSelector
+            open={linkDialogOpen}
+            onOpenChange={setLinkDialogOpen}
+            unitId={unitId}
+            onLinked={() =>
+              queryClient.invalidateQueries({ queryKey: ['lease', 'unit', unitId] })
+            }
+          />
         </CardContent>
       </Card>
     );
