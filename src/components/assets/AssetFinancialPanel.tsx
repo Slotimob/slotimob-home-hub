@@ -592,6 +592,26 @@ function MarketValueBlock({
             </div>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir registro de valor de mercado?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget
+                  ? `O registro de ${fmtCurrency(deleteTarget.value)} será removido permanentemente. O valor atual do ativo será resincronizado com a avaliação mais recente restante.`
+                  : ''}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} disabled={deleteMutation.isPending}>
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </CardContent>
     </Card>
   );
