@@ -112,7 +112,7 @@ const getInitialPayment = (): PaymentInfo => ({
 export default function NovoContrato() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const editLeaseId = searchParams.get("edit");
+  const editLeaseId = searchParams.get("edit") ?? searchParams.get("editLeaseId");
   const unitIdParam = searchParams.get("unitId");
 
   const { user } = useAuth();
