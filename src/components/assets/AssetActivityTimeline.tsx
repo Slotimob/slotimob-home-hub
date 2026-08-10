@@ -451,10 +451,20 @@ export const AssetActivityTimeline = ({
     setPage(1);
   };
 
-  // Export CSV
-  const exportCSV = useCallback(() => {
-    const headers = ['Data', 'Ação', 'Tabela', 'Registro', 'Usuário', 'Alterações'];
-    const rows = filteredLogs.filter((l): l is AuditLog => !isManualNote(l)).map(log => {
+  // Linhas compartilhadas entre CSV e PDF (inclui notas manuais)
+  const buildExportRows = useCallback(() => {
+    return filteredLogs.map(item => {
+      if (isManualNote(item)) {
+        return [
+          formatTimestampAbsolute(item.scheduled_at ?? item.created_at),
+          'Nota manual',
+          'Atividade',
+          item.title || 'Nota',
+          profileMap[item.broker_id] || 'Usuário',
+          '',
+        ];
+      }
+      const log = item as AuditLog;
       const changes = getChangedFields(log);
       return [
         formatTimestampAbsolute(log.created_at),
@@ -462,9 +472,15 @@ export const AssetActivityTimeline = ({
         TABLE_LABELS[log.table_name] || log.table_name,
         getRecordName(log),
         profileMap[log.broker_id] || 'Usuário',
-        changes.map(c => `${c.label}: ${c.from} → ${c.to}`).join('; '),
+        changes.map(c => `${c.label}: ${c.from} -> ${c.to}`).join('; '),
       ];
     });
+  }, [filteredLogs, profileMap]);
+
+  // Export CSV
+  const exportCSV = useCallback(() => {
+    const headers = ['Data', 'Ação', 'Tabela', 'Registro', 'Usuário', 'Alterações'];
+    const rows = buildExportRows();
 
     const csvContent = [headers, ...rows]
       .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
@@ -477,7 +493,7 @@ export const AssetActivityTimeline = ({
     a.download = `atividades-${assetType}-${assetId.slice(0, 8)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [filteredLogs, profileMap, assetType, assetId]);
+  }, [buildExportRows, assetType, assetId]);
 
   // Export PDF
   const exportPDF = useCallback(async () => {
@@ -486,21 +502,14 @@ export const AssetActivityTimeline = ({
 
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.setFontSize(14);
-    doc.text(`Histórico de Atividades`, 14, 15);
+    doc.text(pdfSafeLabel('Histórico de Atividades'), 14, 15);
     doc.setFontSize(9);
-    doc.text(`${filteredLogs.length} registros`, 14, 22);
+    doc.text(pdfSafeLabel(`${filteredLogs.length} registros`), 14, 22);
 
-    const tableData = filteredLogs.filter((l): l is AuditLog => !isManualNote(l)).map(log => {
-      const changes = getChangedFields(log);
-      return [
-        formatTimestampAbsolute(log.created_at),
-        ACTION_LABELS[log.action] || log.action,
-        TABLE_LABELS[log.table_name] || log.table_name,
-        getRecordName(log).slice(0, 30),
-        (profileMap[log.broker_id] || 'Usuário').slice(0, 20),
-        changes.map(c => `${c.label}: ${c.from} → ${c.to}`).join('; ').slice(0, 60),
-      ];
-    });
+    const limits = [40, 24, 24, 30, 20, 60];
+    const tableData = buildExportRows().map(row =>
+      row.map((cell, i) => pdfSafeText(cell, { maxLength: limits[i], preserveLineBreaks: false }))
+    );
 
     autoTable(doc, {
       startY: 28,
@@ -511,7 +520,8 @@ export const AssetActivityTimeline = ({
     });
 
     doc.save(`atividades-${assetType}-${assetId.slice(0, 8)}.pdf`);
-  }, [filteredLogs, profileMap, assetType, assetId]);
+  }, [buildExportRows, filteredLogs, assetType, assetId]);
+
 
   // ── Render ─────────────────────────────────────────────
 
