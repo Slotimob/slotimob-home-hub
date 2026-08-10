@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { sanitizeStorageFileName } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -157,7 +158,7 @@ export const AssetDocuments = ({ assetType, assetId, userId }: AssetDocumentsPro
     setUploading(true);
     try {
       const timestamp = Date.now();
-      const filePath = `${userId}/${assetId}/documents/${timestamp}-${file.name}`;
+      const filePath = `${userId}/${assetId}/documents/${timestamp}-${sanitizeStorageFileName(file.name)}`;
 
       const { error: uploadError } = await supabase.storage
         .from('documents')
