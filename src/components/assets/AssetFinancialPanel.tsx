@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { LinkImprovementTransactionDialog } from '@/components/assets/LinkImprovementTransactionDialog';
+
 import {
   Tooltip as UITooltip,
   TooltipContent as UITooltipContent,
