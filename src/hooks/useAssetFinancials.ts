@@ -124,8 +124,11 @@ export function useCreateImprovement() {
       cost: number;
       completed_at: string;
       affects_market_value: boolean;
+      affects_market_value: boolean;
       invoice_doc_path?: string | null;
+      financial_transaction_id?: string | null;
     }) => {
+
       const { assetType, assetId, ...rest } = payload;
       const insert: Record<string, unknown> = {
         ...rest,
