@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLeaseByUnitId, type Lease } from '@/hooks/useLeases';
 import { formatCurrencyBRL } from '@/utils/unitPricing';
 import { supabase } from '@/integrations/supabase/client';
+import { LeaseLinkSelector } from '@/components/units/LeaseLinkSelector';
 
 const STATUS_LABELS: Record<
   string,
@@ -38,6 +39,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: lease, isLoading } = useLeaseByUnitId(unitId);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
   const handleMarkReviewed = async () => {
     if (!lease) return;
