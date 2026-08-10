@@ -3015,6 +3015,7 @@ export type Database = {
           is_dimob_deductible: boolean | null
           is_dimob_eligible: boolean | null
           metadata: Json | null
+          needs_tenant_review: boolean
           next_adjustment_date: string | null
           notes: string | null
           owner_contact_id: string | null
@@ -3025,6 +3026,7 @@ export type Database = {
           start_date: string
           status: string
           tenant_contact_id: string
+          tenant_review_note: string | null
           termination_date: string | null
           termination_reason: string | null
           unit_id: string
@@ -3050,6 +3052,7 @@ export type Database = {
           is_dimob_deductible?: boolean | null
           is_dimob_eligible?: boolean | null
           metadata?: Json | null
+          needs_tenant_review?: boolean
           next_adjustment_date?: string | null
           notes?: string | null
           owner_contact_id?: string | null
@@ -3060,6 +3063,7 @@ export type Database = {
           start_date: string
           status?: string
           tenant_contact_id: string
+          tenant_review_note?: string | null
           termination_date?: string | null
           termination_reason?: string | null
           unit_id: string
@@ -3085,6 +3089,7 @@ export type Database = {
           is_dimob_deductible?: boolean | null
           is_dimob_eligible?: boolean | null
           metadata?: Json | null
+          needs_tenant_review?: boolean
           next_adjustment_date?: string | null
           notes?: string | null
           owner_contact_id?: string | null
@@ -3095,6 +3100,7 @@ export type Database = {
           start_date?: string
           status?: string
           tenant_contact_id?: string
+          tenant_review_note?: string | null
           termination_date?: string | null
           termination_reason?: string | null
           unit_id?: string
@@ -5866,6 +5872,15 @@ export type Database = {
       }
       reset_ai_credits_for_user: {
         Args: { p_user_id: string }
+        Returns: undefined
+      }
+      sync_unit_tenant_from_lease: {
+        Args: {
+          p_lease_id: string
+          p_start_date: string
+          p_tenant_contact_id: string
+          p_unit_id: string
+        }
         Returns: undefined
       }
       validate_permissions_payload: {
