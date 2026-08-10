@@ -83,14 +83,25 @@ import {
        const { data: lease } = await supabase
          .from("leases")
          .select(`id, rent_amount, start_date, end_date, due_day, admin_fee_percentage,
-           tenant_contact_id, adjustment_index, deposit_amount, guarantee_type, guarantor_data, payment_info`)
+           tenant_contact_id, adjustment_index, deposit_amount, guarantee_type, guarantor_data, payment_info,
+           unit_subdivision_id`)
          .eq("unit_id", unitId)
          .eq("status", "active")
          .order("start_date", { ascending: false })
          .limit(1)
          .maybeSingle();
        
-       if (!lease?.tenant_contact_id) return { lease, tenant: null };
+       let subdivision: { label: string; area: number | null } | null = null;
+       if (lease?.unit_subdivision_id) {
+         const { data: sub } = await supabase
+           .from("unit_subdivisions")
+           .select("label, area")
+           .eq("id", lease.unit_subdivision_id)
+           .maybeSingle();
+         subdivision = sub ?? null;
+       }
+
+       if (!lease?.tenant_contact_id) return { lease, tenant: null, subdivision };
        
        const { data: tenant } = await supabase
          .from("contacts")
@@ -98,7 +109,7 @@ import {
          .eq("id", lease.tenant_contact_id)
          .single();
        
-       return { lease, tenant };
+       return { lease, tenant, subdivision };
      },
      enabled: open,
    });
