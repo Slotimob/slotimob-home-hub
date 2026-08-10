@@ -844,6 +844,44 @@ export default function NovoContrato() {
           {/* Financial */}
           {step === "financial" && (
             <div className="space-y-4">
+              {showSubdivisionSelect && (
+                <div className="space-y-2">
+                  <Label>Fração</Label>
+                  <Select
+                    value={formData.unit_subdivision_id ?? "none"}
+                    onValueChange={(v) => {
+                      const id = v === "none" ? null : v;
+                      const fraction = subdivisions.find((s) => s.id === id);
+                      setFormData((prev) => ({
+                        ...prev,
+                        unit_subdivision_id: id,
+                        rent_amount:
+                          fraction?.rent_price != null
+                            ? Number(fraction.rent_price)
+                            : prev.rent_amount,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Imóvel inteiro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
+                      {subdivisions.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.label}
+                          {s.area != null ? ` — ${s.area}m²` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Opcional. Selecione a fração quando o contrato for de apenas uma parte do
+                    imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Valor do Aluguel *</Label>
