@@ -1,60 +1,64 @@
-# Diagnóstico: "Erro no upload. Invalid key: nome do arquivo.pdf"
+# Diagnóstico: duplicação de contratos + aba Inquilinos por contrato
 
-## 1. Qual componente renderiza a aba "Documentos" nas duas rotas
+## PEDIDO 1 — Duplicação do lease pending (causa confirmada)
 
-Ambas as rotas caem no **mesmo componente**:
+Causa raiz: **incompatibilidade de nome do query param**.
 
-- `/units?id=...` e `/real-estate?id=...` são resolvidas em `src/App.tsx:94-109` — `UnitsRoute` e `RealEstateRoute` renderizam **ambas** `UnitDetalhe` quando há `?id`.
-- `src/pages/UnitDetalhe.tsx:582-583` renderiza a aba: `<AssetDocuments assetType="unit" assetId={unit.id} userId={effectiveBrokerId} />`.
-- `src/pages/PropertyDetalhe.tsx` (empreendimento) hoje tem só 3 abas: Detalhes, Financeiro, Atividades. **Não tem aba Documentos.**
+- `src/components/units/UnitContractTab.tsx:166` navega para `/gestao/contratos/novo?editLeaseId=${lease.id}`
+- `src/pages/gestao/NovoContrato.tsx:115` lê `searchParams.get("edit")` — chave diferente
+- Logo `isEditMode` (`NovoContrato.tsx:163`) é sempre `false` nesse fluxo; a query de edição (`:166-180`) nunca roda
+- No submit (`NovoContrato.tsx:546-567`), cai sempre no `else` → `useCreateLease` (INSERT, `src/hooks/useLeases.ts:265-320`) em vez de `useUpdateLease` (`useLeases.ts:367+`)
 
-Sobre a nota do vault (2026-07-30): a divergência ainda **existe no código legado**, mas não está no caminho do bug:
-- `src/components/PropertyDocuments.tsx` → tabela `property_documents` + bucket `property-documents`.
-- `src/components/units/UnitDocuments.tsx` → tabela `documents` + bucket `documents` (não `unit-media`), usado só nos diálogos legados `UnitDetailsDialog.tsx` e `EditUnitDialog.tsx`.
-- O componente novo `AssetDocuments.tsx` unificou: tabela `documents` + bucket `documents`, alternando só a coluna (`unit_id` / `property_id`) e o `document_type`.
+O trigger **não** é culpado: `sync_pending_lease_from_unit` (verificado no banco) só insere quando a unit **não tem nenhum lease** (`SELECT EXISTS ... FROM leases WHERE unit_id = NEW.id`), portanto é idempotente e não gera um 2º pending.
 
-## 2. Trecho que monta a key
+Por que o usuário só vê o problema na listagem: `useLeaseByUnitId` (`useLeases.ts:219-239`) filtra `status in (active,pending)`, ordena por `created_at desc` e faz `limit(1)`, então a aba Contrato mostra só o mais novo; o pending órfão sobrevive silenciosamente e aparece em `/gestao/contratos`.
 
-`src/components/assets/AssetDocuments.tsx:159-164`:
+Dados atuais: apenas 2 units com mais de 1 lease; 1 delas com exatamente o padrão do bug (1 pending + 1 novo, 2 inquilinos distintos).
 
-```text
-const timestamp = Date.now();
-const filePath = `${userId}/${assetId}/documents/${timestamp}-${file.name}`;
-await supabase.storage.from('documents').upload(filePath, file);
-```
+### Correção proposta (baixo risco)
+1. Aceitar ambos os params em `NovoContrato.tsx:115`: `searchParams.get("edit") ?? searchParams.get("editLeaseId")`.
+2. Padronizar o link em `UnitContractTab.tsx:166` para `?edit=` (mantendo a leitura dupla por compatibilidade com links antigos/salvos).
+3. Limpeza dos pending órfãos existentes: migração pontual que encerra (`status='cancelled'`) leases `pending` de units que já possuem outro lease mais recente — apenas as 2 linhas identificadas. **Confirmar antes de executar.**
 
-Mesmo padrão nos legados:
-- `src/components/PropertyDocuments.tsx:145` → `${userId}/${propertyId}/${timestamp}-${file.name}`
-- `src/components/units/UnitDocuments.tsx:160` → `${userId}/${unitId}/documents/${timestamp}-${file.name}`
+## PEDIDO 2 — Aba Inquilinos como histórico de contratos
 
-Em todos, `file.name` entra **cru**, sem sanitização.
+### Schema
+`leases` tem: `unit_id`, `tenant_contact_id`, `owner_contact_id`, `rent_amount`, `start_date`, `end_date`, `status`, `contract_status`, `termination_date`, entre outras. **Não existe `unit_subdivision_id` nem `property_id`** — o property é resolvido via `units.property_id`. Join com `contacts` disponível pela FK `leases_tenant_contact_id_fkey` (mesmo padrão já usado em `ContractsTab.tsx`).
 
-## 3. Causa confirmada
+`unit_subdivisions` tem `tenant_contact_id` próprio, **sem qualquer ligação com `leases`**. Hoje existem três lugares paralelos guardando "quem é o inquilino": `units.tenant_contact_id`, `unit_subdivisions.tenant_contact_id` e `leases.tenant_contact_id`.
 
-É exatamente isso. O Supabase Storage valida a key do objeto contra um conjunto restrito de caracteres; espaços, acentos, cedilha, parênteses e `#`/`?` disparam `Invalid key: <path>`. Como o arquivo se chamava `nome do arquivo.pdf` (espaços), a key final ficou `.../1770.../1770...-nome do arquivo.pdf` → rejeitada antes de qualquer RLS. A mensagem que o usuário viu vem do `catch` em `AssetDocuments.tsx` (`toast 'Erro no upload'` + `err.message`).
+Resposta ao item 8: sim — para imóvel fracionado, todos os leases ficam com o mesmo `unit_id` da unit pai e **não há como diferenciar a fração** hoje.
 
-É **um único bug, um único componente** para as duas rotas (`AssetDocuments.tsx`), com dois clones legados com o mesmo defeito.
+### O que ficaria órfão
+- Leitura de `unit_tenant_history`: `src/components/units/TenantHistoryPanel.tsx:51-53` e `src/components/reports/ReportsAssetsSection.tsx:229-231` (este último **permanece**, não mexer)
+- Escrita: RPC `register_tenant_history_entry` chamada só em `src/components/units/RegisterTenantHistoryDialog.tsx:142`
+- `RegisterTenantHistoryDialog` só é importado por `TenantHistoryPanel.tsx:7,73`
 
-## 4. Existe utilitário de sanitização reaproveitável?
+Ou seja: removendo o botão da aba, o dialog e a RPC ficam sem call site na UI. A tabela e o trigger de auditoria continuam existindo (dados históricos preservados e ainda usados no relatório).
 
-**Não.** Busca por `sanitizeFileName`, `slugify`, `normalize('NFD')` retorna apenas:
-- `slugify` em `src/components/cockpit/CockpitBlogTab.tsx:59` — local, para slug de post de blog, não exportado nem adequado a nome de arquivo (come a extensão).
-- `normalize('NFD')` em `src/pages/BlogPost.tsx:90` — normalização de cidade.
+### `units.tenant_contact_id` — não tocar
+Usado amplamente: `UnitFormFields.tsx:80,122,195,851`, `EditUnitDialog.tsx:90,143,312`, `UnitSelector.tsx`, `UnitMultiSelector.tsx:96`, `NovoContrato.tsx:192,292`, `ObligationsConfigForm.tsx:77-89`, `DimobStatusCard.tsx`, `ContactsUnified.tsx:247-269`, `CreateContactDialog.tsx:270,305`, `DimobReportTab.tsx:74,119`. O escopo fica restrito à aba Inquilinos.
 
-Os demais uploads **evitam** o problema em vez de resolvê-lo: geram nome sintético e descartam o original.
-- `PropertyGalleryUpload.tsx:103`, `UnitGalleryUpload.tsx:99`, `AssetImageUpload.tsx`, `PropertyImageUpload.tsx:116` → `${Date.now()}_${random}.${ext}`
-- `WhatsApp.tsx:296` → hash SHA-256 + extensão
-- `UploadSignedContractDialog.tsx:92`, `LeaseJourneyTab.tsx:282`, `CreateProposalSheet.tsx:354` → nome fixo/derivado do id
-- Exceção: `CreateProposalDialog.tsx:145` monta o nome com `lead.name.replace(/\s+/g,'-')` — cobre espaço mas não acento/cedilha, então também pode quebrar com nome acentuado.
+### Padrão a reaproveitar
+`src/components/assets/ContractsTab.tsx:290-330` (select com `tenant_contact:contacts!leases_tenant_contact_id_fkey(...)` + `unit:units!leases_unit_id_fkey(...)`) e o mapa `STATUS_LABELS` em `ContractsTab.tsx:101-107` — idêntico ao de `UnitContractTab.tsx:17-27`. Recomendo extrair esse mapa para um módulo compartilhado (`src/lib/lease-status.ts`) e consumi-lo nos três lugares.
 
-Ou seja: não há nada para reaproveitar — o correto é criar um utilitário compartilhado.
+### Nova aba Inquilinos (somente leitura)
+Reescrever `TenantHistoryPanel.tsx` para listar **contratos** da unidade (ou de todas as units filhas, quando for property):
+- Query: `leases` por `unit_id` (ou `unit_id in (units filhas)`), join com `contacts`, ordenada por `start_date desc`
+- Colunas por linha: inquilino, período (`start_date` → `end_date`, ou "em vigor"), `rent_amount` em BRL, badge de status
+- Múltiplos contratos ativos aparecem simultaneamente — resolve o caso do imóvel fracionado no nível de exibição
+- Remover o botão "Registrar Entrada de Inquilino" e o uso de `RegisterTenantHistoryDialog`
+- Estado vazio: orientar a criar contrato (link para `/gestao/contratos/novo?unitId=...`)
+- Opcional: seção colapsada "Histórico legado" lendo `unit_tenant_history`, para não esconder dados antigos
 
-## Correção proposta (quando aprovado)
+## Recomendação de escopo
 
-1. Criar `sanitizeStorageFileName(name)` em `src/lib/utils.ts` (ou `src/lib/storage-utils.ts`): separa base + extensão, aplica `normalize('NFD')` + remoção de diacríticos, troca tudo que não for `[a-zA-Z0-9._-]` por `-`, colapsa hifens, corta o tamanho (~80 chars), e cai num fallback (`arquivo`) se sobrar vazio. Extensão em minúsculas.
-2. Aplicar em `AssetDocuments.tsx:160` (o bug reportado).
-3. Aplicar também nos dois clones legados — `PropertyDocuments.tsx:145` e `units/UnitDocuments.tsx:160` — e no `CreateProposalDialog.tsx:145`, que têm o mesmo defeito.
-4. O título exibido continua usando o `file.name` original (só a key do storage é sanitizada), então nada muda para o usuário na UI.
-5. Rodar typecheck e build ao final.
+**Nesta rodada (seguro):**
+- Fix do param `edit`/`editLeaseId` + padronização do link
+- Aba Inquilinos convertida em leitura de contratos, com múltiplos ativos simultâneos
+- Extração do `STATUS_LABELS` compartilhado
+- (Sob confirmação) limpeza das 2 linhas pending órfãs
 
-Fora de escopo (não mexer agora): unificar `property_documents`/`property-documents` com `documents`, e adicionar aba Documentos ao `PropertyDetalhe.tsx`.
+**Próximo passo (fora desta rodada):**
+- Coluna `leases.unit_subdivision_id` + FK, para vincular formalmente contrato ↔ fração, exibir a fração na linha do histórico e permitir que o wizard escolha a fração
+- Unificar as três fontes de "inquilino atual" (`units`, `unit_subdivisions`, `leases`) — mudança estrutural com impacto em DIMOB, relatórios e formulários
