@@ -834,20 +834,30 @@ export const UnitFormFields = ({
         </div>
 
         {/* Tenant Contact - only show when status is rented or occupied */}
-        {(formData.status === 'rented' || formData.is_occupied) && (
-          <div className="space-y-2">
-            <Label>Ocupante (Inquilino)</Label>
-            <ContactSelector
-              key={`tenant-${contactSelectorKey}`}
-              value={formData.tenant_contact_id}
-              onChange={(v) => setFormData({ ...formData, tenant_contact_id: v })}
-              placeholder="Buscar inquilino..."
-              filterCategories={['Inquilino']}
-              autoAddCategory="Inquilino"
-              showCreateButton
-              onCreateClick={() => handleCreateContactClick('Inquilino')}
-            />
+        {formData.has_subdivisions ? (
+          <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+            <Label className="text-muted-foreground">Ocupante (Inquilino)</Label>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Layers className="h-4 w-4 shrink-0" />
+              <span>Este imóvel está subdividido em frações — cada fração tem seu próprio inquilino. Gerencie os ocupantes na aba <strong>Frações</strong>.</span>
+            </div>
           </div>
+        ) : (
+          (formData.status === 'rented' || formData.is_occupied) && (
+            <div className="space-y-2">
+              <Label>Ocupante (Inquilino)</Label>
+              <ContactSelector
+                key={`tenant-${contactSelectorKey}`}
+                value={formData.tenant_contact_id}
+                onChange={(v) => setFormData({ ...formData, tenant_contact_id: v })}
+                placeholder="Buscar inquilino..."
+                filterCategories={['Inquilino']}
+                autoAddCategory="Inquilino"
+                showCreateButton
+                onCreateClick={() => handleCreateContactClick('Inquilino')}
+              />
+            </div>
+          )
         )}
 
         {/* Tags */}
