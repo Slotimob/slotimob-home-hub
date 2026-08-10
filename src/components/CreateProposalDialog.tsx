@@ -142,7 +142,7 @@ Assinatura do Corretor
 
       // Create text file
       const blob = new Blob([proposalContent], { type: 'text/plain' });
-      const fileName = `${Date.now()}-proposta-${lead.name.replace(/\s+/g, '-')}.txt`;
+      const fileName = sanitizeStorageFileName(`${Date.now()}-proposta-${lead.name}.txt`);
       const filePath = `${user?.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
