@@ -466,7 +466,7 @@ export default function UnitDetalhe() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className={cn('grid w-full', tabsCount === 8 ? 'grid-cols-8' : 'grid-cols-7')}>
           <TabsTrigger value="info" className="text-xs sm:text-sm">
             <Info className="h-4 w-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Informações</span>
@@ -502,6 +502,13 @@ export default function UnitDetalhe() {
             <span className="hidden sm:inline">Inquilinos</span>
             <span className="sm:hidden">Inq.</span>
           </TabsTrigger>
+          {showSubdivisionsTab && (
+            <TabsTrigger value="subdivisions" className="text-xs sm:text-sm">
+              <Layers className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Frações</span>
+              <span className="sm:hidden">Fraç.</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Info */}
