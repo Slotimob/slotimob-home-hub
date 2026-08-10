@@ -240,6 +240,14 @@ export const EVENT_GROUPS: Record<string, EventGroupDef> = {
     label: 'Vendas',
     match: (l) => l.table_name === 'sales' || l.action === 'sale_recorded',
   },
+  asset_improvements: {
+    label: 'Benfeitorias',
+    match: (l) => l.table_name === 'asset_improvements',
+  },
+  market_value_history: {
+    label: 'Valor de Mercado',
+    match: (l) => l.table_name === 'market_value_history',
+  },
 };
 
 // ── Activity type labels ──────────────────────────────────
