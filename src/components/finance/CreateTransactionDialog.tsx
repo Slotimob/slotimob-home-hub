@@ -247,6 +247,21 @@ export function CreateTransactionDialog({
       }
 
       // Normal transaction flow
+      // Auto-preenche property_id a partir da unidade selecionada (unidade de
+      // empreendimento) para que o lançamento também seja encontrável no nível
+      // do imóvel pai (usado no vínculo financeiro de benfeitorias).
+      let resolvedPropertyId: string | null = editTransaction?.property_id || null;
+      if (formData.unitId) {
+        const { data: unitRow } = await supabase
+          .from("units")
+          .select("property_id")
+          .eq("id", formData.unitId)
+          .maybeSingle();
+        resolvedPropertyId = unitRow?.property_id || null;
+      } else {
+        resolvedPropertyId = null;
+      }
+
       const baseTransactionData = {
         broker_id: brokerId,
         assigned_user_id: user.id,
@@ -262,6 +277,7 @@ export function CreateTransactionDialog({
         notes: formData.notes || null,
         paid_date: formData.status === "paid" ? new Date().toISOString().split("T")[0] : null,
         unit_id: formData.unitId || null,
+        property_id: resolvedPropertyId,
         contact_id: formData.contactId || null,
         obligation_type: selectedObligationType || obligationType || null,
         competency_period: selectedCompetencyPeriod || competencyPeriod || null,
