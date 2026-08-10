@@ -889,6 +889,16 @@ export function TransactionsTableInfinite({
           }}
         />
       )}
+
+      {/* Mark as improvement */}
+      {improvementTransaction && (
+        <MarkAsImprovementDialog
+          open={!!improvementTransaction}
+          onOpenChange={(open) => !open && setImprovementTransaction(null)}
+          transaction={improvementTransaction}
+        />
+      )}
+
     </TooltipProvider>
   );
 }
