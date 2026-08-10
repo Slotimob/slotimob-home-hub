@@ -251,8 +251,7 @@ export default function UnitDetalhe() {
     setShowDeleteDialog(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveUnit = async () => {
     if (!unit) return;
 
     if (formData.intent_type === 'sale' || formData.intent_type === 'both') {
@@ -435,8 +434,13 @@ export default function UnitDetalhe() {
               </div>
             </div>
 
-            {(canDuplicate || canDelete) && (
+            {(canEdit || canDuplicate || canDelete) && (
               <div className="flex items-center gap-2 flex-wrap">
+                {canEdit && (
+                  <Button size="sm" onClick={saveUnit} disabled={saving}>
+                    {saving ? 'Salvando...' : 'Salvar Alterações'}
+                  </Button>
+                )}
                 {canDuplicate && (
                   <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating}>
                     <Copy className="h-4 w-4 mr-1" />
@@ -515,7 +519,7 @@ export default function UnitDetalhe() {
 
         {/* Info */}
         <TabsContent value="info" className="mt-4">
-          <form onSubmit={canEdit ? handleSubmit : (e) => e.preventDefault()} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); if (canEdit) saveUnit(); }} className="space-y-4">
             <fieldset disabled={!canEdit}>
               <UnitFormFields
                 formData={formData}
