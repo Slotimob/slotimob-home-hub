@@ -644,7 +644,7 @@ export function ContractsTab() {
   return (
     <div className="space-y-4">
       {/* Stats Cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-5">
         <Card 
           className={cn(
             "cursor-pointer transition-all hover:shadow-md",
@@ -670,6 +670,22 @@ export function ContractsTab() {
               <p className="text-xs text-muted-foreground">Ativos</p>
             </div>
             <p className="text-2xl font-bold text-primary">{stats.active}</p>
+          </CardContent>
+        </Card>
+        <Card 
+          className={cn(
+            "transition-all hover:shadow-md",
+            stats.pendingConfig > 0 ? "border-blue-500/50 bg-blue-500/10" : "border-muted"
+          )}
+        >
+          <CardContent className="p-3">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-blue-600" />
+              <p className="text-xs text-muted-foreground">Pend. Configuração</p>
+            </div>
+            <p className={`text-2xl font-bold ${stats.pendingConfig > 0 ? "text-blue-600" : "text-muted-foreground"}`}>
+              {stats.pendingConfig}
+            </p>
           </CardContent>
         </Card>
         <Card 
