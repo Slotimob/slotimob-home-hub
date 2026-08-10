@@ -72,6 +72,8 @@ import {
   formatTimestampAbsolute,
   deduplicateAuditLogs,
 } from '@/lib/audit-formatting';
+import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
+
 
 // ── Types ──────────────────────────────────────────────────
 
