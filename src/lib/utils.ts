@@ -5,6 +5,31 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Sanitizes a file name so it can be safely used inside a Supabase Storage
+ * object key (S3-compatible). Removes diacritics and any character outside
+ * [a-zA-Z0-9._-]. Only use for the storage key — keep the original name for display.
+ */
+export function sanitizeStorageFileName(name: string): string {
+  const raw = (name ?? '').trim();
+  const match = raw.match(/\.([a-zA-Z0-9]{1,10})$/);
+  const ext = match ? match[1].toLowerCase() : '';
+  const rawBase = match ? raw.slice(0, -(match[0].length)) : raw;
+
+  let base = rawBase
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-.]+|[-.]+$/g, '')
+    .slice(0, 80)
+    .replace(/[-.]+$/g, '');
+
+  if (!base) base = 'arquivo';
+
+  return ext ? `${base}.${ext}` : base;
+}
+
 export function formatPhoneForWhatsApp(phone: string): string {
   let cleaned = phone.replace(/\D/g, '');
 
