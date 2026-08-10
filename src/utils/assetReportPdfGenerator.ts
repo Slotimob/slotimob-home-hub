@@ -4,7 +4,15 @@
  */
 import type { AssetReportData, AssetReportAsset } from '@/lib/asset-report-data';
 import { ASSET_EXPENSE_CATEGORIES } from '@/lib/asset-expense-categories';
+import { ACTIVITIES_REPORT_LIMIT } from '@/lib/asset-report-data';
 import { pdfSafeText, pdfSafeRow, pdfSafeLabel } from '@/utils/pdfSafeText';
+
+function fmtDateTime(d: string | null): string {
+  if (!d) return '—';
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return fmtDate(d);
+  return date.toLocaleDateString('pt-BR');
+}
 
 function fmtCurrency(v: number | null | undefined): string {
   if (v == null) return '—';
@@ -46,7 +54,12 @@ export async function generateAssetReportPdf(report: AssetReportData) {
   doc.text('Relatório Completo', pageW / 2, 80, { align: 'center' });
   doc.text('do Imóvel', pageW / 2, 95, { align: 'center' });
   doc.setFontSize(12);
-  doc.text(`Período: ${fmtDate(report.period.from)} — ${fmtDate(report.period.to)}`, pageW / 2, 120, { align: 'center' });
+  doc.text(
+    report.period.all_history
+      ? `Período: todo o histórico (até ${fmtDate(report.period.to)})`
+      : `Período: ${fmtDate(report.period.from)} — ${fmtDate(report.period.to)}`,
+    pageW / 2, 120, { align: 'center' },
+  );
   doc.text(`${report.summary.total_assets} imóve${report.summary.total_assets === 1 ? 'l' : 'is'}`, pageW / 2, 132, { align: 'center' });
   doc.setFontSize(9);
   doc.text(`Gerado em ${new Date(report.generated_at).toLocaleDateString('pt-BR')} às ${new Date(report.generated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, pageW / 2, pageH - 20, { align: 'center' });
@@ -235,6 +248,43 @@ export async function generateAssetReportPdf(report: AssetReportData) {
       doc.setTextColor(60, 60, 60);
       doc.text(`Total: ${fmtCurrency(asset.period.income_total)}`, margin, y);
       y += 8;
+    }
+
+    // Activities
+    if (asset.period && (asset.period.activities_items?.length ?? 0) > 0) {
+      checkPageBreak();
+      doc.setTextColor(30, 58, 95);
+      doc.setFontSize(11);
+      doc.text('Atividades no Período', margin, y);
+      y += 2;
+
+      const items = asset.period.activities_items;
+      autoTable(doc, {
+        startY: y,
+        head: [['Data', 'Tipo', 'Descrição']],
+        body: items.map(a => pdfSafeRow([
+          fmtDateTime(a.date),
+          a.group,
+          pdfSafeText(a.description).slice(0, 90),
+        ])),
+        theme: 'striped',
+        styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+        headStyles: { fillColor: [30, 58, 95] },
+        columnStyles: { 0: { cellWidth: 22 }, 1: { cellWidth: 32 } },
+        margin: { left: margin, right: margin },
+      });
+      y = (doc as any).lastAutoTable.finalY + 3;
+
+      if (asset.period.activities_count > items.length) {
+        doc.setFontSize(7);
+        doc.setTextColor(120, 120, 120);
+        doc.text(
+          `Mostrando as ${items.length} atividades mais recentes de ${asset.period.activities_count} no período (limite de ${ACTIVITIES_REPORT_LIMIT} por imóvel).`,
+          margin, y,
+        );
+        y += 5;
+      }
+      y += 3;
     }
 
     // Indicators

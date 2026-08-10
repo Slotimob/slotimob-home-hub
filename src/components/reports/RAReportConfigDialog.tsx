@@ -22,10 +22,13 @@ import { buildAssetReport, type AssetReportSections, type AssetReportData } from
 interface RAReportConfigDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  dateRange: { from: Date; to: Date };
+  /** `from: null` = all history */
+  dateRange: { from: Date | null; to: Date };
   onGenerate: (data: AssetReportData) => void;
   /** Pre-select specific asset(s) */
   preSelectedAssetIds?: string[];
+  /** When opened from an asset detail page, restricts the picker to that asset type */
+  preSelectedAssetType?: 'property' | 'unit';
   formatLabel?: string;
 }
 
@@ -41,6 +44,7 @@ export function RAReportConfigDialog({
   dateRange,
   onGenerate,
   preSelectedAssetIds,
+  preSelectedAssetType,
   formatLabel,
 }: RAReportConfigDialogProps) {
   const { user } = useAuth();
@@ -84,9 +88,13 @@ export function RAReportConfigDialog({
     enabled: open && !!effectiveBrokerId,
   });
 
-  const filtered = search
-    ? assetOptions.filter(a => a.label.toLowerCase().includes(search.toLowerCase()))
+  const typeScoped = preSelectedAssetType
+    ? assetOptions.filter(a => a.type === preSelectedAssetType || preSelectedAssetIds?.includes(a.id))
     : assetOptions;
+
+  const filtered = search
+    ? typeScoped.filter(a => a.label.toLowerCase().includes(search.toLowerCase()))
+    : typeScoped;
 
   const toggleId = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -197,7 +205,9 @@ export function RAReportConfigDialog({
           <div className="space-y-1">
             <Label className="text-sm font-medium">Período</Label>
             <p className="text-sm text-muted-foreground">
-              {dateRange.from.toLocaleDateString('pt-BR')} — {dateRange.to.toLocaleDateString('pt-BR')}
+              {dateRange.from
+                ? `${dateRange.from.toLocaleDateString('pt-BR')} — ${dateRange.to.toLocaleDateString('pt-BR')}`
+                : `Todo o histórico (até ${dateRange.to.toLocaleDateString('pt-BR')})`}
             </p>
             <p className="text-[11px] text-muted-foreground">Altere o período nos filtros da página de relatórios.</p>
           </div>

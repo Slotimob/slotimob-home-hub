@@ -883,7 +883,7 @@ export const AssetActivityTimeline = ({
         open={raConfigOpen}
         onOpenChange={setRaConfigOpen}
         dateRange={{
-          from: periodStartDate || subDays(new Date(), 30),
+          from: periodStartDate,
           to: new Date(),
         }}
         onGenerate={async (data) => {
@@ -895,6 +895,7 @@ export const AssetActivityTimeline = ({
           }
         }}
         preSelectedAssetIds={[assetId]}
+        preSelectedAssetType={assetType}
         formatLabel="PDF"
       />
 
