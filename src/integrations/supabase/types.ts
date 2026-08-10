@@ -3030,6 +3030,7 @@ export type Database = {
           termination_date: string | null
           termination_reason: string | null
           unit_id: string
+          unit_subdivision_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3067,6 +3068,7 @@ export type Database = {
           termination_date?: string | null
           termination_reason?: string | null
           unit_id: string
+          unit_subdivision_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3104,6 +3106,7 @@ export type Database = {
           termination_date?: string | null
           termination_reason?: string | null
           unit_id?: string
+          unit_subdivision_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3126,6 +3129,13 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leases_unit_subdivision_id_fkey"
+            columns: ["unit_subdivision_id"]
+            isOneToOne: false
+            referencedRelation: "unit_subdivisions"
             referencedColumns: ["id"]
           },
         ]
