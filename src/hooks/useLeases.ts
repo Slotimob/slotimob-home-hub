@@ -84,6 +84,7 @@ export interface Lease {
   id: string;
   broker_id: string;
   unit_id: string;
+  unit_subdivision_id?: string | null;
   tenant_contact_id: string;
   owner_contact_id: string | null;
   rent_amount: number;
@@ -138,6 +139,7 @@ export interface Lease {
 
 export interface CreateLeaseData {
   unit_id: string;
+  unit_subdivision_id?: string | null;
   tenant_contact_id: string;
   owner_contact_id?: string;
   rent_amount: number;
@@ -278,6 +280,7 @@ export function useCreateLease() {
         .insert({
           broker_id: effectiveBrokerId || user.id,
           unit_id: data.unit_id,
+          unit_subdivision_id: data.unit_subdivision_id || null,
           tenant_contact_id: data.tenant_contact_id,
           owner_contact_id: data.owner_contact_id || null,
           rent_amount: data.rent_amount,

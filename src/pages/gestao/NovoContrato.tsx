@@ -39,6 +39,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useCreateLease, useUpdateLease, type GuarantorData, type PaymentInfo } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
+import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
 import { supabase } from "@/integrations/supabase/client";
 
 type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "billing" | "compliance";
@@ -75,6 +76,7 @@ const DRAFT_KEY = "novo-contrato-draft";
 
 const getInitialFormData = () => ({
   tenant_contact_id: "",
+  unit_subdivision_id: null as string | null,
   rent_amount: 0,
   admin_fee_percentage: 10,
   due_day: 10,
@@ -197,6 +199,27 @@ export default function NovoContrato() {
     enabled: !!user && !!effectiveUnitId && !isEditMode && !selectedUnitInfo,
   });
 
+  // Frações (subdivisões) da unidade — só relevante quando a unit tem has_subdivisions
+  const { data: unitSubdivisionFlag } = useQuery({
+    queryKey: ["unit-has-subdivisions", effectiveUnitId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("units")
+        .select("has_subdivisions")
+        .eq("id", effectiveUnitId)
+        .maybeSingle();
+      return !!(data as any)?.has_subdivisions;
+    },
+    enabled: !!user && !!effectiveUnitId,
+  });
+
+  const { data: subdivisions = [] } = useUnitSubdivisions(
+    unitSubdivisionFlag ? effectiveUnitId : ""
+  );
+  const showSubdivisionSelect = !!unitSubdivisionFlag && subdivisions.length > 0;
+
+
+
   // Conta Asaas do broker (para validar emissão automática)
   const { data: asaasAccount } = useQuery({
     queryKey: ["asaas-account-status", effectiveBrokerId, user?.id],
@@ -260,6 +283,7 @@ export default function NovoContrato() {
     if (!editLease) return;
     setFormData({
       tenant_contact_id: editLease.tenant_contact_id,
+      unit_subdivision_id: (editLease as any).unit_subdivision_id || null,
       rent_amount: Number(editLease.rent_amount),
       admin_fee_percentage: Number(editLease.admin_fee_percentage),
       due_day: editLease.due_day,
@@ -505,6 +529,7 @@ export default function NovoContrato() {
 
       const leaseData = {
         unit_id: effectiveUnitId,
+        unit_subdivision_id: formData.unit_subdivision_id || null,
         tenant_contact_id: formData.tenant_contact_id,
         owner_contact_id: ownerContactId || undefined,
         rent_amount: formData.rent_amount,
@@ -819,6 +844,44 @@ export default function NovoContrato() {
           {/* Financial */}
           {step === "financial" && (
             <div className="space-y-4">
+              {showSubdivisionSelect && (
+                <div className="space-y-2">
+                  <Label>Fração</Label>
+                  <Select
+                    value={formData.unit_subdivision_id ?? "none"}
+                    onValueChange={(v) => {
+                      const id = v === "none" ? null : v;
+                      const fraction = subdivisions.find((s) => s.id === id);
+                      setFormData((prev) => ({
+                        ...prev,
+                        unit_subdivision_id: id,
+                        rent_amount:
+                          fraction?.rent_price != null
+                            ? Number(fraction.rent_price)
+                            : prev.rent_amount,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Imóvel inteiro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
+                      {subdivisions.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.label}
+                          {s.area != null ? ` — ${s.area}m²` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Opcional. Selecione a fração quando o contrato for de apenas uma parte do
+                    imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Valor do Aluguel *</Label>
