@@ -12,6 +12,16 @@ import {
   computeCapRate,
 } from './asset-financials';
 import { ASSET_EXPENSE_CATEGORIES } from './asset-expense-categories';
+import { EVENT_GROUPS, humanizeLog, type AuditLog } from './audit-formatting';
+
+/** Max activity rows rendered per asset in the report */
+export const ACTIVITIES_REPORT_LIMIT = 120;
+
+export interface AssetReportActivity {
+  date: string;
+  group: string;
+  description: string;
+}
 
 export interface AssetReportSections {
   acquisition: boolean;
@@ -64,6 +74,8 @@ export interface AssetReportAsset {
     }>;
     activities_count: number;
     activities_by_type: Record<string, number>;
+    /** Most recent activities within the period (capped at ACTIVITIES_REPORT_LIMIT) */
+    activities_items: AssetReportActivity[];
     roi_pct: number | null;
     monthly_yield: number | null;
     cap_rate: number | null;
@@ -101,11 +113,12 @@ function getCategoryLabel(cat: string | null): string {
 export async function buildAssetReport(params: {
   brokerId: string;
   assetIds?: string[];
-  period: { from: Date; to: Date };
+  /** `from: null` means "all history" (no lower bound) */
+  period: { from: Date | null; to: Date };
   sections: AssetReportSections;
 }): Promise<AssetReportData> {
   const { brokerId, assetIds, period, sections } = params;
-  const fromStr = fmtDate(period.from);
+  const fromStr = period.from ? fmtDate(period.from) : '1900-01-01';
   const toStr = fmtDate(period.to);
 
   let propsQuery = supabase
@@ -225,29 +238,86 @@ export async function buildAssetReport(params: {
     }
   }
 
-  let activitiesMap: Record<string, { count: number; byType: Record<string, number> }> = {};
+  let activitiesMap: Record<string, { count: number; byType: Record<string, number>; items: AssetReportActivity[] }> = {};
   if (sections.activities) {
-    for (const pid of propertyIds) {
-      const { count } = await supabase
-        .from('audit_logs')
-        .select('*', { count: 'exact', head: true })
-        .or(`and(table_name.eq.properties,record_id.eq.${pid}),metadata->>property_id.eq.${pid}`)
-        .gte('created_at', fromStr)
-        .lte('created_at', toStr + 'T23:59:59');
-      activitiesMap[pid] = { count: count || 0, byType: {} };
-    }
-    for (const uid of unitIds) {
-      const { count } = await supabase
-        .from('audit_logs')
-        .select('*', { count: 'exact', head: true })
-        .or(`and(table_name.eq.units,record_id.eq.${uid}),metadata->>unit_id.eq.${uid}`)
-        .gte('created_at', fromStr)
-        .lte('created_at', toStr + 'T23:59:59');
-      activitiesMap[uid] = { count: count || 0, byType: {} };
-    }
+    const loadActivities = async (id: string, kind: 'property' | 'unit') => {
+      const metaKey = kind === 'property' ? 'property_id' : 'unit_id';
+      const tableName = kind === 'property' ? 'properties' : 'units';
+
+      const [directRes, metaRes, notesRes] = await Promise.all([
+        supabase
+          .from('audit_logs')
+          .select('*')
+          .eq('table_name', tableName)
+          .eq('record_id', id)
+          .gte('created_at', fromStr)
+          .lte('created_at', toStr + 'T23:59:59')
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabase
+          .from('audit_logs')
+          .select('*')
+          .filter(`metadata->>${metaKey}`, 'eq', id)
+          .gte('created_at', fromStr)
+          .lte('created_at', toStr + 'T23:59:59')
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabase
+          .from('property_activities')
+          .select('id, title, scheduled_at, created_at')
+          .eq(metaKey, id)
+          .order('created_at', { ascending: false })
+          .limit(500),
+      ]);
+
+      const logMap = new Map<string, AuditLog>();
+      for (const l of [...(directRes.data || []), ...(metaRes.data || [])]) {
+        logMap.set((l as any).id, l as unknown as AuditLog);
+      }
+
+      const byType: Record<string, number> = {};
+      const items: AssetReportActivity[] = [];
+
+      for (const log of logMap.values()) {
+        const groupKey = Object.keys(EVENT_GROUPS).find(k => EVENT_GROUPS[k].match(log));
+        const groupLabel = groupKey ? EVENT_GROUPS[groupKey].label : 'Outros';
+        byType[groupLabel] = (byType[groupLabel] || 0) + 1;
+        items.push({
+          date: log.created_at,
+          group: groupLabel,
+          description: humanizeLog(log),
+        });
+      }
+
+      for (const note of (notesRes.data || []) as any[]) {
+        const d = note.scheduled_at || note.created_at;
+        if (!d) continue;
+        const dayStr = String(d).slice(0, 10);
+        if (dayStr < fromStr || dayStr > toStr) continue;
+        byType['Notas manuais'] = (byType['Notas manuais'] || 0) + 1;
+        items.push({
+          date: d,
+          group: 'Notas manuais',
+          description: note.title || 'Nota manual',
+        });
+      }
+
+      items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      activitiesMap[id] = {
+        count: items.length,
+        byType,
+        items: items.slice(0, ACTIVITIES_REPORT_LIMIT),
+      };
+    };
+
+    await Promise.all([
+      ...propertyIds.map(pid => loadActivities(pid, 'property')),
+      ...unitIds.map(uid => loadActivities(uid, 'unit')),
+    ]);
   }
 
-  const periodMonths = Math.max(1, (period.to.getTime() - period.from.getTime()) / (30 * 24 * 3600 * 1000));
+  const periodMonths = Math.max(1, (period.to.getTime() - new Date(fromStr).getTime()) / (30 * 24 * 3600 * 1000));
   const assets: AssetReportAsset[] = [];
 
   for (const prop of properties) {
@@ -313,6 +383,7 @@ export async function buildAssetReport(params: {
         top_expenses: topExpensesMap[id] || [],
         activities_count: activitiesMap[id]?.count ?? 0,
         activities_by_type: activitiesMap[id]?.byType ?? {},
+        activities_items: activitiesMap[id]?.items ?? [],
         roi_pct: roi?.roi_pct ?? null,
         monthly_yield: monthlyYield,
         cap_rate: capRate,
@@ -385,6 +456,7 @@ export async function buildAssetReport(params: {
         top_expenses: topExpensesMap[id] || [],
         activities_count: activitiesMap[id]?.count ?? 0,
         activities_by_type: activitiesMap[id]?.byType ?? {},
+        activities_items: activitiesMap[id]?.items ?? [],
         roi_pct: roi?.roi_pct ?? null,
         monthly_yield: monthlyYield,
         cap_rate: capRate,
