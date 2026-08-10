@@ -305,15 +305,17 @@ export function useCreateLease() {
 
       if (error) throw new Error(error.message || error.details || "Erro inesperado");
 
-      // Step 2: Update unit as occupied
-      await supabase
-        .from("units")
-        .update({
-          is_occupied: true,
-          tenant_contact_id: data.tenant_contact_id,
-          is_managed: true,
-        })
-        .eq("id", data.unit_id);
+      // Step 2: Sync unit tenant from lease (uses real start_date for tenant history)
+      const { error: syncError } = await supabase.rpc("sync_unit_tenant_from_lease", {
+        p_unit_id: data.unit_id,
+        p_tenant_contact_id: data.tenant_contact_id,
+        p_lease_id: lease.id,
+        p_start_date: data.start_date,
+      });
+
+      if (syncError) {
+        console.error("Failed to sync unit tenant from lease:", syncError);
+      }
 
       // Step 3: Generate financial projections (rent installments)
       let projectionsGenerated = 0;
