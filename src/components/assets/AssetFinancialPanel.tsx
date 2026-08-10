@@ -106,10 +106,14 @@ function fmtCurrency(v: number | null | undefined): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function parseCurrency(s: string): number | null {
-  const cleaned = s.replace(/[^\d,.-]/g, '').replace(',', '.');
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
+/**
+ * Converts the raw numeric string produced by CurrencyInput ("1350000" / "1350.5")
+ * into a number. Returns null for empty/invalid input.
+ */
+function toNumber(s: string | null | undefined): number | null {
+  if (s == null || s.trim() === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
 }
 
 interface AssetFinancialPanelProps {
@@ -178,12 +182,6 @@ function AcquisitionBlock({
     data?.acquisition_notes,
   ]);
 
-  // CurrencyInput already returns a raw numeric string ("1350000" / "1350.5")
-  const toNumber = (s: string): number | null => {
-    if (s == null || s.trim() === '') return null;
-    const n = Number(s);
-    return Number.isFinite(n) ? n : null;
-  };
 
   const handleSave = async () => {
     try {
@@ -332,7 +330,7 @@ function MarketValueBlock({
   };
 
   const handleSubmit = async () => {
-    const val = parseCurrency(newValue);
+    const val = toNumber(newValue);
     if (!val || val <= 0) {
       toast({ title: 'Informe um valor válido', variant: 'destructive', duration: 1000 });
       return;
@@ -423,15 +421,13 @@ function MarketValueBlock({
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-sm">Novo valor (R$) *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CurrencyInput
                   value={newValue}
-                  onChange={(e) => setNewValue(e.target.value)}
+                  onChange={setNewValue}
                   placeholder="0,00"
                   className="text-base"
                 />
+
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm">Data efetiva</Label>
@@ -564,7 +560,7 @@ function ImprovementsBlock({
   };
 
   const handleSubmit = async () => {
-    const costVal = parseCurrency(cost);
+    const costVal = toNumber(cost);
     if (!description.trim() || !costVal || costVal < 0) {
       toast({ title: 'Preencha descrição e custo', variant: 'destructive', duration: 1000 });
       return;
@@ -821,15 +817,13 @@ function ImprovementsBlock({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-sm">Custo (R$) *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <CurrencyInput
                     value={cost}
-                    onChange={(e) => setCost(e.target.value)}
+                    onChange={setCost}
                     placeholder="0,00"
                     className="text-base"
                   />
+
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm">Data de conclusão *</Label>
