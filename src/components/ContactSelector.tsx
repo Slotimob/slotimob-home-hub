@@ -61,6 +61,37 @@ export function ContactSelector({
     loadContacts();
   }, []);
 
+  // Fetch a recently created contact that may not be in the initial list yet.
+  useEffect(() => {
+    if (!value) return;
+    if (contacts.some((c) => c.id === value)) return;
+
+    let cancelled = false;
+    const fetchSingle = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('id, name, email, phone, whatsapp, categories')
+          .eq('id', value)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (data && !cancelled) {
+          setContacts((prev) =>
+            prev.some((c) => c.id === data.id) ? prev : [...prev, data]
+          );
+        }
+      } catch (error) {
+        console.error('Error loading selected contact:', error);
+      }
+    };
+
+    fetchSingle();
+    return () => {
+      cancelled = true;
+    };
+  }, [value]);
+
   const loadContacts = async () => {
     setLoading(true);
     try {
