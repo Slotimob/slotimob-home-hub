@@ -330,7 +330,7 @@ function MarketValueBlock({
   };
 
   const handleSubmit = async () => {
-    const val = parseCurrency(newValue);
+    const val = toNumber(newValue);
     if (!val || val <= 0) {
       toast({ title: 'Informe um valor válido', variant: 'destructive', duration: 1000 });
       return;
@@ -421,15 +421,13 @@ function MarketValueBlock({
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-sm">Novo valor (R$) *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CurrencyInput
                   value={newValue}
-                  onChange={(e) => setNewValue(e.target.value)}
+                  onChange={setNewValue}
                   placeholder="0,00"
                   className="text-base"
                 />
+
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm">Data efetiva</Label>
@@ -562,7 +560,7 @@ function ImprovementsBlock({
   };
 
   const handleSubmit = async () => {
-    const costVal = parseCurrency(cost);
+    const costVal = toNumber(cost);
     if (!description.trim() || !costVal || costVal < 0) {
       toast({ title: 'Preencha descrição e custo', variant: 'destructive', duration: 1000 });
       return;
