@@ -731,7 +731,9 @@ function ImprovementsBlock({
   };
 
   const items = data?.items || [];
+  const reconcileTarget = items.find((i) => i.id === reconcileOpenFor) || null;
   const isMutating = createMutation.isPending || updateMutation.isPending;
+
 
   return (
     <Card>
