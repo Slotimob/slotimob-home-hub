@@ -4785,6 +4785,63 @@ export type Database = {
           },
         ]
       }
+      unit_subdivisions: {
+        Row: {
+          area: number | null
+          broker_id: string
+          created_at: string
+          id: string
+          label: string
+          notes: string | null
+          rent_price: number | null
+          status: Database["public"]["Enums"]["unit_status"]
+          tenant_contact_id: string | null
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          area?: number | null
+          broker_id: string
+          created_at?: string
+          id?: string
+          label: string
+          notes?: string | null
+          rent_price?: number | null
+          status?: Database["public"]["Enums"]["unit_status"]
+          tenant_contact_id?: string | null
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          area?: number | null
+          broker_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          notes?: string | null
+          rent_price?: number | null
+          status?: Database["public"]["Enums"]["unit_status"]
+          tenant_contact_id?: string | null
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_subdivisions_tenant_contact_id_fkey"
+            columns: ["tenant_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_subdivisions_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       unit_tenant_history: {
         Row: {
           broker_id: string
@@ -4872,6 +4929,7 @@ export type Database = {
           furnished: string | null
           gallery_images: string[] | null
           has_no_registration: boolean | null
+          has_subdivisions: boolean
           id: string
           intent_type: string | null
           iptu: number | null
@@ -4926,6 +4984,7 @@ export type Database = {
           furnished?: string | null
           gallery_images?: string[] | null
           has_no_registration?: boolean | null
+          has_subdivisions?: boolean
           id?: string
           intent_type?: string | null
           iptu?: number | null
@@ -4980,6 +5039,7 @@ export type Database = {
           furnished?: string | null
           gallery_images?: string[] | null
           has_no_registration?: boolean | null
+          has_subdivisions?: boolean
           id?: string
           intent_type?: string | null
           iptu?: number | null
