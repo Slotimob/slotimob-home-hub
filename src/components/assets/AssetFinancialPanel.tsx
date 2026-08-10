@@ -76,6 +76,9 @@ import {
   useReconcileImprovement,
   useMarketValueHistory,
   useRecordMarketValue,
+  useUpdateMarketValueEntry,
+  useDeleteMarketValueEntry,
+  type MarketValueEntry,
   type Improvement,
 } from '@/hooks/useAssetFinancials';
 
@@ -309,9 +312,14 @@ function MarketValueBlock({
 }) {
   const { toast } = useToast();
   const twelveMonthsAgo = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
-  const { data: history, isLoading } = useMarketValueHistory(assetType, assetId, twelveMonthsAgo);
+  // Full history (list) — chart is filtered to the last 12 months client-side
+  const { data: history, isLoading } = useMarketValueHistory(assetType, assetId);
   const recordMutation = useRecordMarketValue(assetType, assetId);
+  const updateMutation = useUpdateMarketValueEntry(assetType, assetId);
+  const deleteMutation = useDeleteMarketValueEntry(assetType, assetId);
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MarketValueEntry | null>(null);
 
   // Modal state
   const [newValue, setNewValue] = useState('');
@@ -326,8 +334,31 @@ function MarketValueBlock({
     setSource('manual_appraisal');
     setAppraiserName('');
     setNote('');
+    setEditingId(null);
     setShowModal(false);
   };
+
+  const openCreate = () => {
+    setEditingId(null);
+    setNewValue('');
+    setEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
+    setSource('manual_appraisal');
+    setAppraiserName('');
+    setNote('');
+    setShowModal(true);
+  };
+
+  const openEdit = (entry: MarketValueEntry) => {
+    setEditingId(entry.id);
+    setNewValue(String(entry.value ?? ''));
+    setEffectiveDate(entry.effective_date);
+    setSource(entry.source || 'manual_appraisal');
+    setAppraiserName(entry.appraiser_name || '');
+    setNote(entry.note || '');
+    setShowModal(true);
+  };
+
+  const isSaving = recordMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = async () => {
     const val = toNumber(newValue);
@@ -336,24 +367,55 @@ function MarketValueBlock({
       return;
     }
     try {
-      await recordMutation.mutateAsync({
-        value: val,
-        effective_date: effectiveDate,
-        source,
-        appraiser_name: source === 'third_party_appraisal' ? appraiserName : null,
-        note: note || null,
-      });
-      toast({ title: 'Valor de mercado registrado', duration: 1000 });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          value: val,
+          effective_date: effectiveDate,
+          source,
+          appraiser_name: source === 'third_party_appraisal' ? appraiserName : null,
+          note: note || null,
+        });
+        toast({ title: 'Registro atualizado', duration: 1000 });
+      } else {
+        await recordMutation.mutateAsync({
+          value: val,
+          effective_date: effectiveDate,
+          source,
+          appraiser_name: source === 'third_party_appraisal' ? appraiserName : null,
+          note: note || null,
+        });
+        toast({ title: 'Valor de mercado registrado', duration: 1000 });
+      }
       resetModal();
     } catch {
-      toast({ title: 'Erro ao registrar', variant: 'destructive', duration: 1000 });
+      toast({ title: 'Erro ao salvar', variant: 'destructive', duration: 1000 });
     }
   };
 
-  const chartData = (history || []).map((h) => ({
-    date: format(new Date(h.effective_date), 'MMM/yy', { locale: ptBR }),
-    value: h.value,
-  }));
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMutation.mutateAsync(deleteTarget.id);
+      toast({ title: 'Registro excluído', duration: 1000 });
+    } catch {
+      toast({ title: 'Erro ao excluir', variant: 'destructive', duration: 1000 });
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const allEntries = history || [];
+  const chartData = allEntries
+    .filter((h) => h.effective_date >= twelveMonthsAgo)
+    .map((h) => ({
+      date: format(new Date(h.effective_date), 'MMM/yy', { locale: ptBR }),
+      value: h.value,
+    }));
+  const sortedEntries = [...allEntries].sort((a, b) =>
+    b.effective_date.localeCompare(a.effective_date)
+  );
+
 
   return (
     <Card>
@@ -370,7 +432,7 @@ function MarketValueBlock({
             <p className="text-xl font-semibold">{fmtCurrency(currentMarketValue)}</p>
           </div>
           {!disabled && (
-            <Button size="sm" variant="outline" onClick={() => setShowModal(true)}>
+            <Button size="sm" variant="outline" onClick={openCreate}>
               <BarChart3 className="h-4 w-4 mr-1.5" />
               Reavaliar valor
             </Button>
@@ -412,15 +474,62 @@ function MarketValueBlock({
           <p className="text-xs text-muted-foreground">Nenhum histórico de avaliação registrado.</p>
         ) : null}
 
-        {/* Revaluation modal */}
-        <Dialog open={showModal} onOpenChange={setShowModal}>
+        {sortedEntries.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">Registros de avaliação</p>
+            <div className="divide-y rounded-md border">
+              {sortedEntries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{fmtCurrency(entry.value)}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {format(new Date(`${entry.effective_date}T00:00:00`), "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
+                      {' · '}
+                      {SOURCE_LABELS[entry.source] || entry.source}
+                      {entry.appraiser_name ? ` · ${entry.appraiser_name}` : ''}
+                    </p>
+                  </div>
+                  {!disabled && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label="Editar registro"
+                        onClick={() => openEdit(entry)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        aria-label="Excluir registro"
+                        onClick={() => setDeleteTarget(entry)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Revaluation / edit modal */}
+        <Dialog open={showModal} onOpenChange={(open) => (open ? setShowModal(true) : resetModal())}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Reavaliar valor de mercado</DialogTitle>
+              <DialogTitle>
+                {editingId ? 'Editar registro de valor de mercado' : 'Reavaliar valor de mercado'}
+              </DialogTitle>
             </DialogHeader>
+
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-sm">Novo valor (R$) *</Label>
+                <Label className="text-sm">{editingId ? 'Valor (R$) *' : 'Novo valor (R$) *'}</Label>
+
                 <CurrencyInput
                   value={newValue}
                   onChange={setNewValue}
@@ -474,14 +583,35 @@ function MarketValueBlock({
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" size="sm" onClick={resetModal}>Cancelar</Button>
-                <Button size="sm" onClick={handleSubmit} disabled={recordMutation.isPending}>
-                  {recordMutation.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                  Registrar
+                <Button size="sm" onClick={handleSubmit} disabled={isSaving}>
+                  {isSaving && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
+                  {editingId ? 'Salvar alterações' : 'Registrar'}
                 </Button>
               </div>
+
             </div>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir registro de valor de mercado?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget
+                  ? `O registro de ${fmtCurrency(deleteTarget.value)} será removido permanentemente. O valor atual do ativo será resincronizado com a avaliação mais recente restante.`
+                  : ''}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} disabled={deleteMutation.isPending}>
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </CardContent>
     </Card>
   );
