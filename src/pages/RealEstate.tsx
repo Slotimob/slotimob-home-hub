@@ -610,11 +610,7 @@ const RealEstate = () => {
                           <TableCell className="text-right py-2 sm:py-4">
                             {unit.market_value != null ? (
                               <span className="font-medium text-xs sm:text-sm">
-                                {new Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                  maximumFractionDigits: 0,
-                                }).format(unit.market_value)}
+                                {formatCurrencyBRL(unit.market_value)}
                               </span>
                             ) : (
                               <span className="text-muted-foreground text-xs">-</span>
@@ -623,11 +619,7 @@ const RealEstate = () => {
                           <TableCell className="text-right py-2 sm:py-4">
                             {canShowSale ? (
                               <span className="font-medium text-xs sm:text-sm">
-                                {new Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                  maximumFractionDigits: 0,
-                                }).format(unit.price)}
+                                {formatCurrencyBRL(unit.price)}
                               </span>
                             ) : (
                               <span className="text-muted-foreground text-xs">-</span>
@@ -636,11 +628,7 @@ const RealEstate = () => {
                           <TableCell className="text-right py-2 sm:py-4">
                             {canShowRent ? (
                               <span className="font-medium text-xs sm:text-sm text-blue-600">
-                                {new Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                  maximumFractionDigits: 0,
-                                }).format(unit.rent_price)}
+                                {formatCurrencyBRL(unit.rent_price)}
                               </span>
                             ) : (
                               <span className="text-muted-foreground text-xs">-</span>
