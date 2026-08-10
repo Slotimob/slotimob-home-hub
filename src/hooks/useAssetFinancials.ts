@@ -199,16 +199,49 @@ export function useUnitFinancialTransactions(
     queryKey: ['asset-expense-transactions', assetType, assetId],
     queryFn: async () => {
       if (!assetId) return [];
+      const select = 'id, description, amount, transaction_date, status';
+
+      if (assetType === 'property') {
+        const { data: childUnits, error: unitsError } = await supabase
+          .from('units')
+          .select('id')
+          .eq('property_id', assetId);
+        if (unitsError) throw unitsError;
+
+        const unitIds = (childUnits || []).map((u: any) => u.id).filter(Boolean);
+
+        let query = supabase
+          .from('financial_transactions')
+          .select(select)
+          .eq('type', 'expense');
+
+        query = unitIds.length
+          ? query.or(`property_id.eq.${assetId},unit_id.in.(${unitIds.join(',')})`)
+          : query.eq('property_id', assetId);
+
+        const { data, error } = await query.order('transaction_date', { ascending: false });
+        if (error) throw error;
+
+        const seen = new Set<string>();
+        const unique = (data || []).filter((t: any) => {
+          if (seen.has(t.id)) return false;
+          seen.add(t.id);
+          return true;
+        });
+        return unique as AssetExpenseTransaction[];
+      }
+
       const col = fkColumn(assetType);
       const { data, error } = await supabase
         .from('financial_transactions')
-        .select('id, description, amount, transaction_date, status')
+        .select(select)
         .eq('type', 'expense')
         .eq(col, assetId)
         .order('transaction_date', { ascending: false });
       if (error) throw error;
       return (data || []) as AssetExpenseTransaction[];
     },
+
     enabled: !!assetId,
   });
 }
