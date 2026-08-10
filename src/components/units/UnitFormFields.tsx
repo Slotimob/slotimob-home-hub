@@ -22,7 +22,7 @@ import { CreatePropertyQuickDialog } from '@/components/units/CreatePropertyQuic
 import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
 import { ContactCategory } from '@/components/contacts/ContactCategoryFilter';
 import { TagsInput } from '@/components/units/TagsInput';
-import { Plus, Search, Building2, HelpCircle, Target, Settings2, Globe } from 'lucide-react';
+import { Plus, Search, Building2, HelpCircle, Target, Settings2, Globe, Layers } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -93,6 +93,7 @@ export interface UnitFormData {
   market_value: string;
   is_occupied: boolean;
   is_published_portal: boolean;
+  has_subdivisions: boolean;
 }
 
 export const getInitialFormData = (): UnitFormData => ({
@@ -134,6 +135,7 @@ export const getInitialFormData = (): UnitFormData => ({
   market_value: '',
   is_occupied: false,
   is_published_portal: false,
+  has_subdivisions: false,
 });
 
 interface UnitFormFieldsProps {
@@ -280,6 +282,29 @@ export const UnitFormFields = ({
             className="flex-shrink-0"
           />
         </div>
+
+        {/* Subdivisions Toggle (standalone only) */}
+        {isStandalone && (
+          <div className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+            <div className="space-y-0.5 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary flex-shrink-0" />
+                <Label htmlFor="has_subdivisions" className="font-medium cursor-pointer">
+                  Este imóvel é subdividido em várias frações/inquilinos?
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use quando há 1 matrícula só mas o aluguel é dividido entre mais de um inquilino (ex: galpão com várias lojas).
+              </p>
+            </div>
+            <Switch
+              id="has_subdivisions"
+              checked={formData.has_subdivisions}
+              onCheckedChange={(checked) => setFormData({ ...formData, has_subdivisions: checked })}
+              className="flex-shrink-0"
+            />
+          </div>
+        )}
       </div>
 
       <Separator />
