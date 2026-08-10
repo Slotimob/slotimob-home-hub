@@ -183,9 +183,15 @@ export const UnitFormFields = ({
     setIsCreateContactDialogOpen(true);
   };
 
-  const handleContactCreated = () => {
+  const handleContactCreated = (newContact?: { id: string }) => {
     // Force ContactSelector to reload contacts
     setContactSelectorKey(prev => prev + 1);
+    if (!newContact) return;
+    if (createContactCategory === 'Proprietário') {
+      setFormData({ ...formData, owner_contact_id: newContact.id });
+    } else if (createContactCategory === 'Inquilino') {
+      setFormData({ ...formData, tenant_contact_id: newContact.id, is_occupied: true });
+    }
   };
 
   // Determine which financial fields to show based on intent
