@@ -104,6 +104,7 @@ interface Unit {
   market_value?: number | null;
   is_occupied?: boolean | null;
   is_published_portal?: boolean | null;
+  has_subdivisions?: boolean | null;
 }
 
 interface EditUnitDialogProps {
