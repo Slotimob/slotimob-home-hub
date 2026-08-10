@@ -9,6 +9,7 @@ import {
   Info,
   Image,
   FileText,
+  FileSignature,
   ClipboardList,
   Wallet,
   Trash2,
@@ -41,6 +42,7 @@ import { UnitFormFields, UnitFormData } from '@/components/units/UnitFormFields'
 import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
 import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
+import { UnitContractTab } from '@/components/units/UnitContractTab';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -460,7 +462,7 @@ export default function UnitDetalhe() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="info" className="text-xs sm:text-sm">
             <Info className="h-4 w-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Informações</span>
@@ -470,6 +472,11 @@ export default function UnitDetalhe() {
             <Wallet className="h-4 w-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Financeiro</span>
             <span className="sm:hidden">Fin.</span>
+          </TabsTrigger>
+          <TabsTrigger value="contract" className="text-xs sm:text-sm">
+            <FileSignature className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Contrato</span>
+            <span className="sm:hidden">Contr.</span>
           </TabsTrigger>
           <TabsTrigger value="gallery" className="text-xs sm:text-sm">
             <Image className="h-4 w-4 mr-1 sm:mr-2" />
@@ -531,6 +538,11 @@ export default function UnitDetalhe() {
             currentMarketValue={unit.market_value}
             disabled={!canEdit}
           />
+        </TabsContent>
+
+        {/* Contrato */}
+        <TabsContent value="contract" className="mt-4">
+          <UnitContractTab unitId={unit.id} />
         </TabsContent>
 
         {/* Galeria */}
