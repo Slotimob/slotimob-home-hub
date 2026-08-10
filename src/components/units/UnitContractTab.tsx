@@ -13,18 +13,7 @@ import { useLeaseByUnitId, type Lease } from '@/hooks/useLeases';
 import { formatCurrencyBRL } from '@/utils/unitPricing';
 import { supabase } from '@/integrations/supabase/client';
 import { LeaseLinkSelector } from '@/components/units/LeaseLinkSelector';
-
-const STATUS_LABELS: Record<
-  string,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
-> = {
-  active: { label: 'Ativo', variant: 'default' },
-  pending: { label: 'Pendente de Configuração', variant: 'secondary' },
-  pending_signature: { label: 'Aguardando Assinatura', variant: 'secondary' },
-  expired: { label: 'Expirado', variant: 'destructive' },
-  cancelled: { label: 'Cancelado', variant: 'outline' },
-  terminated: { label: 'Encerrado', variant: 'outline' },
-};
+import { LEASE_STATUS_LABELS } from '@/lib/lease-status';
 
 interface LeaseWithReview extends Lease {
   needs_tenant_review?: boolean;

@@ -85,6 +85,7 @@ import { TableErrorBoundary } from "@/components/shared/TableErrorBoundary";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { LEASE_STATUS_LABELS } from "@/lib/lease-status";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,15 +98,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  active: { label: "Ativo", variant: "default" },
-  pending: { label: "Pendente de Configuração", variant: "secondary" },
-  pending_signature: { label: "Aguardando Assinatura", variant: "secondary" },
-  expired: { label: "Expirado", variant: "destructive" },
-  cancelled: { label: "Cancelado", variant: "outline" },
-  terminated: { label: "Encerrado", variant: "outline" },
-};
 
 const INDEX_LABELS: Record<string, string> = {
   IGPM: "IGP-M",
