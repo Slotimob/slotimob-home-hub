@@ -63,7 +63,7 @@ interface ContractCardProps {
   onAdjustmentClick: (lease: LeaseWithDetails, isUrgent: boolean) => void;
   onEditClick?: (lease: LeaseWithDetails) => void;
   onQuickTransactionClick?: (lease: LeaseWithDetails) => void;
-  onGenerateContractClick?: (unitId: string) => void;
+  onGenerateContractClick?: (unitId: string, leaseId?: string) => void;
   onViewFinancialsClick?: (lease: LeaseWithDetails) => void;
   onTerminateClick?: (lease: LeaseWithDetails) => void;
   onUploadContractClick?: (lease: LeaseWithDetails) => void;
@@ -193,7 +193,7 @@ export function ContractCard({
                     </DropdownMenuItem>
                   )}
                   {onGenerateContractClick && (
-                    <DropdownMenuItem onClick={() => onGenerateContractClick(lease.unit_id)}>
+                    <DropdownMenuItem onClick={() => onGenerateContractClick(lease.unit_id, lease.id)}>
                       <FileSignature className="h-4 w-4 mr-2" />
                       Gerar Documento
                     </DropdownMenuItem>
