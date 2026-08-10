@@ -189,6 +189,8 @@ import {
         cep: unitData?.postal_code || '',
         matricula: unitData?.registration_number || '',
         cib: unitData?.cib || '',
+        fracaoLabel: activeLease?.subdivision?.label || undefined,
+        fracaoArea: activeLease?.subdivision?.area ?? undefined,
       },
       contrato: {
         valorAluguel: lease.rent_amount || 0,
