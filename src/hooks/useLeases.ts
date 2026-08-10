@@ -280,6 +280,7 @@ export function useCreateLease() {
         .insert({
           broker_id: effectiveBrokerId || user.id,
           unit_id: data.unit_id,
+          unit_subdivision_id: data.unit_subdivision_id || null,
           tenant_contact_id: data.tenant_contact_id,
           owner_contact_id: data.owner_contact_id || null,
           rent_amount: data.rent_amount,
