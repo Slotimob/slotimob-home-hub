@@ -251,6 +251,8 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                 <TableHead>Aluguel</TableHead>
                 <TableHead>Inquilino</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Contrato</TableHead>
+
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
