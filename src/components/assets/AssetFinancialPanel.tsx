@@ -84,21 +84,8 @@ import {
   type Improvement,
 } from '@/hooks/useAssetFinancials';
 
-const IMPROVEMENT_TYPE_LABELS: Record<string, string> = {
-  reforma_geral: 'Reforma Geral',
-  ampliacao: 'Ampliação',
-  reforma_cozinha: 'Reforma Cozinha',
-  reforma_banheiro: 'Reforma Banheiro',
-  pintura: 'Pintura',
-  piso: 'Piso',
-  eletrica: 'Elétrica',
-  hidraulica: 'Hidráulica',
-  telhado: 'Telhado',
-  fachada: 'Fachada',
-  mobilia: 'Mobília',
-  equipamento: 'Equipamento',
-  outro: 'Outro',
-};
+import { IMPROVEMENT_TYPE_LABELS } from '@/lib/improvement-types';
+
 
 const SOURCE_LABELS: Record<string, string> = {
   manual_appraisal: 'Avaliação manual',
