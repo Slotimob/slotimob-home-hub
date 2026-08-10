@@ -1367,61 +1367,11 @@ export default function NovoContrato() {
                       )}
                     </div>
                   </div>
+                  {emissao === "asaas" && (
+                  <>
                   {/* Configurações de cobrança */}
                   <div className="space-y-3">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Configurações de Cobrança</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Multa por atraso (%)</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={10}
-                          step={0.5}
-                          placeholder="2"
-                          value={paymentInfo.fine_value ?? ""}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, fine_value: e.target.value !== "" ? Number(e.target.value) : undefined })}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Juros ao mês (%)</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={5}
-                          step={0.1}
-                          placeholder="1"
-                          value={paymentInfo.interest_value ?? ""}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, interest_value: e.target.value !== "" ? Number(e.target.value) : undefined })}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Desconto (R$)</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          placeholder="0"
-                          value={paymentInfo.discount_value ?? ""}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, discount_value: e.target.value !== "" ? Number(e.target.value) : undefined })}
-                        />
-                      </div>
-                    </div>
-                    {(paymentInfo.discount_value ?? 0) > 0 && (
-                      <div className="space-y-1">
-                        <Label className="text-xs">Dias antes do vencimento para desconto</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={30}
-                          placeholder="5"
-                          value={paymentInfo.discount_due_date_limit_days ?? ""}
-                          onChange={(e) => setPaymentInfo({ ...paymentInfo, discount_due_date_limit_days: e.target.value !== "" ? Number(e.target.value) : undefined })}
-                        />
-                      </div>
-                    )}
-                  </div>
-
+...
                   {/* Envio */}
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Enviar boleto por</p>
@@ -1446,16 +1396,42 @@ export default function NovoContrato() {
                       </label>
                     </div>
                   </div>
+                  </>
+                  )}
 
                   {/* Info */}
-                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
-                    <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-blue-600 dark:text-blue-500">
-                      Boletos emitidos automaticamente pelo <strong>Asaas</strong> a cada vencimento com as configurações acima.
-                    </p>
-                  </div>
+                  {emissao === "propria" ? (
+                    <div className="flex items-start gap-2 p-3 bg-muted/50 border rounded-lg">
+                      <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground">
+                        Você é responsável por gerar e controlar este boleto fora do sistema. Os dados acima ficam
+                        registrados no contrato como referência.
+                      </p>
+                    </div>
+                  ) : !hasActiveAsaasAccount ? (
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-950/30 dark:border-amber-800">
+                      <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="space-y-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-500">
+                          Você ainda não tem uma subconta Asaas configurada. Configure em Configurações → Configuração
+                          de Boleto Asaas antes de emitir cobranças automáticas.
+                        </p>
+                        <Button type="button" size="sm" variant="outline" onClick={() => navigate("/settings")}>
+                          Ir para Configurações
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
+                      <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-600 dark:text-blue-500">
+                        Boletos emitidos automaticamente pelo <strong>Asaas</strong> a cada vencimento com as configurações acima.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+                );
+              })()}
 
               <div className="p-3 bg-muted/50 rounded-lg text-sm">
                 <p className="text-muted-foreground">
