@@ -261,6 +261,7 @@ export default function NovoContrato() {
     if (!editLease) return;
     setFormData({
       tenant_contact_id: editLease.tenant_contact_id,
+      unit_subdivision_id: (editLease as any).unit_subdivision_id || null,
       rent_amount: Number(editLease.rent_amount),
       admin_fee_percentage: Number(editLease.admin_fee_percentage),
       due_day: editLease.due_day,
