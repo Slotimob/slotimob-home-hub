@@ -5930,6 +5930,18 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: boolean
       }
+      register_tenant_history_entry: {
+        Args: {
+          p_lease_id?: string
+          p_moved_in_at: string
+          p_moved_out_at?: string
+          p_notes?: string
+          p_source?: string
+          p_tenant_contact_id: string
+          p_unit_id: string
+        }
+        Returns: string
+      }
       reset_ai_credits_for_user: {
         Args: { p_user_id: string }
         Returns: undefined
