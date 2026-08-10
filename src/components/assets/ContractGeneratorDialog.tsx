@@ -34,6 +34,8 @@ import {
    open: boolean;
    onOpenChange: (open: boolean) => void;
    unitId: string;
+   /** Optional: generate the PDF for a specific lease (needed when a unit has multiple active leases / fractions) */
+   leaseId?: string;
    onSuccess?: () => void;
  }
  
@@ -41,6 +43,7 @@ import {
    open,
    onOpenChange,
    unitId,
+   leaseId,
    onSuccess,
  }: ContractGeneratorDialogProps) {
    const [isGenerating, setIsGenerating] = useState(false);
