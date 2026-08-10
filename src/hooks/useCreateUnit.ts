@@ -43,32 +43,32 @@ export function useCreateUnit(standalone: boolean) {
   const createUnit = async (
     formData: UnitFormData,
     effectivePropertyId: string | null
-  ): Promise<boolean> => {
+  ): Promise<{ id: string; intent_type: string; tenant_contact_id: string | null } | null> => {
     // For non-standalone mode, require property selection
     if (!standalone && !effectivePropertyId) {
       showError('Empreendimento obrigatório', 'Selecione um empreendimento para vincular a unidade.');
-      return false;
+      return null;
     }
 
     // Validate financial fields based on intent_type
     if (formData.intent_type === 'sale' || formData.intent_type === 'both') {
       if (!formData.price) {
         showError('Campo obrigatório', 'Informe o Valor de Venda para imóveis com objetivo de venda.');
-        return false;
+      return null;
       }
     }
 
     if (formData.intent_type === 'rental' || formData.intent_type === 'both') {
       if (!formData.rent_price) {
         showError('Campo obrigatório', 'Informe o Preço de Locação para imóveis com objetivo de locação.');
-        return false;
+      return null;
       }
     }
 
     // For rental-only, market_value is needed for Yield calculation
     if (formData.intent_type === 'rental' && !formData.market_value) {
       showError('Campo obrigatório', 'Informe o Valor Estimado do Patrimônio para calcular a rentabilidade.');
-      return false;
+      return null;
     }
 
     try {
@@ -90,37 +90,41 @@ export function useCreateUnit(standalone: boolean) {
       unitSchema.parse(payload);
       setSaving(true);
 
-      const { error } = await supabase.from('units').insert([
-        {
-          ...payload,
-          property_id: standalone ? null : effectivePropertyId,
-          broker_id: effectiveBrokerId,
-          property_type: formData.property_type || null,
-          condition: formData.condition || null,
-          furnished: formData.furnished || null,
-          solar_orientation: formData.solar_orientation || null,
-          is_financeable: formData.is_financeable,
-          registration_number: formData.registration_number || null,
-          has_no_registration: formData.has_no_registration,
-          iptu_number: formData.iptu_number || null,
-          owner_contact_id: formData.owner_contact_id || null,
-          tenant_contact_id: formData.tenant_contact_id || null,
-          cover_image_url: formData.cover_image_url || null,
-          is_standalone: standalone,
-          is_managed: formData.is_managed,
-          description: formData.description || null,
-          address: formData.address || null,
-          neighborhood: formData.neighborhood || null,
-          city: formData.city || null,
-          state: formData.state || null,
-          postal_code: formData.postal_code || null,
-          cib: formData.cib || null,
-          tags: formData.tags.length > 0 ? formData.tags : [],
-          intent_type: formData.intent_type,
-          market_value: formData.market_value ? parseFloat(formData.market_value) : null,
-          is_occupied: formData.is_occupied,
-        },
-      ]);
+      const { data: insertedUnit, error } = await supabase
+        .from('units')
+        .insert([
+          {
+            ...payload,
+            property_id: standalone ? null : effectivePropertyId,
+            broker_id: effectiveBrokerId,
+            property_type: formData.property_type || null,
+            condition: formData.condition || null,
+            furnished: formData.furnished || null,
+            solar_orientation: formData.solar_orientation || null,
+            is_financeable: formData.is_financeable,
+            registration_number: formData.registration_number || null,
+            has_no_registration: formData.has_no_registration,
+            iptu_number: formData.iptu_number || null,
+            owner_contact_id: formData.owner_contact_id || null,
+            tenant_contact_id: formData.tenant_contact_id || null,
+            cover_image_url: formData.cover_image_url || null,
+            is_standalone: standalone,
+            is_managed: formData.is_managed,
+            description: formData.description || null,
+            address: formData.address || null,
+            neighborhood: formData.neighborhood || null,
+            city: formData.city || null,
+            state: formData.state || null,
+            postal_code: formData.postal_code || null,
+            cib: formData.cib || null,
+            tags: formData.tags.length > 0 ? formData.tags : [],
+            intent_type: formData.intent_type,
+            market_value: formData.market_value ? parseFloat(formData.market_value) : null,
+            is_occupied: formData.is_occupied,
+          },
+        ])
+        .select('id, intent_type, tenant_contact_id')
+        .single();
 
       if (error) throw error;
 
@@ -129,14 +133,14 @@ export function useCreateUnit(standalone: boolean) {
         standalone ? 'O imóvel avulso foi cadastrado com sucesso.' : 'A unidade foi cadastrada com sucesso.'
       );
 
-      return true;
+      return insertedUnit;
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         showError('Erro de validação', error.errors[0].message);
       } else {
         showError(standalone ? 'Erro ao criar imóvel' : 'Erro ao criar unidade', error.message);
       }
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }
