@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { sanitizeStorageFileName } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
