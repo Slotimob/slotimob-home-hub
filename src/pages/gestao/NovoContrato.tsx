@@ -189,7 +189,7 @@ export default function NovoContrato() {
       if (!effectiveUnitId) return null;
       const { data } = await supabase
         .from("units")
-        .select("id, unit_number, address, owner_contact_id")
+        .select("id, unit_number, address, owner_contact_id, tenant_contact_id, rent_price")
         .eq("id", effectiveUnitId)
         .maybeSingle();
       return data as any;
@@ -263,6 +263,22 @@ export default function NovoContrato() {
       });
     }
   }, [editLease]);
+
+  // Pre-fill tenant/rent from unit info when creating a new lease
+  useEffect(() => {
+    if (isEditMode || !unitInfo) return;
+    setFormData((prev) => {
+      const next = { ...prev };
+      if (!next.tenant_contact_id && unitInfo.tenant_contact_id) {
+        next.tenant_contact_id = unitInfo.tenant_contact_id;
+      }
+      if ((!next.rent_amount || next.rent_amount === 0) && unitInfo.rent_price) {
+        next.rent_amount = Number(unitInfo.rent_price);
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitInfo?.id]);
 
 
   const needsSpouseData =
