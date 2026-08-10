@@ -474,15 +474,62 @@ function MarketValueBlock({
           <p className="text-xs text-muted-foreground">Nenhum histórico de avaliação registrado.</p>
         ) : null}
 
-        {/* Revaluation modal */}
-        <Dialog open={showModal} onOpenChange={setShowModal}>
+        {sortedEntries.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">Registros de avaliação</p>
+            <div className="divide-y rounded-md border">
+              {sortedEntries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{fmtCurrency(entry.value)}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {format(new Date(`${entry.effective_date}T00:00:00`), "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
+                      {' · '}
+                      {SOURCE_LABELS[entry.source] || entry.source}
+                      {entry.appraiser_name ? ` · ${entry.appraiser_name}` : ''}
+                    </p>
+                  </div>
+                  {!disabled && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label="Editar registro"
+                        onClick={() => openEdit(entry)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        aria-label="Excluir registro"
+                        onClick={() => setDeleteTarget(entry)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Revaluation / edit modal */}
+        <Dialog open={showModal} onOpenChange={(open) => (open ? setShowModal(true) : resetModal())}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Reavaliar valor de mercado</DialogTitle>
+              <DialogTitle>
+                {editingId ? 'Editar registro de valor de mercado' : 'Reavaliar valor de mercado'}
+              </DialogTitle>
             </DialogHeader>
+
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-sm">Novo valor (R$) *</Label>
+                <Label className="text-sm">{editingId ? 'Valor (R$) *' : 'Novo valor (R$) *'}</Label>
+
                 <CurrencyInput
                   value={newValue}
                   onChange={setNewValue}
@@ -536,11 +583,12 @@ function MarketValueBlock({
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" size="sm" onClick={resetModal}>Cancelar</Button>
-                <Button size="sm" onClick={handleSubmit} disabled={recordMutation.isPending}>
-                  {recordMutation.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                  Registrar
+                <Button size="sm" onClick={handleSubmit} disabled={isSaving}>
+                  {isSaving && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
+                  {editingId ? 'Salvar alterações' : 'Registrar'}
                 </Button>
               </div>
+
             </div>
           </DialogContent>
         </Dialog>
