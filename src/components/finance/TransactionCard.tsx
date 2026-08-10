@@ -21,7 +21,10 @@ interface TransactionCardProps {
   isReconciling?: boolean;
   isSendingBilling?: boolean;
   isEligibleForBilling?: boolean;
+  onMarkAsImprovement?: (transaction: any) => void;
+  isAlreadyImprovement?: boolean;
 }
+
 
 export function TransactionCard({
   transaction,
