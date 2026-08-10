@@ -87,8 +87,22 @@ export function TransactionsTableInfinite({
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [matcherTransaction, setMatcherTransaction] = useState<any>(null);
   const [billingTransactionId, setBillingTransactionId] = useState<string | null>(null);
+  const [improvementTransaction, setImprovementTransaction] = useState<any>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const improvementCandidateIds = useMemo(
+    () =>
+      (transactions || [])
+        .filter((t: any) => t.type === 'expense' && (t.unit_id || t.property_id))
+        .map((t: any) => t.id),
+    [transactions]
+  );
+  const { data: alreadyImprovementIds } = useTransactionsWithImprovement(improvementCandidateIds);
+  const canMarkAsImprovement = (t: any) =>
+    !!canEditTx && t.type === 'expense' && !!(t.unit_id || t.property_id);
+  const isAlreadyImprovement = (t: any) => !!alreadyImprovementIds?.has(t.id);
+
 
   // Handle WhatsApp billing reminder
   const handleSendBillingReminder = async (transaction: any) => {
