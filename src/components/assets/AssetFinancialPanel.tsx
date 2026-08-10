@@ -952,6 +952,22 @@ function ImprovementsBlock({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Link financial transaction */}
+        {reconcileTarget && (
+          <LinkImprovementTransactionDialog
+            open={!!reconcileOpenFor}
+            onOpenChange={(o) => { if (!o) setReconcileOpenFor(null); }}
+            assetType={assetType}
+            assetId={assetId}
+            improvementId={reconcileTarget.id}
+            improvementDescription={reconcileTarget.description}
+            currentTransactionId={reconcileTarget.financial_transaction_id}
+            isSaving={reconcileMutation.isPending}
+            onSelect={(txId) => handleReconcile(reconcileTarget, txId)}
+          />
+        )}
+
       </CardContent>
     </Card>
   );
