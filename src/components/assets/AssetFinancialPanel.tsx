@@ -432,7 +432,7 @@ function MarketValueBlock({
             <p className="text-xl font-semibold">{fmtCurrency(currentMarketValue)}</p>
           </div>
           {!disabled && (
-            <Button size="sm" variant="outline" onClick={() => setShowModal(true)}>
+            <Button size="sm" variant="outline" onClick={openCreate}>
               <BarChart3 className="h-4 w-4 mr-1.5" />
               Reavaliar valor
             </Button>
