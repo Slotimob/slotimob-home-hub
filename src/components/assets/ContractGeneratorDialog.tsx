@@ -34,6 +34,8 @@ import {
    open: boolean;
    onOpenChange: (open: boolean) => void;
    unitId: string;
+   /** Optional: generate the PDF for a specific lease (needed when a unit has multiple active leases / fractions) */
+   leaseId?: string;
    onSuccess?: () => void;
  }
  
@@ -41,6 +43,7 @@ import {
    open,
    onOpenChange,
    unitId,
+   leaseId,
    onSuccess,
  }: ContractGeneratorDialogProps) {
    const [isGenerating, setIsGenerating] = useState(false);
@@ -78,18 +81,22 @@ import {
  
    // Fetch active lease with all data
    const { data: activeLease, isLoading: isLoadingLease } = useQuery({
-     queryKey: ["unit-lease-for-pdf", unitId],
+     queryKey: ["unit-lease-for-pdf", unitId, leaseId ?? null],
      queryFn: async () => {
-       const { data: lease } = await supabase
-         .from("leases")
-         .select(`id, rent_amount, start_date, end_date, due_day, admin_fee_percentage,
+       const baseSelect = `id, rent_amount, start_date, end_date, due_day, admin_fee_percentage,
            tenant_contact_id, adjustment_index, deposit_amount, guarantee_type, guarantor_data, payment_info,
-           unit_subdivision_id`)
-         .eq("unit_id", unitId)
-         .eq("status", "active")
-         .order("start_date", { ascending: false })
-         .limit(1)
-         .maybeSingle();
+           unit_subdivision_id`;
+
+       const { data: lease } = leaseId
+         ? await supabase.from("leases").select(baseSelect).eq("id", leaseId).maybeSingle()
+         : await supabase
+             .from("leases")
+             .select(baseSelect)
+             .eq("unit_id", unitId)
+             .eq("status", "active")
+             .order("start_date", { ascending: false })
+             .limit(1)
+             .maybeSingle();
        
        let subdivision: { label: string; area: number | null } | null = null;
        if (lease?.unit_subdivision_id) {

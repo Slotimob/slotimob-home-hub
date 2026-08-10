@@ -989,6 +989,7 @@ export function LeaseManagementSheet({
             open={showContractDialog}
             onOpenChange={setShowContractDialog}
             unitId={asset.unitId}
+            leaseId={lease?.id}
           />
         )}
       </SheetContent>
