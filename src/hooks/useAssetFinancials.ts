@@ -309,3 +309,83 @@ export function useRecordMarketValue(assetType: AssetType, assetId: string | und
     },
   });
 }
+
+/**
+ * Re-syncs units.market_value / properties.market_value with the most recent
+ * market_value_history entry for the asset. There is no DB trigger for this
+ * (only an INSERT audit trigger), so it is handled here after edits/deletes.
+ */
+async function resyncCurrentMarketValue(assetType: AssetType, assetId: string) {
+  const { data, error } = await supabase
+    .from('market_value_history')
+    .select('value, effective_date')
+    .eq(fkColumn(assetType), assetId)
+    .order('effective_date', { ascending: false })
+    .order('recorded_at', { ascending: false })
+    .limit(1);
+  if (error) throw error;
+
+  const latest = (data || [])[0] as { value: number } | undefined;
+  const { error: updateError } = await supabase
+    .from(tableName(assetType))
+    .update({ market_value: latest ? latest.value : null })
+    .eq('id', assetId);
+  if (updateError) throw updateError;
+}
+
+export function useUpdateMarketValueEntry(assetType: AssetType, assetId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      value: number;
+      effective_date: string;
+      source?: string;
+      appraiser_name?: string | null;
+      note?: string | null;
+    }) => {
+      if (!assetId) throw new Error('Missing context');
+      const { id, ...fields } = payload;
+      const { error } = await supabase
+        .from('market_value_history')
+        .update({
+          value: fields.value,
+          effective_date: fields.effective_date,
+          ...(fields.source !== undefined ? { source: fields.source } : {}),
+          appraiser_name: fields.appraiser_name ?? null,
+          note: fields.note ?? null,
+        } as any)
+        .eq('id', id);
+      if (error) throw error;
+
+      await resyncCurrentMarketValue(assetType, assetId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['market-value-history', assetType, assetId] });
+      queryClient.invalidateQueries({ queryKey: ['asset-acquisition', assetType, assetId] });
+      queryClient.invalidateQueries({ queryKey: ['unit', assetId] });
+      queryClient.invalidateQueries({ queryKey: ['property', assetId] });
+    },
+  });
+}
+
+export function useDeleteMarketValueEntry(assetType: AssetType, assetId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      if (!assetId) throw new Error('Missing context');
+      const { error } = await supabase.from('market_value_history').delete().eq('id', id);
+      if (error) throw error;
+
+      await resyncCurrentMarketValue(assetType, assetId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['market-value-history', assetType, assetId] });
+      queryClient.invalidateQueries({ queryKey: ['asset-acquisition', assetType, assetId] });
+      queryClient.invalidateQueries({ queryKey: ['unit', assetId] });
+      queryClient.invalidateQueries({ queryKey: ['property', assetId] });
+    },
+  });
+}
