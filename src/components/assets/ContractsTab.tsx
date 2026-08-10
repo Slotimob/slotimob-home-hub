@@ -100,6 +100,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   active: { label: "Ativo", variant: "default" },
+  pending: { label: "Pendente de Configuração", variant: "secondary" },
   pending_signature: { label: "Aguardando Assinatura", variant: "secondary" },
   expired: { label: "Expirado", variant: "destructive" },
   cancelled: { label: "Cancelado", variant: "outline" },
@@ -404,6 +405,7 @@ export function ContractsTab() {
   const stats = useMemo(() => ({
     total: leases?.length || 0,
     active: leases?.filter((l) => l.status === "active").length || 0,
+    pendingConfig: leases?.filter((l) => l.status === "pending").length || 0,
     pendingSignature: leases?.filter((l) => 
       l.signature_status !== "signed" && 
       !l.signed_contract_path && 
@@ -642,7 +644,7 @@ export function ContractsTab() {
   return (
     <div className="space-y-4">
       {/* Stats Cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-5">
         <Card 
           className={cn(
             "cursor-pointer transition-all hover:shadow-md",
@@ -668,6 +670,22 @@ export function ContractsTab() {
               <p className="text-xs text-muted-foreground">Ativos</p>
             </div>
             <p className="text-2xl font-bold text-primary">{stats.active}</p>
+          </CardContent>
+        </Card>
+        <Card 
+          className={cn(
+            "transition-all hover:shadow-md",
+            stats.pendingConfig > 0 ? "border-blue-500/50 bg-blue-500/10" : "border-muted"
+          )}
+        >
+          <CardContent className="p-3">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-blue-600" />
+              <p className="text-xs text-muted-foreground">Pend. Configuração</p>
+            </div>
+            <p className={`text-2xl font-bold ${stats.pendingConfig > 0 ? "text-blue-600" : "text-muted-foreground"}`}>
+              {stats.pendingConfig}
+            </p>
           </CardContent>
         </Card>
         <Card 
@@ -959,6 +977,17 @@ export function ContractsTab() {
                           </TableCell>
                           <TableCell className="text-center">
                             {(() => {
+                              if (lease.status === "pending") {
+                                return (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] whitespace-nowrap border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950/30"
+                                  >
+                                    <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                    Pendente de Configuração
+                                  </Badge>
+                                );
+                              }
                               const awaitingSignature =
                                 lease.status === "active" && lease.signature_status !== "signed";
                               if (awaitingSignature) {
