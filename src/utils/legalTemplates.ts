@@ -168,6 +168,8 @@ export interface FullContractData {
     areaUtil?: string;
     descricaoCompleta?: string;
     tipoImovel?: 'residencial' | 'comercial' | 'misto';
+    fracaoLabel?: string;
+    fracaoArea?: number | null;
   };
 
   // ===== VALORES E CONDIÇÕES =====

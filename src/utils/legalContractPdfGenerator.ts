@@ -196,6 +196,8 @@ export interface LegalContractData {
     descricao?: string;
     matricula?: string;
     cib?: string;
+    fracaoLabel?: string;
+    fracaoArea?: number | null;
   };
   // Contrato
   contrato: {
