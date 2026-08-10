@@ -158,7 +158,7 @@ export const UnitDocuments = ({ unitId, userId }: UnitDocumentsProps) => {
     setUploading(true);
     try {
       const timestamp = Date.now();
-      const filePath = `${userId}/${unitId}/documents/${timestamp}-${file.name}`;
+      const filePath = `${userId}/${unitId}/documents/${timestamp}-${sanitizeStorageFileName(file.name)}`;
 
       const { error: uploadError } = await supabase.storage
         .from('documents')
