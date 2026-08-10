@@ -100,6 +100,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   active: { label: "Ativo", variant: "default" },
+  pending: { label: "Pendente de Configuração", variant: "secondary" },
   pending_signature: { label: "Aguardando Assinatura", variant: "secondary" },
   expired: { label: "Expirado", variant: "destructive" },
   cancelled: { label: "Cancelado", variant: "outline" },
