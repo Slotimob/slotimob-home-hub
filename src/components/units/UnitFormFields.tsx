@@ -689,7 +689,7 @@ export const UnitFormFields = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label htmlFor="market_value">
-                {showMarketValueForRentalOnly ? 'Valor Estimado do Patrimônio (R$)' : 'Valor de Mercado (R$)'}
+                {showMarketValueForRentalOnly ? 'Valor Estimado do Patrimônio (R$) *' : 'Valor de Mercado (R$)'}
               </Label>
               <TooltipProvider>
                 <Tooltip>
