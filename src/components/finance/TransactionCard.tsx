@@ -38,7 +38,10 @@ export function TransactionCard({
   isReconciling = false,
   isSendingBilling = false,
   isEligibleForBilling = false,
+  onMarkAsImprovement,
+  isAlreadyImprovement = false,
 }: TransactionCardProps) {
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
