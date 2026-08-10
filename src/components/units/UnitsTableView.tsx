@@ -21,7 +21,7 @@ import { UnitActionsMenu } from "./UnitActionsMenu";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
-import { showSalePrice, showRentalPrice } from "@/utils/unitPricing";
+import { showSalePrice, showRentalPrice, formatCurrencyBRL } from "@/utils/unitPricing";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 
@@ -70,14 +70,6 @@ interface UnitsTableViewProps {
 }
 
 
-const formatCurrency = (value: number | null | undefined): string => {
-  if (value === null || value === undefined) return "-";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 export function UnitsTableView({
   units,

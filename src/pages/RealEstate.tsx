@@ -110,7 +110,7 @@ const initialFilters: UnitsFiltersState = {
 };
 
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from '@/utils/uiConstants';
-import { showSalePrice, showRentalPrice } from '@/utils/unitPricing';
+import { showSalePrice, showRentalPrice, formatCurrencyBRL } from '@/utils/unitPricing';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 const STATUS_LABELS: Record<string, string> = {
