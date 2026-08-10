@@ -817,15 +817,13 @@ function ImprovementsBlock({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-sm">Custo (R$) *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <CurrencyInput
                     value={cost}
-                    onChange={(e) => setCost(e.target.value)}
+                    onChange={setCost}
                     placeholder="0,00"
                     className="text-base"
                   />
+
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm">Data de conclusão *</Label>
