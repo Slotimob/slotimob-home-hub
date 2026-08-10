@@ -139,6 +139,7 @@ export interface Lease {
 
 export interface CreateLeaseData {
   unit_id: string;
+  unit_subdivision_id?: string | null;
   tenant_contact_id: string;
   owner_contact_id?: string;
   rent_amount: number;
