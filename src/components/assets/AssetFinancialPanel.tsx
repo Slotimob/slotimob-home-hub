@@ -76,6 +76,9 @@ import {
   useReconcileImprovement,
   useMarketValueHistory,
   useRecordMarketValue,
+  useUpdateMarketValueEntry,
+  useDeleteMarketValueEntry,
+  type MarketValueEntry,
   type Improvement,
 } from '@/hooks/useAssetFinancials';
 
