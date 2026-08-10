@@ -121,6 +121,7 @@ export function useCreateUnit(standalone: boolean) {
             intent_type: formData.intent_type,
             market_value: formData.market_value ? parseFloat(formData.market_value) : null,
             is_occupied: formData.is_occupied,
+            has_subdivisions: formData.has_subdivisions,
           },
         ])
         .select('id, intent_type, tenant_contact_id')

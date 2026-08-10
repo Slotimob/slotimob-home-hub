@@ -122,6 +122,7 @@ function mapUnitToFormData(u: any): UnitFormData {
     market_value: u.market_value?.toString() || '',
     is_occupied: u.is_occupied ?? false,
     is_published_portal: u.is_published_portal ?? false,
+    has_subdivisions: u.has_subdivisions ?? false,
   };
 }
 
@@ -324,6 +325,7 @@ export default function UnitDetalhe() {
         market_value: formData.market_value ? parseFloat(formData.market_value) : null,
         is_occupied: formData.is_occupied,
         is_published_portal: formData.is_published_portal,
+        has_subdivisions: formData.has_subdivisions,
       };
 
       unitSchema.parse(payload);
