@@ -751,12 +751,25 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
+                          {canMarkAsImprovement(transaction) && (
+                            <DropdownMenuItem
+                              className="text-xs"
+                              disabled={isAlreadyImprovement(transaction)}
+                              onClick={() => setImprovementTransaction(transaction)}
+                            >
+                              <Hammer className="h-3.5 w-3.5 mr-2 text-amber-600" />
+                              {isAlreadyImprovement(transaction)
+                                ? 'Já é uma benfeitoria'
+                                : 'Marcar como Benfeitoria'}
+                            </DropdownMenuItem>
+                          )}
                           {canEditTx && (
                             <DropdownMenuItem onClick={() => setEditTransaction(transaction)} className="text-xs">
                               <Pencil className="h-3.5 w-3.5 mr-2" />
                               Editar
                             </DropdownMenuItem>
                           )}
+
                           {canDeleteTx && (
                             <>
                               <DropdownMenuSeparator />
