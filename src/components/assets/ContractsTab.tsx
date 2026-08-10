@@ -405,6 +405,7 @@ export function ContractsTab() {
   const stats = useMemo(() => ({
     total: leases?.length || 0,
     active: leases?.filter((l) => l.status === "active").length || 0,
+    pendingConfig: leases?.filter((l) => l.status === "pending").length || 0,
     pendingSignature: leases?.filter((l) => 
       l.signature_status !== "signed" && 
       !l.signed_contract_path && 
