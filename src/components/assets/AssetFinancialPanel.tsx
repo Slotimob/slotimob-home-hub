@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -161,22 +162,35 @@ function AcquisitionBlock({
   const [date, setDate] = useState('');
   const [costs, setCosts] = useState('');
   const [notes, setNotes] = useState('');
-  const [initialized, setInitialized] = useState(false);
 
-  if (data && !initialized) {
-    setValue(data.acquisition_value?.toString() || '');
+  // Re-hydrate local state whenever the persisted data actually changes
+  // (mount, refetch after save, cache invalidation).
+  useEffect(() => {
+    if (!data) return;
+    setValue(data.acquisition_value != null ? String(data.acquisition_value) : '');
     setDate(data.acquisition_date || '');
-    setCosts(data.acquisition_costs?.toString() || '');
+    setCosts(data.acquisition_costs != null ? String(data.acquisition_costs) : '');
     setNotes(data.acquisition_notes || '');
-    setInitialized(true);
-  }
+  }, [
+    data?.acquisition_value,
+    data?.acquisition_date,
+    data?.acquisition_costs,
+    data?.acquisition_notes,
+  ]);
+
+  // CurrencyInput already returns a raw numeric string ("1350000" / "1350.5")
+  const toNumber = (s: string): number | null => {
+    if (s == null || s.trim() === '') return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  };
 
   const handleSave = async () => {
     try {
       await saveMutation.mutateAsync({
-        acquisition_value: parseCurrency(value),
+        acquisition_value: toNumber(value),
         acquisition_date: date || null,
-        acquisition_costs: parseCurrency(costs),
+        acquisition_costs: toNumber(costs),
         acquisition_notes: notes || null,
       });
       toast({ title: 'Dados de aquisição salvos', duration: 1000 });
@@ -185,7 +199,8 @@ function AcquisitionBlock({
     }
   };
 
-  const totalInvested = (parseCurrency(value) || 0) + (parseCurrency(costs) || 0);
+  const totalInvested = (toNumber(value) || 0) + (toNumber(costs) || 0);
+
 
   if (isLoading) {
     return (
