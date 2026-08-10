@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { sanitizeStorageFileName } from '@/lib/utils';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
