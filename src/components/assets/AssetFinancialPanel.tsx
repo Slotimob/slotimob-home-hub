@@ -224,17 +224,15 @@ function AcquisitionBlock({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="acq-value" className="text-sm">Valor de aquisição (R$)</Label>
-            <Input
+            <CurrencyInput
               id="acq-value"
-              type="number"
-              step="0.01"
-              min="0"
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={setValue}
               placeholder="0,00"
               disabled={disabled}
               className="text-base"
             />
+
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acq-date" className="text-sm">Data de aquisição</Label>
@@ -249,17 +247,15 @@ function AcquisitionBlock({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acq-costs" className="text-sm">Custos (ITBI, cartório, etc.) (R$)</Label>
-            <Input
+            <CurrencyInput
               id="acq-costs"
-              type="number"
-              step="0.01"
-              min="0"
               value={costs}
-              onChange={(e) => setCosts(e.target.value)}
+              onChange={setCosts}
               placeholder="0,00"
               disabled={disabled}
               className="text-base"
             />
+
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acq-notes" className="text-sm">Observações</Label>
