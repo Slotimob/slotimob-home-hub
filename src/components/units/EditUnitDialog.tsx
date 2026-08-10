@@ -155,6 +155,7 @@ function mapUnitToFormData(u: Unit): UnitFormData {
     market_value: u.market_value?.toString() || '',
     is_occupied: u.is_occupied ?? false,
     is_published_portal: u.is_published_portal ?? false,
+    has_subdivisions: u.has_subdivisions ?? false,
   };
 }
 
