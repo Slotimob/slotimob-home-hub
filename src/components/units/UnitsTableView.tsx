@@ -21,7 +21,7 @@ import { UnitActionsMenu } from "./UnitActionsMenu";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
-import { showSalePrice, showRentalPrice } from "@/utils/unitPricing";
+import { showSalePrice, showRentalPrice, formatCurrencyBRL } from "@/utils/unitPricing";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 
@@ -70,14 +70,6 @@ interface UnitsTableViewProps {
 }
 
 
-const formatCurrency = (value: number | null | undefined): string => {
-  if (value === null || value === undefined) return "-";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 export function UnitsTableView({
   units,
@@ -224,7 +216,7 @@ export function UnitsTableView({
                 <TableCell className="text-right py-2 sm:py-4">
                   {unit.market_value != null ? (
                     <span className="font-medium text-xs sm:text-sm">
-                      {formatCurrency(unit.market_value)}
+                      {formatCurrencyBRL(unit.market_value)}
                     </span>
                   ) : (
                     <span className="text-muted-foreground text-xs">-</span>
@@ -233,7 +225,7 @@ export function UnitsTableView({
                 <TableCell className="text-right py-2 sm:py-4">
                   {showSalePrice(unit.intent_type) && unit.price != null ? (
                     <span className="font-medium text-xs sm:text-sm">
-                      {formatCurrency(unit.price)}
+                      {formatCurrencyBRL(unit.price)}
                     </span>
                   ) : (
                     <span className="text-muted-foreground text-xs">-</span>
@@ -242,7 +234,7 @@ export function UnitsTableView({
                 <TableCell className="text-right py-2 sm:py-4">
                   {showRentalPrice(unit.intent_type) && unit.rent_price != null ? (
                     <span className="font-medium text-xs sm:text-sm text-blue-600">
-                      {formatCurrency(unit.rent_price)}
+                      {formatCurrencyBRL(unit.rent_price)}
                     </span>
                   ) : (
                     <span className="text-muted-foreground text-xs">-</span>
