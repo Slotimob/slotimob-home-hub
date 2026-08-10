@@ -184,6 +184,29 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
   const rentExcess =
     remainingRent != null && currentRent > remainingRent ? currentRent - remainingRent : 0;
 
+  const subdivisionIds = useMemo(() => subdivisions.map((s) => s.id), [subdivisions]);
+
+  const { data: subdivisionLeases = {} } = useQuery({
+    queryKey: ['subdivision-leases', unitId, subdivisionIds],
+    enabled: subdivisionIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leases')
+        .select('id, unit_subdivision_id, status, created_at')
+        .in('unit_subdivision_id', subdivisionIds)
+        .in('status', ['active', 'pending'])
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const map: Record<string, { id: string; status: string }> = {};
+      (data || []).forEach((lease: any) => {
+        if (lease.unit_subdivision_id && !map[lease.unit_subdivision_id]) {
+          map[lease.unit_subdivision_id] = { id: lease.id, status: lease.status };
+        }
+      });
+      return map;
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-3">
