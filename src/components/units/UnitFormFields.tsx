@@ -224,7 +224,7 @@ export const UnitFormFields = ({
               type="button"
               variant={formData.intent_type === 'rental' ? 'default' : 'outline'}
               className="w-full text-sm px-2"
-              onClick={() => setFormData({ ...formData, intent_type: 'rental' })}
+              onClick={() => setFormData({ ...formData, intent_type: 'rental', is_managed: true })}
             >
               Locação
             </Button>
@@ -232,7 +232,7 @@ export const UnitFormFields = ({
               type="button"
               variant={formData.intent_type === 'both' ? 'default' : 'outline'}
               className="w-full text-sm px-2"
-              onClick={() => setFormData({ ...formData, intent_type: 'both' })}
+              onClick={() => setFormData({ ...formData, intent_type: 'both', is_managed: true })}
             >
               Ambos
             </Button>

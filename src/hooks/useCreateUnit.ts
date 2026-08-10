@@ -47,28 +47,28 @@ export function useCreateUnit(standalone: boolean) {
     // For non-standalone mode, require property selection
     if (!standalone && !effectivePropertyId) {
       showError('Empreendimento obrigatório', 'Selecione um empreendimento para vincular a unidade.');
-      return false;
+      return null;
     }
 
     // Validate financial fields based on intent_type
     if (formData.intent_type === 'sale' || formData.intent_type === 'both') {
       if (!formData.price) {
         showError('Campo obrigatório', 'Informe o Valor de Venda para imóveis com objetivo de venda.');
-        return false;
+      return null;
       }
     }
 
     if (formData.intent_type === 'rental' || formData.intent_type === 'both') {
       if (!formData.rent_price) {
         showError('Campo obrigatório', 'Informe o Preço de Locação para imóveis com objetivo de locação.');
-        return false;
+      return null;
       }
     }
 
     // For rental-only, market_value is needed for Yield calculation
     if (formData.intent_type === 'rental' && !formData.market_value) {
       showError('Campo obrigatório', 'Informe o Valor Estimado do Patrimônio para calcular a rentabilidade.');
-      return false;
+      return null;
     }
 
     try {
@@ -140,7 +140,7 @@ export function useCreateUnit(standalone: boolean) {
       } else {
         showError(standalone ? 'Erro ao criar imóvel' : 'Erro ao criar unidade', error.message);
       }
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }
