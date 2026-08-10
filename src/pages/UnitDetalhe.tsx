@@ -434,8 +434,13 @@ export default function UnitDetalhe() {
               </div>
             </div>
 
-            {(canDuplicate || canDelete) && (
+            {(canEdit || canDuplicate || canDelete) && (
               <div className="flex items-center gap-2 flex-wrap">
+                {canEdit && (
+                  <Button size="sm" onClick={saveUnit} disabled={saving}>
+                    {saving ? 'Salvando...' : 'Salvar Alterações'}
+                  </Button>
+                )}
                 {canDuplicate && (
                   <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating}>
                     <Copy className="h-4 w-4 mr-1" />
