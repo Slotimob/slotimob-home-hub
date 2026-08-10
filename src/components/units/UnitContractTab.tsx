@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { FileText, FileSignature, AlertTriangle, Loader2 } from 'lucide-react';
+import { FileText, FileSignature, AlertTriangle, AlertCircle, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -17,6 +17,7 @@ const STATUS_LABELS: Record<
   { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
 > = {
   active: { label: 'Ativo', variant: 'default' },
+  pending: { label: 'Pendente de Configuração', variant: 'secondary' },
   pending_signature: { label: 'Aguardando Assinatura', variant: 'secondary' },
   expired: { label: 'Expirado', variant: 'destructive' },
   cancelled: { label: 'Cancelado', variant: 'outline' },
