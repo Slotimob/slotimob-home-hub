@@ -271,7 +271,7 @@ function AcquisitionBlock({
           </div>
         </div>
 
-        {(parseCurrency(value) || parseCurrency(costs)) ? (
+        {(toNumber(value) || toNumber(costs)) ? (
           <div className="text-sm text-muted-foreground">
             Valor total investido: <span className="font-semibold text-foreground">{fmtCurrency(totalInvested)}</span>
           </div>
