@@ -888,7 +888,7 @@ export function ContractsTab() {
                   ) : (
                     filteredLeases.map((lease) => {
                       // Use lease.status directly since it's the actual status field
-                      const statusConfig = STATUS_LABELS[lease.status] || STATUS_LABELS.active;
+                      const statusConfig = LEASE_STATUS_LABELS[lease.status] || LEASE_STATUS_LABELS.active;
                       const { adjustmentStatus } = lease;
                       const needsAction = adjustmentStatus === "overdue" || adjustmentStatus === "current_month";
                       const daysUntilAdjustment = lease.next_adjustment_date

@@ -83,7 +83,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
   }
 
   const leaseWithReview = lease as LeaseWithReview;
-  const statusConfig = STATUS_LABELS[lease.status] || {
+  const statusConfig = LEASE_STATUS_LABELS[lease.status] || {
     label: lease.status,
     variant: 'outline',
   };
