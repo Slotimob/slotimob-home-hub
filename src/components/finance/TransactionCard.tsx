@@ -188,12 +188,25 @@ export function TransactionCard({
                   Marcar como Pago
                 </DropdownMenuItem>
               )}
+              {onMarkAsImprovement &&
+                transaction.type === "expense" &&
+                (transaction.unit_id || transaction.property_id) && (
+                  <DropdownMenuItem
+                    className="text-xs"
+                    disabled={isAlreadyImprovement}
+                    onClick={() => onMarkAsImprovement(transaction)}
+                  >
+                    <Hammer className="h-3.5 w-3.5 mr-2 text-amber-600" />
+                    {isAlreadyImprovement ? "Já é uma benfeitoria" : "Marcar como Benfeitoria"}
+                  </DropdownMenuItem>
+                )}
               {onEdit && (
                 <DropdownMenuItem onClick={() => onEdit(transaction)} className="text-xs">
                   <Pencil className="h-3.5 w-3.5 mr-2" />
                   Editar
                 </DropdownMenuItem>
               )}
+
               {onDelete && (
                 <>
                   <DropdownMenuSeparator />
