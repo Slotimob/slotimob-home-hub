@@ -309,9 +309,14 @@ function MarketValueBlock({
 }) {
   const { toast } = useToast();
   const twelveMonthsAgo = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
-  const { data: history, isLoading } = useMarketValueHistory(assetType, assetId, twelveMonthsAgo);
+  // Full history (list) — chart is filtered to the last 12 months client-side
+  const { data: history, isLoading } = useMarketValueHistory(assetType, assetId);
   const recordMutation = useRecordMarketValue(assetType, assetId);
+  const updateMutation = useUpdateMarketValueEntry(assetType, assetId);
+  const deleteMutation = useDeleteMarketValueEntry(assetType, assetId);
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MarketValueEntry | null>(null);
 
   // Modal state
   const [newValue, setNewValue] = useState('');
@@ -326,8 +331,31 @@ function MarketValueBlock({
     setSource('manual_appraisal');
     setAppraiserName('');
     setNote('');
+    setEditingId(null);
     setShowModal(false);
   };
+
+  const openCreate = () => {
+    setEditingId(null);
+    setNewValue('');
+    setEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
+    setSource('manual_appraisal');
+    setAppraiserName('');
+    setNote('');
+    setShowModal(true);
+  };
+
+  const openEdit = (entry: MarketValueEntry) => {
+    setEditingId(entry.id);
+    setNewValue(String(entry.value ?? ''));
+    setEffectiveDate(entry.effective_date);
+    setSource(entry.source || 'manual_appraisal');
+    setAppraiserName(entry.appraiser_name || '');
+    setNote(entry.note || '');
+    setShowModal(true);
+  };
+
+  const isSaving = recordMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = async () => {
     const val = toNumber(newValue);
@@ -336,24 +364,55 @@ function MarketValueBlock({
       return;
     }
     try {
-      await recordMutation.mutateAsync({
-        value: val,
-        effective_date: effectiveDate,
-        source,
-        appraiser_name: source === 'third_party_appraisal' ? appraiserName : null,
-        note: note || null,
-      });
-      toast({ title: 'Valor de mercado registrado', duration: 1000 });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          value: val,
+          effective_date: effectiveDate,
+          source,
+          appraiser_name: source === 'third_party_appraisal' ? appraiserName : null,
+          note: note || null,
+        });
+        toast({ title: 'Registro atualizado', duration: 1000 });
+      } else {
+        await recordMutation.mutateAsync({
+          value: val,
+          effective_date: effectiveDate,
+          source,
+          appraiser_name: source === 'third_party_appraisal' ? appraiserName : null,
+          note: note || null,
+        });
+        toast({ title: 'Valor de mercado registrado', duration: 1000 });
+      }
       resetModal();
     } catch {
-      toast({ title: 'Erro ao registrar', variant: 'destructive', duration: 1000 });
+      toast({ title: 'Erro ao salvar', variant: 'destructive', duration: 1000 });
     }
   };
 
-  const chartData = (history || []).map((h) => ({
-    date: format(new Date(h.effective_date), 'MMM/yy', { locale: ptBR }),
-    value: h.value,
-  }));
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMutation.mutateAsync(deleteTarget.id);
+      toast({ title: 'Registro excluído', duration: 1000 });
+    } catch {
+      toast({ title: 'Erro ao excluir', variant: 'destructive', duration: 1000 });
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const allEntries = history || [];
+  const chartData = allEntries
+    .filter((h) => h.effective_date >= twelveMonthsAgo)
+    .map((h) => ({
+      date: format(new Date(h.effective_date), 'MMM/yy', { locale: ptBR }),
+      value: h.value,
+    }));
+  const sortedEntries = [...allEntries].sort((a, b) =>
+    b.effective_date.localeCompare(a.effective_date)
+  );
+
 
   return (
     <Card>
