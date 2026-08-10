@@ -44,6 +44,7 @@ import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
 import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
 import { UnitContractTab } from '@/components/units/UnitContractTab';
+import { UnitSubdivisionsPanel } from '@/components/units/UnitSubdivisionsPanel';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
