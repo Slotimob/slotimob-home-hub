@@ -37,6 +37,8 @@ export interface PaymentInfo {
   agencia?: string;
   conta?: string;
   titular?: string;
+  // emissão do boleto: própria (manual, fora do sistema) ou via Asaas
+  emissao_boleto?: "propria" | "asaas";
   // campos Asaas — usados quando tipo = "boleto"
   fine_value?: number;
   interest_value?: number;

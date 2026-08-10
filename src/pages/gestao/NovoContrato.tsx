@@ -197,6 +197,26 @@ export default function NovoContrato() {
     enabled: !!user && !!effectiveUnitId && !isEditMode && !selectedUnitInfo,
   });
 
+  // Conta Asaas do broker (para validar emissão automática)
+  const { data: asaasAccount } = useQuery({
+    queryKey: ["asaas-account-status", effectiveBrokerId, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("asaas_accounts")
+        .select("status")
+        .eq("broker_id", effectiveBrokerId || user!.id)
+        .limit(1)
+        .maybeSingle();
+      return data as { status: string | null } | null;
+    },
+    enabled: !!user,
+  });
+
+  const hasActiveAsaasAccount = ["active", "approved", "ACTIVE", "APPROVED"].includes(
+    (asaasAccount?.status || "").toString()
+  );
+
+
   const ownerContactId =
     editLease?.owner_contact_id || selectedUnitInfo?.owner_contact_id || unitInfo?.owner_contact_id || null;
   const unitName =
@@ -1293,8 +1313,31 @@ export default function NovoContrato() {
                 </div>
               )}
 
-              {paymentInfo.tipo === "boleto" && (
+              {paymentInfo.tipo === "boleto" && (() => {
+                const emissao = paymentInfo.emissao_boleto ?? "asaas";
+                return (
                 <div className="space-y-3">
+                  {/* Escolha do modo de emissão */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Como o boleto será emitido?</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={emissao === "propria" ? "default" : "outline"}
+                        onClick={() => setPaymentInfo({ ...paymentInfo, emissao_boleto: "propria" })}
+                      >
+                        Vou emitir por conta própria
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={emissao === "asaas" ? "default" : "outline"}
+                        onClick={() => setPaymentInfo({ ...paymentInfo, emissao_boleto: "asaas" })}
+                      >
+                        Usar emissão automática via Asaas
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dados do Pagador</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
@@ -1324,6 +1367,8 @@ export default function NovoContrato() {
                       )}
                     </div>
                   </div>
+                  {emissao === "asaas" && (
+                  <>
                   {/* Configurações de cobrança */}
                   <div className="space-y-3">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Configurações de Cobrança</p>
@@ -1378,7 +1423,6 @@ export default function NovoContrato() {
                       </div>
                     )}
                   </div>
-
                   {/* Envio */}
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Enviar boleto por</p>
@@ -1403,16 +1447,42 @@ export default function NovoContrato() {
                       </label>
                     </div>
                   </div>
+                  </>
+                  )}
 
                   {/* Info */}
-                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
-                    <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-blue-600 dark:text-blue-500">
-                      Boletos emitidos automaticamente pelo <strong>Asaas</strong> a cada vencimento com as configurações acima.
-                    </p>
-                  </div>
+                  {emissao === "propria" ? (
+                    <div className="flex items-start gap-2 p-3 bg-muted/50 border rounded-lg">
+                      <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground">
+                        Você é responsável por gerar e controlar este boleto fora do sistema. Os dados acima ficam
+                        registrados no contrato como referência.
+                      </p>
+                    </div>
+                  ) : !hasActiveAsaasAccount ? (
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-950/30 dark:border-amber-800">
+                      <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="space-y-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-500">
+                          Você ainda não tem uma subconta Asaas configurada. Configure em Configurações → Configuração
+                          de Boleto Asaas antes de emitir cobranças automáticas.
+                        </p>
+                        <Button type="button" size="sm" variant="outline" onClick={() => navigate("/settings")}>
+                          Ir para Configurações
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
+                      <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-600 dark:text-blue-500">
+                        Boletos emitidos automaticamente pelo <strong>Asaas</strong> a cada vencimento com as configurações acima.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+                );
+              })()}
 
               <div className="p-3 bg-muted/50 rounded-lg text-sm">
                 <p className="text-muted-foreground">
