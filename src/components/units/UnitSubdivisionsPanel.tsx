@@ -273,7 +273,29 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                       {getStatusLabel(item.status)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
+                    {subdivisionLeases[item.id] ? (
+                      <Badge
+                        variant={
+                          LEASE_STATUS_LABELS[subdivisionLeases[item.id].status]?.variant ?? 'outline'
+                        }
+                      >
+                        {LEASE_STATUS_LABELS[subdivisionLeases[item.id].status]?.label ??
+                          subdivisionLeases[item.id].status}
+                      </Badge>
+                    ) : (
+                      <div className="flex flex-col">
+                        <span className="text-xs text-muted-foreground">Sem contrato</span>
+                        <Link
+                          to={`/gestao/contratos/novo?unitId=${unitId}`}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Criar contrato
+                        </Link>
+                      </div>
+                    )}
+                  </TableCell>
+
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
