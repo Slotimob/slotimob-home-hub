@@ -508,6 +508,7 @@ export default function NovoContrato() {
 
       const leaseData = {
         unit_id: effectiveUnitId,
+        unit_subdivision_id: formData.unit_subdivision_id || null,
         tenant_contact_id: formData.tenant_contact_id,
         owner_contact_id: ownerContactId || undefined,
         rent_amount: formData.rent_amount,
