@@ -143,7 +143,7 @@ export const PropertyDocuments = ({ propertyId, userId }: PropertyDocumentsProps
     setUploading(true);
     try {
       const timestamp = Date.now();
-      const filePath = `${userId}/${propertyId}/${timestamp}-${file.name}`;
+      const filePath = `${userId}/${propertyId}/${timestamp}-${sanitizeStorageFileName(file.name)}`;
 
       const { error: uploadError } = await supabase.storage
         .from('property-documents')
