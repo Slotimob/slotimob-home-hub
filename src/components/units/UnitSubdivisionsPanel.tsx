@@ -292,6 +292,25 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
               />
             </div>
 
+            {(remainingArea != null || remainingRent != null) && (
+              <div className="space-y-1 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+                {remainingArea != null && (
+                  <p>
+                    Área restante:{' '}
+                    <span className="font-medium text-foreground">{remainingArea.toLocaleString('pt-BR')} m²</span>{' '}
+                    de {totalArea?.toLocaleString('pt-BR')} m² total
+                  </p>
+                )}
+                {remainingRent != null && (
+                  <p>
+                    Aluguel restante:{' '}
+                    <span className="font-medium text-foreground">{formatCurrencyBRL(remainingRent)}</span> de{' '}
+                    {formatCurrencyBRL(totalRent ?? 0)} total
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="subdivision-area">Área (m²)</Label>
@@ -302,17 +321,31 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                   value={form.area}
                   onChange={(e) => setForm({ ...form, area: e.target.value })}
                   placeholder="0,00"
+                  className={areaExcess > 0 ? 'border-amber-500 focus-visible:ring-amber-500' : undefined}
                 />
+                {areaExcess > 0 && (
+                  <p className="text-xs text-amber-600">
+                    Excede o saldo em {areaExcess.toLocaleString('pt-BR')} m²
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="subdivision-rent">Valor do aluguel</Label>
-                <CurrencyInput
-                  id="subdivision-rent"
-                  value={form.rent_price}
-                  onChange={(value) => setForm({ ...form, rent_price: value })}
-                />
+                <div className={rentExcess > 0 ? 'rounded-md ring-1 ring-amber-500' : undefined}>
+                  <CurrencyInput
+                    id="subdivision-rent"
+                    value={form.rent_price}
+                    onChange={(value) => setForm({ ...form, rent_price: value })}
+                  />
+                </div>
+                {rentExcess > 0 && (
+                  <p className="text-xs text-amber-600">
+                    Excede o saldo em {formatCurrencyBRL(rentExcess)}
+                  </p>
+                )}
               </div>
             </div>
+
 
             <div className="space-y-2">
               <Label>Inquilino</Label>
