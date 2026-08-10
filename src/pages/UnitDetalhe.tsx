@@ -586,6 +586,13 @@ export default function UnitDetalhe() {
         <TabsContent value="tenants" className="mt-4">
           <TenantHistoryPanel unitId={unit.id} />
         </TabsContent>
+
+        {/* Frações */}
+        {showSubdivisionsTab && (
+          <TabsContent value="subdivisions" className="mt-4">
+            <UnitSubdivisionsPanel unitId={unit.id} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
