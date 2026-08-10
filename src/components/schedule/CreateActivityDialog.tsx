@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { ACTIVITY_TYPES } from './ActivityPalette';
 import { AgentSelector } from '@/components/shared/AgentSelector';
+import { UnitSelector, UnitOption } from '@/components/units/UnitSelector';
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -40,6 +41,7 @@ export function CreateActivityDialog({
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [duration, setDuration] = useState('30');
   const [assignedUserId, setAssignedUserId] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<UnitOption | null>(null);
 
   const { data: leads } = useQuery({
     queryKey: ['leads-for-activity', user?.id],
@@ -80,6 +82,8 @@ export function CreateActivityDialog({
         duration_minutes: parseInt(duration),
         lead_id: selectedLeadId && selectedLeadId !== 'none' ? selectedLeadId : null,
         assigned_user_id: assignedUserId || user?.id || null,
+        unit_id: selectedUnit?.id ?? null,
+        property_id: selectedUnit && !selectedUnit.is_standalone ? selectedUnit.property_id ?? null : null,
       });
 
       if (error) throw error;
@@ -94,6 +98,7 @@ export function CreateActivityDialog({
       setTitle('');
       setDescription('');
       setSelectedLeadId('');
+      setSelectedUnit(null);
     } catch (error: any) {
       toast({
         title: 'Erro ao criar atividade',
@@ -154,6 +159,15 @@ export function CreateActivityDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Imóvel/Unidade vinculado (opcional)</Label>
+            <UnitSelector
+              value={selectedUnit?.id ?? null}
+              onChange={setSelectedUnit}
+              placeholder="Nenhum imóvel vinculado"
+            />
           </div>
 
           <div className="space-y-2">
