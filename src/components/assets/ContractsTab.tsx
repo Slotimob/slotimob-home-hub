@@ -501,8 +501,9 @@ export function ContractsTab() {
   };
 
   // Handle contract generator
-  const handleGenerateContract = (unitId: string) => {
+  const handleGenerateContract = (unitId: string, leaseId?: string) => {
     setGeneratorUnitId(unitId);
+    setGeneratorLeaseId(leaseId ?? null);
     setContractGeneratorOpen(true);
   };
 

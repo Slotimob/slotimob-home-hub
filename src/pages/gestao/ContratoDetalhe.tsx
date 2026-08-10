@@ -1357,7 +1357,7 @@ export default function ContratoDetalhe() {
           }
         }}
       />
-      <ContractGeneratorDialog open={showContractDialog} onOpenChange={setShowContractDialog} unitId={lease.unit_id} />
+      <ContractGeneratorDialog open={showContractDialog} onOpenChange={setShowContractDialog} unitId={lease.unit_id} leaseId={lease.id} />
       <EditStartDateDialog
         open={showEditStartDateDialog}
         onOpenChange={setShowEditStartDateDialog}
