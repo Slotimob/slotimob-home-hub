@@ -163,7 +163,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button onClick={() => navigate(`/gestao/contratos/novo?editLeaseId=${lease.id}`)}>
+              <Button onClick={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}>
                 <FileSignature className="h-4 w-4 mr-2" />
                 Finalizar Configuração do Contrato
               </Button>
