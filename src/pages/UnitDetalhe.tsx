@@ -16,6 +16,7 @@ import {
   Copy,
   Building2,
   Users,
+  Layers,
 } from 'lucide-react';
 
 import { AppLayout } from '@/components/AppLayout';
