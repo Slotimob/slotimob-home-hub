@@ -514,7 +514,7 @@ export default function UnitDetalhe() {
 
         {/* Info */}
         <TabsContent value="info" className="mt-4">
-          <form onSubmit={canEdit ? handleSubmit : (e) => e.preventDefault()} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); if (canEdit) saveUnit(); }} className="space-y-4">
             <fieldset disabled={!canEdit}>
               <UnitFormFields
                 formData={formData}
