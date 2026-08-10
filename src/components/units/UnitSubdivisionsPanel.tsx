@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { LEASE_STATUS_LABELS } from '@/lib/lease-status';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Pencil, Trash2, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -184,6 +186,29 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
   const rentExcess =
     remainingRent != null && currentRent > remainingRent ? currentRent - remainingRent : 0;
 
+  const subdivisionIds = useMemo(() => subdivisions.map((s) => s.id), [subdivisions]);
+
+  const { data: subdivisionLeases = {} } = useQuery({
+    queryKey: ['subdivision-leases', unitId, subdivisionIds],
+    enabled: subdivisionIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leases')
+        .select('id, unit_subdivision_id, status, created_at')
+        .in('unit_subdivision_id', subdivisionIds)
+        .in('status', ['active', 'pending'])
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const map: Record<string, { id: string; status: string }> = {};
+      (data || []).forEach((lease: any) => {
+        if (lease.unit_subdivision_id && !map[lease.unit_subdivision_id]) {
+          map[lease.unit_subdivision_id] = { id: lease.id, status: lease.status };
+        }
+      });
+      return map;
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -228,6 +253,8 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                 <TableHead>Aluguel</TableHead>
                 <TableHead>Inquilino</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Contrato</TableHead>
+
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -248,7 +275,30 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                       {getStatusLabel(item.status)}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    {subdivisionLeases[item.id] ? (
+                      <Badge
+                        variant={
+                          LEASE_STATUS_LABELS[subdivisionLeases[item.id].status]?.variant ?? 'outline'
+                        }
+                      >
+                        {LEASE_STATUS_LABELS[subdivisionLeases[item.id].status]?.label ??
+                          subdivisionLeases[item.id].status}
+                      </Badge>
+                    ) : (
+                      <div className="flex flex-col">
+                        <span className="text-xs text-muted-foreground">Sem contrato</span>
+                        <Link
+                          to={`/gestao/contratos/novo?unitId=${unitId}`}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Criar contrato
+                        </Link>
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
+
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
