@@ -16,6 +16,7 @@ import {
   Copy,
   Building2,
   Users,
+  Layers,
 } from 'lucide-react';
 
 import { AppLayout } from '@/components/AppLayout';
@@ -43,6 +44,7 @@ import { UnitGalleryUpload } from '@/components/units/UnitGalleryUpload';
 import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
 import { UnitContractTab } from '@/components/units/UnitContractTab';
+import { UnitSubdivisionsPanel } from '@/components/units/UnitSubdivisionsPanel';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -153,6 +155,8 @@ export default function UnitDetalhe() {
   });
 
   const isStandalone = unit?.is_standalone ?? false;
+  const showSubdivisionsTab = isStandalone && !!unit?.has_subdivisions;
+  const tabsCount = showSubdivisionsTab ? 8 : 7;
   const moduleKey = isStandalone ? 'assets_standalone' : 'assets_units';
   const canEdit = isPermOwner || hasPermission(moduleKey, 'edit');
   const canDelete = isPermOwner || hasPermission(moduleKey, 'delete');
@@ -462,7 +466,7 @@ export default function UnitDetalhe() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className={cn('grid w-full', tabsCount === 8 ? 'grid-cols-8' : 'grid-cols-7')}>
           <TabsTrigger value="info" className="text-xs sm:text-sm">
             <Info className="h-4 w-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Informações</span>
@@ -498,6 +502,13 @@ export default function UnitDetalhe() {
             <span className="hidden sm:inline">Inquilinos</span>
             <span className="sm:hidden">Inq.</span>
           </TabsTrigger>
+          {showSubdivisionsTab && (
+            <TabsTrigger value="subdivisions" className="text-xs sm:text-sm">
+              <Layers className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Frações</span>
+              <span className="sm:hidden">Fraç.</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Info */}
@@ -575,6 +586,13 @@ export default function UnitDetalhe() {
         <TabsContent value="tenants" className="mt-4">
           <TenantHistoryPanel unitId={unit.id} />
         </TabsContent>
+
+        {/* Frações */}
+        {showSubdivisionsTab && (
+          <TabsContent value="subdivisions" className="mt-4">
+            <UnitSubdivisionsPanel unitId={unit.id} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
