@@ -1,8 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { format, differenceInMonths } from 'date-fns';
-import { User, Phone, Mail, CalendarDays, Users } from 'lucide-react';
+import { User, Phone, Mail, CalendarDays, Users, FileSignature, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TenantHistoryRow {
@@ -92,6 +98,40 @@ export const TenantHistoryPanel = ({ unitId }: { unitId: string }) => {
                   <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 border-0 text-[10px]">
                     Atual
                   </Badge>
+                )}
+                {row.source === 'lease' && (
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="text-[10px] gap-1 cursor-help">
+                          <FileSignature className="h-3 w-3" />
+                          Via Contrato
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p className="max-w-xs text-xs">
+                          Data de entrada herdada do contrato de locação
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {row.source === 'manual' && (
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="text-[10px] gap-1 cursor-help">
+                          <Pencil className="h-3 w-3" />
+                          Manual
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p className="max-w-xs text-xs">
+                          Data de entrada registrada na data em que o campo foi editado, sem contrato vinculado
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
 
