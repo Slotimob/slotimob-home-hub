@@ -39,6 +39,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useCreateLease, useUpdateLease, type GuarantorData, type PaymentInfo } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
+import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
 import { supabase } from "@/integrations/supabase/client";
 
 type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "billing" | "compliance";
