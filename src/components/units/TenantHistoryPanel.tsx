@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, differenceInMonths } from 'date-fns';
-import { User, Phone, Mail, CalendarDays, Users, FileSignature, Pencil } from 'lucide-react';
+import { User, Phone, Mail, CalendarDays, Users, FileSignature, Pencil, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { RegisterTenantHistoryDialog } from '@/components/units/RegisterTenantHistoryDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Tooltip,
@@ -40,6 +43,7 @@ function formatDuration(from: string | null, to: string | null): string {
 }
 
 export const TenantHistoryPanel = ({ unitId }: { unitId: string }) => {
+  const [registerOpen, setRegisterOpen] = useState(false);
   const { data: history = [], isLoading } = useQuery<TenantHistoryRow[]>({
     queryKey: ['unit-tenant-history', unitId],
     queryFn: async () => {
@@ -55,29 +59,54 @@ export const TenantHistoryPanel = ({ unitId }: { unitId: string }) => {
     staleTime: 30_000,
   });
 
+  const header = (
+    <div className="flex items-center justify-between gap-2">
+      <p className="text-sm font-medium">Histórico de Inquilinos</p>
+      <Button size="sm" onClick={() => setRegisterOpen(true)}>
+        <Plus className="h-4 w-4 mr-1" />
+        Registrar Entrada de Inquilino
+      </Button>
+    </div>
+  );
+
+  const dialog = (
+    <RegisterTenantHistoryDialog
+      unitId={unitId}
+      open={registerOpen}
+      onOpenChange={setRegisterOpen}
+    />
+  );
+
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
+        {header}
         {[0, 1, 2].map(i => (
           <Skeleton key={i} className="h-16 w-full rounded-lg" />
         ))}
+        {dialog}
       </div>
     );
   }
 
   if (history.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Users className="h-10 w-10 text-muted-foreground/30 mb-2" />
-        <p className="text-sm text-muted-foreground">
-          Nenhum histórico de inquilino registrado para esta unidade.
-        </p>
+      <div className="space-y-3">
+        {header}
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Users className="h-10 w-10 text-muted-foreground/30 mb-2" />
+          <p className="text-sm text-muted-foreground">
+            Nenhum histórico de inquilino registrado para esta unidade.
+          </p>
+        </div>
+        {dialog}
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {header}
       {history.map(row => {
         const isCurrent = !row.moved_out_at;
         return (
@@ -170,6 +199,7 @@ export const TenantHistoryPanel = ({ unitId }: { unitId: string }) => {
           </div>
         );
       })}
+      {dialog}
     </div>
   );
 };
