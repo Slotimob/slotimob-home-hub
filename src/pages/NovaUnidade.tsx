@@ -48,8 +48,14 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const effectivePropertyId = standalone ? null : (propertyId || formData.property_id || null);
-    const ok = await createUnit(formData, effectivePropertyId);
-    if (ok) navigate(backTo);
+    const created = await createUnit(formData, effectivePropertyId);
+    if (!created) return;
+
+    if (created.intent_type !== 'sale' && created.tenant_contact_id) {
+      navigate('/gestao/contratos/novo?unitId=' + created.id);
+    } else {
+      navigate(backTo);
+    }
   };
 
   const title = standalone ? 'Novo Imóvel Avulso' : 'Nova Unidade';
