@@ -106,10 +106,14 @@ function fmtCurrency(v: number | null | undefined): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function parseCurrency(s: string): number | null {
-  const cleaned = s.replace(/[^\d,.-]/g, '').replace(',', '.');
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
+/**
+ * Converts the raw numeric string produced by CurrencyInput ("1350000" / "1350.5")
+ * into a number. Returns null for empty/invalid input.
+ */
+function toNumber(s: string | null | undefined): number | null {
+  if (s == null || s.trim() === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
 }
 
 interface AssetFinancialPanelProps {
@@ -178,12 +182,6 @@ function AcquisitionBlock({
     data?.acquisition_notes,
   ]);
 
-  // CurrencyInput already returns a raw numeric string ("1350000" / "1350.5")
-  const toNumber = (s: string): number | null => {
-    if (s == null || s.trim() === '') return null;
-    const n = Number(s);
-    return Number.isFinite(n) ? n : null;
-  };
 
   const handleSave = async () => {
     try {
