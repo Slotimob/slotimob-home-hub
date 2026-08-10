@@ -249,6 +249,30 @@ export function useUnitFinancialTransactions(
   });
 }
 
+/**
+ * Returns the set of financial_transaction_ids that are already registered
+ * as an asset improvement (used to prevent duplicating a "marcar como benfeitoria").
+ */
+export function useTransactionsWithImprovement(transactionIds: string[]) {
+  const ids = Array.from(new Set(transactionIds.filter(Boolean)));
+  return useQuery({
+    queryKey: ['transaction-improvements', ids.slice().sort().join(',')],
+    queryFn: async () => {
+      if (ids.length === 0) return new Set<string>();
+      const { data, error } = await supabase
+        .from('asset_improvements')
+        .select('financial_transaction_id')
+        .in('financial_transaction_id', ids);
+      if (error) throw error;
+      return new Set<string>(
+        (data || []).map((r: any) => r.financial_transaction_id).filter(Boolean)
+      );
+    },
+    enabled: ids.length > 0,
+  });
+}
+
+
 export function useReconcileImprovement() {
   const queryClient = useQueryClient();
   return useMutation({
