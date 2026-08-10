@@ -251,8 +251,7 @@ export default function UnitDetalhe() {
     setShowDeleteDialog(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveUnit = async () => {
     if (!unit) return;
 
     if (formData.intent_type === 'sale' || formData.intent_type === 'both') {
