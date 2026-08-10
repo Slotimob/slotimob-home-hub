@@ -84,6 +84,7 @@ export interface Lease {
   id: string;
   broker_id: string;
   unit_id: string;
+  unit_subdivision_id?: string | null;
   tenant_contact_id: string;
   owner_contact_id: string | null;
   rent_amount: number;
