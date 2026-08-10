@@ -295,6 +295,7 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                       </div>
                     )}
                   </TableCell>
+                  <TableCell className="text-right">
 
                     <div className="flex justify-end gap-1">
                       <Button
