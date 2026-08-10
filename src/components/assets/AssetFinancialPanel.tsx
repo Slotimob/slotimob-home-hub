@@ -821,57 +821,17 @@ function ImprovementsBlock({
                             Não vinculado
                           </Badge>
                           {!disabled && (
-                            expenseTransactions.length === 0 ? (
-                              <UITooltipProvider>
-                                <UITooltip>
-                                  <UITooltipTrigger asChild>
-                                    <span>
-                                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" disabled>
-                                        <Link2 className="h-3.5 w-3.5 mr-1" />
-                                        Vincular Lançamento
-                                      </Button>
-                                    </span>
-                                  </UITooltipTrigger>
-                                  <UITooltipContent>
-                                    Nenhum lançamento de despesa encontrado para este imóvel em Financeiro &gt; Lançamentos. Este vínculo serve para confirmar que a benfeitoria já foi lançada financeiramente — não é conciliação bancária (extrato/OFX).
-                                  </UITooltipContent>
-                                </UITooltip>
-                              </UITooltipProvider>
-                            ) : (
-                              <Popover
-                                open={reconcileOpenFor === imp.id}
-                                onOpenChange={(o) => setReconcileOpenFor(o ? imp.id : null)}
-                              >
-                                <PopoverTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                    <Link2 className="h-3.5 w-3.5 mr-1" />
-                                    Vincular Lançamento
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent align="end" className="w-80 p-0">
-                                  <div className="px-3 py-2 border-b text-xs font-medium text-muted-foreground">
-                                    Lançamentos de despesa deste imóvel
-                                  </div>
-                                  <div className="max-h-64 overflow-y-auto">
-                                    {expenseTransactions.map((tx) => (
-                                      <button
-                                        key={tx.id}
-                                        type="button"
-                                        className="w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors"
-                                        onClick={() => handleReconcile(imp, tx.id)}
-                                      >
-                                        <div className="text-sm truncate">{tx.description || 'Sem descrição'}</div>
-                                        <div className="text-xs text-muted-foreground">
-                                          {fmtCurrency(tx.amount)} ·{' '}
-                                          {format(new Date(tx.transaction_date), 'dd/MM/yyyy')}
-                                        </div>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            )
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => setReconcileOpenFor(imp.id)}
+                            >
+                              <Link2 className="h-3.5 w-3.5 mr-1" />
+                              Vincular Lançamento
+                            </Button>
                           )}
+
                         </div>
                       )}
                     </td>
