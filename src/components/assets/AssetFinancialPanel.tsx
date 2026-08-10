@@ -649,12 +649,12 @@ function ImprovementsBlock({
         financial_transaction_id: financialTransactionId,
       });
       toast({
-        title: financialTransactionId ? 'Benfeitoria conciliada' : 'Vínculo removido',
+        title: financialTransactionId ? 'Lançamento vinculado' : 'Vínculo removido',
         duration: 1000,
       });
       setReconcileOpenFor(null);
     } catch {
-      toast({ title: 'Erro ao conciliar', variant: 'destructive', duration: 1000 });
+      toast({ title: 'Erro ao vincular lançamento', variant: 'destructive', duration: 1000 });
     }
   };
 
@@ -767,7 +767,7 @@ function ImprovementsBlock({
                   <th className="pb-2 pr-3 font-medium hidden sm:table-cell">Descrição</th>
                   <th className="pb-2 pr-3 font-medium text-right">Custo</th>
                   <th className="pb-2 pr-3 font-medium text-center hidden sm:table-cell">Afeta VM?</th>
-                  <th className="pb-2 pr-3 font-medium hidden md:table-cell">Conciliação</th>
+                  <th className="pb-2 pr-3 font-medium">Vínculo Financeiro</th>
                   {!disabled && <th className="pb-2 font-medium text-right">Ações</th>}
                 </tr>
               </thead>
@@ -781,21 +781,6 @@ function ImprovementsBlock({
                       <Badge variant="secondary" className="text-xs font-normal">
                         {IMPROVEMENT_TYPE_LABELS[imp.improvement_type] || imp.improvement_type}
                       </Badge>
-                      {/* Status de conciliação no mobile (coluna dedicada fica oculta) */}
-                      <div className="md:hidden mt-1">
-                        {imp.financial_transaction_id ? (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] font-normal border-emerald-500/40 text-emerald-600 bg-emerald-500/10"
-                          >
-                            Conciliado
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-                            Não conciliado
-                          </Badge>
-                        )}
-                      </div>
                     </td>
                     <td className="py-2 pr-3 hidden sm:table-cell max-w-[200px] truncate">
                       {imp.description}
@@ -806,14 +791,14 @@ function ImprovementsBlock({
                     <td className="py-2 pr-3 text-center hidden sm:table-cell">
                       {imp.affects_market_value ? '✓' : '—'}
                     </td>
-                    <td className="py-2 pr-3 hidden md:table-cell">
+                    <td className="py-2 pr-3">
                       {imp.financial_transaction_id ? (
                         <div className="flex items-center gap-1.5 min-w-0">
                           <Badge
                             variant="outline"
                             className="text-xs font-normal border-emerald-500/40 text-emerald-600 bg-emerald-500/10 whitespace-nowrap"
                           >
-                            Conciliado
+                            Vinculado
                           </Badge>
                           <span className="text-xs text-muted-foreground truncate max-w-[140px]">
                             {findTransaction(imp.financial_transaction_id)?.description || 'Lançamento vinculado'}
@@ -833,7 +818,7 @@ function ImprovementsBlock({
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <Badge variant="outline" className="text-xs font-normal text-muted-foreground whitespace-nowrap">
-                            Não conciliado
+                            Não vinculado
                           </Badge>
                           {!disabled && (
                             expenseTransactions.length === 0 ? (
@@ -843,12 +828,12 @@ function ImprovementsBlock({
                                     <span>
                                       <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" disabled>
                                         <Link2 className="h-3.5 w-3.5 mr-1" />
-                                        Conciliar
+                                        Vincular Lançamento
                                       </Button>
                                     </span>
                                   </UITooltipTrigger>
                                   <UITooltipContent>
-                                    Nenhum lançamento de despesa encontrado para este imóvel em Financeiro &gt; Lançamentos
+                                    Nenhum lançamento de despesa encontrado para este imóvel em Financeiro &gt; Lançamentos. Este vínculo serve para confirmar que a benfeitoria já foi lançada financeiramente — não é conciliação bancária (extrato/OFX).
                                   </UITooltipContent>
                                 </UITooltip>
                               </UITooltipProvider>
@@ -860,7 +845,7 @@ function ImprovementsBlock({
                                 <PopoverTrigger asChild>
                                   <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
                                     <Link2 className="h-3.5 w-3.5 mr-1" />
-                                    Conciliar
+                                    Vincular Lançamento
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent align="end" className="w-80 p-0">
