@@ -145,6 +145,45 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const { data: parentUnit } = useQuery({
+    queryKey: ['unit-subdivision-reference', unitId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('units')
+        .select('area_total, area, rent_price')
+        .eq('id', unitId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { area_total: number | null; area: number | null; rent_price: number | null } | null;
+    },
+    enabled: !!unitId,
+  });
+
+  const totalArea = parentUnit?.area_total ?? parentUnit?.area ?? null;
+  const totalRent = parentUnit?.rent_price ?? null;
+
+  const { usedArea, usedRent } = useMemo(() => {
+    return subdivisions.reduce(
+      (acc, item) => {
+        if (editing && item.id === editing.id) return acc;
+        acc.usedArea += Number(item.area) || 0;
+        acc.usedRent += Number(item.rent_price) || 0;
+        return acc;
+      },
+      { usedArea: 0, usedRent: 0 }
+    );
+  }, [subdivisions, editing]);
+
+  const remainingArea = totalArea != null ? Math.max(totalArea - usedArea, 0) : null;
+  const remainingRent = totalRent != null ? Math.max(totalRent - usedRent, 0) : null;
+
+  const currentArea = form.area ? parseFloat(form.area) : 0;
+  const currentRent = form.rent_price ? parseFloat(form.rent_price) : 0;
+  const areaExcess =
+    remainingArea != null && currentArea > remainingArea ? currentArea - remainingArea : 0;
+  const rentExcess =
+    remainingRent != null && currentRent > remainingRent ? currentRent - remainingRent : 0;
+
   if (isLoading) {
     return (
       <div className="space-y-3">
