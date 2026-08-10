@@ -1,64 +1,57 @@
-# Diagnóstico: duplicação de contratos + aba Inquilinos por contrato
+# Fracionamento de imóvel avulso + contratos — diagnóstico e plano
 
-## PEDIDO 1 — Duplicação do lease pending (causa confirmada)
+## Diagnóstico
 
-Causa raiz: **incompatibilidade de nome do query param**.
+### Pedido 1 — vínculo formal contrato ↔ fração
 
-- `src/components/units/UnitContractTab.tsx:166` navega para `/gestao/contratos/novo?editLeaseId=${lease.id}`
-- `src/pages/gestao/NovoContrato.tsx:115` lê `searchParams.get("edit")` — chave diferente
-- Logo `isEditMode` (`NovoContrato.tsx:163`) é sempre `false` nesse fluxo; a query de edição (`:166-180`) nunca roda
-- No submit (`NovoContrato.tsx:546-567`), cai sempre no `else` → `useCreateLease` (INSERT, `src/hooks/useLeases.ts:265-320`) em vez de `useUpdateLease` (`useLeases.ts:367+`)
+**Schema (confirmado via information_schema):**
 
-O trigger **não** é culpado: `sync_pending_lease_from_unit` (verificado no banco) só insere quando a unit **não tem nenhum lease** (`SELECT EXISTS ... FROM leases WHERE unit_id = NEW.id`), portanto é idempotente e não gera um 2º pending.
+- `public.leases` (35 colunas): `id uuid`, `broker_id uuid NOT NULL`, `unit_id uuid NOT NULL`, `tenant_contact_id uuid NOT NULL`, `owner_contact_id uuid`, `rent_amount numeric NOT NULL`, `admin_fee_percentage numeric`, `due_day int`, `deposit_amount numeric`, `start_date date NOT NULL`, `end_date date`, `status text NOT NULL default 'active'`, `cib text`, `is_dimob_deductible bool`, `billing_automation jsonb`, `billing_logs jsonb`, `notes text`, `metadata jsonb`, `created_at/updated_at timestamptz`, `adjustment_index text`, `next_adjustment_date date`, `contract_status text`, `signature_status text`, `signed_contract_path text`, `termination_date date`, `termination_reason text`, `guarantee_type text`, `guarantor_data jsonb`, `payment_info jsonb`, `administration_fee_value numeric`, `gross_rent_value numeric`, `is_dimob_eligible bool`, `needs_tenant_review bool NOT NULL`, `tenant_review_note text`.
+  **Não existe `unit_subdivision_id` nem `property_id`.**
+- `public.unit_subdivisions`: `id uuid`, `unit_id uuid NOT NULL`, `broker_id uuid NOT NULL`, `label text NOT NULL`, `area numeric`, `rent_price numeric`, `tenant_contact_id uuid`, `status unit_status NOT NULL default 'available'`, `notes text`, `created_at/updated_at timestamptz`.
 
-Por que o usuário só vê o problema na listagem: `useLeaseByUnitId` (`useLeases.ts:219-239`) filtra `status in (active,pending)`, ordena por `created_at desc` e faz `limit(1)`, então a aba Contrato mostra só o mais novo; o pending órfão sobrevive silenciosamente e aparece em `/gestao/contratos`.
+FK a criar: `leases.unit_subdivision_id uuid NULL REFERENCES public.unit_subdivisions(id) ON DELETE SET NULL` (nullable — a esmagadora maioria dos contratos é do imóvel inteiro).
 
-Dados atuais: apenas 2 units com mais de 1 lease; 1 delas com exatamente o padrão do bug (1 pending + 1 novo, 2 inquilinos distintos).
+**Wizard `src/pages/gestao/NovoContrato.tsx`** (1669 linhas): steps definidos em `STEPS` (linha 46): `unit` → `tenant` → `financial` → `guarantee` → `payment` → `billing` → `compliance`. Sim, existe step "Financeiro" (render em `NovoContrato.tsx:820`, começa com "Valor do Aluguel" + "Dia de Vencimento"). Step `unit` renderiza em `:674` (lista de imóveis com gestão ativa). Unidade efetiva resolvida em `:180` (`effectiveUnitId = editLease?.unit_id || unitIdParam || selectedUnitId`).
+Melhor lugar para o select "Fração": **topo do step `financial`** (`:821`), acima de "Valor do Aluguel", condicionado a `has_subdivisions === true` da unit efetiva — assim a escolha da fração pode auto-preencher `rent_amount` com o `rent_price` da fração. (No step `unit` não caberia bem, porque quando se chega via `?unitId=` o wizard já pula direto para `tenant` — `:120`.)
 
-### Correção proposta (baixo risco)
-1. Aceitar ambos os params em `NovoContrato.tsx:115`: `searchParams.get("edit") ?? searchParams.get("editLeaseId")`.
-2. Padronizar o link em `UnitContractTab.tsx:166` para `?edit=` (mantendo a leitura dupla por compatibilidade com links antigos/salvos).
-3. Limpeza dos pending órfãos existentes: migração pontual que encerra (`status='cancelled'`) leases `pending` de units que já possuem outro lease mais recente — apenas as 2 linhas identificadas. **Confirmar antes de executar.**
+**PDF do contrato:** `src/utils/legalContractPdfGenerator.ts`, função `generateLegalContractPDF` (`:234`). A Cláusula Primeira é montada em `:592-596`: `addClauseHeader('PRIMEIRA','DO OBJETO')` e `addSubClause('1.1', ...)` com `enderecoCompleto` + matrícula + CIB. Ponto exato para inserir a fração: dentro do texto de 1.1 (ou uma sub-cláusula 1.2 nova) quando o lease tiver fração.
+Existe um segundo caminho, em markdown: `src/utils/legalTemplates.ts:444-446` (1.1 objeto, 1.2 descrição registral, 1.3 características físicas com `areaTotal`/`areaUtil`) — mesma informação precisa ser espelhada lá para não divergir.
 
-## PEDIDO 2 — Aba Inquilinos como histórico de contratos
+**Onde mais a fração aparece no fluxo:** `src/components/assets/ContractGeneratorDialog.tsx:173` monta o objeto `imovel` (endereco/bairro/cidade/estado/cep/matricula/cib) — é aqui que os campos da fração precisam entrar (novos campos opcionais `fracaoLabel`/`fracaoArea` no tipo `LegalContractData.imovel`, `legalContractPdfGenerator.ts:187`). O dialog é usado por `ContratoDetalhe.tsx`, `AlugueiDetalhe.tsx`, `ContractsTab.tsx`, `AssetDetailDialog.tsx`, `LeaseManagementSheet.tsx` — todos herdam a mudança sem edição.
 
-### Schema
-`leases` tem: `unit_id`, `tenant_contact_id`, `owner_contact_id`, `rent_amount`, `start_date`, `end_date`, `status`, `contract_status`, `termination_date`, entre outras. **Não existe `unit_subdivision_id` nem `property_id`** — o property é resolvido via `units.property_id`. Join com `contacts` disponível pela FK `leases_tenant_contact_id_fkey` (mesmo padrão já usado em `ContractsTab.tsx`).
+### Pedido 2 — UX do popup "Nova Fração" + coluna Contrato
 
-`unit_subdivisions` tem `tenant_contact_id` próprio, **sem qualquer ligação com `leases`**. Hoje existem três lugares paralelos guardando "quem é o inquilino": `units.tenant_contact_id`, `unit_subdivisions.tenant_contact_id` e `leases.tenant_contact_id`.
+- O popup é **inline** em `src/components/units/UnitSubdivisionsPanel.tsx` (não tem arquivo próprio): `Dialog` em `:237-329`. Campos: `label` (`:246`), `area` (Input number, `:258`), `rent_price` (`CurrencyInput`, `:268`), inquilino, status, notas. **Nenhuma validação cruzada** com área/aluguel do imóvel pai.
+- Campos do imóvel avulso: `src/components/units/UnitFormFields.tsx` — `area_total` (`:496`, "Área Total (m²)"), `area` (`:507`, "Área Útil (m²)"), `rent_price` (`:666`, "Preço de Locação (R$/mês)"). São colunas de `units`. Portanto "quanto resta" = `unit.area_total (ou area) − Σ subdivisions.area` e `unit.rent_price − Σ subdivisions.rent_price`.
+- Tabela de frações: `UnitSubdivisionsPanel.tsx:182-233`, colunas atuais **Label | Área (m²) | Aluguel | Inquilino | Status | Ações**. A coluna "Contrato" entra entre Status e Ações.
 
-Resposta ao item 8: sim — para imóvel fracionado, todos os leases ficam com o mesmo `unit_id` da unit pai e **não há como diferenciar a fração** hoje.
+### Pedido 3 — múltiplos leases + "Gerar Novo Contrato"
 
-### O que ficaria órfão
-- Leitura de `unit_tenant_history`: `src/components/units/TenantHistoryPanel.tsx:51-53` e `src/components/reports/ReportsAssetsSection.tsx:229-231` (este último **permanece**, não mexer)
-- Escrita: RPC `register_tenant_history_entry` chamada só em `src/components/units/RegisterTenantHistoryDialog.tsx:142`
-- `RegisterTenantHistoryDialog` só é importado por `TenantHistoryPanel.tsx:7,73`
+- `src/components/units/UnitContractTab.tsx` (211 linhas) usa `useLeaseByUnitId` (`src/hooks/useLeases.ts:219-244`): filtra `unit_id`, `status in ('active','pending')`, ordena por `created_at desc`, **`.limit(1).maybeSingle()`** → só o mais recente.
+- Decisão de render: `!lease` → estado vazio com "Criar Contrato" + "Vincular a Contrato Existente" (`:54-83`); `lease.status === 'pending'` → card âmbar "Contrato Pré-iniciado" com "Finalizar Configuração do Contrato" (`:107-161`); senão → card "Contrato Ativo" (`:162-208`).
+- Rota `/gestao/contratos/novo?unitId=<id>`: **funciona hoje**. `unitIdParam` é lido em `:112`, faz o wizard iniciar direto no step `tenant` (`:120`) e alimenta `effectiveUnitId` (`:180`) + query `unit-name` (`:183`). Ou seja, abrir só com `?unitId=` já deixa o usuário selecionando inquilino e seguindo — nada falta. (O wizard também aceita `?edit=`/`?editLeaseId=` e `?step=`.)
 
-Ou seja: removendo o botão da aba, o dialog e a RPC ficam sem call site na UI. A tabela e o trigger de auditoria continuam existindo (dados históricos preservados e ainda usados no relatório).
+## Plano de execução (fases, na ordem de dependência)
 
-### `units.tenant_contact_id` — não tocar
-Usado amplamente: `UnitFormFields.tsx:80,122,195,851`, `EditUnitDialog.tsx:90,143,312`, `UnitSelector.tsx`, `UnitMultiSelector.tsx:96`, `NovoContrato.tsx:192,292`, `ObligationsConfigForm.tsx:77-89`, `DimobStatusCard.tsx`, `ContactsUnified.tsx:247-269`, `CreateContactDialog.tsx:270,305`, `DimobReportTab.tsx:74,119`. O escopo fica restrito à aba Inquilinos.
+**Fase 1 — Migração (base de tudo)**
+`ALTER TABLE public.leases ADD COLUMN unit_subdivision_id uuid NULL REFERENCES public.unit_subdivisions(id) ON DELETE SET NULL;` + índice. Sem mudança de RLS (isolamento continua por `broker_id`).
 
-### Padrão a reaproveitar
-`src/components/assets/ContractsTab.tsx:290-330` (select com `tenant_contact:contacts!leases_tenant_contact_id_fkey(...)` + `unit:units!leases_unit_id_fkey(...)`) e o mapa `STATUS_LABELS` em `ContractsTab.tsx:101-107` — idêntico ao de `UnitContractTab.tsx:17-27`. Recomendo extrair esse mapa para um módulo compartilhado (`src/lib/lease-status.ts`) e consumi-lo nos três lugares.
+**Fase 2 — Wizard: campo "Fração"**
+Select no topo do step `financial` de `NovoContrato.tsx`, visível só quando a unit efetiva tem `has_subdivisions=true`; opções via `useUnitSubdivisions(effectiveUnitId)`; ao escolher, auto-preenche `rent_amount` com o `rent_price` da fração (editável). Persistir `unit_subdivision_id` no create e no update (`useLeases.ts`).
 
-### Nova aba Inquilinos (somente leitura)
-Reescrever `TenantHistoryPanel.tsx` para listar **contratos** da unidade (ou de todas as units filhas, quando for property):
-- Query: `leases` por `unit_id` (ou `unit_id in (units filhas)`), join com `contacts`, ordenada por `start_date desc`
-- Colunas por linha: inquilino, período (`start_date` → `end_date`, ou "em vigor"), `rent_amount` em BRL, badge de status
-- Múltiplos contratos ativos aparecem simultaneamente — resolve o caso do imóvel fracionado no nível de exibição
-- Remover o botão "Registrar Entrada de Inquilino" e o uso de `RegisterTenantHistoryDialog`
-- Estado vazio: orientar a criar contrato (link para `/gestao/contratos/novo?unitId=...`)
-- Opcional: seção colapsada "Histórico legado" lendo `unit_tenant_history`, para não esconder dados antigos
+**Fase 3 — Fração no contrato gerado**
+Campos opcionais `fracao` (label + área) em `LegalContractData.imovel`; preencher em `ContractGeneratorDialog.tsx:173`; renderizar na Cláusula Primeira (`legalContractPdfGenerator.ts:594`) e espelhar em `legalTemplates.ts:444`.
 
-## Recomendação de escopo
+**Fase 4 — UX do popup "Nova Fração"** (independente das fases 1-3, pode ir em paralelo)
+Mostrar no dialog os saldos "Área restante" e "Aluguel restante" (total do imóvel − soma das frações já cadastradas, excluindo a que está em edição), com aviso não-bloqueante quando o valor digitado ultrapassar o saldo.
 
-**Nesta rodada (seguro):**
-- Fix do param `edit`/`editLeaseId` + padronização do link
-- Aba Inquilinos convertida em leitura de contratos, com múltiplos ativos simultâneos
-- Extração do `STATUS_LABELS` compartilhado
-- (Sob confirmação) limpeza das 2 linhas pending órfãs
+**Fase 5 — Coluna "Contrato" na tabela de frações** (depende das fases 1-2)
+Nova coluna com badge de status do lease vinculado à fração (`LEASE_STATUS_LABELS` de `src/lib/lease-status.ts`), ou "Sem contrato" com atalho para `/gestao/contratos/novo?unitId=...`.
 
-**Próximo passo (fora desta rodada):**
-- Coluna `leases.unit_subdivision_id` + FK, para vincular formalmente contrato ↔ fração, exibir a fração na linha do histórico e permitir que o wizard escolha a fração
-- Unificar as três fontes de "inquilino atual" (`units`, `unit_subdivisions`, `leases`) — mudança estrutural com impacto em DIMOB, relatórios e formulários
+**Fase 6 — Aba Contrato com múltiplos leases** (depende da fase 1 para exibir a fração de cada linha; a listagem em si já pode ser feita antes)
+Novo hook `useLeasesByUnitId` (sem `limit(1)`) e reescrita de `UnitContractTab.tsx` para listar todos os contratos ativos/pendentes (cada um com inquilino, fração, valor, status, ação), mantendo o card âmbar por contrato pendente, mais um botão fixo "Gerar Novo Contrato" → `/gestao/contratos/novo?unitId=<id>`.
+
+## Observações
+- `units.tenant_contact_id` e `unit_subdivisions.tenant_contact_id` continuam intocados — o vínculo por fração passa a ser a fonte formal via lease, sem quebrar o que já lê esses campos.
+- Nada aqui altera o trigger `sync_pending_lease_from_unit`; o lease pendente que ele cria fica sem fração (`NULL`), comportamento correto para imóvel inteiro.
