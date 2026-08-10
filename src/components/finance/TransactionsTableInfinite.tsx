@@ -423,7 +423,12 @@ export function TransactionsTableInfinite({
               isReconciling={reconcilingId === transaction.id}
               isSendingBilling={billingTransactionId === transaction.id && isSendingBilling}
               isEligibleForBilling={isEligibleForBilling(transaction)}
+              onMarkAsImprovement={
+                canMarkAsImprovement(transaction) ? setImprovementTransaction : undefined
+              }
+              isAlreadyImprovement={isAlreadyImprovement(transaction)}
             />
+
           ))}
         </div>
 
