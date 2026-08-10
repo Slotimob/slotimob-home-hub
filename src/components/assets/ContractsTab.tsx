@@ -977,6 +977,17 @@ export function ContractsTab() {
                           </TableCell>
                           <TableCell className="text-center">
                             {(() => {
+                              if (lease.status === "pending") {
+                                return (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] whitespace-nowrap border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950/30"
+                                  >
+                                    <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                    Pendente de Configuração
+                                  </Badge>
+                                );
+                              }
                               const awaitingSignature =
                                 lease.status === "active" && lease.signature_status !== "signed";
                               if (awaitingSignature) {
