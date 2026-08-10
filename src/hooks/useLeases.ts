@@ -264,6 +264,49 @@ export function useLeaseByUnitId(unitId: string | null) {
   });
 }
 
+export function useLeasesByUnitId(unitId: string | null) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["leases", "unit", unitId],
+    queryFn: async () => {
+      if (!user || !unitId) return [] as Lease[];
+
+      const { data, error } = await supabase
+        .from("leases")
+        .select(`
+          *,
+          tenant:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp, document_number, address, city, state, neighborhood, postal_code),
+          owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone, document_number, address, city, state, neighborhood, postal_code),
+          unit:units(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name)),
+          subdivision:unit_subdivisions(id, label, area)
+        `)
+        .eq("unit_id", unitId)
+        .in("status", ["active", "pending"])
+        .order("created_at", { ascending: false });
+
+      if (error) throw new Error(error.message || error.details || "Erro inesperado");
+
+      return (data || []).map((lease: any) => ({
+        ...lease,
+        next_adjustment_date: lease.next_adjustment_date ?? null,
+        adjustment_index: lease.adjustment_index ?? null,
+        billing_automation: (lease.billing_automation as unknown as BillingAutomation) || {
+          reminder_5_days: true,
+          reminder_due_day: true,
+          reminder_3_days_late: true,
+          send_method: "whatsapp",
+        },
+        billing_logs: (lease.billing_logs as unknown as BillingLog[]) || [],
+        guarantor_data: lease.guarantor_data as unknown as GuarantorData | null,
+        payment_info: lease.payment_info as unknown as PaymentInfo | null,
+      })) as unknown as Lease[];
+    },
+    enabled: !!user && !!unitId,
+  });
+}
+
+
 export function useCreateLease() {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
