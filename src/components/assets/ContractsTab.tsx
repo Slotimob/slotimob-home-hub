@@ -1065,7 +1065,7 @@ export function ContractsTab() {
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleGenerateContract(lease.unit_id);
+                                      handleGenerateContract(lease.unit_id, lease.id);
                                     }}
                                   >
                                     <FileSignature className="h-4 w-4 mr-2" />
@@ -1146,9 +1146,13 @@ export function ContractsTab() {
           open={contractGeneratorOpen}
           onOpenChange={(open) => {
             setContractGeneratorOpen(open);
-            if (!open) setGeneratorUnitId(null);
+            if (!open) {
+              setGeneratorUnitId(null);
+              setGeneratorLeaseId(null);
+            }
           }}
           unitId={generatorUnitId}
+          leaseId={generatorLeaseId ?? undefined}
         />
       )}
 
