@@ -596,7 +596,11 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   
   const enderecoCompleto = `${data.imovel.endereco}${data.imovel.numero ? `, nº ${data.imovel.numero}` : ''}${data.imovel.complemento ? `, ${data.imovel.complemento}` : ''}${data.imovel.bairro ? `, Bairro ${data.imovel.bairro}` : ''}, ${data.imovel.cidade}/${data.imovel.estado}${data.imovel.cep ? `, CEP ${data.imovel.cep}` : ''}`;
   
-  addSubClause('1.1', `Este contrato tem por objeto a locação do imóvel ${data.contrato.finalidade === 'residencial' ? 'residencial' : 'comercial'} situado em ${enderecoCompleto}${data.imovel.matricula ? `, matrícula nº ${data.imovel.matricula}` : ''}${data.imovel.cib ? `, CIB nº ${data.imovel.cib}` : ''}.`);
+  const fracaoTexto = data.imovel.fracaoLabel
+    ? `, correspondente à fração/unidade autônoma "${data.imovel.fracaoLabel}"${data.imovel.fracaoArea ? `, com área aproximada de ${data.imovel.fracaoArea}m²` : ''}`
+    : '';
+
+  addSubClause('1.1', `Este contrato tem por objeto a locação do imóvel ${data.contrato.finalidade === 'residencial' ? 'residencial' : 'comercial'} situado em ${enderecoCompleto}${data.imovel.matricula ? `, matrícula nº ${data.imovel.matricula}` : ''}${data.imovel.cib ? `, CIB nº ${data.imovel.cib}` : ''}${fracaoTexto}.`);
   
   addSubClause('1.2', `O imóvel destina-se exclusivamente para fins ${data.contrato.finalidade === 'residencial' ? 'residenciais' : 'comerciais'}, sendo vedada qualquer outra destinação sem prévia autorização por escrito do LOCADOR.`);
 
