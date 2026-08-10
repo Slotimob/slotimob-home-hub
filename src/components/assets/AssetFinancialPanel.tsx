@@ -637,6 +637,7 @@ function ImprovementsBlock({
   const reconcileMutation = useReconcileImprovement();
   const [reconcileOpenFor, setReconcileOpenFor] = useState<string | null>(null);
 
+
   const findTransaction = (txId: string | null) =>
     txId ? expenseTransactions.find((t) => t.id === txId) : undefined;
 
