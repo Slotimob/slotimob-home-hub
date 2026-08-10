@@ -506,7 +506,17 @@ export function TransactionsTableInfinite({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Mark as improvement */}
+        {improvementTransaction && (
+          <MarkAsImprovementDialog
+            open={!!improvementTransaction}
+            onOpenChange={(open) => !open && setImprovementTransaction(null)}
+            transaction={improvementTransaction}
+          />
+        )}
       </>
+
     );
   }
 
