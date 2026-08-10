@@ -155,6 +155,8 @@ export default function UnitDetalhe() {
   });
 
   const isStandalone = unit?.is_standalone ?? false;
+  const showSubdivisionsTab = isStandalone && !!unit?.has_subdivisions;
+  const tabsCount = showSubdivisionsTab ? 8 : 7;
   const moduleKey = isStandalone ? 'assets_standalone' : 'assets_units';
   const canEdit = isPermOwner || hasPermission(moduleKey, 'edit');
   const canDelete = isPermOwner || hasPermission(moduleKey, 'delete');
