@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Plus, Pencil, Trash2, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,6 +145,45 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const { data: parentUnit } = useQuery({
+    queryKey: ['unit-subdivision-reference', unitId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('units')
+        .select('area_total, area, rent_price')
+        .eq('id', unitId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { area_total: number | null; area: number | null; rent_price: number | null } | null;
+    },
+    enabled: !!unitId,
+  });
+
+  const totalArea = parentUnit?.area_total ?? parentUnit?.area ?? null;
+  const totalRent = parentUnit?.rent_price ?? null;
+
+  const { usedArea, usedRent } = useMemo(() => {
+    return subdivisions.reduce(
+      (acc, item) => {
+        if (editing && item.id === editing.id) return acc;
+        acc.usedArea += Number(item.area) || 0;
+        acc.usedRent += Number(item.rent_price) || 0;
+        return acc;
+      },
+      { usedArea: 0, usedRent: 0 }
+    );
+  }, [subdivisions, editing]);
+
+  const remainingArea = totalArea != null ? Math.max(totalArea - usedArea, 0) : null;
+  const remainingRent = totalRent != null ? Math.max(totalRent - usedRent, 0) : null;
+
+  const currentArea = form.area ? parseFloat(form.area) : 0;
+  const currentRent = form.rent_price ? parseFloat(form.rent_price) : 0;
+  const areaExcess =
+    remainingArea != null && currentArea > remainingArea ? currentArea - remainingArea : 0;
+  const rentExcess =
+    remainingRent != null && currentRent > remainingRent ? currentRent - remainingRent : 0;
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -251,6 +292,25 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
               />
             </div>
 
+            {(remainingArea != null || remainingRent != null) && (
+              <div className="space-y-1 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+                {remainingArea != null && (
+                  <p>
+                    Área restante:{' '}
+                    <span className="font-medium text-foreground">{remainingArea.toLocaleString('pt-BR')} m²</span>{' '}
+                    de {totalArea?.toLocaleString('pt-BR')} m² total
+                  </p>
+                )}
+                {remainingRent != null && (
+                  <p>
+                    Aluguel restante:{' '}
+                    <span className="font-medium text-foreground">{formatCurrencyBRL(remainingRent)}</span> de{' '}
+                    {formatCurrencyBRL(totalRent ?? 0)} total
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="subdivision-area">Área (m²)</Label>
@@ -261,17 +321,31 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                   value={form.area}
                   onChange={(e) => setForm({ ...form, area: e.target.value })}
                   placeholder="0,00"
+                  className={areaExcess > 0 ? 'border-amber-500 focus-visible:ring-amber-500' : undefined}
                 />
+                {areaExcess > 0 && (
+                  <p className="text-xs text-amber-600">
+                    Excede o saldo em {areaExcess.toLocaleString('pt-BR')} m²
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="subdivision-rent">Valor do aluguel</Label>
-                <CurrencyInput
-                  id="subdivision-rent"
-                  value={form.rent_price}
-                  onChange={(value) => setForm({ ...form, rent_price: value })}
-                />
+                <div className={rentExcess > 0 ? 'rounded-md ring-1 ring-amber-500' : undefined}>
+                  <CurrencyInput
+                    id="subdivision-rent"
+                    value={form.rent_price}
+                    onChange={(value) => setForm({ ...form, rent_price: value })}
+                  />
+                </div>
+                {rentExcess > 0 && (
+                  <p className="text-xs text-amber-600">
+                    Excede o saldo em {formatCurrencyBRL(rentExcess)}
+                  </p>
+                )}
               </div>
             </div>
+
 
             <div className="space-y-2">
               <Label>Inquilino</Label>
