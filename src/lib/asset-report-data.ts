@@ -84,7 +84,7 @@ export interface AssetReportAsset {
 
 export interface AssetReportData {
   generated_at: string;
-  period: { from: string; to: string };
+  period: { from: string; to: string; all_history?: boolean };
   summary: {
     total_assets: number;
     total_invested: number;
@@ -139,7 +139,7 @@ export async function buildAssetReport(params: {
   const unitIds = units.map(u => u.id);
   const allAssetIds = [...propertyIds, ...unitIds];
   if (allAssetIds.length === 0) {
-    return emptyReport(fromStr, toStr);
+    return emptyReport(fromStr, toStr, !period.from);
   }
 
   let improvementsMap: Record<string, any[]> = {};
@@ -317,7 +317,8 @@ export async function buildAssetReport(params: {
     ]);
   }
 
-  const periodMonths = Math.max(1, (period.to.getTime() - new Date(fromStr).getTime()) / (30 * 24 * 3600 * 1000));
+  const metricsFrom = period.from ?? new Date(period.to.getTime() - 365 * 24 * 3600 * 1000);
+  const periodMonths = Math.max(1, (period.to.getTime() - metricsFrom.getTime()) / (30 * 24 * 3600 * 1000));
   const assets: AssetReportAsset[] = [];
 
   for (const prop of properties) {
@@ -481,7 +482,7 @@ export async function buildAssetReport(params: {
 
   return {
     generated_at: new Date().toISOString(),
-    period: { from: fromStr, to: toStr },
+    period: { from: fromStr, to: toStr, all_history: !period.from },
     summary: {
       total_assets: assets.length,
       total_invested: totalInvested,
@@ -499,10 +500,10 @@ export async function buildAssetReport(params: {
   };
 }
 
-function emptyReport(from: string, to: string): AssetReportData {
+function emptyReport(from: string, to: string, allHistory = false): AssetReportData {
   return {
     generated_at: new Date().toISOString(),
-    period: { from, to },
+    period: { from, to, all_history: allHistory },
     summary: {
       total_assets: 0, total_invested: 0, total_market_value: 0,
       total_appreciation_abs: null, total_appreciation_pct: null,
