@@ -21,6 +21,7 @@ export interface UnitOption {
   unit_number: string;
   is_standalone: boolean;
   tenant_contact_id: string | null;
+  property_id: string | null;
   property_name: string | null;
 }
 
@@ -33,7 +34,7 @@ export function useUnitOptions() {
     setLoading(true);
     supabase
       .from('units')
-      .select('id, unit_number, is_standalone, tenant_contact_id, property:properties(name)')
+      .select('id, unit_number, is_standalone, tenant_contact_id, property_id, property:properties(name)')
       .order('unit_number')
       .then(({ data, error }) => {
         if (cancelled) return;
@@ -45,6 +46,7 @@ export function useUnitOptions() {
             unit_number: u.unit_number,
             is_standalone: u.is_standalone,
             tenant_contact_id: u.tenant_contact_id,
+            property_id: u.property_id ?? null,
             property_name: u.property?.name ?? null,
           }))
         );
