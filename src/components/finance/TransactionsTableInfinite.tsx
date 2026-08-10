@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader2, Repeat, CheckCircle2, Circle, ArrowRightLeft, Link2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader2, Repeat, CheckCircle2, Circle, ArrowRightLeft, Link2, Hammer } from "lucide-react";
+import { useTransactionsWithImprovement } from "@/hooks/useAssetFinancials";
+import { MarkAsImprovementDialog } from "./MarkAsImprovementDialog";
+
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
