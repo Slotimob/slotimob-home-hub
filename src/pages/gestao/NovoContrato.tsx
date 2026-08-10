@@ -75,6 +75,7 @@ const DRAFT_KEY = "novo-contrato-draft";
 
 const getInitialFormData = () => ({
   tenant_contact_id: "",
+  unit_subdivision_id: null as string | null,
   rent_amount: 0,
   admin_fee_percentage: 10,
   due_day: 10,
