@@ -212,6 +212,7 @@ export function ContractsTab() {
   // Contract generator dialog state
   const [contractGeneratorOpen, setContractGeneratorOpen] = useState(false);
   const [generatorUnitId, setGeneratorUnitId] = useState<string | null>(null);
+  const [generatorLeaseId, setGeneratorLeaseId] = useState<string | null>(null);
   
   // New dialogs state
   const [terminateDialogOpen, setTerminateDialogOpen] = useState(false);
