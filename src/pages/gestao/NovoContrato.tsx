@@ -197,6 +197,26 @@ export default function NovoContrato() {
     enabled: !!user && !!effectiveUnitId && !isEditMode && !selectedUnitInfo,
   });
 
+  // Conta Asaas do broker (para validar emissão automática)
+  const { data: asaasAccount } = useQuery({
+    queryKey: ["asaas-account-status", effectiveBrokerId, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("asaas_accounts")
+        .select("status")
+        .eq("broker_id", effectiveBrokerId || user!.id)
+        .limit(1)
+        .maybeSingle();
+      return data as { status: string | null } | null;
+    },
+    enabled: !!user,
+  });
+
+  const hasActiveAsaasAccount = ["active", "approved", "ACTIVE", "APPROVED"].includes(
+    (asaasAccount?.status || "").toString()
+  );
+
+
   const ownerContactId =
     editLease?.owner_contact_id || selectedUnitInfo?.owner_contact_id || unitInfo?.owner_contact_id || null;
   const unitName =
