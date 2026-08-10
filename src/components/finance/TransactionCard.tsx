@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, CheckCircle2, Repeat, Calendar, Circle, Loader2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, CheckCircle2, Repeat, Calendar, Circle, Loader2, Hammer } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,10 @@ interface TransactionCardProps {
   isReconciling?: boolean;
   isSendingBilling?: boolean;
   isEligibleForBilling?: boolean;
+  onMarkAsImprovement?: (transaction: any) => void;
+  isAlreadyImprovement?: boolean;
 }
+
 
 export function TransactionCard({
   transaction,
@@ -35,7 +38,10 @@ export function TransactionCard({
   isReconciling = false,
   isSendingBilling = false,
   isEligibleForBilling = false,
+  onMarkAsImprovement,
+  isAlreadyImprovement = false,
 }: TransactionCardProps) {
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -188,12 +194,25 @@ export function TransactionCard({
                   Marcar como Pago
                 </DropdownMenuItem>
               )}
+              {onMarkAsImprovement &&
+                transaction.type === "expense" &&
+                (transaction.unit_id || transaction.property_id) && (
+                  <DropdownMenuItem
+                    className="text-xs"
+                    disabled={isAlreadyImprovement}
+                    onClick={() => onMarkAsImprovement(transaction)}
+                  >
+                    <Hammer className="h-3.5 w-3.5 mr-2 text-amber-600" />
+                    {isAlreadyImprovement ? "Já é uma benfeitoria" : "Marcar como Benfeitoria"}
+                  </DropdownMenuItem>
+                )}
               {onEdit && (
                 <DropdownMenuItem onClick={() => onEdit(transaction)} className="text-xs">
                   <Pencil className="h-3.5 w-3.5 mr-2" />
                   Editar
                 </DropdownMenuItem>
               )}
+
               {onDelete && (
                 <>
                   <DropdownMenuSeparator />

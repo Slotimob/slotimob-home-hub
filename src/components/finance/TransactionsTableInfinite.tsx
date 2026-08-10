@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader2, Repeat, CheckCircle2, Circle, ArrowRightLeft, Link2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader2, Repeat, CheckCircle2, Circle, ArrowRightLeft, Link2, Hammer } from "lucide-react";
+import { useTransactionsWithImprovement } from "@/hooks/useAssetFinancials";
+import { MarkAsImprovementDialog } from "./MarkAsImprovementDialog";
+
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -87,8 +90,22 @@ export function TransactionsTableInfinite({
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [matcherTransaction, setMatcherTransaction] = useState<any>(null);
   const [billingTransactionId, setBillingTransactionId] = useState<string | null>(null);
+  const [improvementTransaction, setImprovementTransaction] = useState<any>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const improvementCandidateIds = useMemo(
+    () =>
+      (transactions || [])
+        .filter((t: any) => t.type === 'expense' && (t.unit_id || t.property_id))
+        .map((t: any) => t.id),
+    [transactions]
+  );
+  const { data: alreadyImprovementIds } = useTransactionsWithImprovement(improvementCandidateIds);
+  const canMarkAsImprovement = (t: any) =>
+    !!canEditTx && t.type === 'expense' && !!(t.unit_id || t.property_id);
+  const isAlreadyImprovement = (t: any) => !!alreadyImprovementIds?.has(t.id);
+
 
   // Handle WhatsApp billing reminder
   const handleSendBillingReminder = async (transaction: any) => {
@@ -406,7 +423,12 @@ export function TransactionsTableInfinite({
               isReconciling={reconcilingId === transaction.id}
               isSendingBilling={billingTransactionId === transaction.id && isSendingBilling}
               isEligibleForBilling={isEligibleForBilling(transaction)}
+              onMarkAsImprovement={
+                canMarkAsImprovement(transaction) ? setImprovementTransaction : undefined
+              }
+              isAlreadyImprovement={isAlreadyImprovement(transaction)}
             />
+
           ))}
         </div>
 
@@ -484,7 +506,17 @@ export function TransactionsTableInfinite({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Mark as improvement */}
+        {improvementTransaction && (
+          <MarkAsImprovementDialog
+            open={!!improvementTransaction}
+            onOpenChange={(open) => !open && setImprovementTransaction(null)}
+            transaction={improvementTransaction}
+          />
+        )}
       </>
+
     );
   }
 
@@ -734,12 +766,25 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
+                          {canMarkAsImprovement(transaction) && (
+                            <DropdownMenuItem
+                              className="text-xs"
+                              disabled={isAlreadyImprovement(transaction)}
+                              onClick={() => setImprovementTransaction(transaction)}
+                            >
+                              <Hammer className="h-3.5 w-3.5 mr-2 text-amber-600" />
+                              {isAlreadyImprovement(transaction)
+                                ? 'Já é uma benfeitoria'
+                                : 'Marcar como Benfeitoria'}
+                            </DropdownMenuItem>
+                          )}
                           {canEditTx && (
                             <DropdownMenuItem onClick={() => setEditTransaction(transaction)} className="text-xs">
                               <Pencil className="h-3.5 w-3.5 mr-2" />
                               Editar
                             </DropdownMenuItem>
                           )}
+
                           {canDeleteTx && (
                             <>
                               <DropdownMenuSeparator />
@@ -854,6 +899,16 @@ export function TransactionsTableInfinite({
           }}
         />
       )}
+
+      {/* Mark as improvement */}
+      {improvementTransaction && (
+        <MarkAsImprovementDialog
+          open={!!improvementTransaction}
+          onOpenChange={(open) => !open && setImprovementTransaction(null)}
+          transaction={improvementTransaction}
+        />
+      )}
+
     </TooltipProvider>
   );
 }

@@ -1,0 +1,15 @@
+export const IMPROVEMENT_TYPE_LABELS: Record<string, string> = {
+  reforma_geral: 'Reforma Geral',
+  ampliacao: 'Ampliação',
+  reforma_cozinha: 'Reforma Cozinha',
+  reforma_banheiro: 'Reforma Banheiro',
+  pintura: 'Pintura',
+  piso: 'Piso',
+  eletrica: 'Elétrica',
+  hidraulica: 'Hidráulica',
+  telhado: 'Telhado',
+  fachada: 'Fachada',
+  mobilia: 'Mobília',
+  equipamento: 'Equipamento',
+  outro: 'Outro',
+};
