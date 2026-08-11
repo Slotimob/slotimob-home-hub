@@ -431,15 +431,15 @@ export function humanizeLog(log: AuditLog): string {
 
   switch (log.action) {
     case 'INSERT':
-      return `cadastrou ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
+      return `cadastrou ${article(table)} ${table}${recordSuffix}`;
     case 'DELETE':
-      return `excluiu ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
+      return `excluiu ${article(table)} ${table}${recordSuffix}`;
     case 'UPDATE': {
       const changes = getChangedFields(log);
       if (changes.length === 1) {
-        return `alterou ${changes[0].label.toLowerCase()} d${table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
+        return `alterou ${changes[0].label.toLowerCase()} d${article(table)} ${table}${recordSuffix}`;
       }
-      return `atualizou ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
+      return `atualizou ${article(table)} ${table}${recordSuffix}`;
     }
     default:
       return `realizou ação em ${table}${recordSuffix}`;
