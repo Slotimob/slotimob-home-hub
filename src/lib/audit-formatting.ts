@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Hammer,
   TrendingUp,
+  Layers,
   type LucideIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -36,6 +37,8 @@ export const TABLE_LABELS: Record<string, string> = {
   asset_improvements: 'benfeitoria',
   market_value_history: 'avaliação de mercado',
   organization_members: 'membro da equipe',
+  unit_tenant_history: 'histórico de inquilino',
+  unit_subdivisions: 'fração',
 };
 
 export const TABLE_ICONS: Record<string, LucideIcon> = {
@@ -56,6 +59,8 @@ export const TABLE_ICONS: Record<string, LucideIcon> = {
   asset_improvements: Hammer,
   market_value_history: TrendingUp,
   organization_members: Users,
+  unit_tenant_history: Users,
+  unit_subdivisions: Layers,
 };
 
 export const ACTION_LABELS: Record<string, string> = {
@@ -143,6 +148,10 @@ export const FIELD_LABELS: Record<string, string> = {
   iptu: 'IPTU',
   sale_value: 'Valor da venda',
   commission_value: 'Comissão',
+  moved_in_at: 'Data de Entrada',
+  moved_out_at: 'Data de Saída',
+  source: 'Origem',
+  label: 'Nome',
 };
 
 export const ENUM_TRANSLATIONS: Record<string, string> = {
@@ -183,6 +192,8 @@ export const ENUM_TRANSLATIONS: Record<string, string> = {
   lead: 'Lead',
   owner: 'Proprietário',
   tenant: 'Inquilino',
+  lease: 'Contrato',
+  manual: 'Manual',
 };
 
 // ── Event Groups for timeline filters ──────────────────────
@@ -247,6 +258,14 @@ export const EVENT_GROUPS: Record<string, EventGroupDef> = {
   market_value_history: {
     label: 'Valor de Mercado',
     match: (l) => l.table_name === 'market_value_history',
+  },
+  unit_tenant_history: {
+    label: 'Histórico de Inquilino',
+    match: (l) => l.table_name === 'unit_tenant_history',
+  },
+  unit_subdivisions: {
+    label: 'Frações',
+    match: (l) => l.table_name === 'unit_subdivisions',
   },
 };
 
@@ -314,7 +333,7 @@ export function translateValue(val: any): string {
 export function getRecordName(log: AuditLog): string {
   const data = log.new_data || log.old_data;
   if (!data) return '';
-  return data.name || data.title || (data.unit_number ? `Unidade ${data.unit_number}` : '') || data.description?.slice(0, 40) || '';
+  return data.name || data.title || (data.unit_number ? `Unidade ${data.unit_number}` : '') || data.label || data.description?.slice(0, 40) || '';
 }
 
 export function getChangedFields(log: AuditLog): { label: string; from: string; to: string }[] {
@@ -354,6 +373,9 @@ export function diffOldNew(old_data: any, new_data: any): { label: string; from:
   }
   return changes;
 }
+
+const FEMININE_TABLES = new Set(['unidade', 'fração']);
+const article = (t: string) => (FEMININE_TABLES.has(t) ? 'a' : 'o');
 
 export function humanizeLog(log: AuditLog): string {
   const meta = log.metadata || {};
@@ -409,15 +431,15 @@ export function humanizeLog(log: AuditLog): string {
 
   switch (log.action) {
     case 'INSERT':
-      return `cadastrou ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
+      return `cadastrou ${article(table)} ${table}${recordSuffix}`;
     case 'DELETE':
-      return `excluiu ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
+      return `excluiu ${article(table)} ${table}${recordSuffix}`;
     case 'UPDATE': {
       const changes = getChangedFields(log);
       if (changes.length === 1) {
-        return `alterou ${changes[0].label.toLowerCase()} d${table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
+        return `alterou ${changes[0].label.toLowerCase()} d${article(table)} ${table}${recordSuffix}`;
       }
-      return `atualizou ${table === 'lead' ? 'o' : table === 'unidade' ? 'a' : 'o'} ${table}${recordSuffix}`;
+      return `atualizou ${article(table)} ${table}${recordSuffix}`;
     }
     default:
       return `realizou ação em ${table}${recordSuffix}`;
