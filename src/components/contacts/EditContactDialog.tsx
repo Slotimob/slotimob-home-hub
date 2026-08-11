@@ -18,6 +18,48 @@ interface EditContactDialogProps {
   onSuccess: () => void;
 }
 
+// Format helpers for automation-ready data (mirrored from CreateContactDialog)
+const formatPhone = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+const formatCPF = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
+const formatCNPJ = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 14);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+};
+
+const formatCEP = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
+
+// Extract clean digits for storage
+const cleanPhone = (value: string): string => value.replace(/\D/g, '');
+const cleanDocument = (value: string): string => value.replace(/\D/g, '');
+const cleanCEP = (value: string): string => value.replace(/\D/g, '');
+
+const formatDocumentByType = (type: string, value: string): string => {
+  if (type === 'CNPJ') return formatCNPJ(value);
+  if (type === 'CPF') return formatCPF(value);
+  return value;
+};
+
 const INITIAL_FORM_DATA = {
   name: '',
   email: '',
@@ -38,6 +80,7 @@ const INITIAL_FORM_DATA = {
   website: '',
   contact_person: '',
 };
+
 
 export const EditContactDialog = ({
   open,
@@ -65,18 +108,19 @@ export const EditContactDialog = ({
     // Only load if we have contact data and it's different from what we loaded
     if (contact && contact.id !== lastLoadedIdRef.current) {
       const metadata = contact.metadata || {};
+      const docType = contact.document_type || 'CPF';
       setFormData({
         name: contact.name || '',
         email: contact.email || '',
-        phone: contact.phone || '',
-        whatsapp: contact.whatsapp || '',
-        document_type: contact.document_type || 'CPF',
-        document_number: contact.document_number || '',
+        phone: formatPhone(contact.phone || ''),
+        whatsapp: formatPhone(contact.whatsapp || ''),
+        document_type: docType,
+        document_number: formatDocumentByType(docType, contact.document_number || ''),
         address: contact.address || '',
         neighborhood: contact.neighborhood || '',
         city: contact.city || '',
         state: contact.state || '',
-        postal_code: contact.postal_code || '',
+        postal_code: formatCEP(contact.postal_code || ''),
         notes: contact.notes || '',
         categories: (contact.categories || []) as ContactCategory[],
         budget_min: metadata.budget_min?.toString() || '',
@@ -97,9 +141,15 @@ export const EditContactDialog = ({
     }
   }, [open]);
 
+  const handleCepChange = (value: string) => {
+    const formatted = formatCEP(value);
+    setFormData(prev => ({ ...prev, postal_code: formatted }));
+  };
+
   const handleCepBlur = async () => {
-    if (formData.postal_code.length >= 8) {
-      const result = await searchCepData(formData.postal_code);
+    const cleanedCep = cleanCEP(formData.postal_code);
+    if (cleanedCep.length === 8) {
+      const result = await searchCepData(cleanedCep);
       if (result) {
         setFormData(prev => ({
           ...prev,
@@ -110,6 +160,23 @@ export const EditContactDialog = ({
         }));
       }
     }
+  };
+
+  const handlePhoneChange = (field: 'phone' | 'whatsapp', value: string) => {
+    const formatted = formatPhone(value);
+    setFormData(prev => ({ ...prev, [field]: formatted }));
+  };
+
+  const handleDocumentChange = (value: string) => {
+    setFormData(prev => ({ ...prev, document_number: formatDocumentByType(prev.document_type, value) }));
+  };
+
+  const handleDocumentTypeChange = (type: string) => {
+    setFormData(prev => ({
+      ...prev,
+      document_type: type,
+      document_number: '',
+    }));
   };
 
   const handleCategoryToggle = (category: ContactCategory) => {
@@ -148,20 +215,28 @@ export const EditContactDialog = ({
         metadata.contact_person = formData.contact_person || null;
       }
 
+      // Store clean values for automation compatibility (same rules as CreateContactDialog)
+      const cleanPhoneValue = cleanPhone(formData.phone);
+      const cleanWhatsappValue = cleanPhone(formData.whatsapp);
+      const cleanDocumentValue =
+        formData.document_type === 'RG'
+          ? formData.document_number.trim()
+          : cleanDocument(formData.document_number);
+
       const { error } = await supabase
         .from('contacts')
         .update({
           name: formData.name.trim(),
           email: formData.email.trim() || null,
-          phone: formData.phone.trim() || null,
-          whatsapp: formData.whatsapp.trim() || null,
+          phone: cleanPhoneValue || null,
+          whatsapp: cleanWhatsappValue || null,
           document_type: formData.document_type || null,
-          document_number: formData.document_number.trim() || null,
+          document_number: cleanDocumentValue || null,
           address: formData.address.trim() || null,
           neighborhood: formData.neighborhood.trim() || null,
           city: formData.city.trim() || null,
-          state: formData.state.trim() || null,
-          postal_code: formData.postal_code.trim() || null,
+          state: formData.state.trim().toUpperCase() || null,
+          postal_code: cleanCEP(formData.postal_code) || null,
           notes: formData.notes.trim() || null,
           categories: formData.categories,
           metadata: Object.keys(metadata).length > 0 ? metadata : null,
@@ -243,30 +318,13 @@ export const EditContactDialog = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Telefone</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>WhatsApp</Label>
-                <Input
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
-                  placeholder="Se diferente do telefone"
-                />
-              </div>
-            </div>
-
+            {/* Document */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Tipo de Documento</Label>
                 <Select
                   value={formData.document_type || 'CPF'}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, document_type: v }))}
+                  onValueChange={handleDocumentTypeChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -279,24 +337,57 @@ export const EditContactDialog = ({
                 </Select>
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Número do Documento</Label>
+                <Label htmlFor="edit_document_number">Número do Documento</Label>
                 <Input
+                  id="edit_document_number"
                   value={formData.document_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, document_number: e.target.value }))}
+                  onChange={(e) => handleDocumentChange(e.target.value)}
+                  placeholder={formData.document_type === 'CNPJ' ? '00.000.000/0000-00' : '000.000.000-00'}
+                  inputMode={formData.document_type === 'RG' ? 'text' : 'numeric'}
                 />
               </div>
             </div>
 
+            {/* Phone fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_phone">Telefone</Label>
+                <Input
+                  id="edit_phone"
+                  value={formData.phone}
+                  onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  inputMode="tel"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_whatsapp">WhatsApp</Label>
+                <Input
+                  id="edit_whatsapp"
+                  value={formData.whatsapp}
+                  onChange={(e) => handlePhoneChange('whatsapp', e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  inputMode="tel"
+                />
+                <p className="text-xs text-muted-foreground">Se diferente do telefone</p>
+              </div>
+            </div>
+
+
             {/* Address */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>CEP</Label>
+                <Label htmlFor="edit_postal_code">CEP</Label>
                 <Input
+                  id="edit_postal_code"
                   value={formData.postal_code}
-                  onChange={(e) => setFormData(prev => ({ ...prev, postal_code: e.target.value }))}
+                  onChange={(e) => handleCepChange(e.target.value)}
                   onBlur={handleCepBlur}
+                  placeholder="00000-000"
+                  inputMode="numeric"
                   disabled={isLoadingCep}
                 />
+
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>Endereço</Label>
