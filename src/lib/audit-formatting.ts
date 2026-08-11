@@ -374,6 +374,9 @@ export function diffOldNew(old_data: any, new_data: any): { label: string; from:
   return changes;
 }
 
+const FEMININE_TABLES = new Set(['unidade', 'fração']);
+const article = (t: string) => (FEMININE_TABLES.has(t) ? 'a' : 'o');
+
 export function humanizeLog(log: AuditLog): string {
   const meta = log.metadata || {};
 
