@@ -26,6 +26,7 @@ declare global {
     dataLayer: any[];
     fbq: (...args: any[]) => void;
     _fbq: any;
+    gtag?: (...args: any[]) => void;
   }
 }
 
@@ -101,6 +102,9 @@ export function trackEvent(eventName: string, params?: Record<string, any>) {
   if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('trackCustom', eventName, params);
   }
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.gtag('event', eventName, params || {});
+  }
 }
 
 /** Convenience: track Lead signup */
@@ -116,6 +120,14 @@ export function trackStartTrial(planId?: string) {
   trackEvent('StartTrial', { plan: planId });
   if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('track', 'StartTrial', { plan: planId });
+  }
+}
+
+/** Convenience: track SubscriptionPaid (checkout de plano pago concluído: PIX/boleto gerado ou redirect de cartão) */
+export function trackSubscriptionPaid(planId?: string, billingType?: string) {
+  trackEvent('SubscriptionPaid', { plan: planId, billing_type: billingType });
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', 'Purchase', { plan: planId, billing_type: billingType });
   }
 }
 

@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
+import { trackStartTrial, trackSubscriptionPaid } from '@/components/TrackingProvider';
 import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
@@ -325,6 +326,7 @@ export default function Checkout() {
         currentUserId = signUpData.user.id;
       }
       toast.success('Conta criada! Bem-vindo ao Slotimob 🎉');
+      trackStartTrial(selectedPlan);
     }
 
     // ── Validação e salvamento de dados fiscais ─────────────────────────────
@@ -444,6 +446,7 @@ export default function Checkout() {
       if (data?.type === 'redirect' && data?.url) {
         window.open(data.url, '_blank');
         setPaymentResult(data as PaymentResult);
+        trackSubscriptionPaid(selectedPlan, billingType);
         // Após processar o resultado principal da subscription:
         if (Object.values(addonQuantities).some((q) => q > 0)) {
           for (const [addonId, qty] of Object.entries(addonQuantities)) {
@@ -465,6 +468,7 @@ export default function Checkout() {
         }
       } else if (data?.type === 'pix' || data?.type === 'boleto') {
         setPaymentResult(data as PaymentResult);
+        trackSubscriptionPaid(selectedPlan, billingType);
         // Após processar o resultado principal da subscription:
         if (Object.values(addonQuantities).some((q) => q > 0)) {
           for (const [addonId, qty] of Object.entries(addonQuantities)) {
