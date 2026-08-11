@@ -215,20 +215,28 @@ export const EditContactDialog = ({
         metadata.contact_person = formData.contact_person || null;
       }
 
+      // Store clean values for automation compatibility (same rules as CreateContactDialog)
+      const cleanPhoneValue = cleanPhone(formData.phone);
+      const cleanWhatsappValue = cleanPhone(formData.whatsapp);
+      const cleanDocumentValue =
+        formData.document_type === 'RG'
+          ? formData.document_number.trim()
+          : cleanDocument(formData.document_number);
+
       const { error } = await supabase
         .from('contacts')
         .update({
           name: formData.name.trim(),
           email: formData.email.trim() || null,
-          phone: formData.phone.trim() || null,
-          whatsapp: formData.whatsapp.trim() || null,
+          phone: cleanPhoneValue || null,
+          whatsapp: cleanWhatsappValue || null,
           document_type: formData.document_type || null,
-          document_number: formData.document_number.trim() || null,
+          document_number: cleanDocumentValue || null,
           address: formData.address.trim() || null,
           neighborhood: formData.neighborhood.trim() || null,
           city: formData.city.trim() || null,
-          state: formData.state.trim() || null,
-          postal_code: formData.postal_code.trim() || null,
+          state: formData.state.trim().toUpperCase() || null,
+          postal_code: cleanCEP(formData.postal_code) || null,
           notes: formData.notes.trim() || null,
           categories: formData.categories,
           metadata: Object.keys(metadata).length > 0 ? metadata : null,
