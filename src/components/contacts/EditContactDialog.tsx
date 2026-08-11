@@ -377,13 +377,17 @@ export const EditContactDialog = ({
             {/* Address */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>CEP</Label>
+                <Label htmlFor="edit_postal_code">CEP</Label>
                 <Input
+                  id="edit_postal_code"
                   value={formData.postal_code}
-                  onChange={(e) => setFormData(prev => ({ ...prev, postal_code: e.target.value }))}
+                  onChange={(e) => handleCepChange(e.target.value)}
                   onBlur={handleCepBlur}
+                  placeholder="00000-000"
+                  inputMode="numeric"
                   disabled={isLoadingCep}
                 />
+
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>Endereço</Label>
