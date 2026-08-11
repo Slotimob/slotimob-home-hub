@@ -318,30 +318,13 @@ export const EditContactDialog = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Telefone</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>WhatsApp</Label>
-                <Input
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
-                  placeholder="Se diferente do telefone"
-                />
-              </div>
-            </div>
-
+            {/* Document */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Tipo de Documento</Label>
                 <Select
                   value={formData.document_type || 'CPF'}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, document_type: v }))}
+                  onValueChange={handleDocumentTypeChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -354,13 +337,42 @@ export const EditContactDialog = ({
                 </Select>
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Número do Documento</Label>
+                <Label htmlFor="edit_document_number">Número do Documento</Label>
                 <Input
+                  id="edit_document_number"
                   value={formData.document_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, document_number: e.target.value }))}
+                  onChange={(e) => handleDocumentChange(e.target.value)}
+                  placeholder={formData.document_type === 'CNPJ' ? '00.000.000/0000-00' : '000.000.000-00'}
+                  inputMode={formData.document_type === 'RG' ? 'text' : 'numeric'}
                 />
               </div>
             </div>
+
+            {/* Phone fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_phone">Telefone</Label>
+                <Input
+                  id="edit_phone"
+                  value={formData.phone}
+                  onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  inputMode="tel"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_whatsapp">WhatsApp</Label>
+                <Input
+                  id="edit_whatsapp"
+                  value={formData.whatsapp}
+                  onChange={(e) => handlePhoneChange('whatsapp', e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  inputMode="tel"
+                />
+                <p className="text-xs text-muted-foreground">Se diferente do telefone</p>
+              </div>
+            </div>
+
 
             {/* Address */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
