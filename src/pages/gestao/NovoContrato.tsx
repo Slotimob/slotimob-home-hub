@@ -1380,27 +1380,6 @@ export default function NovoContrato() {
                 const emissao = paymentInfo.emissao_boleto ?? "asaas";
                 return (
                 <div className="space-y-3">
-                  {/* Escolha do modo de emissão */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Como o boleto será emitido?</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant={emissao === "propria" ? "default" : "outline"}
-                        onClick={() => setPaymentInfo({ ...paymentInfo, emissao_boleto: "propria" })}
-                      >
-                        Vou emitir por conta própria
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={emissao === "asaas" ? "default" : "outline"}
-                        onClick={() => setPaymentInfo({ ...paymentInfo, emissao_boleto: "asaas" })}
-                      >
-                        Usar emissão automática via Asaas
-                      </Button>
-                    </div>
-                  </div>
-
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dados do Pagador</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
@@ -1430,8 +1409,7 @@ export default function NovoContrato() {
                       )}
                     </div>
                   </div>
-                  {emissao === "asaas" && (
-                  <>
+
                   {/* Configurações de cobrança */}
                   <div className="space-y-3">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Configurações de Cobrança</p>
@@ -1486,6 +1464,7 @@ export default function NovoContrato() {
                       </div>
                     )}
                   </div>
+
                   {/* Envio */}
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Enviar boleto por</p>
@@ -1510,8 +1489,27 @@ export default function NovoContrato() {
                       </label>
                     </div>
                   </div>
-                  </>
-                  )}
+
+                  {/* Escolha do modo de emissão */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Como o boleto será emitido?</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={emissao === "propria" ? "default" : "outline"}
+                        onClick={() => setPaymentInfo({ ...paymentInfo, emissao_boleto: "propria" })}
+                      >
+                        Vou emitir por conta própria
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={emissao === "asaas" ? "default" : "outline"}
+                        onClick={() => setPaymentInfo({ ...paymentInfo, emissao_boleto: "asaas" })}
+                      >
+                        Usar emissão automática via Asaas
+                      </Button>
+                    </div>
+                  </div>
 
                   {/* Info */}
                   {emissao === "propria" ? (
