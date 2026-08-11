@@ -108,18 +108,19 @@ export const EditContactDialog = ({
     // Only load if we have contact data and it's different from what we loaded
     if (contact && contact.id !== lastLoadedIdRef.current) {
       const metadata = contact.metadata || {};
+      const docType = contact.document_type || 'CPF';
       setFormData({
         name: contact.name || '',
         email: contact.email || '',
-        phone: contact.phone || '',
-        whatsapp: contact.whatsapp || '',
-        document_type: contact.document_type || 'CPF',
-        document_number: contact.document_number || '',
+        phone: formatPhone(contact.phone || ''),
+        whatsapp: formatPhone(contact.whatsapp || ''),
+        document_type: docType,
+        document_number: formatDocumentByType(docType, contact.document_number || ''),
         address: contact.address || '',
         neighborhood: contact.neighborhood || '',
         city: contact.city || '',
         state: contact.state || '',
-        postal_code: contact.postal_code || '',
+        postal_code: formatCEP(contact.postal_code || ''),
         notes: contact.notes || '',
         categories: (contact.categories || []) as ContactCategory[],
         budget_min: metadata.budget_min?.toString() || '',
