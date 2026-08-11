@@ -141,9 +141,15 @@ export const EditContactDialog = ({
     }
   }, [open]);
 
+  const handleCepChange = (value: string) => {
+    const formatted = formatCEP(value);
+    setFormData(prev => ({ ...prev, postal_code: formatted }));
+  };
+
   const handleCepBlur = async () => {
-    if (formData.postal_code.length >= 8) {
-      const result = await searchCepData(formData.postal_code);
+    const cleanedCep = cleanCEP(formData.postal_code);
+    if (cleanedCep.length === 8) {
+      const result = await searchCepData(cleanedCep);
       if (result) {
         setFormData(prev => ({
           ...prev,
@@ -154,6 +160,23 @@ export const EditContactDialog = ({
         }));
       }
     }
+  };
+
+  const handlePhoneChange = (field: 'phone' | 'whatsapp', value: string) => {
+    const formatted = formatPhone(value);
+    setFormData(prev => ({ ...prev, [field]: formatted }));
+  };
+
+  const handleDocumentChange = (value: string) => {
+    setFormData(prev => ({ ...prev, document_number: formatDocumentByType(prev.document_type, value) }));
+  };
+
+  const handleDocumentTypeChange = (type: string) => {
+    setFormData(prev => ({
+      ...prev,
+      document_type: type,
+      document_number: '',
+    }));
   };
 
   const handleCategoryToggle = (category: ContactCategory) => {
