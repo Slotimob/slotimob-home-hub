@@ -5155,6 +5155,45 @@ export type Database = {
         }
         Relationships: []
       }
+      utm_links: {
+        Row: {
+          campanha: string
+          canal: string
+          conteudo: string | null
+          created_at: string
+          created_by: string | null
+          created_by_email: string | null
+          destino_url: string
+          formato: string
+          full_url: string
+          id: string
+        }
+        Insert: {
+          campanha: string
+          canal: string
+          conteudo?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          destino_url: string
+          formato: string
+          full_url: string
+          id?: string
+        }
+        Update: {
+          campanha?: string
+          canal?: string
+          conteudo?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          destino_url?: string
+          formato?: string
+          full_url?: string
+          id?: string
+        }
+        Relationships: []
+      }
       visits: {
         Row: {
           assigned_user_id: string | null
