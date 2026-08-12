@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { COOKIE_CONSENT_EVENT, readCookieConsent } from '@/hooks/useCookieConsent';
+
 
 const ENV_GTM_ID = import.meta.env.VITE_GTM_ID || 'GTM-PPNZLQM5';
 const ENV_PIXEL_ID = import.meta.env.VITE_PIXEL_ID;
