@@ -253,6 +253,58 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Indicador de referência para uma decisão inicial. Não considera valorização futura do imóvel, custos de transação (ITBI, corretagem, cartório), inflação do aluguel ao longo do tempo, nem o perfil de investidor. Para uma análise completa, consulte um planejador financeiro.',
     status: 'ativa',
   },
+  {
+    slug: 'imposto-de-renda-aluguel',
+    category: 'Imposto de Renda',
+    title: 'IR sobre Aluguel',
+    seoTitle: 'Calculadora de Carnê-Leão 2026: Imposto de Renda sobre Aluguel | Slotimob',
+    seoDescription:
+      'Calcule a base do Carnê-Leão sobre o aluguel recebido: compare desconto simplificado vs deduções reais e descubra sua faixa de tributação do IRPF.',
+    icon: 'Receipt',
+    heroH1: 'Calculadora de Imposto de Renda sobre Aluguel (Carnê-Leão)',
+    intro:
+      'Quem recebe aluguel de outra pessoa física precisa recolher mensalmente o Imposto de Renda via Carnê-Leão. Esta calculadora ajuda a apurar a base de cálculo tributável — comparando o desconto simplificado de R$ 607,20 com a soma das deduções reais (taxa de administração, IPTU e condomínio pagos pelo locador) — e identifica em qual faixa de tributação sua renda mensal total se enquadra: isenta, redução proporcional ou alíquota plena. Informe o aluguel bruto recebido e escolha o método de dedução que resultar na menor base de cálculo.',
+    howItWorks: [
+      {
+        heading: 'Desconto simplificado ou deduções reais',
+        body: 'Você pode abater da receita bruta um valor fixo de R$ 607,20 por mês (desconto simplificado) ou a soma real da taxa de administração imobiliária, IPTU e condomínio efetivamente pagos por você como locador. Vale a pena calcular os dois e usar o que resultar na menor base de cálculo tributável.',
+      },
+      {
+        heading: 'As três faixas de tributação',
+        body: 'Renda mensal total (aluguel líquido + outras rendas tributáveis) até R$ 5.000,00 é isenta. Entre R$ 5.000,01 e R$ 7.350,00 há redução proporcional do imposto. Acima de R$ 7.350,00, incide a tabela progressiva do IRPF, com alíquota de até 27,5% sobre a base de cálculo.',
+      },
+      {
+        heading: 'Por que o valor exato precisa ser apurado no programa oficial',
+        body: 'As faixas de redução proporcional e a tabela progressiva completa têm fórmulas e parcelas a deduzir definidas pela Receita Federal, que podem ser atualizadas periodicamente. Por isso, para o valor exato do imposto devido nessas duas faixas, use o Programa Carnê-Leão oficial (gov.br/receitafederal) ou consulte seu contador — esta calculadora mostra a base de cálculo e a faixa aplicável, o ponto de partida para essa apuração.',
+      },
+    ],
+    faq: [
+      {
+        question: 'O que é o Carnê-Leão?',
+        answer:
+          'É o programa da Receita Federal usado para recolhimento mensal obrigatório do Imposto de Renda sobre rendimentos recebidos de pessoas físicas — como o aluguel pago por um inquilino pessoa física (quando o locador não usa imobiliária como intermediária para fins fiscais).',
+      },
+      {
+        question: 'Desconto simplificado ou deduções reais: qual escolher?',
+        answer:
+          'O que resultar na menor base de cálculo tributável. Se a soma de taxa de administração, IPTU e condomínio pagos por você ultrapassar R$ 607,20 no mês, as deduções reais tendem a ser mais vantajosas.',
+      },
+      {
+        question: 'Se minha renda está isenta no mês, ainda preciso declarar?',
+        answer:
+          'Pode haver obrigatoriedade de informar os aluguéis recebidos na Declaração Anual de Ajuste, dependendo do total recebido no ano — mesmo que o Carnê-Leão mensal tenha ficado zerado. Confirme sua situação com um contador.',
+      },
+      {
+        question: 'Essa calculadora substitui o Carnê-Leão oficial da Receita Federal?',
+        answer:
+          'Não. É uma ferramenta educacional para entender a base de cálculo e identificar sua faixa de tributação. O recolhimento oficial do imposto deve ser feito através do Programa Carnê-Leão da Receita Federal.',
+      },
+    ],
+    relatedSlugs: ['ganho-de-capital', 'rentabilidade-imobiliaria', 'financiamento-imobiliario'],
+    disclaimer:
+      'Cálculo simplificado com fins educacionais, baseado nas faixas de isenção e redução vigentes. O valor exato do imposto devido — especialmente nas faixas de redução proporcional e alíquota plena — deve ser apurado no Programa Carnê-Leão da Receita Federal (gov.br/receitafederal) ou com a orientação de um contador. Esta ferramenta não constitui aconselhamento tributário.',
+    status: 'ativa',
+  },
 ];
 
 
