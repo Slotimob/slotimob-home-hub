@@ -15,6 +15,8 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { RequireFeature } from "@/components/subscription/RequireFeature";
 import { LandingThemeProvider } from "@/components/LandingThemeProvider";
 import { SuspenseFallback } from "@/components/SuspenseFallback";
+import { CookieConsent } from "@/components/CookieConsent";
+
 
 
 const LandingPage = React.lazy(() => import("./pages/LandingPage"));
