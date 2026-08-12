@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/table';
 import {
   Building2, CreditCard, Loader2, Plus, Settings2,
-  Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon, FileText, ShieldCheck,
+  Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon, FileText, ShieldCheck, Link2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CockpitOverviewTab } from '@/components/cockpit/CockpitOverviewTab';
@@ -31,6 +31,7 @@ import { CockpitSupportTab } from '@/components/cockpit/CockpitSupportTab';
 import { CockpitBlogTab } from '@/components/cockpit/CockpitBlogTab';
 import { CockpitSettingsTab } from '@/components/cockpit/CockpitSettingsTab';
 import { CockpitGovernanceTab } from '@/components/cockpit/CockpitGovernanceTab';
+import { CockpitUtmTab } from '@/components/cockpit/CockpitUtmTab';
 
 interface Organization {
   user_id: string;
