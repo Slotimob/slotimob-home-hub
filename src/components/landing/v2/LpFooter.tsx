@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { SlotiSymbol } from './SlotiSymbol';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { Youtube, Instagram, Linkedin } from 'lucide-react';
+import { FaTiktok } from 'react-icons/fa';
 
 
 const COLS = [
@@ -54,6 +56,48 @@ export function LpFooter() {
             <p className="mt-4 text-[14px] max-w-[36ch]" style={{ color: 'rgba(255,255,255,0.7)' }}>
               A gestão imobiliária inteira em um só sistema. Para donos de imóveis, corretores e imobiliárias.
             </p>
+            <div className="mt-6 flex items-center gap-4">
+              <a
+                href="https://www.youtube.com/@slotimob"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Slotimob no YouTube"
+                className="transition-colors duration-200 hover:text-white"
+                style={{ color: 'rgba(255,255,255,0.75)' }}
+              >
+                <Youtube size={20} />
+              </a>
+              <a
+                href="https://www.instagram.com/slotimob/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Slotimob no Instagram"
+                className="transition-colors duration-200 hover:text-white"
+                style={{ color: 'rgba(255,255,255,0.75)' }}
+              >
+                <Instagram size={20} />
+              </a>
+              <a
+                href="http://tiktok.com/@slotimob"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Slotimob no TikTok"
+                className="transition-colors duration-200 hover:text-white"
+                style={{ color: 'rgba(255,255,255,0.75)' }}
+              >
+                <FaTiktok size={18} />
+              </a>
+              <a
+                href="https://www.linkedin.com/company/slotimob"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Slotimob no LinkedIn"
+                className="transition-colors duration-200 hover:text-white"
+                style={{ color: 'rgba(255,255,255,0.75)' }}
+              >
+                <Linkedin size={20} />
+              </a>
+            </div>
           </div>
 
           {COLS.map((c) => (
