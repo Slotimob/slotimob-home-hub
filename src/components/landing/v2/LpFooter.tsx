@@ -122,7 +122,20 @@ export function LpFooter() {
                     )}
                   </li>
                 ))}
+                {c.title === 'legal' && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={openCookiePreferences}
+                      className="lp-link text-[13px] text-left"
+                      style={{ color: 'rgba(255,255,255,0.75)' }}
+                    >
+                      preferências de cookies
+                    </button>
+                  </li>
+                )}
               </ul>
+
             </div>
           ))}
         </div>
