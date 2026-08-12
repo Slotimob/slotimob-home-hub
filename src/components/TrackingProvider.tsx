@@ -208,14 +208,18 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
     setInjected(true);
   }, [dbSettings, isError, isFetched, injected]);
 
+  const lastPixelPageView = useRef<string | null>(null);
+
   // Meta Pixel: only load/fire after explicit marketing consent (LGPD opt-in)
   useEffect(() => {
     if (!marketingAllowed || !pixelId) return;
+    // injectPixel already fires the initial PageView
+    lastPixelPageView.current = window.location.pathname + window.location.search;
     injectPixel(pixelId);
   }, [marketingAllowed, pixelId]);
 
+
   // Track page views on route change
-  const lastPixelPageView = useRef<string | null>(null);
   useEffect(() => {
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
