@@ -19,7 +19,7 @@ const Legal = () => {
   const cnpj = "42.323.823/0001-06";
   const appName = "SLOTIMOB";
   const contactEmail = "contato@slotimob.com.br";
-  const lastUpdate = "07 de julho de 2026";
+  const lastUpdate = "12 de agosto de 2026";
 
   const handleTabChange = (value: string) => {
     const next = new URLSearchParams(searchParams);
@@ -104,6 +104,10 @@ const Legal = () => {
                           <li>Dados de imóveis: informações sobre propriedades e unidades cadastradas</li>
                           <li>Dados de comunicação: mensagens trocadas via WhatsApp integrado</li>
                         </ul>
+                        <h3 className="text-base font-semibold mt-4 mb-2">2.1. Dados de Navegação e Publicidade (Visitantes do Site)</h3>
+                        <p className="text-muted-foreground">
+                          Além dos dados fornecidos por clientes cadastrados, ao visitar nosso site — mesmo sem se cadastrar — podemos coletar, mediante consentimento quando exigido pela LGPD: endereço IP, identificadores de cookies e dispositivo, tipo de navegador, páginas visitadas, tempo de permanência, origem do acesso (ex: rede social, busca orgânica, anúncio) e interações com campanhas publicitárias, por meio das ferramentas de terceiros descritas na seção sobre Compartilhamento de Dados.
+                        </p>
                       </section>
 
                       <section>
@@ -139,11 +143,32 @@ const Legal = () => {
                           <li>Serviços de integração de WhatsApp (Evolution API) para envio de notificações e mensagens automatizadas</li>
                           <li>Asaas Gestão Financeira Instituição de Pagamentos S.A. (processamento de pagamentos, emissão de cobranças e serviços financeiros regulados)</li>
                           <li>Serviços de envio de e-mail transacional (Resend)</li>
+                          <li>Google Analytics (Google LLC) — mensuração de audiência e comportamento de navegação no site, mediante consentimento coletado no banner de cookies. Política de privacidade:{" "}
+                            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://policies.google.com/privacy</a>
+                          </li>
+                          <li>Google Ads (Google LLC) — mensuração de conversões e campanhas de remarketing, mediante consentimento.</li>
+                          <li>Meta Ads / Meta Pixel (Meta Platforms, Inc.) — mensuração de conversões e campanhas de remarketing em Facebook e Instagram, mediante consentimento. Política de privacidade:{" "}
+                            <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.facebook.com/privacy/policy/</a>
+                          </li>
                           <li>Autoridades competentes, quando exigido por lei</li>
                         </ul>
                         <p className="text-muted-foreground mt-2">
                           Não vendemos ou comercializamos seus dados pessoais a terceiros.
                         </p>
+                        <div className="mt-4 rounded-lg border border-border bg-muted/40 p-4">
+                          <h3 className="text-base font-semibold mb-2">Cookies de Analytics e Publicidade (Google e Meta)</h3>
+                          <p className="text-muted-foreground">
+                            Utilizamos Google Analytics, Google Ads e Meta Ads (Meta Pixel) para entender como os visitantes utilizam nosso site e mensurar o desempenho de campanhas publicitárias. Essas ferramentas podem coletar dados como endereço IP, identificadores de cookie, tipo de dispositivo/navegador, páginas visitadas e ações realizadas no site.
+                          </p>
+                          <p className="text-muted-foreground mt-3">
+                            O tratamento desses dados tem como base legal o seu consentimento, coletado através do banner de cookies exibido no primeiro acesso ao site (ver seção Cookies). Você pode revogar esse consentimento a qualquer momento pelo link "Preferências de Cookies" no rodapé do site.
+                          </p>
+                          <p className="text-muted-foreground mt-3">
+                            Google e Meta atuam como operadores de dados nos termos da LGPD. Para gerenciar suas preferências de anúncios diretamente com eles:{" "}
+                            <a href="https://myadcenter.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google</a>{" "}e{" "}
+                            <a href="https://www.facebook.com/adpreferences/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Meta</a>.
+                          </p>
+                        </div>
                       </section>
 
                       <section>
@@ -202,19 +227,31 @@ const Legal = () => {
                           <li>Eliminação dos dados tratados com consentimento</li>
                           <li>Revogação do consentimento</li>
                         </ul>
+                        <p className="text-muted-foreground mt-3">
+                          Caso entenda que seus direitos não foram atendidos adequadamente por nós, você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD):{" "}
+                          <a href="https://www.gov.br/anpd" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.gov.br/anpd</a>.
+                        </p>
                       </section>
 
                       <section>
                         <h2 className="text-lg font-semibold mb-3">9. Cookies</h2>
                         <p className="text-muted-foreground">
-                          Utilizamos cookies e tecnologias similares para melhorar sua experiência no aplicativo, analisar o uso e personalizar conteúdos. Você pode gerenciar suas preferências de cookies através das configurações do navegador.
+                          Utilizamos cookies e tecnologias similares (como pixels e armazenamento local do navegador) para viabilizar o funcionamento do site, entender como você o utiliza e, quando você consentir, personalizar anúncios. Classificamos os cookies utilizados nas seguintes categorias:
+                        </p>
+                        <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mt-3">
+                          <li><strong>Cookies Necessários:</strong> essenciais para o funcionamento do site (ex.: manter sua sessão ativa, lembrar sua escolha de cookies). Não podem ser desativados, pois são indispensáveis à prestação do serviço solicitado por você (LGPD, art. 7º, inciso IV).</li>
+                          <li><strong>Cookies de Analytics:</strong> utilizados pelo Google Analytics para entender como os visitantes navegam pelo site (páginas mais acessadas, tempo de permanência, origem do tráfego). Dependem do seu consentimento prévio.</li>
+                          <li><strong>Cookies de Publicidade/Marketing:</strong> utilizados pelo Google Ads e Meta Ads (Meta Pixel) para mensurar o desempenho de campanhas e, quando autorizado, exibir anúncios mais relevantes em outros sites e redes sociais (remarketing). Dependem do seu consentimento prévio.</li>
+                        </ul>
+                        <p className="text-muted-foreground mt-3">
+                          Ao acessar o site pela primeira vez, um banner de cookies permite aceitar todos os cookies, rejeitar os não essenciais, ou personalizar sua escolha por categoria. Enquanto você não fornecer consentimento explícito, cookies de analytics e publicidade permanecem desativados (modelo opt-in). Você pode alterar sua escolha a qualquer momento pelo link "Preferências de Cookies", disponível no rodapé do site, ou pelas configurações do seu navegador.
                         </p>
                       </section>
 
                       <section>
                         <h2 className="text-lg font-semibold mb-3">10. Contato</h2>
                         <p className="text-muted-foreground">
-                          Para exercer seus direitos ou esclarecer dúvidas sobre esta Política de Privacidade, entre em contato conosco pelo e-mail:{" "}
+                          Para exercer os direitos descritos nesta política ou tirar dúvidas sobre o tratamento dos seus dados, entre em contato com nosso Encarregado de Proteção de Dados (DPO) pelo e-mail:{" "}
                           <a href={`mailto:${contactEmail}`} className="text-primary hover:underline font-medium">
                             {contactEmail}
                           </a>
@@ -301,6 +338,13 @@ const Legal = () => {
                         <h2 className="text-lg font-semibold mb-3">6. Seus Dados</h2>
                         <p className="text-muted-foreground">
                           Você mantém a propriedade de todos os dados que inserir no {appName}. Ao utilizar nossos serviços, você nos concede uma licença limitada para processar esses dados conforme necessário para a prestação do serviço. A {companyName} trata seus dados de acordo com nossa Política de Privacidade.
+                        </p>
+                      </section>
+
+                      <section>
+                        <h2 className="text-lg font-semibold mb-3">6.1. Cookies e Ferramentas de Publicidade</h2>
+                        <p className="text-muted-foreground">
+                          O site utiliza cookies, Google Analytics, Google Ads e Meta Ads (Meta Pixel) para fins estatísticos e publicitários, conforme detalhado em nossa Política de Privacidade. O uso de cookies de analytics e publicidade está sujeito ao seu consentimento, coletado através do banner exibido no primeiro acesso ao site — a simples navegação no site não implica consentimento para essas categorias.
                         </p>
                       </section>
 

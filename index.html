@@ -1,7 +1,34 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
+    <!-- Google Consent Mode v2 — default denied (opt-in / LGPD) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        wait_for_update: 500
+      });
+      (function () {
+        try {
+          var raw = localStorage.getItem('slotimob_cookie_consent');
+          if (!raw) return;
+          var c = JSON.parse(raw);
+          gtag('consent', 'update', {
+            analytics_storage: c && c.analytics ? 'granted' : 'denied',
+            ad_storage: c && c.marketing ? 'granted' : 'denied',
+            ad_user_data: c && c.marketing ? 'granted' : 'denied',
+            ad_personalization: c && c.marketing ? 'granted' : 'denied'
+          });
+        } catch (e) {}
+      })();
+    </script>
+    <!-- End Google Consent Mode v2 -->
     <!-- Google Tag Manager -->
+
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
     j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=

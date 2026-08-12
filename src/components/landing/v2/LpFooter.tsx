@@ -3,6 +3,8 @@ import { SlotiSymbol } from './SlotiSymbol';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Youtube, Instagram, Linkedin } from 'lucide-react';
 import { FaTiktok } from 'react-icons/fa';
+import { openCookiePreferences } from '@/hooks/useCookieConsent';
+
 
 
 const COLS = [
@@ -122,7 +124,20 @@ export function LpFooter() {
                     )}
                   </li>
                 ))}
+                {c.title === 'legal' && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={openCookiePreferences}
+                      className="lp-link text-[13px] text-left"
+                      style={{ color: 'rgba(255,255,255,0.75)' }}
+                    >
+                      preferências de cookies
+                    </button>
+                  </li>
+                )}
               </ul>
+
             </div>
           ))}
         </div>
