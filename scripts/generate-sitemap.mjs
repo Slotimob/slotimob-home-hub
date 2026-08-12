@@ -68,7 +68,27 @@ const STATIC_URLS = `
     <lastmod>2026-07-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://slotimob.com.br/calculadoras</loc>
+    <lastmod>${TODAY}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>`;
+
+// Mantenha sincronizado com os slugs ativos de src/data/calculators.ts
+const CALCULATOR_SLUGS = ['financiamento-imobiliario'];
+
+const CALCULATOR_URLS = CALCULATOR_SLUGS.map(
+  (slug) => `
+  <url>
+    <loc>https://slotimob.com.br/calculadoras/${slug}</loc>
+    <lastmod>${TODAY}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>`,
+).join('\n');
 
 async function fetchBlogUrls() {
   try {
