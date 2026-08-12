@@ -3,6 +3,8 @@ import { SlotiSymbol } from './SlotiSymbol';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { Youtube, Instagram, Linkedin } from 'lucide-react';
 import { FaTiktok } from 'react-icons/fa';
+import { openCookiePreferences } from '@/hooks/useCookieConsent';
+
 
 
 const COLS = [
