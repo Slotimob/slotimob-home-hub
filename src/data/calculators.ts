@@ -201,6 +201,58 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Estimativa educacional baseada em multiplicadores de mercado típicos — não substitui avaliação profissional (laudo de engenharia, corretor com CRECI ou avaliação bancária) para fins de venda, compra ou financiamento.',
     status: 'ativa',
   },
+  {
+    slug: 'comprar-ou-alugar',
+    category: 'Decisão Financeira',
+    title: 'Comprar ou Alugar',
+    seoTitle: 'Calculadora Comprar ou Alugar 2026: Price-to-Rent Ratio | Slotimob',
+    seoDescription:
+      'Descubra se vale mais a pena comprar ou alugar um imóvel usando o Price-to-Rent Ratio. Compare o preço de venda com o aluguel equivalente em segundos.',
+    icon: 'Scale',
+    heroH1: 'Calculadora Comprar ou Alugar: Price-to-Rent Ratio',
+    intro:
+      'Vale mais a pena comprar ou alugar? Esta calculadora usa o Price-to-Rent Ratio — a razão entre o valor de venda do imóvel e o total de 12 meses de aluguel equivalente — pra dar uma resposta objetiva a essa pergunta. É a mesma lógica usada por investidores para decidir entre imobilizar capital na compra de um imóvel ou alugar e investir a diferença em outros ativos. Informe o valor de venda do imóvel e o valor do aluguel mensal de um imóvel equivalente na mesma região.',
+    howItWorks: [
+      {
+        heading: 'O que é o Price-to-Rent Ratio',
+        body: 'É a razão entre o valor de venda do imóvel e o valor de 12 meses de aluguel de um imóvel equivalente: preço ÷ (aluguel mensal × 12). Quanto maior o número, mais "caro" está o imóvel em relação ao aluguel — e mais eficiente tende a ser alugar em vez de comprar.',
+      },
+      {
+        heading: 'Como interpretar o resultado',
+        body: 'Um índice acima de 25 costuma indicar que alugar e investir a diferença é mais eficiente financeiramente. Abaixo de 15, comprar tende a ser mais vantajoso no longo prazo. Entre 15 e 25, a decisão financeira está equilibrada e outros fatores pesam mais — estabilidade, tempo que pretende ficar no imóvel, perfil como investidor.',
+      },
+      {
+        heading: 'O que esse índice não considera',
+        body: 'O Price-to-Rent Ratio é uma fotografia do momento atual — não projeta valorização futura do imóvel, custos de transação (ITBI, corretagem, cartório), nem a evolução do aluguel ao longo dos anos. É um ponto de partida, não uma resposta definitiva.',
+      },
+    ],
+    faq: [
+      {
+        question: 'O que significa Price-to-Rent Ratio?',
+        answer:
+          'É a razão entre o preço de venda de um imóvel e o valor de 12 meses de aluguel de um imóvel equivalente. Fórmula: preço do imóvel ÷ (aluguel mensal × 12).',
+      },
+      {
+        question: 'Alugar e investir a diferença é sempre melhor quando o índice é alto?',
+        answer:
+          'Financeiramente, tende a ser — mas só se a diferença for realmente investida com disciplina. Fatores não financeiros (estabilidade, filhos na escola, planos de longo prazo, aversão a mudanças) também pesam bastante nessa decisão.',
+      },
+      {
+        question: 'Esse cálculo considera a valorização futura do imóvel?',
+        answer:
+          'Não. É uma comparação do momento atual entre preço de compra e custo de locação. Para projetar rentabilidade e valorização ao longo dos anos, use a calculadora de Rentabilidade Imobiliária.',
+      },
+      {
+        question: 'Qual índice é considerado "normal" no Brasil?',
+        answer:
+          'Varia bastante por cidade e bairro, mas historicamente o Brasil costuma ter índices mais baixos que mercados como EUA e Europa — refletindo aluguéis proporcionalmente mais caros em relação ao preço de compra em várias regiões.',
+      },
+    ],
+    relatedSlugs: ['valor-do-imovel', 'financiamento-imobiliario', 'rentabilidade-imobiliaria'],
+    disclaimer:
+      'Indicador de referência para uma decisão inicial. Não considera valorização futura do imóvel, custos de transação (ITBI, corretagem, cartório), inflação do aluguel ao longo do tempo, nem o perfil de investidor. Para uma análise completa, consulte um planejador financeiro.',
+    status: 'ativa',
+  },
 ];
 
 
