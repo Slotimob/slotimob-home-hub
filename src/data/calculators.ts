@@ -97,7 +97,60 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Simulação com fins educacionais. Taxas, condições de aprovação e o Custo Efetivo Total final dependem da análise de crédito de cada instituição financeira.',
     status: 'ativa',
   },
+  {
+    slug: 'reajuste-de-aluguel',
+    category: 'Locação',
+    title: 'Reajuste de Aluguel',
+    seoTitle: 'Calculadora de Reajuste de Aluguel 2026: IGP-M, IPCA e INCC',
+    seoDescription:
+      'Calcule o reajuste anual do seu aluguel pelo IGP-M, IPCA ou INCC. Descubra o novo valor da mensalidade em segundos, com explicação completa da Lei do Inquilinato.',
+    icon: 'TrendingUp',
+    heroH1: 'Calculadora de Reajuste de Aluguel: IGP-M, IPCA e INCC',
+    intro:
+      'A Lei do Inquilinato (Lei nº 8.245/91) permite reajustar o valor do aluguel uma vez por ano, aplicando a variação de um índice de inflação definido em contrato — geralmente o IGP-M ou o IPCA. Esta calculadora aplica a variação percentual acumulada nos últimos 12 meses sobre o valor atual do aluguel e mostra o novo valor da mensalidade e o valor do reajuste em reais. Informe o valor atual do aluguel e a variação percentual acumulada do índice escolhido nos últimos 12 meses — consulte o valor atualizado direto na fonte oficial (FGV para o IGP-M, IBGE para o IPCA) antes de aplicar formalmente.',
+    howItWorks: [
+      {
+        heading: 'Por que só posso reajustar uma vez por ano?',
+        body: 'A Lei do Inquilinato (Lei nº 8.245/91) exige um intervalo mínimo de doze meses entre reajustes de aluguel. O índice aplicado é sempre a variação acumulada nesse período de 12 meses.',
+      },
+      {
+        heading: 'IGP-M ou IPCA: qual escolher?',
+        body: 'O IGP-M (FGV) foi historicamente o índice mais usado em contratos de locação, mas por ser mais volátil em momentos de oscilação cambial, o IPCA (IBGE) — mais estável — passou a ser amplamente adotado como alternativa. O índice usado é sempre o que estiver definido no contrato.',
+      },
+      {
+        heading: 'Como o novo valor é calculado',
+        body: 'O novo aluguel é o valor atual multiplicado por (1 + variação do índice ÷ 100). Por exemplo, um aluguel de R$ 2.000 com reajuste de 4% passa a R$ 2.080.',
+      },
+    ],
+    faq: [
+      {
+        question: 'Onde encontro o valor atualizado do IGP-M ou do IPCA?',
+        answer:
+          'O IGP-M é divulgado mensalmente pela FGV (portalibre.fgv.br) e o IPCA pelo IBGE (ibge.gov.br). O valor a usar é sempre a variação acumulada dos últimos 12 meses.',
+      },
+      {
+        question: 'O que acontece se o índice acumulado for negativo?',
+        answer:
+          'Em caso de deflação acumulada, o valor do aluguel pode até diminuir no reajuste, salvo se o contrato tiver alguma cláusula de piso mínimo — o que não é comum, mas deve ser verificado no contrato.',
+      },
+      {
+        question: 'Posso reajustar antes de completar 12 meses do último reajuste?',
+        answer:
+          'Como regra geral não — a Lei do Inquilinato exige intervalo mínimo de 12 meses entre reajustes, salvo acordo diferente livremente pactuado entre locador e locatário.',
+      },
+      {
+        question: 'O reajuste é automático ou preciso avisar o inquilino?',
+        answer:
+          'Depende do que está previsto em contrato, mas a boa prática — e muitas vezes exigência contratual — é notificar o inquilino formalmente e por escrito com antecedência sobre o novo valor.',
+      },
+    ],
+    relatedSlugs: ['financiamento-imobiliario', 'comprar-ou-alugar', 'multa-rescisoria-aluguel'],
+    disclaimer:
+      'Índices de inflação variam mensalmente. Confirme o valor acumulado dos últimos 12 meses diretamente nas fontes oficiais (FGV/IBGE) antes de aplicar o reajuste formalmente em contrato.',
+    status: 'ativa',
+  },
 ];
+
 
 export const getCalculatorBySlug = (slug?: string): CalculatorEntry | undefined =>
   CALCULATORS.find((c) => c.slug === slug);
