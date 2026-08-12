@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/table';
 import {
   Building2, CreditCard, Loader2, Plus, Settings2,
-  Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon, FileText, ShieldCheck,
+  Shield, Sparkles, Users, Search, Crown, UserCog, BarChart3, HeadphonesIcon, FileText, ShieldCheck, Link2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CockpitOverviewTab } from '@/components/cockpit/CockpitOverviewTab';
@@ -31,6 +31,7 @@ import { CockpitSupportTab } from '@/components/cockpit/CockpitSupportTab';
 import { CockpitBlogTab } from '@/components/cockpit/CockpitBlogTab';
 import { CockpitSettingsTab } from '@/components/cockpit/CockpitSettingsTab';
 import { CockpitGovernanceTab } from '@/components/cockpit/CockpitGovernanceTab';
+import { CockpitUtmTab } from '@/components/cockpit/CockpitUtmTab';
 
 interface Organization {
   user_id: string;
@@ -285,6 +286,11 @@ const AdminCockpit = () => {
               </TabsTrigger>
             )}
             {isSuperAdmin && (
+              <TabsTrigger value="utms" className="gap-2 min-h-[44px]">
+                <Link2 className="h-4 w-4" /> UTMs
+              </TabsTrigger>
+            )}
+            {isSuperAdmin && (
               <TabsTrigger value="settings" className="gap-2 min-h-[44px]">
                 <Settings2 className="h-4 w-4" /> Configurações
               </TabsTrigger>
@@ -498,6 +504,15 @@ const AdminCockpit = () => {
               <CockpitBlogTab />
             </TabsContent>
           )}
+
+          {/* UTMs Tab - super_admin only */}
+          {isSuperAdmin && (
+            <TabsContent value="utms">
+              <CockpitUtmTab />
+            </TabsContent>
+          )}
+
+
 
           {/* Settings Tab - super_admin only */}
           {isSuperAdmin && (
