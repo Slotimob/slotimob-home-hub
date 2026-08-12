@@ -69,6 +69,8 @@ const Users = React.lazy(() => import("./pages/Users"));
 const AdminCockpit = React.lazy(() => import("./pages/AdminCockpit"));
 const Blog = React.lazy(() => import("./pages/Blog"));
 const BlogPostPage = React.lazy(() => import("./pages/BlogPost"));
+const Calculators = React.lazy(() => import("./pages/Calculators"));
+const CalculatorDetail = React.lazy(() => import("./pages/CalculatorDetail"));
 const AIChat = React.lazy(() => import("./pages/AIChat"));
 const Proposals = React.lazy(() => import("./pages/Proposals"));
 const AdminApprovals = React.lazy(() => import("./pages/AdminApprovals"));
