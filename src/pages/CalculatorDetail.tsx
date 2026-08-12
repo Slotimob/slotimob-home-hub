@@ -19,6 +19,7 @@ import { ValorImovelCalculator } from '@/components/calculators/ValorImovelCalcu
 import { ComprarAlugarCalculator } from '@/components/calculators/ComprarAlugarCalculator';
 import { CarneLeaoCalculator } from '@/components/calculators/CarneLeaoCalculator';
 import { GanhoCapitalCalculator } from '@/components/calculators/GanhoCapitalCalculator';
+import { IncCalculator } from '@/components/calculators/IncCalculator';
 
 const BASE_URL = 'https://slotimob.com.br';
 
@@ -29,6 +30,7 @@ const CALCULATOR_COMPONENTS: Record<string, () => JSX.Element> = {
   'comprar-ou-alugar': ComprarAlugarCalculator,
   'imposto-de-renda-aluguel': CarneLeaoCalculator,
   'ganho-de-capital': GanhoCapitalCalculator,
+  'incc-imovel-na-planta': IncCalculator,
 };
 
 

@@ -85,6 +85,7 @@ const CALCULATOR_SLUGS = [
   'comprar-ou-alugar',
   'imposto-de-renda-aluguel',
   'ganho-de-capital',
+  'incc-imovel-na-planta',
 ];
 
 const CALCULATOR_URLS = CALCULATOR_SLUGS.map(

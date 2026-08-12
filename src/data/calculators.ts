@@ -376,6 +376,67 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Estimativa educativa com base na tabela progressiva da Lei 13.259/2016. Não substitui o preenchimento do GCAP, programa oficial da Receita Federal para apuração e recolhimento do imposto. Recomendamos a orientação de um contador em casos com múltiplas isenções, pessoa jurídica ou imóvel rural.',
     status: 'ativa',
   },
+  {
+    slug: 'incc-imovel-na-planta',
+    category: 'Financiamento',
+    title: 'INCC (Imóvel na Planta)',
+    seoTitle: 'Calculadora INCC 2026: Correção de Parcela de Imóvel na Planta | Slotimob',
+    seoDescription:
+      'Projete a correção das parcelas do seu imóvel na planta pelo INCC até a entrega das chaves: veja o valor futuro da parcela, do saldo devedor e o total corrigido.',
+    icon: 'HardHat',
+    heroH1: 'Calculadora de INCC: Correção de Parcelas de Imóvel na Planta',
+    intro:
+      'Comprou um imóvel na planta e quer saber quanto a parcela vai custar quando as chaves forem entregues? Durante a fase de obra, as parcelas e o saldo devedor de imóveis em construção são corrigidos mensalmente pelo INCC — o Índice Nacional de Custo da Construção, divulgado pela FGV. Esta calculadora projeta essa correção mês a mês, em juros compostos, mostrando o valor da parcela hoje, o valor projetado no mês da entrega e quanto isso representa em reais e em percentual acumulado. Informe a parcela atual, o índice mensal médio esperado e quantos meses faltam para a entrega — se quiser, informe também o saldo devedor para ver a projeção dele.',
+    howItWorks: [
+      {
+        heading: 'O que é o INCC',
+        body: 'O Índice Nacional de Custo da Construção (INCC), calculado pela FGV, mede a variação do custo da construção civil — materiais, equipamentos, mão de obra e serviços. É o índice usado por padrão nos contratos de compra de imóveis na planta durante toda a fase de obra.',
+      },
+      {
+        heading: 'Como a correção é aplicada',
+        body: 'A correção é composta: a cada mês, o índice incide sobre o valor já corrigido no mês anterior. A projeção usa a fórmula valor final = valor atual × (1 + índice mensal ÷ 100) elevado ao número de meses restantes até a entrega.',
+      },
+      {
+        heading: 'A transição de índice após as chaves',
+        body: 'Entregue a obra, o contrato normalmente deixa de corrigir pelo INCC e passa a usar IGP-M ou IPCA, geralmente somados a juros contratuais sobre o saldo remanescente. Isso é uma regra contratual, não uma regra legal fixa — confira no seu contrato de compra e venda qual índice passa a valer e a partir de quando.',
+      },
+      {
+        heading: 'Por que usar um índice médio',
+        body: 'O INCC é divulgado mensalmente e varia bastante ao longo do ano. Como não há como prever os valores futuros, a projeção usa um índice mensal médio repetido — útil para simular cenários (conservador, provável, pessimista), não para prever o valor exato.',
+      },
+    ],
+    faq: [
+      {
+        question: 'O que é INCC?',
+        answer:
+          'É o Índice Nacional de Custo da Construção, calculado e divulgado mensalmente pela FGV. Ele mede a variação dos custos da construção civil e é o índice usado para corrigir parcelas e saldo devedor de imóveis na planta durante a obra.',
+      },
+      {
+        question: 'Como calcular o reajuste da parcela de um imóvel na planta?',
+        answer:
+          'Aplique o índice do mês sobre o valor já corrigido no mês anterior, de forma composta: valor corrigido = valor atual × (1 + INCC mensal ÷ 100) elevado ao número de meses. Esta calculadora faz essa projeção mês a mês automaticamente.',
+      },
+      {
+        question: 'Quando o imóvel para de ser corrigido pelo INCC?',
+        answer:
+          'Em geral, na entrega das chaves ou na conclusão da obra (habite-se). A partir daí, o contrato normalmente muda a correção para IGP-M ou IPCA, muitas vezes com acréscimo de juros sobre o saldo devedor. Verifique a cláusula específica do seu contrato.',
+      },
+      {
+        question: 'Onde encontro o valor oficial do INCC?',
+        answer:
+          'Na FGV IBRE (portalibre.fgv.br), que divulga a série histórica mensal do índice. Use os últimos meses como referência para estimar um índice médio na simulação.',
+      },
+      {
+        question: 'Dá para prever com exatidão quanto vou pagar na entrega?',
+        answer:
+          'Não. O INCC varia mês a mês conforme o custo da construção civil. A projeção com índice médio serve para dimensionar cenários e planejar o orçamento, não para cravar um valor exato.',
+      },
+    ],
+    relatedSlugs: ['financiamento-imobiliario', 'reajuste-de-aluguel', 'valor-do-imovel'],
+    disclaimer:
+      'Projeção educativa baseada na repetição de um índice mensal médio. O INCC efetivo varia mês a mês e a mudança de índice após a entrega das chaves depende do que estiver previsto no contrato de compra e venda.',
+    status: 'ativa',
+  },
 ];
 
 
