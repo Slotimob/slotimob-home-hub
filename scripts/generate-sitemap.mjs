@@ -78,8 +78,13 @@ const STATIC_URLS = `
     <priority>0.8</priority>
   </url>`;
 
-// Mantenha sincronizado com os slugs ativos de src/data/calculators.ts
-const CALCULATOR_SLUGS = ['financiamento-imobiliario'];
+const CALCULATOR_SLUGS = [
+  'financiamento-imobiliario',
+  'reajuste-de-aluguel',
+  'valor-do-imovel',
+  'comprar-ou-alugar',
+  'imposto-de-renda-aluguel',
+];
 
 const CALCULATOR_URLS = CALCULATOR_SLUGS.map(
   (slug) => `

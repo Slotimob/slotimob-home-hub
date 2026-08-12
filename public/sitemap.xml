@@ -77,6 +77,34 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+
+  <url>
+    <loc>https://slotimob.com.br/calculadoras/reajuste-de-aluguel</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://slotimob.com.br/calculadoras/valor-do-imovel</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://slotimob.com.br/calculadoras/comprar-ou-alugar</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://slotimob.com.br/calculadoras/imposto-de-renda-aluguel</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 <url>
     <loc>https://slotimob.com.br/blog/reforma-tributaria-no-aluguel-como-o-ibs-e-a-cbs-afetam-voce</loc>
     <lastmod>2026-08-06</lastmod>
