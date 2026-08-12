@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, '..', 'public', 'sitemap.xml');
 const BLOG_SITEMAP_URL = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/blog-sitemap';
+const TODAY = new Date().toISOString().split('T')[0];
 
 const STATIC_URLS = `
   <url>
@@ -68,7 +69,27 @@ const STATIC_URLS = `
     <lastmod>2026-07-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://slotimob.com.br/calculadoras</loc>
+    <lastmod>${TODAY}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>`;
+
+// Mantenha sincronizado com os slugs ativos de src/data/calculators.ts
+const CALCULATOR_SLUGS = ['financiamento-imobiliario'];
+
+const CALCULATOR_URLS = CALCULATOR_SLUGS.map(
+  (slug) => `
+  <url>
+    <loc>https://slotimob.com.br/calculadoras/${slug}</loc>
+    <lastmod>${TODAY}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>`,
+).join('\n');
 
 async function fetchBlogUrls() {
   try {
@@ -88,6 +109,7 @@ const blogUrls = await fetchBlogUrls();
 const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${STATIC_URLS}
+${CALCULATOR_URLS}
 ${blogUrls}
 </urlset>
 `;
