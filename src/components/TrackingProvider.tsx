@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,13 +215,16 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
   }, [marketingAllowed, pixelId]);
 
   // Track page views on route change
+  const lastPixelPageView = useRef<string | null>(null);
   useEffect(() => {
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
       event: 'virtual_page_view',
       page_path: location.pathname + location.search,
     });
-    if (marketingAllowed && window.fbq) {
+    const path = location.pathname + location.search;
+    if (marketingAllowed && window.fbq && lastPixelPageView.current !== path) {
+      lastPixelPageView.current = path;
       window.fbq('track', 'PageView');
     }
   }, [location.pathname, location.search, marketingAllowed]);
