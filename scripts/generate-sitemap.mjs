@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, '..', 'public', 'sitemap.xml');
 const BLOG_SITEMAP_URL = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/blog-sitemap';
+const TODAY = new Date().toISOString().split('T')[0];
 
 const STATIC_URLS = `
   <url>
