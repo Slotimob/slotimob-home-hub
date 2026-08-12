@@ -16,6 +16,7 @@ import { CalculatorIcon } from '@/components/calculators/CalculatorIcon';
 import { FinanciamentoCalculator } from '@/components/calculators/FinanciamentoCalculator';
 import { ReajusteAluguelCalculator } from '@/components/calculators/ReajusteAluguelCalculator';
 import { ValorImovelCalculator } from '@/components/calculators/ValorImovelCalculator';
+import { ComprarAlugarCalculator } from '@/components/calculators/ComprarAlugarCalculator';
 
 const BASE_URL = 'https://slotimob.com.br';
 
@@ -23,6 +24,7 @@ const CALCULATOR_COMPONENTS: Record<string, () => JSX.Element> = {
   'financiamento-imobiliario': FinanciamentoCalculator,
   'reajuste-de-aluguel': ReajusteAluguelCalculator,
   'valor-do-imovel': ValorImovelCalculator,
+  'comprar-ou-alugar': ComprarAlugarCalculator,
 };
 
 
