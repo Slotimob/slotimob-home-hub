@@ -109,6 +109,7 @@ const blogUrls = await fetchBlogUrls();
 const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${STATIC_URLS}
+${CALCULATOR_URLS}
 ${blogUrls}
 </urlset>
 `;
