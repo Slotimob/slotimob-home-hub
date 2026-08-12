@@ -84,6 +84,7 @@ const CALCULATOR_SLUGS = [
   'valor-do-imovel',
   'comprar-ou-alugar',
   'imposto-de-renda-aluguel',
+  'ganho-de-capital',
 ];
 
 const CALCULATOR_URLS = CALCULATOR_SLUGS.map(
