@@ -213,7 +213,9 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>
+            <CookieConsent />
             </TrackingProvider>
+
           </AuthProvider>
         </BrowserRouter>
         <Toaster />
