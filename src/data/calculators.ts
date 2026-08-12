@@ -305,7 +305,79 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Cálculo simplificado com fins educacionais, baseado nas faixas de isenção e redução vigentes. O valor exato do imposto devido — especialmente nas faixas de redução proporcional e alíquota plena — deve ser apurado no Programa Carnê-Leão da Receita Federal (gov.br/receitafederal) ou com a orientação de um contador. Esta ferramenta não constitui aconselhamento tributário.',
     status: 'ativa',
   },
+  {
+    slug: 'ganho-de-capital',
+    category: 'Imposto de Renda',
+    title: 'Ganho de Capital',
+    seoTitle:
+      'Calculadora de Imposto sobre Ganho de Capital na Venda de Imóvel 2026 | Slotimob',
+    seoDescription:
+      'Calcule o imposto de ganho de capital na venda de imóvel: alíquotas de 15% a 22,5%, isenção de até R$ 440 mil e isenção por reinvestimento em 180 dias.',
+    icon: 'Landmark',
+    heroH1: 'Calculadora de Ganho de Capital na Venda de Imóveis',
+    intro:
+      'Ao vender um imóvel por um valor maior do que pagou, você apura um ganho de capital — e sobre ele incide Imposto de Renda, com alíquotas progressivas de 15% a 22,5%. Esta calculadora apura o ganho de capital descontando o valor de aquisição, as benfeitorias documentadas e as despesas da venda, e estima o imposto devido faixa a faixa. Ela também identifica as duas isenções mais usadas na prática: a venda de único imóvel de até R$ 440.000 e a aplicação integral do valor da venda na compra de outro imóvel residencial no Brasil em até 180 dias. Informe os valores da operação e marque as situações aplicáveis para ver o resultado na hora.',
+    howItWorks: [
+      {
+        heading: 'Como o ganho de capital é apurado',
+        body: 'Ganho de capital = valor de venda − valor de aquisição − benfeitorias documentadas − despesas da venda (corretagem, ITBI quando aplicável). Só entram como benfeitorias os custos comprovados por nota fiscal em seu nome, informados na declaração de bens. Se o resultado for zero ou negativo, não há imposto a pagar sobre ganho.',
+      },
+      {
+        heading: 'Tabela progressiva de alíquotas',
+        body: 'Desde a Lei 13.259/2016, o imposto é progressivo por faixas: 15% sobre a parcela do ganho até R$ 5 milhões, 17,5% entre R$ 5 e R$ 10 milhões, 20% entre R$ 10 e R$ 30 milhões e 22,5% acima de R$ 30 milhões. Na grande maioria das vendas residenciais, o ganho inteiro fica na primeira faixa, com alíquota de 15%.',
+      },
+      {
+        heading: 'Isenção do único imóvel de até R$ 440 mil',
+        body: 'O Art. 39 da Lei 11.196/2005 isenta a venda do único imóvel do contribuinte, desde que o valor da alienação não ultrapasse R$ 440.000,00 e que ele não tenha vendido outro imóvel nos cinco anos anteriores.',
+      },
+      {
+        heading: 'Isenção por reinvestimento em 180 dias',
+        body: 'A mesma lei isenta o ganho quando o valor total da venda de imóvel residencial é aplicado na compra de outro imóvel residencial no Brasil dentro de 180 dias. A isenção é proporcional ao valor efetivamente reinvestido e só pode ser usada uma vez a cada cinco anos.',
+      },
+      {
+        heading: 'Imóveis adquiridos antes de 1988',
+        body: 'Imóveis comprados antes de 1988 seguem regras de transição, com percentuais de redução do ganho que variam conforme o ano de aquisição — podendo chegar à isenção total. Nesses casos, a apuração deve ser feita no programa GCAP da Receita Federal ou com um contador.',
+      },
+    ],
+    faq: [
+      {
+        question: 'Quem paga imposto de ganho de capital na venda de imóvel?',
+        answer:
+          'Paga quem vende um imóvel por valor superior ao custo de aquisição corrigido (incluindo benfeitorias documentadas) e não se enquadra em nenhuma hipótese de isenção. O recolhimento é feito até o último dia útil do mês seguinte ao da venda, via DARF apurado no programa GCAP.',
+      },
+      {
+        question: 'Como calcular o ganho de capital na venda de um imóvel?',
+        answer:
+          'Subtraia do valor de venda o valor de aquisição declarado, as benfeitorias comprovadas por nota fiscal e as despesas da venda, como corretagem e ITBI quando pago pelo vendedor. Sobre o resultado aplica-se a tabela progressiva de 15% a 22,5%.',
+      },
+      {
+        question: 'Existe isenção de imposto na venda de imóvel?',
+        answer:
+          'Sim. As duas mais comuns são a venda de único imóvel por até R$ 440.000, sem outra venda nos cinco anos anteriores, e a aplicação integral do valor da venda na compra de outro imóvel residencial no Brasil em até 180 dias — esta última utilizável uma vez a cada cinco anos.',
+      },
+      {
+        question: 'Qual a alíquota do imposto sobre ganho de capital?',
+        answer:
+          'A alíquota é progressiva: 15% até R$ 5 milhões de ganho, 17,5% de R$ 5 a R$ 10 milhões, 20% de R$ 10 a R$ 30 milhões e 22,5% acima de R$ 30 milhões. A maioria das operações residenciais fica integralmente na faixa de 15%.',
+      },
+      {
+        question: 'Posso abater a reforma do imóvel do ganho de capital?',
+        answer:
+          'Sim, desde que os gastos estejam comprovados por nota fiscal em seu nome e tenham sido informados na declaração de bens do Imposto de Renda. Reformas sem comprovação documental não podem ser abatidas.',
+      },
+      {
+        question: 'Esta calculadora substitui o programa GCAP?',
+        answer:
+          'Não. O GCAP é o programa oficial da Receita Federal para apurar e recolher o imposto sobre ganho de capital. Esta ferramenta é uma estimativa educativa para você entender a operação antes de fazer a apuração oficial.',
+      },
+    ],
+    relatedSlugs: ['financiamento-imobiliario', 'imposto-de-renda-aluguel', 'valor-do-imovel'],
+    disclaimer:
+      'Estimativa educativa com base na tabela progressiva da Lei 13.259/2016. Não substitui o preenchimento do GCAP, programa oficial da Receita Federal para apuração e recolhimento do imposto. Recomendamos a orientação de um contador em casos com múltiplas isenções, pessoa jurídica ou imóvel rural.',
+    status: 'ativa',
+  },
 ];
+
 
 
 export const getCalculatorBySlug = (slug?: string): CalculatorEntry | undefined =>
