@@ -286,6 +286,11 @@ const AdminCockpit = () => {
               </TabsTrigger>
             )}
             {isSuperAdmin && (
+              <TabsTrigger value="utms" className="gap-2 min-h-[44px]">
+                <Link2 className="h-4 w-4" /> UTMs
+              </TabsTrigger>
+            )}
+            {isSuperAdmin && (
               <TabsTrigger value="settings" className="gap-2 min-h-[44px]">
                 <Settings2 className="h-4 w-4" /> Configurações
               </TabsTrigger>
