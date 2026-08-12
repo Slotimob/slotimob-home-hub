@@ -505,6 +505,15 @@ const AdminCockpit = () => {
             </TabsContent>
           )}
 
+          {/* UTMs Tab - super_admin only */}
+          {isSuperAdmin && (
+            <TabsContent value="utms">
+              <CockpitUtmTab />
+            </TabsContent>
+          )}
+
+
+
           {/* Settings Tab - super_admin only */}
           {isSuperAdmin && (
             <TabsContent value="settings">
