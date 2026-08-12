@@ -143,6 +143,8 @@ const App = () => (
               <Route path="/refund-policy" element={<Navigate to="/legal?tab=refund" replace />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
+              <Route path="/calculadoras" element={<Calculators />} />
+              <Route path="/calculadoras/:slug" element={<CalculatorDetail />} />
               <Route path="/apresentacao" element={<Presentation />} />
               <Route path="/presentation" element={<Navigate to="/apresentacao" replace />} />
               <Route path="/checkout" element={<Checkout />} />
