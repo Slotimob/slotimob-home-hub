@@ -9,6 +9,8 @@ import {
   Landmark,
   LineChart,
   Coins,
+  HardHat,
+  Building2,
   type LucideProps,
 } from 'lucide-react';
 
@@ -23,6 +25,8 @@ const ICONS: Record<string, React.ComponentType<LucideProps>> = {
   Landmark,
   LineChart,
   Coins,
+  HardHat,
+  Building2,
 };
 
 export function CalculatorIcon({ name, ...props }: { name: string } & LucideProps) {
