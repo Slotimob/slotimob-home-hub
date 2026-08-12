@@ -136,6 +136,19 @@ export function trackSubscriptionPaid(planId?: string, billingType?: string) {
 export function TrackingProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [injected, setInjected] = useState(false);
+  const [pixelId, setPixelId] = useState('');
+  const [marketingAllowed, setMarketingAllowed] = useState(
+    () => !!readCookieConsent()?.marketing,
+  );
+
+  // Keep marketing consent in sync with the cookie banner
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setMarketingAllowed(!!(e as CustomEvent).detail?.marketing);
+    };
+    window.addEventListener(COOKIE_CONSENT_EVENT, handler);
+    return () => window.removeEventListener(COOKIE_CONSENT_EVENT, handler);
+  }, []);
 
   // Fetch marketing settings from DB with error fallback
   const { data: dbSettings, isError, isFetched } = useQuery({
@@ -164,7 +177,7 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
 
     const settings = isError ? {} : (dbSettings || {});
     const gtmId = settings.gtm_id || ENV_GTM_ID || '';
-    const pixelId = settings.pixel_id || ENV_PIXEL_ID || '';
+    const resolvedPixelId = settings.pixel_id || ENV_PIXEL_ID || '';
     const gaId = settings.ga_id || '';
     const googleAdsId = settings.google_ads_id || '';
 
@@ -174,9 +187,10 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
       console.warn('[Tracking] GTM ID inválido, ignorado por segurança.');
     }
 
-    if (pixelId && isValidPixelId(pixelId)) {
-      injectPixel(pixelId);
-    } else if (pixelId) {
+    // Meta Pixel is only initialized after marketing consent (see effect below)
+    if (resolvedPixelId && isValidPixelId(resolvedPixelId)) {
+      setPixelId(resolvedPixelId);
+    } else if (resolvedPixelId) {
       console.warn('[Tracking] Pixel ID inválido, ignorado por segurança.');
     }
 
@@ -194,6 +208,12 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
     setInjected(true);
   }, [dbSettings, isError, isFetched, injected]);
 
+  // Meta Pixel: only load/fire after explicit marketing consent (LGPD opt-in)
+  useEffect(() => {
+    if (!marketingAllowed || !pixelId) return;
+    injectPixel(pixelId);
+  }, [marketingAllowed, pixelId]);
+
   // Track page views on route change
   useEffect(() => {
     window.dataLayer = window.dataLayer || [];
@@ -201,10 +221,11 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
       event: 'virtual_page_view',
       page_path: location.pathname + location.search,
     });
-    if (window.fbq) {
+    if (marketingAllowed && window.fbq) {
       window.fbq('track', 'PageView');
     }
-  }, [location.pathname, location.search]);
+  }, [location.pathname, location.search, marketingAllowed]);
 
   return <>{children}</>;
 }
+
