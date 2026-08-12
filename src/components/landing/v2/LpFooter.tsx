@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { SlotiSymbol } from './SlotiSymbol';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { Youtube, Instagram, Linkedin } from 'lucide-react';
+import { FaTiktok } from 'react-icons/fa';
 
 
 const COLS = [
