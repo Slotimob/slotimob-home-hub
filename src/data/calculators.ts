@@ -149,6 +149,58 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Índices de inflação variam mensalmente. Confirme o valor acumulado dos últimos 12 meses diretamente nas fontes oficiais (FGV/IBGE) antes de aplicar o reajuste formalmente em contrato.',
     status: 'ativa',
   },
+  {
+    slug: 'valor-do-imovel',
+    category: 'Avaliação',
+    title: 'Avaliação de Imóvel',
+    seoTitle: 'Calculadora de Avaliação de Imóvel 2026: Estime o Valor de Venda | Slotimob',
+    seoDescription:
+      'Estime o valor de mercado do seu imóvel em segundos: informe área, tipologia, vagas e características, e veja uma faixa de preço estimada por m².',
+    icon: 'Building2',
+    heroH1: 'Calculadora de Avaliação de Imóvel: Estime o Valor de Venda ou Locação',
+    intro:
+      'Quanto vale o seu imóvel? Esta calculadora usa um modelo de precificação hedônica simplificado — o mesmo princípio usado por grandes portais imobiliários — para estimar uma faixa de valor a partir do preço médio do m² na sua região e das características específicas do imóvel: tipologia, idade, vagas de garagem, suíte, estado de conservação e lazer no condomínio. Informe o valor médio do m² na sua região (consulte anúncios de imóveis similares em portais como Zap Imóveis ou QuintoAndar para essa referência) e a área útil do seu imóvel — o resultado é uma faixa estimada, não um valor exato.',
+    howItWorks: [
+      {
+        heading: 'O que é precificação hedônica',
+        body: 'É um modelo que decompõe o valor de um imóvel em características individuais (localização, área, padrão construtivo, comodidades) e aplica um ajuste percentual pra cada uma sobre um valor-base regional. É a mesma lógica usada por grandes portais imobiliários em suas ferramentas de avaliação automática (AVM).',
+      },
+      {
+        heading: 'Por que o resultado é uma faixa, e não um número exato',
+        body: 'Nenhuma calculadora automática substitui a análise de um profissional que conhece o imóvel e a região. Por isso mostramos uma faixa de variação (±8%) em vez de um valor único — o objetivo é dar um ponto de partida realista pra negociação ou para decidir se vale a pena buscar uma avaliação formal.',
+      },
+      {
+        heading: 'Como os multiplicadores funcionam',
+        body: 'Cada característica (tipologia, idade, vagas, suíte, conservação, lazer) aplica um ajuste percentual sobre o valor base (área × valor do m² da região). Coberturas e imóveis com mais vagas, por exemplo, valem proporcionalmente mais; imóveis que precisam de reforma valem proporcionalmente menos.',
+      },
+    ],
+    faq: [
+      {
+        question: 'Essa calculadora substitui um laudo de avaliação profissional?',
+        answer:
+          'Não. Esta é uma estimativa educacional para dar um ponto de partida. Para venda, compra ou financiamento formal, um laudo de avaliação de um corretor com CRECI, engenheiro avaliador, ou a avaliação feita pelo próprio banco financiador é necessário.',
+      },
+      {
+        question: 'Onde encontro o valor médio do m² na minha região?',
+        answer:
+          'Busque anúncios de imóveis parecidos com o seu (mesmo bairro, tipologia similar) em portais como Zap Imóveis, OLX ou QuintoAndar, e divida o valor anunciado pela área do imóvel. A prefeitura da sua cidade também costuma publicar plantas de valores usadas para cálculo de IPTU, que servem como referência adicional.',
+      },
+      {
+        question: 'Por que uma cobertura vale mais que um apartamento padrão do mesmo tamanho?',
+        answer:
+          'Coberturas geralmente têm área extra (terraço, área privativa), maior privacidade, vista privilegiada e menor densidade de vizinhos no andar — características que o mercado historicamente paga um prêmio para ter.',
+      },
+      {
+        question: 'O estado de conservação realmente muda tanto o valor?',
+        answer:
+          'Sim — um imóvel que precisa de reforma reduz o interesse de compradores que não querem lidar com obra, e o comprador tende a descontar do preço o custo estimado da reforma. Um imóvel em excelente estado, ao contrário, costuma ter um pequeno prêmio.',
+      },
+    ],
+    relatedSlugs: ['comprar-ou-alugar', 'financiamento-imobiliario', 'rentabilidade-imobiliaria'],
+    disclaimer:
+      'Estimativa educacional baseada em multiplicadores de mercado típicos — não substitui avaliação profissional (laudo de engenharia, corretor com CRECI ou avaliação bancária) para fins de venda, compra ou financiamento.',
+    status: 'ativa',
+  },
 ];
 
 
