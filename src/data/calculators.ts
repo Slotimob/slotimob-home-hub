@@ -570,6 +570,128 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Estimativa educativa baseada nos valores informados. A projeção assume valorização, reajuste e despesas constantes ao longo de todo o período, não considera vacância, inadimplência, custos de transação nem Imposto de Renda. Rentabilidade passada ou projetada não é garantia de retorno futuro.',
     status: 'ativa',
   },
+  {
+    slug: 'multa-rescisoria-aluguel',
+    category: 'Locação',
+    title: 'Multa Rescisória de Aluguel',
+    seoTitle: 'Calculadora de Multa Rescisória de Aluguel 2026 | Slotimob',
+    seoDescription:
+      'Calcule a multa por quebra de contrato de aluguel de forma proporcional aos meses restantes, conforme o Art. 4º da Lei do Inquilinato (Lei 8.245/91).',
+    icon: 'FileWarning',
+    heroH1: 'Calculadora de Multa Rescisória de Aluguel',
+    intro:
+      'Quem devolve o imóvel antes do fim do contrato de locação normalmente paga uma multa — mas ela não é cobrada por inteiro. O Art. 4º da Lei do Inquilinato (Lei 8.245/91) determina que a multa seja proporcional ao tempo que ainda falta para o contrato terminar. Informe o valor do aluguel, quantos aluguéis o seu contrato prevê como multa, o prazo total e quantos meses você já cumpriu para ver o valor proporcional devido.',
+    howItWorks: [
+      {
+        heading: 'Valor total da multa',
+        body: 'É o valor do aluguel mensal multiplicado pelo número de aluguéis previstos como multa no contrato. Três aluguéis é a previsão mais comum na prática, mas o número varia de contrato para contrato — vale conferir a cláusula específica antes de calcular.',
+      },
+      {
+        heading: 'Proporcionalidade pelos meses restantes',
+        body: 'A multa total é dividida pelo prazo total do contrato em meses e multiplicada pelos meses que ainda faltam. Ou seja: quanto mais perto do fim do contrato, menor a multa. Se a rescisão acontece logo no início, a multa se aproxima do valor cheio; se acontece no último mês, ela tende a zero.',
+      },
+      {
+        heading: 'A fórmula usada',
+        body: 'Multa proporcional = (aluguel mensal × número de aluguéis ÷ prazo total em meses) × meses restantes. Os meses restantes são o prazo total menos os meses já cumpridos, com piso em zero.',
+      },
+      {
+        heading: 'Dispensa por transferência de trabalho',
+        body: 'O parágrafo único do Art. 4º dispensa o locatário da multa quando a devolução do imóvel decorre de transferência de local de trabalho imposta pelo empregador, público ou privado, desde que o locador seja notificado por escrito com pelo menos 30 dias de antecedência.',
+      },
+    ],
+    faq: [
+      {
+        question: 'Como é calculada a multa por quebra de contrato de aluguel?',
+        answer:
+          'A multa prevista em contrato — normalmente três aluguéis — é reduzida proporcionalmente ao tempo já cumprido. Divide-se o valor total da multa pelo prazo total do contrato e multiplica-se pelos meses que ainda faltam para o término.',
+      },
+      {
+        question: 'A multa é sempre de 3 aluguéis?',
+        answer:
+          'Não. Três aluguéis é o valor mais comum na prática do mercado, mas quem define é o contrato. Alguns contratos preveem dois, outros um valor fixo. Por isso o campo é editável nesta calculadora: use o número que consta na sua cláusula de multa.',
+      },
+      {
+        question: 'Posso sair do aluguel sem pagar multa?',
+        answer:
+          'Em algumas situações sim. A mais clara é a do parágrafo único do Art. 4º: transferência de local de trabalho pelo empregador, com notificação escrita ao locador com no mínimo 30 dias de antecedência. Também é possível negociar a dispensa diretamente com o locador, especialmente quando o inquilino apresenta um substituto ou colabora com a nova locação.',
+      },
+      {
+        question: 'A multa vale se o contrato já venceu e continuei no imóvel?',
+        answer:
+          'Depois do fim do prazo, se o inquilino permanece no imóvel sem oposição, a locação passa a vigorar por prazo indeterminado. Nesse regime não há multa rescisória proporcional: basta a notificação prévia de 30 dias para devolver o imóvel, conforme o Art. 6º da Lei 8.245/91.',
+      },
+      {
+        question: 'A multa rescisória e a multa por atraso de aluguel são a mesma coisa?',
+        answer:
+          'Não. A multa rescisória é pela devolução antecipada do imóvel. A multa por atraso é uma penalidade sobre a parcela paga fora do prazo, com percentual próprio definido em contrato. São cobranças independentes.',
+      },
+    ],
+    relatedSlugs: ['reajuste-de-aluguel', 'comprar-ou-alugar'],
+    disclaimer:
+      'Cálculo educativo baseado no Art. 4º da Lei 8.245/91. O valor exato da multa e eventuais cláusulas específicas dependem do que está escrito no seu contrato — consulte o contrato e, se necessário, um advogado.',
+    status: 'ativa',
+  },
+  {
+    slug: 'custo-de-mudanca',
+    category: 'Planejamento',
+    title: 'Custo de Mudança',
+    seoTitle: 'Planilha de Custo de Mudança: organize seu orçamento | Slotimob',
+    seoDescription:
+      'Organize e some todos os custos da sua mudança — frete, embalagem, montagem de móveis, taxas do prédio e faxina — a partir dos orçamentos que você recebeu.',
+    icon: 'Truck',
+    heroH1: 'Planejador de Custo de Mudança',
+    intro:
+      'Mudar de imóvel custa bem mais do que o frete. Esta ferramenta reúne todas as categorias de gasto de uma mudança em um só lugar, soma os valores que você informar e mostra o peso de cada item no total. Importante: não estimamos preços. Preços de frete e de serviços de mudança variam demais por cidade, empresa e época do mês para que qualquer valor de referência genérico fosse honesto. O total que você vê é exatamente a soma dos números que você digitou.',
+    howItWorks: [
+      {
+        heading: 'Você informa, a ferramenta organiza',
+        body: 'Cada campo corresponde a uma categoria típica de custo: frete, embalagem e materiais, mão de obra para embalar e desembalar, desmontagem e montagem de móveis, seguro, taxas do prédio, faxina e outros. Preencha apenas os que se aplicam ao seu caso, com os valores dos orçamentos que você recebeu.',
+      },
+      {
+        heading: 'Total e distribuição percentual',
+        body: 'A ferramenta soma tudo e mostra quanto cada categoria representa do total. Isso ajuda a enxergar onde o dinheiro está concentrado e onde vale pedir uma segunda cotação ou fazer parte do serviço por conta própria.',
+      },
+      {
+        heading: 'O que influencia o preço da mudança',
+        body: 'Distância entre os imóveis, volume de itens e tamanho do imóvel, existência de elevador nos dois endereços, necessidade de embalagem profissional para itens frágeis e época do mês — as datas de troca de contrato concentram demanda e pressionam os preços para cima. Peça pelo menos três orçamentos antes de fechar.',
+      },
+      {
+        heading: 'Custos que costumam ficar de fora',
+        body: 'Taxas de uso de elevador de carga e reserva de vaga no condomínio, caução para eventuais danos em áreas comuns, faxina pós-mudança nos dois imóveis e seguro sobre o valor dos bens transportados são itens frequentemente esquecidos no planejamento inicial.',
+      },
+    ],
+    faq: [
+      {
+        question: 'Quanto custa uma mudança?',
+        answer:
+          'Não existe um valor de referência confiável e nacional para dar como resposta — depende de cidade, distância, volume, andar, acesso e época do mês, e as diferenças entre empresas na mesma cidade costumam ser grandes. O caminho correto é pedir pelo menos três orçamentos com visita ou lista detalhada de itens e usar esses números reais nesta ferramenta.',
+      },
+      {
+        question: 'Esta ferramenta estima o preço do frete?',
+        answer:
+          'Não, e isso é intencional. Ela é um planejador de orçamento: soma e organiza os valores que você informa. Qualquer preço por metro cúbico ou por quilômetro que apresentássemos aqui seria um chute com aparência de precisão.',
+      },
+      {
+        question: 'Vale a pena contratar seguro de mudança?',
+        answer:
+          'Depende do valor dos bens transportados e da distância. Para mudanças interestaduais ou com itens de alto valor (eletrônicos, obras de arte, instrumentos), o seguro costuma representar uma fração pequena do orçamento diante do risco. Pergunte à transportadora o que a cobertura básica já inclui antes de contratar um seguro adicional.',
+      },
+      {
+        question: 'Qual a melhor época do mês para fazer a mudança?',
+        answer:
+          'Início e fim de mês concentram a maior parte das mudanças, porque é quando os contratos de locação começam e terminam. Dias no meio do mês e no meio da semana costumam ter mais disponibilidade de agenda, o que ajuda na negociação.',
+      },
+      {
+        question: 'Devo somar a multa rescisória do aluguel no custo da mudança?',
+        answer:
+          'Se você está saindo antes do fim do contrato, sim — é um custo real da transição. Calcule o valor proporcional na calculadora de multa rescisória e inclua o resultado no campo de outros custos.',
+      },
+    ],
+    relatedSlugs: ['multa-rescisoria-aluguel', 'financiamento-imobiliario'],
+    disclaimer:
+      'Esta ferramenta organiza e soma os valores que você informar — não calculamos nem estimamos preços de frete ou serviços de mudança, porque esses variam muito por cidade, empresa e época. Peça orçamentos reais para preencher os campos.',
+    status: 'ativa',
+  },
 ];
 
 
