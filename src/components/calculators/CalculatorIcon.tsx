@@ -11,6 +11,8 @@ import {
   Coins,
   HardHat,
   Building2,
+  TrendingDown,
+  ArrowRightLeft,
   type LucideProps,
 } from 'lucide-react';
 
@@ -27,6 +29,8 @@ const ICONS: Record<string, React.ComponentType<LucideProps>> = {
   Coins,
   HardHat,
   Building2,
+  TrendingDown,
+  ArrowRightLeft,
 };
 
 export function CalculatorIcon({ name, ...props }: { name: string } & LucideProps) {
