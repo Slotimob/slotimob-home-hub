@@ -437,7 +437,75 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Projeção educativa baseada na repetição de um índice mensal médio. O INCC efetivo varia mês a mês e a mudança de índice após a entrega das chaves depende do que estiver previsto no contrato de compra e venda.',
     status: 'ativa',
   },
+  {
+    slug: 'amortizacao-e-portabilidade',
+    category: 'Financiamento',
+    title: 'Amortização e Portabilidade',
+    seoTitle:
+      'Amortização Extraordinária e Portabilidade de Financiamento: Calculadora | Slotimob',
+    seoDescription:
+      'Simule a amortização extraordinária do seu financiamento (reduzir prazo ou parcela) e calcule a economia da portabilidade de financiamento imobiliário para outro banco.',
+    icon: 'TrendingDown',
+    heroH1: 'Calculadora de Amortização Extraordinária e Portabilidade de Financiamento',
+    intro:
+      'Duas decisões podem reduzir bastante o custo do seu financiamento imobiliário: usar um dinheiro extra para amortizar a dívida e transferir o saldo devedor para um banco com juros menores. Nesta calculadora você faz os dois cálculos. Na aba de amortização extraordinária, informe o saldo devedor, a taxa, o prazo restante e o valor do aporte para comparar lado a lado as duas opções oferecidas pelos bancos — reduzir o prazo mantendo a parcela ou reduzir a parcela mantendo o prazo — com a economia de juros de cada uma. Na aba de portabilidade, compare o total a pagar com a taxa atual e com a taxa de outro banco, descontando os custos de avaliação e cartório, para ver a economia líquida estimada da troca.',
+    howItWorks: [
+      {
+        heading: 'Amortização extraordinária: reduzir prazo ou reduzir parcela',
+        body: 'Ao receber um aporte extra, o banco abate o valor diretamente do saldo devedor e pergunta o que você prefere: manter a parcela e encurtar o contrato, ou manter o prazo e diminuir a parcela. Na Tabela Price, manter a parcela recalcula o número de meses restantes; manter o prazo recalcula o valor da prestação. No SAC, manter a quota de amortização original reduz o prazo, e recalcular a quota sobre o novo saldo reduz todas as parcelas seguintes.',
+      },
+      {
+        heading: 'Por que reduzir o prazo costuma economizar mais',
+        body: 'Os juros incidem mês a mês sobre o saldo devedor. Encurtar o contrato diminui o tempo de exposição a esses juros, o que normalmente resulta em economia total maior. Reduzir a parcela, por outro lado, libera caixa no orçamento mensal. É uma troca entre economia acumulada e folga financeira no presente — a escolha depende da sua realidade, não existe resposta única.',
+      },
+      {
+        heading: 'Portabilidade de financiamento imobiliário',
+        body: 'A portabilidade é o direito de transferir o saldo devedor do financiamento para outra instituição que ofereça condições melhores, mantendo o mesmo imóvel como garantia. O novo banco quita a dívida no banco de origem e você passa a pagar as parcelas restantes com a nova taxa. Na prática, o primeiro passo costuma ser pedir o saldo devedor atualizado ao banco atual e levar essa proposta ao concorrente.',
+      },
+      {
+        heading: 'Como estimamos a economia da portabilidade',
+        body: 'Comparamos o total a pagar pelas parcelas restantes com a taxa atual e com a taxa do novo banco, usando a fórmula da Tabela Price e o mesmo prazo. A diferença é a economia bruta; subtraindo os custos de terceiros informados, como avaliação do imóvel e cartório, chega-se à economia líquida estimada.',
+      },
+    ],
+    faq: [
+      {
+        question: 'Vale mais a pena reduzir o prazo ou reduzir a parcela?',
+        answer:
+          'Reduzir o prazo normalmente gera economia total de juros maior, porque diminui o tempo em que o saldo devedor fica rendendo juros. Reduzir a parcela gera menos economia, mas alivia o orçamento mensal. Se o fluxo de caixa está apertado, a segunda opção pode fazer mais sentido mesmo pagando mais juros no total.',
+      },
+      {
+        question: 'A portabilidade de financiamento tem custo?',
+        answer:
+          'A portabilidade em si é gratuita por lei: a Resolução CMN nº 4.292/2013 proíbe que o banco de origem ou o de destino cobrem tarifa pela operação. Podem existir custos de terceiros, como avaliação do imóvel e registro em cartório da nova garantia, que variam por instituição e por estado.',
+      },
+      {
+        question: 'Como funciona a portabilidade de crédito imobiliário?',
+        answer:
+          'Você solicita ao seu banco o saldo devedor atualizado e as condições do contrato, apresenta esses dados a outras instituições e recebe propostas. Escolhida a melhor, o novo banco quita a dívida no banco de origem e assume o crédito. O banco atual pode fazer uma contraproposta para manter o cliente — o que muitas vezes já resolve sem trocar de instituição.',
+      },
+      {
+        question: 'Amortizar o financiamento vale a pena?',
+        answer:
+          'Costuma valer quando a taxa do financiamento é maior do que o rendimento líquido que o dinheiro teria numa aplicação de risco equivalente. Como as taxas de crédito imobiliário são de longo prazo e incidem sobre saldos altos, o abatimento antecipado tende a ser vantajoso — mas vale comparar com sua alternativa de investimento e manter reserva de emergência.',
+      },
+      {
+        question: 'Posso usar o FGTS para amortizar o financiamento?',
+        answer:
+          'Sim, dentro das regras da Caixa e do FGTS: o saldo pode ser usado para amortizar ou quitar o saldo devedor de financiamento habitacional enquadrado no SFH, respeitando o intervalo mínimo entre utilizações. Consulte as condições vigentes junto ao agente financeiro.',
+      },
+      {
+        question: 'Esta calculadora considera seguros e taxas administrativas?',
+        answer:
+          'Não. A simulação considera apenas juros, saldo devedor e prazo. Seguros obrigatórios (MIP e DFI) e a taxa de administração entram na parcela real cobrada pelo banco e no Custo Efetivo Total, por isso os valores do seu extrato podem ser diferentes.',
+      },
+    ],
+    relatedSlugs: ['financiamento-imobiliario', 'ganho-de-capital'],
+    disclaimer:
+      'Estimativa educativa baseada nos valores informados. Não considera seguros obrigatórios, taxa de administração nem eventuais atualizações do saldo devedor por índice. Taxas, prazos e custos reais dependem da análise de crédito e das condições de cada instituição financeira — confirme sempre diretamente com os bancos envolvidos.',
+    status: 'ativa',
+  },
 ];
+
 
 
 
