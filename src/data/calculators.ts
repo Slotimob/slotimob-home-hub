@@ -504,7 +504,74 @@ export const CALCULATORS: CalculatorEntry[] = [
       'Estimativa educativa baseada nos valores informados. Não considera seguros obrigatórios, taxa de administração nem eventuais atualizações do saldo devedor por índice. Taxas, prazos e custos reais dependem da análise de crédito e das condições de cada instituição financeira — confirme sempre diretamente com os bancos envolvidos.',
     status: 'ativa',
   },
+  {
+    slug: 'rentabilidade-imobiliaria',
+    category: 'Investimento',
+    title: 'Rentabilidade Imobiliária',
+    seoTitle: 'Calculadora de Rentabilidade Imobiliária: Cap Rate e Yield do Aluguel | Slotimob',
+    seoDescription:
+      'Calcule a rentabilidade imobiliária do seu imóvel alugado: yield bruto, yield líquido (cap rate) e projeção de retorno em 10 anos com valorização e reajuste.',
+    icon: 'TrendingUp',
+    heroH1: 'Calculadora de Rentabilidade Imobiliária (Cap Rate e Yield)',
+    intro:
+      'Saber quanto um imóvel alugado realmente rende exige olhar além do valor do aluguel. Esta calculadora mostra o yield bruto anual, o yield líquido — o que o mercado internacional chama de cap rate — já descontadas as despesas que ficam por conta do proprietário, e projeta o retorno acumulado ao longo de 10 anos considerando a valorização esperada do imóvel e o reajuste anual do aluguel.',
+    howItWorks: [
+      {
+        heading: 'Yield bruto anual',
+        body: 'É a conta mais simples: aluguel mensal multiplicado por 12, dividido pelo valor do imóvel, em percentual. Serve para comparar rapidamente oportunidades, mas ignora todos os custos de manter o imóvel, por isso sempre parece melhor do que o retorno real.',
+      },
+      {
+        heading: 'Yield líquido, ou cap rate',
+        body: 'Aqui subtraímos do aluguel as despesas mensais que não são repassadas ao inquilino — condomínio e IPTU quando ficam com o proprietário, taxa de administração, seguro e manutenção média — antes de anualizar e dividir pelo valor do imóvel. É o indicador que o mercado usa como capitalization rate (cap rate) e o que mais se aproxima do retorno efetivo da operação de locação.',
+      },
+      {
+        heading: 'Projeção de 10 anos',
+        body: 'A cada ano o valor do imóvel é corrigido pela valorização anual informada e o aluguel pelo reajuste anual informado, ambos de forma composta. O retorno acumulado soma os aluguéis líquidos recebidos até aquele ano com o ganho de capital ainda não realizado (a diferença entre o valor projetado do imóvel e o valor inicial). As despesas mensais são mantidas fixas ao longo de todo o período, como simplificação.',
+      },
+      {
+        heading: 'Yield médio anualizado',
+        body: 'É o retorno total percentual dividido pelo número de anos da projeção. Trata-se de uma média simples, útil para comparação rápida, e não de uma taxa interna de retorno (TIR/XIRR), que consideraria o momento exato de cada entrada de caixa.',
+      },
+    ],
+    faq: [
+      {
+        question: 'O que é cap rate?',
+        answer:
+          'Cap rate (capitalization rate) é a taxa de capitalização de um imóvel: a receita operacional líquida anual dividida pelo valor do imóvel, em percentual. É o equivalente ao yield líquido anual — o retorno da locação já descontadas as despesas do proprietário, sem considerar financiamento nem impostos sobre a renda.',
+      },
+      {
+        question: 'Qual a rentabilidade média de um imóvel alugado no Brasil?',
+        answer:
+          'Não existe um número nacional único que faça sentido. O yield varia muito conforme a cidade, o bairro, o tipo de imóvel (residencial, comercial, sala, galpão) e o perfil do contrato. Imóveis mais caros em regiões valorizadas tendem a ter yield menor e potencial de valorização maior; imóveis mais baratos ou comerciais costumam ter yield maior e risco de vacância também maior. O caminho prático é calcular o yield do seu imóvel e comparar com anúncios semelhantes na mesma região.',
+      },
+      {
+        question: 'Yield bruto ou líquido é mais importante?',
+        answer:
+          'O líquido (cap rate). O bruto ignora condomínio, IPTU, taxa de administração, seguro e manutenção, que costumam consumir uma fatia relevante do aluguel. O bruto serve como filtro inicial para comparar anúncios; a decisão de investimento deve olhar o líquido.',
+      },
+      {
+        question: 'A projeção considera vacância?',
+        answer:
+          'Não. A projeção assume o imóvel alugado durante os 12 meses de cada ano. Se o seu imóvel costuma ficar períodos vago, uma forma de aproximar o cenário real é reduzir o aluguel informado proporcionalmente aos meses de ocupação esperados.',
+      },
+      {
+        question: 'O cálculo desconta Imposto de Renda?',
+        answer:
+          'Não. Nem o IR sobre o aluguel recebido (carnê-leão) nem o IR sobre um eventual ganho de capital na venda entram na conta. Para estimar esses impostos, use as calculadoras específicas de imposto de renda sobre aluguel e de ganho de capital.',
+      },
+      {
+        question: 'Como comparar a rentabilidade do imóvel com investimentos financeiros?',
+        answer:
+          'Compare o yield líquido anual com o rendimento líquido anual da aplicação alternativa, lembrando que o imóvel ainda pode agregar valorização e que tem características próprias: menor liquidez, custos de transação altos e risco de vacância e inadimplência.',
+      },
+    ],
+    relatedSlugs: ['imposto-de-renda-aluguel', 'ganho-de-capital', 'comprar-ou-alugar'],
+    disclaimer:
+      'Estimativa educativa baseada nos valores informados. A projeção assume valorização, reajuste e despesas constantes ao longo de todo o período, não considera vacância, inadimplência, custos de transação nem Imposto de Renda. Rentabilidade passada ou projetada não é garantia de retorno futuro.',
+    status: 'ativa',
+  },
 ];
+
 
 
 
