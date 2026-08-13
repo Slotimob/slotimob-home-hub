@@ -21,6 +21,7 @@ import { CarneLeaoCalculator } from '@/components/calculators/CarneLeaoCalculato
 import { GanhoCapitalCalculator } from '@/components/calculators/GanhoCapitalCalculator';
 import { IncCalculator } from '@/components/calculators/IncCalculator';
 import { AmortizacaoPortabilidadeCalculator } from '@/components/calculators/AmortizacaoPortabilidadeCalculator';
+import { RentabilidadeCalculator } from '@/components/calculators/RentabilidadeCalculator';
 
 const BASE_URL = 'https://slotimob.com.br';
 
@@ -33,6 +34,7 @@ const CALCULATOR_COMPONENTS: Record<string, () => JSX.Element> = {
   'ganho-de-capital': GanhoCapitalCalculator,
   'incc-imovel-na-planta': IncCalculator,
   'amortizacao-e-portabilidade': AmortizacaoPortabilidadeCalculator,
+  'rentabilidade-imobiliaria': RentabilidadeCalculator,
 };
 
 

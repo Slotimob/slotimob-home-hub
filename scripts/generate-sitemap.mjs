@@ -87,6 +87,7 @@ const CALCULATOR_SLUGS = [
   'ganho-de-capital',
   'incc-imovel-na-planta',
   'amortizacao-e-portabilidade',
+  'rentabilidade-imobiliaria',
 ];
 
 const CALCULATOR_URLS = CALCULATOR_SLUGS.map(
