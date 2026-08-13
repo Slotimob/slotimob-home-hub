@@ -86,6 +86,7 @@ const CALCULATOR_SLUGS = [
   'imposto-de-renda-aluguel',
   'ganho-de-capital',
   'incc-imovel-na-planta',
+  'amortizacao-e-portabilidade',
 ];
 
 const CALCULATOR_URLS = CALCULATOR_SLUGS.map(
