@@ -13,6 +13,9 @@ import {
   Building2,
   TrendingDown,
   ArrowRightLeft,
+  FileWarning,
+  Truck,
+  Package,
   type LucideProps,
 } from 'lucide-react';
 
@@ -31,6 +34,9 @@ const ICONS: Record<string, React.ComponentType<LucideProps>> = {
   Building2,
   TrendingDown,
   ArrowRightLeft,
+  FileWarning,
+  Truck,
+  Package,
 };
 
 export function CalculatorIcon({ name, ...props }: { name: string } & LucideProps) {

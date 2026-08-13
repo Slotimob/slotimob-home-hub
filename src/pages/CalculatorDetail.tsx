@@ -22,6 +22,8 @@ import { GanhoCapitalCalculator } from '@/components/calculators/GanhoCapitalCal
 import { IncCalculator } from '@/components/calculators/IncCalculator';
 import { AmortizacaoPortabilidadeCalculator } from '@/components/calculators/AmortizacaoPortabilidadeCalculator';
 import { RentabilidadeCalculator } from '@/components/calculators/RentabilidadeCalculator';
+import { MultaRescisoriaCalculator } from '@/components/calculators/MultaRescisoriaCalculator';
+import { CustoMudancaCalculator } from '@/components/calculators/CustoMudancaCalculator';
 
 const BASE_URL = 'https://slotimob.com.br';
 
@@ -35,6 +37,8 @@ const CALCULATOR_COMPONENTS: Record<string, () => JSX.Element> = {
   'incc-imovel-na-planta': IncCalculator,
   'amortizacao-e-portabilidade': AmortizacaoPortabilidadeCalculator,
   'rentabilidade-imobiliaria': RentabilidadeCalculator,
+  'multa-rescisoria-aluguel': MultaRescisoriaCalculator,
+  'custo-de-mudanca': CustoMudancaCalculator,
 };
 
 

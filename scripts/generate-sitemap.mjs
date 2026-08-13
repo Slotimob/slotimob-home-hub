@@ -88,6 +88,8 @@ const CALCULATOR_SLUGS = [
   'incc-imovel-na-planta',
   'amortizacao-e-portabilidade',
   'rentabilidade-imobiliaria',
+  'multa-rescisoria-aluguel',
+  'custo-de-mudanca',
 ];
 
 const CALCULATOR_URLS = CALCULATOR_SLUGS.map(
