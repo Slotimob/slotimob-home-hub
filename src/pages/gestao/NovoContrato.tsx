@@ -278,6 +278,9 @@ export default function NovoContrato() {
           if (draft.guarantorData) setGuarantorData(draft.guarantorData);
           if (draft.paymentInfo) setPaymentInfo(draft.paymentInfo);
           if (draft.billingContact) setBillingContact(draft.billingContact);
+          if (draft.selectedUnitId) setSelectedUnitId(draft.selectedUnitId);
+          if (draft.selectedUnitInfo) setSelectedUnitInfo(draft.selectedUnitInfo);
+          if (draft.step && STEPS.some((s) => s.id === draft.step)) setStep(draft.step as WizardStep);
         }
       }
     } catch {
@@ -292,12 +295,36 @@ export default function NovoContrato() {
     try {
       sessionStorage.setItem(
         DRAFT_KEY,
-        JSON.stringify({ unitId: unitIdParam, formData, guarantorData, paymentInfo, billingContact })
+        JSON.stringify({
+          unitId: unitIdParam,
+          step,
+          selectedUnitId,
+          selectedUnitInfo,
+          formData,
+          guarantorData,
+          paymentInfo,
+          billingContact,
+        })
       );
     } catch {
       /* ignore */
     }
-  }, [isEditMode, draftLoaded, unitIdParam, formData, guarantorData, paymentInfo, billingContact]);
+  }, [
+    isEditMode,
+    draftLoaded,
+    unitIdParam,
+    step,
+    selectedUnitId,
+    selectedUnitInfo,
+    formData,
+    guarantorData,
+    paymentInfo,
+    billingContact,
+  ]);
+
+  // Block PWA auto-reload while the wizard holds unsaved data
+  useUnsavedChangesGuard(!isEditMode && draftLoaded && (!!selectedUnitId || !!formData.tenant_contact_id));
+
 
   // Hydrate from editLease when fetched
   useEffect(() => {
