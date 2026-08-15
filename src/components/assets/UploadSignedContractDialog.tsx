@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import {
   Dialog,
   DialogContent,

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

@@ -15,6 +15,7 @@
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
    ClipboardCheck,
    FileText,
    FileSignature,
