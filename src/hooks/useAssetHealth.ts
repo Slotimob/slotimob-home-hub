@@ -24,7 +24,7 @@ export interface ObligationConfig {
   active: boolean;
   due_day?: number;
   responsible?: ResponsibleRole;
-  installation_code?: string;
+  agency_contact_id?: string | null;
   control_type?: ControlType;
 }
 
@@ -45,7 +45,6 @@ export interface ObligationHealth {
   status: ObligationStatus;
   dueDay: number | null;
   responsible: ResponsibleRole | null;
-  installationCode?: string | null;
   controlType: ControlType;
   transactionId?: string;
   amount?: number;
@@ -356,7 +355,6 @@ export function useAssetHealth(referenceDate?: Date) {
             status,
             dueDay: obligationConfig.due_day || null,
             responsible: obligationConfig.responsible || null,
-            installationCode: obligationConfig.installation_code || null,
             controlType,
             transactionId: matchingTx?.id,
             amount: matchingTx?.amount,

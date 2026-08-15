@@ -23,6 +23,7 @@ import {
   SYSTEM_OBLIGATION_TYPES 
 } from "@/hooks/useCustomObligationTypes";
 import { CreateCustomObligationDialog } from "./CreateCustomObligationDialog";
+import { ContactSelector } from "@/components/ContactSelector";
 import { 
   Loader2, 
   Home, 
@@ -56,9 +57,8 @@ const ICON_MAP: Record<string, typeof Home> = {
   Home, Building, Zap, Droplets, Flame, Shield, Receipt, Circle,
 };
 
-// Extended obligation config with installation code
+// Extended obligation config
 interface ExtendedObligationConfig extends ObligationConfig {
-  installation_code?: string;
   control_type?: ControlType;
 }
 
@@ -154,7 +154,7 @@ export function ObligationsConfigForm({
       } else {
         const defaults: ExtendedObligationsConfig = {};
         allObligationTypes.forEach(({ type, defaultDueDay }) => {
-          defaults[type] = { active: false, due_day: defaultDueDay, responsible: "owner", installation_code: "" };
+          defaults[type] = { active: false, due_day: defaultDueDay, responsible: "owner" };
         });
         setConfig(defaults);
       }
@@ -171,7 +171,7 @@ export function ObligationsConfigForm({
     const obl = allObligationTypes.find(o => o.type === type);
     setConfig((prev) => ({
       ...prev,
-      [type]: { ...prev[type], active, due_day: prev[type]?.due_day || obl?.defaultDueDay || 10, responsible: prev[type]?.responsible || "owner", installation_code: prev[type]?.installation_code || "" },
+      [type]: { ...prev[type], active, due_day: prev[type]?.due_day || obl?.defaultDueDay || 10, responsible: prev[type]?.responsible || "owner" },
     }));
   };
 
@@ -183,8 +183,8 @@ export function ObligationsConfigForm({
     setConfig((prev) => ({ ...prev, [type]: { ...prev[type], responsible } }));
   };
 
-  const handleInstallationCodeChange = (type: ObligationType, code: string) => {
-    setConfig((prev) => ({ ...prev, [type]: { ...prev[type], installation_code: code } }));
+  const handleAgencyContactChange = (type: ObligationType, contactId: string | null) => {
+    setConfig((prev) => ({ ...prev, [type]: { ...prev[type], agency_contact_id: contactId } }));
   };
 
   const handleControlTypeChange = (type: ObligationType, controlType: ControlType) => {
@@ -297,7 +297,7 @@ export function ObligationsConfigForm({
                 onToggle={handleToggle}
                 onDueDayChange={handleDueDayChange}
                 onResponsibleChange={handleResponsibleChange}
-                onInstallationCodeChange={handleInstallationCodeChange}
+                onAgencyContactChange={handleAgencyContactChange}
                 onControlTypeChange={handleControlTypeChange}
                 getResponsibleFeedback={getResponsibleFeedback}
               />
@@ -329,7 +329,7 @@ export function ObligationsConfigForm({
                     onToggle={handleToggle}
                     onDueDayChange={handleDueDayChange}
                     onResponsibleChange={handleResponsibleChange}
-                    onInstallationCodeChange={handleInstallationCodeChange}
+                    onAgencyContactChange={handleAgencyContactChange}
                     onControlTypeChange={handleControlTypeChange}
                     getResponsibleFeedback={getResponsibleFeedback}
                   />
@@ -374,14 +374,14 @@ interface ObligationResponsibilityCardProps {
   onToggle: (type: ObligationType, active: boolean) => void;
   onDueDayChange: (type: ObligationType, dueDay: number) => void;
   onResponsibleChange: (type: ObligationType, responsible: ResponsibleRole) => void;
-  onInstallationCodeChange: (type: ObligationType, code: string) => void;
+  onAgencyContactChange: (type: ObligationType, contactId: string | null) => void;
   onControlTypeChange: (type: ObligationType, controlType: ControlType) => void;
   getResponsibleFeedback: (role: ResponsibleRole, label: string) => string;
 }
 
 function ObligationResponsibilityCard({
   type, label, icon, config, ownerInfo, tenantInfo, isVacant,
-  onToggle, onDueDayChange, onResponsibleChange, onInstallationCodeChange,
+  onToggle, onDueDayChange, onResponsibleChange, onAgencyContactChange,
   onControlTypeChange, getResponsibleFeedback,
 }: ObligationResponsibilityCardProps) {
   const currentResponsible = config.responsible || "owner";
@@ -562,10 +562,22 @@ function ObligationResponsibilityCard({
               <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground">{feedback}</p>
             </div>
+
+            {/* Agency Contact Selector */}
+            {currentResponsible === "agency" && (
+              <div className="space-y-1.5 pt-1">
+                <Label className="text-xs text-muted-foreground">Contato da Imobiliária</Label>
+                <ContactSelector
+                  value={config.agency_contact_id || null}
+                  onChange={(contactId) => onAgencyContactChange(type, contactId)}
+                  placeholder="Selecione o contato responsável..."
+                />
+              </div>
+            )}
           </div>
 
-          {/* Due Day and Installation Code */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Due Day */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Dia de Vencimento</Label>
               <Input
@@ -574,16 +586,6 @@ function ObligationResponsibilityCard({
                 max={31}
                 value={config.due_day || 10}
                 onChange={(e) => onDueDayChange(type, parseInt(e.target.value) || 10)}
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Código/Matrícula</Label>
-              <Input
-                type="text"
-                placeholder="Ex: 123456789"
-                value={config.installation_code || ""}
-                onChange={(e) => onInstallationCodeChange(type, e.target.value)}
                 className="h-9"
               />
             </div>
