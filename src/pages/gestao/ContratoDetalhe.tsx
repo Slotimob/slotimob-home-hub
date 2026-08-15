@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, addDays, addMonths, isBefore, isToday } from "date-fns";
@@ -132,6 +133,7 @@ export default function ContratoDetalhe() {
     whatsapp_enabled: false,
   });
   const [savingAutomation, setSavingAutomation] = useState(false);
+  const [projectionOpen, setProjectionOpen] = useState(false);
 
   const { data: lease, isLoading, refetch } = useQuery({
     queryKey: ["lease-detail", id, effectiveBrokerId],
@@ -445,6 +447,16 @@ export default function ContratoDetalhe() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    {canEdit && (
+                      <DropdownMenuItem
+                        disabled={lease.status === "terminated"}
+                        onClick={() => setProjectionOpen(true)}
+                      >
+                        <Receipt className="h-4 w-4 mr-2" />
+                        Gerar lançamentos
+                      </DropdownMenuItem>
+                    )}
+                    {canEdit && <DropdownMenuSeparator />}
                     {canEdit && (
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
@@ -1420,6 +1432,11 @@ export default function ContratoDetalhe() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ConfirmLeaseProjectionDialog
+        open={projectionOpen}
+        onOpenChange={setProjectionOpen}
+        lease={lease as unknown as LeaseForProjection}
+      />
     </AppLayout>
   );
 }
