@@ -118,7 +118,7 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
             variant="ghost"
             size="icon"
             aria-label="Voltar"
-            onClick={() => navigate(backTo)}
+            onClick={handleCancel}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -146,7 +146,7 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
               />
 
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => navigate(backTo)} className="w-full sm:w-auto">
+                <Button type="button" variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={saving} className="w-full sm:w-auto">
