@@ -36,6 +36,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { RealEstateKanbanView } from '@/components/units/RealEstateKanbanView';
+import { CityText, formatCityLabel } from '@/components/shared/CityCell';
 import { UnitCard } from '@/components/units/UnitCard';
 import { UnitActionsMenu } from '@/components/units/UnitActionsMenu';
 
