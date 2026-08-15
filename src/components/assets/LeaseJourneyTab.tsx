@@ -315,13 +315,11 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
           if (dbError2) throw dbError2;
        }
  
-        toast.success("Arquivo enviado com sucesso!");
-        queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-        queryClient.invalidateQueries({ queryKey: ["leases"] });
-        queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
+        await invalidateLeaseQueries(queryClient);
         queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
+        toast.success("Arquivo enviado com sucesso!");
      } catch (error: any) {
        console.error("Upload error:", error);
        toast.error("Erro ao enviar arquivo", {
@@ -358,9 +356,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
    };
  
   // Handle refresh
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-    queryClient.invalidateQueries({ queryKey: ["leases"] });
+  const handleRefresh = async () => {
+    await invalidateLeaseQueries(queryClient);
     toast.success("Dados atualizados!");
   };
 
@@ -406,13 +403,11 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
           .eq("id", lease.id);
       }
 
-      toast.success("Arquivo removido com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
+      await invalidateLeaseQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
+      toast.success("Arquivo removido com sucesso!");
     } catch (error: any) {
       console.error("Delete error:", error);
       toast.error("Erro ao remover arquivo", {
@@ -553,9 +548,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                          id: fullLeaseData.id,
                          data: { start_date: startDateValue },
                        });
+                       await invalidateLeaseQueries(queryClient);
                        toast.success("Data de início atualizada!");
-                       queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-                       queryClient.invalidateQueries({ queryKey: ["leases"] });
                        setEditingStartDate(false);
                      } catch (err: any) {
                        toast.error("Erro ao salvar", { description: err.message });
