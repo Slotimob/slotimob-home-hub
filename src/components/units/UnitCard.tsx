@@ -7,6 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { UnitActionsMenu } from "./UnitActionsMenu";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
 import { showSalePrice, showRentalPrice } from "@/utils/unitPricing";
+import { formatCityLabel } from "@/components/shared/CityCell";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 
@@ -26,9 +27,13 @@ interface Unit {
   property_type?: string | null;
   cover_image_url: string | null;
   is_published_portal?: boolean | null;
+  city?: string | null;
+  state?: string | null;
   property?: {
     id?: string;
     name: string;
+    city?: string | null;
+    state?: string | null;
   } | null;
 }
 
@@ -55,10 +60,14 @@ export function UnitCard({ unit, onUnitClick, onShareClick, onDuplicate, onDelet
   const navigate = useNavigate();
   const canShowSale = showSalePrice(unit.intent_type) && unit.price != null;
   const canShowRent = showRentalPrice(unit.intent_type) && unit.rent_price != null;
+  const cityLabel = formatCityLabel(
+    unit.city?.trim() ? unit.city : unit.property?.city,
+    unit.city?.trim() ? unit.state : unit.property?.state
+  );
 
   return (
     <Card 
-      className="cursor-pointer hover:bg-muted/50 transition-colors"
+      className="cursor-pointer hover:bg-muted/50 transition-colors select-none"
       onClick={() => onUnitClick(unit)}
     >
       <CardContent className="p-4 space-y-3">
@@ -67,7 +76,12 @@ export function UnitCard({ unit, onUnitClick, onShareClick, onDuplicate, onDelet
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Home className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0">
-              <p className="font-medium truncate">{unit.unit_number}</p>
+              <p className="font-medium truncate select-text">{unit.unit_number}</p>
+              {cityLabel && (
+                <p className="text-xs text-muted-foreground truncate select-text" title={cityLabel}>
+                  {cityLabel}
+                </p>
+              )}
               {unit.property_type && (
                 <p className="text-xs text-muted-foreground">
                   {PROPERTY_TYPE_LABELS[unit.property_type] || unit.property_type}
