@@ -49,6 +49,10 @@ import {
   StickyNote,
   Pencil,
   Trash2,
+  Paperclip,
+  User,
+  CircleDollarSign,
+  CheckCircle2,
 } from 'lucide-react';
 import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
 import { format } from 'date-fns';
@@ -73,6 +77,8 @@ import {
   deduplicateAuditLogs,
 } from '@/lib/audit-formatting';
 import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
+import { ActivityFormDialog } from '@/components/assets/ActivityFormDialog';
+import { activityTypeLabel } from '@/lib/activity-types';
 
 
 // ── Types ──────────────────────────────────────────────────
@@ -137,6 +143,14 @@ interface ManualNote {
   scheduled_at: string | null;
   created_at: string;
   broker_id: string;
+  activity_type?: string | null;
+  description?: string | null;
+  assigned_contact_id?: string | null;
+  responsible_name?: string | null;
+  estimated_cost?: number | null;
+  has_transaction?: boolean;
+  attachments_count?: number;
+  is_completed?: boolean;
 }
 
 function isManualNote(item: any): item is ManualNote {
@@ -206,10 +220,7 @@ export const AssetActivityTimeline = ({
   const [raConfigOpen, setRaConfigOpen] = useState(false);
 
   const queryClient = useQueryClient();
-  const [showNoteForm, setShowNoteForm] = useState(false);
-  const [noteTitle, setNoteTitle] = useState('');
-  const [noteDate, setNoteDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [savingNote, setSavingNote] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editNoteTitle, setEditNoteTitle] = useState('');
   const [editNoteDate, setEditNoteDate] = useState('');
@@ -294,43 +305,42 @@ export const AssetActivityTimeline = ({
       const col = assetType === 'unit' ? 'unit_id' : 'property_id';
       const { data, error } = await (supabase as any)
         .from('property_activities')
-        .select('id, title, scheduled_at, created_at, broker_id')
+        .select('id, title, description, scheduled_at, created_at, broker_id, activity_type, assigned_contact_id, estimated_cost, financial_transaction_id, is_completed')
         .eq(col, assetId)
         .order('scheduled_at', { ascending: false, nullsFirst: false });
       if (error) throw error;
-      return (data || []).map((r: any) => ({
+      const rows = data || [];
+
+      const contactIds = [...new Set(rows.map((r: any) => r.assigned_contact_id).filter(Boolean))] as string[];
+      const activityIds = rows.map((r: any) => r.id);
+
+      const [contactsRes, docsRes] = await Promise.all([
+        contactIds.length
+          ? supabase.from('contacts').select('id, name').in('id', contactIds)
+          : Promise.resolve({ data: [] as any[] }),
+        activityIds.length
+          ? (supabase as any).from('documents').select('activity_id').in('activity_id', activityIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const contactNames: Record<string, string> = {};
+      ((contactsRes as any).data || []).forEach((c: any) => { contactNames[c.id] = c.name; });
+      const attachments: Record<string, number> = {};
+      ((docsRes as any).data || []).forEach((d: any) => {
+        if (!d.activity_id) return;
+        attachments[d.activity_id] = (attachments[d.activity_id] || 0) + 1;
+      });
+
+      return rows.map((r: any) => ({
         ...r,
         type: 'manual_note' as const,
+        responsible_name: r.assigned_contact_id ? contactNames[r.assigned_contact_id] || null : null,
+        attachments_count: attachments[r.id] || 0,
+        has_transaction: !!r.financial_transaction_id,
       }));
     },
     staleTime: 30_000,
   });
-
-  const saveNote = async () => {
-    if (!noteTitle.trim()) return;
-    setSavingNote(true);
-    try {
-      const col = assetType === 'unit' ? 'unit_id' : 'property_id';
-      const { error } = await (supabase as any)
-        .from('property_activities')
-        .insert({
-          [col]: assetId,
-          broker_id: brokerId,
-          activity_type: 'note',
-          title: noteTitle.trim(),
-          scheduled_at: noteDate ? new Date(noteDate + 'T12:00:00').toISOString() : null,
-        });
-      if (error) throw error;
-      setNoteTitle('');
-      setNoteDate(new Date().toISOString().split('T')[0]);
-      setShowNoteForm(false);
-      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes', assetType, assetId] });
-    } catch (e: any) {
-      toast({ title: 'Erro ao salvar atividade', description: e.message, variant: 'destructive' });
-    } finally {
-      setSavingNote(false);
-    }
-  };
 
   const startEditNote = (note: ManualNote) => {
     setEditingNoteId(note.id);
@@ -611,7 +621,7 @@ export const AssetActivityTimeline = ({
             variant="outline"
             size="sm"
             className="h-8 text-xs gap-1.5"
-            onClick={() => setShowNoteForm(v => !v)}
+            onClick={() => setActivityDialogOpen(true)}
           >
             <Plus className="h-3.5 w-3.5" />
             Incluir atividade
@@ -653,36 +663,6 @@ export const AssetActivityTimeline = ({
           )}
         </div>
       </div>
-
-      {showNoteForm && (
-        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Nova atividade manual</p>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              placeholder="Descrição (ex: Vistoria feita, Reunião com proprietário...)"
-              value={noteTitle}
-              onChange={e => setNoteTitle(e.target.value)}
-              className="h-8 text-sm flex-1"
-              onKeyDown={e => { if (e.key === 'Enter') saveNote(); }}
-              autoFocus
-            />
-            <input
-              type="date"
-              value={noteDate}
-              onChange={e => setNoteDate(e.target.value)}
-              className="h-8 text-sm rounded-md border border-input bg-background px-2 shrink-0 w-full sm:w-[140px]"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setShowNoteForm(false); setNoteTitle(''); }}>
-              Cancelar
-            </Button>
-            <Button size="sm" className="h-7 text-xs" onClick={saveNote} disabled={!noteTitle.trim() || savingNote}>
-              {savingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Salvar'}
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Count */}
       <p className="text-[11px] text-muted-foreground">
@@ -783,6 +763,43 @@ export const AssetActivityTimeline = ({
                             {' '}
                             <span>{item.title}</span>
                           </p>
+                          {item.description && (
+                            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                              {item.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            {item.activity_type && item.activity_type !== 'note' && (
+                              <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
+                                {activityTypeLabel(item.activity_type)}
+                              </Badge>
+                            )}
+                            {item.responsible_name && (
+                              <Badge variant="outline" className="h-5 text-[10px] px-1.5 gap-1 font-normal">
+                                <User className="h-2.5 w-2.5" />
+                                {item.responsible_name}
+                              </Badge>
+                            )}
+                            {!!item.attachments_count && (
+                              <Badge variant="outline" className="h-5 text-[10px] px-1.5 gap-1 font-normal">
+                                <Paperclip className="h-2.5 w-2.5" />
+                                {item.attachments_count} anexo{item.attachments_count > 1 ? 's' : ''}
+                              </Badge>
+                            )}
+                            {item.estimated_cost != null && (
+                              <Badge variant="outline" className="h-5 text-[10px] px-1.5 gap-1 font-normal">
+                                <CircleDollarSign className="h-2.5 w-2.5" />
+                                {Number(item.estimated_cost).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                {item.has_transaction ? ' · lançado' : ''}
+                              </Badge>
+                            )}
+                            {item.is_completed && (
+                              <Badge className="h-5 text-[10px] px-1.5 gap-1 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25">
+                                <CheckCircle2 className="h-2.5 w-2.5" />
+                                Concluída
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <TooltipProvider>
                           <Tooltip>
@@ -891,6 +908,20 @@ export const AssetActivityTimeline = ({
           </Button>
         </div>
       )}
+      <ActivityFormDialog
+        open={activityDialogOpen}
+        onOpenChange={setActivityDialogOpen}
+        defaultAsset={{
+          id: assetId,
+          type: assetType,
+          label: assetType === 'unit' ? 'Esta unidade' : 'Este imóvel',
+        }}
+        lockAsset
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ['asset-manual-notes', assetType, assetId] });
+        }}
+      />
+
       <RAReportConfigDialog
         open={raConfigOpen}
         onOpenChange={setRaConfigOpen}
