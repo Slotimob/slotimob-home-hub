@@ -268,7 +268,43 @@ All colors MUST be HSL.
     overflow-x: clip;
     max-width: 100vw;
     min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  /* Interface chrome is not text-selectable (prevents double-click from
+     painting whole UI blocks) */
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  label,
+  th,
+  nav,
+  [data-sidebar],
+  [data-sidebar] *,
+  [aria-label="breadcrumb"],
+  [aria-label="breadcrumb"] *,
+  header,
+  .badge,
+  [data-badge] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Data and editable content stay selectable */
+  input,
+  textarea,
+  select,
+  [contenteditable="true"],
+  code,
+  pre,
+  td,
+  td * {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
 
   /* Prevent page horizontal scroll but allow internal scrollers */
   #root {
