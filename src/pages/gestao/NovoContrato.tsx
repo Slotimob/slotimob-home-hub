@@ -466,8 +466,18 @@ export default function NovoContrato() {
         return !!effectiveUnitId;
       case "tenant":
         return !!formData.tenant_contact_id;
-      case "financial":
-        return formData.rent_amount > 0 && formData.due_day >= 1 && formData.due_day <= 31;
+      case "financial": {
+        const endDateValid =
+          formData.is_indefinite_term ||
+          !formData.end_date ||
+          formData.end_date >= formData.start_date;
+        return (
+          formData.rent_amount > 0 &&
+          formData.due_day >= 1 &&
+          formData.due_day <= 31 &&
+          endDateValid
+        );
+      }
       case "guarantee":
         if (formData.guarantee_type === "fiador") {
           const hasBasicInfo = !!(guarantorData.nome && guarantorData.cpf);
