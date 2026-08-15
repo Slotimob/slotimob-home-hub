@@ -484,14 +484,10 @@ export default function BoletosEmGestao() {
         </DialogHeader>
         <div className="space-y-2 py-2">
           <Label htmlFor="new-value">Novo valor</Label>
-          <Input
+          <CurrencyInput
             id="new-value"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0"
             value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
+            onChange={setNewValue}
           />
         </div>
         <DialogFooter>

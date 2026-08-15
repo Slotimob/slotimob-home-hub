@@ -378,12 +378,9 @@ export function EmitirCobrancaDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>Valor (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CurrencyInput
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={setAmount}
                 />
               </div>
             </div>

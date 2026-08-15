@@ -519,12 +519,9 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
           </DialogHeader>
           <div className="space-y-2 py-2">
             <Label>Novo valor</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
+            <CurrencyInput
               value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
+              onChange={setNewValue}
             />
           </div>
           <DialogFooter>

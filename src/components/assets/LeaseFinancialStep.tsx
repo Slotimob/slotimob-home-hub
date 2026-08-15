@@ -242,12 +242,9 @@ export function LeaseFinancialStep({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Taxa de Administração (%)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
+              <PercentInput
                 value={value.admin_fee_percentage}
-                onChange={(e) => onChange({ admin_fee_percentage: parseFloat(e.target.value) || 0 })}
+                onChange={(v) => onChange({ admin_fee_percentage: v })}
               />
             </div>
             <div className="space-y-2">
