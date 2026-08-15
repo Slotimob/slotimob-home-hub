@@ -14,8 +14,9 @@
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import { getAdjustmentStatus, getAdjustmentStatusConfig } from "@/lib/lease-status";
+import {
    ClipboardCheck,
    FileText,
    FileSignature,
