@@ -192,6 +192,9 @@ export default function NovoContrato() {
     enabled: !!user && !!editLeaseId,
   });
 
+  const isPendingSetup = isEditMode && editLease?.status === "pending";
+
+
   // Resolve which unit we'll create the lease for
   const effectiveUnitId = editLease?.unit_id || unitIdParam || selectedUnitId || "";
 
