@@ -97,16 +97,12 @@ export function EditAdjustmentDateDialog({
         data: { next_adjustment_date: adjustmentDate },
       });
 
+      // Refetch antes do toast para a tela já refletir a mudança
+      await invalidateLeaseQueries(queryClient);
+
       toast.success("Data de reajuste atualizada!", {
         description: `Próximo reajuste: ${format(parseISO(adjustmentDate), "dd/MM/yyyy")}`,
       });
-
-      // Invalidate queries to update the UI immediately
-      queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["lease", "unit", lease.unit_id] });
-      queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
-      queryClient.invalidateQueries({ queryKey: ["asset-health"] });
 
       onSuccess?.();
       handleClose();
