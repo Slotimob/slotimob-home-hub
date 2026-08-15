@@ -401,29 +401,61 @@ export default function NovoContrato() {
   }, [selectedTenant?.id]);
 
 
-  // Managed units list (used in the "unit" step)
+  // Managed units list (used in the "unit" step) — mostra TODOS os imóveis de locação
   const { data: managedUnits, isLoading: loadingManagedUnits } = useQuery({
     queryKey: ["managed-units-for-lease", effectiveBrokerId, user?.id, unitSearchTerm],
     queryFn: async () => {
       if (!user) return [];
       let query = supabase
         .from("units")
-        .select("id, unit_number, address, owner_contact_id, is_occupied, is_managed")
+        .select("id, unit_number, address, city, state, owner_contact_id, is_occupied, is_managed, intent_type")
         .eq("broker_id", effectiveBrokerId || user.id)
         .eq("is_managed", true)
+        .in("intent_type", ["rental", "both"])
         .order("unit_number");
       if (unitSearchTerm) {
         query = query.or(
-          `unit_number.ilike.%${unitSearchTerm}%,address.ilike.%${unitSearchTerm}%`
+          `unit_number.ilike.%${unitSearchTerm}%,address.ilike.%${unitSearchTerm}%,city.ilike.%${unitSearchTerm}%`
         );
       }
       const { data, error } = await query.limit(50);
       if (error) throw error;
       const all = data || [];
-      const free = all.filter((u: any) => !u.is_occupied);
-      return free.length > 0 ? free : all;
+
+      // Inquilino do contrato ativo (para os imóveis ocupados)
+      const occupiedIds = all.filter((u: any) => u.is_occupied).map((u: any) => u.id);
+      const tenantByUnit: Record<string, string> = {};
+      if (occupiedIds.length > 0) {
+        const { data: activeLeases } = await supabase
+          .from("leases")
+          .select("unit_id, tenant:contacts!leases_tenant_contact_id_fkey(name)")
+          .in("unit_id", occupiedIds)
+          .eq("status", "active");
+        (activeLeases || []).forEach((l: any) => {
+          if (l.tenant?.name && !tenantByUnit[l.unit_id]) tenantByUnit[l.unit_id] = l.tenant.name;
+        });
+      }
+
+      // Livres primeiro, ocupados depois — todos visíveis
+      return all
+        .map((u: any) => ({ ...u, active_tenant_name: tenantByUnit[u.id] || null }))
+        .sort((a: any, b: any) => (a.is_occupied === b.is_occupied ? 0 : a.is_occupied ? 1 : -1));
     },
     enabled: !!user && !isEditMode && !unitIdParam,
+  });
+
+  // Dados do imóvel usados como default dos encargos (IPTU / seguro)
+  const { data: unitChargeDefaults } = useQuery({
+    queryKey: ["unit-charge-defaults", effectiveUnitId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("units")
+        .select("iptu, obligations_config")
+        .eq("id", effectiveUnitId)
+        .maybeSingle();
+      return (data as { iptu: number | null; obligations_config: any } | null) ?? null;
+    },
+    enabled: !!user && !!effectiveUnitId,
   });
 
   const currentIndex = STEPS.findIndex((s) => s.id === step);
