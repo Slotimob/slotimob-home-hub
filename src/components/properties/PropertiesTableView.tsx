@@ -159,7 +159,9 @@ export function PropertiesTableView({
                       <Package className="h-3.5 w-3.5" />
                       <span>{unitCounts[property.id] || 0}</span>
                     </div>
+                  </TableCell>
                   <TableCell className="text-right">
+
 
                     <Tooltip>
                       <TooltipTrigger asChild>
