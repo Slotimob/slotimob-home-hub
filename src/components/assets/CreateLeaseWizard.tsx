@@ -568,6 +568,7 @@ export function CreateLeaseWizard({
   
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
         <style>{`
@@ -1528,7 +1529,9 @@ export function CreateLeaseWizard({
           )}
         </DialogFooter>
       </DialogContent>
-    <ConfirmLeaseProjectionDialog
+      </Dialog>
+
+      <ConfirmLeaseProjectionDialog
         open={projectionOpen}
         onOpenChange={(o) => {
           setProjectionOpen(o);
@@ -1536,6 +1539,6 @@ export function CreateLeaseWizard({
         }}
         lease={projectionLease}
       />
-    </Dialog>
+    </>
   );
 }
