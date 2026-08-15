@@ -13,6 +13,7 @@ import {
 } from './asset-financials';
 import { ASSET_EXPENSE_CATEGORIES } from './asset-expense-categories';
 import { EVENT_GROUPS, humanizeLog, type AuditLog } from './audit-formatting';
+import { activityTypeLabel } from './activity-types';
 
 /** Max activity rows rendered per asset in the report */
 export const ACTIVITIES_REPORT_LIMIT = 120;
@@ -505,6 +506,7 @@ export async function buildAssetReport(params: {
         activities_count: activitiesMap[id]?.count ?? 0,
         activities_by_type: activitiesMap[id]?.byType ?? {},
         activities_items: activitiesMap[id]?.items ?? [],
+        ...maintenanceFor(id),
         roi_pct: roi?.roi_pct ?? null,
         monthly_yield: monthlyYield,
         cap_rate: capRate,
@@ -578,6 +580,7 @@ export async function buildAssetReport(params: {
         activities_count: activitiesMap[id]?.count ?? 0,
         activities_by_type: activitiesMap[id]?.byType ?? {},
         activities_items: activitiesMap[id]?.items ?? [],
+        ...maintenanceFor(id),
         roi_pct: roi?.roi_pct ?? null,
         monthly_yield: monthlyYield,
         cap_rate: capRate,
