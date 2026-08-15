@@ -297,7 +297,17 @@ export function ContractCard({
 
         {/* Action Button */}
         <div className="pt-2">
-          {needsAction ? (
+          {isPendingSetup ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-1.5 border-amber-500 text-amber-700 hover:bg-amber-500/10"
+              onClick={() => onCardClick?.(lease)}
+            >
+              <Settings2 className="h-3.5 w-3.5" />
+              Finalizar Configuração
+            </Button>
+          ) : needsAction ? (
             <Button
               variant="destructive"
               size="sm"
