@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
-import { DashboardLayout } from '@/components/DashboardLayout';
+import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -289,7 +289,7 @@ export default function Manutencoes() {
   );
 
   return (
-    <DashboardLayout>
+    <AppLayout title="Manutenções">
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
@@ -489,6 +489,6 @@ export default function Manutencoes() {
       </div>
 
       <ActivityFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-    </DashboardLayout>
+    </AppLayout>
   );
 }
