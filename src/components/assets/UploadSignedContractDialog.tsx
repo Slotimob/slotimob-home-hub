@@ -109,6 +109,8 @@ export function UploadSignedContractDialog({
         signedContractPath: filePath,
       });
 
+      await invalidateLeaseQueries(queryClient);
+
       toast.success("Contrato assinado enviado!", {
         description: "O status foi atualizado para 'Assinado'.",
       });
