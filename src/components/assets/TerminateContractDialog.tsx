@@ -103,6 +103,8 @@ export function TerminateContractDialog({
 
       console.log('[TerminateContract] Sucesso:', result);
 
+      await invalidateLeaseQueries(queryClient);
+
       toast.success("Contrato encerrado com sucesso!", {
         id: toastId,
         description: result.deletedTransactions > 0 
