@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Building2, MapPin, Package, Percent, Flame, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { normalizePropertyImageUrl } from '@/lib/imageUtils';
+import { CityText, formatCityLabel } from '@/components/shared/CityCell';
 
 interface Property {
   id: string;
