@@ -52,7 +52,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreateLease, useUpdateLease, GuarantorData, PaymentInfo, Lease } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { CurrencyInput, PercentInput } from "@/components/ui/currency-input";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import type { LeaseConversionContext } from "@/hooks/useLeaseConversionContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";

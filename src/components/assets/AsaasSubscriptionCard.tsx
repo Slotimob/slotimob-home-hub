@@ -47,6 +47,7 @@ import {
 import { toast } from "sonner";
 import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
 import { usePermissions } from "@/hooks/usePermissions";
+import { CurrencyInput, PercentInput } from "@/components/ui/currency-input";
 
 type BillingType = "UNDEFINED" | "BOLETO" | "PIX";
 

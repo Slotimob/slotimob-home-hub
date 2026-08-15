@@ -24,6 +24,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
+import { PercentInput } from "@/components/ui/currency-input";
 
 interface LeaseForAdjustment {
   id: string;

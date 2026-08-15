@@ -26,6 +26,7 @@ import {
 import { Loader2, Copy, ExternalLink, AlertCircle, CheckCircle2, Receipt } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface EmitirCobrancaDialogProps {
   open: boolean;

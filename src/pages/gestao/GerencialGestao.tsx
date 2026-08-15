@@ -58,6 +58,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { MonthYearPicker } from "@/components/schedule/MonthYearPicker";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface ManagerialTransaction {
   id: string;

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface CreateBankAccountDialogProps {
   open: boolean;

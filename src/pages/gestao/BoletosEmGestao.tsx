@@ -19,6 +19,7 @@ import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/As
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 
 const STATUS_MAP: Record<string, { label: string; variant: string }> = {

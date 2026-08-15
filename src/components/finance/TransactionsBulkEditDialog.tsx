@@ -20,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useFinancialCategories } from "@/hooks/useFinancialCategories";
 import {
+import { CurrencyInput } from "@/components/ui/currency-input";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
