@@ -95,6 +95,13 @@ export interface AssetReportAsset {
     activities_by_type: Record<string, number>;
     /** Most recent activities within the period (capped at ACTIVITIES_REPORT_LIMIT) */
     activities_items: AssetReportActivity[];
+    /** Manutenções/atividades registradas manualmente no período */
+    maintenance_items: AssetReportMaintenanceItem[];
+    maintenance_count: number;
+    maintenance_pending_count: number;
+    maintenance_by_type: Record<string, number>;
+    maintenance_estimated_cost: number;
+
     roi_pct: number | null;
     monthly_yield: number | null;
     cap_rate: number | null;
