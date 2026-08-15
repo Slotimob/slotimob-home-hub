@@ -131,4 +131,73 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
 
 CurrencyInput.displayName = 'CurrencyInput';
 
-export { CurrencyInput };
+interface PercentInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
+  /** Numeric value (e.g. 10.5 for 10,5%) */
+  value: number | string;
+  onChange: (value: number) => void;
+  /** Maximum allowed percentage (default 100) */
+  max?: number;
+}
+
+/**
+ * Percentage input: accepts "10,5" or "10.5" without losing decimals, caps at `max`.
+ */
+const PercentInput = React.forwardRef<HTMLInputElement, PercentInputProps>(
+  ({ className, value, onChange, max = 100, ...props }, ref) => {
+    const [displayValue, setDisplayValue] = React.useState('');
+    const [isFocused, setIsFocused] = React.useState(false);
+
+    React.useEffect(() => {
+      if (!isFocused) {
+        const num = typeof value === 'number' ? value : parseFloat(parseInputValue(String(value ?? '')));
+        setDisplayValue(isNaN(num) || value === '' || value === null || value === undefined
+          ? ''
+          : String(num).replace('.', ','));
+      }
+    }, [value, isFocused]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const sanitized = e.target.value.replace(/[^\d.,]/g, '');
+      setDisplayValue(sanitized);
+      const raw = parseInputValue(sanitized);
+      const num = parseFloat(raw);
+      if (isNaN(num)) {
+        onChange(0);
+        return;
+      }
+      onChange(Math.min(num, max));
+    };
+
+    return (
+      <div className="relative">
+        <Input
+          ref={ref}
+          type="text"
+          inputMode="decimal"
+          className={cn('pr-8', className)}
+          value={displayValue}
+          onChange={handleChange}
+          onFocus={(e) => {
+            setIsFocused(true);
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            const num = parseFloat(parseInputValue(displayValue));
+            setDisplayValue(isNaN(num) ? '' : String(Math.min(num, max)).replace('.', ','));
+            props.onBlur?.(e);
+          }}
+          {...props}
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+          %
+        </span>
+      </div>
+    );
+  }
+);
+
+PercentInput.displayName = 'PercentInput';
+
+export { CurrencyInput, PercentInput };
+
