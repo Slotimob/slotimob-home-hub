@@ -591,22 +591,24 @@ export function LeaseFinancialStep({
           <span className="text-muted-foreground">Aluguel</span>
           <span className="font-medium">{formatCurrency(value.rent_amount)}</span>
         </div>
-        {value.fire_insurance.enabled && (
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">
+            Taxa de Administração ({(value.admin_fee_percentage || 0).toLocaleString("pt-BR")}% sobre aluguel)
+          </span>
+          <span className="font-medium text-destructive">
+            −{formatCurrency(value.rent_amount * ((value.admin_fee_percentage || 0) / 100))}
+          </span>
+        </div>
+        {value.fire_insurance.enabled && value.fire_insurance.charge_to === "owner" && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">
-              Seguro incêndio (parcela ·{" "}
-              {value.fire_insurance.charge_to === "tenant" ? "inquilino" : "proprietário"})
-            </span>
-            <span className="font-medium">{formatCurrency(insuranceInstallment)}</span>
+            <span className="text-muted-foreground">Seguro incêndio (descontado do proprietário)</span>
+            <span className="font-medium text-destructive">−{formatCurrency(insuranceInstallment)}</span>
           </div>
         )}
-        {value.iptu_charge.enabled && (
+        {value.iptu_charge.enabled && value.iptu_charge.charge_to === "owner" && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">
-              IPTU (parcela ·{" "}
-              {value.iptu_charge.charge_to === "tenant" ? "inquilino" : "proprietário"})
-            </span>
-            <span className="font-medium">{formatCurrency(iptuInstallment)}</span>
+            <span className="text-muted-foreground">IPTU (descontado do proprietário)</span>
+            <span className="font-medium text-destructive">−{formatCurrency(iptuInstallment)}</span>
           </div>
         )}
         <Separator className="my-1" />
