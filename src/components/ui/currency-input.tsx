@@ -16,21 +16,18 @@ interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
  */
 const formatDisplayValue = (value: string, locale: string = 'pt-BR'): string => {
   if (!value || value === '') return '';
-  
-  // Remove non-numeric chars except decimal separator
-  const numericValue = value.replace(/[^\d.,]/g, '');
-  if (!numericValue) return '';
-  
-  // Parse the number
-  const parsed = parseFloat(numericValue.replace(',', '.'));
-  if (isNaN(parsed)) return value;
-  
-  // Format with thousand separators
+
+  const parsed = parseFloat(parseInputValue(String(value)));
+  if (isNaN(parsed)) return '';
+
+  const hasDecimals = !Number.isInteger(parsed);
+
   return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: hasDecimals ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(parsed);
 };
+
 
 /**
  * Parses a formatted display value back to a raw numeric string.
