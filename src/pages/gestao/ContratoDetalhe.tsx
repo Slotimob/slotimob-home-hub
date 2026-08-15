@@ -83,15 +83,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn, formatPhoneForWhatsApp } from "@/lib/utils";
 import { toast as sonnerToast } from "sonner";
-
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  active: { label: "Ativo", variant: "default" },
-  pending_signature: { label: "Aguardando Assinatura", variant: "secondary" },
-  expired: { label: "Expirado", variant: "destructive" },
-  cancelled: { label: "Cancelado", variant: "outline" },
-  terminated: { label: "Encerrado", variant: "outline" },
-  pending: { label: "Pendente", variant: "secondary" },
-};
+import {
+  getLeaseStatusConfig,
+  getSignatureStatus,
+  getAdjustmentStatusConfig,
+  isLeasePendingSetup,
+} from "@/lib/lease-status";
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 
 export default function ContratoDetalhe() {
   const [searchParams] = useSearchParams();
@@ -371,7 +369,9 @@ export default function ContratoDetalhe() {
     );
   }
 
-  const statusConfig = STATUS_LABELS[lease.status] || STATUS_LABELS.active;
+  const statusConfig = getLeaseStatusConfig(lease.status);
+  const signatureConfig = getSignatureStatus(lease.signature_status);
+  const adjustmentConfig = getAdjustmentStatusConfig(lease.next_adjustment_date);
   const tenant = lease.tenant_contact;
   const billingContactConfig = (lease as any)?.billing_automation?.billing_contact;
   const tenantWhatsApp = billingContactConfig?.whatsapp || tenant?.whatsapp || tenant?.phone || null;
@@ -401,16 +401,11 @@ export default function ContratoDetalhe() {
                 {unit?.address && <p className="text-sm text-muted-foreground truncate">{unit.address}</p>}
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-xs",
-                      isSigned
-                        ? "border-green-500/30 text-green-700 bg-green-500/10"
-                        : "border-amber-500/30 text-amber-700 bg-amber-500/10"
-                    )}
-                  >
-                    {isSigned ? "Assinado" : "Pendente assinatura"}
+                  <Badge variant="outline" className={cn("text-xs", signatureConfig.className)}>
+                    {signatureConfig.label}
+                  </Badge>
+                  <Badge variant={adjustmentConfig.variant} className={cn("text-xs", adjustmentConfig.className)}>
+                    {adjustmentConfig.label}
                   </Badge>
                 </div>
               </div>
@@ -1330,10 +1325,10 @@ export default function ContratoDetalhe() {
       <OwnerReportDialog open={showOwnerReport} onOpenChange={setShowOwnerReport} lease={{ ...lease, tenant } as any} />
       <ConfigureObligationsDialog
         open={showObligationsDialog}
-        onOpenChange={(open) => {
+        onOpenChange={async (open) => {
           setShowObligationsDialog(open);
           if (!open) {
-            queryClient.invalidateQueries({ queryKey: ["lease-detail", id, effectiveBrokerId] });
+            await invalidateLeaseQueries(queryClient);
             refetch();
           }
         }}
@@ -1350,7 +1345,7 @@ export default function ContratoDetalhe() {
                 },
               })
               .eq("id", lease.id);
-            queryClient.invalidateQueries({ queryKey: ["lease-detail", id, effectiveBrokerId] });
+            await invalidateLeaseQueries(queryClient);
             refetch();
           } catch {
             /* silently fail */
@@ -1362,8 +1357,8 @@ export default function ContratoDetalhe() {
         open={showEditStartDateDialog}
         onOpenChange={setShowEditStartDateDialog}
         lease={{ id: lease.id, start_date: lease.start_date, unit: unit, tenant: tenant } as any}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["leases"] });
+        onSuccess={async () => {
+          await invalidateLeaseQueries(queryClient);
           refetch();
         }}
       />
@@ -1371,8 +1366,8 @@ export default function ContratoDetalhe() {
         open={terminateDialogOpen}
         onOpenChange={setTerminateDialogOpen}
         lease={{ id: lease.id, unit_id: lease.unit_id, unit: unit, tenant_contact: tenant } as any}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["leases"] });
+        onSuccess={async () => {
+          await invalidateLeaseQueries(queryClient);
           refetch();
         }}
       />
