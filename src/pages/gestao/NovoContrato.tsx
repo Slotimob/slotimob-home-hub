@@ -32,6 +32,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { GuarantorSelector } from "@/components/assets/GuarantorSelector";
+import {
+  LeaseFinancialStep,
+  getInitialFireInsurance,
+  getInitialIptuCharge,
+  type LeaseFinancialValue,
+} from "@/components/assets/LeaseFinancialStep";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -88,6 +94,11 @@ const getInitialFormData = () => ({
   notes: "",
   adjustment_index: "IGPM",
   guarantee_type: "caucao" as GuaranteeType,
+  is_indefinite_term: false,
+  adjustment_periodicity_months: 12,
+  next_adjustment_date: "",
+  fire_insurance: getInitialFireInsurance(),
+  iptu_charge: getInitialIptuCharge(),
 });
 
 const getInitialGuarantor = (): GuarantorData => ({
@@ -295,6 +306,11 @@ export default function NovoContrato() {
       notes: editLease.notes || "",
       adjustment_index: (editLease.metadata?.adjustment_index as string) || editLease.adjustment_index || "IGPM",
       guarantee_type: (editLease.guarantee_type || "caucao") as GuaranteeType,
+      is_indefinite_term: !!editLease.is_indefinite_term,
+      adjustment_periodicity_months: Number(editLease.adjustment_periodicity_months) || 12,
+      next_adjustment_date: editLease.next_adjustment_date || "",
+      fire_insurance: { ...getInitialFireInsurance(), ...(editLease.fire_insurance || {}) },
+      iptu_charge: { ...getInitialIptuCharge(), ...(editLease.iptu_charge || {}) },
     });
     if (editLease.guarantor_data) setGuarantorData(editLease.guarantor_data);
     if (editLease.payment_info) setPaymentInfo(editLease.payment_info);
@@ -385,29 +401,61 @@ export default function NovoContrato() {
   }, [selectedTenant?.id]);
 
 
-  // Managed units list (used in the "unit" step)
+  // Managed units list (used in the "unit" step) — mostra TODOS os imóveis de locação
   const { data: managedUnits, isLoading: loadingManagedUnits } = useQuery({
     queryKey: ["managed-units-for-lease", effectiveBrokerId, user?.id, unitSearchTerm],
     queryFn: async () => {
       if (!user) return [];
       let query = supabase
         .from("units")
-        .select("id, unit_number, address, owner_contact_id, is_occupied, is_managed")
+        .select("id, unit_number, address, city, state, owner_contact_id, is_occupied, is_managed, intent_type")
         .eq("broker_id", effectiveBrokerId || user.id)
         .eq("is_managed", true)
+        .in("intent_type", ["rental", "both"])
         .order("unit_number");
       if (unitSearchTerm) {
         query = query.or(
-          `unit_number.ilike.%${unitSearchTerm}%,address.ilike.%${unitSearchTerm}%`
+          `unit_number.ilike.%${unitSearchTerm}%,address.ilike.%${unitSearchTerm}%,city.ilike.%${unitSearchTerm}%`
         );
       }
       const { data, error } = await query.limit(50);
       if (error) throw error;
       const all = data || [];
-      const free = all.filter((u: any) => !u.is_occupied);
-      return free.length > 0 ? free : all;
+
+      // Inquilino do contrato ativo (para os imóveis ocupados)
+      const occupiedIds = all.filter((u: any) => u.is_occupied).map((u: any) => u.id);
+      const tenantByUnit: Record<string, string> = {};
+      if (occupiedIds.length > 0) {
+        const { data: activeLeases } = await supabase
+          .from("leases")
+          .select("unit_id, tenant:contacts!leases_tenant_contact_id_fkey(name)")
+          .in("unit_id", occupiedIds)
+          .eq("status", "active");
+        (activeLeases || []).forEach((l: any) => {
+          if (l.tenant?.name && !tenantByUnit[l.unit_id]) tenantByUnit[l.unit_id] = l.tenant.name;
+        });
+      }
+
+      // Livres primeiro, ocupados depois — todos visíveis
+      return all
+        .map((u: any) => ({ ...u, active_tenant_name: tenantByUnit[u.id] || null }))
+        .sort((a: any, b: any) => (a.is_occupied === b.is_occupied ? 0 : a.is_occupied ? 1 : -1));
     },
     enabled: !!user && !isEditMode && !unitIdParam,
+  });
+
+  // Dados do imóvel usados como default dos encargos (IPTU / seguro)
+  const { data: unitChargeDefaults } = useQuery({
+    queryKey: ["unit-charge-defaults", effectiveUnitId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("units")
+        .select("iptu, obligations_config")
+        .eq("id", effectiveUnitId)
+        .maybeSingle();
+      return (data as { iptu: number | null; obligations_config: any } | null) ?? null;
+    },
+    enabled: !!user && !!effectiveUnitId,
   });
 
   const currentIndex = STEPS.findIndex((s) => s.id === step);
@@ -418,8 +466,18 @@ export default function NovoContrato() {
         return !!effectiveUnitId;
       case "tenant":
         return !!formData.tenant_contact_id;
-      case "financial":
-        return formData.rent_amount > 0 && formData.due_day >= 1 && formData.due_day <= 31;
+      case "financial": {
+        const endDateValid =
+          formData.is_indefinite_term ||
+          !formData.end_date ||
+          formData.end_date >= formData.start_date;
+        return (
+          formData.rent_amount > 0 &&
+          formData.due_day >= 1 &&
+          formData.due_day <= 31 &&
+          endDateValid
+        );
+      }
       case "guarantee":
         if (formData.guarantee_type === "fiador") {
           const hasBasicInfo = !!(guarantorData.nome && guarantorData.cpf);
@@ -537,15 +595,19 @@ export default function NovoContrato() {
         due_day: formData.due_day,
         deposit_amount: formData.deposit_amount,
         start_date: formData.start_date,
-        end_date: formData.end_date || undefined,
+        end_date: formData.is_indefinite_term ? null : formData.end_date || null,
         cib: formData.cib || undefined,
         is_dimob_deductible: formData.is_dimob_deductible,
         notes: formData.notes || undefined,
         adjustment_index: formData.adjustment_index,
-        next_adjustment_date: nextAdjustmentDate || undefined,
+        next_adjustment_date: formData.next_adjustment_date || undefined,
         guarantee_type: formData.guarantee_type,
         guarantor_data: finalGuarantorData,
         payment_info: finalPaymentInfo,
+        is_indefinite_term: formData.is_indefinite_term,
+        adjustment_periodicity_months: formData.adjustment_periodicity_months,
+        fire_insurance: formData.fire_insurance.enabled ? formData.fire_insurance : null,
+        iptu_charge: formData.iptu_charge.enabled ? formData.iptu_charge : null,
         billing_automation: (isEditMode && editLease
           ? {
               ...(editLease.billing_automation || {}),
@@ -745,9 +807,22 @@ export default function NovoContrato() {
                           {unit.address && (
                             <p className="text-xs text-muted-foreground truncate">{unit.address}</p>
                           )}
+                          {unit.city && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {unit.city}
+                              {unit.state ? `/${unit.state}` : ""}
+                            </p>
+                          )}
+                          {unit.is_occupied && (
+                            <p className="text-[11px] text-amber-700 truncate">
+                              Já possui contrato ativo
+                              {unit.active_tenant_name ? ` com ${unit.active_tenant_name}` : ""} — é
+                              possível criar um contrato adicional.
+                            </p>
+                          )}
                         </div>
                         {unit.is_occupied && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 flex-shrink-0">
                             Ocupado
                           </span>
                         )}
@@ -843,162 +918,51 @@ export default function NovoContrato() {
 
           {/* Financial */}
           {step === "financial" && (
-            <div className="space-y-4">
-              {showSubdivisionSelect && (
-                <div className="space-y-2">
-                  <Label>Fração</Label>
-                  <Select
-                    value={formData.unit_subdivision_id ?? "none"}
-                    onValueChange={(v) => {
-                      const id = v === "none" ? null : v;
-                      const fraction = subdivisions.find((s) => s.id === id);
-                      setFormData((prev) => ({
-                        ...prev,
-                        unit_subdivision_id: id,
-                        rent_amount:
-                          fraction?.rent_price != null
-                            ? Number(fraction.rent_price)
-                            : prev.rent_amount,
-                      }));
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Imóvel inteiro" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
-                      {subdivisions.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.label}
-                          {s.area != null ? ` — ${s.area}m²` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Opcional. Selecione a fração quando o contrato for de apenas uma parte do
-                    imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Valor do Aluguel *</Label>
-                  <CurrencyInput
-                    value={formData.rent_amount.toString()}
-                    onChange={(value) =>
-                      setFormData({ ...formData, rent_amount: parseFloat(value) || 0 })
-                    }
-                    placeholder="R$ 0,00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Dia de Vencimento *</Label>
-                  <Select
-                    value={formData.due_day.toString()}
-                    onValueChange={(v) => setFormData({ ...formData, due_day: parseInt(v) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                        <SelectItem key={day} value={day.toString()}>
-                          Dia {day}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Taxa de Administração (%)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={formData.admin_fee_percentage}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        admin_fee_percentage: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Caução</Label>
-                  <CurrencyInput
-                    value={formData.deposit_amount.toString()}
-                    onChange={(value) =>
-                      setFormData({ ...formData, deposit_amount: parseFloat(value) || 0 })
-                    }
-                    placeholder="R$ 0,00"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Início do Contrato *</Label>
-                  <Input
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Fim do Contrato</Label>
-                  <Input
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Índice de Reajuste *</Label>
-                  <Select
-                    value={formData.adjustment_index}
-                    onValueChange={(v) => setFormData({ ...formData, adjustment_index: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="IGPM">IGP-M</SelectItem>
-                      <SelectItem value="IPCA">IPCA</SelectItem>
-                      <SelectItem value="INPC">INPC</SelectItem>
-                      <SelectItem value="Fixo">Fixo (sem reajuste)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Próximo Reajuste</Label>
-                  <Input type="date" value={nextAdjustmentDate || ""} disabled className="bg-muted" />
-                  <p className="text-[10px] text-muted-foreground">
-                    Calculado automaticamente (início + 12 meses)
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Repasse Líquido (estimado)</span>
-                  <span className="font-semibold text-primary">
-                    {(
-                      formData.rent_amount *
-                      (1 - formData.admin_fee_percentage / 100)
-                    ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <LeaseFinancialStep
+              value={formData as unknown as LeaseFinancialValue}
+              onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+              unit={unitChargeDefaults}
+              adjustmentLocked={isEditMode}
+              header={
+                showSubdivisionSelect ? (
+                  <div className="space-y-2">
+                    <Label>Fração</Label>
+                    <Select
+                      value={formData.unit_subdivision_id ?? "none"}
+                      onValueChange={(v) => {
+                        const id = v === "none" ? null : v;
+                        const fraction = subdivisions.find((s) => s.id === id);
+                        setFormData((prev) => ({
+                          ...prev,
+                          unit_subdivision_id: id,
+                          rent_amount:
+                            fraction?.rent_price != null
+                              ? Number(fraction.rent_price)
+                              : prev.rent_amount,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Imóvel inteiro" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
+                        {subdivisions.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.label}
+                            {s.area != null ? ` — ${s.area}m²` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Opcional. Selecione a fração quando o contrato for de apenas uma parte do
+                      imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
+                    </p>
+                  </div>
+                ) : null
+              }
+            />
           )}
 
           {/* Guarantee */}

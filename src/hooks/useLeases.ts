@@ -68,6 +68,32 @@ export interface BillingAutomation {
   legal_notification_7_days?: boolean;
 }
 
+/** Responsável pelo encargo do contrato */
+export type LeaseChargeResponsible = "tenant" | "owner";
+
+/** Seguro incêndio parametrizado no contrato (leases.fire_insurance) */
+export interface FireInsuranceConfig {
+  enabled: boolean;
+  total_amount: number;
+  installments: number;
+  installment_amount: number;
+  first_due_date: string | null;
+  charge_to: LeaseChargeResponsible;
+}
+
+/** IPTU parcelado parametrizado no contrato (leases.iptu_charge) */
+export interface IptuChargeConfig {
+  enabled: boolean;
+  annual_amount: number;
+  installments: number;
+  installment_amount: number;
+  first_due_date: string | null;
+  charge_to: LeaseChargeResponsible;
+  /** 'unit' quando o valor veio do cadastro do imóvel, 'manual' quando editado */
+  source: "unit" | "manual";
+}
+
+
 
 export interface BillingLog {
   type: "reminder_5_days" | "reminder_due_day" | "reminder_3_days_late" | "manual";
@@ -113,6 +139,10 @@ export interface Lease {
   guarantee_type?: "fiador" | "caucao" | "seguro_fianca" | "none";
   guarantor_data?: GuarantorData | null;
   payment_info?: PaymentInfo | null;
+  is_indefinite_term?: boolean;
+  adjustment_periodicity_months?: number;
+  fire_insurance?: FireInsuranceConfig | null;
+  iptu_charge?: IptuChargeConfig | null;
   // Joined data
   tenant?: {
     id: string;
@@ -147,7 +177,7 @@ export interface CreateLeaseData {
   due_day: number;
   deposit_amount?: number;
   start_date: string;
-  end_date?: string;
+  end_date?: string | null;
   cib?: string;
   is_dimob_deductible?: boolean;
   billing_automation?: BillingAutomation;
@@ -161,6 +191,10 @@ export interface CreateLeaseData {
   guarantee_type?: "fiador" | "caucao" | "seguro_fianca" | "none";
   guarantor_data?: GuarantorData | null;
   payment_info?: PaymentInfo | null;
+  is_indefinite_term?: boolean;
+  adjustment_periodicity_months?: number;
+  fire_insurance?: FireInsuranceConfig | null;
+  iptu_charge?: IptuChargeConfig | null;
 }
 
 export interface CreateLeaseResult {
@@ -347,6 +381,10 @@ export function useCreateLease() {
           guarantee_type: data.guarantee_type || "caucao",
           guarantor_data: data.guarantor_data as unknown as Json || null,
           payment_info: data.payment_info as unknown as Json || null,
+          is_indefinite_term: data.is_indefinite_term ?? false,
+          adjustment_periodicity_months: data.adjustment_periodicity_months ?? 12,
+          fire_insurance: (data.fire_insurance as unknown as Json) ?? null,
+          iptu_charge: (data.iptu_charge as unknown as Json) ?? null,
         })
         .select()
         .single();
@@ -388,7 +426,7 @@ export function useCreateLease() {
             rentAmount: data.rent_amount,
             dueDay: data.due_day,
             startDate: data.start_date,
-            endDate: data.end_date,
+            endDate: data.end_date || undefined,
             propertyId: propertyId,
           });
 
