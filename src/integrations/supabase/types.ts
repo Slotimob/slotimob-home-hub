@@ -2997,6 +2997,7 @@ export type Database = {
       leases: {
         Row: {
           adjustment_index: string | null
+          adjustment_periodicity_months: number
           admin_fee_percentage: number | null
           administration_fee_value: number | null
           billing_automation: Json | null
@@ -3008,12 +3009,15 @@ export type Database = {
           deposit_amount: number | null
           due_day: number
           end_date: string | null
+          fire_insurance: Json | null
           gross_rent_value: number | null
           guarantee_type: string | null
           guarantor_data: Json | null
           id: string
+          iptu_charge: Json | null
           is_dimob_deductible: boolean | null
           is_dimob_eligible: boolean | null
+          is_indefinite_term: boolean
           metadata: Json | null
           needs_tenant_review: boolean
           next_adjustment_date: string | null
@@ -3035,6 +3039,7 @@ export type Database = {
         }
         Insert: {
           adjustment_index?: string | null
+          adjustment_periodicity_months?: number
           admin_fee_percentage?: number | null
           administration_fee_value?: number | null
           billing_automation?: Json | null
@@ -3046,12 +3051,15 @@ export type Database = {
           deposit_amount?: number | null
           due_day?: number
           end_date?: string | null
+          fire_insurance?: Json | null
           gross_rent_value?: number | null
           guarantee_type?: string | null
           guarantor_data?: Json | null
           id?: string
+          iptu_charge?: Json | null
           is_dimob_deductible?: boolean | null
           is_dimob_eligible?: boolean | null
+          is_indefinite_term?: boolean
           metadata?: Json | null
           needs_tenant_review?: boolean
           next_adjustment_date?: string | null
@@ -3073,6 +3081,7 @@ export type Database = {
         }
         Update: {
           adjustment_index?: string | null
+          adjustment_periodicity_months?: number
           admin_fee_percentage?: number | null
           administration_fee_value?: number | null
           billing_automation?: Json | null
@@ -3084,12 +3093,15 @@ export type Database = {
           deposit_amount?: number | null
           due_day?: number
           end_date?: string | null
+          fire_insurance?: Json | null
           gross_rent_value?: number | null
           guarantee_type?: string | null
           guarantor_data?: Json | null
           id?: string
+          iptu_charge?: Json | null
           is_dimob_deductible?: boolean | null
           is_dimob_eligible?: boolean | null
+          is_indefinite_term?: boolean
           metadata?: Json | null
           needs_tenant_review?: boolean
           next_adjustment_date?: string | null
