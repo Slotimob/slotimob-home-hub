@@ -15,7 +15,11 @@
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
-import { getAdjustmentStatus, getAdjustmentStatusConfig } from "@/lib/lease-status";
+import {
+  getAdjustmentStatus,
+  getAdjustmentStatusConfig,
+  ADJUSTMENT_STATUS_LABELS,
+} from "@/lib/lease-status";
 import {
    ClipboardCheck,
    FileText,
@@ -580,12 +584,12 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
 
         {/* Adjustment Controls Card */}
         {fullLeaseData && (() => {
-          const today = new Date();
           const adjustmentDate = fullLeaseData.next_adjustment_date ? parseISO(fullLeaseData.next_adjustment_date) : null;
-          const daysUntilAdjustment = adjustmentDate ? differenceInDays(adjustmentDate, today) : null;
-          const isOverdue = daysUntilAdjustment !== null && daysUntilAdjustment < 0;
-          const isComingSoon = daysUntilAdjustment !== null && daysUntilAdjustment >= 0 && daysUntilAdjustment <= 30;
-          const isOnTrack = daysUntilAdjustment !== null && daysUntilAdjustment > 30;
+          const adjConfig = getAdjustmentStatusConfig(fullLeaseData.next_adjustment_date);
+          const daysUntilAdjustment = adjConfig.daysUntil;
+          const isOverdue = adjConfig.status === "vencido";
+          const isComingSoon = adjConfig.status === "proximo";
+          const isOnTrack = adjConfig.status === "em_dia";
 
           return (
             <div className={cn(
@@ -597,15 +601,9 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                   <TrendingUp className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">Controle de Reajuste</span>
                 </div>
-                {isOverdue && (
-                  <Badge className="bg-red-500 text-white hover:bg-red-500 text-[10px]">Reajuste Vencido</Badge>
-                )}
-                {isComingSoon && !isOverdue && (
-                  <Badge className="bg-amber-500 text-white hover:bg-amber-500 text-[10px]">Atenção</Badge>
-                )}
-                {isOnTrack && (
-                  <Badge className="bg-emerald-500 text-white hover:bg-emerald-500 text-[10px]">Em dia</Badge>
-                )}
+                <Badge variant={adjConfig.variant} className={cn("text-[10px]", adjConfig.className)}>
+                  {adjConfig.label}
+                </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
