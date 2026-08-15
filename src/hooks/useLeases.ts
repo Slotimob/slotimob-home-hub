@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import type { Json } from "@/integrations/supabase/types";
-import { useLeaseFinancialProjection, useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
+import { useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
 import { format } from "date-fns";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
@@ -346,7 +346,6 @@ export function useCreateLease() {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const queryClient = useQueryClient();
-  const { generateProjections } = useLeaseFinancialProjection();
 
   return useMutation({
     mutationFn: async (data: CreateLeaseData): Promise<CreateLeaseResult> => {
@@ -404,39 +403,10 @@ export function useCreateLease() {
         console.error("Failed to sync unit tenant from lease:", syncError);
       }
 
-      // Step 3: Generate financial projections (rent installments)
-      let projectionsGenerated = 0;
-
-      if (!data.skipFinancialProjection) {
-        try {
-          // Get property_id from unit if not provided
-          let propertyId = data.property_id;
-          if (!propertyId) {
-            const { data: unitData } = await supabase
-              .from("units")
-              .select("property_id")
-              .eq("id", data.unit_id)
-              .single();
-            propertyId = unitData?.property_id || undefined;
-          }
-
-          const result = await generateProjections.mutateAsync({
-            leaseId: lease.id,
-            unitId: data.unit_id,
-            tenantContactId: data.tenant_contact_id,
-            rentAmount: data.rent_amount,
-            dueDay: data.due_day,
-            startDate: data.start_date,
-            endDate: data.end_date || undefined,
-            propertyId: propertyId,
-          });
-
-          projectionsGenerated = result.count;
-        } catch (projectionError) {
-          // Log but don't fail the lease creation if projections fail
-          console.error("Failed to generate financial projections:", projectionError);
-        }
-      }
+      // Lançamentos financeiros NÃO são gerados aqui.
+      // A criação de parcelas passa obrigatoriamente pela confirmação do usuário
+      // em ConfirmLeaseProjectionDialog (ver src/lib/lease-projection.ts).
+      const projectionsGenerated = 0;
 
       return { lease, projectionsGenerated };
     },
