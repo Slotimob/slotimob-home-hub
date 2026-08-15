@@ -23,6 +23,25 @@ export interface AssetReportActivity {
   description: string;
 }
 
+/** Manutenção / atividade registrada manualmente (property_activities) */
+export interface AssetReportMaintenanceItem {
+  id: string;
+  date: string;
+  activity_type: string;
+  type_label: string;
+  title: string;
+  description: string | null;
+  responsible: string | null;
+  estimated_cost: number | null;
+  has_transaction: boolean;
+  attachments_count: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  outcome: string | null;
+  group_size: number;
+}
+
+
 export interface AssetReportSections {
   acquisition: boolean;
   market: boolean;
