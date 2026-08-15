@@ -29,22 +29,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Search, X, Paperclip, Building2, Home } from 'lucide-react';
+import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
 
-export const ACTIVITY_TYPES = [
-  { value: 'orcamento', label: 'Orçamento' },
-  { value: 'mudanca', label: 'Mudança' },
-  { value: 'visita', label: 'Visita' },
-  { value: 'reforma', label: 'Reforma' },
-  { value: 'manutencao', label: 'Manutenção' },
-  { value: 'vistoria', label: 'Vistoria' },
-  { value: 'nota', label: 'Nota' },
-  { value: 'outro', label: 'Outro' },
-] as const;
-
-export const ACTIVITY_TYPE_LABELS: Record<string, string> = ACTIVITY_TYPES.reduce(
-  (acc, t) => ({ ...acc, [t.value]: t.label }),
-  {} as Record<string, string>,
-);
+export { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
 
 export interface AssetOption {
   id: string;
