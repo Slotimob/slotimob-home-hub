@@ -698,7 +698,10 @@ export default function NovoContrato() {
           unit: selectedUnitInfo
             ? { unit_number: selectedUnitInfo.unit_number, address: selectedUnitInfo.address }
             : null,
-          tenant: { name: selectedContactName },
+          tenant: {
+            name:
+              (tenants || []).find((t: any) => t.id === formData.tenant_contact_id)?.name || null,
+          },
         } as LeaseForProjection);
         setProjectionOpen(true);
         return;
@@ -1748,6 +1751,18 @@ export default function NovoContrato() {
           </Button>
         )}
       </div>
+      <ConfirmLeaseProjectionDialog
+        open={projectionOpen}
+        onOpenChange={(o) => {
+          setProjectionOpen(o);
+          if (!o) {
+            const id = postProjectionNavId;
+            setProjectionLease(null);
+            navigate(id ? `/gestao/contratos?id=${id}` : "/gestao/contratos");
+          }
+        }}
+        lease={projectionLease}
+      />
     </AppLayout>
   );
 }
