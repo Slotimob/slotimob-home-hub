@@ -63,9 +63,12 @@
          data: { start_date: startDate },
        });
  
+       await invalidateLeaseQueries(queryClient);
+
        toast.success("Data de início atualizada!", {
          description: `Nova data: ${format(parseISO(startDate), "dd/MM/yyyy")}`,
        });
+ 
  
        onSuccess?.();
        handleClose();
