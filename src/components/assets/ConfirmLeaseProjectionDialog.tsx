@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { CurrencyInput } from "@/components/shared/CurrencyInput";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   AlertTriangle,
   CalendarClock,
@@ -28,7 +28,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import {
   buildChargeInstallments,
@@ -384,8 +384,8 @@ export function ConfirmLeaseProjectionDialog({
                 <Label htmlFor="rent">Valor da parcela</Label>
                 <CurrencyInput
                   id="rent"
-                  value={rentAmount}
-                  onValueChange={(v) => setRentAmount(v || 0)}
+                  value={rentAmount ? String(rentAmount) : ""}
+                  onChange={(v) => setRentAmount(parseFloat(v) || 0)}
                 />
               </div>
               <div className="space-y-1.5">
