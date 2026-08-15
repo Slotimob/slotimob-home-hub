@@ -728,8 +728,11 @@ export default function NovoContrato() {
   const isLoading = createLease.isPending || updateLease.isPending;
 
   if (!user) {
-    navigate("/auth");
-    return null;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   // Loading edit data
