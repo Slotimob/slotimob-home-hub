@@ -585,16 +585,9 @@ export function useTerminateLease() {
 
       return { deletedTransactions: deletedCount };
     },
-    onSuccess: () => {
-      // Invalidate all related queries without awaiting
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["lease"] });
-      queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
+    onSuccess: async () => {
+      await invalidateLeaseQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ["units"] });
-      queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-      queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
-      queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
     },
   });
 }
