@@ -13,6 +13,8 @@
  import { Calendar, Loader2, Check } from "lucide-react";
  import { format, parseISO } from "date-fns";
  import { useUpdateLease } from "@/hooks/useLeases";
+ import { useQueryClient } from "@tanstack/react-query";
+ import { invalidateLeaseQueries } from "@/lib/query-invalidation";
  import { toast } from "sonner";
  
  interface EditStartDateDialogProps {
