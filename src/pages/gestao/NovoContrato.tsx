@@ -905,162 +905,51 @@ export default function NovoContrato() {
 
           {/* Financial */}
           {step === "financial" && (
-            <div className="space-y-4">
-              {showSubdivisionSelect && (
-                <div className="space-y-2">
-                  <Label>Fração</Label>
-                  <Select
-                    value={formData.unit_subdivision_id ?? "none"}
-                    onValueChange={(v) => {
-                      const id = v === "none" ? null : v;
-                      const fraction = subdivisions.find((s) => s.id === id);
-                      setFormData((prev) => ({
-                        ...prev,
-                        unit_subdivision_id: id,
-                        rent_amount:
-                          fraction?.rent_price != null
-                            ? Number(fraction.rent_price)
-                            : prev.rent_amount,
-                      }));
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Imóvel inteiro" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
-                      {subdivisions.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.label}
-                          {s.area != null ? ` — ${s.area}m²` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Opcional. Selecione a fração quando o contrato for de apenas uma parte do
-                    imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Valor do Aluguel *</Label>
-                  <CurrencyInput
-                    value={formData.rent_amount.toString()}
-                    onChange={(value) =>
-                      setFormData({ ...formData, rent_amount: parseFloat(value) || 0 })
-                    }
-                    placeholder="R$ 0,00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Dia de Vencimento *</Label>
-                  <Select
-                    value={formData.due_day.toString()}
-                    onValueChange={(v) => setFormData({ ...formData, due_day: parseInt(v) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                        <SelectItem key={day} value={day.toString()}>
-                          Dia {day}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Taxa de Administração (%)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={formData.admin_fee_percentage}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        admin_fee_percentage: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Caução</Label>
-                  <CurrencyInput
-                    value={formData.deposit_amount.toString()}
-                    onChange={(value) =>
-                      setFormData({ ...formData, deposit_amount: parseFloat(value) || 0 })
-                    }
-                    placeholder="R$ 0,00"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Início do Contrato *</Label>
-                  <Input
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Fim do Contrato</Label>
-                  <Input
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Índice de Reajuste *</Label>
-                  <Select
-                    value={formData.adjustment_index}
-                    onValueChange={(v) => setFormData({ ...formData, adjustment_index: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="IGPM">IGP-M</SelectItem>
-                      <SelectItem value="IPCA">IPCA</SelectItem>
-                      <SelectItem value="INPC">INPC</SelectItem>
-                      <SelectItem value="Fixo">Fixo (sem reajuste)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Próximo Reajuste</Label>
-                  <Input type="date" value={nextAdjustmentDate || ""} disabled className="bg-muted" />
-                  <p className="text-[10px] text-muted-foreground">
-                    Calculado automaticamente (início + 12 meses)
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Repasse Líquido (estimado)</span>
-                  <span className="font-semibold text-primary">
-                    {(
-                      formData.rent_amount *
-                      (1 - formData.admin_fee_percentage / 100)
-                    ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <LeaseFinancialStep
+              value={formData as unknown as LeaseFinancialValue}
+              onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+              unit={unitChargeDefaults}
+              adjustmentLocked={isEditMode}
+              header={
+                showSubdivisionSelect ? (
+                  <div className="space-y-2">
+                    <Label>Fração</Label>
+                    <Select
+                      value={formData.unit_subdivision_id ?? "none"}
+                      onValueChange={(v) => {
+                        const id = v === "none" ? null : v;
+                        const fraction = subdivisions.find((s) => s.id === id);
+                        setFormData((prev) => ({
+                          ...prev,
+                          unit_subdivision_id: id,
+                          rent_amount:
+                            fraction?.rent_price != null
+                              ? Number(fraction.rent_price)
+                              : prev.rent_amount,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Imóvel inteiro" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
+                        {subdivisions.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.label}
+                            {s.area != null ? ` — ${s.area}m²` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Opcional. Selecione a fração quando o contrato for de apenas uma parte do
+                      imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
+                    </p>
+                  </div>
+                ) : null
+              }
+            />
           )}
 
           {/* Guarantee */}
