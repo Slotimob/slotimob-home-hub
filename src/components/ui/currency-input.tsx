@@ -33,23 +33,40 @@ const formatDisplayValue = (value: string, locale: string = 'pt-BR'): string => 
 };
 
 /**
- * Parses a formatted display value back to a raw numeric string
+ * Parses a formatted display value back to a raw numeric string.
+ *
+ * The decimal separator is the LAST "." or "," in the string, provided it is
+ * followed by exactly 1 or 2 digits. Every separator before it is a thousand
+ * separator and is removed. Works for "1.500,50", "1500.50" and "1500,50".
  */
-const parseInputValue = (displayValue: string): string => {
+export const parseInputValue = (displayValue: string): string => {
   if (!displayValue) return '';
-  
-  // Remove thousand separators (dots in pt-BR) but keep decimal comma
-  // Then convert comma to dot for internal storage
-  const cleaned = displayValue
-    .replace(/\./g, '') // Remove thousand separators
-    .replace(',', '.'); // Convert decimal comma to dot
-  
-  // If it's a valid number, return it; otherwise return as-is
+
+  const sanitized = displayValue.replace(/[^\d.,]/g, '');
+  if (!sanitized) return '';
+
+  const lastSepIndex = Math.max(sanitized.lastIndexOf('.'), sanitized.lastIndexOf(','));
+  let cleaned: string;
+
+  if (lastSepIndex === -1) {
+    cleaned = sanitized;
+  } else {
+    const decimals = sanitized.slice(lastSepIndex + 1);
+    const isDecimalSeparator = /^\d{1,2}$/.test(decimals);
+    if (isDecimalSeparator) {
+      const intPart = sanitized.slice(0, lastSepIndex).replace(/[.,]/g, '');
+      cleaned = `${intPart}.${decimals}`;
+    } else {
+      cleaned = sanitized.replace(/[.,]/g, '');
+    }
+  }
+
   const parsed = parseFloat(cleaned);
   if (isNaN(parsed)) return '';
-  
+
   return parsed.toString();
 };
+
 
 /**
  * Currency input component that displays formatted values (e.g., 2.000.000)
