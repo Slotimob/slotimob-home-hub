@@ -306,6 +306,11 @@ export default function NovoContrato() {
       notes: editLease.notes || "",
       adjustment_index: (editLease.metadata?.adjustment_index as string) || editLease.adjustment_index || "IGPM",
       guarantee_type: (editLease.guarantee_type || "caucao") as GuaranteeType,
+      is_indefinite_term: !!editLease.is_indefinite_term,
+      adjustment_periodicity_months: Number(editLease.adjustment_periodicity_months) || 12,
+      next_adjustment_date: editLease.next_adjustment_date || "",
+      fire_insurance: { ...getInitialFireInsurance(), ...(editLease.fire_insurance || {}) },
+      iptu_charge: { ...getInitialIptuCharge(), ...(editLease.iptu_charge || {}) },
     });
     if (editLease.guarantor_data) setGuarantorData(editLease.guarantor_data);
     if (editLease.payment_info) setPaymentInfo(editLease.payment_info);
