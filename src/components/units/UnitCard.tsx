@@ -160,7 +160,7 @@ export function UnitCard({ unit, onUnitClick, onShareClick, onDuplicate, onDelet
             className="flex-1 gap-1.5"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+              navigate(`/crm/propostas?create=true&unitId=${unit.id}`);
             }}
           >
             <Share2 className="h-3.5 w-3.5" />

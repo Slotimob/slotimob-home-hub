@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { HelpTooltip } from '@/components/help/HelpTooltip';
@@ -49,7 +50,13 @@ const Finance = () => {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const bankAccountId = isAll ? undefined : selectedBankAccountId;
 

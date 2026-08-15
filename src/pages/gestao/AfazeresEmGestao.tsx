@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { openLeaseRoute } from "@/lib/lease-navigation";
 import { useNavigate } from "react-router-dom";
@@ -147,7 +148,13 @@ const AfazeresEmGestao = () => {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <>

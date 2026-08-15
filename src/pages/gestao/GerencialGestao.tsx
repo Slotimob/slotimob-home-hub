@@ -58,6 +58,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { MonthYearPicker } from "@/components/schedule/MonthYearPicker";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface ManagerialTransaction {
   id: string;
@@ -455,7 +456,7 @@ const GerencialGestao = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Valor (R$)</Label>
-                  <Input type="number" step="0.01" value={formAmount} onChange={(e) => setFormAmount(e.target.value)} placeholder="0,00" />
+                  <CurrencyInput value={formAmount} onChange={setFormAmount} placeholder="0,00" />
                 </div>
                 <div>
                   <Label>Vencimento</Label>

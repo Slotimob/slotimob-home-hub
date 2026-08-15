@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface CreateBankAccountDialogProps {
   open: boolean;
@@ -146,13 +147,11 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: Creat
 
           <div className="space-y-2">
             <Label htmlFor="initialBalance">Saldo de Abertura</Label>
-            <Input
+            <CurrencyInput
               id="initialBalance"
-              type="number"
-              step="0.01"
               placeholder="0,00"
               value={formData.initialBalance}
-              onChange={(e) => setFormData({ ...formData, initialBalance: e.target.value })}
+              onChange={(v) => setFormData({ ...formData, initialBalance: v })}
             />
             <div className="flex items-start gap-2 p-2 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300">
               <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />

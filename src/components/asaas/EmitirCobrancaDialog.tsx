@@ -26,6 +26,7 @@ import {
 import { Loader2, Copy, ExternalLink, AlertCircle, CheckCircle2, Receipt } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface EmitirCobrancaDialogProps {
   open: boolean;
@@ -378,12 +379,9 @@ export function EmitirCobrancaDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>Valor (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CurrencyInput
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={setAmount}
                 />
               </div>
             </div>

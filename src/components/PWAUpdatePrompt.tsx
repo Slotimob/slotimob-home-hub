@@ -1,16 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, X } from 'lucide-react';
+import { hasUnsavedChanges } from '@/lib/unsaved-changes-guard';
 
 export function PWAUpdatePrompt() {
-  const autoReloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
-      // Check for updates every 60 seconds (less aggressive)
       if (registration) {
         setInterval(() => {
           registration.update();
@@ -22,36 +23,55 @@ export function PWAUpdatePrompt() {
     },
   });
 
+  useEffect(() => {
+    if (needRefresh) setDismissed(false);
+  }, [needRefresh]);
+
   const handleUpdate = async () => {
-    if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current);
+    // Never reload while a form holds unsaved data
+    if (hasUnsavedChanges()) {
+      const confirmed = window.confirm(
+        'Existem alterações não salvas nesta página. Recarregar agora vai descartá-las. Deseja continuar?'
+      );
+      if (!confirmed) return;
+    }
     try {
       await updateServiceWorker(true);
     } catch {
-      // If SW update fails, force a hard reload
+      // ignore — fall back to hard reload
     }
-    // Hard reload to bust any remaining cache
     window.location.reload();
   };
 
-  useEffect(() => {
-    if (needRefresh) {
-      toast.info('Nova versão disponível!', {
-        description: 'Atualizando automaticamente em 3 segundos…',
-        duration: 5000,
-        action: {
-          label: 'Atualizar agora',
-          onClick: handleUpdate,
-        },
-      });
+  if (!needRefresh || dismissed) return null;
 
-      // Force update after 3 seconds
-      autoReloadTimer.current = setTimeout(handleUpdate, 3000);
-    }
-
-    return () => {
-      if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current);
-    };
-  }, [needRefresh]);
-
-  return null;
+  return (
+    <div className="fixed bottom-4 left-1/2 z-[100] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-lg border bg-card p-4 shadow-lg">
+      <div className="flex items-start gap-3">
+        <RefreshCw className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">Nova versão disponível</p>
+          <p className="text-xs text-muted-foreground">
+            Atualize quando terminar o que está fazendo. Nada será recarregado automaticamente.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" onClick={handleUpdate}>
+              Atualizar agora
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDismissed(true)}>
+              Depois
+            </Button>
+          </div>
+        </div>
+        <button
+          type="button"
+          aria-label="Fechar aviso de atualização"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={() => setDismissed(true)}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
 }

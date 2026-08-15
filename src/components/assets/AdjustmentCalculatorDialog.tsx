@@ -24,6 +24,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
+import { PercentInput } from "@/components/ui/currency-input";
 
 interface LeaseForAdjustment {
   id: string;
@@ -278,20 +279,13 @@ export function AdjustmentCalculatorDialog({
               <Percent className="h-4 w-4 text-muted-foreground" />
               Percentual Acumulado (12 meses)
             </Label>
-            <div className="relative">
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Ex: 4.52"
-                value={indexPercentage}
-                onChange={(e) => setIndexPercentage(e.target.value)}
-                className="text-center text-lg font-bold pr-10"
-                autoFocus
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                %
-              </span>
-            </div>
+            <PercentInput
+              placeholder="Ex: 4,52"
+              value={indexPercentage}
+              onChange={(v) => setIndexPercentage(String(v))}
+              className="text-center text-lg font-bold"
+              autoFocus
+            />
             
             {/* Link to consult official value */}
             {indexKey !== "Fixo" && (

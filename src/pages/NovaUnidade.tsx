@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { UnitFormFields, UnitFormData, getInitialFormData } from '@/components/units/UnitFormFields';
 import { useCreateUnit } from '@/hooks/useCreateUnit';
+import { useUnsavedChangesGuard } from '@/lib/unsaved-changes-guard';
 
 interface NovaUnidadeProps {
   /** If true, creates a standalone real estate (no property required) */
@@ -24,14 +25,49 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
 
   const { createUnit, saving } = useCreateUnit(standalone);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
+  const draftKey = standalone ? 'novo-imovel-avulso-draft' : 'nova-unidade-draft';
   const [formData, setFormData] = useState<UnitFormData>(() => {
     const initial = getInitialFormData();
     if (propertyId) initial.property_id = propertyId;
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft?.propertyId === (propertyId || null) && draft?.formData) {
+          return { ...initial, ...draft.formData };
+        }
+      }
+    } catch {
+      /* ignore */
+    }
     return initial;
   });
 
   const backTo = standalone ? '/real-estate' : '/units';
   const showPropertySelector = !standalone && !propertyId;
+
+  // Persist draft against reloads
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        draftKey,
+        JSON.stringify({ propertyId: propertyId || null, formData })
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [draftKey, propertyId, formData]);
+
+  const clearDraft = () => {
+    try {
+      sessionStorage.removeItem(draftKey);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const initialSnapshot = JSON.stringify(getInitialFormData());
+  useUnsavedChangesGuard(JSON.stringify({ ...formData, property_id: getInitialFormData().property_id }) !== initialSnapshot);
 
   useEffect(() => {
     if (user && showPropertySelector) {
@@ -45,11 +81,14 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
     }
   }, [propertyId]);
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const effectivePropertyId = standalone ? null : (propertyId || formData.property_id || null);
     const created = await createUnit(formData, effectivePropertyId);
     if (!created) return;
+
+    clearDraft();
 
     if (created.intent_type !== 'sale' && created.tenant_contact_id) {
       navigate('/gestao/contratos/novo?unitId=' + created.id);
@@ -57,6 +96,12 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
       navigate(backTo);
     }
   };
+
+  const handleCancel = () => {
+    clearDraft();
+    navigate(backTo);
+  };
+
 
   const title = standalone ? 'Novo Imóvel Avulso' : 'Nova Unidade';
   const subtitle = standalone
@@ -73,7 +118,7 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
             variant="ghost"
             size="icon"
             aria-label="Voltar"
-            onClick={() => navigate(backTo)}
+            onClick={handleCancel}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -101,7 +146,7 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
               />
 
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => navigate(backTo)} className="w-full sm:w-auto">
+                <Button type="button" variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={saving} className="w-full sm:w-auto">

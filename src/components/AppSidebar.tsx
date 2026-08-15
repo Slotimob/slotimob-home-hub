@@ -142,7 +142,6 @@ export function AppSidebar() {
       icon: ClipboardList,
       moduleKey: 'management_rentals', // group-level: visible if any management_* is granted
       items: [
-        { title: 'Propostas', url: '/gestao/propostas', moduleKey: 'management_proposals' },
         { title: 'Aluguéis', url: '/gestao/alugueis', moduleKey: 'management_rentals' },
         { title: 'Contratos', url: '/gestao/contratos', moduleKey: 'management_contracts' },
         { title: 'Gerencial', url: '/gestao/gerencial', moduleKey: 'management_reports' },
@@ -184,6 +183,7 @@ export function AppSidebar() {
       icon: Users,
       items: [
         { title: 'Mensagens', url: '/whatsapp', moduleKey: 'crm_whatsapp' },
+        { title: 'Propostas', url: '/crm/propostas', moduleKey: 'management_proposals' },
         { 
           title: 'Pipeline', 
           url: '/pipeline',

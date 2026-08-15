@@ -52,7 +52,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreateLease, useUpdateLease, GuarantorData, PaymentInfo, Lease } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { CurrencyInput, PercentInput } from "@/components/ui/currency-input";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import type { LeaseConversionContext } from "@/hooks/useLeaseConversionContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -748,14 +748,9 @@ export function CreateLeaseWizard({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Taxa de Administração (%)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
+                  <PercentInput
                     value={formData.admin_fee_percentage}
-                    onChange={(e) =>
-                      setFormData({ ...formData, admin_fee_percentage: parseFloat(e.target.value) || 0 })
-                    }
+                    onChange={(v) => setFormData({ ...formData, admin_fee_percentage: v })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1312,14 +1307,11 @@ export function CreateLeaseWizard({
                     </div>
                     <div className="space-y-2">
                       <Label>Multa por atraso (%)</Label>
-                      <Input
-                        type="number"
-                        min={0}
+                      <PercentInput
                         max={10}
-                        step={0.5}
                         value={chargeConfig.fine_percentage}
-                        onChange={e => setChargeConfig(p => ({ ...p, fine_percentage: parseFloat(e.target.value) || 0 }))}
-                        placeholder="2%"
+                        onChange={v => setChargeConfig(p => ({ ...p, fine_percentage: v }))}
+                        placeholder="2"
                       />
                       <p className="text-[10px] text-muted-foreground">Máx. 2% (Lei 8.245/91)</p>
                     </div>
@@ -1328,14 +1320,11 @@ export function CreateLeaseWizard({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>Juros mensais (%)</Label>
-                      <Input
-                        type="number"
-                        min={0}
+                      <PercentInput
                         max={12}
-                        step={0.1}
                         value={chargeConfig.interest_percentage}
-                        onChange={e => setChargeConfig(p => ({ ...p, interest_percentage: parseFloat(e.target.value) || 0 }))}
-                        placeholder="1%"
+                        onChange={v => setChargeConfig(p => ({ ...p, interest_percentage: v }))}
+                        placeholder="1"
                       />
                       <p className="text-[10px] text-muted-foreground">Máx. 1%/mês</p>
                     </div>

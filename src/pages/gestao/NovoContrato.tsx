@@ -45,6 +45,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useCreateLease, useUpdateLease, type GuarantorData, type PaymentInfo } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
+import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
 import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -278,6 +279,9 @@ export default function NovoContrato() {
           if (draft.guarantorData) setGuarantorData(draft.guarantorData);
           if (draft.paymentInfo) setPaymentInfo(draft.paymentInfo);
           if (draft.billingContact) setBillingContact(draft.billingContact);
+          if (draft.selectedUnitId) setSelectedUnitId(draft.selectedUnitId);
+          if (draft.selectedUnitInfo) setSelectedUnitInfo(draft.selectedUnitInfo);
+          if (draft.step && STEPS.some((s) => s.id === draft.step)) setStep(draft.step as WizardStep);
         }
       }
     } catch {
@@ -292,12 +296,36 @@ export default function NovoContrato() {
     try {
       sessionStorage.setItem(
         DRAFT_KEY,
-        JSON.stringify({ unitId: unitIdParam, formData, guarantorData, paymentInfo, billingContact })
+        JSON.stringify({
+          unitId: unitIdParam,
+          step,
+          selectedUnitId,
+          selectedUnitInfo,
+          formData,
+          guarantorData,
+          paymentInfo,
+          billingContact,
+        })
       );
     } catch {
       /* ignore */
     }
-  }, [isEditMode, draftLoaded, unitIdParam, formData, guarantorData, paymentInfo, billingContact]);
+  }, [
+    isEditMode,
+    draftLoaded,
+    unitIdParam,
+    step,
+    selectedUnitId,
+    selectedUnitInfo,
+    formData,
+    guarantorData,
+    paymentInfo,
+    billingContact,
+  ]);
+
+  // Block PWA auto-reload while the wizard holds unsaved data
+  useUnsavedChangesGuard(!isEditMode && draftLoaded && (!!selectedUnitId || !!formData.tenant_contact_id));
+
 
   // Hydrate from editLease when fetched
   useEffect(() => {
@@ -727,10 +755,21 @@ export default function NovoContrato() {
 
   const isLoading = createLease.isPending || updateLease.isPending;
 
+  // Redirect (never during render — that causes a blank screen)
+  useEffect(() => {
+    if (user === null) navigate("/auth", { replace: true });
+  }, [user, navigate]);
+
   if (!user) {
-    navigate("/auth");
-    return null;
+    return (
+      <AppLayout title="Novo Contrato">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppLayout>
+    );
   }
+
 
   // Loading edit data
   if (isEditMode && loadingEdit) {

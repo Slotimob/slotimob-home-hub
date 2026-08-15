@@ -424,7 +424,7 @@ const Units = () => {
             iconOnly 
             showTextAt="lg" 
             icon={<Share2 className="h-4 w-4" />} 
-            onClick={() => navigate('/gestao/propostas?create=true')}
+            onClick={() => navigate('/crm/propostas?create=true')}
           >
             Compartilhar
           </HeaderButton>
@@ -724,7 +724,7 @@ const Units = () => {
               units={paginatedUnits}
               onUnitClick={openUnitDetail}
               onShareClick={(unit) => {
-                navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+                navigate(`/crm/propostas?create=true&unitId=${unit.id}`);
               }}
               onDuplicate={canCreate ? handleDuplicateUnit : undefined}
               onDelete={canDelete ? handleDeleteUnit : undefined}

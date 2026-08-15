@@ -47,6 +47,7 @@ import {
 import { toast } from "sonner";
 import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
 import { usePermissions } from "@/hooks/usePermissions";
+import { CurrencyInput, PercentInput } from "@/components/ui/currency-input";
 
 type BillingType = "UNDEFINED" | "BOLETO" | "PIX";
 
@@ -306,11 +307,9 @@ export function AsaasSubscriptionCard({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Valor mensal (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
+              <CurrencyInput
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
+                onChange={setValue}
                 className="h-9 text-sm"
               />
             </div>
@@ -328,21 +327,17 @@ export function AsaasSubscriptionCard({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Multa (%)</Label>
-              <Input
-                type="number"
-                step="0.01"
+              <PercentInput
                 value={fine}
-                onChange={(e) => setFine(e.target.value)}
+                onChange={(v) => setFine(String(v))}
                 className="h-9 text-sm"
               />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Juros ao mês (%)</Label>
-              <Input
-                type="number"
-                step="0.01"
+              <PercentInput
                 value={interest}
-                onChange={(e) => setInterest(e.target.value)}
+                onChange={(v) => setInterest(String(v))}
                 className="h-9 text-sm"
               />
             </div>
@@ -484,11 +479,9 @@ export function AsaasSubscriptionCard({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Valor (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
+              <CurrencyInput
                 value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
+                onChange={setEditValue}
                 className="h-9 text-sm"
               />
             </div>
@@ -503,21 +496,17 @@ export function AsaasSubscriptionCard({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Multa (%)</Label>
-              <Input
-                type="number"
-                step="0.01"
+              <PercentInput
                 value={editFine}
-                onChange={(e) => setEditFine(e.target.value)}
+                onChange={(v) => setEditFine(String(v))}
                 className="h-9 text-sm"
               />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Juros / mês (%)</Label>
-              <Input
-                type="number"
-                step="0.01"
+              <PercentInput
                 value={editInterest}
-                onChange={(e) => setEditInterest(e.target.value)}
+                onChange={(v) => setEditInterest(String(v))}
                 className="h-9 text-sm"
               />
             </div>

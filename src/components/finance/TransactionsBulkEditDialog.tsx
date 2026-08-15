@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface TransactionsBulkEditDialogProps {
   open: boolean;
@@ -424,12 +425,9 @@ export function TransactionsBulkEditDialog({
                 </Label>
               </div>
               {updateAmount && (
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CurrencyInput
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={setAmount}
                   placeholder="0,00"
                   className="h-9 text-sm"
                 />
