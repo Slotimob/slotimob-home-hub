@@ -210,18 +210,23 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          action: onConfigureObligations,
          actionLabel: "Configurar",
        },
-        {
-          id: "adjustment",
-          title: "Reajuste Anual",
-          // CRITICAL: Fallback for next_adjustment_date - show clear message if not configured
-          description: fullLeaseData?.next_adjustment_date
-            ? `Próximo reajuste: ${format(parseISO(fullLeaseData.next_adjustment_date), "dd/MM/yyyy", { locale: ptBR })}`
-            : metadata.last_adjustment_year === currentYear
-              ? `Reajuste aplicado em ${currentYear}`
-              : "Data não configurada — clique para definir",
-          icon: TrendingUp,
-          status: metadata.last_adjustment_year === currentYear ? "completed" : "pending",
-        },
+        (() => {
+          const adjStatus = getAdjustmentStatus(fullLeaseData?.next_adjustment_date);
+          const appliedThisYear = metadata.last_adjustment_year === currentYear;
+          // Concluído quando o reajuste não está vencido, ou já foi aplicado no ano corrente
+          const isDone = appliedThisYear || adjStatus === "em_dia" || adjStatus === "proximo";
+          return {
+            id: "adjustment",
+            title: "Reajuste Anual",
+            description: fullLeaseData?.next_adjustment_date
+              ? `${ADJUSTMENT_STATUS_LABELS[adjStatus]} • Próximo: ${format(parseISO(fullLeaseData.next_adjustment_date), "dd/MM/yyyy", { locale: ptBR })}`
+              : appliedThisYear
+                ? `Reajuste aplicado em ${currentYear}`
+                : "Data não configurada — clique para definir",
+            icon: TrendingUp,
+            status: (isDone ? "completed" : "pending") as "completed" | "pending",
+          };
+        })(),
      ];
  
     // Add termination steps if contract is terminating
