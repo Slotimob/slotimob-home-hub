@@ -470,10 +470,9 @@ export function useUpdateLease() {
 
       if (error) throw new Error(error.message || error.details || "Erro ao salvar");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["lease"] });
-      queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
+    onSuccess: async () => {
+      await invalidateLeaseQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["units"] });
     },
   });
 }
