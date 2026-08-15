@@ -55,6 +55,7 @@ import {
   Upload,
   Check,
   Clock,
+  Settings2,
   CalendarDays,
   FileCheck,
   FileX,
