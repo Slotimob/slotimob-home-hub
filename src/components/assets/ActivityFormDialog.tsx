@@ -88,7 +88,7 @@ export function ActivityFormDialog({
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('09:00');
   const [files, setFiles] = useState<File[]>([]);
-  const [estimatedCost, setEstimatedCost] = useState<number | null>(null);
+  const [estimatedCost, setEstimatedCost] = useState('');
   const [createTransaction, setCreateTransaction] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -104,7 +104,7 @@ export function ActivityFormDialog({
     setDate(new Date().toISOString().split('T')[0]);
     setTime('09:00');
     setFiles([]);
-    setEstimatedCost(null);
+    setEstimatedCost('');
     setCreateTransaction(false);
   }, [open, defaultAsset]);
 
@@ -192,6 +192,11 @@ export function ActivityFormDialog({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const estimatedCostNumber = useMemo(() => {
+    const parsed = parseFloat(String(estimatedCost).replace(/\./g, '').replace(',', '.'));
+    return isNaN(parsed) ? null : parsed;
+  }, [estimatedCost]);
+
   const canSave =
     !!brokerId && selectedAssets.length > 0 && title.trim().length > 0 && !saving;
 
@@ -212,7 +217,7 @@ export function ActivityFormDialog({
         description: description.trim() || null,
         assigned_contact_id: contactId,
         scheduled_at: scheduledAt,
-        estimated_cost: estimatedCost,
+        estimated_cost: estimatedCostNumber,
         activity_group_id: groupId,
         property_id: asset.type === 'property' ? asset.id : null,
         unit_id: asset.type === 'unit' ? asset.id : null,
@@ -227,7 +232,7 @@ export function ActivityFormDialog({
       const activities = created || [];
 
       // Optional financial transaction (one per asset), linked back to the activity
-      if (createTransaction && estimatedCost && estimatedCost > 0) {
+      if (createTransaction && estimatedCostNumber && estimatedCostNumber > 0) {
         for (const act of activities) {
           const { data: tx, error: txError } = await supabase
             .from('financial_transactions')
@@ -235,7 +240,7 @@ export function ActivityFormDialog({
               broker_id: brokerId,
               type: 'expense',
               description: `${ACTIVITY_TYPE_LABELS[activityType] || 'Atividade'} - ${title.trim()}`,
-              amount: estimatedCost,
+              amount: estimatedCostNumber,
               transaction_date: date,
               due_date: date,
               status: 'pending',
@@ -465,7 +470,7 @@ export function ActivityFormDialog({
               <Label className="text-sm">Custo estimado</Label>
               <CurrencyInput
                 value={estimatedCost}
-                onValueChange={(v) => setEstimatedCost(v)}
+                onChange={setEstimatedCost}
                 placeholder="R$ 0,00"
               />
             </div>
@@ -474,7 +479,7 @@ export function ActivityFormDialog({
                 <Checkbox
                   checked={createTransaction}
                   onCheckedChange={(v) => setCreateTransaction(!!v)}
-                  disabled={!estimatedCost || estimatedCost <= 0}
+                  disabled={!estimatedCostNumber || estimatedCostNumber <= 0}
                 />
                 Gerar lançamento financeiro
               </label>
