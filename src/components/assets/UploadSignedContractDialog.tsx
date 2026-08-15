@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ export function UploadSignedContractDialog({
 }: UploadSignedContractDialogProps) {
   const { user } = useAuth();
   const updateSignature = useUpdateLeaseSignature();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

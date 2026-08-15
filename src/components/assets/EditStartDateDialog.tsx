@@ -36,6 +36,7 @@
    onSuccess,
  }: EditStartDateDialogProps) {
    const updateLease = useUpdateLease();
+   const queryClient = useQueryClient();
  
    const [startDate, setStartDate] = useState("");
    const [isSubmitting, setIsSubmitting] = useState(false);
