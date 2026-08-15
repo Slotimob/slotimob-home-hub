@@ -807,9 +807,22 @@ export default function NovoContrato() {
                           {unit.address && (
                             <p className="text-xs text-muted-foreground truncate">{unit.address}</p>
                           )}
+                          {unit.city && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {unit.city}
+                              {unit.state ? `/${unit.state}` : ""}
+                            </p>
+                          )}
+                          {unit.is_occupied && (
+                            <p className="text-[11px] text-amber-700 truncate">
+                              Já possui contrato ativo
+                              {unit.active_tenant_name ? ` com ${unit.active_tenant_name}` : ""} — é
+                              possível criar um contrato adicional.
+                            </p>
+                          )}
                         </div>
                         {unit.is_occupied && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 flex-shrink-0">
                             Ocupado
                           </span>
                         )}
