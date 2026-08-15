@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getAdjustmentStatus } from "@/lib/lease-status";
 import { Button } from "@/components/ui/button";
 import { CalendarClock, AlertTriangle, ChevronRight, TrendingUp } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
@@ -31,24 +32,19 @@ export function UpcomingAdjustmentsCard({
 }: UpcomingAdjustmentsCardProps) {
   const today = new Date();
 
-  // Filter leases with adjustments in the next 30 days
-  const upcomingAdjustments = leases.filter((lease) => {
-    if (!lease.next_adjustment_date) return false;
-    const adjustmentDate = parseISO(lease.next_adjustment_date);
-    const daysUntil = differenceInDays(adjustmentDate, today);
-    return daysUntil >= 0 && daysUntil <= 30;
-  }).sort((a, b) => {
+  // Fonte única: getAdjustmentStatus
+  const upcomingAdjustments = leases
+    .filter((lease) => getAdjustmentStatus(lease.next_adjustment_date) === "proximo")
+    .sort((a, b) => {
     const dateA = parseISO(a.next_adjustment_date!);
     const dateB = parseISO(b.next_adjustment_date!);
     return dateA.getTime() - dateB.getTime();
   });
 
   // Overdue adjustments (should have been done)
-  const overdueAdjustments = leases.filter((lease) => {
-    if (!lease.next_adjustment_date) return false;
-    const adjustmentDate = parseISO(lease.next_adjustment_date);
-    return differenceInDays(adjustmentDate, today) < 0;
-  });
+  const overdueAdjustments = leases.filter(
+    (lease) => getAdjustmentStatus(lease.next_adjustment_date) === "vencido"
+  );
 
   if (upcomingAdjustments.length === 0 && overdueAdjustments.length === 0) {
     return null;
