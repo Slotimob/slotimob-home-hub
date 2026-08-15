@@ -47,6 +47,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ConfirmLeaseProjectionDialog,
+  type LeaseForProjection,
+} from "@/components/assets/ConfirmLeaseProjectionDialog";
 
 type WizardStep = "unit" | "tenant" | "financial" | "guarantee" | "payment" | "billing" | "compliance";
 type GuaranteeType = "fiador" | "caucao" | "seguro_fianca" | "none";
@@ -684,7 +688,7 @@ export default function NovoContrato() {
         setPostProjectionNavId(resultId);
         setProjectionLease({
           id: resultId,
-          unit_id: formData.unit_id,
+          unit_id: effectiveUnitId,
           tenant_contact_id: formData.tenant_contact_id,
           property_id: selectedUnitInfo?.property_id ?? null,
           rent_amount: Number(formData.rent_amount) || 0,
