@@ -14,6 +14,12 @@
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import {
+  getAdjustmentStatus,
+  getAdjustmentStatusConfig,
+  ADJUSTMENT_STATUS_LABELS,
+} from "@/lib/lease-status";
 import {
    ClipboardCheck,
    FileText,
@@ -204,18 +210,23 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          action: onConfigureObligations,
          actionLabel: "Configurar",
        },
-        {
-          id: "adjustment",
-          title: "Reajuste Anual",
-          // CRITICAL: Fallback for next_adjustment_date - show clear message if not configured
-          description: fullLeaseData?.next_adjustment_date
-            ? `Próximo reajuste: ${format(parseISO(fullLeaseData.next_adjustment_date), "dd/MM/yyyy", { locale: ptBR })}`
-            : metadata.last_adjustment_year === currentYear
-              ? `Reajuste aplicado em ${currentYear}`
-              : "Data não configurada — clique para definir",
-          icon: TrendingUp,
-          status: metadata.last_adjustment_year === currentYear ? "completed" : "pending",
-        },
+        (() => {
+          const adjStatus = getAdjustmentStatus(fullLeaseData?.next_adjustment_date);
+          const appliedThisYear = metadata.last_adjustment_year === currentYear;
+          // Concluído quando o reajuste não está vencido, ou já foi aplicado no ano corrente
+          const isDone = appliedThisYear || adjStatus === "em_dia" || adjStatus === "proximo";
+          return {
+            id: "adjustment",
+            title: "Reajuste Anual",
+            description: fullLeaseData?.next_adjustment_date
+              ? `${ADJUSTMENT_STATUS_LABELS[adjStatus]} • Próximo: ${format(parseISO(fullLeaseData.next_adjustment_date), "dd/MM/yyyy", { locale: ptBR })}`
+              : appliedThisYear
+                ? `Reajuste aplicado em ${currentYear}`
+                : "Data não configurada — clique para definir",
+            icon: TrendingUp,
+            status: (isDone ? "completed" : "pending") as "completed" | "pending",
+          };
+        })(),
      ];
  
     // Add termination steps if contract is terminating
@@ -313,13 +324,11 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
           if (dbError2) throw dbError2;
        }
  
-        toast.success("Arquivo enviado com sucesso!");
-        queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-        queryClient.invalidateQueries({ queryKey: ["leases"] });
-        queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
+        await invalidateLeaseQueries(queryClient);
         queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
+        toast.success("Arquivo enviado com sucesso!");
      } catch (error: any) {
        console.error("Upload error:", error);
        toast.error("Erro ao enviar arquivo", {
@@ -356,9 +365,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
    };
  
   // Handle refresh
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-    queryClient.invalidateQueries({ queryKey: ["leases"] });
+  const handleRefresh = async () => {
+    await invalidateLeaseQueries(queryClient);
     toast.success("Dados atualizados!");
   };
 
@@ -404,13 +412,11 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
           .eq("id", lease.id);
       }
 
-      toast.success("Arquivo removido com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
+      await invalidateLeaseQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
+      toast.success("Arquivo removido com sucesso!");
     } catch (error: any) {
       console.error("Delete error:", error);
       toast.error("Erro ao remover arquivo", {
@@ -551,9 +557,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                          id: fullLeaseData.id,
                          data: { start_date: startDateValue },
                        });
+                       await invalidateLeaseQueries(queryClient);
                        toast.success("Data de início atualizada!");
-                       queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-                       queryClient.invalidateQueries({ queryKey: ["leases"] });
                        setEditingStartDate(false);
                      } catch (err: any) {
                        toast.error("Erro ao salvar", { description: err.message });
@@ -584,12 +589,12 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
 
         {/* Adjustment Controls Card */}
         {fullLeaseData && (() => {
-          const today = new Date();
           const adjustmentDate = fullLeaseData.next_adjustment_date ? parseISO(fullLeaseData.next_adjustment_date) : null;
-          const daysUntilAdjustment = adjustmentDate ? differenceInDays(adjustmentDate, today) : null;
-          const isOverdue = daysUntilAdjustment !== null && daysUntilAdjustment < 0;
-          const isComingSoon = daysUntilAdjustment !== null && daysUntilAdjustment >= 0 && daysUntilAdjustment <= 30;
-          const isOnTrack = daysUntilAdjustment !== null && daysUntilAdjustment > 30;
+          const adjConfig = getAdjustmentStatusConfig(fullLeaseData.next_adjustment_date);
+          const daysUntilAdjustment = adjConfig.daysUntil;
+          const isOverdue = adjConfig.status === "vencido";
+          const isComingSoon = adjConfig.status === "proximo";
+          const isOnTrack = adjConfig.status === "em_dia";
 
           return (
             <div className={cn(
@@ -601,15 +606,9 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                   <TrendingUp className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">Controle de Reajuste</span>
                 </div>
-                {isOverdue && (
-                  <Badge className="bg-red-500 text-white hover:bg-red-500 text-[10px]">Reajuste Vencido</Badge>
-                )}
-                {isComingSoon && !isOverdue && (
-                  <Badge className="bg-amber-500 text-white hover:bg-amber-500 text-[10px]">Atenção</Badge>
-                )}
-                {isOnTrack && (
-                  <Badge className="bg-emerald-500 text-white hover:bg-emerald-500 text-[10px]">Em dia</Badge>
-                )}
+                <Badge variant={adjConfig.variant} className={cn("text-[10px]", adjConfig.className)}>
+                  {adjConfig.label}
+                </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

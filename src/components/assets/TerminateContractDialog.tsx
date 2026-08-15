@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -37,6 +39,7 @@ export function TerminateContractDialog({
   onSuccess,
 }: TerminateContractDialogProps) {
   const terminateLease = useTerminateLease();
+  const queryClient = useQueryClient();
   const { countProjections } = useCountFutureProjections();
   
   const [terminationDate, setTerminationDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -99,6 +102,8 @@ export function TerminateContractDialog({
       });
 
       console.log('[TerminateContract] Sucesso:', result);
+
+      await invalidateLeaseQueries(queryClient);
 
       toast.success("Contrato encerrado com sucesso!", {
         id: toastId,

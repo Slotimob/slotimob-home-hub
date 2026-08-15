@@ -192,6 +192,9 @@ export default function NovoContrato() {
     enabled: !!user && !!editLeaseId,
   });
 
+  const isPendingSetup = isEditMode && editLease?.status === "pending";
+
+
   // Resolve which unit we'll create the lease for
   const effectiveUnitId = editLease?.unit_id || unitIdParam || selectedUnitId || "";
 
@@ -633,8 +636,35 @@ export default function NovoContrato() {
       let resultId = editLeaseId || "";
 
       if (isEditMode && editLease) {
+        // Promoção de contrato pendente de configuração → ativo
+        const wasPending = editLease.status === "pending";
+        let promoted = false;
+        if (wasPending) {
+          const missing: string[] = [];
+          if (!formData.tenant_contact_id) missing.push("inquilino");
+          if (!formData.rent_amount || formData.rent_amount <= 0) missing.push("valor do aluguel");
+          if (!formData.start_date) missing.push("data de início");
+          if (!formData.due_day || formData.due_day < 1 || formData.due_day > 31)
+            missing.push("dia de vencimento");
+
+          if (missing.length > 0) {
+            toast({
+              title: "Faltam informações para ativar o contrato",
+              description: `Preencha: ${missing.join(", ")}.`,
+              variant: "destructive",
+            });
+            setStep(missing.includes("inquilino") ? "tenant" : "financial");
+            return;
+          }
+          (leaseData as any).status = "active";
+          (leaseData as any).contract_status = "active";
+          promoted = true;
+        }
+
         await updateLease.mutateAsync({ id: editLease.id, data: leaseData });
-        toast({ title: "Contrato atualizado com sucesso!" });
+        toast({
+          title: promoted ? "Contrato finalizado e ativado" : "Contrato atualizado com sucesso!",
+        });
         resultId = editLease.id;
       } else {
         const result = await createLease.mutateAsync(leaseData);
@@ -713,7 +743,7 @@ export default function NovoContrato() {
         </Button>
         <div className="min-w-0">
           <h1 className="text-xl font-semibold truncate">
-            {isEditMode ? "Editar Contrato" : "Novo Contrato"}
+            {isPendingSetup ? "Finalizar Contrato" : isEditMode ? "Editar Contrato" : "Novo Contrato"}
           </h1>
           {unitName && (
             <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
@@ -723,6 +753,16 @@ export default function NovoContrato() {
           )}
         </div>
       </div>
+
+      {isPendingSetup && (
+        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Este contrato foi criado automaticamente a partir do cadastro do imóvel e ainda
+            precisa ser finalizado.
+          </p>
+        </div>
+      )}
 
       {/* Stepper */}
       <div className="w-full overflow-x-auto -mx-1 px-1 mb-4">
@@ -1685,7 +1725,7 @@ export default function NovoContrato() {
         ) : (
           <Button onClick={handleSubmit} disabled={isLoading || !canProceed()}>
             {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditMode ? "Salvar" : "Concluir"}
+            {isPendingSetup ? "Finalizar Contrato" : isEditMode ? "Salvar" : "Concluir"}
           </Button>
         )}
       </div>

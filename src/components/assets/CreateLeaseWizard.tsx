@@ -411,13 +411,43 @@ export function CreateLeaseWizard({
 
       let leaseId: string | null = null;
       if (isEditMode && editLease) {
+        // Promoção de contrato pendente de configuração → ativo
+        const wasPending = (editLease as any).status === "pending";
+        const hasMinimum =
+          !!formData.tenant_contact_id &&
+          !!formData.rent_amount &&
+          formData.rent_amount > 0 &&
+          !!formData.start_date &&
+          !!formData.due_day &&
+          formData.due_day >= 1 &&
+          formData.due_day <= 31;
+
+        if (wasPending && !hasMinimum) {
+          toast({
+            title: "Faltam informações para ativar o contrato",
+            description:
+              "Preencha inquilino, valor do aluguel, data de início e dia de vencimento.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (wasPending) {
+          (leaseData as any).status = "active";
+          (leaseData as any).contract_status = "active";
+        }
+
         // Update existing lease
         await updateLease.mutateAsync({
           id: editLease.id,
           data: leaseData,
         });
         leaseId = editLease.id;
-        toast({ title: "Contrato atualizado com sucesso!" });
+        toast({
+          title: wasPending
+            ? "Contrato finalizado e ativado"
+            : "Contrato atualizado com sucesso!",
+        });
+
       } else {
         // Create new lease
         const result = await createLease.mutateAsync(leaseData);

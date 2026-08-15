@@ -13,6 +13,8 @@
  import { Calendar, Loader2, Check } from "lucide-react";
  import { format, parseISO } from "date-fns";
  import { useUpdateLease } from "@/hooks/useLeases";
+ import { useQueryClient } from "@tanstack/react-query";
+ import { invalidateLeaseQueries } from "@/lib/query-invalidation";
  import { toast } from "sonner";
  
  interface EditStartDateDialogProps {
@@ -34,6 +36,7 @@
    onSuccess,
  }: EditStartDateDialogProps) {
    const updateLease = useUpdateLease();
+   const queryClient = useQueryClient();
  
    const [startDate, setStartDate] = useState("");
    const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,9 +63,12 @@
          data: { start_date: startDate },
        });
  
+       await invalidateLeaseQueries(queryClient);
+
        toast.success("Data de início atualizada!", {
          description: `Nova data: ${format(parseISO(startDate), "dd/MM/yyyy")}`,
        });
+ 
  
        onSuccess?.();
        handleClose();

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import { useEffect } from "react";
 import {
   Dialog,
@@ -161,13 +162,8 @@ export function AdjustmentCalculatorDialog({
         });
       }
 
-      // Invalidate all relevant queries (fire and forget for better UX)
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
+      await invalidateLeaseQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ["lease-adjustments"] });
-      queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
-      queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["finance-overview"] });
 
       onSuccess?.();

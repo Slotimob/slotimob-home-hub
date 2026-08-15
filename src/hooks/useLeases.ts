@@ -6,6 +6,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { useLeaseFinancialProjection, useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
 import { format } from "date-fns";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 
 export interface GuarantorData {
   nome: string;
@@ -439,11 +440,9 @@ export function useCreateLease() {
 
       return { lease, projectionsGenerated };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
+    onSuccess: async () => {
+      await invalidateLeaseQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ["units"] });
-      queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-      queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
     },
   });
 }
@@ -470,10 +469,9 @@ export function useUpdateLease() {
 
       if (error) throw new Error(error.message || error.details || "Erro ao salvar");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["lease"] });
-      queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
+    onSuccess: async () => {
+      await invalidateLeaseQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["units"] });
     },
   });
 }
@@ -585,16 +583,9 @@ export function useTerminateLease() {
 
       return { deletedTransactions: deletedCount };
     },
-    onSuccess: () => {
-      // Invalidate all related queries without awaiting
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["lease"] });
-      queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
+    onSuccess: async () => {
+      await invalidateLeaseQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ["units"] });
-      queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-      queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
-      queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
     },
   });
 }
@@ -628,9 +619,8 @@ export function useUpdateLeaseSignature() {
 
       if (error) throw new Error(error.message || error.details || "Erro ao salvar");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
-      queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
+    onSuccess: async () => {
+      await invalidateLeaseQueries(queryClient);
     },
   });
 }
