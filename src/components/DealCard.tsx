@@ -244,7 +244,7 @@ export const DealCard = ({
                   const unitId = (deal as any).unit_id || (deal as any).unit?.id;
                   const params = new URLSearchParams({ create: 'true' });
                   if (unitId) params.set('unitId', unitId);
-                  navigate(`/gestao/propostas?${params.toString()}`);
+                  navigate(`/crm/propostas?${params.toString()}`);
                 }}
                 title="Gerar Proposta"
               >

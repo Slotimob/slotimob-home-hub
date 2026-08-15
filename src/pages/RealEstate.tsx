@@ -382,7 +382,7 @@ const RealEstate = () => {
               iconOnly 
               showTextAt="lg" 
             icon={<Share2 className="h-4 w-4" />} 
-            onClick={() => navigate('/gestao/propostas?create=true')}
+            onClick={() => navigate('/crm/propostas?create=true')}
           >
             Compartilhar
             </HeaderButton>
@@ -650,7 +650,7 @@ const RealEstate = () => {
                               <UnitActionsMenu
                                 unitLabel={unit.unit_number}
                                 onView={() => navigate(`/real-estate?id=${unit.id}`)}
-                                onShare={() => navigate(`/gestao/propostas?create=true&unitId=${unit.id}`)}
+                                onShare={() => navigate(`/crm/propostas?create=true&unitId=${unit.id}`)}
                                 shareLabel="Proposta"
                                 onDuplicate={canDuplicate ? () => handleDuplicateUnit(unit.id) : undefined}
                                 onDelete={canDelete ? () => handleDeleteUnit(unit.id) : undefined}
@@ -693,7 +693,7 @@ const RealEstate = () => {
                         className="h-8 w-8 shadow-md"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/gestao/propostas?create=true&unitId=${unit.id}`);
+                          navigate(`/crm/propostas?create=true&unitId=${unit.id}`);
                         }}
                       >
                         <Share2 className="h-4 w-4" />

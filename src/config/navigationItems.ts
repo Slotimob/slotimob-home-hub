@@ -205,7 +205,7 @@ export const SIDEBAR_ITEMS = [
     items: [
       { title: 'Mensagens', url: '/whatsapp' },
       { title: 'Pipeline', url: '/pipeline' },
-      { title: 'Propostas', url: '/gestao/propostas' },
+      { title: 'Propostas', url: '/crm/propostas' },
       { title: 'Contatos', url: '/contacts' },
       { title: 'Agenda', url: '/schedule' },
     ],
