@@ -74,9 +74,13 @@ export interface Unit {
   market_value?: number | null;
   rent_price?: number | null;
   is_standalone?: boolean | null;
+  city?: string | null;
+  state?: string | null;
   property?: {
     id: string;
     name: string;
+    city?: string | null;
+    state?: string | null;
     commission_rate?: number | null;
   };
 }
@@ -128,7 +132,7 @@ const Units = () => {
       } else {
         const { data, error } = await supabase
           .from('units')
-          .select('*, property:properties(id, name, commission_rate)')
+          .select('*, property:properties(id, name, city, state, commission_rate)')
           .or('is_standalone.is.null,is_standalone.eq.false')
           .order('created_at', { ascending: false });
         if (error) throw error;
