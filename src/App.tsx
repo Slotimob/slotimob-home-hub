@@ -16,6 +16,7 @@ import { RequireFeature } from "@/components/subscription/RequireFeature";
 import { LandingThemeProvider } from "@/components/LandingThemeProvider";
 import { SuspenseFallback } from "@/components/SuspenseFallback";
 import { CookieConsent } from "@/components/CookieConsent";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 
 
 
@@ -130,6 +131,7 @@ const App = () => (
             <TrackingProvider>
             <GlowInitializer />
             <UtmCaptureProvider />
+            <AppErrorBoundary>
             <Suspense fallback={<SuspenseFallback />}>
             <Routes>
               {/* Public routes */}
@@ -218,6 +220,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>
+            </AppErrorBoundary>
             <CookieConsent />
             </TrackingProvider>
 
