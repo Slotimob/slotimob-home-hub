@@ -36,6 +36,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { RealEstateKanbanView } from '@/components/units/RealEstateKanbanView';
+import { CityText, formatCityLabel } from '@/components/shared/CityCell';
 import { UnitCard } from '@/components/units/UnitCard';
 import { UnitActionsMenu } from '@/components/units/UnitActionsMenu';
 
@@ -558,10 +559,11 @@ const RealEstate = () => {
               </div>
             ) : (
               <div className="rounded-lg border bg-card animate-fade-in overflow-x-auto">
-                <Table className="min-w-[600px]">
+                <Table className="min-w-[760px]">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[140px] sm:w-[180px]">Identificação</TableHead>
+                      <TableHead className="min-w-[160px]">Identificação</TableHead>
+                      <TableHead className="hidden lg:table-cell w-[160px]">Cidade</TableHead>
                       <TableHead className="w-[90px] sm:w-[100px]">Status</TableHead>
                       <TableHead className="hidden sm:table-cell w-[100px]">Tipo</TableHead>
                       <TableHead className="text-right w-[90px] sm:w-[110px]">Valor Imóvel</TableHead>
@@ -574,15 +576,21 @@ const RealEstate = () => {
                     {filteredUnits.map((unit) => {
                       const canShowSale = showSalePrice(unit.intent_type) && unit.price != null;
                       const canShowRent = showRentalPrice(unit.intent_type) && unit.rent_price != null;
+                      const cityLabel = formatCityLabel(unit.city, unit.state);
                       return (
                         <TableRow 
                           key={unit.id} 
-                          className="cursor-pointer"
+                          className="cursor-pointer select-none"
                           onClick={() => navigate(`/real-estate?id=${unit.id}`)}
                         >
                           <TableCell className="font-medium py-2 sm:py-4">
-                            <div className="flex flex-col">
-                              <span className="truncate max-w-[120px] sm:max-w-[160px] text-sm">{unit.unit_number}</span>
+                            <div className="flex flex-col min-w-0">
+                              <span className="truncate max-w-[180px] text-sm select-text">{unit.unit_number}</span>
+                              {cityLabel && (
+                                <span className="lg:hidden text-xs text-muted-foreground truncate max-w-[180px] select-text">
+                                  {cityLabel}
+                                </span>
+                              )}
                               {(unit.area || unit.area_total) && (
                                 <span className="text-xs text-muted-foreground">
                                   {unit.area_total && `${unit.area_total} m² total`}
@@ -592,6 +600,9 @@ const RealEstate = () => {
                                 </span>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell py-2 sm:py-4 max-w-[160px]">
+                            <CityText city={unit.city} state={unit.state} className="text-sm" />
                           </TableCell>
                           <TableCell className="py-2 sm:py-4">
                             <Badge className={`text-[10px] px-1.5 sm:px-2 py-0.5 whitespace-nowrap ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}>

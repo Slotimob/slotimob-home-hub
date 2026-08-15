@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Building2, MapPin, Package, Percent, Flame, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { normalizePropertyImageUrl } from '@/lib/imageUtils';
+import { CityText, formatCityLabel } from '@/components/shared/CityCell';
 
 interface Property {
   id: string;
@@ -85,21 +86,21 @@ export function PropertiesTableView({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="rounded-lg border bg-card">
-        <Table>
+      <div className="rounded-lg border bg-card overflow-x-auto">
+        <Table className="min-w-[720px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[50px]"></TableHead>
-              <TableHead>
+              <TableHead className="min-w-[200px]">
                 <SortableHeader field="name">Nome</SortableHeader>
               </TableHead>
-              <TableHead className="hidden md:table-cell">
-                <SortableHeader field="city">Localização</SortableHeader>
+              <TableHead className="hidden lg:table-cell w-[180px]">
+                <SortableHeader field="city">Cidade</SortableHeader>
               </TableHead>
-              <TableHead className="text-center w-[120px]">
+              <TableHead className="text-right w-[110px]">
                 <SortableHeader field="total_units">Unidades</SortableHeader>
               </TableHead>
-              <TableHead className="text-center w-[130px]">
+              <TableHead className="text-right w-[130px]">
                 <SortableHeader field="commission_rate">Comissão</SortableHeader>
               </TableHead>
               <TableHead className="w-[150px] text-right">Ações</TableHead>
@@ -109,11 +110,12 @@ export function PropertiesTableView({
             {properties.map((property) => {
               const commissionRate = property.commission_rate ?? 5;
               const isHighCommission = commissionRate >= 6;
+              const cityLabel = formatCityLabel(property.city, property.state);
 
               return (
                 <TableRow
                   key={property.id}
-                  className="cursor-pointer"
+                  className="cursor-pointer select-none"
                   onClick={() => onPropertyClick(property)}
                 >
                   <TableCell className="p-2">
@@ -130,36 +132,37 @@ export function PropertiesTableView({
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium truncate max-w-[200px]">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-medium truncate max-w-[220px] select-text">
                         {property.name}
                       </span>
                       {property.description && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        <span className="text-xs text-muted-foreground truncate max-w-[220px] select-text">
                           {property.description}
+                        </span>
+                      )}
+                      {cityLabel && (
+                        <span className="lg:hidden text-xs text-muted-foreground truncate max-w-[220px] select-text">
+                          {cityLabel}
                         </span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {(property.city || property.state) && (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5" />
-                        <span className="text-sm">
-                          {property.city && property.state
-                            ? `${property.city} - ${property.state}`
-                            : property.city || property.state}
-                        </span>
-                      </div>
-                    )}
+                  <TableCell className="hidden lg:table-cell max-w-[180px]">
+                    <div className="flex items-center gap-1 min-w-0">
+                      {cityLabel && <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />}
+                      <CityText city={property.city} state={property.state} className="text-sm" />
+                    </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-muted-foreground">
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1 text-muted-foreground">
                       <Package className="h-3.5 w-3.5" />
                       <span>{unitCounts[property.id] || 0}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-right">
+
+
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Badge

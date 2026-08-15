@@ -22,6 +22,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import type { Database } from "@/integrations/supabase/types";
 import { UNIT_STATUS_STYLES, PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
 import { showSalePrice, showRentalPrice, formatCurrencyBRL } from "@/utils/unitPricing";
+import { CityText, formatCityLabel } from "@/components/shared/CityCell";
 
 type UnitStatus = Database["public"]["Enums"]["unit_status"];
 
@@ -47,9 +48,13 @@ interface Unit {
   rent_price?: number | null;
   is_standalone?: boolean | null;
   is_published_portal?: boolean | null;
+  city?: string | null;
+  state?: string | null;
   property?: {
     id: string;
     name: string;
+    city?: string | null;
+    state?: string | null;
     commission_rate?: number | null;
   } | null;
   owner?: {
@@ -132,10 +137,11 @@ export function UnitsTableView({
   return (
     <TooltipProvider delayDuration={0}>
       <div className="rounded-lg border bg-card overflow-x-auto">
-        <Table className="min-w-[600px]">
+        <Table className="min-w-[760px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[140px] sm:w-[180px]">Identificação</TableHead>
+              <TableHead className="min-w-[160px]">Identificação</TableHead>
+              <TableHead className="hidden lg:table-cell w-[160px]">Cidade</TableHead>
               <TableHead className="w-[90px] sm:w-[100px]">Status</TableHead>
               {showProperty && <TableHead className="hidden md:table-cell min-w-[150px]">Empreendimento</TableHead>}
               <TableHead className="hidden sm:table-cell w-[100px]">Tipo</TableHead>
@@ -146,15 +152,24 @@ export function UnitsTableView({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {units.map((unit) => (
+            {units.map((unit) => {
+              const cityValue = unit.city?.trim() ? unit.city : unit.property?.city;
+              const stateValue = unit.city?.trim() ? unit.state : unit.property?.state;
+              const cityLabel = formatCityLabel(cityValue, stateValue);
+              return (
               <TableRow
                 key={unit.id}
-                className="cursor-pointer"
+                className="cursor-pointer select-none"
                 onClick={() => onUnitClick(unit)}
               >
                 <TableCell className="font-medium py-2 sm:py-4">
-                  <div className="flex flex-col">
-                    <span className="truncate max-w-[120px] sm:max-w-[160px] text-sm">{unit.unit_number}</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="truncate max-w-[180px] text-sm select-text">{unit.unit_number}</span>
+                    {cityLabel && (
+                      <span className="lg:hidden text-xs text-muted-foreground truncate max-w-[180px] select-text">
+                        {cityLabel}
+                      </span>
+                    )}
                     {(unit.area || unit.area_total) && (
                       <span className="text-xs text-muted-foreground">
                         {unit.area_total && `${unit.area_total} m² total`}
@@ -164,6 +179,9 @@ export function UnitsTableView({
                       </span>
                     )}
                   </div>
+                </TableCell>
+                <TableCell className="hidden lg:table-cell py-2 sm:py-4 max-w-[160px]">
+                  <CityText city={cityValue} state={stateValue} className="text-sm" />
                 </TableCell>
                 <TableCell className="py-2 sm:py-4">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -252,7 +270,8 @@ export function UnitsTableView({
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </div>

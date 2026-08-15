@@ -36,6 +36,7 @@ interface Property {
 const SORT_OPTIONS = [
   { value: 'created_at', label: 'Mais Recentes' },
   { value: 'name', label: 'Nome (A-Z)' },
+  { value: 'city', label: 'Cidade (A-Z)' },
   { value: 'total_units', label: 'Mais Unidades' },
   { value: 'commission_rate', label: 'Maior Comissão' },
 ];
@@ -93,6 +94,8 @@ const Properties = () => {
       switch (sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
+        case 'city':
+          return (a.city || '').localeCompare(b.city || '');
         case 'total_units':
           return getUnitCount(b.id) - getUnitCount(a.id);
         case 'commission_rate':
