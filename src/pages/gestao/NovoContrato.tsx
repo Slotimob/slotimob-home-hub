@@ -727,13 +727,21 @@ export default function NovoContrato() {
 
   const isLoading = createLease.isPending || updateLease.isPending;
 
+  // Redirect (never during render — that causes a blank screen)
+  useEffect(() => {
+    if (user === null) navigate("/auth", { replace: true });
+  }, [user, navigate]);
+
   if (!user) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <AppLayout title="Novo Contrato">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppLayout>
     );
   }
+
 
   // Loading edit data
   if (isEditMode && loadingEdit) {
