@@ -145,6 +145,7 @@ export function AppSidebar() {
         { title: 'Aluguéis', url: '/gestao/alugueis', moduleKey: 'management_rentals' },
         { title: 'Contratos', url: '/gestao/contratos', moduleKey: 'management_contracts' },
         { title: 'Gerencial', url: '/gestao/gerencial', moduleKey: 'management_reports' },
+        { title: 'Manutenções', url: '/gestao/manutencoes', moduleKey: 'management_tasks' },
         { title: 'Afazeres', url: '/gestao/afazeres', moduleKey: 'management_tasks' },
         { title: 'Boletos', url: '/gestao/boletos', moduleKey: 'management_rentals' },
       ]

@@ -2205,6 +2205,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          activity_id: string | null
           broker_id: string
           created_at: string
           deal_id: string | null
@@ -2226,6 +2227,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          activity_id?: string | null
           broker_id: string
           created_at?: string
           deal_id?: string | null
@@ -2247,6 +2249,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          activity_id?: string | null
           broker_id?: string
           created_at?: string
           deal_id?: string | null
@@ -2268,6 +2271,13 @@ export type Database = {
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "property_activities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_broker_id_fkey"
             columns: ["broker_id"]
@@ -3908,11 +3918,15 @@ export type Database = {
       }
       property_activities: {
         Row: {
+          activity_group_id: string | null
           activity_type: string
+          assigned_contact_id: string | null
           broker_id: string
           completed_at: string | null
           created_at: string
           description: string | null
+          estimated_cost: number | null
+          financial_transaction_id: string | null
           id: string
           is_completed: boolean
           metadata: Json | null
@@ -3925,11 +3939,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activity_group_id?: string | null
           activity_type?: string
+          assigned_contact_id?: string | null
           broker_id: string
           completed_at?: string | null
           created_at?: string
           description?: string | null
+          estimated_cost?: number | null
+          financial_transaction_id?: string | null
           id?: string
           is_completed?: boolean
           metadata?: Json | null
@@ -3942,11 +3960,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activity_group_id?: string | null
           activity_type?: string
+          assigned_contact_id?: string | null
           broker_id?: string
           completed_at?: string | null
           created_at?: string
           description?: string | null
+          estimated_cost?: number | null
+          financial_transaction_id?: string | null
           id?: string
           is_completed?: boolean
           metadata?: Json | null
@@ -3959,6 +3981,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "property_activities_assigned_contact_id_fkey"
+            columns: ["assigned_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_activities_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "property_activities_property_id_fkey"
             columns: ["property_id"]

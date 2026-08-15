@@ -28,6 +28,7 @@ import {
   FileSignature,
   CheckSquare,
   Briefcase,
+  Wrench,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -74,6 +75,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { title: 'Aluguéis', url: '/gestao/alugueis', icon: HeartPulse },
       { title: 'Contratos', url: '/gestao/contratos', icon: FileSignature },
       { title: 'Gerencial', url: '/gestao/gerencial', icon: Briefcase },
+      { title: 'Manutenções', url: '/gestao/manutencoes', icon: Wrench },
       { title: 'Afazeres', url: '/gestao/afazeres', icon: CheckSquare },
       { title: 'Boletos', url: '/gestao/boletos', icon: Receipt },
     ],
@@ -168,6 +170,7 @@ export const SIDEBAR_ITEMS = [
       { title: 'Aluguéis', url: '/gestao/alugueis' },
       { title: 'Contratos', url: '/gestao/contratos' },
       { title: 'Gerencial', url: '/gestao/gerencial' },
+      { title: 'Manutenções', url: '/gestao/manutencoes' },
       { title: 'Afazeres', url: '/gestao/afazeres' },
       { title: 'Boletos', url: '/gestao/boletos' },
     ],

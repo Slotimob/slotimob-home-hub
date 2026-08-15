@@ -63,6 +63,7 @@ const NovoContrato = React.lazy(() => import("./pages/gestao/NovoContrato"));
 const AfazeresEmGestao = React.lazy(() => import("./pages/gestao/AfazeresEmGestao"));
 const BoletosEmGestao = React.lazy(() => import("./pages/gestao/BoletosEmGestao"));
 const GerencialGestao = React.lazy(() => import("./pages/gestao/GerencialGestao"));
+const Manutencoes = React.lazy(() => import("./pages/gestao/Manutencoes"));
 const CheckoutSuccess = React.lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancel = React.lazy(() => import("./pages/CheckoutCancel"));
 const Checkout = React.lazy(() => import("./pages/Checkout"));
@@ -196,6 +197,7 @@ const App = () => (
               <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
               <Route path="/gestao/boletos" element={guarded(<RequireFeature feature="asset_management"><BoletosEmGestao /></RequireFeature>)} />
               <Route path="/gestao/gerencial" element={guarded(<RequireFeature feature="asset_management"><GerencialGestao /></RequireFeature>)} />
+              <Route path="/gestao/manutencoes" element={guarded(<RequireFeature feature="asset_management"><Manutencoes /></RequireFeature>)} />
               <Route path="/crm/propostas" element={guarded(<Proposals />)} />
               <Route path="/gestao/propostas" element={<Navigate to="/crm/propostas" replace />} />
               <Route path="/schedule" element={guarded(<Schedule />)} />
