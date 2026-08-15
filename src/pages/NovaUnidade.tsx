@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { UnitFormFields, UnitFormData, getInitialFormData } from '@/components/units/UnitFormFields';
 import { useCreateUnit } from '@/hooks/useCreateUnit';
+import { useUnsavedChangesGuard } from '@/lib/unsaved-changes-guard';
 
 interface NovaUnidadeProps {
   /** If true, creates a standalone real estate (no property required) */
