@@ -88,6 +88,11 @@ const getInitialFormData = () => ({
   notes: "",
   adjustment_index: "IGPM",
   guarantee_type: "caucao" as GuaranteeType,
+  is_indefinite_term: false,
+  adjustment_periodicity_months: 12,
+  next_adjustment_date: "",
+  fire_insurance: getInitialFireInsurance(),
+  iptu_charge: getInitialIptuCharge(),
 });
 
 const getInitialGuarantor = (): GuarantorData => ({
