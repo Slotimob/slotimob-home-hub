@@ -194,7 +194,8 @@ const App = () => (
               <Route path="/gestao/afazeres" element={guarded(<RequireFeature feature="asset_management"><AfazeresEmGestao /></RequireFeature>)} />
               <Route path="/gestao/boletos" element={guarded(<RequireFeature feature="asset_management"><BoletosEmGestao /></RequireFeature>)} />
               <Route path="/gestao/gerencial" element={guarded(<RequireFeature feature="asset_management"><GerencialGestao /></RequireFeature>)} />
-              <Route path="/gestao/propostas" element={guarded(<Proposals />)} />
+              <Route path="/crm/propostas" element={guarded(<Proposals />)} />
+              <Route path="/gestao/propostas" element={<Navigate to="/crm/propostas" replace />} />
               <Route path="/schedule" element={guarded(<Schedule />)} />
               <Route path="/portals" element={guarded(<Portals />)} />
               <Route path="/reports" element={guarded(<RequireFeature feature="reports_overview"><Reports /></RequireFeature>)} />
