@@ -56,7 +56,14 @@ interface LeaseWithDetails {
   } | null;
 }
 
-type AdjustmentStatus = "overdue" | "current_month" | "upcoming" | "ok";
+
+import {
+  getLeaseStatusConfig,
+  getSignatureStatus,
+  getAdjustmentStatusConfig,
+  isLeasePendingSetup,
+  type AdjustmentStatus,
+} from "@/lib/lease-status";
 
 interface ContractCardProps {
   lease: LeaseWithDetails & { adjustmentStatus: AdjustmentStatus };
@@ -72,14 +79,6 @@ interface ContractCardProps {
   // UNIFIED UX: Click card to open management sheet
   onCardClick?: (lease: LeaseWithDetails) => void;
 }
-
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  active: { label: "Ativo", variant: "default" },
-  pending_signature: { label: "Aguardando", variant: "secondary" },
-  expired: { label: "Expirado", variant: "destructive" },
-  cancelled: { label: "Cancelado", variant: "outline" },
-  terminated: { label: "Encerrado", variant: "outline" },
-};
 
 const INDEX_LABELS: Record<string, string> = {
   IGPM: "IGP-M",
@@ -108,13 +107,16 @@ export function ContractCard({
   onEditAdjustmentDateClick,
   onCardClick,
 }: ContractCardProps) {
-  const status = lease.contract_status || lease.status;
-  const statusConfig = STATUS_LABELS[status] || STATUS_LABELS.active;
+  // Status do contrato tem precedência: um contrato pendente de configuração
+  // não deve ser mascarado pelo contract_status legado.
+  const isPendingSetup = isLeasePendingSetup(lease.status);
+  const status = isPendingSetup ? lease.status : (lease.contract_status || lease.status);
+  const statusConfig = getLeaseStatusConfig(status);
+  const signatureConfig = getSignatureStatus((lease as any).signature_status);
+  const adjConfig = getAdjustmentStatusConfig(lease.next_adjustment_date);
   const { adjustmentStatus } = lease;
-  const needsAction = adjustmentStatus === "overdue" || adjustmentStatus === "current_month";
-  const daysUntilAdjustment = lease.next_adjustment_date
-    ? differenceInDays(parseISO(lease.next_adjustment_date), new Date())
-    : null;
+  const needsAction = adjConfig.needsAction;
+  const daysUntilAdjustment = adjConfig.daysUntil;
 
   const hasActions = onEditClick || onQuickTransactionClick || onGenerateContractClick || onViewFinancialsClick;
 
@@ -152,7 +154,13 @@ export function ContractCard({
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Badge variant={statusConfig.variant} className="text-[10px] whitespace-nowrap">
+            <Badge
+              variant={statusConfig.variant}
+              className={cn(
+                "text-[10px] whitespace-nowrap",
+                isPendingSetup && "border-amber-500 text-amber-700 bg-amber-500/10"
+              )}
+            >
               {statusConfig.label}
             </Badge>
             {/* Signature Status Badge */}
@@ -279,22 +287,10 @@ export function ContractCard({
             <span>
               {format(parseISO(lease.next_adjustment_date), "dd/MM/yyyy", { locale: ptBR })}
             </span>
-            {adjustmentStatus === "overdue" && (
-              <Badge variant="destructive" className="text-[10px]">
-                <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
-                Atrasado
-              </Badge>
-            )}
-            {adjustmentStatus === "current_month" && (
-              <Badge className="text-[10px] bg-primary text-primary-foreground">
-                Este mês
-              </Badge>
-            )}
-            {adjustmentStatus === "upcoming" && daysUntilAdjustment !== null && (
-              <Badge variant="secondary" className="text-[10px]">
-                {daysUntilAdjustment}d
-              </Badge>
-            )}
+            <Badge variant={adjConfig.variant} className={cn("text-[10px]", adjConfig.className)}>
+              {adjustmentStatus === "vencido" && <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />}
+              {adjConfig.label}
+            </Badge>
           </div>
         )}
 
