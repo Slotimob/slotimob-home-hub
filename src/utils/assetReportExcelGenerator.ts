@@ -99,14 +99,36 @@ export async function generateAssetReportExcel(report: AssetReportData) {
   // Tab 6: Activities
   const wsAct = wb.addWorksheet('Atividades');
   wsAct.columns = [{ width: 30 }, { width: 10 }, { width: 15 }, { width: 15 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }];
-  addHeader(wsAct, ['Imóvel', 'Tipo', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Atividades']);
+  addHeader(wsAct, ['Imóvel', 'Tipo', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Atividades', 'Manutenções', 'Custo Est. Manutenções']);
   for (const a of report.assets) {
     wsAct.addRow([
       a.name, a.type === 'property' ? 'Imóvel' : 'Unidade',
       a.period?.income_total ?? 0, a.period?.expenses_total ?? 0,
       pct(a.period?.roi_pct), pct(a.period?.monthly_yield),
       pct(a.period?.cap_rate), a.period?.activities_count ?? 0,
+      a.period?.maintenance_count ?? 0, a.period?.maintenance_estimated_cost ?? 0,
     ]);
+  }
+
+  // Tab 7: Manutenções e Atividades
+  const wsMaint = wb.addWorksheet('Manutenções');
+  wsMaint.columns = [{ width: 30 }, { width: 14 }, { width: 16 }, { width: 34 }, { width: 40 }, { width: 22 }, { width: 16 }, { width: 18 }, { width: 10 }, { width: 14 }];
+  addHeader(wsMaint, ['Imóvel', 'Data', 'Tipo', 'Atividade', 'Descrição', 'Responsável', 'Custo Estimado', 'Lançamento Financeiro', 'Anexos', 'Status']);
+  for (const a of report.assets) {
+    for (const m of a.period?.maintenance_items || []) {
+      wsMaint.addRow([
+        a.name,
+        new Date(m.date).toLocaleDateString('pt-BR'),
+        m.type_label,
+        m.title,
+        m.description ?? '',
+        m.responsible ?? '',
+        m.estimated_cost ?? '',
+        m.has_transaction ? 'Sim' : 'Não',
+        m.attachments_count,
+        m.is_completed ? 'Concluída' : 'Pendente',
+      ]);
+    }
   }
 
   const buffer = await wb.xlsx.writeBuffer();
