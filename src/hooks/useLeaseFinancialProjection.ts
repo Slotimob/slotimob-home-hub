@@ -1,19 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { addMonths, setDate, format, differenceInMonths, lastDayOfMonth, getDate } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
+import type { PlannedInstallment, PlannedObligation } from "@/lib/lease-projection";
 
 export interface LeaseProjectionParams {
   leaseId: string;
   unitId: string;
   tenantContactId: string;
-  rentAmount: number;
-  dueDay: number;
-  startDate: string;
-  endDate?: string | null;
   propertyId?: string | null;
+  /** Parcelas já confirmadas pelo usuário no dialog. Nada é inserido sem isso. */
+  installments: PlannedInstallment[];
 }
 
 interface FinancialTransaction {
@@ -33,18 +31,73 @@ interface FinancialTransaction {
   category_id?: string | null;
 }
 
-/**
- * Calculates the correct due date for a given month, handling edge cases
- * like months with fewer days (e.g., day 31 in February)
- */
-function calculateDueDate(baseDate: Date, dueDay: number): Date {
-  const lastDay = getDate(lastDayOfMonth(baseDate));
-  const actualDay = Math.min(dueDay, lastDay);
-  return setDate(baseDate, actualDay);
+/** Categoria financeira por tipo de obrigação. Ausência => category_id null. */
+const CATEGORY_NAMES: Record<PlannedObligation, string[]> = {
+  rent: ["Receita de Aluguel"],
+  fire_insurance: ["Seguro Incêndio", "Seguros"],
+  iptu: ["IPTU", "Impostos"],
+};
+
+async function resolveCategoryIds(): Promise<Record<PlannedObligation, string | null>> {
+  const result: Record<PlannedObligation, string | null> = {
+    rent: null,
+    fire_insurance: null,
+    iptu: null,
+  };
+
+  const allNames = Object.values(CATEGORY_NAMES).flat();
+  const { data, error } = await supabase
+    .from("financial_categories")
+    .select("id, name, type")
+    .in("name", allNames);
+
+  if (error || !data) return result;
+
+  for (const key of Object.keys(CATEGORY_NAMES) as PlannedObligation[]) {
+    for (const name of CATEGORY_NAMES[key]) {
+      const match = data.find((c: any) => c.name === name);
+      if (match) {
+        result[key] = match.id;
+        break;
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
- * Hook for generating financial projections (rent installments) when a lease is created
+ * Competências já lançadas para um contrato, no formato `${obligation}:${yyyy-MM}`.
+ * É a base da idempotência por competência: geramos apenas o que ainda não existe,
+ * de modo que o ciclo seguinte a um reajuste possa ser lançado sem duplicar o anterior.
+ */
+export async function fetchExistingCompetencies(leaseId: string): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("financial_transactions")
+    .select("competency_period, obligation_type")
+    .eq("reference", `lease:${leaseId}`);
+
+  if (error || !data) return new Set();
+
+  return new Set(
+    data
+      .filter((t: any) => t.competency_period)
+      .map((t: any) => `${t.obligation_type || "rent"}:${t.competency_period}`)
+  );
+}
+
+export function useExistingLeaseCompetencies(leaseId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["lease-competencies", leaseId],
+    queryFn: () => fetchExistingCompetencies(leaseId!),
+    enabled: !!leaseId && enabled,
+    staleTime: 0,
+  });
+}
+
+/**
+ * Insere as parcelas confirmadas pelo usuário. Nunca é chamado automaticamente:
+ * a confirmação passa obrigatoriamente por ConfirmLeaseProjectionDialog.
  */
 export function useLeaseFinancialProjection() {
   const { user } = useAuth();
@@ -55,97 +108,35 @@ export function useLeaseFinancialProjection() {
     mutationFn: async (params: LeaseProjectionParams): Promise<{ count: number }> => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      const {
-        leaseId,
-        unitId,
-        tenantContactId,
-        rentAmount,
-        dueDay,
-        startDate,
-        endDate,
-        propertyId,
-      } = params;
+      const { leaseId, unitId, tenantContactId, propertyId, installments } = params;
 
-      // Step 1: Idempotency check - verify if transactions already exist for this lease
-      const { data: existingTransactions, error: checkError } = await supabase
-        .from("financial_transactions")
-        .select("id")
-        .eq("reference", `lease:${leaseId}`)
-        .limit(1);
+      if (!installments || installments.length === 0) return { count: 0 };
 
-      if (checkError) throw new Error(checkError.message || "Erro ao verificar transações");
+      // Idempotência por competência: recarrega o estado atual e descarta duplicatas.
+      const existing = await fetchExistingCompetencies(leaseId);
+      const toInsert = installments.filter((i) => !existing.has(i.key));
 
-      if (existingTransactions && existingTransactions.length > 0) {
-        console.log("Transactions already exist for this lease, skipping generation");
-        return { count: 0 };
-      }
+      if (toInsert.length === 0) return { count: 0 };
 
-      // Step 2: Find the "Receita de Aluguel" category
-      const { data: rentCategory, error: catError } = await supabase
-        .from("financial_categories")
-        .select("id")
-        .eq("name", "Receita de Aluguel")
-        .eq("type", "income")
-        .maybeSingle();
+      const categoryIds = await resolveCategoryIds();
 
-      if (catError) throw new Error(catError.message || "Erro ao buscar categoria");
+      const transactions: FinancialTransaction[] = toInsert.map((i) => ({
+        broker_id: effectiveBrokerId || user.id,
+        unit_id: unitId,
+        contact_id: tenantContactId,
+        type: "income",
+        description: i.description,
+        amount: i.amount,
+        transaction_date: i.dueDate,
+        due_date: i.dueDate,
+        status: "pending",
+        obligation_type: i.obligationType,
+        competency_period: i.competencyPeriod,
+        reference: `lease:${leaseId}`,
+        property_id: propertyId || null,
+        category_id: categoryIds[i.obligationType] ?? null,
+      }));
 
-      const categoryId = rentCategory?.id || null;
-
-      // Step 3: Calculate the number of months to project
-      const start = new Date(startDate);
-      let end: Date;
-
-      if (endDate) {
-        end = new Date(endDate);
-      } else {
-        // Default to 12 months if no end date is specified
-        end = addMonths(start, 12);
-      }
-
-      const totalMonths = differenceInMonths(end, start) + 1;
-      const monthsToGenerate = Math.min(Math.max(totalMonths, 1), 60); // Cap at 60 months (5 years)
-
-      // Step 4: Generate the transaction array
-      const transactions: FinancialTransaction[] = [];
-
-      for (let i = 0; i < monthsToGenerate; i++) {
-        const currentMonth = addMonths(start, i);
-        const dueDate = calculateDueDate(currentMonth, dueDay);
-        
-        // Skip if due date is before start date (for first month edge case)
-        if (i === 0 && dueDate < start) {
-          continue;
-        }
-
-        const competencyPeriod = format(currentMonth, "yyyy-MM");
-        const monthLabel = format(currentMonth, "MMMM/yyyy", { locale: ptBR });
-        // Capitalize first letter for proper display
-        const capitalizedMonthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-
-        transactions.push({
-          broker_id: effectiveBrokerId || user.id,
-          unit_id: unitId,
-          contact_id: tenantContactId,
-          type: "income",
-          description: `Aluguel ${capitalizedMonthLabel}`,
-          amount: rentAmount,
-          transaction_date: format(dueDate, "yyyy-MM-dd"),
-          due_date: format(dueDate, "yyyy-MM-dd"),
-          status: "pending",
-          obligation_type: "rent",
-          competency_period: competencyPeriod,
-          reference: `lease:${leaseId}`,
-          property_id: propertyId || null,
-          category_id: categoryId,
-        });
-      }
-
-      if (transactions.length === 0) {
-        return { count: 0 };
-      }
-
-      // Step 5: Bulk insert all transactions atomically
       const { error: insertError } = await supabase
         .from("financial_transactions")
         .insert(transactions);
@@ -155,10 +146,10 @@ export function useLeaseFinancialProjection() {
       return { count: transactions.length };
     },
     onSuccess: () => {
-      // Invalidate financial queries to reflect new transactions
       queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["finance-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["lease-competencies"] });
     },
   });
 
