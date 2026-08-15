@@ -86,7 +86,14 @@ import { TableErrorBoundary } from "@/components/shared/TableErrorBoundary";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LEASE_STATUS_LABELS } from "@/lib/lease-status";
+import {
+  LEASE_STATUS_LABELS,
+  getLeaseStatusConfig,
+  getAdjustmentStatus,
+  getAdjustmentStatusConfig,
+  isLeasePendingSetup,
+  type AdjustmentStatus,
+} from "@/lib/lease-status";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -148,38 +155,10 @@ interface LeaseWithDetails {
   } | null;
 }
 
-type AdjustmentStatus = "overdue" | "current_month" | "upcoming" | "ok";
-
 interface LeaseWithAdjustment extends LeaseWithDetails {
   adjustmentStatus: AdjustmentStatus;
 }
 
-function getAdjustmentStatus(nextAdjustmentDate: string | null): AdjustmentStatus {
-  if (!nextAdjustmentDate) return "ok";
-  
-  const adjustmentDate = parseISO(nextAdjustmentDate);
-  const today = new Date();
-  const currentMonthStart = startOfMonth(today);
-  const currentMonthEnd = endOfMonth(today);
-  
-  // Overdue: date is before today
-  if (isBefore(adjustmentDate, today) && differenceInDays(today, adjustmentDate) > 0) {
-    return "overdue";
-  }
-  
-  // Current month: date is within the current month
-  if (!isBefore(adjustmentDate, currentMonthStart) && !isAfter(adjustmentDate, currentMonthEnd)) {
-    return "current_month";
-  }
-  
-  // Upcoming: within 30 days
-  const daysUntil = differenceInDays(adjustmentDate, today);
-  if (daysUntil >= 0 && daysUntil <= 30) {
-    return "upcoming";
-  }
-  
-  return "ok";
-}
 type ContractStatusFilter = "all" | "active" | "pending_signature" | "terminated";
 
 export function ContractsTab() {
@@ -383,7 +362,7 @@ export function ContractsTab() {
       // Adjustment filter
       if (adjustmentFilter !== "all") {
         if (adjustmentFilter === "needs_action") {
-          if (lease.adjustmentStatus !== "overdue" && lease.adjustmentStatus !== "current_month") {
+          if (lease.adjustmentStatus !== "vencido" && lease.adjustmentStatus !== "proximo") {
             return false;
           }
         } else if (lease.adjustmentStatus !== adjustmentFilter) {
@@ -406,8 +385,8 @@ export function ContractsTab() {
       l.status !== "terminated"
     ).length || 0,
     terminated: leases?.filter((l) => l.status === "terminated").length || 0,
-    needsAction: leasesWithStatus.filter((l) => 
-      l.adjustmentStatus === "overdue" || l.adjustmentStatus === "current_month"
+    needsAction: leasesWithStatus.filter((l) =>
+      l.adjustmentStatus === "vencido" || l.adjustmentStatus === "proximo"
     ).length,
   }), [leases, leasesWithStatus]);
 
@@ -613,6 +592,15 @@ export function ContractsTab() {
     if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[data-radix-collection-item]')) {
       return;
     }
+    openLease(lease);
+  };
+
+  // Contratos pendentes de configuração abrem o wizard, não o detalhe
+  const openLease = (lease: LeaseWithDetails) => {
+    if (isLeasePendingSetup(lease.status)) {
+      navigate(`/gestao/contratos/novo?edit=${lease.id}`);
+      return;
+    }
     navigate(`/gestao/contratos?id=${lease.id}`);
   };
 
@@ -744,9 +732,10 @@ export function ContractsTab() {
                 Ação Necessária
               </span>
             </SelectItem>
-            <SelectItem value="overdue">Atrasados</SelectItem>
-            <SelectItem value="current_month">Este Mês</SelectItem>
-            <SelectItem value="upcoming">Próximos 30 dias</SelectItem>
+            <SelectItem value="vencido">Reajuste Vencido</SelectItem>
+            <SelectItem value="proximo">Próximo de Reajustar</SelectItem>
+            <SelectItem value="em_dia">Em dia</SelectItem>
+            <SelectItem value="sem_reajuste">Sem reajuste definido</SelectItem>
           </SelectContent>
         </Select>
         
@@ -839,7 +828,7 @@ export function ContractsTab() {
                   onToggleSignatureClick={handleToggleSignature}
                   onEditAdjustmentDateClick={handleEditAdjustmentDate}
                   // UNIFIED UX: Click anywhere on card navigates to contract detail page
-                  onCardClick={(lease) => navigate(`/gestao/contratos?id=${lease.id}`)}
+                  onCardClick={(lease) => openLease(lease)}
                 />
               ))}
             </div>
@@ -891,9 +880,11 @@ export function ContractsTab() {
                   ) : (
                     filteredLeases.map((lease) => {
                       // Use lease.status directly since it's the actual status field
-                      const statusConfig = LEASE_STATUS_LABELS[lease.status] || LEASE_STATUS_LABELS.active;
+                      const statusConfig = getLeaseStatusConfig(lease.status);
+                      const adjConfig = getAdjustmentStatusConfig(lease.next_adjustment_date);
                       const { adjustmentStatus } = lease;
-                      const needsAction = adjustmentStatus === "overdue" || adjustmentStatus === "current_month";
+                      const isPendingSetup = isLeasePendingSetup(lease.status);
+                      const needsAction = adjConfig.needsAction;
                       const daysUntilAdjustment = lease.next_adjustment_date
                         ? differenceInDays(parseISO(lease.next_adjustment_date), new Date())
                         : null;
@@ -960,9 +951,12 @@ export function ContractsTab() {
                                 <span className="text-sm">
                                   {format(parseISO(lease.next_adjustment_date), "dd/MM/yyyy", { locale: ptBR })}
                                 </span>
-                                {adjustmentStatus === "overdue" && (
-                                  <Badge variant="destructive" className="text-[10px] ml-1">
-                                    Atrasado
+                                {adjustmentStatus !== "sem_reajuste" && (
+                                  <Badge
+                                    variant={adjConfig.variant}
+                                    className={cn("text-[10px] ml-1", adjConfig.className)}
+                                  >
+                                    {adjConfig.label}
                                   </Badge>
                                 )}
                               </div>
@@ -972,11 +966,17 @@ export function ContractsTab() {
                           </TableCell>
                           <TableCell className="text-center">
                             {(() => {
-                              if (lease.status === "pending") {
+                              if (isPendingSetup) {
                                 return (
                                   <Badge
                                     variant="outline"
-                                    className="text-[10px] whitespace-nowrap border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950/30"
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openLease(lease);
+                                    }}
+                                    className="text-[10px] whitespace-nowrap border-amber-500 text-amber-700 bg-amber-500/10 cursor-pointer hover:bg-amber-500/20"
                                   >
                                     <Clock className="h-2.5 w-2.5 mr-0.5" />
                                     Pendente de Configuração
@@ -1027,11 +1027,21 @@ export function ContractsTab() {
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      navigate(`/gestao/contratos?id=${lease.id}`);
+                                      openLease(lease);
                                     }}
+                                    className={cn(isPendingSetup && "text-amber-700 focus:text-amber-700")}
                                   >
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    Ver Detalhes
+                                    {isPendingSetup ? (
+                                      <>
+                                        <Settings2 className="h-4 w-4 mr-2" />
+                                        Finalizar Configuração
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        Ver Detalhes
+                                      </>
+                                    )}
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   {needsAction && (
