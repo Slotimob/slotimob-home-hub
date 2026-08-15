@@ -69,3 +69,23 @@ export function computeCapRate(params: {
   if (income == null || mv == null || mv === 0) return null;
   return ((income - (expenses ?? 0)) / mv) * 100;
 }
+
+/**
+ * Annualized appreciation (CAGR):
+ * (market_value_current / acquisition_value) ^ (1 / years_since_acquisition) - 1
+ * Returned as a percentage. Null when inputs are missing/invalid.
+ */
+export function computeAnnualizedAppreciation(params: {
+  market_value_current: N;
+  acquisition_value: N;
+  years_elapsed: N;
+}): number | null {
+  const mv = safe(params.market_value_current);
+  const acq = safe(params.acquisition_value);
+  const years = safe(params.years_elapsed);
+  if (mv == null || acq == null || years == null) return null;
+  if (acq <= 0 || mv <= 0 || years <= 0) return null;
+  const cagr = Math.pow(mv / acq, 1 / years) - 1;
+  if (!isFinite(cagr)) return null;
+  return cagr * 100;
+}
