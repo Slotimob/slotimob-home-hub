@@ -15,6 +15,7 @@ import {
   Calendar,
   TrendingUp,
   Calculator,
+  Settings2,
   AlertTriangle,
   MoreVertical,
   Edit3,
