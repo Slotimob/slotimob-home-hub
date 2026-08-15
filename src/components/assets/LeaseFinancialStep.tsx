@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import type {
   FireInsuranceConfig,
   IptuChargeConfig,
