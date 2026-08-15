@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { openLeaseRoute } from "@/lib/lease-navigation";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
@@ -318,7 +319,7 @@ const AfazeresEmGestao = () => {
                           </p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                      <Button variant="outline" size="sm" onClick={() => openLeaseRoute(navigate, l)}>
                         Ver Contrato
                       </Button>
                     </div>
@@ -344,7 +345,7 @@ const AfazeresEmGestao = () => {
                           </p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                      <Button variant="outline" size="sm" onClick={() => openLeaseRoute(navigate, l)}>
                         Ver Contrato
                       </Button>
                     </div>
@@ -385,7 +386,7 @@ const AfazeresEmGestao = () => {
                       </div>
                     </div>
                     {canEdit && (
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos?id=${l.id}`)}>
+                      <Button variant="outline" size="sm" onClick={() => openLeaseRoute(navigate, l)}>
                         Anexar Assinatura
                       </Button>
                     )}

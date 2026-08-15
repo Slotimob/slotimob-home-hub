@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { openLeaseRoute } from "@/lib/lease-navigation";
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { FileText, FileSignature, AlertTriangle, AlertCircle, Loader2, Link2, Layers } from 'lucide-react';
@@ -221,7 +222,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
                   {details}
 
                   <div className="flex justify-end pt-2">
-                    <Button onClick={() => navigate(`/gestao/contratos?id=${lease.id}`)}>
+                    <Button onClick={() => openLeaseRoute(navigate, lease)}>
                       Ver Contrato Completo
                     </Button>
                   </div>
