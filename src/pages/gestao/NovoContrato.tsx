@@ -32,6 +32,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { GuarantorSelector } from "@/components/assets/GuarantorSelector";
+import {
+  LeaseFinancialStep,
+  getInitialFireInsurance,
+  getInitialIptuCharge,
+  type LeaseFinancialValue,
+} from "@/components/assets/LeaseFinancialStep";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
