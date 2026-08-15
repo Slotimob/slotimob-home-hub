@@ -343,6 +343,100 @@ export async function buildAssetReport(params: {
     ]);
   }
 
+  // ── Manutenções / atividades registradas manualmente ──
+  const maintenanceMap: Record<string, AssetReportMaintenanceItem[]> = {};
+  if (sections.activities) {
+    const { data: rawMaintenance = [] } = await (supabase as any)
+      .from('property_activities')
+      .select(
+        'id, activity_type, title, description, scheduled_at, created_at, is_completed, completed_at, outcome, estimated_cost, activity_group_id, assigned_contact_id, financial_transaction_id, property_id, unit_id',
+      )
+      .eq('broker_id', brokerId)
+      .or(`property_id.in.(${propertyIds.join(',') || '00000000-0000-0000-0000-000000000000'}),unit_id.in.(${unitIds.join(',') || '00000000-0000-0000-0000-000000000000'})`)
+      .order('created_at', { ascending: false })
+      .limit(2000);
+
+    const inPeriod = (rawMaintenance as any[]).filter(r => {
+      const d = r.scheduled_at || r.created_at;
+      if (!d) return false;
+      const dayStr = String(d).slice(0, 10);
+      return dayStr >= fromStr && dayStr <= toStr;
+    });
+
+    const contactIds = [...new Set(inPeriod.map(r => r.assigned_contact_id).filter(Boolean))] as string[];
+    const activityIds = inPeriod.map(r => r.id);
+
+    const [contactsRes, docsRes] = await Promise.all([
+      contactIds.length
+        ? supabase.from('contacts').select('id, name').in('id', contactIds)
+        : Promise.resolve({ data: [] as any[] }),
+      activityIds.length
+        ? (supabase as any).from('documents').select('activity_id').in('activity_id', activityIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const contactNames: Record<string, string> = {};
+    ((contactsRes as any).data || []).forEach((c: any) => { contactNames[c.id] = c.name; });
+
+    const attachmentCounts: Record<string, number> = {};
+    ((docsRes as any).data || []).forEach((d: any) => {
+      if (!d.activity_id) return;
+      attachmentCounts[d.activity_id] = (attachmentCounts[d.activity_id] || 0) + 1;
+    });
+
+    const groupSizes: Record<string, number> = {};
+    for (const r of inPeriod) {
+      if (r.activity_group_id) groupSizes[r.activity_group_id] = (groupSizes[r.activity_group_id] || 0) + 1;
+    }
+
+    for (const r of inPeriod) {
+      const key = r.unit_id || r.property_id;
+      if (!key) continue;
+      if (!maintenanceMap[key]) maintenanceMap[key] = [];
+      maintenanceMap[key].push({
+        id: r.id,
+        date: r.scheduled_at || r.created_at,
+        activity_type: r.activity_type || 'outro',
+        type_label: activityTypeLabel(r.activity_type),
+        title: r.title || 'Atividade',
+        description: r.description || null,
+        responsible: r.assigned_contact_id ? contactNames[r.assigned_contact_id] || null : null,
+        estimated_cost: r.estimated_cost != null ? Number(r.estimated_cost) : null,
+        has_transaction: !!r.financial_transaction_id,
+        attachments_count: attachmentCounts[r.id] || 0,
+        is_completed: !!r.is_completed,
+        completed_at: r.completed_at || null,
+        outcome: r.outcome || null,
+        group_size: r.activity_group_id ? groupSizes[r.activity_group_id] || 1 : 1,
+      });
+    }
+
+    for (const key of Object.keys(maintenanceMap)) {
+      maintenanceMap[key].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+  }
+
+  function maintenanceFor(id: string) {
+    const items = maintenanceMap[id] || [];
+    const byType: Record<string, number> = {};
+    let cost = 0;
+    let pending = 0;
+    for (const i of items) {
+      byType[i.type_label] = (byType[i.type_label] || 0) + 1;
+      cost += i.estimated_cost || 0;
+      if (!i.is_completed) pending++;
+    }
+    return {
+      maintenance_items: items.slice(0, ACTIVITIES_REPORT_LIMIT),
+      maintenance_count: items.length,
+      maintenance_pending_count: pending,
+      maintenance_by_type: byType,
+      maintenance_estimated_cost: cost,
+    };
+  }
+
+
+
   const metricsFrom = period.from ?? new Date(period.to.getTime() - 365 * 24 * 3600 * 1000);
   const periodMonths = Math.max(1, (period.to.getTime() - metricsFrom.getTime()) / (30 * 24 * 3600 * 1000));
   const assets: AssetReportAsset[] = [];
