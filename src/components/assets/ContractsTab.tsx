@@ -66,6 +66,7 @@ import {
 import { format, parseISO, differenceInDays, startOfMonth, endOfMonth, isBefore, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AdjustmentCalculatorDialog } from "./AdjustmentCalculatorDialog";
+import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "./ConfirmLeaseProjectionDialog";
 import { ContractCard } from "./ContractCard";
 import { ContractGeneratorDialog } from "./ContractGeneratorDialog";
 import { CreateLeaseWizard } from "./CreateLeaseWizard";
@@ -222,6 +223,7 @@ export function ContractsTab() {
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingLease, setDeletingLease] = useState<LeaseWithDetails | null>(null);
+  const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch all available units for the selection dialog
@@ -1044,6 +1046,17 @@ export function ContractsTab() {
                                       </>
                                     )}
                                   </DropdownMenuItem>
+                                  {!isPendingSetup && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setProjectionLease(lease as unknown as LeaseForProjection);
+                                      }}
+                                    >
+                                      <Receipt className="h-4 w-4 mr-2" />
+                                      Gerar lançamentos
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuSeparator />
                                   {needsAction && (
                                     <DropdownMenuItem
@@ -1417,6 +1430,12 @@ export function ContractsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ConfirmLeaseProjectionDialog
+        open={!!projectionLease}
+        onOpenChange={(open) => !open && setProjectionLease(null)}
+        lease={projectionLease}
+      />
 
       <EmitirCobrancaDialog
         open={!!emitirLeaseId}

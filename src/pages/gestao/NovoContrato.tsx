@@ -155,6 +155,9 @@ export default function NovoContrato() {
     whatsapp: "", // display format: "(11) 99999-9999"
   });
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
+  const [projectionOpen, setProjectionOpen] = useState(false);
+  const [postProjectionNavId, setPostProjectionNavId] = useState<string>("");
 
   // Formata dígitos para exibição: "(11) 99999-9999"
   const formatWhatsAppDisplay = (raw: string): string => {
@@ -634,6 +637,7 @@ export default function NovoContrato() {
       };
 
       let resultId = editLeaseId || "";
+      let shouldOfferProjection = false;
 
       if (isEditMode && editLease) {
         // Promoção de contrato pendente de configuração → ativo
@@ -659,6 +663,7 @@ export default function NovoContrato() {
           (leaseData as any).status = "active";
           (leaseData as any).contract_status = "active";
           promoted = true;
+          shouldOfferProjection = true;
         }
 
         await updateLease.mutateAsync({ id: editLease.id, data: leaseData });
@@ -668,22 +673,39 @@ export default function NovoContrato() {
         resultId = editLease.id;
       } else {
         const result = await createLease.mutateAsync(leaseData);
-
-        const projectionsCount = (result as any).projectionsGenerated || 0;
-        toast({
-          title:
-            projectionsCount > 0
-              ? `Contrato criado com sucesso! ${projectionsCount} parcelas financeiras projetadas.`
-              : "Contrato criado com sucesso!",
-          description:
-            projectionsCount > 0
-              ? "As parcelas de aluguel foram automaticamente lançadas no financeiro."
-              : undefined,
-        });
+        toast({ title: "Contrato criado com sucesso!" });
         resultId = (result as any).id || (result as any).lease?.id || "";
       }
 
       sessionStorage.removeItem(DRAFT_KEY);
+
+      // Lançamentos financeiros só acontecem após confirmação explícita do usuário.
+      if (resultId && (!isEditMode || shouldOfferProjection)) {
+        setPostProjectionNavId(resultId);
+        setProjectionLease({
+          id: resultId,
+          unit_id: formData.unit_id,
+          tenant_contact_id: formData.tenant_contact_id,
+          property_id: selectedUnitInfo?.property_id ?? null,
+          rent_amount: Number(formData.rent_amount) || 0,
+          due_day: Number(formData.due_day) || 10,
+          start_date: formData.start_date,
+          end_date: formData.is_indefinite_term ? null : formData.end_date || null,
+          next_adjustment_date: formData.next_adjustment_date || null,
+          is_indefinite_term: formData.is_indefinite_term,
+          fire_insurance: formData.fire_insurance?.enabled ? formData.fire_insurance : null,
+          iptu_charge: formData.iptu_charge?.enabled ? formData.iptu_charge : null,
+          unit: selectedUnitInfo
+            ? { unit_number: selectedUnitInfo.unit_number, address: selectedUnitInfo.address }
+            : null,
+          tenant: {
+            name:
+              (tenants || []).find((t: any) => t.id === formData.tenant_contact_id)?.name || null,
+          },
+        } as LeaseForProjection);
+        setProjectionOpen(true);
+        return;
+      }
 
       if (resultId) {
         navigate(`/gestao/contratos?id=${resultId}`);
@@ -1729,6 +1751,18 @@ export default function NovoContrato() {
           </Button>
         )}
       </div>
+      <ConfirmLeaseProjectionDialog
+        open={projectionOpen}
+        onOpenChange={(o) => {
+          setProjectionOpen(o);
+          if (!o) {
+            const id = postProjectionNavId;
+            setProjectionLease(null);
+            navigate(id ? `/gestao/contratos?id=${id}` : "/gestao/contratos");
+          }
+        }}
+        lease={projectionLease}
+      />
     </AppLayout>
   );
 }

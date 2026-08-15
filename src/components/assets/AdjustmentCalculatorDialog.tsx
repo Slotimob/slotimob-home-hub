@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 
 interface LeaseForAdjustment {
   id: string;
@@ -31,6 +32,13 @@ interface LeaseForAdjustment {
   adjustment_index: string | null;
   next_adjustment_date: string | null;
   start_date: string;
+  end_date?: string | null;
+  is_indefinite_term?: boolean | null;
+  due_day?: number | null;
+  tenant_contact_id?: string | null;
+  property_id?: string | null;
+  fire_insurance?: any;
+  iptu_charge?: any;
   tenant_contact?: {
     name: string;
   } | null;
@@ -76,6 +84,8 @@ export function AdjustmentCalculatorDialog({
   const [indexPercentage, setIndexPercentage] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
+  const [projectionOpen, setProjectionOpen] = useState(false);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -168,6 +178,27 @@ export function AdjustmentCalculatorDialog({
 
       onSuccess?.();
       onOpenChange(false);
+
+      // Novo ciclo: oferece o lançamento das parcelas já com o valor reajustado.
+      if (lease.tenant_contact_id && lease.due_day) {
+        setProjectionLease({
+          id: lease.id,
+          unit_id: lease.unit_id,
+          tenant_contact_id: lease.tenant_contact_id,
+          property_id: lease.property_id ?? null,
+          rent_amount: newValue,
+          due_day: lease.due_day,
+          start_date: currentAdjustmentDate,
+          end_date: lease.end_date ?? null,
+          next_adjustment_date: nextAdjustmentDate,
+          is_indefinite_term: lease.is_indefinite_term ?? false,
+          fire_insurance: lease.fire_insurance ?? null,
+          iptu_charge: lease.iptu_charge ?? null,
+          unit: lease.unit ? { unit_number: lease.unit.unit_number } : null,
+          tenant: lease.tenant_contact ? { name: lease.tenant_contact.name } : null,
+        });
+        setProjectionOpen(true);
+      }
     } catch (error: any) {
       toast({
         title: "Erro ao aplicar reajuste",
@@ -180,6 +211,7 @@ export function AdjustmentCalculatorDialog({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md" onInteractOutside={(e) => isSubmitting && e.preventDefault()}>
         <DialogHeader>
@@ -339,5 +371,15 @@ export function AdjustmentCalculatorDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+      <ConfirmLeaseProjectionDialog
+        open={projectionOpen}
+        onOpenChange={(o) => {
+          setProjectionOpen(o);
+          if (!o) setProjectionLease(null);
+        }}
+        lease={projectionLease}
+      />
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { format, addYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -129,6 +130,8 @@ export function CreateLeaseWizard({
   const { isLoadingCep, handleCepBlur, formatCep } = useCepSearch();
 
   const [step, setStep] = useState<WizardStep>("tenant");
+  const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
+  const [projectionOpen, setProjectionOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Flag to indicate this is a CRM conversion (for UI hints)
@@ -410,6 +413,7 @@ export function CreateLeaseWizard({
       };
 
       let leaseId: string | null = null;
+      let shouldOfferProjection = !isEditMode;
       if (isEditMode && editLease) {
         // Promoção de contrato pendente de configuração → ativo
         const wasPending = (editLease as any).status === "pending";
@@ -434,6 +438,7 @@ export function CreateLeaseWizard({
         if (wasPending) {
           (leaseData as any).status = "active";
           (leaseData as any).contract_status = "active";
+          shouldOfferProjection = true;
         }
 
         // Update existing lease
@@ -452,16 +457,7 @@ export function CreateLeaseWizard({
         // Create new lease
         const result = await createLease.mutateAsync(leaseData);
         leaseId = (result.lease as any)?.id || null;
-        const projectionsCount = result.projectionsGenerated;
-        const successMessage = projectionsCount > 0
-          ? `Contrato criado com sucesso! ${projectionsCount} parcelas financeiras projetadas.`
-          : "Contrato criado com sucesso!";
-        toast({ 
-          title: successMessage,
-          description: projectionsCount > 0 
-            ? "As parcelas de aluguel foram automaticamente lançadas no financeiro."
-            : undefined,
-        });
+        toast({ title: "Contrato criado com sucesso!" });
       }
 
       // Save Asaas charge config if active
@@ -492,6 +488,29 @@ export function CreateLeaseWizard({
       // O corretor ativará manualmente na página do contrato após a assinatura.
 
 
+
+      // Lançamentos financeiros exigem confirmação explícita do usuário.
+      if (leaseId && shouldOfferProjection) {
+        setProjectionLease({
+          id: leaseId,
+          unit_id: (leaseData as any).unit_id,
+          tenant_contact_id: (leaseData as any).tenant_contact_id,
+          property_id: (leaseData as any).property_id ?? null,
+          rent_amount: Number(formData.rent_amount) || 0,
+          due_day: Number(formData.due_day) || 10,
+          start_date: formData.start_date,
+          end_date: formData.end_date || null,
+          next_adjustment_date: nextAdjustmentDate || null,
+          is_indefinite_term: (formData as any).is_indefinite_term ?? false,
+          fire_insurance: (formData as any).fire_insurance?.enabled
+            ? (formData as any).fire_insurance
+            : null,
+          iptu_charge: (formData as any).iptu_charge?.enabled
+            ? (formData as any).iptu_charge
+            : null,
+        } as LeaseForProjection);
+        setProjectionOpen(true);
+      }
 
       onOpenChange(false);
       onSuccess?.();
@@ -549,6 +568,7 @@ export function CreateLeaseWizard({
   
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
         <style>{`
@@ -1509,6 +1529,16 @@ export function CreateLeaseWizard({
           )}
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+
+      <ConfirmLeaseProjectionDialog
+        open={projectionOpen}
+        onOpenChange={(o) => {
+          setProjectionOpen(o);
+          if (!o) setProjectionLease(null);
+        }}
+        lease={projectionLease}
+      />
+    </>
   );
 }
