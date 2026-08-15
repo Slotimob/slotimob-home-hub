@@ -299,6 +299,13 @@ export default function ContratoDetalhe() {
     }
   };
 
+  // Guarda: contrato ainda não configurado não tem tela de detalhe — vai para o wizard
+  useEffect(() => {
+    if (lease && isLeasePendingSetup(lease.status)) {
+      navigate(`/gestao/contratos/novo?edit=${lease.id}`, { replace: true });
+    }
+  }, [lease?.id, lease?.status, navigate]);
+
   const confirmDeleteLease = async () => {
     if (!lease || !user) return;
     setIsDeleting(true);
