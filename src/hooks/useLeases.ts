@@ -440,11 +440,9 @@ export function useCreateLease() {
 
       return { lease, projectionsGenerated };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leases"] });
+    onSuccess: async () => {
+      await invalidateLeaseQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ["units"] });
-      queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-      queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
     },
   });
 }
