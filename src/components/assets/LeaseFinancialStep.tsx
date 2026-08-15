@@ -593,7 +593,7 @@ export function LeaseFinancialStep({
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">
-            Taxa de Administração ({value.admin_fee_percentage}% sobre aluguel)
+            Taxa de Administração ({(value.admin_fee_percentage || 0).toLocaleString("pt-BR")}% sobre aluguel)
           </span>
           <span className="font-medium text-destructive">
             −{formatCurrency(value.rent_amount * ((value.admin_fee_percentage || 0) / 100))}
