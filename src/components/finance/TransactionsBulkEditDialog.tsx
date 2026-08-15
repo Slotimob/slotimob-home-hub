@@ -20,7 +20,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useFinancialCategories } from "@/hooks/useFinancialCategories";
 import {
-import { CurrencyInput } from "@/components/ui/currency-input";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,6 +29,7 @@ import { CurrencyInput } from "@/components/ui/currency-input";
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface TransactionsBulkEditDialogProps {
   open: boolean;
