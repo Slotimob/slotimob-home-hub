@@ -217,6 +217,33 @@ export default function PropertyDetalhe() {
     }
   };
 
+  /** Valida (regras financeiras + schema) e persiste as alterações do formulário */
+  const saveProperty = async () => {
+    if (!canEdit) return;
+    if (!validatePropertyFinancials(formData)) return;
+
+    try {
+      const payload = buildPropertyPayload(formData);
+      propertySchema.parse(payload);
+      await handleSubmit(payload);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Erro de validação',
+          description: error.errors[0].message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Erro ao atualizar empreendimento',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+
   const { duplicateProperty, deleteProperty } = useAssetActions();
   const [duplicating, setDuplicating] = useState(false);
 
