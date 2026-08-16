@@ -41,7 +41,7 @@ const brl = (n: number) =>
 /**
  * Calculadora pública de financiamento imobiliário (SEO).
  * Engine SAC/Price, CET, tabela de amortização e export PDF portados de
- * `src/components/FinancingCalculator.tsx`, com o acréscimo do card de
+ * calculadora legada de financiamento, com o acréscimo do card de
  * renda familiar mínima necessária.
  */
 export const FinanciamentoCalculator = () => {
