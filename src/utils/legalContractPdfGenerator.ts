@@ -227,7 +227,49 @@ export interface LegalContractData {
     email?: string;
     whatsapp?: string;
   };
+  /**
+   * Imobiliária/administradora responsável por algum encargo da Matriz de
+   * Responsabilidades. Quando presente, é qualificada no preâmbulo.
+   */
+  imobiliaria?: {
+    nome: string;
+    cpf?: string;
+    cnpj?: string;
+    endereco?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
+    email?: string;
+    telefone?: string;
+  };
+  /**
+   * Matriz de Responsabilidades do contrato (leases.fire_insurance,
+   * leases.iptu_charge, leases.additional_obligations e taxa de administração),
+   * já com o responsável resolvido para um registro real.
+   */
+  encargos?: EncargoContrato[];
 }
+
+export type EncargoResponsavelTipo = 'tenant' | 'owner' | 'agency';
+
+export interface EncargoContrato {
+  /** Chave lógica do encargo (admin_fee, insurance, iptu, condominium, ...) */
+  key: string;
+  /** Rótulo jurídico do encargo, ex.: "IPTU e taxas municipais" */
+  label: string;
+  responsavelTipo: EncargoResponsavelTipo;
+  /** Nome real do responsável (proprietário, inquilino ou imobiliária) */
+  responsavelNome?: string | null;
+  /** Valor da parcela/mensalidade quando aplicável */
+  valor?: number | null;
+  /** Ex.: "mensal", "12 parcelas", "5% sobre o aluguel" */
+  periodicidade?: string | null;
+  observacao?: string | null;
+}
+
+/** Papel contratual correspondente ao tipo de responsável */
+export const encargoRoleLabel = (tipo: EncargoResponsavelTipo): string =>
+  tipo === 'tenant' ? 'LOCATÁRIO' : tipo === 'owner' ? 'LOCADOR' : 'ADMINISTRADORA';
 
 // ============================================================================
 // GERADOR DE PDF DE CONTRATO JURÍDICO
@@ -583,6 +625,17 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
     currentY += calculateTextHeight(doc, fiadorQualificacao, contentWidth, fonts.body.size) + 4;
   }
 
+  // ADMINISTRADORA / IMOBILIÁRIA (quando responsável por algum encargo)
+  if (data.imobiliaria?.nome) {
+    const imobiliariaQualificacao = buildQualificacao('ADMINISTRADORA (IMOBILIÁRIA)', {
+      ...data.imobiliaria,
+      nacionalidade: undefined,
+    });
+    checkPageBreak(20);
+    renderParagraphWithBold(doc, imobiliariaQualificacao, margins.left, currentY, contentWidth, fonts.body.size, colors.black);
+    currentY += calculateTextHeight(doc, imobiliariaQualificacao, contentWidth, fonts.body.size) + 4;
+  }
+
   currentY += 4;
   addParagraph('As partes acima qualificadas têm entre si, justo e contratado, o presente CONTRATO DE LOCAÇÃO, que se regerá pelas cláusulas e condições a seguir estipuladas, bem como pelas disposições da Lei Federal nº 8.245, de 18 de outubro de 1991:');
   currentY += 6;
@@ -735,21 +788,73 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   addSubClause('13.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
 
+  const encargos = data.encargos || [];
+  const findEncargo = (key: string) => encargos.find((e) => e.key === key);
+  const responsavelTexto = (e: EncargoContrato): string => {
+    const papel = encargoRoleLabel(e.responsavelTipo);
+    const nome = pdfSafeText(e.responsavelNome || '').trim();
+    return nome ? `${papel} (${nome.toUpperCase()})` : papel;
+  };
+  const valorTexto = (e: EncargoContrato): string => {
+    if (e.valor === null || e.valor === undefined || !e.valor) return '';
+    return `, no valor de ${formatCurrency(e.valor)}${e.periodicidade ? ` (${e.periodicidade})` : ''}`;
+  };
+
   // CLÁUSULA DÉCIMA QUARTA - SEGURO INCÊNDIO
   addClauseHeader('DÉCIMA QUARTA', 'DO SEGURO CONTRA INCÊNDIO');
-  addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
+  const seguro = findEncargo('insurance');
+  if (seguro) {
+    addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o imóvel será mantido coberto por apólice de seguro contra incêndio e demais sinistros que possam destruí-lo ou deteriorá-lo, ficando a contratação e o custeio do prêmio a cargo do ${responsavelTexto(seguro)}${valorTexto(seguro)}, conforme a Matriz de Responsabilidades constante da Cláusula Décima Sexta.`);
+  } else {
+    addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
+  }
   addSubClause('14.2', `O LOCATÁRIO deverá zelar pelo imóvel de forma a não comprometer a vigência ou as condições da apólice de seguro, sendo-lhe vedado armazenar ou manusear materiais inflamáveis ou substâncias que aumentem o risco de sinistro.`);
 
   // CLÁUSULA DÉCIMA QUINTA - IPTU E ENCARGOS MUNICIPAIS
   addClauseHeader('DÉCIMA QUINTA', 'DO IPTU E ENCARGOS MUNICIPAIS');
-  addSubClause('15.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel serão de responsabilidade do LOCADOR, salvo disposição expressa em contrário firmada por escrito entre as partes.`);
-  addSubClause('15.2', `As taxas de condomínio ordinárias são de responsabilidade do LOCATÁRIO. As taxas extraordinárias de condomínio, destinadas à realização de obras nas partes comuns e fachada, são de responsabilidade do LOCADOR.`);
+  const iptu = findEncargo('iptu');
+  if (iptu) {
+    addSubClause('15.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel são de responsabilidade do ${responsavelTexto(iptu)}${valorTexto(iptu)}, nos termos ajustados na Matriz de Responsabilidades constante da Cláusula Décima Sexta.`);
+  } else {
+    addSubClause('15.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel serão de responsabilidade do LOCADOR, salvo disposição expressa em contrário firmada por escrito entre as partes.`);
+  }
+  const condominio = findEncargo('condominium');
+  if (condominio) {
+    addSubClause('15.2', `As taxas de condomínio ordinárias, destinadas às despesas correntes de manutenção e conservação das áreas comuns, são de responsabilidade do ${responsavelTexto(condominio)}${valorTexto(condominio)}. As despesas extraordinárias de condomínio, assim definidas no art. 22, parágrafo único, da Lei nº 8.245/91, permanecem a cargo do LOCADOR.`);
+  } else {
+    addSubClause('15.2', `As taxas de condomínio ordinárias são de responsabilidade do LOCATÁRIO. As taxas extraordinárias de condomínio, destinadas à realização de obras nas partes comuns e fachada, são de responsabilidade do LOCADOR.`);
+  }
 
-  // CLÁUSULA DÉCIMA SEXTA - RENOVAÇÃO E REVISÃO
-  addClauseHeader('DÉCIMA SEXTA', 'DA RENOVAÇÃO E REVISÃO DO CONTRATO');
-  addSubClause('16.1', `Qualquer das partes poderá propor a renovação deste contrato mediante notificação por escrito com antecedência mínima de 30 (trinta) dias do término do prazo.`);
-  addSubClause('16.2', `Na ausência de comunicação de não renovação, o contrato prorroga-se automaticamente por prazo indeterminado, nos termos do art. 46 da Lei 8.245/91, com todos os encargos e condições vigentes, sujeitos ao reajuste previsto na Cláusula Terceira.`);
-  addSubClause('16.3', `O LOCATÁRIO poderá requerer revisão judicial do aluguel após 3 (três) anos de vigência do contrato ou de acordo da última revisão, conforme art. 68 da Lei 8.245/91.`);
+  // CLÁUSULA DÉCIMA SEXTA - MATRIZ DE RESPONSABILIDADES
+  addClauseHeader('DÉCIMA SEXTA', 'DA MATRIZ DE RESPONSABILIDADES DOS ENCARGOS');
+  if (encargos.length > 0) {
+    addSubClause('16.1', 'As partes ajustam, de forma expressa, a seguinte distribuição de responsabilidades quanto aos encargos e despesas da locação, prevalecendo o aqui disposto sobre eventuais menções genéricas contidas nas demais cláusulas deste instrumento:');
+    encargos.forEach((e, idx) => {
+      const partes = [
+        `**${pdfSafeText(e.label)}**: a cargo do ${responsavelTexto(e)}`,
+      ];
+      if (e.valor) {
+        partes.push(`valor de ${formatCurrency(e.valor)}${e.periodicidade ? ` (${e.periodicidade})` : ''}`);
+      } else if (e.periodicidade) {
+        partes.push(e.periodicidade);
+      }
+      if (e.observacao) partes.push(pdfSafeText(e.observacao));
+      addSubClause(`16.${idx + 2}`, `${partes.join(', ')}.`);
+    });
+    const ultima = encargos.length + 2;
+    addSubClause(`16.${ultima}`, 'Os valores acima indicados são os vigentes na data de assinatura deste instrumento e poderão sofrer variação por ato de terceiros (poder público, condomínio ou concessionárias), hipótese em que prevalecerá o valor efetivamente lançado, mantida a atribuição de responsabilidade ora pactuada.');
+    if (data.imobiliaria?.nome) {
+      addSubClause(`16.${ultima + 1}`, `Quando a responsabilidade recair sobre a ADMINISTRADORA, esta atua na qualidade de administradora da locação, por conta e ordem do LOCADOR, sem que isso importe assunção de dívida própria perante o LOCATÁRIO.`);
+    }
+  } else {
+    addSubClause('16.1', 'Não foram pactuados encargos adicionais além dos expressamente previstos nas cláusulas anteriores deste instrumento.');
+  }
+
+  // CLÁUSULA DÉCIMA SÉTIMA - RENOVAÇÃO E REVISÃO
+  addClauseHeader('DÉCIMA SÉTIMA', 'DA RENOVAÇÃO E REVISÃO DO CONTRATO');
+  addSubClause('17.1', `Qualquer das partes poderá propor a renovação deste contrato mediante notificação por escrito com antecedência mínima de 30 (trinta) dias do término do prazo.`);
+  addSubClause('17.2', `Na ausência de comunicação de não renovação, o contrato prorroga-se automaticamente por prazo indeterminado, nos termos do art. 46 da Lei 8.245/91, com todos os encargos e condições vigentes, sujeitos ao reajuste previsto na Cláusula Terceira.`);
+  addSubClause('17.3', `O LOCATÁRIO poderá requerer revisão judicial do aluguel após 3 (três) anos de vigência do contrato ou de acordo da última revisão, conforme art. 68 da Lei 8.245/91.`);
 
   currentY += 8;
   addParagraph('E, por estarem assim justos e contratados, as partes firmam este instrumento em 2 (duas) vias de igual teor e forma, na presença de 2 (duas) testemunhas, para que produza seus jurídicos e legais efeitos.');
