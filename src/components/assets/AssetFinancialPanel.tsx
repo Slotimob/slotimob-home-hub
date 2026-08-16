@@ -84,6 +84,7 @@ import {
   type Improvement,
 } from '@/hooks/useAssetFinancials';
 
+import { AssetPerformanceBlock } from '@/components/assets/AssetPerformanceBlock';
 import { IMPROVEMENT_TYPE_LABELS } from '@/lib/improvement-types';
 
 
@@ -132,6 +133,12 @@ export function AssetFinancialPanel({
         assetId={assetId}
         currentMarketValue={currentMarketValue}
         disabled={disabled}
+      />
+      <Separator />
+      <AssetPerformanceBlock
+        assetType={assetType}
+        assetId={assetId}
+        currentMarketValue={currentMarketValue}
       />
       <Separator />
       <ImprovementsBlock assetType={assetType} assetId={assetId} disabled={disabled} />

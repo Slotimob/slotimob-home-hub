@@ -249,6 +249,78 @@ export function useUnitFinancialTransactions(
   });
 }
 
+export interface AssetCashflowTransaction {
+  amount: number;
+  type: string;
+  paid_date: string | null;
+}
+
+/**
+ * Paid income + expense transactions for an asset, from `sinceDate` onwards.
+ * Works for both units (unit_id) and properties (property_id + child units),
+ * mirroring the scoping used by useUnitFinancialTransactions.
+ */
+export function useAssetCashflowTransactions(
+  assetType: AssetType,
+  assetId: string | undefined,
+  sinceDate: string | undefined
+) {
+  return useQuery({
+    queryKey: ['asset-cashflow-transactions', assetType, assetId, sinceDate],
+    queryFn: async () => {
+      if (!assetId || !sinceDate) return [];
+      const select = 'id, amount, type, paid_date';
+
+      const base = () =>
+        supabase
+          .from('financial_transactions')
+          .select(select)
+          .eq('status', 'paid')
+          .gte('paid_date', sinceDate);
+
+      if (assetType === 'property') {
+        const { data: childUnits, error: unitsError } = await supabase
+          .from('units')
+          .select('id')
+          .eq('property_id', assetId);
+        if (unitsError) throw unitsError;
+
+        const unitIds = (childUnits || []).map((u: any) => u.id).filter(Boolean);
+        let query = base();
+        query = unitIds.length
+          ? query.or(`property_id.eq.${assetId},unit_id.in.(${unitIds.join(',')})`)
+          : query.eq('property_id', assetId);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        const seen = new Set<string>();
+        return (data || [])
+          .filter((t: any) => {
+            if (seen.has(t.id)) return false;
+            seen.add(t.id);
+            return true;
+          })
+          .map((t: any) => ({
+            amount: Number(t.amount) || 0,
+            type: t.type,
+            paid_date: t.paid_date,
+          })) as AssetCashflowTransaction[];
+      }
+
+      const { data, error } = await base().eq(fkColumn(assetType), assetId);
+      if (error) throw error;
+      return (data || []).map((t: any) => ({
+        amount: Number(t.amount) || 0,
+        type: t.type,
+        paid_date: t.paid_date,
+      })) as AssetCashflowTransaction[];
+    },
+    enabled: !!assetId && !!sinceDate,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 /**
  * Returns the set of financial_transaction_ids that are already registered
  * as an asset improvement (used to prevent duplicating a "marcar como benfeitoria").
