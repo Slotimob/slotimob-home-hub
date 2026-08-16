@@ -40,6 +40,16 @@ export interface AssetOption {
   subtitle?: string | null;
 }
 
+export interface EditingActivity {
+  id: string;
+  title: string;
+  description?: string | null;
+  activity_type?: string | null;
+  scheduled_at?: string | null;
+  estimated_cost?: number | null;
+  assigned_contact_id?: string | null;
+}
+
 interface ActivityFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -47,6 +57,8 @@ interface ActivityFormDialogProps {
   defaultAsset?: AssetOption | null;
   /** Lock the asset selector to the default asset */
   lockAsset?: boolean;
+  /** When provided, the dialog updates this activity instead of creating new ones */
+  editingActivity?: EditingActivity | null;
   onSaved?: () => void;
 }
 
