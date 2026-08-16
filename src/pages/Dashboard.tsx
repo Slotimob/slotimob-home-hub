@@ -279,14 +279,10 @@ const Dashboard = () => {
                 </Link>
               </div>
             </footer>
-          </main>
-        </div>
       </div>
-
-      {/* Bottom Navigation for Mobile */}
-      <BottomNavigation />
-    </SidebarProvider>
+    </AppLayout>
   );
+
 };
 
 export default Dashboard;
