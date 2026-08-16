@@ -408,22 +408,8 @@ export default function WhatsApp() {
             </div>
           )}
 
-          <header className="border-b bg-card flex-shrink-0 pt-[env(safe-area-inset-top)]">
-            <div className="flex items-center gap-2 px-3 py-2">
-              <SidebarTrigger className="flex-shrink-0" />
-              <h1 className="text-lg font-bold text-foreground">WhatsApp</h1>
-              {canManage && (
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                  Supervisor
-                </span>
-              )}
-              <div className="ml-auto">
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/integrations"><Settings className="h-4 w-4" /></Link>
-                </Button>
-              </div>
-            </div>
-          </header>
+
+
 
           <div className="flex-1 flex overflow-hidden min-h-0">
             <div
