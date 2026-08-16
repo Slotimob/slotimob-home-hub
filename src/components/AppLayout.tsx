@@ -12,9 +12,12 @@ interface AppLayoutProps {
   title?: string;
   titleExtra?: ReactNode;
   headerActions?: ReactNode;
+  /** Full-height content without main padding/scroll (chat-like screens) */
+  fullBleed?: boolean;
 }
 
-export function AppLayout({ children, title, titleExtra, headerActions }: AppLayoutProps) {
+export function AppLayout({ children, title, titleExtra, headerActions, fullBleed = false }: AppLayoutProps) {
+
   useWhatsAppGlobalListener();
 
   // Sync theme from user profile — only inside authenticated pages
