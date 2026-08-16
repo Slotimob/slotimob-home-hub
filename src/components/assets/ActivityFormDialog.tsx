@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Search, X, Paperclip, Building2, Home } from 'lucide-react';
+import { format } from 'date-fns';
 import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
 
 export { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
