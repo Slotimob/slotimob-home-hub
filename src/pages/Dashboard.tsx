@@ -22,6 +22,7 @@ import {
   PortfolioWidget,
   AppointmentsWidget,
   DelinquencyWidget,
+  AluguelReceberWidget,
   AfazeresSummaryWidget,
   DatePreset,
   DateRange,
