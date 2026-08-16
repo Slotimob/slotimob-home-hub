@@ -788,11 +788,16 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   addSubClause('13.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
 
+  // pdfSafeText troca parênteses por colchetes fullwidth, que não existem na
+  // fonte padrão do jsPDF (helvetica) e saem como caracteres quebrados.
+  // Reconverte para colchetes ASCII, mantendo a sanitização original.
+  const legalSafe = (v: unknown): string =>
+    pdfSafeText(v).replace(/［/g, '[').replace(/］/g, ']');
   const encargos = data.encargos || [];
   const findEncargo = (key: string) => encargos.find((e) => e.key === key);
   const responsavelTexto = (e: EncargoContrato): string => {
     const papel = encargoRoleLabel(e.responsavelTipo);
-    const nome = pdfSafeText(e.responsavelNome || '').trim();
+    const nome = legalSafe(e.responsavelNome || '').trim();
     return nome ? `${papel} (${nome.toUpperCase()})` : papel;
   };
   const artigoResp = (e: EncargoContrato): string => (e.responsavelTipo === 'agency' ? 'da' : 'do');
@@ -832,14 +837,14 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
     addSubClause('16.1', 'As partes ajustam, de forma expressa, a seguinte distribuição de responsabilidades quanto aos encargos e despesas da locação, prevalecendo o aqui disposto sobre eventuais menções genéricas contidas nas demais cláusulas deste instrumento:');
     encargos.forEach((e, idx) => {
       const partes = [
-        `${pdfSafeText(e.label).toUpperCase()}: a cargo ${artigoResp(e)} ${responsavelTexto(e)}`,
+        `${legalSafe(e.label).toUpperCase()}: a cargo ${artigoResp(e)} ${responsavelTexto(e)}`,
       ];
       if (e.valor) {
         partes.push(`valor de ${formatCurrency(e.valor)}${e.periodicidade ? ` (${e.periodicidade})` : ''}`);
       } else if (e.periodicidade) {
         partes.push(e.periodicidade);
       }
-      if (e.observacao) partes.push(pdfSafeText(e.observacao));
+      if (e.observacao) partes.push(legalSafe(e.observacao));
       addSubClause(`16.${idx + 2}`, `${partes.join(', ')}.`);
     });
     const ultima = encargos.length + 2;
