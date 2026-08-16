@@ -216,7 +216,8 @@ export function ActivityFormDialog({
   };
 
   const estimatedCostNumber = useMemo(() => {
-    const parsed = parseFloat(String(estimatedCost).replace(/\./g, '').replace(',', '.'));
+    // CurrencyInput already delivers a plain numeric string ("1000.05")
+    const parsed = parseFloat(estimatedCost);
     return isNaN(parsed) ? null : parsed;
   }, [estimatedCost]);
 
@@ -228,6 +229,29 @@ export function ActivityFormDialog({
     setSaving(true);
     try {
       const scheduledAt = new Date(`${date}T${time || '00:00'}:00`).toISOString();
+
+      if (isEditing && editingActivity) {
+        const { error: updateError } = await (supabase as any)
+          .from('property_activities')
+          .update({
+            activity_type: activityType,
+            title: title.trim(),
+            description: description.trim() || null,
+            assigned_contact_id: contactId,
+            scheduled_at: scheduledAt,
+            estimated_cost: estimatedCostNumber,
+          })
+          .eq('id', editingActivity.id);
+        if (updateError) throw updateError;
+
+        toast({ title: 'Atividade atualizada' });
+        queryClient.invalidateQueries({ queryKey: ['activities-list'] });
+        queryClient.invalidateQueries({ queryKey: ['asset-manual-notes'] });
+        onSaved?.();
+        onOpenChange(false);
+        return;
+      }
+
       const groupId =
         selectedAssets.length > 1
           ? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)
