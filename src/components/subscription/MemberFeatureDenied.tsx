@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Home, Lock, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { AppLayout } from '@/components/AppLayout';
 
 export const MEMBER_PERMISSION_MESSAGE =
   'Você não tem permissão para acessar este módulo. Fale com o administrador da sua conta.';
