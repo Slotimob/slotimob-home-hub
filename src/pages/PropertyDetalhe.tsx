@@ -6,7 +6,10 @@ import {
   AlertCircle,
   Loader2,
   ClipboardList,
-  Settings2,
+  Info,
+  Sparkles,
+  Image,
+  FileText,
   Wallet,
   Trash2,
   Copy,
@@ -32,9 +35,21 @@ import {
 
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 import { AssetFinancialPanel } from '@/components/assets/AssetFinancialPanel';
-import { PropertyForm, PropertyPayload, PropertyFormData } from '@/components/properties/PropertyForm';
+import { AssetDocuments } from '@/components/assets/AssetDocuments';
+import {
+  PropertyInfoFields,
+  PropertyAmenitiesFields,
+  PropertyGalleryFields,
+  buildPropertyPayload,
+  validatePropertyFinancials,
+  propertySchema,
+  type PropertyPayload,
+  type PropertyFormData,
+} from '@/components/properties/PropertyFormFields';
 
+import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
@@ -105,6 +120,7 @@ export default function PropertyDetalhe() {
   const id = searchParams.get('id') ?? undefined;
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isOwner, hasPermission } = usePermissions();
@@ -113,7 +129,7 @@ export default function PropertyDetalhe() {
   const canDelete = isOwner || hasPermission('assets_properties', 'delete');
   const canDuplicate = isOwner || hasPermission('assets_properties', 'create');
 
-  const [activeTab, setActiveTab] = useState<string>('details');
+  const [activeTab, setActiveTab] = useState<string>('info');
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [freshProperty, setFreshProperty] = useState<Property | null>(null);
@@ -201,6 +217,33 @@ export default function PropertyDetalhe() {
     }
   };
 
+  /** Valida (regras financeiras + schema) e persiste as alterações do formulário */
+  const saveProperty = async () => {
+    if (!canEdit) return;
+    if (!validatePropertyFinancials(formData)) return;
+
+    try {
+      const payload = buildPropertyPayload(formData);
+      propertySchema.parse(payload);
+      await handleSubmit(payload);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Erro de validação',
+          description: error.errors[0].message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Erro ao atualizar empreendimento',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+
   const { duplicateProperty, deleteProperty } = useAssetActions();
   const [duplicating, setDuplicating] = useState(false);
 
@@ -238,6 +281,20 @@ export default function PropertyDetalhe() {
   const handleRefreshProperty = async () => {
     await fetchProperty();
   };
+
+  /** Rodapé de ações compartilhado pelas abas editáveis (Informações / Infraestrutura) */
+  const renderFormActions = () => (
+    <div className="flex justify-end gap-2 pt-4 border-t">
+      <Button type="button" variant="outline" onClick={handleCancel}>
+        {canEdit ? 'Cancelar' : 'Fechar'}
+      </Button>
+      {canEdit && (
+        <Button type="submit" disabled={saving}>
+          {saving ? 'Salvando...' : 'Salvar Alterações'}
+        </Button>
+      )}
+    </div>
+  );
 
   const handleDiscardDraft = () => {
     discardDraft();
@@ -310,8 +367,13 @@ export default function PropertyDetalhe() {
               </div>
             </div>
 
-            {(canDuplicate || canDelete) && (
+            {(canEdit || canDuplicate || canDelete) && (
               <div className="flex items-center gap-2 flex-wrap">
+                {canEdit && (
+                  <Button size="sm" onClick={saveProperty} disabled={saving}>
+                    {saving ? 'Salvando...' : 'Salvar Alterações'}
+                  </Button>
+                )}
                 {canDuplicate && (
                   <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating}>
                     <Copy className="h-4 w-4 mr-1" />
@@ -330,81 +392,150 @@ export default function PropertyDetalhe() {
         </CardContent>
       </Card>
 
+      {/* Draft recovery notice */}
+      {hasDraft && !loadingProperty && (
+        <Alert className="border-amber-500/50 bg-amber-500/10 mb-4">
+          <AlertCircle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-sm">Rascunho recuperado. Você tinha alterações não salvas.</span>
+            <Button variant="ghost" size="sm" onClick={handleDiscardDraft} className="ml-2 h-7 text-xs">
+              Descartar
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="details" className="text-xs sm:text-sm">
-            <Settings2 className="h-4 w-4 mr-1.5" />
-            Detalhes
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="info" className="text-xs sm:text-sm">
+            <Info className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Informações</span>
+            <span className="sm:hidden">Info</span>
           </TabsTrigger>
           <TabsTrigger value="financial" className="text-xs sm:text-sm">
-            <Wallet className="h-4 w-4 mr-1.5" />
-            Financeiro
+            <Wallet className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Financeiro</span>
+            <span className="sm:hidden">Fin.</span>
+          </TabsTrigger>
+          <TabsTrigger value="amenities" className="text-xs sm:text-sm">
+            <Sparkles className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Infraestrutura</span>
+            <span className="sm:hidden">Lazer</span>
+          </TabsTrigger>
+          <TabsTrigger value="gallery" className="text-xs sm:text-sm">
+            <Image className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Galeria</span>
+            <span className="sm:hidden">Fotos</span>
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="text-xs sm:text-sm">
+            <FileText className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Documentos</span>
+            <span className="sm:hidden">Docs</span>
           </TabsTrigger>
           <TabsTrigger value="activities" className="text-xs sm:text-sm">
-            <ClipboardList className="h-4 w-4 mr-1.5" />
-            Atividades
+            <ClipboardList className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Atividades</span>
+            <span className="sm:hidden">Log</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="mt-4">
-          {/* Draft recovery notice */}
-          {hasDraft && !loadingProperty && (
-            <Alert className="border-amber-500/50 bg-amber-500/10 mb-4">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
-              <AlertDescription className="flex items-center justify-between">
-                <span className="text-sm">Rascunho recuperado. Você tinha alterações não salvas.</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDiscardDraft}
-                  className="ml-2 h-7 text-xs"
-                >
-                  Descartar
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
+        {loadingProperty ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Informações */}
+            <TabsContent value="info" className="mt-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveProperty();
+                }}
+                className="space-y-4"
+              >
+                <fieldset disabled={!canEdit}>
+                  <PropertyInfoFields
+                    formData={formData}
+                    setFormData={setFormData}
+                    disabled={!canEdit}
+                    isEditing
+                    propertyId={currentProperty.id}
+                    onRefreshProperty={handleRefreshProperty}
+                  />
+                </fieldset>
+                {renderFormActions()}
+              </form>
+            </TabsContent>
 
-          {loadingProperty ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <PropertyForm
-              key={`${currentProperty.id}-${freshProperty?.gallery_images?.length || 0}`}
-              initialData={formData}
-              isEditing={true}
-              onSubmit={canEdit ? handleSubmit : (undefined as any)}
-              onCancel={handleCancel}
-              onDelete={canDelete ? () => setShowDeleteDialog(true) : undefined}
-              isSubmitting={saving}
-              propertyId={currentProperty.id}
-              onRefreshProperty={handleRefreshProperty}
-              onFormChange={setFormData}
-              disabled={!canEdit}
-            />
-          )}
-        </TabsContent>
+            {/* Financeiro */}
+            <TabsContent value="financial" className="mt-4">
+              <AssetFinancialPanel
+                assetType="property"
+                assetId={currentProperty.id}
+                currentMarketValue={currentProperty.market_value}
+                disabled={!canEdit}
+              />
+            </TabsContent>
 
-        <TabsContent value="financial" className="mt-4">
-          <AssetFinancialPanel
-            assetType="property"
-            assetId={currentProperty.id}
-            currentMarketValue={currentProperty.market_value}
-            disabled={!canEdit}
-          />
-        </TabsContent>
+            {/* Infraestrutura */}
+            <TabsContent value="amenities" className="mt-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveProperty();
+                }}
+                className="space-y-4"
+              >
+                <fieldset disabled={!canEdit}>
+                  <PropertyAmenitiesFields
+                    formData={formData}
+                    setFormData={setFormData}
+                    disabled={!canEdit}
+                  />
+                </fieldset>
+                {renderFormActions()}
+              </form>
+            </TabsContent>
 
-        <TabsContent value="activities" className="mt-4">
-          {user && (
-            <AssetActivityTimeline
-              assetType="property"
-              assetId={currentProperty.id}
-              brokerId={user.id}
-            />
-          )}
-        </TabsContent>
+            {/* Galeria — autosave em modo edição */}
+            <TabsContent value="gallery" className="mt-4">
+              <PropertyGalleryFields
+                key={`gallery-${currentProperty.id}-${freshProperty?.gallery_images?.length || 0}`}
+                formData={formData}
+                setFormData={setFormData}
+                disabled={!canEdit}
+                isEditing
+                propertyId={currentProperty.id}
+                onRefreshProperty={handleRefreshProperty}
+              />
+            </TabsContent>
+
+            {/* Documentos */}
+            <TabsContent value="documents" className="mt-4">
+              {user && (
+                <AssetDocuments
+                  assetType="property"
+                  assetId={currentProperty.id}
+                  userId={effectiveBrokerId}
+                />
+              )}
+            </TabsContent>
+
+            {/* Atividades */}
+            <TabsContent value="activities" className="mt-4">
+              {user && (
+                <AssetActivityTimeline
+                  assetType="property"
+                  assetId={currentProperty.id}
+                  brokerId={user.id}
+                />
+              )}
+            </TabsContent>
+          </>
+        )}
       </Tabs>
+
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
