@@ -201,7 +201,7 @@ export function AppSidebar() {
     },
     { title: 'Relatórios', url: '/reports', icon: BarChart3, ownerOnly: true, moduleKey: 'reports' },
     { title: 'Documentos', url: '/documents', icon: FileText, moduleKey: 'documents' },
-    { title: 'Simulador', url: '/simulator', icon: Calculator },
+    { title: 'Calculadoras', url: '/simulator', icon: Calculator },
     { title: 'Integrações', url: '/integrations', icon: Plug, moduleKey: 'integrations' },
     { title: 'Treinamentos', url: '/training', icon: GraduationCap },
     { title: 'Usuários', url: '/users', icon: UsersRound, hiddenOnPlan: ['essencial', 'free'] },

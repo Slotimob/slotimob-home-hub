@@ -48,7 +48,6 @@ const Portals = React.lazy(() => import("./pages/Portals"));
 const Reports = React.lazy(() => import("./pages/Reports"));
 const Integrations = React.lazy(() => import("./pages/Integrations"));
 const Training = React.lazy(() => import("./pages/Training"));
-const Rentability = React.lazy(() => import("./pages/Rentability"));
 const ProductDemo = React.lazy(() => import("./pages/ProductDemo"));
 const Finance = React.lazy(() => import("./pages/Finance"));
 const FinanceTransactions = React.lazy(() => import("./pages/FinanceTransactions"));
@@ -178,13 +177,15 @@ const App = () => (
               <Route path="/documents/custom" element={guarded(<Documents />)} />
               <Route path="/documents/history" element={guarded(<Documents />)} />
               <Route path="/simulator" element={guarded(<Simulator />)} />
-              <Route path="/simulator/financing" element={guarded(<Simulator />)} />
-              <Route path="/simulator/taxes" element={guarded(<Simulator />)} />
-              <Route path="/simulator/comparison" element={guarded(<Simulator />)} />
-              <Route path="/rentability" element={guarded(<Rentability />)} />
-              <Route path="/rentability/yield" element={guarded(<Rentability />)} />
-              <Route path="/rentability/payback" element={guarded(<Rentability />)} />
-              <Route path="/rentability/comparison" element={guarded(<Rentability />)} />
+              {/* Rotas legadas do antigo Simulador -> novas calculadoras por slug */}
+              <Route path="/simulator/financing" element={<Navigate to="/simulator/financiamento-imobiliario" replace />} />
+              <Route path="/simulator/taxes" element={<Navigate to="/simulator/rentabilidade-imobiliaria" replace />} />
+              <Route path="/simulator/comparison" element={<Navigate to="/simulator/comprar-ou-alugar" replace />} />
+              <Route path="/rentability" element={<Navigate to="/simulator/rentabilidade-imobiliaria" replace />} />
+              <Route path="/rentability/yield" element={<Navigate to="/simulator/rentabilidade-imobiliaria" replace />} />
+              <Route path="/rentability/payback" element={<Navigate to="/simulator/rentabilidade-imobiliaria" replace />} />
+              <Route path="/rentability/comparison" element={<Navigate to="/simulator/comprar-ou-alugar" replace />} />
+              <Route path="/simulator/:slug" element={guarded(<Simulator />)} />
               <Route path="/finance" element={guarded(<Finance />)} />
               <Route path="/finance/dre" element={guarded(<RequireFeature feature="finance_full"><FinanceDRE /></RequireFeature>)} />
               <Route path="/finance/transactions" element={guarded(<FinanceTransactions />)} />
