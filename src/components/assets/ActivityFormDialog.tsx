@@ -69,6 +69,7 @@ export function ActivityFormDialog({
   onOpenChange,
   defaultAsset = null,
   lockAsset = false,
+  editingActivity = null,
   onSaved,
 }: ActivityFormDialogProps) {
   const { user } = useAuth();
@@ -77,6 +78,7 @@ export function ActivityFormDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isEditing = !!editingActivity;
 
   const [assetSearch, setAssetSearch] = useState('');
   const [selectedAssets, setSelectedAssets] = useState<AssetOption[]>([]);
@@ -96,16 +98,37 @@ export function ActivityFormDialog({
     if (!open) return;
     setAssetSearch('');
     setSelectedAssets(defaultAsset ? [defaultAsset] : []);
+    setFiles([]);
+    setCreateTransaction(false);
+
+    if (editingActivity) {
+      const scheduled = editingActivity.scheduled_at
+        ? new Date(editingActivity.scheduled_at)
+        : null;
+      setActivityType(editingActivity.activity_type || 'manutencao');
+      setTitle(editingActivity.title || '');
+      setDescription(editingActivity.description || '');
+      setContactId(editingActivity.assigned_contact_id || null);
+      setDate(
+        scheduled && !isNaN(scheduled.getTime())
+          ? format(scheduled, 'yyyy-MM-dd')
+          : new Date().toISOString().split('T')[0],
+      );
+      setTime(scheduled && !isNaN(scheduled.getTime()) ? format(scheduled, 'HH:mm') : '09:00');
+      setEstimatedCost(
+        editingActivity.estimated_cost != null ? String(editingActivity.estimated_cost) : '',
+      );
+      return;
+    }
+
     setActivityType('manutencao');
     setTitle('');
     setDescription('');
     setContactId(null);
     setDate(new Date().toISOString().split('T')[0]);
     setTime('09:00');
-    setFiles([]);
     setEstimatedCost('');
-    setCreateTransaction(false);
-  }, [open, defaultAsset]);
+  }, [open, defaultAsset, editingActivity]);
 
   // Asset search (units + properties)
   const { data: assetOptions = [], isFetching: searching } = useQuery({
