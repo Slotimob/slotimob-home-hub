@@ -49,15 +49,25 @@ export interface LeaseFinancialUnit {
   obligations_config?: Record<string, any> | null;
 }
 
+export interface LeaseResponsibleContact {
+  id: string | null;
+  name: string | null;
+}
+
 interface LeaseFinancialStepProps {
   value: LeaseFinancialValue;
   onChange: (patch: Partial<LeaseFinancialValue>) => void;
   unit?: LeaseFinancialUnit | null;
+  /** Inquilino já selecionado na etapa de Inquilino do contrato */
+  tenantContact?: LeaseResponsibleContact | null;
+  /** Proprietário vinculado ao imóvel/unidade selecionado */
+  ownerContact?: LeaseResponsibleContact | null;
   /** Conteúdo extra no topo (ex.: seletor de fração) */
   header?: ReactNode;
   /** Em edição, o próximo reajuste salvo não deve ser sobrescrito pela sugestão */
   adjustmentLocked?: boolean;
 }
+
 
 export function getInitialFireInsurance(): FireInsuranceConfig {
   return {
