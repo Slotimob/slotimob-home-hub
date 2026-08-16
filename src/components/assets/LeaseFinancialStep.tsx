@@ -608,8 +608,11 @@ export function LeaseFinancialStep({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tenant">Inquilino</SelectItem>
-                      <SelectItem value="owner">Proprietário</SelectItem>
+                      {RESPONSIBLE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -709,14 +712,104 @@ export function LeaseFinancialStep({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tenant">Inquilino</SelectItem>
-                      <SelectItem value="owner">Proprietário</SelectItem>
+                      {RESPONSIBLE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             )}
           </div>
+
+          {ADDITIONAL_OBLIGATIONS.map((meta) => {
+            const cfg =
+              additionalObligations.find((o) => o.type === meta.type) ||
+              getInitialAdditionalObligation(meta.type);
+            return (
+              <div key={meta.type} className="space-y-3">
+                <Separator />
+                <div className="flex items-center justify-between gap-2">
+                  <Label
+                    htmlFor={`obligation-${meta.type}-toggle`}
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    Cobrar {meta.label.toLowerCase()}
+                  </Label>
+                  <Switch
+                    id={`obligation-${meta.type}-toggle`}
+                    checked={cfg.enabled}
+                    onCheckedChange={(checked) => toggleAdditional(meta.type, checked)}
+                  />
+                </div>
+
+                {cfg.enabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Valor mensal</Label>
+                      <CurrencyInput
+                        value={(cfg.installment_amount || 0).toString()}
+                        onChange={(v) =>
+                          updateAdditional(meta.type, {
+                            installment_amount: parseFloat(v) || 0,
+                          })
+                        }
+                        placeholder="R$ 0,00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Primeiro vencimento</Label>
+                      <Input
+                        type="date"
+                        value={cfg.first_due_date || ""}
+                        onChange={(e) =>
+                          updateAdditional(meta.type, {
+                            first_due_date: e.target.value || null,
+                          })
+                        }
+                      />
+                    </div>
+                    {meta.type === "other" && (
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label>Descrição</Label>
+                        <Input
+                          value={cfg.label || ""}
+                          onChange={(e) =>
+                            updateAdditional(meta.type, { label: e.target.value || null })
+                          }
+                          placeholder="Ex.: taxa de lixo, jardinagem..."
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>Responsável</Label>
+                      <Select
+                        value={cfg.charge_to}
+                        onValueChange={(v) =>
+                          updateAdditional(meta.type, {
+                            charge_to: v as LeaseChargeResponsible,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {RESPONSIBLE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
