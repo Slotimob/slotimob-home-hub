@@ -535,6 +535,7 @@ export function ActivityFormDialog({
           </div>
 
           {/* Attachments */}
+          {!isEditing && (
           <div className="space-y-1.5">
             <Label className="text-sm">Comprovantes / anexos</Label>
             <Input ref={fileInputRef} type="file" multiple onChange={handleFiles} />
@@ -562,17 +563,19 @@ export function ActivityFormDialog({
               </div>
             )}
           </div>
+          )}
         </div>
 
-        <DialogFooter className="p-6 pt-2">
+        <DialogFooter className="shrink-0 border-t bg-background px-6 py-4 rounded-b-lg">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={!canSave}>
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Salvar atividade
+            {isEditing ? 'Salvar alterações' : 'Salvar atividade'}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
