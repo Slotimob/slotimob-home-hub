@@ -25,7 +25,23 @@ export interface ObligationConfig {
   due_day?: number;
   responsible?: ResponsibleRole;
   agency_contact_id?: string | null;
+  /** Referência real do responsável (inquilino/proprietário/imobiliária) */
+  responsible_contact_id?: string | null;
   control_type?: ControlType;
+  /** Valor mensal herdado do contrato, quando aplicável */
+  amount?: number | null;
+}
+
+/**
+ * Metadados da configuração de obrigações do imóvel.
+ * Gravado sob a chave reservada `__meta` dentro de `units.obligations_config`.
+ */
+export interface ObligationsConfigMeta {
+  /** true quando os dados foram herdados de um contrato e ainda não revisados */
+  pending_review?: boolean;
+  inherited_from_lease_id?: string | null;
+  inherited_at?: string | null;
+  reviewed_at?: string | null;
 }
 
 export interface ObligationsConfig {
@@ -37,7 +53,11 @@ export interface ObligationsConfig {
   gas?: ObligationConfig;
   insurance?: ObligationConfig;
   other?: ObligationConfig;
+  /** Chave reservada — não é um tipo de obrigação */
+  __meta?: ObligationsConfigMeta;
+  [key: string]: ObligationConfig | ObligationsConfigMeta | undefined;
 }
+
 
 export interface ObligationHealth {
   type: ObligationType;
