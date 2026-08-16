@@ -831,7 +831,7 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
     addSubClause('16.1', 'As partes ajustam, de forma expressa, a seguinte distribuição de responsabilidades quanto aos encargos e despesas da locação, prevalecendo o aqui disposto sobre eventuais menções genéricas contidas nas demais cláusulas deste instrumento:');
     encargos.forEach((e, idx) => {
       const partes = [
-        `**${pdfSafeText(e.label)}**: a cargo do ${responsavelTexto(e)}`,
+        `${pdfSafeText(e.label).toUpperCase()}: a cargo do ${responsavelTexto(e)}`,
       ];
       if (e.valor) {
         partes.push(`valor de ${formatCurrency(e.valor)}${e.periodicidade ? ` (${e.periodicidade})` : ''}`);
