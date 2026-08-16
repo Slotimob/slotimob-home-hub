@@ -18,7 +18,13 @@ async function generate(data: LegalContractData, out: string) {
     return this;
   };
   const { generateLegalContractPDF } = await import("@/utils/legalContractPdfGenerator");
-  await generateLegalContractPDF(data, "contrato-teste.pdf");
+  try {
+    await generateLegalContractPDF(data, "contrato-teste.pdf");
+  } catch (e) {
+    console.log("PDF_ERROR=" + (e as Error).message + "\n" + (e as Error).stack);
+    throw e;
+  }
+  console.log("SAVE_PATCHED=" + String((jsPDF as any).prototype.save).slice(0, 60));
 }
 
 const base: LegalContractData = {
