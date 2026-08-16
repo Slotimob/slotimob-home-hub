@@ -14,8 +14,16 @@ import {
   generateLegalContractPDF,
   validateContractData,
   type ContractPendency,
-  LegalContractData
+  LegalContractData,
+  type EncargoContrato,
 } from "@/utils/legalContractPdfGenerator";
+import type {
+  FireInsuranceConfig,
+  IptuChargeConfig,
+  ObligationChargeConfig,
+  LeaseChargeResponsible,
+} from "@/hooks/useLeases";
+import { ADDITIONAL_OBLIGATIONS } from "@/components/assets/LeaseFinancialStep";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -121,6 +129,43 @@ import {
      enabled: open,
    });
  
+  const lease = activeLease?.lease as any;
+
+  /** Encargos brutos da Matriz de Responsabilidades gravada no contrato */
+  const fireInsurance = (lease?.fire_insurance || null) as FireInsuranceConfig | null;
+  const iptuCharge = (lease?.iptu_charge || null) as IptuChargeConfig | null;
+  const additionalObligations = (Array.isArray(lease?.additional_obligations)
+    ? lease.additional_obligations
+    : []) as ObligationChargeConfig[];
+
+  /** IDs de imobiliária referenciados por qualquer encargo */
+  const agencyIds = Array.from(
+    new Set(
+      [
+        fireInsurance,
+        iptuCharge,
+        ...additionalObligations,
+      ]
+        .filter((c): c is FireInsuranceConfig | IptuChargeConfig | ObligationChargeConfig =>
+          !!c && (c as any).enabled && (c as any).charge_to === "agency"
+        )
+        .map((c) => c.agency_contact_id || c.responsible_contact_id)
+        .filter((id): id is string => !!id)
+    )
+  );
+
+  const { data: agencyContacts } = useQuery({
+    queryKey: ["contract-agency-contacts", agencyIds.join(",")],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, name, document_number, address, city, state, postal_code, phone, email")
+        .in("id", agencyIds);
+      return data || [];
+    },
+    enabled: open && agencyIds.length > 0,
+  });
+
   const [pendencies, setPendencies] = useState<ContractPendency[]>([]);
   const [pendingData, setPendingData] = useState<LegalContractData | null>(null);
   const [pendingFileName, setPendingFileName] = useState<string>("");
@@ -152,6 +197,88 @@ import {
 
     const ownerDocDigits = (ownerContact?.document_number || '').replace(/\D/g, '');
     const ownerIsCnpj = ownerDocDigits.length === 14;
+
+    // ---------------------------------------------------------------------
+    // MATRIZ DE RESPONSABILIDADES -> cláusulas dinâmicas do PDF
+    // ---------------------------------------------------------------------
+    const agencyById = new Map((agencyContacts || []).map((c: any) => [c.id, c]));
+
+    const responsavelNome = (
+      chargeTo: LeaseChargeResponsible,
+      link: { responsible_contact_id?: string | null; agency_contact_id?: string | null }
+    ): string | null => {
+      if (chargeTo === "tenant") return activeLease?.tenant?.name || null;
+      if (chargeTo === "owner") return ownerContact?.name || null;
+      const id = link.agency_contact_id || link.responsible_contact_id;
+      return (id && agencyById.get(id)?.name) || null;
+    };
+
+    const encargos: EncargoContrato[] = [];
+
+    // Taxa de administração (percentual sobre o aluguel, devida à imobiliária)
+    const adminFeePercent = Number(lease.admin_fee_percentage) || 0;
+    if (adminFeePercent > 0) {
+      const adminAgency = agencyIds.length === 1 ? agencyById.get(agencyIds[0]) : null;
+      encargos.push({
+        key: "admin_fee",
+        label: "Taxa de administração imobiliária",
+        responsavelTipo: "owner",
+        responsavelNome: ownerContact?.name || null,
+        valor: (lease.rent_amount || 0) * (adminFeePercent / 100),
+        periodicidade: `mensal, equivalente a ${adminFeePercent}% do aluguel`,
+        observacao: adminAgency
+          ? `devida à administradora ${adminAgency.name} e retida do repasse ao LOCADOR`
+          : "retida do repasse ao LOCADOR",
+      });
+    }
+
+    if (fireInsurance?.enabled) {
+      encargos.push({
+        key: "insurance",
+        label: "Seguro contra incêndio",
+        responsavelTipo: fireInsurance.charge_to,
+        responsavelNome: responsavelNome(fireInsurance.charge_to, fireInsurance),
+        valor: fireInsurance.installment_amount || null,
+        periodicidade: fireInsurance.installments > 1
+          ? `${fireInsurance.installments} parcelas`
+          : "parcela única",
+      });
+    }
+
+    if (iptuCharge?.enabled) {
+      encargos.push({
+        key: "iptu",
+        label: "IPTU e taxas municipais",
+        responsavelTipo: iptuCharge.charge_to,
+        responsavelNome: responsavelNome(iptuCharge.charge_to, iptuCharge),
+        valor: iptuCharge.installment_amount || null,
+        periodicidade: iptuCharge.installments > 1
+          ? `${iptuCharge.installments} parcelas`
+          : "parcela única",
+      });
+    }
+
+    additionalObligations
+      .filter((o) => o?.enabled)
+      .forEach((o) => {
+        const meta = ADDITIONAL_OBLIGATIONS.find((m) => m.type === o.type);
+        const label =
+          (o.type === "other" && o.label) ||
+          (o.type === "condominium" ? "Condomínio (despesas ordinárias)" : meta?.label) ||
+          "Outras despesas";
+        encargos.push({
+          key: o.type === "other" ? `other_${label}` : o.type,
+          label,
+          responsavelTipo: o.charge_to,
+          responsavelNome: responsavelNome(o.charge_to, o),
+          valor: o.installment_amount || null,
+          periodicidade: "mensal",
+        });
+      });
+
+    // Imobiliária qualificada no preâmbulo quando responsável por algum encargo
+    const agencyForQualification = agencyIds.length > 0 ? agencyById.get(agencyIds[0]) : null;
+    const agencyDocDigits = (agencyForQualification?.document_number || "").replace(/\D/g, "");
 
     const contractData: LegalContractData = {
       locador: {
@@ -218,6 +345,18 @@ import {
         tipoConta: paymentInfo.tipoConta || '',
         beneficiario: paymentInfo.beneficiario || ownerContact?.name || '',
       } : undefined,
+      imobiliaria: agencyForQualification ? {
+        nome: agencyForQualification.name || '',
+        cnpj: agencyDocDigits.length === 14 ? agencyForQualification.document_number : '',
+        cpf: agencyDocDigits.length === 11 ? agencyForQualification.document_number : '',
+        endereco: agencyForQualification.address || '',
+        cidade: agencyForQualification.city || '',
+        estado: agencyForQualification.state || '',
+        cep: agencyForQualification.postal_code || '',
+        email: agencyForQualification.email || '',
+        telefone: agencyForQualification.phone || '',
+      } : undefined,
+      encargos,
     };
 
     const fileName = `Contrato_Locacao_${unitData?.address?.replace(/\s+/g, '_') || 'Imovel'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
