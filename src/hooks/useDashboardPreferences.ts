@@ -9,6 +9,7 @@ export interface DashboardWidgetPreferences {
   pipeline: boolean;
   appointments: boolean;
   delinquency: boolean;
+  alugueis: boolean;
   afazeres: boolean;
 }
 
@@ -84,6 +85,7 @@ const DEFAULT_WIDGET_PREFS: DashboardWidgetPreferences = {
   pipeline: true,
   appointments: true,
   delinquency: true,
+  alugueis: true,
   afazeres: true,
 };
 

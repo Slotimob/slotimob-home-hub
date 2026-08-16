@@ -22,6 +22,7 @@ import {
   PortfolioWidget,
   AppointmentsWidget,
   DelinquencyWidget,
+  AluguelReceberWidget,
   AfazeresSummaryWidget,
   DatePreset,
   DateRange,
@@ -201,12 +202,12 @@ const Dashboard = () => {
                 </section>
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    BLOCO 3: COMPROMISSOS | INADIMPLÊNCIA
+                    BLOCO 3: ALUGUÉIS | INADIMPLÊNCIA
                    ═══════════════════════════════════════════════════════════════ */}
-                {(preferences.widgets.appointments || preferences.widgets.delinquency) && (
+                {(preferences.widgets.alugueis || preferences.widgets.delinquency) && (
                   <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                    {preferences.widgets.appointments && (
-                      <AppointmentsWidget dateRange={dateRange} refreshKey={refreshKey} />
+                    {preferences.widgets.alugueis && (
+                      <AluguelReceberWidget dateRange={dateRange} refreshKey={refreshKey} />
                     )}
                     {preferences.widgets.delinquency && (
                       <DelinquencyWidget dateRange={dateRange} refreshKey={refreshKey} />
@@ -215,7 +216,16 @@ const Dashboard = () => {
                 )}
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    BLOCO 4: PERFORMANCE DO PERÍODO + FINANCEIRO
+                    BLOCO 4: AFAZERES (resumo) — linha inteira
+                   ═══════════════════════════════════════════════════════════════ */}
+                {preferences.widgets.afazeres && (
+                  <section className="w-full">
+                    <AfazeresSummaryWidget />
+                  </section>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════════
+                    BLOCO 5: PERFORMANCE DO PERÍODO + FINANCEIRO
                    ═══════════════════════════════════════════════════════════════ */}
                 <section className="py-2">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border/50">
@@ -248,11 +258,13 @@ const Dashboard = () => {
                 )}
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    BLOCO 5: AFAZERES (resumo) | PIPELINE CRM
+                    BLOCO 6: COMPROMISSOS | PIPELINE CRM
                    ═══════════════════════════════════════════════════════════════ */}
-                {(preferences.widgets.afazeres || preferences.widgets.pipeline) && (
+                {(preferences.widgets.appointments || preferences.widgets.pipeline) && (
                   <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
-                    {preferences.widgets.afazeres && <AfazeresSummaryWidget />}
+                    {preferences.widgets.appointments && (
+                      <AppointmentsWidget dateRange={dateRange} refreshKey={refreshKey} />
+                    )}
                     {preferences.widgets.pipeline && (
                       <PipelineWidget
                         dateRange={dateRange}
@@ -263,6 +275,7 @@ const Dashboard = () => {
                     )}
                   </section>
                 )}
+
 
               </div>
             )}

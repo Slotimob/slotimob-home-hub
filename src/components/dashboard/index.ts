@@ -8,6 +8,7 @@ export { PipelineWidget } from './PipelineWidget';
 export { PortfolioWidget } from './PortfolioWidget';
 export { AppointmentsWidget } from './AppointmentsWidget';
 export { DelinquencyWidget } from './DelinquencyWidget';
+export { AluguelReceberWidget } from './AluguelReceberWidget';
 export { AfazeresSummaryWidget } from './AfazeresSummaryWidget';
 export { WidgetPeriodFilter, useWidgetPeriod } from './WidgetPeriodFilter';
 export type { WidgetPeriod } from './WidgetPeriodFilter';

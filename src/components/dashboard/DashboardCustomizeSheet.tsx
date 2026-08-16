@@ -27,20 +27,22 @@ interface DashboardCustomizeSheetProps {
 // Ordem espelha a ordem de exibição dos blocos no Dashboard
 const WIDGET_LABELS: Record<keyof DashboardWidgetPreferences, { label: string; description: string }> = {
   assets: { label: '1. Contagem de Ativos', description: 'Unidades e imóveis avulsos por status' },
-  financial: { label: '4. Financeiro', description: 'Receitas, despesas e fluxo de caixa do período' },
-  appointments: { label: '3. Compromissos', description: 'Próximos compromissos da agenda' },
+  alugueis: { label: '3. Aluguéis', description: 'Aluguéis recebidos, a receber e em atraso' },
   delinquency: { label: '3. Inadimplência', description: 'Aging de cobranças em atraso' },
-  afazeres: { label: '5. Afazeres (resumo)', description: 'Resumo de pendências de gestão' },
-  pipeline: { label: '5. Pipeline (CRM)', description: 'Métricas de funil de vendas' },
+  afazeres: { label: '4. Afazeres (resumo)', description: 'Resumo de pendências de gestão' },
+  financial: { label: '5. Financeiro', description: 'Receitas, despesas e fluxo de caixa do período' },
+  appointments: { label: '6. Compromissos', description: 'Próximos compromissos da agenda' },
+  pipeline: { label: '6. Pipeline (CRM)', description: 'Métricas de funil de vendas' },
 };
 
 // Ordem de renderização dos toggles na lista
 const WIDGET_ORDER: Array<keyof DashboardWidgetPreferences> = [
   'assets',
-  'appointments',
+  'alugueis',
   'delinquency',
-  'financial',
   'afazeres',
+  'financial',
+  'appointments',
   'pipeline',
 ];
 export function DashboardCustomizeSheet({
