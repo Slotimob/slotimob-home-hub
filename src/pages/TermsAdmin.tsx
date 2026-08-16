@@ -429,6 +429,7 @@ const TermsAdmin = () => {
               </Card>
             )}
           </div>
+        </div>
       </div>
     </AppLayout>
   );

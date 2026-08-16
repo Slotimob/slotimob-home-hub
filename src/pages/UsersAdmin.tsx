@@ -449,6 +449,7 @@ const UsersAdmin = () => {
               </Card>
             )}
           </div>
+        </div>
       </div>
     </AppLayout>
   );
