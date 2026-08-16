@@ -32,6 +32,7 @@ import { AssetImageUpload } from '@/components/shared/AssetImageUpload';
 import { AddressFields, AddressData } from '@/components/shared/AddressFields';
 import { PropertyAmenitiesSelect } from '@/components/properties/PropertyAmenitiesSelect';
 import { PropertyGalleryUpload } from '@/components/properties/PropertyGalleryUpload';
+import { ContactSelector } from '@/components/ContactSelector';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { showError } from '@/utils/notifications';
