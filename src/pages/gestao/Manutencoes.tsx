@@ -505,13 +505,17 @@ export default function Manutencoes() {
                       <TableHead>Data</TableHead>
                       <TableHead className="text-right">Custo estimado</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {groupedRows.map((entry) => {
                       if (entry.kind === 'single') {
                         return (
-                          <TableRow key={entry.row.id}>
+                          <TableRow
+                            key={entry.row.id}
+                            className="border-l-4 border-l-transparent bg-card hover:bg-muted/40"
+                          >
                             <ActivityCells row={entry.row} />
                           </TableRow>
                         );
@@ -523,7 +527,7 @@ export default function Manutencoes() {
                         <>
                           <TableRow
                             key={entry.groupId}
-                            className="cursor-pointer bg-muted/30"
+                            className="cursor-pointer border-l-4 border-l-primary bg-primary/5 hover:bg-primary/10"
                             onClick={() =>
                               setExpanded((prev) => ({ ...prev, [entry.groupId]: !isOpen }))
                             }
@@ -531,12 +535,12 @@ export default function Manutencoes() {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 {isOpen ? (
-                                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronDown className="h-4 w-4 text-primary" />
                                 ) : (
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronRight className="h-4 w-4 text-primary" />
                                 )}
                                 <div>
-                                  <p className="text-sm font-medium">{first.title}</p>
+                                  <p className="text-sm font-semibold">{first.title}</p>
                                   {first.description && (
                                     <p className="text-xs text-muted-foreground line-clamp-1">
                                       {first.description}
@@ -551,7 +555,7 @@ export default function Manutencoes() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="gap-1">
+                              <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20">
                                 <Layers className="h-3 w-3" />
                                 Aplicado a {entry.rows.length} imóveis
                               </Badge>
@@ -564,7 +568,7 @@ export default function Manutencoes() {
                             <TableCell className="text-sm whitespace-nowrap">
                               {renderDate(first)}
                             </TableCell>
-                            <TableCell className="text-sm text-right whitespace-nowrap">
+                            <TableCell className="text-sm text-right whitespace-nowrap font-medium">
                               {first.estimated_cost != null
                                 ? brl(Number(first.estimated_cost) * entry.rows.length)
                                 : '—'}
@@ -574,10 +578,14 @@ export default function Manutencoes() {
                                 {done}/{entry.rows.length} concluídas
                               </Badge>
                             </TableCell>
+                            <TableCell className="w-10" />
                           </TableRow>
                           {isOpen &&
                             entry.rows.map((row) => (
-                              <TableRow key={row.id} className="bg-background">
+                              <TableRow
+                                key={row.id}
+                                className="border-l-4 border-l-primary/40 bg-muted/20 hover:bg-muted/40"
+                              >
                                 <ActivityCells row={row} indent />
                               </TableRow>
                             ))}
@@ -585,6 +593,7 @@ export default function Manutencoes() {
                       );
                     })}
                   </TableBody>
+
                 </Table>
               </div>
             )}
