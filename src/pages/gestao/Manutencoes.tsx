@@ -30,7 +30,25 @@ import {
   ActivityFormDialog,
   ACTIVITY_TYPES,
   ACTIVITY_TYPE_LABELS,
+  type AssetOption,
+  type EditingActivity,
 } from '@/components/assets/ActivityFormDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -41,6 +59,10 @@ import {
   CheckCircle2,
   Clock,
   Layers,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 
 interface ActivityRow {
