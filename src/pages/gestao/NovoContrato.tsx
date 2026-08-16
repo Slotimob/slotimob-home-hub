@@ -36,6 +36,8 @@ import {
   LeaseFinancialStep,
   getInitialFireInsurance,
   getInitialIptuCharge,
+  getInitialAdditionalObligations,
+  normalizeAdditionalObligations,
   type LeaseFinancialValue,
 } from "@/components/assets/LeaseFinancialStep";
 
@@ -104,6 +106,7 @@ const getInitialFormData = () => ({
   next_adjustment_date: "",
   fire_insurance: getInitialFireInsurance(),
   iptu_charge: getInitialIptuCharge(),
+  additional_obligations: getInitialAdditionalObligations(),
 });
 
 const getInitialGuarantor = (): GuarantorData => ({
@@ -349,6 +352,9 @@ export default function NovoContrato() {
       next_adjustment_date: editLease.next_adjustment_date || "",
       fire_insurance: { ...getInitialFireInsurance(), ...(editLease.fire_insurance || {}) },
       iptu_charge: { ...getInitialIptuCharge(), ...(editLease.iptu_charge || {}) },
+      additional_obligations: normalizeAdditionalObligations(
+        (editLease as any).additional_obligations
+      ),
     });
     if (editLease.guarantor_data) setGuarantorData(editLease.guarantor_data);
     if (editLease.payment_info) setPaymentInfo(editLease.payment_info);
@@ -646,6 +652,7 @@ export default function NovoContrato() {
         adjustment_periodicity_months: formData.adjustment_periodicity_months,
         fire_insurance: formData.fire_insurance.enabled ? formData.fire_insurance : null,
         iptu_charge: formData.iptu_charge.enabled ? formData.iptu_charge : null,
+        additional_obligations: (formData.additional_obligations || []).filter((o) => o.enabled),
         billing_automation: (isEditMode && editLease
           ? {
               ...(editLease.billing_automation || {}),

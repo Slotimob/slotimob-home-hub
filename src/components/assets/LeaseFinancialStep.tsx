@@ -18,9 +18,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import type {
+  AdditionalObligationType,
   FireInsuranceConfig,
   IptuChargeConfig,
   LeaseChargeResponsible,
+  ObligationChargeConfig,
 } from "@/hooks/useLeases";
 
 export const ADJUSTMENT_PERIODICITY_OPTIONS = [12, 24, 30, 36];
@@ -38,6 +40,7 @@ export interface LeaseFinancialValue {
   next_adjustment_date: string;
   fire_insurance: FireInsuranceConfig;
   iptu_charge: IptuChargeConfig;
+  additional_obligations: ObligationChargeConfig[];
 }
 
 /** Dados do imóvel usados como default dos encargos */
@@ -78,6 +81,61 @@ export function getInitialIptuCharge(): IptuChargeConfig {
     source: "manual",
   };
 }
+
+/**
+ * Encargos adicionais configuráveis no contrato.
+ * Mesma taxonomia da Matriz de Responsabilidades (`SYSTEM_OBLIGATION_TYPES` /
+ * `ObligationType` em useAssetHealth), sem `rent` (é o aluguel), `insurance`
+ * (tratado por fire_insurance) e `iptu` (tratado por iptu_charge).
+ * A chave `obligationKey` é a usada dentro de `units.obligations_config`.
+ */
+export const ADDITIONAL_OBLIGATIONS: {
+  type: AdditionalObligationType;
+  label: string;
+  obligationKey: string;
+}[] = [
+  { type: "condominium", label: "Condomínio", obligationKey: "condominium" },
+  { type: "energy", label: "Energia", obligationKey: "energy" },
+  { type: "water", label: "Água", obligationKey: "water" },
+  { type: "gas", label: "Gás", obligationKey: "gas" },
+  { type: "other", label: "Outros", obligationKey: "other" },
+];
+
+export function getInitialAdditionalObligation(
+  type: AdditionalObligationType
+): ObligationChargeConfig {
+  return {
+    type,
+    enabled: false,
+    installment_amount: 0,
+    first_due_date: null,
+    charge_to: "tenant",
+    label: null,
+  };
+}
+
+export function getInitialAdditionalObligations(): ObligationChargeConfig[] {
+  return ADDITIONAL_OBLIGATIONS.map((o) => getInitialAdditionalObligation(o.type));
+}
+
+/** Normaliza a lista vinda do banco garantindo um item por tipo da taxonomia */
+export function normalizeAdditionalObligations(
+  saved?: ObligationChargeConfig[] | null
+): ObligationChargeConfig[] {
+  const list = Array.isArray(saved) ? saved : [];
+  return ADDITIONAL_OBLIGATIONS.map((o) => {
+    const found = list.find((i) => i?.type === o.type);
+    return found
+      ? { ...getInitialAdditionalObligation(o.type), ...found }
+      : getInitialAdditionalObligation(o.type);
+  });
+}
+
+const RESPONSIBLE_OPTIONS: { value: LeaseChargeResponsible; label: string }[] = [
+  { value: "tenant", label: "Inquilino" },
+  { value: "owner", label: "Proprietário" },
+  { value: "agency", label: "Imobiliária" },
+];
 
 const parseLocalDate = (value: string): Date | null => {
   if (!value) return null;
@@ -140,7 +198,7 @@ export function LeaseFinancialStep({
 
   const obligations = (unit?.obligations_config || {}) as Record<string, any>;
 
-  const dueDateFromObligation = (key: "iptu" | "insurance"): string => {
+  const dueDateFromObligation = (key: string): string => {
     const dueDay = Number(obligations?.[key]?.due_day);
     if (!dueDay || dueDay < 1 || dueDay > 28) return firstRentDueDate();
     const base = parseLocalDate(value.start_date) || new Date();
@@ -149,12 +207,43 @@ export function LeaseFinancialStep({
     return format(due, "yyyy-MM-dd");
   };
 
-  const responsibleFromObligation = (key: "iptu" | "insurance"): LeaseChargeResponsible => {
+  const responsibleFromObligation = (key: string): LeaseChargeResponsible => {
     const responsible = String(obligations?.[key]?.responsible || "").toLowerCase();
     if (responsible === "owner" || responsible === "proprietario" || responsible === "proprietário") {
       return "owner";
     }
+    if (responsible === "agency" || responsible === "imobiliaria" || responsible === "imobiliária") {
+      return "agency";
+    }
     return "tenant";
+  };
+
+  const additionalObligations = normalizeAdditionalObligations(value.additional_obligations);
+
+  const updateAdditional = (
+    type: AdditionalObligationType,
+    patch: Partial<ObligationChargeConfig>
+  ) =>
+    onChange({
+      additional_obligations: additionalObligations.map((o) =>
+        o.type === type ? { ...o, ...patch } : o
+      ),
+    });
+
+  const toggleAdditional = (type: AdditionalObligationType, enabled: boolean) => {
+    if (!enabled) {
+      updateAdditional(type, { enabled: false });
+      return;
+    }
+    const meta = ADDITIONAL_OBLIGATIONS.find((o) => o.type === type);
+    const current = additionalObligations.find((o) => o.type === type);
+    updateAdditional(type, {
+      enabled: true,
+      first_due_date:
+        current?.first_due_date || dueDateFromObligation(meta?.obligationKey || type),
+      charge_to:
+        current?.charge_to || responsibleFromObligation(meta?.obligationKey || type),
+    });
   };
 
   const toggleFireInsurance = (enabled: boolean) => {
@@ -191,14 +280,60 @@ export function LeaseFinancialStep({
     ? value.fire_insurance.installment_amount || 0
     : 0;
   const iptuInstallment = value.iptu_charge.enabled ? value.iptu_charge.installment_amount || 0 : 0;
-  const totalTenant =
-    value.rent_amount +
-    (value.fire_insurance.charge_to === "tenant" ? insuranceInstallment : 0) +
-    (value.iptu_charge.charge_to === "tenant" ? iptuInstallment : 0);
-  const netToOwner =
-    value.rent_amount * (1 - (value.admin_fee_percentage || 0) / 100) -
-    (value.fire_insurance.charge_to === "owner" ? insuranceInstallment : 0) -
-    (value.iptu_charge.charge_to === "owner" ? iptuInstallment : 0);
+  /**
+   * Todas as obrigações do contrato normalizadas para o cálculo.
+   * Regra (validada com o cliente):
+   * - tenant  -> soma à cobrança do inquilino
+   * - owner   -> soma ao repasse líquido do proprietário (reembolso/repasse)
+   * - agency  -> a imobiliária absorve: não soma nem subtrai de ninguém
+   * A taxa de administração incide SOMENTE sobre o aluguel.
+   */
+  const chargeLines: { key: string; label: string; amount: number; charge_to: LeaseChargeResponsible }[] = [
+    ...(value.fire_insurance.enabled
+      ? [
+          {
+            key: "fire_insurance",
+            label: "Seguro incêndio",
+            amount: insuranceInstallment,
+            charge_to: value.fire_insurance.charge_to,
+          },
+        ]
+      : []),
+    ...(value.iptu_charge.enabled
+      ? [
+          {
+            key: "iptu",
+            label: "IPTU",
+            amount: iptuInstallment,
+            charge_to: value.iptu_charge.charge_to,
+          },
+        ]
+      : []),
+    ...additionalObligations
+      .filter((o) => o.enabled)
+      .map((o) => ({
+        key: o.type,
+        label:
+          (o.type === "other" && o.label) ||
+          ADDITIONAL_OBLIGATIONS.find((m) => m.type === o.type)?.label ||
+          o.type,
+        amount: o.installment_amount || 0,
+        charge_to: o.charge_to,
+      })),
+  ];
+
+  const sumBy = (responsible: LeaseChargeResponsible) =>
+    chargeLines
+      .filter((l) => l.charge_to === responsible)
+      .reduce((sum, l) => sum + (l.amount || 0), 0);
+
+  const adminFeeAmount = round2(value.rent_amount * ((value.admin_fee_percentage || 0) / 100));
+  const tenantCharges = sumBy("tenant");
+  const ownerCharges = sumBy("owner");
+  const agencyCharges = sumBy("agency");
+
+  const totalTenant = round2(value.rent_amount + tenantCharges);
+  const netToOwner = round2(value.rent_amount - adminFeeAmount + ownerCharges);
 
   return (
     <div className="space-y-4">
@@ -473,8 +608,11 @@ export function LeaseFinancialStep({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tenant">Inquilino</SelectItem>
-                      <SelectItem value="owner">Proprietário</SelectItem>
+                      {RESPONSIBLE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -574,14 +712,104 @@ export function LeaseFinancialStep({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tenant">Inquilino</SelectItem>
-                      <SelectItem value="owner">Proprietário</SelectItem>
+                      {RESPONSIBLE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             )}
           </div>
+
+          {ADDITIONAL_OBLIGATIONS.map((meta) => {
+            const cfg =
+              additionalObligations.find((o) => o.type === meta.type) ||
+              getInitialAdditionalObligation(meta.type);
+            return (
+              <div key={meta.type} className="space-y-3">
+                <Separator />
+                <div className="flex items-center justify-between gap-2">
+                  <Label
+                    htmlFor={`obligation-${meta.type}-toggle`}
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    Cobrar {meta.label.toLowerCase()}
+                  </Label>
+                  <Switch
+                    id={`obligation-${meta.type}-toggle`}
+                    checked={cfg.enabled}
+                    onCheckedChange={(checked) => toggleAdditional(meta.type, checked)}
+                  />
+                </div>
+
+                {cfg.enabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Valor mensal</Label>
+                      <CurrencyInput
+                        value={(cfg.installment_amount || 0).toString()}
+                        onChange={(v) =>
+                          updateAdditional(meta.type, {
+                            installment_amount: parseFloat(v) || 0,
+                          })
+                        }
+                        placeholder="R$ 0,00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Primeiro vencimento</Label>
+                      <Input
+                        type="date"
+                        value={cfg.first_due_date || ""}
+                        onChange={(e) =>
+                          updateAdditional(meta.type, {
+                            first_due_date: e.target.value || null,
+                          })
+                        }
+                      />
+                    </div>
+                    {meta.type === "other" && (
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label>Descrição</Label>
+                        <Input
+                          value={cfg.label || ""}
+                          onChange={(e) =>
+                            updateAdditional(meta.type, { label: e.target.value || null })
+                          }
+                          placeholder="Ex.: taxa de lixo, jardinagem..."
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>Responsável</Label>
+                      <Select
+                        value={cfg.charge_to}
+                        onValueChange={(v) =>
+                          updateAdditional(meta.type, {
+                            charge_to: v as LeaseChargeResponsible,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {RESPONSIBLE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -596,21 +824,40 @@ export function LeaseFinancialStep({
             Taxa de Administração ({(value.admin_fee_percentage || 0).toLocaleString("pt-BR")}% sobre aluguel)
           </span>
           <span className="font-medium text-destructive">
-            −{formatCurrency(value.rent_amount * ((value.admin_fee_percentage || 0) / 100))}
+            −{formatCurrency(adminFeeAmount)}
           </span>
         </div>
-        {value.fire_insurance.enabled && value.fire_insurance.charge_to === "owner" && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Seguro incêndio (descontado do proprietário)</span>
-            <span className="font-medium text-destructive">−{formatCurrency(insuranceInstallment)}</span>
+
+        {chargeLines.map((line) => (
+          <div key={line.key} className="flex justify-between">
+            <span className="text-muted-foreground">
+              {line.label}{" "}
+              {line.charge_to === "owner"
+                ? "(repassado ao proprietário)"
+                : line.charge_to === "tenant"
+                  ? "(cobrado do inquilino)"
+                  : "(custo da imobiliária)"}
+            </span>
+            <span
+              className={
+                line.charge_to === "agency"
+                  ? "font-medium text-muted-foreground"
+                  : "font-medium text-emerald-600"
+              }
+            >
+              {line.charge_to === "agency" ? "" : "+"}
+              {formatCurrency(line.amount)}
+            </span>
           </div>
+        ))}
+
+        {agencyCharges > 0 && (
+          <p className="text-[11px] text-muted-foreground pt-0.5">
+            Encargos sob responsabilidade da imobiliária não são cobrados do inquilino nem
+            repassados ao proprietário.
+          </p>
         )}
-        {value.iptu_charge.enabled && value.iptu_charge.charge_to === "owner" && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">IPTU (descontado do proprietário)</span>
-            <span className="font-medium text-destructive">−{formatCurrency(iptuInstallment)}</span>
-          </div>
-        )}
+
         <Separator className="my-1" />
         <div className="flex justify-between">
           <span className="text-muted-foreground">Total mensal a cobrar do inquilino</span>

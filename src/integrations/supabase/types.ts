@@ -3006,6 +3006,7 @@ export type Database = {
       }
       leases: {
         Row: {
+          additional_obligations: Json
           adjustment_index: string | null
           adjustment_periodicity_months: number
           admin_fee_percentage: number | null
@@ -3048,6 +3049,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_obligations?: Json
           adjustment_index?: string | null
           adjustment_periodicity_months?: number
           admin_fee_percentage?: number | null
@@ -3090,6 +3092,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_obligations?: Json
           adjustment_index?: string | null
           adjustment_periodicity_months?: number
           admin_fee_percentage?: number | null
