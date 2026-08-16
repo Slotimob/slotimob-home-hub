@@ -36,6 +36,8 @@ import {
   LeaseFinancialStep,
   getInitialFireInsurance,
   getInitialIptuCharge,
+  getInitialAdditionalObligations,
+  normalizeAdditionalObligations,
   type LeaseFinancialValue,
 } from "@/components/assets/LeaseFinancialStep";
 
