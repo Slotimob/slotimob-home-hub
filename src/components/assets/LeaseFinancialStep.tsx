@@ -198,7 +198,7 @@ export function LeaseFinancialStep({
 
   const obligations = (unit?.obligations_config || {}) as Record<string, any>;
 
-  const dueDateFromObligation = (key: "iptu" | "insurance"): string => {
+  const dueDateFromObligation = (key: string): string => {
     const dueDay = Number(obligations?.[key]?.due_day);
     if (!dueDay || dueDay < 1 || dueDay > 28) return firstRentDueDate();
     const base = parseLocalDate(value.start_date) || new Date();
@@ -207,12 +207,43 @@ export function LeaseFinancialStep({
     return format(due, "yyyy-MM-dd");
   };
 
-  const responsibleFromObligation = (key: "iptu" | "insurance"): LeaseChargeResponsible => {
+  const responsibleFromObligation = (key: string): LeaseChargeResponsible => {
     const responsible = String(obligations?.[key]?.responsible || "").toLowerCase();
     if (responsible === "owner" || responsible === "proprietario" || responsible === "proprietário") {
       return "owner";
     }
+    if (responsible === "agency" || responsible === "imobiliaria" || responsible === "imobiliária") {
+      return "agency";
+    }
     return "tenant";
+  };
+
+  const additionalObligations = normalizeAdditionalObligations(value.additional_obligations);
+
+  const updateAdditional = (
+    type: AdditionalObligationType,
+    patch: Partial<ObligationChargeConfig>
+  ) =>
+    onChange({
+      additional_obligations: additionalObligations.map((o) =>
+        o.type === type ? { ...o, ...patch } : o
+      ),
+    });
+
+  const toggleAdditional = (type: AdditionalObligationType, enabled: boolean) => {
+    if (!enabled) {
+      updateAdditional(type, { enabled: false });
+      return;
+    }
+    const meta = ADDITIONAL_OBLIGATIONS.find((o) => o.type === type);
+    const current = additionalObligations.find((o) => o.type === type);
+    updateAdditional(type, {
+      enabled: true,
+      first_due_date:
+        current?.first_due_date || dueDateFromObligation(meta?.obligationKey || type),
+      charge_to:
+        current?.charge_to || responsibleFromObligation(meta?.obligationKey || type),
+    });
   };
 
   const toggleFireInsurance = (enabled: boolean) => {
@@ -249,14 +280,60 @@ export function LeaseFinancialStep({
     ? value.fire_insurance.installment_amount || 0
     : 0;
   const iptuInstallment = value.iptu_charge.enabled ? value.iptu_charge.installment_amount || 0 : 0;
-  const totalTenant =
-    value.rent_amount +
-    (value.fire_insurance.charge_to === "tenant" ? insuranceInstallment : 0) +
-    (value.iptu_charge.charge_to === "tenant" ? iptuInstallment : 0);
-  const netToOwner =
-    value.rent_amount * (1 - (value.admin_fee_percentage || 0) / 100) -
-    (value.fire_insurance.charge_to === "owner" ? insuranceInstallment : 0) -
-    (value.iptu_charge.charge_to === "owner" ? iptuInstallment : 0);
+  /**
+   * Todas as obrigações do contrato normalizadas para o cálculo.
+   * Regra (validada com o cliente):
+   * - tenant  -> soma à cobrança do inquilino
+   * - owner   -> soma ao repasse líquido do proprietário (reembolso/repasse)
+   * - agency  -> a imobiliária absorve: não soma nem subtrai de ninguém
+   * A taxa de administração incide SOMENTE sobre o aluguel.
+   */
+  const chargeLines: { key: string; label: string; amount: number; charge_to: LeaseChargeResponsible }[] = [
+    ...(value.fire_insurance.enabled
+      ? [
+          {
+            key: "fire_insurance",
+            label: "Seguro incêndio",
+            amount: insuranceInstallment,
+            charge_to: value.fire_insurance.charge_to,
+          },
+        ]
+      : []),
+    ...(value.iptu_charge.enabled
+      ? [
+          {
+            key: "iptu",
+            label: "IPTU",
+            amount: iptuInstallment,
+            charge_to: value.iptu_charge.charge_to,
+          },
+        ]
+      : []),
+    ...additionalObligations
+      .filter((o) => o.enabled)
+      .map((o) => ({
+        key: o.type,
+        label:
+          (o.type === "other" && o.label) ||
+          ADDITIONAL_OBLIGATIONS.find((m) => m.type === o.type)?.label ||
+          o.type,
+        amount: o.installment_amount || 0,
+        charge_to: o.charge_to,
+      })),
+  ];
+
+  const sumBy = (responsible: LeaseChargeResponsible) =>
+    chargeLines
+      .filter((l) => l.charge_to === responsible)
+      .reduce((sum, l) => sum + (l.amount || 0), 0);
+
+  const adminFeeAmount = round2(value.rent_amount * ((value.admin_fee_percentage || 0) / 100));
+  const tenantCharges = sumBy("tenant");
+  const ownerCharges = sumBy("owner");
+  const agencyCharges = sumBy("agency");
+
+  const totalTenant = round2(value.rent_amount + tenantCharges);
+  const netToOwner = round2(value.rent_amount - adminFeeAmount + ownerCharges);
 
   return (
     <div className="space-y-4">
