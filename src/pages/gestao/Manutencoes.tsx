@@ -107,6 +107,10 @@ export default function Manutencoes() {
   const [assetFilter, setAssetFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [editingActivity, setEditingActivity] = useState<EditingActivity | null>(null);
+  const [editingAsset, setEditingAsset] = useState<AssetOption | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ActivityRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['activities-list', brokerId, period],
