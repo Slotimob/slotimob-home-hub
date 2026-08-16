@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Link } from 'react-router-dom';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
@@ -52,7 +53,12 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
         ) : !hasOverdue ? (
           <div className="flex-1 flex flex-col items-center justify-center py-6">
             <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Sem inadimplência. ✓</p>
+            <p className="text-sm text-muted-foreground mb-3">Sem inadimplência. ✓</p>
+            <Button asChild variant="outline" size="sm" className="gap-1 text-xs">
+              <Link to="/gestao/alugueis-em-aberto">
+                <Building2 className="h-3 w-3" /> Ver imóveis
+              </Link>
+            </Button>
           </div>
         ) : (
           <div className="flex-1 space-y-4">
@@ -87,12 +93,19 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
               })}
             </div>
 
-            <Link
-              to="/finance/transactions?status=overdue&type=income"
-              className="flex items-center justify-center gap-1 text-xs text-primary hover:underline"
-            >
-              Ver inadimplentes <ArrowRight className="h-3 w-3" />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+              <Button asChild variant="outline" size="sm" className="w-full sm:w-auto gap-1 text-xs">
+                <Link to="/gestao/alugueis-em-aberto">
+                  <Building2 className="h-3 w-3" /> Ver imóveis
+                </Link>
+              </Button>
+              <Link
+                to="/finance/transactions?status=overdue&type=income"
+                className="flex items-center justify-center gap-1 text-xs text-primary hover:underline"
+              >
+                Ver inadimplentes <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
           </div>
         )}
         {scope === 'workspace' && (
