@@ -602,6 +602,45 @@ export default function Manutencoes() {
       </div>
 
       <ActivityFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
+      <ActivityFormDialog
+        open={!!editingActivity}
+        onOpenChange={(o) => {
+          if (!o) {
+            setEditingActivity(null);
+            setEditingAsset(null);
+          }
+        }}
+        defaultAsset={editingAsset}
+        lockAsset
+        editingActivity={editingActivity}
+      />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir atividade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A atividade "{deleteTarget?.title}" será removida permanentemente deste imóvel. Outras
+              atividades do mesmo grupo não serão afetadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </AppLayout>
   );
 }
