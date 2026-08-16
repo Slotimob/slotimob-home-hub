@@ -6,7 +6,10 @@ import {
   AlertCircle,
   Loader2,
   ClipboardList,
-  Settings2,
+  Info,
+  Sparkles,
+  Image,
+  FileText,
   Wallet,
   Trash2,
   Copy,
@@ -32,9 +35,21 @@ import {
 
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 import { AssetFinancialPanel } from '@/components/assets/AssetFinancialPanel';
-import { PropertyForm, PropertyPayload, PropertyFormData } from '@/components/properties/PropertyForm';
+import { AssetDocuments } from '@/components/assets/AssetDocuments';
+import {
+  PropertyInfoFields,
+  PropertyAmenitiesFields,
+  PropertyGalleryFields,
+  buildPropertyPayload,
+  validatePropertyFinancials,
+  propertySchema,
+  type PropertyPayload,
+  type PropertyFormData,
+} from '@/components/properties/PropertyFormFields';
 
+import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
@@ -105,6 +120,7 @@ export default function PropertyDetalhe() {
   const id = searchParams.get('id') ?? undefined;
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isOwner, hasPermission } = usePermissions();
@@ -113,7 +129,7 @@ export default function PropertyDetalhe() {
   const canDelete = isOwner || hasPermission('assets_properties', 'delete');
   const canDuplicate = isOwner || hasPermission('assets_properties', 'create');
 
-  const [activeTab, setActiveTab] = useState<string>('details');
+  const [activeTab, setActiveTab] = useState<string>('info');
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [freshProperty, setFreshProperty] = useState<Property | null>(null);
