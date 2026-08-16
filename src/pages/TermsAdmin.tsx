@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Plus, Send, Shield, Loader2, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { SlotiLogo } from '@/components/SlotiLogo';
 import { AppLayout } from '@/components/AppLayout';
 import {
   Dialog,

@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Loader2, ShieldAlert, Users, UserPlus, Trash2, Shield, Search } from 'lucide-react';
-import { SlotiLogo } from '@/components/SlotiLogo';
 import { AppLayout } from '@/components/AppLayout';
 import {
   Dialog,
