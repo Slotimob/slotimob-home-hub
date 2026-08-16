@@ -12,6 +12,7 @@ import {
   ObligationType,
   ObligationsConfig,
   ObligationConfig,
+  ObligationsConfigMeta,
   ResponsibleRole,
   ControlType,
   useUnitObligationsConfig,
@@ -40,6 +41,7 @@ import {
   Briefcase,
   Info,
   ClipboardList,
+  AlertTriangle,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -118,6 +120,7 @@ export function ObligationsConfigForm({
   const { data: unitContacts, isLoading: isLoadingContacts } = useUnitContacts(unitId);
 
   const [config, setConfig] = useState<ExtendedObligationsConfig>({});
+  const [meta, setMeta] = useState<ObligationsConfigMeta | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -149,8 +152,10 @@ export function ObligationsConfigForm({
   useEffect(() => {
     if (hasInitialized || !unitId) return;
     if (currentConfig !== undefined) {
-      if (currentConfig && Object.keys(currentConfig).length > 0) {
-        setConfig(currentConfig as ExtendedObligationsConfig);
+      const { __meta: savedMeta, ...savedConfig } = (currentConfig || {}) as Record<string, any>;
+      setMeta((savedMeta as ObligationsConfigMeta) || null);
+      if (savedConfig && Object.keys(savedConfig).length > 0) {
+        setConfig(savedConfig as ExtendedObligationsConfig);
       } else {
         const defaults: ExtendedObligationsConfig = {};
         allObligationTypes.forEach(({ type, defaultDueDay }) => {
@@ -191,14 +196,31 @@ export function ObligationsConfigForm({
     setConfig((prev) => ({ ...prev, [type]: { ...prev[type], control_type: controlType } }));
   };
 
+  const wasPendingReview = meta?.pending_review === true;
+
   const handleSave = async () => {
     if (!unitId) return;
     setIsSaving(true);
     try {
-      await updateUnitObligationsConfig(unitId, config as ObligationsConfig);
+      // Salvar confirma a revisão humana e remove o estado "pendente de revisão"
+      const reviewedMeta: ObligationsConfigMeta = {
+        ...(meta || {}),
+        pending_review: false,
+        reviewed_at: new Date().toISOString(),
+      };
+      await updateUnitObligationsConfig(unitId, {
+        ...(config as ObligationsConfig),
+        __meta: reviewedMeta,
+      });
+      setMeta(reviewedMeta);
       queryClient.invalidateQueries({ queryKey: ["asset-health"] });
       queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", unitId] });
-      toast({ title: "Configurações salvas", description: "As responsabilidades financeiras foram configuradas com sucesso." });
+      toast({
+        title: "Configurações salvas",
+        description: wasPendingReview
+          ? "Revisão confirmada. As obrigações herdadas do contrato foram validadas."
+          : "As responsabilidades financeiras foram configuradas com sucesso.",
+      });
       onSaved?.();
     } catch (error: any) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
@@ -235,6 +257,30 @@ export function ObligationsConfigForm({
   return (
     <>
       <div className="space-y-4">
+        {/* Pending review (herdado do contrato) */}
+        {wasPendingReview && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/40">
+            <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                  Pendente de revisão
+                </p>
+                <Badge variant="outline" className="border-amber-500/50 text-amber-700 dark:text-amber-400 text-[10px]">
+                  Herdado do contrato
+                </Badge>
+              </div>
+              <p className="text-xs text-amber-700/90 dark:text-amber-400/90">
+                Estas obrigações foram preenchidas automaticamente a partir do contrato ativado
+                {meta?.inherited_at
+                  ? ` em ${new Date(meta.inherited_at).toLocaleDateString("pt-BR")}`
+                  : ""}
+                . Revise os dados e clique em "Salvar Configurações" para confirmar.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Vacancy Warning */}
         {isVacant && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
@@ -349,7 +395,7 @@ export function ObligationsConfigForm({
         {showSaveButton && (
           <Button onClick={handleSave} disabled={isSaving} className="w-full">
             {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Salvar Configurações
+            {wasPendingReview ? "Salvar Configurações e confirmar revisão" : "Salvar Configurações"}
           </Button>
         )}
       </div>

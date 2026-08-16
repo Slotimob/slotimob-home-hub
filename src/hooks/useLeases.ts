@@ -78,8 +78,22 @@ export interface BillingAutomation {
  */
 export type LeaseChargeResponsible = "tenant" | "owner" | "agency";
 
+/**
+ * Vínculo do responsável com um registro real.
+ * - `charge_to` continua sendo o tipo (tenant/owner/agency)
+ * - `responsible_contact_id` é a referência real resolvida no momento da edição:
+ *   inquilino do contrato, proprietário do imóvel ou a imobiliária escolhida.
+ * - `agency_contact_id` guarda especificamente a imobiliária selecionada
+ *   (categoria "Imobiliária" em /contacts), preservada mesmo se o usuário
+ *   alternar o tipo e voltar para "agency".
+ */
+export interface LeaseChargeResponsibleLink {
+  responsible_contact_id?: string | null;
+  agency_contact_id?: string | null;
+}
+
 /** Seguro incêndio parametrizado no contrato (leases.fire_insurance) */
-export interface FireInsuranceConfig {
+export interface FireInsuranceConfig extends LeaseChargeResponsibleLink {
   enabled: boolean;
   total_amount: number;
   installments: number;
@@ -89,7 +103,7 @@ export interface FireInsuranceConfig {
 }
 
 /** IPTU parcelado parametrizado no contrato (leases.iptu_charge) */
-export interface IptuChargeConfig {
+export interface IptuChargeConfig extends LeaseChargeResponsibleLink {
   enabled: boolean;
   annual_amount: number;
   installments: number;
@@ -111,7 +125,7 @@ export type AdditionalObligationType = "condominium" | "energy" | "water" | "gas
  * Encargo adicional parametrizado no contrato (leases.additional_obligations).
  * Mesmo shape de FireInsuranceConfig/IptuChargeConfig, com valor mensal.
  */
-export interface ObligationChargeConfig {
+export interface ObligationChargeConfig extends LeaseChargeResponsibleLink {
   type: AdditionalObligationType;
   enabled: boolean;
   /** Valor mensal do encargo */
@@ -121,6 +135,7 @@ export interface ObligationChargeConfig {
   /** Descrição livre — usada principalmente no tipo "other" */
   label?: string | null;
 }
+
 
 
 

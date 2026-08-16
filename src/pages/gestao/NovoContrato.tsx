@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, addYears } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   User,
   Wallet,
@@ -40,6 +40,10 @@ import {
   normalizeAdditionalObligations,
   type LeaseFinancialValue,
 } from "@/components/assets/LeaseFinancialStep";
+import {
+  inheritObligationsConfigFromLease,
+  markLeaseObligationsInherited,
+} from "@/lib/lease-obligations-inheritance";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -152,6 +156,7 @@ export default function NovoContrato() {
   const [searchTerm, setSearchTerm] = useState("");
   const [unitSearchTerm, setUnitSearchTerm] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const queryClient = useQueryClient();
   const [selectedUnitInfo, setSelectedUnitInfo] = useState<any>(null);
   const [formData, setFormData] = useState(getInitialFormData);
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
@@ -269,6 +274,21 @@ export default function NovoContrato() {
     editLease?.owner_contact_id || selectedUnitInfo?.owner_contact_id || unitInfo?.owner_contact_id || null;
   const unitName =
     editLease?.unit?.unit_number || selectedUnitInfo?.unit_number || unitInfo?.unit_number || "";
+
+  // Proprietário real vinculado ao imóvel/unidade — usado na Matriz de Responsabilidades
+  const { data: ownerContactInfo } = useQuery({
+    queryKey: ["lease-owner-contact", ownerContactId],
+    queryFn: async () => {
+      if (!ownerContactId) return null;
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, name")
+        .eq("id", ownerContactId)
+        .maybeSingle();
+      return data as { id: string; name: string } | null;
+    },
+    enabled: !!user && !!ownerContactId,
+  });
 
   // Load draft from sessionStorage (only for new contracts)
   useEffect(() => {
@@ -706,14 +726,71 @@ export default function NovoContrato() {
         }
 
         await updateLease.mutateAsync({ id: editLease.id, data: leaseData });
+
+        // Herança automática da Matriz de Responsabilidades ao ativar o contrato
+        if (promoted) {
+          try {
+            await inheritObligationsConfigFromLease({
+              leaseId: editLease.id,
+              unitId: effectiveUnitId,
+              dueDay: Number(formData.due_day) || 10,
+              tenantContactId: formData.tenant_contact_id || null,
+              ownerContactId: ownerContactId || null,
+              fireInsurance: formData.fire_insurance?.enabled ? formData.fire_insurance : null,
+              iptuCharge: formData.iptu_charge?.enabled ? formData.iptu_charge : null,
+              additionalObligations: (formData.additional_obligations || []).filter(
+                (o) => o.enabled
+              ),
+            });
+            await markLeaseObligationsInherited(
+              editLease.id,
+              (editLease.metadata as Record<string, unknown>) || {}
+            );
+            queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", effectiveUnitId] });
+            queryClient.invalidateQueries({ queryKey: ["asset-health"] });
+          } catch (inheritError) {
+            console.error("Falha ao herdar configuração de obrigações:", inheritError);
+          }
+        }
+
         toast({
           title: promoted ? "Contrato finalizado e ativado" : "Contrato atualizado com sucesso!",
+          description: promoted
+            ? "As obrigações foram herdadas para o imóvel e aguardam sua revisão."
+            : undefined,
         });
         resultId = editLease.id;
       } else {
         const result = await createLease.mutateAsync(leaseData);
-        toast({ title: "Contrato criado com sucesso!" });
         resultId = (result as any).id || (result as any).lease?.id || "";
+
+        // Contrato nasce ativo: herda a Matriz de Responsabilidades para o imóvel
+        if (resultId) {
+          try {
+            await inheritObligationsConfigFromLease({
+              leaseId: resultId,
+              unitId: effectiveUnitId,
+              dueDay: Number(formData.due_day) || 10,
+              tenantContactId: formData.tenant_contact_id || null,
+              ownerContactId: ownerContactId || null,
+              fireInsurance: formData.fire_insurance?.enabled ? formData.fire_insurance : null,
+              iptuCharge: formData.iptu_charge?.enabled ? formData.iptu_charge : null,
+              additionalObligations: (formData.additional_obligations || []).filter(
+                (o) => o.enabled
+              ),
+            });
+            await markLeaseObligationsInherited(resultId, {});
+            queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", effectiveUnitId] });
+            queryClient.invalidateQueries({ queryKey: ["asset-health"] });
+          } catch (inheritError) {
+            console.error("Falha ao herdar configuração de obrigações:", inheritError);
+          }
+        }
+
+        toast({
+          title: "Contrato criado com sucesso!",
+          description: "As obrigações foram herdadas para o imóvel e aguardam sua revisão.",
+        });
       }
 
       sessionStorage.removeItem(DRAFT_KEY);
@@ -1034,6 +1111,14 @@ export default function NovoContrato() {
               value={formData as unknown as LeaseFinancialValue}
               onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
               unit={unitChargeDefaults}
+              tenantContact={{
+                id: formData.tenant_contact_id || null,
+                name: selectedTenant?.name || editLease?.tenant?.name || null,
+              }}
+              ownerContact={{
+                id: ownerContactId,
+                name: ownerContactInfo?.name || editLease?.owner?.name || null,
+              }}
               adjustmentLocked={isEditMode}
               header={
                 showSubdivisionSelect ? (

@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ContactSelector } from "@/components/ContactSelector";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import type {
   AdditionalObligationType,
@@ -23,6 +25,7 @@ import type {
   IptuChargeConfig,
   LeaseChargeResponsible,
   ObligationChargeConfig,
+  LeaseChargeResponsibleLink,
 } from "@/hooks/useLeases";
 
 export const ADJUSTMENT_PERIODICITY_OPTIONS = [12, 24, 30, 36];
@@ -49,15 +52,25 @@ export interface LeaseFinancialUnit {
   obligations_config?: Record<string, any> | null;
 }
 
+export interface LeaseResponsibleContact {
+  id: string | null;
+  name: string | null;
+}
+
 interface LeaseFinancialStepProps {
   value: LeaseFinancialValue;
   onChange: (patch: Partial<LeaseFinancialValue>) => void;
   unit?: LeaseFinancialUnit | null;
+  /** Inquilino já selecionado na etapa de Inquilino do contrato */
+  tenantContact?: LeaseResponsibleContact | null;
+  /** Proprietário vinculado ao imóvel/unidade selecionado */
+  ownerContact?: LeaseResponsibleContact | null;
   /** Conteúdo extra no topo (ex.: seletor de fração) */
   header?: ReactNode;
   /** Em edição, o próximo reajuste salvo não deve ser sobrescrito pela sugestão */
   adjustmentLocked?: boolean;
 }
+
 
 export function getInitialFireInsurance(): FireInsuranceConfig {
   return {
@@ -137,6 +150,92 @@ const RESPONSIBLE_OPTIONS: { value: LeaseChargeResponsible; label: string }[] = 
   { value: "agency", label: "Imobiliária" },
 ];
 
+/**
+ * Seletor de Responsável vinculado a registros reais.
+ * - Inquilino: mostra o inquilino já selecionado na etapa de Inquilino
+ * - Proprietário: mostra o proprietário do imóvel/unidade do contrato
+ * - Imobiliária: combobox de contatos da categoria "Imobiliária"
+ */
+function ResponsibleField({
+  idPrefix,
+  value,
+  onChange,
+  tenantContact,
+  ownerContact,
+}: {
+  idPrefix: string;
+  value: LeaseChargeResponsibleLink & { charge_to: LeaseChargeResponsible };
+  onChange: (patch: Partial<LeaseChargeResponsibleLink> & { charge_to?: LeaseChargeResponsible }) => void;
+  tenantContact?: LeaseResponsibleContact | null;
+  ownerContact?: LeaseResponsibleContact | null;
+}) {
+  const chargeTo = value.charge_to;
+
+  const linkedName =
+    chargeTo === "tenant"
+      ? tenantContact?.name
+      : chargeTo === "owner"
+        ? ownerContact?.name
+        : null;
+
+  const handleChargeTo = (next: LeaseChargeResponsible) => {
+    onChange({
+      charge_to: next,
+      responsible_contact_id:
+        next === "tenant"
+          ? tenantContact?.id ?? null
+          : next === "owner"
+            ? ownerContact?.id ?? null
+            : value.agency_contact_id ?? null,
+    });
+  };
+
+  return (
+    <div className="space-y-2 sm:col-span-2">
+      <Label>Responsável</Label>
+      <Select value={chargeTo} onValueChange={(v) => handleChargeTo(v as LeaseChargeResponsible)}>
+        <SelectTrigger id={`${idPrefix}-responsible`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {RESPONSIBLE_OPTIONS.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {chargeTo === "agency" ? (
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Imobiliária responsável</Label>
+          <ContactSelector
+            value={value.agency_contact_id || null}
+            onChange={(contactId) =>
+              onChange({ agency_contact_id: contactId, responsible_contact_id: contactId })
+            }
+            filterCategories={["Imobiliária"]}
+            placeholder="Selecione a imobiliária..."
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Lista de contatos da categoria "Imobiliária".
+          </p>
+        </div>
+      ) : linkedName ? (
+        <Badge variant="secondary" className="font-normal">
+          {chargeTo === "tenant" ? "Inquilino" : "Proprietário"}: {linkedName}
+        </Badge>
+      ) : (
+        <p className="text-[11px] text-amber-600">
+          {chargeTo === "tenant"
+            ? "Selecione o inquilino na etapa de Inquilino para vincular o registro."
+            : "O imóvel selecionado não tem proprietário cadastrado."}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const parseLocalDate = (value: string): Date | null => {
   if (!value) return null;
   try {
@@ -152,6 +251,8 @@ export function LeaseFinancialStep({
   value,
   onChange,
   unit,
+  tenantContact,
+  ownerContact,
   header,
   adjustmentLocked = false,
 }: LeaseFinancialStepProps) {
@@ -596,26 +697,13 @@ export function LeaseFinancialStep({
                     onChange={(e) => updateFireInsurance({ first_due_date: e.target.value || null })}
                   />
                 </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Responsável</Label>
-                  <Select
-                    value={value.fire_insurance.charge_to}
-                    onValueChange={(v) =>
-                      updateFireInsurance({ charge_to: v as LeaseChargeResponsible })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RESPONSIBLE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <ResponsibleField
+                  idPrefix="fire-insurance"
+                  value={value.fire_insurance}
+                  onChange={(patch) => updateFireInsurance(patch)}
+                  tenantContact={tenantContact}
+                  ownerContact={ownerContact}
+                />
               </div>
             )}
           </div>
@@ -702,24 +790,13 @@ export function LeaseFinancialStep({
                     onChange={(e) => updateIptu({ first_due_date: e.target.value || null })}
                   />
                 </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Responsável</Label>
-                  <Select
-                    value={value.iptu_charge.charge_to}
-                    onValueChange={(v) => updateIptu({ charge_to: v as LeaseChargeResponsible })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RESPONSIBLE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <ResponsibleField
+                  idPrefix="iptu"
+                  value={value.iptu_charge}
+                  onChange={(patch) => updateIptu(patch)}
+                  tenantContact={tenantContact}
+                  ownerContact={ownerContact}
+                />
               </div>
             )}
           </div>
@@ -783,28 +860,13 @@ export function LeaseFinancialStep({
                         />
                       </div>
                     )}
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label>Responsável</Label>
-                      <Select
-                        value={cfg.charge_to}
-                        onValueChange={(v) =>
-                          updateAdditional(meta.type, {
-                            charge_to: v as LeaseChargeResponsible,
-                          })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {RESPONSIBLE_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <ResponsibleField
+                      idPrefix={`obligation-${meta.type}`}
+                      value={cfg}
+                      onChange={(patch) => updateAdditional(meta.type, patch)}
+                      tenantContact={tenantContact}
+                      ownerContact={ownerContact}
+                    />
                   </div>
                 )}
               </div>
