@@ -4,9 +4,8 @@ import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useWorkspace } from '@/hooks/useWorkspace';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
-import { BottomNavigation } from '@/components/BottomNavigation';
+import { AppLayout } from '@/components/AppLayout';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
