@@ -361,15 +361,16 @@ export function ActivityFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle>Nova atividade</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
+        <DialogHeader className="p-6 pb-3 shrink-0">
+          <DialogTitle>{isEditing ? 'Editar atividade' : 'Nova atividade'}</DialogTitle>
           <DialogDescription>
             Registre manutenções, vistorias, reformas e outras atividades dos seus imóveis.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 pb-2 space-y-4 overflow-y-auto max-h-[65vh]">
+        <div className="px-6 pb-4 space-y-4 overflow-y-auto flex-1 min-h-0">
+
           {/* Assets */}
           <div className="space-y-2">
             <Label className="text-sm">Imóveis / Unidades</Label>
