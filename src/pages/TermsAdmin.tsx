@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Plus, Send, Shield, Loader2, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { SlotiLogo } from '@/components/SlotiLogo';
+import { AppLayout } from '@/components/AppLayout';
 import {
   Dialog,
   DialogContent,
@@ -237,20 +237,16 @@ const TermsAdmin = () => {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-primary/5 via-background to-accent/10">
-      {/* Header */}
-      <header className="border-b bg-card pt-[env(safe-area-inset-top)]">
-        <div className="container mx-auto flex items-center gap-3 px-4 py-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <SlotiLogo size="md" />
-          <h1 className="text-xl font-bold">Administração de Termos</h1>
-        </div>
-      </header>
+    <AppLayout
+      title="Administração de Termos"
+      headerActions={
+        <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+      }
+    >
+      <div className="container mx-auto max-w-4xl">
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-6">
           {/* Header Card */}
           <Card>
@@ -433,8 +429,8 @@ const TermsAdmin = () => {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

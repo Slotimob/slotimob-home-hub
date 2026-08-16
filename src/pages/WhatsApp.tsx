@@ -4,9 +4,8 @@ import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useWorkspace } from '@/hooks/useWorkspace';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
-import { BottomNavigation } from '@/components/BottomNavigation';
+import { AppLayout } from '@/components/AppLayout';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -342,12 +341,9 @@ export default function WhatsApp() {
 
   if (authLoading || connectionLoading) {
     return (
-      <SidebarProvider>
-        <div className="min-h-[100dvh] flex w-full bg-background">
-          <AppSidebar />
-          <main className="flex-1 p-6"><Skeleton className="h-[600px] w-full" /></main>
-        </div>
-      </SidebarProvider>
+      <AppLayout title="WhatsApp">
+        <Skeleton className="h-[600px] w-full" />
+      </AppLayout>
     );
   }
 
@@ -355,46 +351,50 @@ export default function WhatsApp() {
 
   if (!hasConnection) {
     return (
-      <SidebarProvider>
-        <div className="min-h-[100dvh] flex w-full bg-background">
-          <AppSidebar />
-          <main className="flex-1 p-6">
-            <div className="flex items-center gap-4 mb-6">
-              <SidebarTrigger />
-              <h1 className="text-2xl font-bold flex items-center gap-1.5">WhatsApp <HelpTooltip featureKey="whatsapp.overview" /></h1>
-            </div>
-            {canManage ? (
-              <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-                <MessageSquare className="h-16 w-16 text-muted-foreground" />
-                <h2 className="text-xl font-semibold">Conecte seu WhatsApp</h2>
-                <p className="text-muted-foreground text-center max-w-md">
-                  Integração inteligente para gestão de conversas e leads de forma centralizada.
-                </p>
-                <Button asChild>
-                  <Link to="/integrations"><Settings className="h-4 w-4 mr-2" />Configurar WhatsApp</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-                <WifiOff className="h-16 w-16 text-muted-foreground" />
-                <h2 className="text-xl font-semibold">WhatsApp não conectado</h2>
-                <p className="text-muted-foreground text-center max-w-md">
-                  O WhatsApp da imobiliária ainda não foi conectado. Solicite ao administrador que realize a conexão.
-                </p>
-              </div>
-            )}
-          </main>
-        </div>
-      </SidebarProvider>
+      <AppLayout title="WhatsApp" titleExtra={<HelpTooltip featureKey="whatsapp.overview" />}>
+        {canManage ? (
+          <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+            <MessageSquare className="h-16 w-16 text-muted-foreground" />
+            <h2 className="text-xl font-semibold">Conecte seu WhatsApp</h2>
+            <p className="text-muted-foreground text-center max-w-md">
+              Integração inteligente para gestão de conversas e leads de forma centralizada.
+            </p>
+            <Button asChild>
+              <Link to="/integrations"><Settings className="h-4 w-4 mr-2" />Configurar WhatsApp</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+            <WifiOff className="h-16 w-16 text-muted-foreground" />
+            <h2 className="text-xl font-semibold">WhatsApp não conectado</h2>
+            <p className="text-muted-foreground text-center max-w-md">
+              O WhatsApp da imobiliária ainda não foi conectado. Solicite ao administrador que realize a conexão.
+            </p>
+          </div>
+        )}
+      </AppLayout>
     );
   }
 
   return (
-    <SidebarProvider>
-      <div className="h-[100dvh] flex w-full bg-background pb-16 md:pb-0 overflow-hidden">
-        <AppSidebar />
+    <AppLayout
+      fullBleed
+      title="WhatsApp"
+      titleExtra={
+        canManage ? (
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+            Supervisor
+          </span>
+        ) : undefined
+      }
+      headerActions={
+        <Button variant="ghost" size="icon" asChild>
+          <Link to="/integrations"><Settings className="h-4 w-4" /></Link>
+        </Button>
+      }
+    >
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
 
-        <div className="flex-1 flex flex-col min-w-0">
           {!isConnected && (
             <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2 text-sm text-destructive">
@@ -407,22 +407,8 @@ export default function WhatsApp() {
             </div>
           )}
 
-          <header className="border-b bg-card flex-shrink-0 pt-[env(safe-area-inset-top)]">
-            <div className="flex items-center gap-2 px-3 py-2">
-              <SidebarTrigger className="flex-shrink-0" />
-              <h1 className="text-lg font-bold text-foreground">WhatsApp</h1>
-              {canManage && (
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                  Supervisor
-                </span>
-              )}
-              <div className="ml-auto">
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/integrations"><Settings className="h-4 w-4" /></Link>
-                </Button>
-              </div>
-            </div>
-          </header>
+
+
 
           <div className="flex-1 flex overflow-hidden min-h-0">
             <div
@@ -499,8 +485,8 @@ export default function WhatsApp() {
               </div>
             )}
           </div>
-        </div>
       </div>
+
 
       {/* Mobile CRM floating button */}
       {isMobile && selectedConversation && mobileView === 'chat' && (
@@ -541,8 +527,6 @@ export default function WhatsApp() {
         </SheetContent>
       </Sheet>
 
-      <BottomNavigation />
-
       {selectedConversation && (
         <CreateDealFromChatDialog
           open={showDealDialog}
@@ -551,6 +535,7 @@ export default function WhatsApp() {
           onSuccess={handleDealCreated}
         />
       )}
-    </SidebarProvider>
+    </AppLayout>
+
   );
 }

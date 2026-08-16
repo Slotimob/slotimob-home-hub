@@ -224,11 +224,14 @@ const Portals = () => {
 
   if (loading || isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
+      <AppLayout title="Portais">
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </AppLayout>
     );
   }
+
 
   const activeConnections = connections.filter(c => c.is_active);
   const totalListings = Object.values(stats).reduce((sum, s) => sum + s.listings, 0);
