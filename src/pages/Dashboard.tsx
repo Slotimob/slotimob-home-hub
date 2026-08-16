@@ -5,9 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { LogOut, Settings as SettingsIcon } from 'lucide-react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
-import { BottomNavigation } from '@/components/BottomNavigation';
+import { AppLayout } from '@/components/AppLayout';
+
 import { TermsReacceptDialog } from '@/components/TermsReacceptDialog';
 import { useTermsAcceptance } from '@/hooks/useTermsAcceptance';
 import { WelcomeModal } from '@/components/WelcomeModal';
