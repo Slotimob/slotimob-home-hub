@@ -172,6 +172,7 @@ export interface Lease {
   adjustment_periodicity_months?: number;
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
+  additional_obligations?: ObligationChargeConfig[] | null;
   // Joined data
   tenant?: {
     id: string;
@@ -224,6 +225,7 @@ export interface CreateLeaseData {
   adjustment_periodicity_months?: number;
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
+  additional_obligations?: ObligationChargeConfig[] | null;
 }
 
 export interface CreateLeaseResult {
@@ -413,7 +415,8 @@ export function useCreateLease() {
           adjustment_periodicity_months: data.adjustment_periodicity_months ?? 12,
           fire_insurance: (data.fire_insurance as unknown as Json) ?? null,
           iptu_charge: (data.iptu_charge as unknown as Json) ?? null,
-        })
+          additional_obligations: (data.additional_obligations as unknown as Json) ?? [],
+        } as never)
         .select()
         .single();
 
@@ -458,6 +461,11 @@ export function useUpdateLease() {
 
       if (data.billing_logs) {
         updateData.billing_logs = data.billing_logs as unknown as Json;
+      }
+
+      if (data.additional_obligations !== undefined) {
+        updateData.additional_obligations =
+          (data.additional_obligations as unknown as Json) ?? [];
       }
 
       const { error } = await supabase
