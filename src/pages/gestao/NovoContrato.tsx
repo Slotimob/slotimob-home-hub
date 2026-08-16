@@ -270,6 +270,21 @@ export default function NovoContrato() {
   const unitName =
     editLease?.unit?.unit_number || selectedUnitInfo?.unit_number || unitInfo?.unit_number || "";
 
+  // Proprietário real vinculado ao imóvel/unidade — usado na Matriz de Responsabilidades
+  const { data: ownerContactInfo } = useQuery({
+    queryKey: ["lease-owner-contact", ownerContactId],
+    queryFn: async () => {
+      if (!ownerContactId) return null;
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, name")
+        .eq("id", ownerContactId)
+        .maybeSingle();
+      return data as { id: string; name: string } | null;
+    },
+    enabled: !!user && !!ownerContactId,
+  });
+
   // Load draft from sessionStorage (only for new contracts)
   useEffect(() => {
     if (isEditMode || draftLoaded) return;
@@ -1034,6 +1049,14 @@ export default function NovoContrato() {
               value={formData as unknown as LeaseFinancialValue}
               onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
               unit={unitChargeDefaults}
+              tenantContact={{
+                id: formData.tenant_contact_id || null,
+                name: selectedTenant?.name || editLease?.tenant?.name || null,
+              }}
+              ownerContact={{
+                id: ownerContactId,
+                name: ownerContactInfo?.name || editLease?.owner?.name || null,
+              }}
               adjustmentLocked={isEditMode}
               header={
                 showSubdivisionSelect ? (
