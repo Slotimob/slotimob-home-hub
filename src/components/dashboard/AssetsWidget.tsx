@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, Home, Layers, MapPin } from 'lucide-react';
+import { Building2, Home, Layers } from 'lucide-react';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,10 +13,24 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface AssetsData {
   totalAssets: number;
-  propertiesCount: number;
   unitsInProperties: number;
   standaloneUnits: number;
+  rented: number;
+  reserved: number;
+  available: number;
+  sold: number;
 }
+
+const STATUS_BREAKDOWN: Array<{
+  key: 'rented' | 'reserved' | 'available' | 'sold';
+  label: string;
+  dot: string;
+}> = [
+  { key: 'available', label: 'Disponíveis', dot: 'bg-emerald-500' },
+  { key: 'rented', label: 'Alugados', dot: 'bg-blue-500' },
+  { key: 'reserved', label: 'Reservados', dot: 'bg-amber-500' },
+  { key: 'sold', label: 'Vendidos', dot: 'bg-purple-500' },
+];
 
 interface AssetsWidgetProps {
   isLoading?: boolean;
@@ -25,9 +39,12 @@ interface AssetsWidgetProps {
 export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) {
   const [data, setData] = useState<AssetsData>({
     totalAssets: 0,
-    propertiesCount: 0,
     unitsInProperties: 0,
     standaloneUnits: 0,
+    rented: 0,
+    reserved: 0,
+    available: 0,
+    sold: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,21 +56,23 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
     try {
       setIsLoading(true);
       
-      // Fetch units with all relevant fields for accurate asset intelligence
-      const [unitsRes, propertiesRes] = await Promise.all([
-        supabase.from('units').select('id, is_standalone, is_managed, market_value, rent_price, status, intent_type, is_occupied'),
-        supabase.from('properties').select('id', { count: 'exact', head: true }),
-      ]);
+      // Ativos = unidades de empreendimentos + imóveis avulsos.
+      // Empreendimentos (properties) são agrupadores e NÃO entram na contagem.
+      const unitsRes = await supabase
+        .from('units')
+        .select('id, is_standalone, status, is_occupied');
 
       const units = unitsRes.data || [];
-      const unitsInProperties = units.filter(u => !u.is_standalone).length;
-      const standaloneUnits = units.filter(u => u.is_standalone).length;
+      const countByStatus = (status: string) => units.filter(u => u.status === status).length;
 
       setData({
         totalAssets: units.length,
-        propertiesCount: propertiesRes.count || 0,
-        unitsInProperties,
-        standaloneUnits,
+        unitsInProperties: units.filter(u => !u.is_standalone).length,
+        standaloneUnits: units.filter(u => u.is_standalone).length,
+        rented: countByStatus('rented'),
+        reserved: countByStatus('reserved'),
+        available: countByStatus('available'),
+        sold: countByStatus('sold'),
       });
     } catch (error) {
       console.error('Error loading assets data:', error);
@@ -92,14 +111,6 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
       icon: Layers,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
-    },
-    {
-      label: 'Empreendimentos',
-      shortLabel: 'Empreend.',
-      value: data.propertiesCount,
-      icon: MapPin,
-      color: 'text-blue-600 dark:text-blue-500',
-      bgColor: 'bg-blue-500/10',
     },
     {
       label: 'Unidades',
@@ -155,6 +166,17 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
                 </Tooltip>
               );
             })}
+          </div>
+
+          {/* Detalhamento por status */}
+          <div className="mt-3 lg:mt-4 pt-3 border-t flex flex-wrap gap-x-4 gap-y-2">
+            {STATUS_BREAKDOWN.map(({ key, label, dot }) => (
+              <div key={key} className="flex items-center gap-1.5">
+                <span className={`h-2 w-2 rounded-full ${dot}`} />
+                <span className="text-xs text-muted-foreground">{label}</span>
+                <span className="text-xs font-semibold">{data[key]}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
