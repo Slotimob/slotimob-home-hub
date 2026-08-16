@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, addYears } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   User,
   Wallet,
@@ -156,6 +156,7 @@ export default function NovoContrato() {
   const [searchTerm, setSearchTerm] = useState("");
   const [unitSearchTerm, setUnitSearchTerm] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const queryClient = useQueryClient();
   const [selectedUnitInfo, setSelectedUnitInfo] = useState<any>(null);
   const [formData, setFormData] = useState(getInitialFormData);
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
@@ -761,8 +762,35 @@ export default function NovoContrato() {
         resultId = editLease.id;
       } else {
         const result = await createLease.mutateAsync(leaseData);
-        toast({ title: "Contrato criado com sucesso!" });
         resultId = (result as any).id || (result as any).lease?.id || "";
+
+        // Contrato nasce ativo: herda a Matriz de Responsabilidades para o imóvel
+        if (resultId) {
+          try {
+            await inheritObligationsConfigFromLease({
+              leaseId: resultId,
+              unitId: effectiveUnitId,
+              dueDay: Number(formData.due_day) || 10,
+              tenantContactId: formData.tenant_contact_id || null,
+              ownerContactId: ownerContactId || null,
+              fireInsurance: formData.fire_insurance?.enabled ? formData.fire_insurance : null,
+              iptuCharge: formData.iptu_charge?.enabled ? formData.iptu_charge : null,
+              additionalObligations: (formData.additional_obligations || []).filter(
+                (o) => o.enabled
+              ),
+            });
+            await markLeaseObligationsInherited(resultId, {});
+            queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", effectiveUnitId] });
+            queryClient.invalidateQueries({ queryKey: ["asset-health"] });
+          } catch (inheritError) {
+            console.error("Falha ao herdar configuração de obrigações:", inheritError);
+          }
+        }
+
+        toast({
+          title: "Contrato criado com sucesso!",
+          description: "As obrigações foram herdadas para o imóvel e aguardam sua revisão.",
+        });
       }
 
       sessionStorage.removeItem(DRAFT_KEY);
