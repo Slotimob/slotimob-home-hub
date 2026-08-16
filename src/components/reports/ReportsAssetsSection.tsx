@@ -538,7 +538,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
 
         <ReportRow
           title="Relatório Completo do Imóvel"
-          description="Aquisição, valor de mercado, despesas e atividades em período selecionável."
+          description="Aquisição, valor de mercado, despesas, manutenções e atividades em período selecionável."
           icon={<BarChart3 className="h-4 w-4" />}
           onGeneratePDF={async () => openRaConfig('pdf')}
           onDownloadCSV={async () => openRaConfig('csv')}
