@@ -1,4 +1,4 @@
-// @vitest-environment node
+// jsdom (setup global exige window)
 /**
  * Gera o PDF do contrato de TESTE com a Matriz de Responsabilidades preenchida
  * (seguro incêndio = proprietário, condomínio = imobiliária) e grava em /tmp
