@@ -41,7 +41,6 @@ const Dashboard = () => {
     preferences, 
     isLoaded, 
     toggleWidget, 
-    toggleShortcut, 
     togglePipelineStage,
     syncPipelineStages,
     resetPreferences,
@@ -166,10 +165,8 @@ const Dashboard = () => {
                 {(isOwner || hasPermission('dashboard', 'edit')) && (
                 <DashboardCustomizeSheet
                   widgets={preferences.widgets}
-                  shortcuts={preferences.shortcuts}
                   pipelineStages={preferences.pipelineStages}
                   onToggleWidget={toggleWidget}
-                  onToggleShortcut={toggleShortcut}
                   onTogglePipelineStage={togglePipelineStage}
                   onReset={resetPreferences}
                   enabledStagesCount={getEnabledStagesCount()}

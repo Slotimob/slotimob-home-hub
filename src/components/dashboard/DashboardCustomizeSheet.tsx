@@ -11,38 +11,42 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { DashboardWidgetPreferences, ShortcutConfig, PipelineStageConfig } from '@/hooks/useDashboardPreferences';
+import { DashboardWidgetPreferences, PipelineStageConfig } from '@/hooks/useDashboardPreferences';
 import { PipelineStageSelector } from './PipelineStageSelector';
 
 interface DashboardCustomizeSheetProps {
   widgets: DashboardWidgetPreferences;
-  shortcuts: ShortcutConfig[];
   pipelineStages: PipelineStageConfig[];
   onToggleWidget: (widget: keyof DashboardWidgetPreferences) => void;
-  onToggleShortcut: (shortcutId: string) => void;
   onTogglePipelineStage: (stageId: string) => void;
   onReset: () => void;
   enabledStagesCount: number;
   maxStages: number;
 }
 
+// Ordem espelha a ordem de exibição dos blocos no Dashboard
 const WIDGET_LABELS: Record<keyof DashboardWidgetPreferences, { label: string; description: string }> = {
-  shortcuts: { label: 'Acessos Rápidos', description: 'Atalhos para ações frequentes' },
-  assets: { label: 'Contagem de Ativos', description: 'Visão consolidada de ativos' },
-  financial: { label: 'Financeiro', description: 'Receitas, despesas e fluxo de caixa' },
-  pipeline: { label: 'Pipeline (CRM)', description: 'Métricas de funil de vendas' },
-  appointments: { label: 'Compromissos', description: 'Próximos compromissos da agenda' },
-  rent_receivables: { label: 'Aluguéis a receber', description: 'Cobranças de aluguel no período' },
-  open_rentals: { label: 'Imóveis com aluguel em aberto', description: 'Imóveis com cobranças pendentes' },
-  delinquency: { label: 'Inadimplência', description: 'Aging de cobranças em atraso' },
+  assets: { label: '1. Contagem de Ativos', description: 'Unidades e imóveis avulsos por status' },
+  financial: { label: '4. Financeiro', description: 'Receitas, despesas e fluxo de caixa do período' },
+  appointments: { label: '3. Compromissos', description: 'Próximos compromissos da agenda' },
+  delinquency: { label: '3. Inadimplência', description: 'Aging de cobranças em atraso' },
+  afazeres: { label: '5. Afazeres (resumo)', description: 'Resumo de pendências de gestão' },
+  pipeline: { label: '5. Pipeline (CRM)', description: 'Métricas de funil de vendas' },
 };
 
+// Ordem de renderização dos toggles na lista
+const WIDGET_ORDER: Array<keyof DashboardWidgetPreferences> = [
+  'assets',
+  'appointments',
+  'delinquency',
+  'financial',
+  'afazeres',
+  'pipeline',
+];
 export function DashboardCustomizeSheet({
   widgets,
-  shortcuts,
   pipelineStages,
   onToggleWidget,
-  onToggleShortcut,
   onTogglePipelineStage,
   onReset,
   enabledStagesCount,
@@ -69,7 +73,10 @@ export function DashboardCustomizeSheet({
           {/* Widget Toggles */}
           <div className="space-y-4">
             <h4 className="text-sm font-medium">Blocos Visíveis</h4>
-            {(Object.keys(WIDGET_LABELS) as Array<keyof DashboardWidgetPreferences>).map((key) => (
+            <p className="text-xs text-muted-foreground">
+              Os números indicam a posição do bloco no dashboard.
+            </p>
+            {WIDGET_ORDER.map((key) => (
               <div key={key} className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor={`widget-${key}`} className="text-sm font-medium">
@@ -83,28 +90,6 @@ export function DashboardCustomizeSheet({
                   id={`widget-${key}`}
                   checked={widgets[key]}
                   onCheckedChange={() => onToggleWidget(key)}
-                />
-              </div>
-            ))}
-          </div>
-
-          <Separator />
-
-          {/* Shortcut Toggles */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-medium">Atalhos Rápidos</h4>
-            <p className="text-xs text-muted-foreground">
-              Escolha quais atalhos exibir no bloco de Acessos Rápidos.
-            </p>
-            {shortcuts.map((shortcut) => (
-              <div key={shortcut.id} className="flex items-center justify-between">
-                <Label htmlFor={`shortcut-${shortcut.id}`} className="text-sm">
-                  {shortcut.label}
-                </Label>
-                <Switch
-                  id={`shortcut-${shortcut.id}`}
-                  checked={shortcut.enabled}
-                  onCheckedChange={() => onToggleShortcut(shortcut.id)}
                 />
               </div>
             ))}
