@@ -528,8 +528,6 @@ export default function WhatsApp() {
         </SheetContent>
       </Sheet>
 
-      <BottomNavigation />
-
       {selectedConversation && (
         <CreateDealFromChatDialog
           open={showDealDialog}
@@ -538,6 +536,7 @@ export default function WhatsApp() {
           onSuccess={handleDealCreated}
         />
       )}
-    </SidebarProvider>
+    </AppLayout>
+
   );
 }
