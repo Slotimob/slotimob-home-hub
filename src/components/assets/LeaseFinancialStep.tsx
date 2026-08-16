@@ -18,9 +18,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import type {
+  AdditionalObligationType,
   FireInsuranceConfig,
   IptuChargeConfig,
   LeaseChargeResponsible,
+  ObligationChargeConfig,
 } from "@/hooks/useLeases";
 
 export const ADJUSTMENT_PERIODICITY_OPTIONS = [12, 24, 30, 36];
@@ -38,6 +40,7 @@ export interface LeaseFinancialValue {
   next_adjustment_date: string;
   fire_insurance: FireInsuranceConfig;
   iptu_charge: IptuChargeConfig;
+  additional_obligations: ObligationChargeConfig[];
 }
 
 /** Dados do imóvel usados como default dos encargos */
@@ -78,6 +81,61 @@ export function getInitialIptuCharge(): IptuChargeConfig {
     source: "manual",
   };
 }
+
+/**
+ * Encargos adicionais configuráveis no contrato.
+ * Mesma taxonomia da Matriz de Responsabilidades (`SYSTEM_OBLIGATION_TYPES` /
+ * `ObligationType` em useAssetHealth), sem `rent` (é o aluguel), `insurance`
+ * (tratado por fire_insurance) e `iptu` (tratado por iptu_charge).
+ * A chave `obligationKey` é a usada dentro de `units.obligations_config`.
+ */
+export const ADDITIONAL_OBLIGATIONS: {
+  type: AdditionalObligationType;
+  label: string;
+  obligationKey: string;
+}[] = [
+  { type: "condominium", label: "Condomínio", obligationKey: "condominium" },
+  { type: "energy", label: "Energia", obligationKey: "energy" },
+  { type: "water", label: "Água", obligationKey: "water" },
+  { type: "gas", label: "Gás", obligationKey: "gas" },
+  { type: "other", label: "Outros", obligationKey: "other" },
+];
+
+export function getInitialAdditionalObligation(
+  type: AdditionalObligationType
+): ObligationChargeConfig {
+  return {
+    type,
+    enabled: false,
+    installment_amount: 0,
+    first_due_date: null,
+    charge_to: "tenant",
+    label: null,
+  };
+}
+
+export function getInitialAdditionalObligations(): ObligationChargeConfig[] {
+  return ADDITIONAL_OBLIGATIONS.map((o) => getInitialAdditionalObligation(o.type));
+}
+
+/** Normaliza a lista vinda do banco garantindo um item por tipo da taxonomia */
+export function normalizeAdditionalObligations(
+  saved?: ObligationChargeConfig[] | null
+): ObligationChargeConfig[] {
+  const list = Array.isArray(saved) ? saved : [];
+  return ADDITIONAL_OBLIGATIONS.map((o) => {
+    const found = list.find((i) => i?.type === o.type);
+    return found
+      ? { ...getInitialAdditionalObligation(o.type), ...found }
+      : getInitialAdditionalObligation(o.type);
+  });
+}
+
+const RESPONSIBLE_OPTIONS: { value: LeaseChargeResponsible; label: string }[] = [
+  { value: "tenant", label: "Inquilino" },
+  { value: "owner", label: "Proprietário" },
+  { value: "agency", label: "Imobiliária" },
+];
 
 const parseLocalDate = (value: string): Date | null => {
   if (!value) return null;
