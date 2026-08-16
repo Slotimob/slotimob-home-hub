@@ -35,15 +35,18 @@ export function MemberFeatureDenied({
 
   if (!overlay || !children) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        {content}
-        <Button variant="outline" onClick={() => navigate('/dashboard')}>
-          <Home className="h-4 w-4 mr-2" />
-          Voltar ao início
-        </Button>
-      </div>
+      <AppLayout title="Acesso restrito">
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+          {content}
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            <Home className="h-4 w-4 mr-2" />
+            Voltar ao início
+          </Button>
+        </div>
+      </AppLayout>
     );
   }
+
 
   return (
     <div className="relative">
