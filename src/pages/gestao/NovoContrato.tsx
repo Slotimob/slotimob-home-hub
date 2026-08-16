@@ -40,6 +40,10 @@ import {
   normalizeAdditionalObligations,
   type LeaseFinancialValue,
 } from "@/components/assets/LeaseFinancialStep";
+import {
+  inheritObligationsConfigFromLease,
+  markLeaseObligationsInherited,
+} from "@/lib/lease-obligations-inheritance";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -721,8 +725,38 @@ export default function NovoContrato() {
         }
 
         await updateLease.mutateAsync({ id: editLease.id, data: leaseData });
+
+        // Herança automática da Matriz de Responsabilidades ao ativar o contrato
+        if (promoted) {
+          try {
+            await inheritObligationsConfigFromLease({
+              leaseId: editLease.id,
+              unitId: effectiveUnitId,
+              dueDay: Number(formData.due_day) || 10,
+              tenantContactId: formData.tenant_contact_id || null,
+              ownerContactId: ownerContactId || null,
+              fireInsurance: formData.fire_insurance?.enabled ? formData.fire_insurance : null,
+              iptuCharge: formData.iptu_charge?.enabled ? formData.iptu_charge : null,
+              additionalObligations: (formData.additional_obligations || []).filter(
+                (o) => o.enabled
+              ),
+            });
+            await markLeaseObligationsInherited(
+              editLease.id,
+              (editLease.metadata as Record<string, unknown>) || {}
+            );
+            queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", effectiveUnitId] });
+            queryClient.invalidateQueries({ queryKey: ["asset-health"] });
+          } catch (inheritError) {
+            console.error("Falha ao herdar configuração de obrigações:", inheritError);
+          }
+        }
+
         toast({
           title: promoted ? "Contrato finalizado e ativado" : "Contrato atualizado com sucesso!",
+          description: promoted
+            ? "As obrigações foram herdadas para o imóvel e aguardam sua revisão."
+            : undefined,
         });
         resultId = editLease.id;
       } else {
