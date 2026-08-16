@@ -13,10 +13,12 @@ const OUT_EMPTY = "/tmp/browser/contrato-teste-sem-encargos.pdf";
 
 async function generate(data: LegalContractData, out: string) {
   const { default: jsPDF } = await import("jspdf");
-  (jsPDF as any).prototype.save = function (this: any) {
+  const patch = function (this: any) {
     fs.writeFileSync(out, Buffer.from(this.output("arraybuffer")));
     return this;
   };
+  (jsPDF as any).prototype.save = patch;
+  (jsPDF as any).API.save = patch;
   const { generateLegalContractPDF } = await import("@/utils/legalContractPdfGenerator");
   try {
     await generateLegalContractPDF(data, "contrato-teste.pdf");
@@ -24,7 +26,7 @@ async function generate(data: LegalContractData, out: string) {
     console.log("PDF_ERROR=" + (e as Error).message + "\n" + (e as Error).stack);
     throw e;
   }
-  console.log("SAVE_PATCHED=" + String((jsPDF as any).prototype.save).slice(0, 60));
+
 }
 
 const base: LegalContractData = {
