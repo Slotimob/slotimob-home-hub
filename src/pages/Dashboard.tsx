@@ -199,23 +199,7 @@ const Dashboard = () => {
                 <TrialBanner />
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    LINHA 1: ACESSOS RÁPIDOS
-                   ═══════════════════════════════════════════════════════════════ */}
-                {preferences.widgets.shortcuts && (
-                  <section>
-                    <ShortcutsWidget shortcuts={preferences.shortcuts} />
-                  </section>
-                )}
-
-                {/* ═══════════════════════════════════════════════════════════════
-                    LINHA 2: INDICADORES PATRIMONIAIS (Patrimônio | Yield | Vacância)
-                   ═══════════════════════════════════════════════════════════════ */}
-                <section>
-                  <PortfolioWidget refreshKey={refreshKey} />
-                </section>
-
-                {/* ═══════════════════════════════════════════════════════════════
-                    LINHA 3: PATRIMÔNIO (Contagem de Ativos)
+                    BLOCO 1: CONTAGEM DE ATIVOS (Unidades + Imóveis Avulsos)
                    ═══════════════════════════════════════════════════════════════ */}
                 {preferences.widgets.assets && (
                   <section>
@@ -224,35 +208,28 @@ const Dashboard = () => {
                 )}
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    LINHA 3.5: COMPROMISSOS | ALUGUÉIS A RECEBER
+                    BLOCO 2: PATRIMÔNIO | YIELD | VACÂNCIA
                    ═══════════════════════════════════════════════════════════════ */}
-                {(preferences.widgets.appointments || preferences.widgets.rent_receivables) && (
+                <section>
+                  <PortfolioWidget refreshKey={refreshKey} />
+                </section>
+
+                {/* ═══════════════════════════════════════════════════════════════
+                    BLOCO 3: COMPROMISSOS | INADIMPLÊNCIA
+                   ═══════════════════════════════════════════════════════════════ */}
+                {(preferences.widgets.appointments || preferences.widgets.delinquency) && (
                   <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                     {preferences.widgets.appointments && (
                       <AppointmentsWidget dateRange={dateRange} refreshKey={refreshKey} />
                     )}
-                    {preferences.widgets.rent_receivables && (
-                      <RentReceivablesWidget dateRange={dateRange} refreshKey={refreshKey} />
-                    )}
-                  </section>
-                )}
-
-                {/* ═══════════════════════════════════════════════════════════════
-                    LINHA 3.6: INADIMPLÊNCIA | IMÓVEIS COM ALUGUEL EM ABERTO
-                   ═══════════════════════════════════════════════════════════════ */}
-                {(preferences.widgets.delinquency || preferences.widgets.open_rentals) && (
-                  <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                     {preferences.widgets.delinquency && (
                       <DelinquencyWidget dateRange={dateRange} refreshKey={refreshKey} />
                     )}
-                    {preferences.widgets.open_rentals && (
-                      <OpenRentalsWidget dateRange={dateRange} refreshKey={refreshKey} />
-                    )}
                   </section>
                 )}
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    CONTROLADOR DE PERÍODO (Divisor Visual)
+                    BLOCO 4: PERFORMANCE DO PERÍODO + FINANCEIRO
                    ═══════════════════════════════════════════════════════════════ */}
                 <section className="py-2">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border/50">
@@ -275,9 +252,6 @@ const Dashboard = () => {
                   </div>
                 </section>
 
-                {/* ═══════════════════════════════════════════════════════════════
-                    LINHA 4: FINANCEIRO (Full width com gráfico maior)
-                   ═══════════════════════════════════════════════════════════════ */}
                 {preferences.widgets.financial && (
                   <section className="w-full">
                     <FinancialWidget
@@ -288,18 +262,22 @@ const Dashboard = () => {
                 )}
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    LINHA 5: PIPELINE CRM (Full width)
+                    BLOCO 5: AFAZERES (resumo) | PIPELINE CRM
                    ═══════════════════════════════════════════════════════════════ */}
-                {preferences.widgets.pipeline && (
-                  <section className="w-full">
-                    <PipelineWidget
-                      dateRange={dateRange}
-                      refreshKey={refreshKey}
-                      enabledStages={preferences.pipelineStages}
-                      onStagesLoaded={syncPipelineStages}
-                    />
+                {(preferences.widgets.afazeres || preferences.widgets.pipeline) && (
+                  <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
+                    {preferences.widgets.afazeres && <AfazeresSummaryWidget />}
+                    {preferences.widgets.pipeline && (
+                      <PipelineWidget
+                        dateRange={dateRange}
+                        refreshKey={refreshKey}
+                        enabledStages={preferences.pipelineStages}
+                        onStagesLoaded={syncPipelineStages}
+                      />
+                    )}
                   </section>
                 )}
+
               </div>
             )}
 
