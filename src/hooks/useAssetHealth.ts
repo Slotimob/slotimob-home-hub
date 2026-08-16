@@ -55,7 +55,6 @@ export interface ObligationsConfig {
   other?: ObligationConfig;
   /** Chave reservada — não é um tipo de obrigação */
   __meta?: ObligationsConfigMeta;
-  [key: string]: ObligationConfig | ObligationsConfigMeta | undefined;
 }
 
 
