@@ -239,11 +239,9 @@ export default function Proposals() {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-background">
-          <AppSidebar />
-          <main className="flex-1 p-4 md:p-6 pb-24 lg:pb-6 overflow-auto">
+      <AppLayout title="Propostas">
             <div className="max-w-6xl mx-auto space-y-6">
+
               {/* Header */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
