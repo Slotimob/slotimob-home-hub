@@ -112,7 +112,19 @@ const Dashboard = () => {
   }
 
   return (
-    <SidebarProvider>
+    <AppLayout
+      headerActions={
+        <>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+            <SettingsIcon className="h-5 w-5" />
+          </Button>
+          <Button variant="outline" onClick={signOut} className="h-9">
+            <LogOut className="h-4 w-4" />
+            <span className="ml-2">Sair</span>
+          </Button>
+        </>
+      }
+    >
       {/* Terms Re-accept Dialog */}
       {user && needsReaccept && (
         <TermsReacceptDialog
@@ -126,30 +138,8 @@ const Dashboard = () => {
       {/* Onboarding Welcome Modal */}
       <WelcomeModal />
 
-      <div className="min-h-[100dvh] flex w-full bg-gradient-to-br from-primary/5 via-background to-accent/10 pb-20 md:pb-0">
-        <AppSidebar />
+      <div>
 
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="border-b bg-card sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
-            <div className="flex items-center justify-between px-4 py-3 pr-[30px]">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger />
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
-                  <SettingsIcon className="h-5 w-5" />
-                </Button>
-                <Button variant="outline" onClick={signOut} className="h-9 pr-[15px]">
-                  <LogOut className="h-4 w-4" />
-                  <span className="ml-2">Sair</span>
-                </Button>
-              </div>
-            </div>
-          </header>
-
-          {/* Main Content */}
-          <main className="flex-1 overflow-auto px-3 py-6 lg:px-8 lg:py-8">
             {/* Header Section with Title and Customize */}
             <div className="mb-6 lg:mb-8">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
