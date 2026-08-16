@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AppSidebar } from '@/components/AppSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { BottomNavigation } from '@/components/BottomNavigation';
+import { AppLayout } from '@/components/AppLayout';
+
 import { useProposals, type Proposal } from '@/hooks/useProposals';
 import { CreateProposalSheet } from '@/components/proposals/CreateProposalSheet';
 import { Button } from '@/components/ui/button';
@@ -468,9 +467,6 @@ export default function Proposals() {
               </Card>
               </>)}
             </div>
-          </main>
-          <BottomNavigation />
-        </div>
 
         <CreateProposalSheet
           open={sheetOpen}
@@ -504,7 +500,7 @@ export default function Proposals() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </SidebarProvider>
+      </AppLayout>
     </TooltipProvider>
   );
 }
