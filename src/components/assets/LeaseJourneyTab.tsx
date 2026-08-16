@@ -74,6 +74,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
     key_return_path?: string;
     key_return_date?: string;
      obligations_configured?: boolean;
+    obligations_inherited_at?: string;
+    obligations_pending_review?: boolean;
      last_adjustment_year?: number;
    } | null;
    termination_date?: string | null;
@@ -199,17 +201,27 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          uploadKey: "signed_contract",
         canDelete: !!lease.signed_contract_path,
        },
-       {
-         id: "obligations",
-         title: "Configuração de Obrigações",
-         description: metadata.obligations_configured
-           ? "IPTU, Condomínio e outras despesas configuradas"
-           : "Configure as despesas recorrentes do imóvel",
-         icon: Settings,
-         status: metadata.obligations_configured ? "completed" : "pending",
-         action: onConfigureObligations,
-         actionLabel: "Configurar",
-       },
+       (() => {
+         const pendingReview = metadata.obligations_pending_review === true;
+         const inheritedAt = metadata.obligations_inherited_at
+           ? format(new Date(metadata.obligations_inherited_at), "dd/MM/yyyy", { locale: ptBR })
+           : null;
+         return {
+           id: "obligations",
+           title: "Configuração de Obrigações",
+           description: pendingReview
+             ? `Herdada do contrato${inheritedAt ? ` em ${inheritedAt}` : ""} — pendente de revisão`
+             : metadata.obligations_configured
+               ? "IPTU, Condomínio e outras despesas configuradas"
+               : "Configure as despesas recorrentes do imóvel",
+           icon: Settings,
+           status: (metadata.obligations_configured && !pendingReview
+             ? "completed"
+             : "pending") as StepStatus,
+           action: onConfigureObligations,
+           actionLabel: pendingReview ? "Revisar" : "Configurar",
+         };
+       })(),
         (() => {
           const adjStatus = getAdjustmentStatus(fullLeaseData?.next_adjustment_date);
           const appliedThisYear = metadata.last_adjustment_year === currentYear;

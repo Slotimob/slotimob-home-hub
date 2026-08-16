@@ -1364,6 +1364,7 @@ export default function ContratoDetalhe() {
                 metadata: {
                   ...(lease.metadata || {}),
                   obligations_configured: true,
+                  obligations_pending_review: false,
                 },
               })
               .eq("id", lease.id);
