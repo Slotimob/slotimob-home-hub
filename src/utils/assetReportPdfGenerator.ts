@@ -287,6 +287,46 @@ export async function generateAssetReportPdf(report: AssetReportData) {
       y += 3;
     }
 
+    // Maintenance / activities (property_activities)
+    if (asset.period && (asset.period.maintenance_items?.length ?? 0) > 0) {
+      checkPageBreak();
+      doc.setTextColor(30, 58, 95);
+      doc.setFontSize(11);
+      doc.text(pdfSafeLabel('Manutenções e Atividades'), margin, y);
+      y += 2;
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Data', 'Tipo', 'Atividade', 'Responsável', 'Custo est.', 'Lanç.', 'Anexos', 'Status']],
+        body: asset.period.maintenance_items.map(m => pdfSafeRow([
+          fmtDateTime(m.date),
+          m.type_label,
+          pdfSafeText(m.title).slice(0, 45),
+          m.responsible ? pdfSafeText(m.responsible).slice(0, 22) : '—',
+          fmtCurrency(m.estimated_cost),
+          m.has_transaction ? 'Sim' : 'Não',
+          String(m.attachments_count),
+          m.is_completed ? 'Concluída' : 'Pendente',
+        ])),
+        theme: 'striped',
+        styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+        headStyles: { fillColor: [30, 58, 95] },
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 20 }, 5: { cellWidth: 12 }, 6: { cellWidth: 13 }, 7: { cellWidth: 20 } },
+        margin: { left: margin, right: margin },
+      });
+      y = (doc as any).lastAutoTable.finalY + 3;
+
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(
+        pdfSafeLabel(
+          `Total: ${asset.period.maintenance_count} atividade(s) · ${asset.period.maintenance_pending_count} pendente(s) · Custo estimado ${fmtCurrency(asset.period.maintenance_estimated_cost)}`,
+        ),
+        margin, y,
+      );
+      y += 7;
+    }
+
     // Indicators
     if (asset.period) {
       checkPageBreak();
@@ -301,6 +341,8 @@ export async function generateAssetReportPdf(report: AssetReportData) {
           ['Yield mensal', fmtPct(asset.period.monthly_yield)],
           ['Cap Rate', fmtPct(asset.period.cap_rate)],
           ['Atividades no período', String(asset.period.activities_count)],
+          ['Manutenções no período', String(asset.period.maintenance_count)],
+          ['Custo estimado de manutenções', fmtCurrency(asset.period.maintenance_estimated_cost)],
         ],
         theme: 'plain',
         styles: { fontSize: 9, cellPadding: 2 },

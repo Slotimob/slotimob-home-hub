@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ReportRow } from './ReportRow';
 import { ReportsTable } from './ReportsTable';
 import { RAReportConfigDialog } from './RAReportConfigDialog';
-import { Building2, TrendingUp, Shield, Receipt, FileText, BarChart3, Users } from 'lucide-react';
+import { Building2, TrendingUp, Shield, Receipt, FileText, BarChart3, Users, Wrench, AlertTriangle, CalendarClock, CircleDollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateReportPdf, formatCurrency, formatDate } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
@@ -20,6 +20,9 @@ import { differenceInDays, differenceInMonths, format, subMonths } from 'date-fn
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { activityTypeLabel } from '@/lib/activity-types';
+import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -36,6 +39,8 @@ interface ReportsAssetsSectionProps {
 export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: ReportsAssetsSectionProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
+  const maintenanceBrokerId = effectiveBrokerId || user?.id || null;
   const [selectedLeaseId, setSelectedLeaseId] = useState<string>('');
   const [raConfigOpen, setRaConfigOpen] = useState(false);
   const [raFormat, setRaFormat] = useState<'pdf' | 'docx' | 'excel' | 'csv'>('pdf');
@@ -56,6 +61,68 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
     setRaFormat(fmt);
     setRaConfigOpen(true);
   };
+
+  // === Resumo de Manutenções (property_activities) ===
+  const { data: maintenanceSummary } = useQuery({
+    queryKey: [
+      'reports-maintenance-summary',
+      maintenanceBrokerId,
+      selectedUnitId,
+      format(dateRange.from, 'yyyy-MM-dd'),
+      format(dateRange.to, 'yyyy-MM-dd'),
+    ],
+    queryFn: async () => {
+      if (!maintenanceBrokerId) return null;
+      let query = (supabase as any)
+        .from('property_activities')
+        .select('id, activity_type, scheduled_at, created_at, is_completed, estimated_cost, unit_id, property_id')
+        .eq('broker_id', maintenanceBrokerId)
+        .limit(2000);
+      if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const fromStr = format(dateRange.from, 'yyyy-MM-dd');
+      const toStr = format(dateRange.to, 'yyyy-MM-dd');
+      const rows = (data || []).filter((r: any) => {
+        const d = r.scheduled_at || r.created_at;
+        if (!d) return false;
+        const day = String(d).slice(0, 10);
+        return day >= fromStr && day <= toStr;
+      });
+
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const inSevenDays = format(new Date(Date.now() + 7 * 24 * 3600 * 1000), 'yyyy-MM-dd');
+
+      const byType: Record<string, number> = {};
+      let overdue = 0;
+      let upcoming = 0;
+      let completed = 0;
+      let estimatedCost = 0;
+
+      for (const r of rows) {
+        const label = activityTypeLabel(r.activity_type);
+        byType[label] = (byType[label] || 0) + 1;
+        estimatedCost += Number(r.estimated_cost || 0);
+        if (r.is_completed) { completed++; continue; }
+        const day = String(r.scheduled_at || r.created_at).slice(0, 10);
+        if (day < today) overdue++;
+        else if (day <= inSevenDays) upcoming++;
+      }
+
+      return {
+        total: rows.length,
+        completed,
+        pending: rows.length - completed,
+        overdue,
+        upcoming,
+        estimatedCost,
+        byType: Object.entries(byType).sort((a, b) => b[1] - a[1]),
+      };
+    },
+    enabled: !!maintenanceBrokerId,
+    staleTime: 30_000,
+  });
 
   const { data: activeLeases = [] } = useQuery({
     queryKey: ['active-leases-for-reports', user?.id],
@@ -372,6 +439,53 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
 
   return (
     <div className="space-y-6">
+      {maintenanceSummary && maintenanceSummary.total > 0 && (
+        <div className="rounded-lg border bg-card p-4 shadow-sm space-y-3">
+          <div className="flex items-center gap-2">
+            <Wrench className="h-4 w-4 text-primary" />
+            <Label className="text-sm font-medium">Resumo de Manutenções no período</Label>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-[11px] text-muted-foreground">Atividades</p>
+              <p className="text-lg font-semibold">{maintenanceSummary.total}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {maintenanceSummary.completed} concluída(s) · {maintenanceSummary.pending} pendente(s)
+              </p>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> Em atraso
+              </p>
+              <p className="text-lg font-semibold text-destructive">{maintenanceSummary.overdue}</p>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <CalendarClock className="h-3 w-3" /> Próximos 7 dias
+              </p>
+              <p className="text-lg font-semibold">{maintenanceSummary.upcoming}</p>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <CircleDollarSign className="h-3 w-3" /> Custo estimado
+              </p>
+              <p className="text-lg font-semibold">{formatCurrency(maintenanceSummary.estimatedCost)}</p>
+            </div>
+          </div>
+
+          {maintenanceSummary.byType.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {maintenanceSummary.byType.map(([label, count]) => (
+                <Badge key={label} variant="secondary" className="text-[11px] font-normal">
+                  {label}: {count}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {filteredLeases.length > 0 && (
         <div className="rounded-lg border bg-card p-4 shadow-sm space-y-3">
           <div className="flex items-center gap-2">
@@ -424,7 +538,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
 
         <ReportRow
           title="Relatório Completo do Imóvel"
-          description="Aquisição, valor de mercado, despesas e atividades em período selecionável."
+          description="Aquisição, valor de mercado, despesas, manutenções e atividades em período selecionável."
           icon={<BarChart3 className="h-4 w-4" />}
           onGeneratePDF={async () => openRaConfig('pdf')}
           onDownloadCSV={async () => openRaConfig('csv')}

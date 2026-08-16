@@ -45,7 +45,7 @@ export function generateAssetReportCsv(report: AssetReportData) {
     ['Cap Rate médio', report.summary.cap_rate_avg != null ? `${report.summary.cap_rate_avg.toFixed(2)}%` : '—'],
     [],
     ['DETALHAMENTO POR IMÓVEL'],
-    ['Nome', 'Tipo', 'Endereço', 'Valor Aquisição', 'Custos', 'Total Investido', 'Valor Mercado', 'Valorização %', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Atividades'],
+    ['Nome', 'Tipo', 'Endereço', 'Valor Aquisição', 'Custos', 'Total Investido', 'Valor Mercado', 'Valorização %', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Atividades', 'Manutenções', 'Custo Est. Manutenções'],
   ];
 
   for (const a of report.assets) {
@@ -64,7 +64,32 @@ export function generateAssetReportCsv(report: AssetReportData) {
       a.period?.monthly_yield != null ? `${a.period.monthly_yield.toFixed(2)}%` : '',
       a.period?.cap_rate != null ? `${a.period.cap_rate.toFixed(2)}%` : '',
       String(a.period?.activities_count ?? 0),
+      String(a.period?.maintenance_count ?? 0),
+      String(a.period?.maintenance_estimated_cost ?? 0),
     ]);
+  }
+
+  // Manutenções e Atividades
+  const maintenanceRows = report.assets.flatMap(a => (a.period?.maintenance_items || []).map(m => [
+    a.name,
+    new Date(m.date).toLocaleDateString('pt-BR'),
+    m.type_label,
+    m.title,
+    m.description ?? '',
+    m.responsible ?? '',
+    m.estimated_cost != null ? String(m.estimated_cost) : '',
+    m.has_transaction ? 'Sim' : 'Não',
+    String(m.attachments_count),
+    m.is_completed ? 'Concluída' : 'Pendente',
+  ]));
+
+  rows.push([]);
+  rows.push(['MANUTENÇÕES E ATIVIDADES']);
+  rows.push(['Imóvel', 'Data', 'Tipo', 'Atividade', 'Descrição', 'Responsável', 'Custo Estimado', 'Lançamento Financeiro', 'Anexos', 'Status']);
+  if (maintenanceRows.length === 0) {
+    rows.push(['Nenhuma atividade no período']);
+  } else {
+    rows.push(...maintenanceRows);
   }
 
   downloadCsv(toCsv(rows), `relatorio-imovel-${report.period.from}-${report.period.to}.csv`);

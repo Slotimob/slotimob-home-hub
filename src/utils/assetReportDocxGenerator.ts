@@ -124,12 +124,37 @@ export async function generateAssetReportDocx(report: AssetReportData) {
       sections.push(new Paragraph({ text: 'Receitas no Período', heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 50 } }));
       sections.push(new Paragraph({ children: [new TextRun({ text: `Total: ${fmtCurrency(asset.period.income_total)}`, size: 20 })] }));
 
+      if ((asset.period.maintenance_items?.length ?? 0) > 0) {
+        sections.push(new Paragraph({ text: 'Manutenções e Atividades', heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 50 } }));
+        const maintHeader = new TableRow({
+          children: ['Data', 'Tipo', 'Atividade', 'Responsável', 'Custo est.', 'Lançamento', 'Anexos', 'Status'].map(h =>
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 14 })] })] })
+          ),
+        });
+        const maintRows = asset.period.maintenance_items.map(m => new TableRow({
+          children: [
+            new Date(m.date).toLocaleDateString('pt-BR'),
+            m.type_label,
+            m.title,
+            m.responsible ?? '—',
+            fmtCurrency(m.estimated_cost),
+            m.has_transaction ? 'Sim' : 'Não',
+            String(m.attachments_count),
+            m.is_completed ? 'Concluída' : 'Pendente',
+          ].map(v => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: v, size: 14 })] })] })),
+        }));
+        sections.push(new Table({ rows: [maintHeader, ...maintRows], width: { size: 100, type: WidthType.PERCENTAGE } }));
+        sections.push(new Paragraph({ children: [new TextRun({ text: `Total: ${asset.period.maintenance_count} atividade(s) • ${asset.period.maintenance_pending_count} pendente(s) • Custo estimado ${fmtCurrency(asset.period.maintenance_estimated_cost)}`, size: 16, color: '666666' })], spacing: { before: 80 } }));
+      }
+
       sections.push(new Paragraph({ text: 'Indicadores', heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 50 } }));
       sections.push(new Table({ rows: [
         kvRow('ROI no período', fmtPct(asset.period.roi_pct)),
         kvRow('Yield mensal', fmtPct(asset.period.monthly_yield)),
         kvRow('Cap Rate', fmtPct(asset.period.cap_rate)),
         kvRow('Atividades', String(asset.period.activities_count)),
+        kvRow('Manutenções no período', String(asset.period.maintenance_count)),
+        kvRow('Custo estimado de manutenções', fmtCurrency(asset.period.maintenance_estimated_cost)),
       ], width: { size: 100, type: WidthType.PERCENTAGE } }));
     }
   }
