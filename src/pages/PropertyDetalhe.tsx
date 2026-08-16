@@ -282,6 +282,20 @@ export default function PropertyDetalhe() {
     await fetchProperty();
   };
 
+  /** Rodapé de ações compartilhado pelas abas editáveis (Informações / Infraestrutura) */
+  const renderFormActions = () => (
+    <div className="flex justify-end gap-2 pt-4 border-t">
+      <Button type="button" variant="outline" onClick={handleCancel}>
+        {canEdit ? 'Cancelar' : 'Fechar'}
+      </Button>
+      {canEdit && (
+        <Button type="submit" disabled={saving}>
+          {saving ? 'Salvando...' : 'Salvar Alterações'}
+        </Button>
+      )}
+    </div>
+  );
+
   const handleDiscardDraft = () => {
     discardDraft();
     if (freshProperty) {
