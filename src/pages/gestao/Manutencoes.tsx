@@ -247,20 +247,61 @@ export default function Manutencoes() {
     return result;
   }, [filtered]);
 
-  const toggleCompleted = async (row: ActivityRow) => {
+  const setCompleted = async (row: ActivityRow, completed: boolean) => {
     try {
       const { error } = await (supabase as any)
         .from('property_activities')
         .update({
-          is_completed: !row.is_completed,
-          completed_at: !row.is_completed ? new Date().toISOString() : null,
+          is_completed: completed,
+          completed_at: completed ? new Date().toISOString() : null,
         })
         .eq('id', row.id);
       if (error) throw error;
+      toast({ title: completed ? 'Atividade concluída' : 'Atividade reaberta' });
       queryClient.invalidateQueries({ queryKey: ['activities-list'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes'] });
     } catch (e: any) {
       toast({ title: 'Erro ao atualizar', description: e.message, variant: 'destructive' });
     }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await (supabase as any)
+        .from('property_activities')
+        .delete()
+        .eq('id', deleteTarget.id);
+      if (error) throw error;
+      toast({ title: 'Atividade excluída' });
+      queryClient.invalidateQueries({ queryKey: ['activities-list'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes'] });
+      setDeleteTarget(null);
+    } catch (e: any) {
+      toast({ title: 'Erro ao excluir', description: e.message, variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const openEdit = (row: ActivityRow) => {
+    setEditingAsset(
+      row.unit_id
+        ? { id: row.unit_id, type: 'unit', label: assetLabel(row) }
+        : row.property_id
+        ? { id: row.property_id, type: 'property', label: assetLabel(row) }
+        : null,
+    );
+    setEditingActivity({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      activity_type: row.activity_type,
+      scheduled_at: row.scheduled_at,
+      estimated_cost: row.estimated_cost != null ? Number(row.estimated_cost) : null,
+      assigned_contact_id: row.assigned_contact_id,
+    });
   };
 
   const renderDate = (row: ActivityRow) => {
@@ -273,18 +314,51 @@ export default function Manutencoes() {
     }
   };
 
-  const StatusBadge = ({ row }: { row: ActivityRow }) => (
-    <button type="button" onClick={() => toggleCompleted(row)} className="focus:outline-none">
-      {row.is_completed ? (
-        <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 gap-1">
-          <CheckCircle2 className="h-3 w-3" /> Concluída
-        </Badge>
-      ) : (
-        <Badge variant="outline" className="gap-1">
-          <Clock className="h-3 w-3" /> Pendente
-        </Badge>
-      )}
-    </button>
+  const StatusBadge = ({ row }: { row: ActivityRow }) =>
+    row.is_completed ? (
+      <Badge className="bg-emerald-500/15 text-emerald-600 gap-1 hover:bg-emerald-500/15">
+        <CheckCircle2 className="h-3 w-3" /> Concluída
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="gap-1">
+        <Clock className="h-3 w-3" /> Pendente
+      </Badge>
+    );
+
+  const RowActions = ({ row }: { row: ActivityRow }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Ações da atividade"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={() => openEdit(row)}>
+          <Pencil className="h-4 w-4 mr-2" /> Editar
+        </DropdownMenuItem>
+        {row.is_completed ? (
+          <DropdownMenuItem onClick={() => setCompleted(row, false)}>
+            <RotateCcw className="h-4 w-4 mr-2" /> Marcar como pendente
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem onClick={() => setCompleted(row, true)}>
+            <CheckCircle2 className="h-4 w-4 mr-2" /> Marcar como concluída
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => setDeleteTarget(row)}
+        >
+          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   const ActivityCells = ({ row, indent }: { row: ActivityRow; indent?: boolean }) => (
@@ -311,8 +385,12 @@ export default function Manutencoes() {
       <TableCell>
         <StatusBadge row={row} />
       </TableCell>
+      <TableCell className="w-10 text-right">
+        <RowActions row={row} />
+      </TableCell>
     </>
   );
+
 
   return (
     <AppLayout title="Manutenções">
