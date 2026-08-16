@@ -4,14 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 export interface DashboardWidgetPreferences {
-  shortcuts: boolean;
   assets: boolean;
   financial: boolean;
   pipeline: boolean;
   appointments: boolean;
-  rent_receivables: boolean;
-  open_rentals: boolean;
   delinquency: boolean;
+  afazeres: boolean;
 }
 
 export interface ShortcutConfig {
@@ -81,14 +79,12 @@ const DEFAULT_PIPELINE_STAGE_CONFIGS: PipelineStageConfig[] = DEFAULT_PIPELINE_S
 }));
 
 const DEFAULT_WIDGET_PREFS: DashboardWidgetPreferences = {
-  shortcuts: true,
   assets: true,
   financial: true,
   pipeline: true,
   appointments: true,
-  rent_receivables: true,
-  open_rentals: false,
   delinquency: true,
+  afazeres: true,
 };
 
 const DEFAULT_PREFERENCES: DashboardPreferences = {
@@ -98,6 +94,19 @@ const DEFAULT_PREFERENCES: DashboardPreferences = {
 };
 
 const MAX_PIPELINE_STAGES = 6;
+
+/**
+ * Garante que apenas blocos atualmente suportados sejam considerados.
+ * Preferências antigas (ex.: shortcuts, rent_receivables, open_rentals) são descartadas.
+ */
+function sanitizeWidgets(stored?: Partial<DashboardWidgetPreferences> | null): DashboardWidgetPreferences {
+  const result = { ...DEFAULT_WIDGET_PREFS };
+  if (!stored) return result;
+  (Object.keys(DEFAULT_WIDGET_PREFS) as Array<keyof DashboardWidgetPreferences>).forEach((key) => {
+    if (typeof stored[key] === 'boolean') result[key] = stored[key] as boolean;
+  });
+  return result;
+}
 
 export function useDashboardPreferences() {
   const { user } = useAuth();
@@ -150,7 +159,7 @@ export function useDashboardPreferences() {
           });
 
           setPreferences({
-            widgets: { ...DEFAULT_WIDGET_PREFS, ...(settings.visible_widgets || {}) },
+            widgets: sanitizeWidgets(settings.visible_widgets),
             shortcuts: mergedShortcuts,
             pipelineStages: mergedPipelineStages,
             dateFilter: settings.date_filter,
