@@ -69,8 +69,14 @@ export interface BillingAutomation {
   legal_notification_7_days?: boolean;
 }
 
-/** Responsável pelo encargo do contrato */
-export type LeaseChargeResponsible = "tenant" | "owner";
+/**
+ * Responsável pelo encargo do contrato.
+ * Mesma taxonomia da Matriz de Responsabilidades (`ResponsibleRole` em useAssetHealth):
+ * - tenant: inquilino paga (soma à cobrança do inquilino)
+ * - owner: proprietário paga (valor é repassado a ele, soma ao repasse líquido)
+ * - agency: a imobiliária absorve o custo (não soma nem subtrai de ninguém)
+ */
+export type LeaseChargeResponsible = "tenant" | "owner" | "agency";
 
 /** Seguro incêndio parametrizado no contrato (leases.fire_insurance) */
 export interface FireInsuranceConfig {
@@ -92,6 +98,28 @@ export interface IptuChargeConfig {
   charge_to: LeaseChargeResponsible;
   /** 'unit' quando o valor veio do cadastro do imóvel, 'manual' quando editado */
   source: "unit" | "manual";
+}
+
+/**
+ * Tipos de encargo adicionais configuráveis no contrato.
+ * Espelha a taxonomia da Matriz de Responsabilidades (ObligationType),
+ * sem `rent` (é o próprio aluguel), `insurance` (fire_insurance) e `iptu` (iptu_charge).
+ */
+export type AdditionalObligationType = "condominium" | "energy" | "water" | "gas" | "other";
+
+/**
+ * Encargo adicional parametrizado no contrato (leases.additional_obligations).
+ * Mesmo shape de FireInsuranceConfig/IptuChargeConfig, com valor mensal.
+ */
+export interface ObligationChargeConfig {
+  type: AdditionalObligationType;
+  enabled: boolean;
+  /** Valor mensal do encargo */
+  installment_amount: number;
+  first_due_date: string | null;
+  charge_to: LeaseChargeResponsible;
+  /** Descrição livre — usada principalmente no tipo "other" */
+  label?: string | null;
 }
 
 
