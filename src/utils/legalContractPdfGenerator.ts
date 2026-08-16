@@ -788,13 +788,19 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
 
   addSubClause('13.4', `Para todas as questões decorrentes deste contrato, fica eleito o foro da Comarca de ${safeField(data.imovel.cidade, '_______________')}/${safeField(data.imovel.estado, '__')}, com renúncia expressa a qualquer outro, por mais privilegiado que seja.`);
 
+  // pdfSafeText troca parênteses por colchetes fullwidth, que não existem na
+  // fonte padrão do jsPDF (helvetica) e saem como caracteres quebrados.
+  // Reconverte para colchetes ASCII, mantendo a sanitização original.
+  const legalSafe = (v: unknown): string =>
+    pdfSafeText(v).replace(/［/g, '[').replace(/］/g, ']');
   const encargos = data.encargos || [];
   const findEncargo = (key: string) => encargos.find((e) => e.key === key);
   const responsavelTexto = (e: EncargoContrato): string => {
     const papel = encargoRoleLabel(e.responsavelTipo);
-    const nome = pdfSafeText(e.responsavelNome || '').trim();
+    const nome = legalSafe(e.responsavelNome || '').trim();
     return nome ? `${papel} (${nome.toUpperCase()})` : papel;
   };
+  const artigoResp = (e: EncargoContrato): string => (e.responsavelTipo === 'agency' ? 'da' : 'do');
   const valorTexto = (e: EncargoContrato): string => {
     if (e.valor === null || e.valor === undefined || !e.valor) return '';
     return `, no valor de ${formatCurrency(e.valor)}${e.periodicidade ? ` (${e.periodicidade})` : ''}`;
@@ -804,7 +810,7 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addClauseHeader('DÉCIMA QUARTA', 'DO SEGURO CONTRA INCÊNDIO');
   const seguro = findEncargo('insurance');
   if (seguro) {
-    addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o imóvel será mantido coberto por apólice de seguro contra incêndio e demais sinistros que possam destruí-lo ou deteriorá-lo, ficando a contratação e o custeio do prêmio a cargo do ${responsavelTexto(seguro)}${valorTexto(seguro)}, conforme a Matriz de Responsabilidades constante da Cláusula Décima Sexta.`);
+    addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o imóvel será mantido coberto por apólice de seguro contra incêndio e demais sinistros que possam destruí-lo ou deteriorá-lo, ficando a contratação e o custeio do prêmio a cargo ${artigoResp(seguro)} ${responsavelTexto(seguro)}${valorTexto(seguro)}, conforme a Matriz de Responsabilidades constante da Cláusula Décima Sexta.`);
   } else {
     addSubClause('14.1', `Em cumprimento ao art. 22, inciso VIII, da Lei nº 8.245/91, o LOCADOR contratará e manterá vigente, durante toda a locação, apólice de seguro contra incêndio e outros sinistros que possam destruir ou deteriorar o imóvel locado.`);
   }
@@ -814,13 +820,13 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addClauseHeader('DÉCIMA QUINTA', 'DO IPTU E ENCARGOS MUNICIPAIS');
   const iptu = findEncargo('iptu');
   if (iptu) {
-    addSubClause('15.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel são de responsabilidade do ${responsavelTexto(iptu)}${valorTexto(iptu)}, nos termos ajustados na Matriz de Responsabilidades constante da Cláusula Décima Sexta.`);
+    addSubClause('15.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel são de responsabilidade ${artigoResp(iptu)} ${responsavelTexto(iptu)}${valorTexto(iptu)}, nos termos ajustados na Matriz de Responsabilidades constante da Cláusula Décima Sexta.`);
   } else {
     addSubClause('15.1', `O Imposto Predial e Territorial Urbano (IPTU) e demais taxas municipais incidentes sobre o imóvel serão de responsabilidade do LOCADOR, salvo disposição expressa em contrário firmada por escrito entre as partes.`);
   }
   const condominio = findEncargo('condominium');
   if (condominio) {
-    addSubClause('15.2', `As taxas de condomínio ordinárias, destinadas às despesas correntes de manutenção e conservação das áreas comuns, são de responsabilidade do ${responsavelTexto(condominio)}${valorTexto(condominio)}. As despesas extraordinárias de condomínio, assim definidas no art. 22, parágrafo único, da Lei nº 8.245/91, permanecem a cargo do LOCADOR.`);
+    addSubClause('15.2', `As taxas de condomínio ordinárias, destinadas às despesas correntes de manutenção e conservação das áreas comuns, são de responsabilidade ${artigoResp(condominio)} ${responsavelTexto(condominio)}${valorTexto(condominio)}. As despesas extraordinárias de condomínio, assim definidas no art. 22, parágrafo único, da Lei nº 8.245/91, permanecem a cargo do LOCADOR.`);
   } else {
     addSubClause('15.2', `As taxas de condomínio ordinárias são de responsabilidade do LOCATÁRIO. As taxas extraordinárias de condomínio, destinadas à realização de obras nas partes comuns e fachada, são de responsabilidade do LOCADOR.`);
   }
@@ -831,14 +837,14 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
     addSubClause('16.1', 'As partes ajustam, de forma expressa, a seguinte distribuição de responsabilidades quanto aos encargos e despesas da locação, prevalecendo o aqui disposto sobre eventuais menções genéricas contidas nas demais cláusulas deste instrumento:');
     encargos.forEach((e, idx) => {
       const partes = [
-        `${pdfSafeText(e.label).toUpperCase()}: a cargo do ${responsavelTexto(e)}`,
+        `${legalSafe(e.label).toUpperCase()}: a cargo ${artigoResp(e)} ${responsavelTexto(e)}`,
       ];
       if (e.valor) {
         partes.push(`valor de ${formatCurrency(e.valor)}${e.periodicidade ? ` (${e.periodicidade})` : ''}`);
       } else if (e.periodicidade) {
         partes.push(e.periodicidade);
       }
-      if (e.observacao) partes.push(pdfSafeText(e.observacao));
+      if (e.observacao) partes.push(legalSafe(e.observacao));
       addSubClause(`16.${idx + 2}`, `${partes.join(', ')}.`);
     });
     const ultima = encargos.length + 2;
