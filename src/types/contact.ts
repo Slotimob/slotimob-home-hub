@@ -14,6 +14,7 @@ export const CONTACT_CATEGORY_VALUES = [
   'Fornecedor',
   'Fiador',
   'Parceiro',
+  'Imobiliária',
 ] as const;
 
 export type ContactCategory = typeof CONTACT_CATEGORY_VALUES[number];

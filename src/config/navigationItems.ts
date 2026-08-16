@@ -203,7 +203,7 @@ export const SIDEBAR_ITEMS = [
     ],
   },
   {
-    title: 'CRM',
+    title: 'Comercial',
     icon: Users,
     items: [
       { title: 'Mensagens', url: '/whatsapp' },

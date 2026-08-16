@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Search, X, Paperclip, Building2, Home } from 'lucide-react';
+import { format } from 'date-fns';
 import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
 
 export { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
@@ -40,6 +41,16 @@ export interface AssetOption {
   subtitle?: string | null;
 }
 
+export interface EditingActivity {
+  id: string;
+  title: string;
+  description?: string | null;
+  activity_type?: string | null;
+  scheduled_at?: string | null;
+  estimated_cost?: number | null;
+  assigned_contact_id?: string | null;
+}
+
 interface ActivityFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -47,6 +58,8 @@ interface ActivityFormDialogProps {
   defaultAsset?: AssetOption | null;
   /** Lock the asset selector to the default asset */
   lockAsset?: boolean;
+  /** When provided, the dialog updates this activity instead of creating new ones */
+  editingActivity?: EditingActivity | null;
   onSaved?: () => void;
 }
 
@@ -57,6 +70,7 @@ export function ActivityFormDialog({
   onOpenChange,
   defaultAsset = null,
   lockAsset = false,
+  editingActivity = null,
   onSaved,
 }: ActivityFormDialogProps) {
   const { user } = useAuth();
@@ -65,6 +79,7 @@ export function ActivityFormDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isEditing = !!editingActivity;
 
   const [assetSearch, setAssetSearch] = useState('');
   const [selectedAssets, setSelectedAssets] = useState<AssetOption[]>([]);
@@ -84,16 +99,37 @@ export function ActivityFormDialog({
     if (!open) return;
     setAssetSearch('');
     setSelectedAssets(defaultAsset ? [defaultAsset] : []);
+    setFiles([]);
+    setCreateTransaction(false);
+
+    if (editingActivity) {
+      const scheduled = editingActivity.scheduled_at
+        ? new Date(editingActivity.scheduled_at)
+        : null;
+      setActivityType(editingActivity.activity_type || 'manutencao');
+      setTitle(editingActivity.title || '');
+      setDescription(editingActivity.description || '');
+      setContactId(editingActivity.assigned_contact_id || null);
+      setDate(
+        scheduled && !isNaN(scheduled.getTime())
+          ? format(scheduled, 'yyyy-MM-dd')
+          : new Date().toISOString().split('T')[0],
+      );
+      setTime(scheduled && !isNaN(scheduled.getTime()) ? format(scheduled, 'HH:mm') : '09:00');
+      setEstimatedCost(
+        editingActivity.estimated_cost != null ? String(editingActivity.estimated_cost) : '',
+      );
+      return;
+    }
+
     setActivityType('manutencao');
     setTitle('');
     setDescription('');
     setContactId(null);
     setDate(new Date().toISOString().split('T')[0]);
     setTime('09:00');
-    setFiles([]);
     setEstimatedCost('');
-    setCreateTransaction(false);
-  }, [open, defaultAsset]);
+  }, [open, defaultAsset, editingActivity]);
 
   // Asset search (units + properties)
   const { data: assetOptions = [], isFetching: searching } = useQuery({
@@ -180,7 +216,8 @@ export function ActivityFormDialog({
   };
 
   const estimatedCostNumber = useMemo(() => {
-    const parsed = parseFloat(String(estimatedCost).replace(/\./g, '').replace(',', '.'));
+    // CurrencyInput already delivers a plain numeric string ("1000.05")
+    const parsed = parseFloat(estimatedCost);
     return isNaN(parsed) ? null : parsed;
   }, [estimatedCost]);
 
@@ -192,6 +229,29 @@ export function ActivityFormDialog({
     setSaving(true);
     try {
       const scheduledAt = new Date(`${date}T${time || '00:00'}:00`).toISOString();
+
+      if (isEditing && editingActivity) {
+        const { error: updateError } = await (supabase as any)
+          .from('property_activities')
+          .update({
+            activity_type: activityType,
+            title: title.trim(),
+            description: description.trim() || null,
+            assigned_contact_id: contactId,
+            scheduled_at: scheduledAt,
+            estimated_cost: estimatedCostNumber,
+          })
+          .eq('id', editingActivity.id);
+        if (updateError) throw updateError;
+
+        toast({ title: 'Atividade atualizada' });
+        queryClient.invalidateQueries({ queryKey: ['activities-list'] });
+        queryClient.invalidateQueries({ queryKey: ['asset-manual-notes'] });
+        onSaved?.();
+        onOpenChange(false);
+        return;
+      }
+
       const groupId =
         selectedAssets.length > 1
           ? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)
@@ -301,15 +361,16 @@ export function ActivityFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle>Nova atividade</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
+        <DialogHeader className="p-6 pb-3 shrink-0">
+          <DialogTitle>{isEditing ? 'Editar atividade' : 'Nova atividade'}</DialogTitle>
           <DialogDescription>
             Registre manutenções, vistorias, reformas e outras atividades dos seus imóveis.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 pb-2 space-y-4 overflow-y-auto max-h-[65vh]">
+        <div className="px-6 pb-4 space-y-4 overflow-y-auto flex-1 min-h-0">
+
           {/* Assets */}
           <div className="space-y-2">
             <Label className="text-sm">Imóveis / Unidades</Label>
@@ -474,6 +535,7 @@ export function ActivityFormDialog({
           </div>
 
           {/* Attachments */}
+          {!isEditing && (
           <div className="space-y-1.5">
             <Label className="text-sm">Comprovantes / anexos</Label>
             <Input ref={fileInputRef} type="file" multiple onChange={handleFiles} />
@@ -501,17 +563,19 @@ export function ActivityFormDialog({
               </div>
             )}
           </div>
+          )}
         </div>
 
-        <DialogFooter className="p-6 pt-2">
+        <DialogFooter className="shrink-0 border-t bg-background px-6 py-4 rounded-b-lg">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={!canSave}>
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Salvar atividade
+            {isEditing ? 'Salvar alterações' : 'Salvar atividade'}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );

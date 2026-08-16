@@ -30,7 +30,25 @@ import {
   ActivityFormDialog,
   ACTIVITY_TYPES,
   ACTIVITY_TYPE_LABELS,
+  type AssetOption,
+  type EditingActivity,
 } from '@/components/assets/ActivityFormDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -41,6 +59,10 @@ import {
   CheckCircle2,
   Clock,
   Layers,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 
 interface ActivityRow {
@@ -85,6 +107,10 @@ export default function Manutencoes() {
   const [assetFilter, setAssetFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [editingActivity, setEditingActivity] = useState<EditingActivity | null>(null);
+  const [editingAsset, setEditingAsset] = useState<AssetOption | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ActivityRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['activities-list', brokerId, period],
@@ -221,20 +247,61 @@ export default function Manutencoes() {
     return result;
   }, [filtered]);
 
-  const toggleCompleted = async (row: ActivityRow) => {
+  const setCompleted = async (row: ActivityRow, completed: boolean) => {
     try {
       const { error } = await (supabase as any)
         .from('property_activities')
         .update({
-          is_completed: !row.is_completed,
-          completed_at: !row.is_completed ? new Date().toISOString() : null,
+          is_completed: completed,
+          completed_at: completed ? new Date().toISOString() : null,
         })
         .eq('id', row.id);
       if (error) throw error;
+      toast({ title: completed ? 'Atividade concluída' : 'Atividade reaberta' });
       queryClient.invalidateQueries({ queryKey: ['activities-list'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes'] });
     } catch (e: any) {
       toast({ title: 'Erro ao atualizar', description: e.message, variant: 'destructive' });
     }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await (supabase as any)
+        .from('property_activities')
+        .delete()
+        .eq('id', deleteTarget.id);
+      if (error) throw error;
+      toast({ title: 'Atividade excluída' });
+      queryClient.invalidateQueries({ queryKey: ['activities-list'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-manual-notes'] });
+      setDeleteTarget(null);
+    } catch (e: any) {
+      toast({ title: 'Erro ao excluir', description: e.message, variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const openEdit = (row: ActivityRow) => {
+    setEditingAsset(
+      row.unit_id
+        ? { id: row.unit_id, type: 'unit', label: assetLabel(row) }
+        : row.property_id
+        ? { id: row.property_id, type: 'property', label: assetLabel(row) }
+        : null,
+    );
+    setEditingActivity({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      activity_type: row.activity_type,
+      scheduled_at: row.scheduled_at,
+      estimated_cost: row.estimated_cost != null ? Number(row.estimated_cost) : null,
+      assigned_contact_id: row.assigned_contact_id,
+    });
   };
 
   const renderDate = (row: ActivityRow) => {
@@ -247,18 +314,51 @@ export default function Manutencoes() {
     }
   };
 
-  const StatusBadge = ({ row }: { row: ActivityRow }) => (
-    <button type="button" onClick={() => toggleCompleted(row)} className="focus:outline-none">
-      {row.is_completed ? (
-        <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 gap-1">
-          <CheckCircle2 className="h-3 w-3" /> Concluída
-        </Badge>
-      ) : (
-        <Badge variant="outline" className="gap-1">
-          <Clock className="h-3 w-3" /> Pendente
-        </Badge>
-      )}
-    </button>
+  const StatusBadge = ({ row }: { row: ActivityRow }) =>
+    row.is_completed ? (
+      <Badge className="bg-emerald-500/15 text-emerald-600 gap-1 hover:bg-emerald-500/15">
+        <CheckCircle2 className="h-3 w-3" /> Concluída
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="gap-1">
+        <Clock className="h-3 w-3" /> Pendente
+      </Badge>
+    );
+
+  const RowActions = ({ row }: { row: ActivityRow }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Ações da atividade"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={() => openEdit(row)}>
+          <Pencil className="h-4 w-4 mr-2" /> Editar
+        </DropdownMenuItem>
+        {row.is_completed ? (
+          <DropdownMenuItem onClick={() => setCompleted(row, false)}>
+            <RotateCcw className="h-4 w-4 mr-2" /> Marcar como pendente
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem onClick={() => setCompleted(row, true)}>
+            <CheckCircle2 className="h-4 w-4 mr-2" /> Marcar como concluída
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => setDeleteTarget(row)}
+        >
+          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   const ActivityCells = ({ row, indent }: { row: ActivityRow; indent?: boolean }) => (
@@ -285,8 +385,12 @@ export default function Manutencoes() {
       <TableCell>
         <StatusBadge row={row} />
       </TableCell>
+      <TableCell className="w-10 text-right">
+        <RowActions row={row} />
+      </TableCell>
     </>
   );
+
 
   return (
     <AppLayout title="Manutenções">
@@ -401,13 +505,17 @@ export default function Manutencoes() {
                       <TableHead>Data</TableHead>
                       <TableHead className="text-right">Custo estimado</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {groupedRows.map((entry) => {
                       if (entry.kind === 'single') {
                         return (
-                          <TableRow key={entry.row.id}>
+                          <TableRow
+                            key={entry.row.id}
+                            className="border-l-4 border-l-transparent bg-card hover:bg-muted/40"
+                          >
                             <ActivityCells row={entry.row} />
                           </TableRow>
                         );
@@ -419,7 +527,7 @@ export default function Manutencoes() {
                         <>
                           <TableRow
                             key={entry.groupId}
-                            className="cursor-pointer bg-muted/30"
+                            className="cursor-pointer border-l-4 border-l-primary bg-primary/5 hover:bg-primary/10"
                             onClick={() =>
                               setExpanded((prev) => ({ ...prev, [entry.groupId]: !isOpen }))
                             }
@@ -427,12 +535,12 @@ export default function Manutencoes() {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 {isOpen ? (
-                                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronDown className="h-4 w-4 text-primary" />
                                 ) : (
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronRight className="h-4 w-4 text-primary" />
                                 )}
                                 <div>
-                                  <p className="text-sm font-medium">{first.title}</p>
+                                  <p className="text-sm font-semibold">{first.title}</p>
                                   {first.description && (
                                     <p className="text-xs text-muted-foreground line-clamp-1">
                                       {first.description}
@@ -447,7 +555,7 @@ export default function Manutencoes() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="gap-1">
+                              <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20">
                                 <Layers className="h-3 w-3" />
                                 Aplicado a {entry.rows.length} imóveis
                               </Badge>
@@ -460,7 +568,7 @@ export default function Manutencoes() {
                             <TableCell className="text-sm whitespace-nowrap">
                               {renderDate(first)}
                             </TableCell>
-                            <TableCell className="text-sm text-right whitespace-nowrap">
+                            <TableCell className="text-sm text-right whitespace-nowrap font-medium">
                               {first.estimated_cost != null
                                 ? brl(Number(first.estimated_cost) * entry.rows.length)
                                 : '—'}
@@ -470,10 +578,14 @@ export default function Manutencoes() {
                                 {done}/{entry.rows.length} concluídas
                               </Badge>
                             </TableCell>
+                            <TableCell className="w-10" />
                           </TableRow>
                           {isOpen &&
                             entry.rows.map((row) => (
-                              <TableRow key={row.id} className="bg-background">
+                              <TableRow
+                                key={row.id}
+                                className="border-l-4 border-l-primary/40 bg-muted/20 hover:bg-muted/40"
+                              >
                                 <ActivityCells row={row} indent />
                               </TableRow>
                             ))}
@@ -481,6 +593,7 @@ export default function Manutencoes() {
                       );
                     })}
                   </TableBody>
+
                 </Table>
               </div>
             )}
@@ -489,6 +602,45 @@ export default function Manutencoes() {
       </div>
 
       <ActivityFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
+      <ActivityFormDialog
+        open={!!editingActivity}
+        onOpenChange={(o) => {
+          if (!o) {
+            setEditingActivity(null);
+            setEditingAsset(null);
+          }
+        }}
+        defaultAsset={editingAsset}
+        lockAsset
+        editingActivity={editingActivity}
+      />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir atividade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A atividade "{deleteTarget?.title}" será removida permanentemente deste imóvel. Outras
+              atividades do mesmo grupo não serão afetadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </AppLayout>
   );
 }

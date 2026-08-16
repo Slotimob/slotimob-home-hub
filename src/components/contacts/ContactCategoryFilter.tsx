@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { User, Home, Users, Building2, Truck, Shield, Handshake } from 'lucide-react';
+import { User, Home, Users, Building2, Truck, Shield, Handshake, Landmark } from 'lucide-react';
 
 export type ContactCategory = 
   | 'Proprietário' 
@@ -9,7 +9,8 @@ export type ContactCategory =
   | 'Empresa' 
   | 'Fornecedor' 
   | 'Fiador' 
-  | 'Parceiro';
+  | 'Parceiro'
+  | 'Imobiliária';
 
 export const CONTACT_CATEGORIES: ContactCategory[] = [
   'Proprietário',
@@ -19,6 +20,7 @@ export const CONTACT_CATEGORIES: ContactCategory[] = [
   'Fornecedor',
   'Fiador',
   'Parceiro',
+  'Imobiliária',
 ];
 
 export const CATEGORY_ICONS: Record<ContactCategory, React.ComponentType<{ className?: string }>> = {
@@ -29,6 +31,7 @@ export const CATEGORY_ICONS: Record<ContactCategory, React.ComponentType<{ class
   'Fornecedor': Truck,
   'Fiador': Shield,
   'Parceiro': Handshake,
+  'Imobiliária': Landmark,
 };
 
 export const CATEGORY_COLORS: Record<ContactCategory, string> = {
@@ -39,6 +42,7 @@ export const CATEGORY_COLORS: Record<ContactCategory, string> = {
   'Fornecedor': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
   'Fiador': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
   'Parceiro': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+  'Imobiliária': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
 };
 
 interface ContactCategoryFilterProps {

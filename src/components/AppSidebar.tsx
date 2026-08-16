@@ -180,7 +180,7 @@ export function AppSidebar() {
       ]
     },
     { 
-      title: 'CRM', 
+      title: 'Comercial', 
       icon: Users,
       items: [
         { title: 'Mensagens', url: '/whatsapp', moduleKey: 'crm_whatsapp' },
