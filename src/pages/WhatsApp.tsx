@@ -486,8 +486,8 @@ export default function WhatsApp() {
               </div>
             )}
           </div>
-        </div>
       </div>
+
 
       {/* Mobile CRM floating button */}
       {isMobile && selectedConversation && mobileView === 'chat' && (
