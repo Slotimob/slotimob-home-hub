@@ -824,21 +824,40 @@ export function LeaseFinancialStep({
             Taxa de Administração ({(value.admin_fee_percentage || 0).toLocaleString("pt-BR")}% sobre aluguel)
           </span>
           <span className="font-medium text-destructive">
-            −{formatCurrency(value.rent_amount * ((value.admin_fee_percentage || 0) / 100))}
+            −{formatCurrency(adminFeeAmount)}
           </span>
         </div>
-        {value.fire_insurance.enabled && value.fire_insurance.charge_to === "owner" && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Seguro incêndio (descontado do proprietário)</span>
-            <span className="font-medium text-destructive">−{formatCurrency(insuranceInstallment)}</span>
+
+        {chargeLines.map((line) => (
+          <div key={line.key} className="flex justify-between">
+            <span className="text-muted-foreground">
+              {line.label}{" "}
+              {line.charge_to === "owner"
+                ? "(repassado ao proprietário)"
+                : line.charge_to === "tenant"
+                  ? "(cobrado do inquilino)"
+                  : "(custo da imobiliária)"}
+            </span>
+            <span
+              className={
+                line.charge_to === "agency"
+                  ? "font-medium text-muted-foreground"
+                  : "font-medium text-emerald-600"
+              }
+            >
+              {line.charge_to === "agency" ? "" : "+"}
+              {formatCurrency(line.amount)}
+            </span>
           </div>
+        ))}
+
+        {agencyCharges > 0 && (
+          <p className="text-[11px] text-muted-foreground pt-0.5">
+            Encargos sob responsabilidade da imobiliária não são cobrados do inquilino nem
+            repassados ao proprietário.
+          </p>
         )}
-        {value.iptu_charge.enabled && value.iptu_charge.charge_to === "owner" && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">IPTU (descontado do proprietário)</span>
-            <span className="font-medium text-destructive">−{formatCurrency(iptuInstallment)}</span>
-          </div>
-        )}
+
         <Separator className="my-1" />
         <div className="flex justify-between">
           <span className="text-muted-foreground">Total mensal a cobrar do inquilino</span>
