@@ -29,7 +29,9 @@ import {
   CheckSquare,
   Briefcase,
   Wrench,
+  Landmark,
 } from 'lucide-react';
+
 
 export interface NavItem {
   title: string;
