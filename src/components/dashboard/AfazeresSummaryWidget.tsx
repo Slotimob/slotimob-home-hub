@@ -90,7 +90,7 @@ export function AfazeresSummaryWidget() {
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
-            Afazeres <HelpTooltip featureKey="dashboard.overview" />
+            Afazeres <HelpTooltip featureKey="management.tasks" />
           </CardTitle>
           {!isLoading && totalCount > 0 && (
             <Badge variant={totalOverdue > 0 ? 'destructive' : 'secondary'} className="text-[11px]">

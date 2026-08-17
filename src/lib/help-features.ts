@@ -1,10 +1,10 @@
 export const HELP_FEATURES = {
   // Dashboard
   'dashboard.overview': 'Visão geral do dashboard',
-  'dashboard.appointments': 'Widget de Compromissos',
-  'dashboard.rent_receivables': 'Widget de Aluguéis',
-  'dashboard.delinquency': 'Widget de Inadimplência',
-  'dashboard.open_rentals': 'Widget de Imóveis com Aluguel em Aberto',
+  'dashboard.appointments': 'Informações de Compromissos',
+  'dashboard.rent_receivables': 'Informações de Aluguéis',
+  'dashboard.delinquency': 'Informações de Inadimplência',
+  'dashboard.open_rentals': 'Informações de Imóveis com Aluguel em Aberto',
 
   // Ativos
   'assets.properties': 'Empreendimentos',
