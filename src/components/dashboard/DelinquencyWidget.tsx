@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
 import { useDashboardScope } from '@/hooks/useDashboardScope';
 import type { DateRange } from './DashboardDateFilter';
-import { useWidgetPeriod, WidgetPeriodFilter } from './WidgetPeriodFilter';
+import { Separator } from '@/components/ui/separator';
 
 function fmtCurrency(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
