@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
 import { useDashboardScope } from '@/hooks/useDashboardScope';
 import type { DateRange } from './DashboardDateFilter';
-import { useWidgetPeriod, WidgetPeriodFilter } from './WidgetPeriodFilter';
+import { Separator } from '@/components/ui/separator';
 
 function fmtCurrency(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -20,7 +19,6 @@ interface DelinquencyWidgetProps {
 }
 
 const BUCKET_CONFIG = [
-  { key: 'bucket_0_15' as const, label: '0-15 dias', color: 'bg-blue-400' },
   { key: 'bucket_16_30' as const, label: '16-30 dias', color: 'bg-yellow-400' },
   { key: 'bucket_31_60' as const, label: '31-60 dias', color: 'bg-orange-400' },
   { key: 'bucket_60_plus' as const, label: '60+ dias', color: 'bg-red-500' },
@@ -28,8 +26,8 @@ const BUCKET_CONFIG = [
 
 export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: DelinquencyWidgetProps) {
   const scope = useDashboardScope();
-  const { period, setPeriod, dateRange: localDateRange } = useWidgetPeriod('this_month');
-  const { data, isLoading } = useRentalMetrics({ from: localDateRange.from, to: localDateRange.to, refreshKey });
+  const fixedDateRange = { from: new Date(2000, 0, 1), to: new Date() };
+  const { data, isLoading } = useRentalMetrics({ from: fixedDateRange.from, to: fixedDateRange.to, refreshKey });
 
   const overdue = data?.overdue ?? { amount: 0, count: 0, buckets: { bucket_0_15: { amount: 0, count: 0 }, bucket_16_30: { amount: 0, count: 0 }, bucket_31_60: { amount: 0, count: 0 }, bucket_60_plus: { amount: 0, count: 0 } } };
   const hasOverdue = overdue.amount > 0;
@@ -42,7 +40,6 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
           <AlertCircle className={`h-4 w-4 ${hasOverdue ? 'text-destructive' : 'text-muted-foreground'}`} />
           Inadimplência <HelpTooltip featureKey="dashboard.delinquency" />
         </CardTitle>
-        <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
         {isLoading ? (
@@ -64,7 +61,7 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
           <div className="flex-1 space-y-4">
             {/* Main KPI */}
             <div className="text-center">
-              <p className="text-2xl font-bold text-destructive">{fmtCurrency(overdue.amount)}</p>
+              <p className="text-xl font-bold text-destructive">{fmtCurrency(overdue.amount)}</p>
               <p className="text-xs text-muted-foreground">{overdue.count} cobrança{overdue.count !== 1 ? 's' : ''} em atraso</p>
             </div>
 
@@ -92,6 +89,29 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
                 );
               })}
             </div>
+
+            {/* Mini table: units with open rentals */}
+            {data?.properties_with_open_rentals && data.properties_with_open_rentals.length > 0 && (
+              <div className="space-y-2">
+                <Separator />
+                <p className="text-xs font-medium text-muted-foreground">Unidades em atraso</p>
+                <div className="space-y-1">
+                  {data.properties_with_open_rentals.map((item) => (
+                    <div
+                      key={`${item.property_id || ''}-${item.unit_id || ''}`}
+                      className="flex items-center justify-between gap-2 py-1 px-2 rounded-md bg-muted/50"
+                    >
+                      <span className="text-xs truncate flex-1" title={item.property_name}>
+                        {item.property_name}
+                      </span>
+                      <span className="text-xs font-medium whitespace-nowrap">
+                        {fmtCurrency(item.total_open)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
               <Button asChild variant="outline" size="sm" className="w-full sm:w-auto gap-1 text-xs">
