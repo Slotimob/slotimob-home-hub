@@ -42,9 +42,11 @@ const FinanceTransactions = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
 
-  // Get unitId from URL if present
+  // Get unitId and bankAccountId from URL if present
   const urlUnitId = searchParams.get("unitId") || "";
+  const urlBankAccountId = searchParams.get("bankAccountId") || "";
   const urlAction = searchParams.get("action") || "";
+
 
   const [filters, setFilters] = useState<TransactionFilters>({
     type: "all",
@@ -56,11 +58,12 @@ const FinanceTransactions = () => {
     dueDateTo: "",
     search: "",
     unitId: urlUnitId,
-    bankAccountId: "",
+    bankAccountId: urlBankAccountId,
     reconciled: "all",
     hideTransfers: false,
     assetExpenseCategory: "all",
   });
+
 
   const [sortConfig, setSortConfig] = useState<SortConfig | undefined>(undefined);
 
@@ -69,7 +72,11 @@ const FinanceTransactions = () => {
     if (urlUnitId && urlUnitId !== filters.unitId) {
       setFilters((prev) => ({ ...prev, unitId: urlUnitId }));
     }
-  }, [urlUnitId]);
+    if (urlBankAccountId && urlBankAccountId !== filters.bankAccountId) {
+      setFilters((prev) => ({ ...prev, bankAccountId: urlBankAccountId }));
+    }
+  }, [urlUnitId, urlBankAccountId]);
+
 
   // Auto-open create dialog when action=new is present in URL
   useEffect(() => {
