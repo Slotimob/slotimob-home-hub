@@ -56,6 +56,14 @@ export const HELP_DEFAULT_DESCRIPTIONS: Partial<Record<FeatureKey, string>> = {
   'assets.portfolio_count': 'Inventário completo dos ativos cadastrados: empreendimentos (edifícios, condomínios, loteamentos), unidades vinculadas a empreendimentos e imóveis avulsos. Total = Unidades + Avulsos.',
   'crm.pipeline': 'Funil de negócios com todos os deals em andamento, organizados por estágio de negociação.',
   'finance.dre': 'Demonstrativo de Resultados do Exercício: receitas, despesas e resultado líquido por período de competência.',
+  'finance.overview': 'Visão geral do fluxo de caixa financeiro: receitas, despesas e saldo, calculados a partir dos lançamentos financeiros do período selecionado.',
+  'finance.transactions': 'Página de lançamentos (receitas e despesas), onde você cadastra, filtra e gerencia todo o financeiro por status, data, categoria e unidade.',
+  'finance.reconciliation': 'Conciliação bancária: confira os lançamentos do sistema contra o extrato bancário importado, marcando o que já bateu.',
+  'finance.cash_flow': 'Fluxo de Caixa Analítico: tabela detalhada de entradas e saídas por período, organizadas pela data de vencimento de cada lançamento.',
+  'finance.bank_accounts': 'Diferença entre Saldo Real (valor já conciliado/confirmado na conta) e Saldo Projetado (saldo real somado às receitas pendentes e subtraídas as despesas pendentes).',
+  'crm.contacts': 'Central de contatos unificada: leads, proprietários, inquilinos e empresas em um só lugar.',
+  'crm.schedule': 'Agenda de compromissos e atividades: visitas, reuniões, vencimentos de contratos e obrigações.',
+  'reports.overview': 'Relatórios gerenciais disponíveis (semanal, mensal, DIMOB e outros) para acompanhar a performance do negócio.',
 };
 
 export type FeatureKey = keyof typeof HELP_FEATURES;
