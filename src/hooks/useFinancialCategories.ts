@@ -248,6 +248,19 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
     },
   });
 
+  const hasAttemptedSeed = useRef(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (hasAttemptedSeed.current) return;
+    if (!effectiveBrokerId) return;
+    if (categories.length > 0) return;
+    if (seedDefaultCategories.isPending) return;
+
+    hasAttemptedSeed.current = true;
+    seedDefaultCategories.mutate();
+  }, [isLoading, effectiveBrokerId, categories.length, seedDefaultCategories.isPending, seedDefaultCategories.mutate]);
+
   // Group categories by category_group for organized dropdown
   const categoriesByGroup = categories.reduce((acc, cat) => {
     const group = cat.category_group || "Outros";
