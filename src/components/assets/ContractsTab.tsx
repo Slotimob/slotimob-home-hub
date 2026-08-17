@@ -347,19 +347,8 @@ export function ContractsTab() {
       }
 
       // Status filter
-      if (statusFilter !== "all") {
-        if (statusFilter === "pending_signature") {
-          // Contracts without signature (not signed and no signed path) and not terminated
-          if (
-            lease.signature_status === "signed" ||
-            lease.signed_contract_path ||
-            lease.status === "terminated"
-          ) return false;
-        } else if (statusFilter === "terminated") {
-          if (lease.status !== "terminated") return false;
-        } else if (statusFilter === "active") {
-          if (lease.status !== "active") return false;
-        }
+      if (statusFilter !== "all" && lease.status !== statusFilter) {
+        return false;
       }
 
       // Adjustment filter
