@@ -29,7 +29,9 @@ import {
   CheckSquare,
   Briefcase,
   Wrench,
+  Landmark,
 } from 'lucide-react';
+
 
 export interface NavItem {
   title: string;
@@ -104,12 +106,14 @@ export const NAV_GROUPS: NavGroup[] = [
     ownerOnly: true,
     items: [
       { title: 'Visão Geral', url: '/finance', icon: Wallet },
+      { title: 'Bancos', url: '/finance/bancos', icon: Landmark },
       { title: 'DRE', url: '/finance/dre', icon: BarChart3 },
       { title: 'Lançamentos', url: '/finance/transactions', icon: Receipt },
       { title: 'Conciliação', url: '/finance/reconciliation', icon: ArrowLeftRight },
       { title: 'Categorias', url: '/finance/categories', icon: Filter },
     ],
   },
+
   {
     title: 'Documentos',
     icon: FileText,
@@ -196,12 +200,14 @@ export const SIDEBAR_ITEMS = [
     ownerOnly: true,
     items: [
       { title: 'Visão Geral', url: '/finance' },
+      { title: 'Bancos', url: '/finance/bancos' },
       { title: 'DRE', url: '/finance/dre' },
       { title: 'Lançamentos', url: '/finance/transactions' },
       { title: 'Conciliação', url: '/finance/reconciliation' },
       { title: 'Categorias', url: '/finance/categories' },
     ],
   },
+
   {
     title: 'Comercial',
     icon: Users,

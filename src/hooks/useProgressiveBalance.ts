@@ -8,6 +8,7 @@ export interface BankAccountWithBalance {
   bank_name: string | null;
   color: string | null;
   initial_balance: number;
+  is_default: boolean;
   // Calculated values
   realBalance: number;
   projectedBalance: number;
@@ -17,6 +18,7 @@ export interface BankAccountWithBalance {
   reconciledExpenses: number;
   hasCashFlowRisk: boolean;
 }
+
 
 interface TransactionSummary {
   bank_account_id: string;
@@ -134,6 +136,7 @@ export function useProgressiveBalance() {
       bank_name: account.bank_name,
       color: account.color,
       initial_balance: initialBalance,
+      is_default: account.is_default ?? false,
       realBalance,
       projectedBalance,
       pendingIncome,
@@ -142,6 +145,7 @@ export function useProgressiveBalance() {
       reconciledExpenses,
       hasCashFlowRisk,
     };
+
   }) || [];
 
   // Quick reconciliation mutation

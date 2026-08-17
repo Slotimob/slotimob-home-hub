@@ -54,6 +54,8 @@ const FinanceTransactions = React.lazy(() => import("./pages/FinanceTransactions
 const FinanceReconciliation = React.lazy(() => import("./pages/FinanceReconciliation"));
 const FinanceCategories = React.lazy(() => import("./pages/FinanceCategories"));
 const FinanceDRE = React.lazy(() => import("./pages/FinanceDRE"));
+const FinanceBanks = React.lazy(() => import("./pages/FinanceBanks"));
+
 const AtivosEmGestao = React.lazy(() => import("./pages/gestao/AtivosEmGestao"));
 const AlugueiDetalhe = React.lazy(() => import("./pages/gestao/AlugueiDetalhe"));
 const ContratosEmGestao = React.lazy(() => import("./pages/gestao/ContratosEmGestao"));
@@ -192,6 +194,8 @@ const App = () => (
               <Route path="/finance/transactions" element={guarded(<FinanceTransactions />)} />
               <Route path="/finance/reconciliation" element={guarded(<RequireFeature feature="finance_full"><FinanceReconciliation /></RequireFeature>)} />
               <Route path="/finance/categories" element={guarded(<FinanceCategories />)} />
+              <Route path="/finance/bancos" element={guarded(<FinanceBanks />)} />
+
               
               <Route path="/gestao/alugueis" element={guarded(<RequireFeature feature="asset_management"><AlugueiRoute /></RequireFeature>)} />
               <Route path="/gestao/contratos" element={guarded(<RequireFeature feature="asset_management"><ContratosRoute /></RequireFeature>)} />
