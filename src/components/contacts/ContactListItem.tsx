@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, Mail, MapPin, MoreVertical, Pencil, Trash2, Briefcase, MessageSquare } from 'lucide-react';
 import { ContactCategoryBadges } from './ContactCategoryFilter';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
