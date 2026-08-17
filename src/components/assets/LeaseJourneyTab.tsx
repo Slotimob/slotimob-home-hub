@@ -525,174 +525,177 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          </Button>
        </div>
 
-       {/* Start Date Card */}
-       {fullLeaseData && (
-         <div className="rounded-lg border bg-card p-3 space-y-2">
-           <div className="flex items-center justify-between">
-             <div className="flex items-center gap-2">
-               <Calendar className="h-4 w-4 text-primary" />
-               <span className="text-sm font-medium">Início do Contrato</span>
-             </div>
-             {canEdit && (!editingStartDate ? (
-               <Button
-                 variant="ghost"
-                 size="sm"
-                 className="h-7 text-xs"
-                 onClick={() => {
-                   setStartDateValue(fullLeaseData.start_date);
-                   setEditingStartDate(true);
-                 }}
-               >
-                 <Pencil className="h-3 w-3 mr-1" />
-                 Editar
-               </Button>
-             ) : (
-               <div className="flex gap-1">
-                 <Button
-                   variant="ghost"
-                   size="sm"
-                   className="h-7 text-xs"
-                   onClick={() => setEditingStartDate(false)}
-                   disabled={savingStartDate}
-                 >
-                   Cancelar
-                 </Button>
-                 <Button
-                   size="sm"
-                   className="h-7 text-xs"
-                   disabled={savingStartDate}
-                   onClick={async () => {
-                     if (!startDateValue) return;
-                     setSavingStartDate(true);
-                     try {
-                       await updateLease.mutateAsync({
-                         id: fullLeaseData.id,
-                         data: { start_date: startDateValue },
-                       });
-                       await invalidateLeaseQueries(queryClient);
-                       toast.success("Data de início atualizada!");
-                       setEditingStartDate(false);
-                     } catch (err: any) {
-                       toast.error("Erro ao salvar", { description: err.message });
-                     } finally {
-                       setSavingStartDate(false);
-                     }
-                   }}
-                 >
-                   {savingStartDate ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
-                 </Button>
-               </div>
-             ))}
-           </div>
-           {editingStartDate ? (
-             <Input
-               type="date"
-               value={startDateValue}
-               onChange={(e) => setStartDateValue(e.target.value)}
-               className="h-8"
-             />
-           ) : (
-             <p className="text-sm text-muted-foreground">
-               {format(parseISO(fullLeaseData.start_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-             </p>
-           )}
-         </div>
-       )}
-
-        {/* Adjustment Controls Card */}
-        {fullLeaseData && (() => {
-          const adjustmentDate = fullLeaseData.next_adjustment_date ? parseISO(fullLeaseData.next_adjustment_date) : null;
-          const adjConfig = getAdjustmentStatusConfig(fullLeaseData.next_adjustment_date);
-          const daysUntilAdjustment = adjConfig.daysUntil;
-          const isOverdue = adjConfig.status === "vencido";
-          const isComingSoon = adjConfig.status === "proximo";
-          const isOnTrack = adjConfig.status === "em_dia";
-
-          return (
-            <div className={cn(
-              "rounded-lg border bg-card p-3 space-y-3",
-              isOverdue && "border-red-500/40"
-            )}>
+        {/* Start Date + Adjustment Cards */}
+        {fullLeaseData && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* Start Date Card */}
+            <div className="rounded-lg border bg-card p-2.5 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Controle de Reajuste</span>
+                  <Calendar className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-medium">Início do Contrato</span>
                 </div>
-                <Badge variant={adjConfig.variant} className={cn("text-[10px]", adjConfig.className)}>
-                  {adjConfig.label}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">Próximo Reajuste</p>
-                  <p className="text-sm font-medium">
-                    {fullLeaseData.next_adjustment_date
-                      ? format(parseISO(fullLeaseData.next_adjustment_date), "dd/MM/yyyy")
-                      : "Não definido"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Valor Atual</p>
-                  <p className="text-sm font-medium">
-                    {fullLeaseData.rent_amount.toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </p>
-                </div>
-                {fullLeaseData.adjustment_index && (
-                  <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">Índice</p>
-                    <p className="text-sm font-medium">{fullLeaseData.adjustment_index}</p>
+                {canEdit && (!editingStartDate ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] px-2"
+                    onClick={() => {
+                      setStartDateValue(fullLeaseData.start_date);
+                      setEditingStartDate(true);
+                    }}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
+                ) : (
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] px-2"
+                      onClick={() => setEditingStartDate(false)}
+                      disabled={savingStartDate}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-6 text-[10px] px-2"
+                      disabled={savingStartDate}
+                      onClick={async () => {
+                        if (!startDateValue) return;
+                        setSavingStartDate(true);
+                        try {
+                          await updateLease.mutateAsync({
+                            id: fullLeaseData.id,
+                            data: { start_date: startDateValue },
+                          });
+                          await invalidateLeaseQueries(queryClient);
+                          toast.success("Data de início atualizada!");
+                          setEditingStartDate(false);
+                        } catch (err: any) {
+                          toast.error("Erro ao salvar", { description: err.message });
+                        } finally {
+                          setSavingStartDate(false);
+                        }
+                      }}
+                    >
+                      {savingStartDate ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
+                    </Button>
                   </div>
-                )}
+                ))}
               </div>
-
-              {isOverdue && adjustmentDate && (
-                <div className="p-2.5 rounded-md bg-red-500/10 border border-red-500/20 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-red-700">
-                    Reajuste vencido em {format(adjustmentDate, "dd/MM/yyyy", { locale: ptBR })}. Aplique o reajuste para manter o contrato atualizado.
-                  </p>
-                </div>
-              )}
-              {isComingSoon && !isOverdue && adjustmentDate && (
-                <div className="p-2.5 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-start gap-2">
-                  <Clock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700">
-                    Reajuste em {daysUntilAdjustment} dias ({format(adjustmentDate, "dd/MM/yyyy")}).
-                  </p>
-                </div>
-              )}
-
-              {canEdit && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 h-8 text-xs"
-                    onClick={() => setShowEditAdjustmentDate(true)}
-                  >
-                    <Calendar className="h-3 w-3 mr-1" />
-                    Alterar Data
-                  </Button>
-                  <Button
-                    size="sm"
-                    className={cn(
-                      "flex-1 h-8 text-xs",
-                      isOverdue && "bg-red-500 hover:bg-red-600 text-white"
-                    )}
-                    onClick={() => setShowAdjustmentCalculator(true)}
-                  >
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    {isOverdue ? "Aplicar Reajuste (Vencido!)" : "Aplicar Reajuste"}
-                  </Button>
-                </div>
+              {editingStartDate ? (
+                <Input
+                  type="date"
+                  value={startDateValue}
+                  onChange={(e) => setStartDateValue(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {format(parseISO(fullLeaseData.start_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
               )}
             </div>
-          );
-        })()}
+
+            {/* Adjustment Controls Card */}
+            {(() => {
+              const adjustmentDate = fullLeaseData.next_adjustment_date ? parseISO(fullLeaseData.next_adjustment_date) : null;
+              const adjConfig = getAdjustmentStatusConfig(fullLeaseData.next_adjustment_date);
+              const daysUntilAdjustment = adjConfig.daysUntil;
+              const isOverdue = adjConfig.status === "vencido";
+              const isComingSoon = adjConfig.status === "proximo";
+
+              return (
+                <div className={cn(
+                  "rounded-lg border bg-card p-2.5 space-y-2",
+                  isOverdue && "border-red-500/40"
+                )}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-medium">Controle de Reajuste</span>
+                    </div>
+                    <Badge variant={adjConfig.variant} className={cn("text-[10px] px-1.5 py-0 h-5", adjConfig.className)}>
+                      {adjConfig.label}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Próximo Reajuste</p>
+                      <p className="text-xs font-medium">
+                        {fullLeaseData.next_adjustment_date
+                          ? format(parseISO(fullLeaseData.next_adjustment_date), "dd/MM/yyyy")
+                          : "Não definido"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Valor Atual</p>
+                      <p className="text-xs font-medium">
+                        {fullLeaseData.rent_amount.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                      </p>
+                    </div>
+                    {fullLeaseData.adjustment_index && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] text-muted-foreground">Índice</p>
+                        <p className="text-xs font-medium">{fullLeaseData.adjustment_index}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {isOverdue && adjustmentDate && (
+                    <div className="p-2 rounded-md bg-red-500/10 border border-red-500/20 flex items-start gap-2">
+                      <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0 mt-0.5" />
+                      <p className="text-[10px] text-red-700">
+                        Reajuste vencido em {format(adjustmentDate, "dd/MM/yyyy", { locale: ptBR })}. Aplique o reajuste para manter o contrato atualizado.
+                      </p>
+                    </div>
+                  )}
+                  {isComingSoon && !isOverdue && adjustmentDate && (
+                    <div className="p-2 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-start gap-2">
+                      <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-[10px] text-amber-700">
+                        Reajuste em {daysUntilAdjustment} dias ({format(adjustmentDate, "dd/MM/yyyy")}).
+                      </p>
+                    </div>
+                  )}
+
+                  {canEdit && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-7 text-[10px]"
+                        onClick={() => setShowEditAdjustmentDate(true)}
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Alterar Data
+                      </Button>
+                      <Button
+                        size="sm"
+                        className={cn(
+                          "flex-1 h-7 text-[10px]",
+                          isOverdue && "bg-red-500 hover:bg-red-600 text-white"
+                        )}
+                        onClick={() => setShowAdjustmentCalculator(true)}
+                      >
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        {isOverdue ? "Aplicar Reajuste (Vencido!)" : "Aplicar Reajuste"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
  
        {/* Rent Evolution Timeline */}
        {fullLeaseData && (
