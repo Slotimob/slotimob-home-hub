@@ -529,17 +529,17 @@ export default function Manutencoes() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                  <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Atividade</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Imóvel</TableHead>
-                      <TableHead>Responsável</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Custo estimado</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-10" />
+                      <TableHead className="text-[11px] py-2 px-3">Atividade</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Tipo</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Imóvel</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Responsável</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Data</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3 text-right">Custo estimado</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Status</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3 w-10" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
