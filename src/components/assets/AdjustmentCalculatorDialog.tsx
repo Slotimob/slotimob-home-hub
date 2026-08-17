@@ -199,6 +199,17 @@ export function AdjustmentCalculatorDialog({
           tenant: lease.tenant_contact ? { name: lease.tenant_contact.name } : null,
         });
         setProjectionOpen(true);
+      } else {
+        const missing = [
+          !lease.tenant_contact_id ? "inquilino vinculado" : null,
+          !lease.due_day ? "dia de vencimento" : null,
+        ].filter(Boolean).join(" e ");
+
+        toast({
+          title: "Lançamentos futuros não gerados",
+          description: `Não foi possível oferecer o lançamento automático das cobranças reajustadas: falta ${missing} no contrato. Complete esses dados no contrato e lance as parcelas manualmente.`,
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
       toast({
