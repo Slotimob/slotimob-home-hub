@@ -19,7 +19,6 @@ interface DelinquencyWidgetProps {
 }
 
 const BUCKET_CONFIG = [
-  { key: 'bucket_0_15' as const, label: '0-15 dias', color: 'bg-blue-400' },
   { key: 'bucket_16_30' as const, label: '16-30 dias', color: 'bg-yellow-400' },
   { key: 'bucket_31_60' as const, label: '31-60 dias', color: 'bg-orange-400' },
   { key: 'bucket_60_plus' as const, label: '60+ dias', color: 'bg-red-500' },
@@ -27,8 +26,8 @@ const BUCKET_CONFIG = [
 
 export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: DelinquencyWidgetProps) {
   const scope = useDashboardScope();
-  const { period, setPeriod, dateRange: localDateRange } = useWidgetPeriod('this_month');
-  const { data, isLoading } = useRentalMetrics({ from: localDateRange.from, to: localDateRange.to, refreshKey });
+  const fixedDateRange = { from: new Date(2000, 0, 1), to: new Date() };
+  const { data, isLoading } = useRentalMetrics({ from: fixedDateRange.from, to: fixedDateRange.to, refreshKey });
 
   const overdue = data?.overdue ?? { amount: 0, count: 0, buckets: { bucket_0_15: { amount: 0, count: 0 }, bucket_16_30: { amount: 0, count: 0 }, bucket_31_60: { amount: 0, count: 0 }, bucket_60_plus: { amount: 0, count: 0 } } };
   const hasOverdue = overdue.amount > 0;
