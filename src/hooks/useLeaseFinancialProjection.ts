@@ -33,7 +33,7 @@ interface FinancialTransaction {
 
 /** Categoria financeira por tipo de obrigação. Ausência => category_id null. */
 const CATEGORY_NAMES: Record<PlannedObligation, string[]> = {
-  rent: ["Receita de Aluguel"],
+  rent: ["Aluguel Recebido", "Receita de Aluguel", "Aluguel"],
   fire_insurance: ["Seguro Incêndio", "Seguros"],
   iptu: ["IPTU", "Impostos"],
 };
