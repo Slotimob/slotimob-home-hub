@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, Mail, MapPin, MoreVertical, Pencil, Trash2, Briefcase, MessageSquare } from 'lucide-react';
 import { ContactCategoryBadges, ContactCategory } from './ContactCategoryFilter';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
