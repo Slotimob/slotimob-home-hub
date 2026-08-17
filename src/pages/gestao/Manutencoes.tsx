@@ -92,13 +92,6 @@ interface ActivityRow {
   unit_id: string | null;
 }
 
-const PERIOD_OPTIONS = [
-  { value: '30', label: 'Últimos 30 dias' },
-  { value: '90', label: 'Últimos 90 dias' },
-  { value: '365', label: 'Último ano' },
-  { value: 'all', label: 'Todo o histórico' },
-];
-
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
