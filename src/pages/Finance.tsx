@@ -107,13 +107,13 @@ const Finance = () => {
           dateTo={filters.dateTo}
         />
 
-        {/* Bottom Section - Vertical stacking */}
+        {/* Bottom Section */}
         <div className="space-y-4 sm:space-y-6">
-          {/* Full width: Upcoming Receipts */}
-          <FinanceUpcomingReceipts unitId={filters.unitId} />
-          
-          {/* Full width: Upcoming Payments */}
-          <FinanceUpcomingPayments unitId={filters.unitId} />
+          {/* Half/Half row: Upcoming Receipts | Upcoming Payments */}
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+            <FinanceUpcomingReceipts unitId={filters.unitId} />
+            <FinanceUpcomingPayments unitId={filters.unitId} />
+          </div>
           
           {/* Half/Half row: Bank Accounts | Recent Transactions */}
           <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
