@@ -53,14 +53,6 @@ export const ContactCard = ({
   canDelete = true,
 }: ContactCardProps) => {
   const navigate = useNavigate();
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.stopPropagation();
