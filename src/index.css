@@ -9,7 +9,7 @@ All colors MUST be HSL.
 @layer base {
   /* Tema: Branco e Verde */
   :root[data-theme="light-green"] {
-    --background: 0 0% 100%;
+    --background: 0 0% 97%;
     --foreground: 246 100% 23%;
     --card: 0 0% 100%;
     --card-foreground: 246 100% 23%;
@@ -51,7 +51,7 @@ All colors MUST be HSL.
 
   /* Tema: Branco e Azul */
   :root[data-theme="light-blue"] {
-    --background: 0 0% 100%;
+    --background: 0 0% 97%;
     --foreground: 246 100% 23%;
     --card: 0 0% 100%;
     --card-foreground: 246 100% 23%;
@@ -93,7 +93,7 @@ All colors MUST be HSL.
 
   /* Tema: Branco e Roxo */
   :root[data-theme="light-purple"] {
-    --background: 0 0% 100%;
+    --background: 0 0% 97%;
     --foreground: 246 100% 23%;
     --card: 0 0% 100%;
     --card-foreground: 246 100% 23%;
@@ -205,7 +205,7 @@ All colors MUST be HSL.
 
   /* Fallback para root sem data-theme (usar tema padrão light-purple) */
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 97%;
     --foreground: 246 100% 23%;
     --card: 0 0% 100%;
     --card-foreground: 246 100% 23%;
