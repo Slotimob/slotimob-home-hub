@@ -367,20 +367,19 @@ export function ContractsTab() {
   }, [leasesWithStatus, searchTerm, statusFilter, adjustmentFilter]);
 
   // Stats
-  const stats = useMemo(() => ({
-    total: leases?.length || 0,
-    active: leases?.filter((l) => l.status === "active").length || 0,
-    pendingConfig: leases?.filter((l) => l.status === "pending").length || 0,
-    pendingSignature: leases?.filter((l) => 
-      l.signature_status !== "signed" && 
-      !l.signed_contract_path && 
-      l.status !== "terminated"
-    ).length || 0,
-    terminated: leases?.filter((l) => l.status === "terminated").length || 0,
-    needsAction: leasesWithStatus.filter((l) =>
-      l.adjustmentStatus === "vencido" || l.adjustmentStatus === "proximo"
-    ).length,
-  }), [leases, leasesWithStatus]);
+  const stats = useMemo(() => {
+    const statusCounts = Object.fromEntries(
+      Object.keys(LEASE_STATUS_LABELS).map((status) => [
+        status,
+        leases?.filter((l) => l.status === status).length || 0,
+      ])
+    );
+
+    return {
+      total: leases?.length || 0,
+      ...statusCounts,
+    };
+  }, [leases]);
 
   const handleOpenAdjustment = (lease: LeaseWithDetails, isUrgent: boolean = false) => {
     setSelectedLease(lease);
