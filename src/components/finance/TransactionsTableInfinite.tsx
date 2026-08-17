@@ -678,6 +678,9 @@ export function TransactionsTableInfinite({
                         )}
                       </div>
                     </TableCell>
+                    <TableCell className="px-2 py-1.5 text-xs text-muted-foreground hidden md:table-cell">
+                      {transaction.unit?.unit_number || "-"}
+                    </TableCell>
                     <TableCell className="px-2 py-1.5 hidden lg:table-cell">
                       {transaction.category ? (
                         <span className="text-[10px] text-muted-foreground truncate block max-w-[100px]">
