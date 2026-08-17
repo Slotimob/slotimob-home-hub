@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { DateRange as RDPRange } from 'react-day-picker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -49,8 +56,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { format, parseISO, subDays } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import {
   Plus,
   Wrench,
@@ -63,6 +71,7 @@ import {
   Pencil,
   Trash2,
   RotateCcw,
+  CalendarDays,
 } from 'lucide-react';
 
 interface ActivityRow {
