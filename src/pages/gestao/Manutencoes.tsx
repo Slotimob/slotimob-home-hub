@@ -107,6 +107,11 @@ export default function Manutencoes() {
     from: startOfMonth(new Date()),
     to: new Date(),
   });
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [pendingPeriod, setPendingPeriod] = useState<RDPRange | undefined>({
+    from: dateRange.from,
+    to: dateRange.to,
+  });
   const [typeFilter, setTypeFilter] = useState('all');
   const [contactFilter, setContactFilter] = useState('all');
   const [assetFilter, setAssetFilter] = useState('all');
