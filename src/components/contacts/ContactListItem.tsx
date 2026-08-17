@@ -47,7 +47,7 @@ export const ContactListItem = ({
 
   return (
     <div 
-      className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border bg-card hover:shadow-md transition-all cursor-pointer group ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+      className={`flex items-center gap-4 sm:gap-5 p-4 sm:p-5 rounded-lg border bg-card hover:shadow-md transition-all cursor-pointer group ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''}`}
       onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
     >
       {/* Selection checkbox */}
@@ -59,14 +59,6 @@ export const ContactListItem = ({
           className="shrink-0"
         />
       )}
-
-      {/* Avatar */}
-      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 shrink-0">
-        <AvatarImage src={contact.avatar_url || undefined} alt={contact.name} />
-        <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
-          {getInitials(contact.name)}
-        </AvatarFallback>
-      </Avatar>
 
       {/* Main info */}
       <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 sm:gap-4">
