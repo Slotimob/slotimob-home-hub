@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { DateRange as RDPRange } from 'react-day-picker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -49,8 +56,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { format, parseISO, subDays } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import {
   Plus,
   Wrench,
@@ -63,6 +71,7 @@ import {
   Pencil,
   Trash2,
   RotateCcw,
+  CalendarDays,
 } from 'lucide-react';
 
 interface ActivityRow {
@@ -83,13 +92,6 @@ interface ActivityRow {
   unit_id: string | null;
 }
 
-const PERIOD_OPTIONS = [
-  { value: '30', label: 'Últimos 30 dias' },
-  { value: '90', label: 'Últimos 90 dias' },
-  { value: '365', label: 'Último ano' },
-  { value: 'all', label: 'Todo o histórico' },
-];
-
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -101,7 +103,15 @@ export default function Manutencoes() {
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [period, setPeriod] = useState('90');
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: startOfMonth(new Date()),
+    to: new Date(),
+  });
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [pendingPeriod, setPendingPeriod] = useState<RDPRange | undefined>({
+    from: dateRange.from,
+    to: dateRange.to,
+  });
   const [typeFilter, setTypeFilter] = useState('all');
   const [contactFilter, setContactFilter] = useState('all');
   const [assetFilter, setAssetFilter] = useState('all');
@@ -113,7 +123,7 @@ export default function Manutencoes() {
   const [deleting, setDeleting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['activities-list', brokerId, period],
+    queryKey: ['activities-list', brokerId, dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: async () => {
       if (!brokerId) return { activities: [] as ActivityRow[], units: {}, properties: {}, contacts: {} };
 
@@ -126,10 +136,9 @@ export default function Manutencoes() {
         .order('scheduled_at', { ascending: false, nullsFirst: false })
         .limit(500);
 
-      if (period !== 'all') {
-        const since = format(subDays(new Date(), parseInt(period, 10)), 'yyyy-MM-dd');
-        query = query.gte('created_at', since);
-      }
+      const fromDate = format(dateRange.from, 'yyyy-MM-dd');
+      const toDate = format(endOfDay(dateRange.to), "yyyy-MM-dd'T'HH:mm:ss");
+      query = query.gte('created_at', fromDate).lte('created_at', toDate);
 
       const { data: activities, error } = await query;
       if (error) throw error;
@@ -316,11 +325,11 @@ export default function Manutencoes() {
 
   const StatusBadge = ({ row }: { row: ActivityRow }) =>
     row.is_completed ? (
-      <Badge className="bg-emerald-500/15 text-emerald-600 gap-1 hover:bg-emerald-500/15">
+      <Badge className="bg-emerald-500/15 text-emerald-600 gap-1 hover:bg-emerald-500/15 text-xs h-6">
         <CheckCircle2 className="h-3 w-3" /> Concluída
       </Badge>
     ) : (
-      <Badge variant="outline" className="gap-1">
+      <Badge variant="outline" className="gap-1 text-xs h-6">
         <Clock className="h-3 w-3" /> Pendente
       </Badge>
     );
@@ -331,31 +340,31 @@ export default function Manutencoes() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-7 w-7"
           onClick={(e) => e.stopPropagation()}
           aria-label="Ações da atividade"
         >
-          <MoreVertical className="h-4 w-4" />
+          <MoreVertical className="h-3.5 w-3.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onClick={() => openEdit(row)}>
-          <Pencil className="h-4 w-4 mr-2" /> Editar
+          <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
         </DropdownMenuItem>
         {row.is_completed ? (
           <DropdownMenuItem onClick={() => setCompleted(row, false)}>
-            <RotateCcw className="h-4 w-4 mr-2" /> Marcar como pendente
+            <RotateCcw className="h-3.5 w-3.5 mr-2" /> Marcar como pendente
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem onClick={() => setCompleted(row, true)}>
-            <CheckCircle2 className="h-4 w-4 mr-2" /> Marcar como concluída
+            <CheckCircle2 className="h-3.5 w-3.5 mr-2" /> Marcar como concluída
           </DropdownMenuItem>
         )}
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
           onClick={() => setDeleteTarget(row)}
         >
-          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+          <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -363,29 +372,29 @@ export default function Manutencoes() {
 
   const ActivityCells = ({ row, indent }: { row: ActivityRow; indent?: boolean }) => (
     <>
-      <TableCell className={indent ? 'pl-10' : ''}>
-        <p className="text-sm font-medium">{row.title}</p>
+      <TableCell className={cn('py-2 px-3', indent ? 'pl-10' : '')}>
+        <p className="text-[11px] font-medium leading-tight">{row.title}</p>
         {row.description && (
-          <p className="text-xs text-muted-foreground line-clamp-1">{row.description}</p>
+          <p className="text-[10px] text-muted-foreground line-clamp-1">{row.description}</p>
         )}
       </TableCell>
-      <TableCell>
-        <Badge variant="secondary">
+      <TableCell className="py-2 px-3">
+        <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
           {ACTIVITY_TYPE_LABELS[row.activity_type] || row.activity_type}
         </Badge>
       </TableCell>
-      <TableCell className="text-sm">{assetLabel(row)}</TableCell>
-      <TableCell className="text-sm">
+      <TableCell className="text-[11px] py-2 px-3 leading-tight">{assetLabel(row)}</TableCell>
+      <TableCell className="text-[11px] py-2 px-3 leading-tight">
         {row.assigned_contact_id ? data?.contacts[row.assigned_contact_id] || '—' : '—'}
       </TableCell>
-      <TableCell className="text-sm whitespace-nowrap">{renderDate(row)}</TableCell>
-      <TableCell className="text-sm text-right whitespace-nowrap">
+      <TableCell className="text-[11px] py-2 px-3 whitespace-nowrap leading-tight">{renderDate(row)}</TableCell>
+      <TableCell className="text-[11px] py-2 px-3 text-right whitespace-nowrap leading-tight">
         {row.estimated_cost != null ? brl(Number(row.estimated_cost)) : '—'}
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2 px-3">
         <StatusBadge row={row} />
       </TableCell>
-      <TableCell className="w-10 text-right">
+      <TableCell className="w-10 py-2 px-3 text-right">
         <RowActions row={row} />
       </TableCell>
     </>
@@ -419,14 +428,39 @@ export default function Manutencoes() {
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Período</Label>
-              <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PERIOD_OPTIONS.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal h-10',
+                      !dateRange.from && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                    {dateRange.from && dateRange.to
+                      ? `${format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`
+                      : 'Selecione o período'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={pendingPeriod}
+                    onSelect={(range) => {
+                      setPendingPeriod(range);
+                      if (range?.from && range?.to) {
+                        setDateRange({ from: range.from, to: range.to });
+                        setPeriodOpen(false);
+                      }
+                    }}
+                    initialFocus
+                    numberOfMonths={2}
+                    locale={ptBR}
+                    className={cn('p-3 pointer-events-auto')}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Tipo</Label>
@@ -495,17 +529,17 @@ export default function Manutencoes() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                  <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Atividade</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Imóvel</TableHead>
-                      <TableHead>Responsável</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Custo estimado</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-10" />
+                      <TableHead className="text-[11px] py-2 px-3">Atividade</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Tipo</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Imóvel</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Responsável</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Data</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3 text-right">Custo estimado</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3">Status</TableHead>
+                      <TableHead className="text-[11px] py-2 px-3 w-10" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -532,53 +566,53 @@ export default function Manutencoes() {
                               setExpanded((prev) => ({ ...prev, [entry.groupId]: !isOpen }))
                             }
                           >
-                            <TableCell>
+                            <TableCell className="py-2 px-3">
                               <div className="flex items-center gap-2">
                                 {isOpen ? (
-                                  <ChevronDown className="h-4 w-4 text-primary" />
+                                  <ChevronDown className="h-3.5 w-3.5 text-primary" />
                                 ) : (
-                                  <ChevronRight className="h-4 w-4 text-primary" />
+                                  <ChevronRight className="h-3.5 w-3.5 text-primary" />
                                 )}
                                 <div>
-                                  <p className="text-sm font-semibold">{first.title}</p>
+                                  <p className="text-[11px] font-semibold leading-tight">{first.title}</p>
                                   {first.description && (
-                                    <p className="text-xs text-muted-foreground line-clamp-1">
+                                    <p className="text-[10px] text-muted-foreground line-clamp-1">
                                       {first.description}
                                     </p>
                                   )}
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">
+                            <TableCell className="py-2 px-3">
+                              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
                                 {ACTIVITY_TYPE_LABELS[first.activity_type] || first.activity_type}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20">
+                            <TableCell className="py-2 px-3">
+                              <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20 text-[10px] h-5 px-1.5">
                                 <Layers className="h-3 w-3" />
                                 Aplicado a {entry.rows.length} imóveis
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-sm">
+                            <TableCell className="text-[11px] py-2 px-3 leading-tight">
                               {first.assigned_contact_id
                                 ? data?.contacts[first.assigned_contact_id] || '—'
                                 : '—'}
                             </TableCell>
-                            <TableCell className="text-sm whitespace-nowrap">
+                            <TableCell className="text-[11px] py-2 px-3 whitespace-nowrap leading-tight">
                               {renderDate(first)}
                             </TableCell>
-                            <TableCell className="text-sm text-right whitespace-nowrap font-medium">
+                            <TableCell className="text-[11px] py-2 px-3 text-right whitespace-nowrap font-medium leading-tight">
                               {first.estimated_cost != null
                                 ? brl(Number(first.estimated_cost) * entry.rows.length)
                                 : '—'}
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
+                            <TableCell className="py-2 px-3">
+                              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
                                 {done}/{entry.rows.length} concluídas
                               </Badge>
                             </TableCell>
-                            <TableCell className="w-10" />
+                            <TableCell className="w-10 py-2 px-3" />
                           </TableRow>
                           {isOpen &&
                             entry.rows.map((row) => (
