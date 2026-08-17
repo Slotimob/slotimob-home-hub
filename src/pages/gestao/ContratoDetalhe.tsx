@@ -578,58 +578,6 @@ export default function ContratoDetalhe() {
             </CardContent>
           </Card>
 
-          {/* CIB */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="py-3 px-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-sm font-medium">CIB - Cadastro Imobiliário</CardTitle>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <AlertCircle className="h-3.5 w-3.5 text-primary" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p><strong>IMPORTANTE:</strong> O CIB é o identificador único do imóvel na Receita Federal. Obrigatório para a declaração DIMOB.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                {canEdit && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      if (isEditingCib) handleSaveCib();
-                      else {
-                        setEditedCib(lease.cib || "");
-                        setIsEditingCib(true);
-                      }
-                    }}
-                  >
-                    {isEditingCib ? "Salvar" : "Editar"}
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="py-2 px-4">
-              {isEditingCib ? (
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium">Número CIB</Label>
-                  <Input
-                    value={editedCib}
-                    onChange={(e) => setEditedCib(e.target.value)}
-                    placeholder="Ex: 12345678901234567890"
-                    className="h-8 font-mono"
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">CIB: {lease.cib || "-"}</p>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Payment health (estimated by overdue) */}
           <Card>
             <CardHeader className="py-3 px-4">
