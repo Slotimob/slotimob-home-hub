@@ -558,6 +558,7 @@ export function TransactionsTableInfinite({
                   currentSort={sortConfig}
                   onSort={handleSortClick}
                 />
+                <TableHead className="px-2 text-xs hidden md:table-cell">Unidade</TableHead>
                 <SortableTableHead
                   field="category"
                   label="Categoria"
