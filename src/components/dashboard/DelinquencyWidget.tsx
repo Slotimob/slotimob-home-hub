@@ -61,7 +61,7 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
           <div className="flex-1 space-y-4">
             {/* Main KPI */}
             <div className="text-center">
-              <p className="text-2xl font-bold text-destructive">{fmtCurrency(overdue.amount)}</p>
+              <p className="text-xl font-bold text-destructive">{fmtCurrency(overdue.amount)}</p>
               <p className="text-xs text-muted-foreground">{overdue.count} cobrança{overdue.count !== 1 ? 's' : ''} em atraso</p>
             </div>
 
@@ -89,6 +89,29 @@ export function DelinquencyWidget({ dateRange: _dateRange, refreshKey }: Delinqu
                 );
               })}
             </div>
+
+            {/* Mini table: units with open rentals */}
+            {data?.properties_with_open_rentals && data.properties_with_open_rentals.length > 0 && (
+              <div className="space-y-2">
+                <Separator />
+                <p className="text-xs font-medium text-muted-foreground">Unidades em atraso</p>
+                <div className="space-y-1">
+                  {data.properties_with_open_rentals.map((item) => (
+                    <div
+                      key={`${item.property_id || ''}-${item.unit_id || ''}`}
+                      className="flex items-center justify-between gap-2 py-1 px-2 rounded-md bg-muted/50"
+                    >
+                      <span className="text-xs truncate flex-1" title={item.property_name}>
+                        {item.property_name}
+                      </span>
+                      <span className="text-xs font-medium whitespace-nowrap">
+                        {fmtCurrency(item.total_open)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
               <Button asChild variant="outline" size="sm" className="w-full sm:w-auto gap-1 text-xs">
