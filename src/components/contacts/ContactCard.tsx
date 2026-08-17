@@ -134,7 +134,7 @@ export const ContactCard = ({
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2.5 p-4 pt-0">
         {contact.email && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Mail className="h-4 w-4 shrink-0" />
