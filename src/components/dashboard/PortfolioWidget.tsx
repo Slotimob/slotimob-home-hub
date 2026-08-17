@@ -75,19 +75,17 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-4">
-        {[1, 2, 3].map((i) => (
-          <Card key={i}>
-            <CardContent className="p-4 lg:p-6">
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-8 w-32" />
-                <Skeleton className="h-3 w-40" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card className="h-full">
+        <CardContent className="p-4 lg:p-5 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     );
   }
 
