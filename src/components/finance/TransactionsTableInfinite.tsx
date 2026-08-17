@@ -368,6 +368,7 @@ export function TransactionsTableInfinite({
               <TableHead className="w-8 px-2"></TableHead>
               <TableHead className="w-8 px-2">Tipo</TableHead>
               <TableHead className="px-2">Descrição</TableHead>
+              <TableHead className="px-2 text-xs hidden md:table-cell">Unidade</TableHead>
               <TableHead className="px-2">Categoria</TableHead>
               <TableHead className="px-2 w-20">Emissão</TableHead>
               <TableHead className="px-2 w-20">Vencim.</TableHead>
@@ -379,7 +380,7 @@ export function TransactionsTableInfinite({
           <TableBody>
             {[...Array(5)].map((_, i) => (
               <TableRow key={i}>
-                {[...Array(9)].map((_, j) => (
+                {[...Array(10)].map((_, j) => (
                   <TableCell key={j} className="px-2 py-2">
                     <Skeleton className="h-3 w-full" />
                   </TableCell>
