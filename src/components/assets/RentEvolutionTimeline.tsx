@@ -88,8 +88,8 @@ export function RentEvolutionTimeline({
   const [formDate, setFormDate] = useState("");
   const [formIndex, setFormIndex] = useState("IGPM");
   const [formPercentage, setFormPercentage] = useState("");
-  const [formPrevious, setFormPrevious] = useState(0);
-  const [formNew, setFormNew] = useState(0);
+  const [formPrevious, setFormPrevious] = useState("");
+  const [formNew, setFormNew] = useState("");
   const [formNotes, setFormNotes] = useState("");
 
   useEffect(() => {
@@ -98,8 +98,8 @@ export function RentEvolutionTimeline({
     setFormDate(adj.adjustment_date);
     setFormIndex(adj.index_used || "IGPM");
     setFormPercentage(adj.index_percentage != null ? String(adj.index_percentage) : "");
-    setFormPrevious(adj.previous_value);
-    setFormNew(adj.new_value);
+    setFormPrevious(String(adj.previous_value ?? ""));
+    setFormNew(String(adj.new_value ?? ""));
     setFormNotes(adj.notes || "");
   }, [editing]);
 
@@ -137,8 +137,8 @@ export function RentEvolutionTimeline({
             adjustment_date: formDate,
             index_used: formIndex,
             index_percentage: formPercentage === "" ? null : parseFloat(formPercentage),
-            previous_value: formPrevious,
-            new_value: formNew,
+            previous_value: parseFloat(formPrevious) || 0,
+            new_value: parseFloat(formNew) || 0,
             notes: formNotes || null,
           }
         : { notes: formNotes || null },
