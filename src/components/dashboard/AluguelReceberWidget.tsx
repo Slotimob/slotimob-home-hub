@@ -32,7 +32,7 @@ export function AluguelReceberWidget({ dateRange: _dateRange, refreshKey }: Alug
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Banknote className="h-4 w-4 text-primary" />
-          Aluguéis <HelpTooltip featureKey="dashboard.delinquency" />
+          Aluguéis <HelpTooltip featureKey="dashboard.rent_receivables" />
         </CardTitle>
         <WidgetPeriodFilter period={period} onChange={setPeriod} />
       </CardHeader>
