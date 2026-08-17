@@ -5,6 +5,7 @@ export const HELP_FEATURES = {
   'dashboard.rent_receivables': 'Informações de Aluguéis',
   'dashboard.delinquency': 'Informações de Inadimplência',
   'dashboard.open_rentals': 'Informações de Imóveis com Aluguel em Aberto',
+  'dashboard.cash_flow_performance': 'Financeiro (fluxo de caixa)',
 
   // Ativos
   'assets.properties': 'Empreendimentos',
@@ -48,6 +49,7 @@ export const HELP_DEFAULT_DESCRIPTIONS: Partial<Record<FeatureKey, string>> = {
   'dashboard.rent_receivables': 'Total de cobranças de aluguel no período selecionado. Inclui contratos ativos com data de vencimento dentro do período.',
   'dashboard.delinquency': 'Valor total de aluguéis em aberto com data de vencimento ultrapassada. Considera cobranças pendentes ou em atraso registradas no financeiro.',
   'dashboard.open_rentals': 'Lista de imóveis com cobranças de aluguel pendentes ou em atraso no período, incluindo valor total em aberto e tempo de atraso máximo.',
+  'dashboard.cash_flow_performance': 'Visão de fluxo de caixa: receitas e despesas pagas no período, e o que ainda está a receber ou a pagar, com base na data de vencimento de cada lançamento financeiro.',
   'assets.properties': 'Empreendimentos são condomínios, loteamentos ou projetos que agrupam múltiplas unidades.',
   'assets.units': 'Unidades são imóveis pertencentes a um empreendimento, como apartamentos e salas comerciais.',
   'assets.standalone': 'Imóveis avulsos são propriedades independentes não vinculadas a nenhum empreendimento, como terrenos, casas e galpões.',

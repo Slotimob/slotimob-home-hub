@@ -23,6 +23,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { DateRange } from './DashboardDateFilter';
 import { SmartCurrency, formatCurrencyFull } from '@/hooks/useSmartCurrency';
+import { HelpTooltip } from '@/components/help/HelpTooltip';
 
 interface FinancialData {
   totalRevenue: number;
@@ -164,7 +165,10 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 lg:px-6">
           <div className="min-w-0 flex-1">
-            <CardTitle className="text-sm lg:text-base font-semibold">Financeiro</CardTitle>
+            <CardTitle className="text-sm lg:text-base font-semibold flex items-center gap-1.5">
+              Financeiro
+              <HelpTooltip featureKey="dashboard.cash_flow_performance" />
+            </CardTitle>
             <CardDescription className="text-[10px] lg:text-xs truncate">
               {format(dateRange.from, 'dd/MM', { locale: ptBR })} - {format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}
             </CardDescription>

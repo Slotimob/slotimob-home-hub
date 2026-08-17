@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { subDays } from 'date-fns';
+import { startOfMonth } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,6 @@ import {
   DelinquencyWidget,
   AluguelReceberWidget,
   AfazeresSummaryWidget,
-  DatePreset,
   DateRange,
 } from '@/components/dashboard';
 
@@ -48,10 +47,9 @@ const Dashboard = () => {
     maxPipelineStages,
   } = useDashboardPreferences();
 
-  // Date filter state
-  const [datePreset, setDatePreset] = useState<DatePreset>('30d');
+  // Date filter state — default to current month
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: subDays(new Date(), 30),
+    from: startOfMonth(new Date()),
     to: new Date(),
   });
   const [refreshKey, setRefreshKey] = useState(0);
@@ -93,10 +91,6 @@ const Dashboard = () => {
     setIsRefreshing(true);
     setRefreshKey(prev => prev + 1);
     setTimeout(() => setIsRefreshing(false), 1000);
-  }, []);
-
-  const handlePresetChange = useCallback((preset: DatePreset) => {
-    setDatePreset(preset);
   }, []);
 
   const handleDateRangeChange = useCallback((range: DateRange) => {
@@ -239,8 +233,6 @@ const Dashboard = () => {
                     </div>
                     <DashboardDateFilter
                       dateRange={dateRange}
-                      preset={datePreset}
-                      onPresetChange={handlePresetChange}
                       onDateRangeChange={handleDateRangeChange}
                       onRefresh={handleRefresh}
                       isRefreshing={isRefreshing}
