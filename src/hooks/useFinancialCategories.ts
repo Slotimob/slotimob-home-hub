@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_FINANCIAL_CATEGORIES, CATEGORY_COLORS, CATEGORIES_WITH_TOOLTIPS } from "@/utils/financialConstants";
@@ -246,6 +247,19 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
       });
     },
   });
+
+  const hasAttemptedSeed = useRef(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (hasAttemptedSeed.current) return;
+    if (!effectiveBrokerId) return;
+    if (categories.length > 0) return;
+    if (seedDefaultCategories.isPending) return;
+
+    hasAttemptedSeed.current = true;
+    seedDefaultCategories.mutate();
+  }, [isLoading, effectiveBrokerId, categories.length, seedDefaultCategories.isPending, seedDefaultCategories.mutate]);
 
   // Group categories by category_group for organized dropdown
   const categoriesByGroup = categories.reduce((acc, cat) => {
