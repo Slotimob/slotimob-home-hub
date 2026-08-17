@@ -136,6 +136,7 @@ export function useProgressiveBalance() {
       bank_name: account.bank_name,
       color: account.color,
       initial_balance: initialBalance,
+      is_default: account.is_default ?? false,
       realBalance,
       projectedBalance,
       pendingIncome,
@@ -144,6 +145,7 @@ export function useProgressiveBalance() {
       reconciledExpenses,
       hasCashFlowRisk,
     };
+
   }) || [];
 
   // Quick reconciliation mutation
