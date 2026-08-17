@@ -82,14 +82,8 @@ export const ContactCard = ({
       className="hover:shadow-lg transition-shadow cursor-pointer group"
       onClick={onClick}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-10 w-10 shrink-0">
-            <AvatarImage src={contact.avatar_url || undefined} alt={contact.name} />
-            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-              {getInitials(contact.name)}
-            </AvatarFallback>
-          </Avatar>
+      <CardHeader className="p-4 pb-3">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <CardTitle className="text-base truncate">{contact.name}</CardTitle>
@@ -135,7 +129,7 @@ export const ContactCard = ({
           </div>
         </div>
         
-        <div className="mt-2">
+        <div className="mt-2.5">
           <ContactCategoryBadges categories={contact.categories} size="sm" />
         </div>
       </CardHeader>
