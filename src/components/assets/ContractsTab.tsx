@@ -161,7 +161,7 @@ interface LeaseWithAdjustment extends LeaseWithDetails {
   adjustmentStatus: AdjustmentStatus;
 }
 
-type ContractStatusFilter = "all" | "active" | "pending_signature" | "terminated";
+type ContractStatusFilter = "all" | keyof typeof LEASE_STATUS_LABELS;
 
 export function ContractsTab() {
   const { user } = useAuth();
@@ -347,19 +347,8 @@ export function ContractsTab() {
       }
 
       // Status filter
-      if (statusFilter !== "all") {
-        if (statusFilter === "pending_signature") {
-          // Contracts without signature (not signed and no signed path) and not terminated
-          if (
-            lease.signature_status === "signed" ||
-            lease.signed_contract_path ||
-            lease.status === "terminated"
-          ) return false;
-        } else if (statusFilter === "terminated") {
-          if (lease.status !== "terminated") return false;
-        } else if (statusFilter === "active") {
-          if (lease.status !== "active") return false;
-        }
+      if (statusFilter !== "all" && lease.status !== statusFilter) {
+        return false;
       }
 
       // Adjustment filter
@@ -378,20 +367,19 @@ export function ContractsTab() {
   }, [leasesWithStatus, searchTerm, statusFilter, adjustmentFilter]);
 
   // Stats
-  const stats = useMemo(() => ({
-    total: leases?.length || 0,
-    active: leases?.filter((l) => l.status === "active").length || 0,
-    pendingConfig: leases?.filter((l) => l.status === "pending").length || 0,
-    pendingSignature: leases?.filter((l) => 
-      l.signature_status !== "signed" && 
-      !l.signed_contract_path && 
-      l.status !== "terminated"
-    ).length || 0,
-    terminated: leases?.filter((l) => l.status === "terminated").length || 0,
-    needsAction: leasesWithStatus.filter((l) =>
-      l.adjustmentStatus === "vencido" || l.adjustmentStatus === "proximo"
-    ).length,
-  }), [leases, leasesWithStatus]);
+  const stats = useMemo(() => {
+    const statusCounts = Object.fromEntries(
+      Object.keys(LEASE_STATUS_LABELS).map((status) => [
+        status,
+        leases?.filter((l) => l.status === status).length || 0,
+      ])
+    );
+
+    return {
+      total: leases?.length || 0,
+      ...statusCounts,
+    };
+  }, [leases]);
 
   const handleOpenAdjustment = (lease: LeaseWithDetails, isUrgent: boolean = false) => {
     setSelectedLease(lease);
@@ -629,86 +617,36 @@ export function ContractsTab() {
 
   return (
     <div className="space-y-4">
-      {/* Stats Cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-5">
-        <Card 
-          className={cn(
-            "cursor-pointer transition-all hover:shadow-md",
-            statusFilter === "all" && "ring-2 ring-primary"
-          )}
+      {/* Status Filter Chips */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={statusFilter === "all" ? "default" : "outline"}
+          size="sm"
+          className="h-7 text-xs px-2 gap-1.5"
           onClick={() => setStatusFilter("all")}
         >
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Total Contratos</p>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card 
-          className={cn(
-            "cursor-pointer transition-all hover:shadow-md border-primary/30 bg-primary/5",
-            statusFilter === "active" && "ring-2 ring-primary"
-          )}
-          onClick={() => setStatusFilter("active")}
-        >
-          <CardContent className="p-3">
-            <div className="flex items-center gap-1">
-              <Check className="h-3 w-3 text-primary" />
-              <p className="text-xs text-muted-foreground">Ativos</p>
-            </div>
-            <p className="text-2xl font-bold text-primary">{stats.active}</p>
-          </CardContent>
-        </Card>
-        <Card 
-          className={cn(
-            "transition-all hover:shadow-md",
-            stats.pendingConfig > 0 ? "border-blue-500/50 bg-blue-500/10" : "border-muted"
-          )}
-        >
-          <CardContent className="p-3">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-blue-600" />
-              <p className="text-xs text-muted-foreground">Pend. Configuração</p>
-            </div>
-            <p className={`text-2xl font-bold ${stats.pendingConfig > 0 ? "text-blue-600" : "text-muted-foreground"}`}>
-              {stats.pendingConfig}
-            </p>
-          </CardContent>
-        </Card>
-        <Card 
-          className={cn(
-            "cursor-pointer transition-all hover:shadow-md",
-            stats.pendingSignature > 0 ? "border-amber-500/50 bg-amber-500/10" : "border-muted",
-            statusFilter === "pending_signature" && "ring-2 ring-amber-500"
-          )}
-          onClick={() => setStatusFilter("pending_signature")}
-        >
-          <CardContent className="p-3">
-            <div className="flex items-center gap-1">
-              <FileX className="h-3 w-3 text-amber-600" />
-              <p className="text-xs text-muted-foreground">Pend. Assinatura</p>
-            </div>
-            <p className={`text-2xl font-bold ${stats.pendingSignature > 0 ? "text-amber-600" : "text-muted-foreground"}`}>
-              {stats.pendingSignature}
-            </p>
-          </CardContent>
-        </Card>
-        <Card 
-          className={cn(
-            "cursor-pointer transition-all hover:shadow-md",
-            statusFilter === "terminated" && "ring-2 ring-muted-foreground"
-          )}
-          onClick={() => setStatusFilter("terminated")}
-        >
-          <CardContent className="p-3">
-            <div className="flex items-center gap-1">
-              <XCircle className="h-3 w-3 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Encerrados</p>
-            </div>
-            <p className="text-2xl font-bold text-muted-foreground">
-              {stats.terminated}
-            </p>
-          </CardContent>
-        </Card>
+          Todos
+          <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+            {stats.total}
+          </Badge>
+        </Button>
+        {Object.entries(LEASE_STATUS_LABELS).map(([status, config]) => (
+          <Button
+            key={status}
+            variant={statusFilter === status ? "default" : "outline"}
+            size="sm"
+            className={cn(
+              "h-7 text-xs px-2 gap-1.5",
+              statusFilter === status && "bg-primary text-primary-foreground"
+            )}
+            onClick={() => setStatusFilter(status as ContractStatusFilter)}
+          >
+            {config.label}
+            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+              {stats[status] ?? 0}
+            </Badge>
+          </Button>
+        ))}
       </div>
 
       {/* Filters */}
@@ -744,30 +682,17 @@ export function ContractsTab() {
         
         {/* Status Filter Dropdown */}
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ContractStatusFilter)}>
-          <SelectTrigger className="w-full sm:w-[160px]">
+          <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os Status</SelectItem>
-            <SelectItem value="active">
-              <span className="flex items-center gap-2">
-                <Check className="h-3.5 w-3.5 text-primary" />
-                Ativos
-              </span>
-            </SelectItem>
-            <SelectItem value="pending_signature">
-              <span className="flex items-center gap-2">
-                <FileX className="h-3.5 w-3.5 text-amber-600" />
-                Pend. Assinatura
-              </span>
-            </SelectItem>
-            <SelectItem value="terminated">
-              <span className="flex items-center gap-2">
-                <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                Encerrados
-              </span>
-            </SelectItem>
+            {Object.entries(LEASE_STATUS_LABELS).map(([status, config]) => (
+              <SelectItem key={status} value={status}>
+                {config.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         
