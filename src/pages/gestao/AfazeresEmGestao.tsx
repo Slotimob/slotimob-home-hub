@@ -398,111 +398,215 @@ const AfazeresEmGestao = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-3 lg:grid-cols-2 items-start">
-              {/* Contratos */}
-              {contracts.length > 0 && (
-                <SectionCard
-                  title="Contratos"
-                  icon={FileSignature}
-                  accent="text-blue-500"
-                  count={contracts.length}
-                >
-                  {contracts.map((c) => (
-                    <Row
-                      key={`${c.id}-${c.issue_type}`}
-                      title={
-                        c.property_name ? `${c.property_name} · ${c.unit_number}` : c.unit_number
-                      }
-                      subtitle={`${c.tenant_name} · ${brl(c.rent_amount)}${
-                        c.issue_type === "expiring" || c.issue_type === "expired"
-                          ? ` · até ${format(parseISO(c.end_date!), "dd/MM/yy")}`
-                          : c.next_adjustment_date &&
-                            c.issue_type.startsWith("adjustment")
-                          ? ` · ${format(parseISO(c.next_adjustment_date), "dd/MM/yy")}`
-                          : ""
-                      }`}
-                      badge={CONTRACT_ISSUE_LABEL[c.issue_type]}
-                      danger={c.issue_type === "adjustment_overdue" || c.issue_type === "expired"}
-                      onClick={() => openLeaseById(c.id, c.lease_status)}
-                    />
-                  ))}
-                </SectionCard>
-              )}
+            <div className="space-y-4">
+              {/* Linha 1: A Receber + A Pagar */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                {/* Financeiro a receber */}
+                {receivables.length > 0 && (
+                  <SectionCard
+                    title="A receber"
+                    icon={ArrowDownCircle}
+                    accent="text-red-500"
+                    count={receivables.length}
+                  >
+                    {receivables.map((r) => (
+                      <Row
+                        key={r.id}
+                        title={r.description}
+                        subtitle={[r.unit_number, r.contact_name].filter(Boolean).join(" · ")}
+                        badge={
+                          r.is_overdue
+                            ? `${r.days_overdue}d atraso`
+                            : format(new Date(r.due_date), "dd/MM")
+                        }
+                        danger={r.is_overdue}
+                        right={
+                          <>
+                            <span className="text-xs font-semibold tabular-nums">
+                              {brl(r.amount)}
+                            </span>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                title="Cobrar via WhatsApp"
+                                onClick={() => collectReceivable(r)}
+                              >
+                                <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+                              </Button>
+                            )}
+                          </>
+                        }
+                      />
+                    ))}
+                  </SectionCard>
+                )}
 
-              {/* Financeiro a receber */}
-              {receivables.length > 0 && (
-                <SectionCard
-                  title="A receber"
-                  icon={ArrowDownCircle}
-                  accent="text-red-500"
-                  count={receivables.length}
-                >
-                  {receivables.map((r) => (
-                    <Row
-                      key={r.id}
-                      title={r.description}
-                      subtitle={[r.unit_number, r.contact_name].filter(Boolean).join(" · ")}
-                      badge={
-                        r.is_overdue
-                          ? `${r.days_overdue}d atraso`
-                          : format(new Date(r.due_date), "dd/MM")
-                      }
-                      danger={r.is_overdue}
-                      right={
-                        <>
-                          <span className="text-xs font-semibold tabular-nums">
-                            {brl(r.amount)}
-                          </span>
-                          {canEdit && (
+                {/* Financeiro a pagar */}
+                {payables.length > 0 && (
+                  <SectionCard
+                    title="A pagar"
+                    icon={ArrowUpCircle}
+                    accent="text-amber-500"
+                    count={payables.length}
+                  >
+                    {payables.map((p) => (
+                      <Row
+                        key={p.id}
+                        title={p.description}
+                        subtitle={[p.unit_number, p.obligation_type].filter(Boolean).join(" · ")}
+                        badge={
+                          p.is_overdue
+                            ? `${p.days_overdue}d atraso`
+                            : format(new Date(p.due_date), "dd/MM")
+                        }
+                        danger={p.is_overdue}
+                        right={
+                          <>
+                            <span className="text-xs font-semibold tabular-nums">
+                              {brl(p.amount)}
+                            </span>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                title="Marcar como pago"
+                                disabled={busyId === p.id}
+                                onClick={() => markPayablePaid(p)}
+                              >
+                                {busyId === p.id ? (
+                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                )}
+                              </Button>
+                            )}
+                          </>
+                        }
+                      />
+                    ))}
+                  </SectionCard>
+                )}
+              </div>
+
+              {/* Linha 2: Contratos + Manutenções Pendentes + Propostas */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                {/* Contratos */}
+                {contracts.length > 0 && (
+                  <SectionCard
+                    title="Contratos"
+                    icon={FileSignature}
+                    accent="text-blue-500"
+                    count={contracts.length}
+                  >
+                    {contracts.map((c) => (
+                      <Row
+                        key={`${c.id}-${c.issue_type}`}
+                        title={
+                          c.property_name ? `${c.property_name} · ${c.unit_number}` : c.unit_number
+                        }
+                        subtitle={`${c.tenant_name} · ${brl(c.rent_amount)}${
+                          c.issue_type === "expiring" || c.issue_type === "expired"
+                            ? ` · até ${format(parseISO(c.end_date!), "dd/MM/yy")}`
+                            : c.next_adjustment_date &&
+                              c.issue_type.startsWith("adjustment")
+                            ? ` · ${format(parseISO(c.next_adjustment_date), "dd/MM/yy")}`
+                            : ""
+                        }`}
+                        badge={CONTRACT_ISSUE_LABEL[c.issue_type]}
+                        danger={c.issue_type === "adjustment_overdue" || c.issue_type === "expired"}
+                        onClick={() => openLeaseById(c.id, c.lease_status)}
+                      />
+                    ))}
+                  </SectionCard>
+                )}
+
+                {/* Manutenções */}
+                {maintenances.length > 0 && (
+                  <SectionCard
+                    title="Manutenções pendentes"
+                    icon={Wrench}
+                    accent="text-orange-500"
+                    count={maintenances.length}
+                  >
+                    {maintenances.map((m) => (
+                      <Row
+                        key={m.id}
+                        title={m.title}
+                        subtitle={[
+                          m.asset_label,
+                          m.scheduled_at
+                            ? format(new Date(m.scheduled_at), "dd/MM/yy", { locale: ptBR })
+                            : "Sem data",
+                          m.estimated_cost ? brl(m.estimated_cost) : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        badge={m.is_overdue ? `${m.days_overdue}d atraso` : "Pendente"}
+                        danger={m.is_overdue}
+                        onClick={() => navigate("/gestao/manutencoes")}
+                        right={
+                          canEdit ? (
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0"
-                              title="Cobrar via WhatsApp"
-                              onClick={() => collectReceivable(r)}
+                              title="Concluir manutenção"
+                              disabled={busyId === m.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                completeMaintenance(m);
+                              }}
                             >
-                              <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+                              {busyId === m.id ? (
+                                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              )}
                             </Button>
-                          )}
-                        </>
-                      }
-                    />
-                  ))}
-                </SectionCard>
-              )}
+                          ) : undefined
+                        }
+                      />
+                    ))}
+                  </SectionCard>
+                )}
 
-              {/* Financeiro a pagar */}
-              {payables.length > 0 && (
-                <SectionCard
-                  title="A pagar"
-                  icon={ArrowUpCircle}
-                  accent="text-amber-500"
-                  count={payables.length}
-                >
-                  {payables.map((p) => (
-                    <Row
-                      key={p.id}
-                      title={p.description}
-                      subtitle={[p.unit_number, p.obligation_type].filter(Boolean).join(" · ")}
-                      badge={
-                        p.is_overdue
-                          ? `${p.days_overdue}d atraso`
-                          : format(new Date(p.due_date), "dd/MM")
-                      }
-                      danger={p.is_overdue}
-                      right={
-                        <>
-                          <span className="text-xs font-semibold tabular-nums">
-                            {brl(p.amount)}
-                          </span>
-                          {canEdit && (
+                {/* Propostas */}
+                {proposalFollowups.length > 0 && (
+                  <SectionCard
+                    title="Propostas"
+                    icon={FileText}
+                    accent="text-violet-500"
+                    count={proposalFollowups.length}
+                  >
+                    {proposalFollowups.map((p) => (
+                      <Row
+                        key={p.id}
+                        title={p.lead_name}
+                        subtitle={[
+                          p.property_name || p.unit_number,
+                          p.kind === "draft"
+                            ? `criada em ${format(new Date(p.created_at), "dd/MM/yy")}`
+                            : `enviada há ${Math.floor(p.hours_since_sent / 24)}d`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        badge={p.kind === "draft" ? "Não enviada" : "Follow-up"}
+                        onClick={() => navigate("/crm/propostas")}
+                        right={
+                          canEdit ? (
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0"
-                              title="Marcar como pago"
+                              title={p.kind === "draft" ? "Marcar enviada" : "Concluir follow-up"}
                               disabled={busyId === p.id}
-                              onClick={() => markPayablePaid(p)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markProposalSent(p);
+                              }}
                             >
                               {busyId === p.id ? (
                                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -510,151 +614,55 @@ const AfazeresEmGestao = () => {
                                 <Check className="h-3.5 w-3.5 text-emerald-600" />
                               )}
                             </Button>
-                          )}
-                        </>
-                      }
-                    />
-                  ))}
-                </SectionCard>
-              )}
+                          ) : undefined
+                        }
+                      />
+                    ))}
+                  </SectionCard>
+                )}
+              </div>
 
-              {/* Manutenções */}
-              {maintenances.length > 0 && (
-                <SectionCard
-                  title="Manutenções pendentes"
-                  icon={Wrench}
-                  accent="text-orange-500"
-                  count={maintenances.length}
-                >
-                  {maintenances.map((m) => (
-                    <Row
-                      key={m.id}
-                      title={m.title}
-                      subtitle={[
-                        m.asset_label,
-                        m.scheduled_at
-                          ? format(new Date(m.scheduled_at), "dd/MM/yy", { locale: ptBR })
-                          : "Sem data",
-                        m.estimated_cost ? brl(m.estimated_cost) : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                      badge={m.is_overdue ? `${m.days_overdue}d atraso` : "Pendente"}
-                      danger={m.is_overdue}
-                      onClick={() => navigate("/gestao/manutencoes")}
-                      right={
-                        canEdit ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            title="Concluir manutenção"
-                            disabled={busyId === m.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              completeMaintenance(m);
-                            }}
-                          >
-                            {busyId === m.id ? (
-                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Check className="h-3.5 w-3.5 text-emerald-600" />
-                            )}
-                          </Button>
-                        ) : undefined
-                      }
-                    />
-                  ))}
-                </SectionCard>
-              )}
-
-              {/* Régua de cobrança */}
+              {/* Régua de cobrança (mantida na posição/tamanho atual) */}
               {billingFollowups.length > 0 && (
-                <SectionCard
-                  title="Régua de cobrança"
-                  icon={MessageSquareWarning}
-                  accent="text-primary"
-                  count={billingFollowups.length}
-                >
-                  {billingFollowups.map((item) => (
-                    <Row
-                      key={item.id}
-                      title={item.lease.tenant?.name || "Inquilino"}
-                      subtitle={`${
-                        item.lease.unit?.property?.name
-                          ? `${item.lease.unit.property.name} · ${item.lease.unit?.unit_number}`
-                          : item.lease.unit?.unit_number || "Contrato"
-                      } · venc. ${format(item.dueDate, "dd/MM/yy")}`}
-                      badge={item.stageLabel}
-                      danger={item.stage === "overdue"}
-                      right={
-                        canEdit ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            title="Cobrar via WhatsApp"
-                            onClick={() =>
-                              navigate(
-                                `/whatsapp?phone=${formatPhoneForWhatsApp(item.phone)}&text=${encodeURIComponent(item.message)}`
-                              )
-                            }
-                          >
-                            <Send className="h-3.5 w-3.5 text-emerald-600" />
-                          </Button>
-                        ) : undefined
-                      }
-                    />
-                  ))}
-                </SectionCard>
-              )}
-
-              {/* Propostas */}
-              {proposalFollowups.length > 0 && (
-                <SectionCard
-                  title="Propostas"
-                  icon={FileText}
-                  accent="text-violet-500"
-                  count={proposalFollowups.length}
-                >
-                  {proposalFollowups.map((p) => (
-                    <Row
-                      key={p.id}
-                      title={p.lead_name}
-                      subtitle={[
-                        p.property_name || p.unit_number,
-                        p.kind === "draft"
-                          ? `criada em ${format(new Date(p.created_at), "dd/MM/yy")}`
-                          : `enviada há ${Math.floor(p.hours_since_sent / 24)}d`,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                      badge={p.kind === "draft" ? "Não enviada" : "Follow-up"}
-                      onClick={() => navigate("/crm/propostas")}
-                      right={
-                        canEdit ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            title={p.kind === "draft" ? "Marcar enviada" : "Concluir follow-up"}
-                            disabled={busyId === p.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              markProposalSent(p);
-                            }}
-                          >
-                            {busyId === p.id ? (
-                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Check className="h-3.5 w-3.5 text-emerald-600" />
-                            )}
-                          </Button>
-                        ) : undefined
-                      }
-                    />
-                  ))}
-                </SectionCard>
+                <div className="grid gap-3 lg:grid-cols-2 items-start">
+                  <SectionCard
+                    title="Régua de cobrança"
+                    icon={MessageSquareWarning}
+                    accent="text-primary"
+                    count={billingFollowups.length}
+                  >
+                    {billingFollowups.map((item) => (
+                      <Row
+                        key={item.id}
+                        title={item.lease.tenant?.name || "Inquilino"}
+                        subtitle={`${
+                          item.lease.unit?.property?.name
+                            ? `${item.lease.unit.property.name} · ${item.lease.unit?.unit_number}`
+                            : item.lease.unit?.unit_number || "Contrato"
+                        } · venc. ${format(item.dueDate, "dd/MM/yy")}`}
+                        badge={item.stageLabel}
+                        danger={item.stage === "overdue"}
+                        right={
+                          canEdit ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              title="Cobrar via WhatsApp"
+                              onClick={() =>
+                                navigate(
+                                  `/whatsapp?phone=${formatPhoneForWhatsApp(item.phone)}&text=${encodeURIComponent(item.message)}`
+                                )
+                              }
+                            >
+                              <Send className="h-3.5 w-3.5 text-emerald-600" />
+                            </Button>
+                          ) : undefined
+                        }
+                      />
+                    ))}
+                  </SectionCard>
+                </div>
               )}
             </div>
           )}
