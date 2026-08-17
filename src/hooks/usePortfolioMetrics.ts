@@ -69,10 +69,12 @@ export function usePortfolioMetrics() {
       );
 
       // 2. Rental Yield Calculation
-      // Universe: Only assets where is_managed = true AND intent_type includes rental
+      // Universe: Only assets where is_managed = true AND intent_type includes rental AND status is 'rented'
+      // Excludes vacant units to avoid inflating yield with advertised rent prices instead of realized rent
       const managedRentalAssets = units.filter(
         u => u.is_managed === true && 
-             (u.intent_type === 'rental' || u.intent_type === 'both')
+             (u.intent_type === 'rental' || u.intent_type === 'both') &&
+             u.status === 'rented'
       );
       
       const totalAnnualRent = managedRentalAssets.reduce(
@@ -100,9 +102,9 @@ export function usePortfolioMetrics() {
              (u.intent_type === 'rental' || u.intent_type === 'both')
       );
       
-      // Cross-validation: if status is 'rented', consider it occupied regardless of is_occupied flag
+      // A unit is considered vacant when its status is explicitly 'available' (not relying on is_occupied flag)
       const vacantUnits = rentalManagedAssets.filter(
-        u => u.is_occupied === false && u.status !== 'rented'
+        u => u.status === 'available'
       );
       const occupiedUnits = rentalManagedAssets.filter(
         u => u.is_occupied === true || u.status === 'rented'

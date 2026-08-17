@@ -179,7 +179,7 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
                       <div className="space-y-2">
                         <h4 className="font-semibold">O que é?</h4>
                         <p className="text-muted-foreground">
-                          Rentabilidade anual dos seus imóveis sob gestão, calculada pela receita de aluguel vs. valor de mercado.
+                          Rentabilidade anual dos seus imóveis sob gestão, calculada pela receita de aluguel realizado vs. valor de mercado.
                         </p>
                         <h4 className="font-semibold">Fórmula</h4>
                         <p className="text-muted-foreground font-mono text-xs bg-muted p-2 rounded">
@@ -189,6 +189,7 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
                         <ul className="text-muted-foreground space-y-1 list-disc list-inside">
                           <li>Marque o imóvel como "Sob Gestão"</li>
                           <li>Defina a intenção como "Locação" ou "Ambos"</li>
+                          <li>Status deve ser "Alugado" (vagos não entram no cálculo)</li>
                           <li>Preencha "Valor do Aluguel" e "Valor de Mercado"</li>
                         </ul>
                       </div>
@@ -250,17 +251,17 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
                       <div className="space-y-2">
                         <h4 className="font-semibold">O que é?</h4>
                         <p className="text-muted-foreground">
-                          Percentual de imóveis sob gestão para locação que estão desocupados.
+                          Percentual de imóveis sob gestão para locação que estão disponíveis (desocupados).
                         </p>
                         <h4 className="font-semibold">Fórmula</h4>
                         <p className="text-muted-foreground font-mono text-xs bg-muted p-2 rounded">
-                          (Imóveis Vagos / Total Geridos para Locação) × 100
+                          (Imóveis Disponíveis / Total Geridos para Locação) × 100
                         </p>
                         <h4 className="font-semibold">Pré-requisitos</h4>
                         <ul className="text-muted-foreground space-y-1 list-disc list-inside">
                           <li>Marque o imóvel como "Sob Gestão"</li>
                           <li>Defina a intenção como "Locação" ou "Ambos"</li>
-                          <li>Mantenha o campo "Ocupado" atualizado</li>
+                          <li>Status "Disponível" indica vaga (não depende mais do campo "Ocupado")</li>
                         </ul>
                         <p className="text-amber-600 text-xs mt-2 flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" />
