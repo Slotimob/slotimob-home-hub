@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -10,10 +11,23 @@ import { AlertCircle } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { CurrencyInput } from "@/components/ui/currency-input";
 
+interface BankAccount {
+  id: string;
+  name: string;
+  bank_name: string | null;
+  account_number: string | null;
+  agency: string | null;
+  initial_balance: number | null;
+  balance: number | null;
+  color: string | null;
+  is_default: boolean | null;
+}
+
 interface CreateBankAccountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  editAccount?: BankAccount | null;
 }
 
 const COLORS = [
@@ -21,7 +35,7 @@ const COLORS = [
   "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#ef4444",
 ];
 
-export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: CreateBankAccountDialogProps) {
+export function CreateBankAccountDialog({ open, onOpenChange, onSuccess, editAccount }: CreateBankAccountDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { effectiveBrokerId } = useWorkspace();
@@ -36,6 +50,24 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: Creat
     isDefault: false,
   });
 
+  useEffect(() => {
+    if (editAccount) {
+      setFormData({
+        name: editAccount.name || "",
+        bankName: editAccount.bank_name || "",
+        accountNumber: editAccount.account_number || "",
+        agency: editAccount.agency || "",
+        initialBalance: editAccount.initial_balance !== null && editAccount.initial_balance !== undefined
+          ? String(editAccount.initial_balance)
+          : "",
+        color: editAccount.color || "#10b981",
+        isDefault: editAccount.is_default || false,
+      });
+    } else if (open) {
+      resetForm();
+    }
+  }, [editAccount, open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -45,33 +77,47 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: Creat
 
       const initialBalance = formData.initialBalance ? parseFloat(formData.initialBalance) : 0;
 
-      const { error } = await supabase.from("bank_accounts").insert({
-        broker_id: effectiveBrokerId,
+      const payload = {
         name: formData.name,
         bank_name: formData.bankName || null,
         account_number: formData.accountNumber || null,
         agency: formData.agency || null,
-        // Set both initial_balance (immutable anchor) and balance (legacy)
         initial_balance: initialBalance,
         balance: initialBalance,
         color: formData.color,
         is_default: formData.isDefault,
-      });
+      };
 
-      if (error) throw error;
+      if (editAccount) {
+        const { error } = await supabase
+          .from("bank_accounts")
+          .update(payload)
+          .eq("id", editAccount.id);
 
-      toast({ title: "Conta criada com sucesso!" });
+        if (error) throw error;
+        toast({ title: "Conta atualizada com sucesso!" });
+      } else {
+        const { error } = await supabase.from("bank_accounts").insert({
+          broker_id: effectiveBrokerId,
+          ...payload,
+        });
+
+        if (error) throw error;
+        toast({ title: "Conta criada com sucesso!" });
+      }
       
       // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
       queryClient.invalidateQueries({ queryKey: ["bank-accounts-summary"] });
       queryClient.invalidateQueries({ queryKey: ["bank-accounts-progressive"] });
+      queryClient.invalidateQueries({ queryKey: ["bank-accounts-filter"] });
+      queryClient.invalidateQueries({ queryKey: ["transaction-summaries-progressive"] });
       
       onSuccess();
-      resetForm();
+      if (!editAccount) resetForm();
     } catch (error: any) {
       toast({
-        title: "Erro ao criar conta",
+        title: editAccount ? "Erro ao atualizar conta" : "Erro ao criar conta",
         description: error.message,
         variant: "destructive",
       });
@@ -92,13 +138,17 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: Creat
     });
   };
 
+  const isEdit = !!editAccount;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Nova Conta Bancária</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar Conta Bancária" : "Nova Conta Bancária"}</DialogTitle>
           <DialogDescription>
-            Adicione uma conta para gerenciar suas movimentações
+            {isEdit
+              ? "Atualize os dados da conta bancária"
+              : "Adicione uma conta para gerenciar suas movimentações"}
           </DialogDescription>
         </DialogHeader>
 
@@ -156,8 +206,10 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: Creat
             <div className="flex items-start gap-2 p-2 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300">
               <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <p className="text-[11px]">
-                Este valor será a âncora imutável para o cálculo do saldo progressivo. 
-                Informe o saldo atual do seu banco no momento da criação.
+                Este valor é a âncora para o cálculo do saldo progressivo. 
+                {isEdit 
+                  ? "Ao alterá-lo, o saldo real e projetado serão recalculados."
+                  : "Informe o saldo atual do seu banco no momento da criação."}
               </p>
             </div>
           </div>
@@ -179,12 +231,23 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess }: Creat
             </div>
           </div>
 
+          <div className="flex items-center gap-2 rounded-md border p-3">
+            <Checkbox
+              id="isDefault"
+              checked={formData.isDefault}
+              onCheckedChange={(checked) => setFormData({ ...formData, isDefault: checked === true })}
+            />
+            <Label htmlFor="isDefault" className="text-sm font-normal cursor-pointer">
+              Definir como conta padrão
+            </Label>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Criando..." : "Criar Conta"}
+              {isLoading ? (isEdit ? "Salvando..." : "Criando...") : (isEdit ? "Salvar Alterações" : "Criar Conta")}
             </Button>
           </DialogFooter>
         </form>
