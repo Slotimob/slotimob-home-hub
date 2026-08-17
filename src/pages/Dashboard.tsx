@@ -180,20 +180,16 @@ const Dashboard = () => {
                 <TrialBanner />
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    BLOCO 1: CONTAGEM DE ATIVOS (Unidades + Imóveis Avulsos)
-                   ═══════════════════════════════════════════════════════════════ */}
-                {preferences.widgets.assets && (
-                  <section>
-                    <AssetsWidget />
+                    BLOCO 1+2: CONTAGEM DE ATIVOS | PATRIMÔNIO/YIELD/VACÂNCIA
+                    ═══════════════════════════════════════════════════════════════ */}
+                {(preferences.widgets.assets || true) && (
+                  <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                    {preferences.widgets.assets && (
+                      <AssetsWidget />
+                    )}
+                    <PortfolioWidget refreshKey={refreshKey} />
                   </section>
                 )}
-
-                {/* ═══════════════════════════════════════════════════════════════
-                    BLOCO 2: PATRIMÔNIO | YIELD | VACÂNCIA
-                   ═══════════════════════════════════════════════════════════════ */}
-                <section>
-                  <PortfolioWidget refreshKey={refreshKey} />
-                </section>
 
                 {/* ═══════════════════════════════════════════════════════════════
                     BLOCO 3: ALUGUÉIS | INADIMPLÊNCIA

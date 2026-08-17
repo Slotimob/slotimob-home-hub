@@ -151,7 +151,7 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
                         <Icon className={`h-4 w-4 lg:h-5 lg:w-5 ${metric.color}`} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xl lg:text-2xl font-bold leading-tight">
+                        <p className="text-lg lg:text-xl font-bold leading-tight">
                           {metric.value}
                         </p>
                         <p className="text-xs text-muted-foreground whitespace-nowrap">

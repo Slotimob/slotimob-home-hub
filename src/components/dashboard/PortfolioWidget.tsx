@@ -1,5 +1,6 @@
 import { TrendingUp, AlertTriangle, Eye, Landmark, HelpCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import {
