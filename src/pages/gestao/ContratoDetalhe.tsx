@@ -285,18 +285,6 @@ export default function ContratoDetalhe() {
     }
   };
 
-  const handleSaveCib = async () => {
-    if (!lease) return;
-    try {
-      const { error } = await supabase.from("units").update({ cib: editedCib || null }).eq("id", lease.unit_id);
-      if (error) throw error;
-      toast({ title: "CIB atualizado com sucesso!" });
-      setIsEditingCib(false);
-      queryClient.invalidateQueries({ queryKey: ["units"] });
-    } catch {
-      toast({ title: "Erro ao salvar", variant: "destructive" });
-    }
-  };
 
   // Guarda: contrato ainda não configurado não tem tela de detalhe — vai para o wizard
   useEffect(() => {
