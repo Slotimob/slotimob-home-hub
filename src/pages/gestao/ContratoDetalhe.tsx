@@ -124,9 +124,6 @@ export default function ContratoDetalhe() {
   });
   const [logsLimit, setLogsLimit] = useState(20);
 
-  const [logsLimit, setLogsLimit] = useState(20);
-
-
   const [automationForm, setAutomationForm] = useState({
     email_enabled: false,
     email_destination: "",
