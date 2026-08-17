@@ -161,7 +161,7 @@ interface LeaseWithAdjustment extends LeaseWithDetails {
   adjustmentStatus: AdjustmentStatus;
 }
 
-type ContractStatusFilter = "all" | "active" | "pending_signature" | "terminated";
+type ContractStatusFilter = "all" | keyof typeof LEASE_STATUS_LABELS;
 
 export function ContractsTab() {
   const { user } = useAuth();
