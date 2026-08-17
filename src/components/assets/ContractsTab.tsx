@@ -682,30 +682,17 @@ export function ContractsTab() {
         
         {/* Status Filter Dropdown */}
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ContractStatusFilter)}>
-          <SelectTrigger className="w-full sm:w-[160px]">
+          <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os Status</SelectItem>
-            <SelectItem value="active">
-              <span className="flex items-center gap-2">
-                <Check className="h-3.5 w-3.5 text-primary" />
-                Ativos
-              </span>
-            </SelectItem>
-            <SelectItem value="pending_signature">
-              <span className="flex items-center gap-2">
-                <FileX className="h-3.5 w-3.5 text-amber-600" />
-                Pend. Assinatura
-              </span>
-            </SelectItem>
-            <SelectItem value="terminated">
-              <span className="flex items-center gap-2">
-                <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                Encerrados
-              </span>
-            </SelectItem>
+            {Object.entries(LEASE_STATUS_LABELS).map(([status, config]) => (
+              <SelectItem key={status} value={status}>
+                {config.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         
