@@ -566,53 +566,53 @@ export default function Manutencoes() {
                               setExpanded((prev) => ({ ...prev, [entry.groupId]: !isOpen }))
                             }
                           >
-                            <TableCell>
+                            <TableCell className="py-2 px-3">
                               <div className="flex items-center gap-2">
                                 {isOpen ? (
-                                  <ChevronDown className="h-4 w-4 text-primary" />
+                                  <ChevronDown className="h-3.5 w-3.5 text-primary" />
                                 ) : (
-                                  <ChevronRight className="h-4 w-4 text-primary" />
+                                  <ChevronRight className="h-3.5 w-3.5 text-primary" />
                                 )}
                                 <div>
-                                  <p className="text-sm font-semibold">{first.title}</p>
+                                  <p className="text-[11px] font-semibold leading-tight">{first.title}</p>
                                   {first.description && (
-                                    <p className="text-xs text-muted-foreground line-clamp-1">
+                                    <p className="text-[10px] text-muted-foreground line-clamp-1">
                                       {first.description}
                                     </p>
                                   )}
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">
+                            <TableCell className="py-2 px-3">
+                              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
                                 {ACTIVITY_TYPE_LABELS[first.activity_type] || first.activity_type}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20">
+                            <TableCell className="py-2 px-3">
+                              <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20 text-[10px] h-5 px-1.5">
                                 <Layers className="h-3 w-3" />
                                 Aplicado a {entry.rows.length} imóveis
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-sm">
+                            <TableCell className="text-[11px] py-2 px-3 leading-tight">
                               {first.assigned_contact_id
                                 ? data?.contacts[first.assigned_contact_id] || '—'
                                 : '—'}
                             </TableCell>
-                            <TableCell className="text-sm whitespace-nowrap">
+                            <TableCell className="text-[11px] py-2 px-3 whitespace-nowrap leading-tight">
                               {renderDate(first)}
                             </TableCell>
-                            <TableCell className="text-sm text-right whitespace-nowrap font-medium">
+                            <TableCell className="text-[11px] py-2 px-3 text-right whitespace-nowrap font-medium leading-tight">
                               {first.estimated_cost != null
                                 ? brl(Number(first.estimated_cost) * entry.rows.length)
                                 : '—'}
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
+                            <TableCell className="py-2 px-3">
+                              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
                                 {done}/{entry.rows.length} concluídas
                               </Badge>
                             </TableCell>
-                            <TableCell className="w-10" />
+                            <TableCell className="w-10 py-2 px-3" />
                           </TableRow>
                           {isOpen &&
                             entry.rows.map((row) => (
