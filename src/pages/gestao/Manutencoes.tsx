@@ -325,11 +325,11 @@ export default function Manutencoes() {
 
   const StatusBadge = ({ row }: { row: ActivityRow }) =>
     row.is_completed ? (
-      <Badge className="bg-emerald-500/15 text-emerald-600 gap-1 hover:bg-emerald-500/15">
+      <Badge className="bg-emerald-500/15 text-emerald-600 gap-1 hover:bg-emerald-500/15 text-xs h-6">
         <CheckCircle2 className="h-3 w-3" /> Concluída
       </Badge>
     ) : (
-      <Badge variant="outline" className="gap-1">
+      <Badge variant="outline" className="gap-1 text-xs h-6">
         <Clock className="h-3 w-3" /> Pendente
       </Badge>
     );
@@ -340,31 +340,31 @@ export default function Manutencoes() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-7 w-7"
           onClick={(e) => e.stopPropagation()}
           aria-label="Ações da atividade"
         >
-          <MoreVertical className="h-4 w-4" />
+          <MoreVertical className="h-3.5 w-3.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onClick={() => openEdit(row)}>
-          <Pencil className="h-4 w-4 mr-2" /> Editar
+          <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
         </DropdownMenuItem>
         {row.is_completed ? (
           <DropdownMenuItem onClick={() => setCompleted(row, false)}>
-            <RotateCcw className="h-4 w-4 mr-2" /> Marcar como pendente
+            <RotateCcw className="h-3.5 w-3.5 mr-2" /> Marcar como pendente
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem onClick={() => setCompleted(row, true)}>
-            <CheckCircle2 className="h-4 w-4 mr-2" /> Marcar como concluída
+            <CheckCircle2 className="h-3.5 w-3.5 mr-2" /> Marcar como concluída
           </DropdownMenuItem>
         )}
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
           onClick={() => setDeleteTarget(row)}
         >
-          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+          <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -372,29 +372,29 @@ export default function Manutencoes() {
 
   const ActivityCells = ({ row, indent }: { row: ActivityRow; indent?: boolean }) => (
     <>
-      <TableCell className={indent ? 'pl-10' : ''}>
-        <p className="text-sm font-medium">{row.title}</p>
+      <TableCell className={cn('py-2 px-3', indent ? 'pl-10' : '')}>
+        <p className="text-[11px] font-medium leading-tight">{row.title}</p>
         {row.description && (
-          <p className="text-xs text-muted-foreground line-clamp-1">{row.description}</p>
+          <p className="text-[10px] text-muted-foreground line-clamp-1">{row.description}</p>
         )}
       </TableCell>
-      <TableCell>
-        <Badge variant="secondary">
+      <TableCell className="py-2 px-3">
+        <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
           {ACTIVITY_TYPE_LABELS[row.activity_type] || row.activity_type}
         </Badge>
       </TableCell>
-      <TableCell className="text-sm">{assetLabel(row)}</TableCell>
-      <TableCell className="text-sm">
+      <TableCell className="text-[11px] py-2 px-3 leading-tight">{assetLabel(row)}</TableCell>
+      <TableCell className="text-[11px] py-2 px-3 leading-tight">
         {row.assigned_contact_id ? data?.contacts[row.assigned_contact_id] || '—' : '—'}
       </TableCell>
-      <TableCell className="text-sm whitespace-nowrap">{renderDate(row)}</TableCell>
-      <TableCell className="text-sm text-right whitespace-nowrap">
+      <TableCell className="text-[11px] py-2 px-3 whitespace-nowrap leading-tight">{renderDate(row)}</TableCell>
+      <TableCell className="text-[11px] py-2 px-3 text-right whitespace-nowrap leading-tight">
         {row.estimated_cost != null ? brl(Number(row.estimated_cost)) : '—'}
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2 px-3">
         <StatusBadge row={row} />
       </TableCell>
-      <TableCell className="w-10 text-right">
+      <TableCell className="w-10 py-2 px-3 text-right">
         <RowActions row={row} />
       </TableCell>
     </>
