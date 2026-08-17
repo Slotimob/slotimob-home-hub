@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, Mail, MapPin, MoreVertical, Pencil, Trash2, Briefcase, MessageSquare } from 'lucide-react';
 import { ContactCategoryBadges } from './ContactCategoryFilter';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
@@ -34,14 +33,6 @@ export const ContactListItem = ({
   onSelectionChange,
 }: ContactListItemProps) => {
   const navigate = useNavigate();
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,7 +47,7 @@ export const ContactListItem = ({
 
   return (
     <div 
-      className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border bg-card hover:shadow-md transition-all cursor-pointer group ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+      className={`flex items-center gap-4 sm:gap-5 p-4 sm:p-5 rounded-lg border bg-card hover:shadow-md transition-all cursor-pointer group ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''}`}
       onClick={selectionMode ? () => onSelectionChange?.(!isSelected) : onClick}
     >
       {/* Selection checkbox */}
@@ -68,14 +59,6 @@ export const ContactListItem = ({
           className="shrink-0"
         />
       )}
-
-      {/* Avatar */}
-      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 shrink-0">
-        <AvatarImage src={contact.avatar_url || undefined} alt={contact.name} />
-        <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
-          {getInitials(contact.name)}
-        </AvatarFallback>
-      </Avatar>
 
       {/* Main info */}
       <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 sm:gap-4">

@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, Mail, MapPin, MoreVertical, Pencil, Trash2, Briefcase, MessageSquare } from 'lucide-react';
 import { ContactCategoryBadges, ContactCategory } from './ContactCategoryFilter';
 import { formatPhoneForWhatsApp } from '@/lib/utils';
@@ -54,14 +53,6 @@ export const ContactCard = ({
   canDelete = true,
 }: ContactCardProps) => {
   const navigate = useNavigate();
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -91,14 +82,8 @@ export const ContactCard = ({
       className="hover:shadow-lg transition-shadow cursor-pointer group"
       onClick={onClick}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-10 w-10 shrink-0">
-            <AvatarImage src={contact.avatar_url || undefined} alt={contact.name} />
-            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-              {getInitials(contact.name)}
-            </AvatarFallback>
-          </Avatar>
+      <CardHeader className="p-4 pb-3">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <CardTitle className="text-base truncate">{contact.name}</CardTitle>
@@ -144,12 +129,12 @@ export const ContactCard = ({
           </div>
         </div>
         
-        <div className="mt-2">
+        <div className="mt-2.5">
           <ContactCategoryBadges categories={contact.categories} size="sm" />
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2.5 p-4 pt-0">
         {contact.email && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Mail className="h-4 w-4 shrink-0" />
