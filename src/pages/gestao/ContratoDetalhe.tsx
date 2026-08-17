@@ -124,8 +124,8 @@ export default function ContratoDetalhe() {
   });
   const [logsLimit, setLogsLimit] = useState(20);
 
-  const [isEditingCib, setIsEditingCib] = useState(false);
-  const [editedCib, setEditedCib] = useState("");
+  const [logsLimit, setLogsLimit] = useState(20);
+
 
   const [automationForm, setAutomationForm] = useState({
     email_enabled: false,
