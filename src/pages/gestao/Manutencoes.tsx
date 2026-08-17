@@ -103,7 +103,10 @@ export default function Manutencoes() {
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [period, setPeriod] = useState('90');
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: startOfMonth(new Date()),
+    to: new Date(),
+  });
   const [typeFilter, setTypeFilter] = useState('all');
   const [contactFilter, setContactFilter] = useState('all');
   const [assetFilter, setAssetFilter] = useState('all');
@@ -115,7 +118,7 @@ export default function Manutencoes() {
   const [deleting, setDeleting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['activities-list', brokerId, period],
+    queryKey: ['activities-list', brokerId, dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: async () => {
       if (!brokerId) return { activities: [] as ActivityRow[], units: {}, properties: {}, contacts: {} };
 
@@ -128,10 +131,9 @@ export default function Manutencoes() {
         .order('scheduled_at', { ascending: false, nullsFirst: false })
         .limit(500);
 
-      if (period !== 'all') {
-        const since = format(subDays(new Date(), parseInt(period, 10)), 'yyyy-MM-dd');
-        query = query.gte('created_at', since);
-      }
+      const fromDate = format(dateRange.from, 'yyyy-MM-dd');
+      const toDate = format(endOfDay(dateRange.to), "yyyy-MM-dd'T'HH:mm:ss");
+      query = query.gte('created_at', fromDate).lte('created_at', toDate);
 
       const { data: activities, error } = await query;
       if (error) throw error;
