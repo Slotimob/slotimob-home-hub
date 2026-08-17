@@ -1,6 +1,6 @@
 export { DashboardDateFilter } from './DashboardDateFilter';
+export type { DateRange } from './DashboardDateFilter';
 export { PipelineStageSelector } from './PipelineStageSelector';
-export type { DatePreset, DateRange } from './DashboardDateFilter';
 export { DashboardCustomizeSheet } from './DashboardCustomizeSheet';
 export { AssetsWidget } from './AssetsWidget';
 export { FinancialWidget } from './FinancialWidget';
