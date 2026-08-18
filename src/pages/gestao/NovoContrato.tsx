@@ -139,6 +139,7 @@ export default function NovoContrato() {
   const [searchParams] = useSearchParams();
   const editLeaseId = searchParams.get("edit") ?? searchParams.get("editLeaseId");
   const unitIdParam = searchParams.get("unitId");
+  const tenantIdParam = searchParams.get("tenantId");
 
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
@@ -388,21 +389,24 @@ export default function NovoContrato() {
     }
   }, [editLease]);
 
-  // Pre-fill tenant/rent from unit info when creating a new lease
+  // Pre-fill tenant/rent from URL param or unit info when creating a new lease
   useEffect(() => {
-    if (isEditMode || !unitInfo) return;
+    if (isEditMode || (!unitInfo && !tenantIdParam)) return;
     setFormData((prev) => {
       const next = { ...prev };
-      if (!next.tenant_contact_id && unitInfo.tenant_contact_id) {
+      if (tenantIdParam && !next.tenant_contact_id) {
+        next.tenant_contact_id = tenantIdParam;
+      }
+      if (!next.tenant_contact_id && unitInfo?.tenant_contact_id) {
         next.tenant_contact_id = unitInfo.tenant_contact_id;
       }
-      if ((!next.rent_amount || next.rent_amount === 0) && unitInfo.rent_price) {
+      if ((!next.rent_amount || next.rent_amount === 0) && unitInfo?.rent_price) {
         next.rent_amount = Number(unitInfo.rent_price);
       }
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unitInfo?.id]);
+  }, [unitInfo?.id, tenantIdParam]);
 
 
   const needsSpouseData =
