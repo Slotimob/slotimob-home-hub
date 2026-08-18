@@ -186,8 +186,6 @@ const AlugueiDetalhe = () => {
   );
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
-  const [editingCib, setEditingCib] = useState(false);
-  const [cibValue, setCibValue] = useState("");
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [raConfigOpen, setRaConfigOpen] = useState(false);
 
@@ -301,32 +299,6 @@ const AlugueiDetalhe = () => {
     ...availableFinancialTransactions,
     ...availableManagerialTransactions,
   ];
-
-  const updateCibMutation = useMutation({
-    mutationFn: async (newCib: string) => {
-      const { error } = await supabase
-        .from("units")
-        .update({ cib: newCib || null })
-        .eq("id", unitId!);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["unit-full-data", unitId] });
-      queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-      setEditingCib(false);
-      toast({
-        title: "CIB atualizado",
-        description: "O número do CIB foi salvo com sucesso.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao salvar",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
     if (!unitConfig) return [];
@@ -474,13 +446,6 @@ const AlugueiDetalhe = () => {
     queryClient.invalidateQueries({ queryKey: ["unit-full-data", unitId] });
     queryClient.invalidateQueries({ queryKey: ["asset-health"] });
   };
-
-  const handleStartCibEdit = () => {
-    setCibValue(unitData?.cib || "");
-    setEditingCib(true);
-  };
-
-  const handleSaveCib = () => updateCibMutation.mutate(cibValue);
 
   const handleCreateLease = () => {
     if (!unitId) return;
