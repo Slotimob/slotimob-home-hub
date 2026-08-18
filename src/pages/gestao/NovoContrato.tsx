@@ -424,6 +424,14 @@ export default function NovoContrato() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unitInfo?.id, tenantIdParam]);
 
+  // CIB: o valor mestre vive em `units.cib`. Se a unidade já tem CIB, ele prevalece
+  // sobre o valor legado gravado em `leases.cib` (fallback apenas quando a unit está vazia).
+  useEffect(() => {
+    if (!unitCib) return;
+    setFormData((prev) => (prev.cib === unitCib ? prev : { ...prev, cib: unitCib }));
+  }, [unitCib]);
+
+
 
   const needsSpouseData =
     guarantorData.estadoCivil === "Casado(a)" || guarantorData.estadoCivil === "União Estável";
