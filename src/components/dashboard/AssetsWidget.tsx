@@ -171,11 +171,10 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
 
           {/* Detalhamento por status - lista vertical */}
           <div className="mt-3 lg:mt-4 pt-3 border-t space-y-1.5">
-            {STATUS_BREAKDOWN.map(({ key, label, dot }) => (
+            {STATUS_BREAKDOWN.map(({ key, label, dot, borderLeft }) => (
               <div
                 key={key}
-                className="flex items-center justify-between rounded-md px-2 py-1.5 border-l-2 bg-muted/30"
-                style={{ borderLeftColor: `var(--${key}-color, currentColor)` }}
+                className={`flex items-center justify-between rounded-md px-2 py-1.5 border-l-2 bg-muted/30 ${borderLeft}`}
               >
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${dot}`} />
