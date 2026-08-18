@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import { DEFAULT_DESCRIPTION } from "./src/config/seoDefaults";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -18,10 +19,10 @@ export default defineConfig(({ mode }) => ({
       devOptions: { enabled: false },
       includeAssets: ["sloti-logo.png", "favicon.ico"],
       manifest: {
-        name: "SLOTIMOB - Gestão Imobiliária",
-        short_name: "SLOTIMOB",
-        description: "Sistema de gestão imobiliária completo para corretores",
-        theme_color: "#6d28d9",
+        name: "Slotimob — Gestão de Aluguel",
+        short_name: "Slotimob",
+        description: DEFAULT_DESCRIPTION,
+        theme_color: "#0B0073",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",

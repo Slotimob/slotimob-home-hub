@@ -1,9 +1,8 @@
 import { Helmet, HelmetProvider } from 'react-helmet-async';
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from '@/config/seoDefaults';
 
 const BASE_URL = 'https://slotimob.com.br';
 const DEFAULT_IMAGE = `${BASE_URL}/sloti-logo.png`;
-const DEFAULT_TITLE = 'Slotimob — gestão de aluguel para proprietários de imóveis';
-const DEFAULT_DESCRIPTION = 'Boleto automático, reajuste IGPM/IPCA e relatório de IR. Para donos de imóveis que querem parar de cobrar manualmente.';
 
 interface SEOHeadProps {
   title?: string;
