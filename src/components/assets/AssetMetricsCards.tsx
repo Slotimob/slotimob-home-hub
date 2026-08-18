@@ -24,6 +24,9 @@ interface AssetMetricsCardsProps {
 }
 
 export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetricsCardsProps) {
+  const { effectiveBrokerId } = useWorkspace();
+  const brokerId = effectiveBrokerId || undefined;
+
   // Fetch lease data for occupancy metrics
   const { data: activeLease } = useQuery({
     queryKey: ["unit-active-lease", unitId],
