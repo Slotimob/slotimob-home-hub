@@ -649,11 +649,20 @@ export function AssetActivitiesPanel({
                               </Badge>
                             </TableCell>
                             {withAssetColumn && (
-                              <TableCell className="py-2 px-3">
-                                <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20 text-[10px] h-5 px-1.5">
-                                  <Layers className="h-3 w-3" />
-                                  Aplicado a {entry.rows.length} imóveis
-                                </Badge>
+                              <TableCell className="py-2 px-3 max-w-[180px]">
+                                <TooltipProvider delayDuration={100}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/20 text-[10px] h-5 px-1.5 w-full max-w-full">
+                                        <Layers className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">Aplicado a {entry.rows.length} imóveis</span>
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Aplicado a {entry.rows.length} imóveis</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </TableCell>
                             )}
                             <TableCell className="text-[11px] py-2 px-3 leading-tight">
