@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ContactSelector } from "@/components/ContactSelector";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
+import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
 import type {
   AdditionalObligationType,
   FireInsuranceConfig,
