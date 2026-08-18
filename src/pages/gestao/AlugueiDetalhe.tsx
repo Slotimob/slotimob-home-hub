@@ -732,30 +732,20 @@ const AlugueiDetalhe = () => {
 
           {/* Obligations */}
           <TabsContent value="obligations" className="mt-4 space-y-6">
-            <div className="flex rounded-lg border overflow-hidden p-1 bg-muted/50">
-              <button
-                className={cn(
-                  "flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-all",
-                  obligationsView === "config"
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setObligationsView("config")}
-              >
-                Configurar
-              </button>
-              <button
-                className={cn(
-                  "flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-all",
-                  obligationsView === "status"
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setObligationsView("status")}
-              >
-                Status Mensal
-              </button>
-            </div>
+            <Tabs
+              value={obligationsView}
+              onValueChange={(v) => setObligationsView(v as typeof obligationsView)}
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="config" className="text-xs">
+                  Configurar
+                </TabsTrigger>
+                <TabsTrigger value="status" className="text-xs">
+                  Status Mensal
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
 
             {obligationsView === "config" && (
               canEdit ? (
