@@ -530,32 +530,7 @@ export const AssetActivityTimeline = ({
     URL.revokeObjectURL(url);
   }, [buildExportRows, assetType, assetId]);
 
-  // Export PDF
-  const exportPDF = useCallback(async () => {
-    const { default: jsPDF } = await import('jspdf');
-    const { default: autoTable } = await import('jspdf-autotable');
-
-    const doc = new jsPDF({ orientation: 'landscape' });
-    doc.setFontSize(14);
-    doc.text(pdfSafeLabel('Histórico de Atividades'), 14, 15);
-    doc.setFontSize(9);
-    doc.text(pdfSafeLabel(`${filteredLogs.length} registros`), 14, 22);
-
-    const limits = [40, 24, 24, 30, 20, 60];
-    const tableData = buildExportRows().map(row =>
-      row.map((cell, i) => pdfSafeText(cell, { maxLength: limits[i], preserveLineBreaks: false }))
-    );
-
-    autoTable(doc, {
-      startY: 28,
-      head: [['Data', 'Ação', 'Tipo', 'Registro', 'Usuário', 'Alterações']],
-      body: tableData,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [59, 130, 246] },
-    });
-
-    doc.save(`atividades-${assetType}-${assetId.slice(0, 8)}.pdf`);
-  }, [buildExportRows, filteredLogs, assetType, assetId]);
+  // (Exportação em PDF avulsa removida — absorvida pelo "Relatório completo")
 
 
   // ── Render ─────────────────────────────────────────────
