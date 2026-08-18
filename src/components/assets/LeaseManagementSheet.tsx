@@ -384,6 +384,13 @@ export function LeaseManagementSheet({
                  // FIXED: Now these fields are properly typed in the Lease interface
                  next_adjustment_date: lease.next_adjustment_date,
                  adjustment_index: lease.adjustment_index,
+                 end_date: lease.end_date,
+                 is_indefinite_term: lease.is_indefinite_term ?? null,
+                 due_day: lease.due_day,
+                 tenant_contact_id: lease.tenant_contact_id,
+                 property_id: lease.property_id,
+                 fire_insurance: lease.fire_insurance ?? null,
+                 iptu_charge: lease.iptu_charge ?? null,
                  unit: lease.unit,
                  tenant: lease.tenant,
                } : null}

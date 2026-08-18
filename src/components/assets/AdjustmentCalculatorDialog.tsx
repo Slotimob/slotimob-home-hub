@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
-import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,14 +9,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Calculator, TrendingUp, Check, Loader2, AlertTriangle, RefreshCw, ExternalLink, Info, Percent } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Calculator,
+  TrendingUp,
+  Check,
+  Loader2,
+  AlertTriangle,
+  RefreshCw,
+  ExternalLink,
+  Info,
+  Percent,
+  CalendarClock,
+} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { format, addYears } from "date-fns";
+import { format, addYears, addMonths, setDate, differenceInCalendarMonths, parseISO, isBefore, lastDayOfMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -70,6 +81,22 @@ const INDEX_SOURCES: Record<string, { url: string; label: string }> = {
   Fixo: { url: "#", label: "Índice Fixo" },
 };
 
+const brl = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/** Primeira cobrança após o reajuste: próxima ocorrência do dia de vencimento. */
+function firstDueDateAfter(base: Date, dueDay: number): Date {
+  const clamp = (d: Date) => {
+    const last = lastDayOfMonth(d).getDate();
+    return setDate(d, Math.min(dueDay, last));
+  };
+  let candidate = clamp(base);
+  if (isBefore(candidate, base)) {
+    candidate = clamp(addMonths(base, 1));
+  }
+  return candidate;
+}
+
 export function AdjustmentCalculatorDialog({
   open,
   onOpenChange,
@@ -85,6 +112,7 @@ export function AdjustmentCalculatorDialog({
   const [indexPercentage, setIndexPercentage] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [launchFuture, setLaunchFuture] = useState(true);
   const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
   const [projectionOpen, setProjectionOpen] = useState(false);
 
@@ -94,17 +122,41 @@ export function AdjustmentCalculatorDialog({
       setIndexPercentage("");
       setNotes("");
       setIsSubmitting(false);
+      setLaunchFuture(true);
     }
   }, [open, lease?.id]);
 
-  if (!lease) return null;
-
-  const currentValue = lease.rent_amount;
+  const currentValue = lease?.rent_amount ?? 0;
   const percentage = parseFloat(indexPercentage) || 0;
   const newValue = currentValue * (1 + percentage / 100);
   const difference = newValue - currentValue;
-  const indexKey = lease.adjustment_index || "IGPM";
+  const indexKey = lease?.adjustment_index || "IGPM";
   const indexSource = INDEX_SOURCES[indexKey] || INDEX_SOURCES.IGPM;
+
+  const missingFields = useMemo(() => {
+    if (!lease) return [] as string[];
+    return [
+      !lease.tenant_contact_id ? "inquilino vinculado" : null,
+      !lease.due_day ? "dia de vencimento" : null,
+    ].filter(Boolean) as string[];
+  }, [lease]);
+
+  const canProject = missingFields.length === 0;
+
+  const projectionPreview = useMemo(() => {
+    if (!lease || !canProject || !lease.due_day) return null;
+    const today = new Date();
+    const firstDue = firstDueDateAfter(today, lease.due_day);
+    const endDate = lease.end_date ? parseISO(lease.end_date) : null;
+    const indefinite = !!lease.is_indefinite_term || !endDate;
+    const installments =
+      !indefinite && endDate
+        ? Math.max(0, differenceInCalendarMonths(endDate, firstDue) + 1)
+        : null;
+    return { firstDue, endDate, indefinite, installments };
+  }, [lease, canProject]);
+
+  if (!lease) return null;
 
   const handleApplyAdjustment = async () => {
     if (!user || !lease || percentage <= 0) return;
@@ -123,7 +175,7 @@ export function AdjustmentCalculatorDialog({
       const { error: historyError } = await supabase
         .from("lease_adjustments")
         .insert({
-           broker_id: effectiveBrokerId || user.id,
+          broker_id: effectiveBrokerId || user.id,
           lease_id: lease.id,
           adjustment_date: format(new Date(), "yyyy-MM-dd"),
           previous_value: currentValue,
@@ -148,7 +200,7 @@ export function AdjustmentCalculatorDialog({
 
       // Step 3: CASCADE UPDATE - Update all pending future transactions for this lease
       const adjustmentEffectiveDate = format(new Date(), "yyyy-MM-dd");
-      
+
       const { data: updatedTransactions, error: cascadeError } = await supabase
         .from("financial_transactions")
         .update({ amount: newValue })
@@ -169,7 +221,7 @@ export function AdjustmentCalculatorDialog({
 
         toast({
           title: "Reajuste aplicado com sucesso!",
-          description: `Novo valor: ${newValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}${updatedCount > 0 ? ` • ${updatedCount} parcelas atualizadas` : ""}`,
+          description: `Novo valor: ${brl(newValue)}${updatedCount > 0 ? ` • ${updatedCount} parcelas atualizadas` : ""}`,
         });
       }
 
@@ -180,15 +232,17 @@ export function AdjustmentCalculatorDialog({
       onSuccess?.();
       onOpenChange(false);
 
-      // Novo ciclo: oferece o lançamento das parcelas já com o valor reajustado.
-      if (lease.tenant_contact_id && lease.due_day) {
+      // Step 4 (opcional): lançamento das parcelas já com o valor reajustado.
+      // Só acontece se o usuário optou por isso e os dados existem — a ausência
+      // de dados já é comunicada inline, antes da confirmação.
+      if (launchFuture && canProject) {
         setProjectionLease({
           id: lease.id,
           unit_id: lease.unit_id,
-          tenant_contact_id: lease.tenant_contact_id,
+          tenant_contact_id: lease.tenant_contact_id!,
           property_id: lease.property_id ?? null,
           rent_amount: newValue,
-          due_day: lease.due_day,
+          due_day: lease.due_day!,
           start_date: currentAdjustmentDate,
           end_date: lease.end_date ?? null,
           next_adjustment_date: nextAdjustmentDate,
@@ -199,17 +253,6 @@ export function AdjustmentCalculatorDialog({
           tenant: lease.tenant_contact ? { name: lease.tenant_contact.name } : null,
         });
         setProjectionOpen(true);
-      } else {
-        const missing = [
-          !lease.tenant_contact_id ? "inquilino vinculado" : null,
-          !lease.due_day ? "dia de vencimento" : null,
-        ].filter(Boolean).join(" e ");
-
-        toast({
-          title: "Lançamentos futuros não gerados",
-          description: `Não foi possível oferecer o lançamento automático das cobranças reajustadas: falta ${missing} no contrato. Complete esses dados no contrato e lance as parcelas manualmente.`,
-          variant: "destructive",
-        });
       }
     } catch (error: any) {
       toast({
@@ -224,158 +267,224 @@ export function AdjustmentCalculatorDialog({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" onInteractOutside={(e) => isSubmitting && e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {isUrgent ? (
-              <AlertTriangle className="h-5 w-5 text-warning" />
-            ) : (
-              <Calculator className="h-5 w-5 text-primary" />
-            )}
-            Calculadora de Reajuste
-            {isUrgent && (
-              <Badge variant="outline" className="ml-2 border-warning text-warning text-[10px]">
-                Reajuste Pendente
-              </Badge>
-            )}
-          </DialogTitle>
-          <DialogDescription>
-            {lease.unit?.unit_number} • {lease.tenant_contact?.name}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Urgent Warning */}
-          {isUrgent && (
-            <Card className="p-3 bg-warning/10 border-warning/30">
-              <p className="text-sm text-warning-foreground flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                Este contrato está com reajuste pendente ou atrasado. Aplique o índice para atualizar o valor.
-              </p>
-            </Card>
-          )}
-
-          {/* Current Info */}
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="p-3">
-              <p className="text-[10px] text-muted-foreground uppercase">Valor Atual</p>
-              <p className="text-lg font-bold">
-                {currentValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-              </p>
-            </Card>
-            <Card className="p-3">
-              <p className="text-[10px] text-muted-foreground uppercase">Índice Contratual</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="font-semibold">
-                  {INDEX_LABELS[indexKey]}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          className="sm:max-w-xl"
+          onInteractOutside={(e) => isSubmitting && e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {isUrgent ? (
+                <AlertTriangle className="h-5 w-5 text-warning" />
+              ) : (
+                <Calculator className="h-5 w-5 text-primary" />
+              )}
+              Calculadora de Reajuste
+              {isUrgent && (
+                <Badge variant="outline" className="ml-2 border-warning text-warning text-[10px]">
+                  Reajuste Pendente
                 </Badge>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[200px]">
-                      <p className="text-xs">Índice definido no contrato de locação</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </Card>
-          </div>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {lease.unit?.unit_number} • {lease.tenant_contact?.name}
+            </DialogDescription>
+          </DialogHeader>
 
-          {/* Index Percentage Input */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Percent className="h-4 w-4 text-muted-foreground" />
-              Percentual Acumulado (12 meses)
-            </Label>
-            <PercentInput
-              placeholder="Ex: 4,52"
-              value={indexPercentage}
-              onChange={(v) => setIndexPercentage(String(v))}
-              className="text-center text-lg font-bold"
-              autoFocus
-            />
-            
-            {/* Link to consult official value */}
-            {indexKey !== "Fixo" && (
-              <a
-                href={indexSource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 text-xs text-primary hover:underline mt-1"
-              >
-                <ExternalLink className="h-3 w-3" />
-                {indexSource.label}
-              </a>
+          {/* Área rolável: header e footer permanecem sempre visíveis */}
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1 -mr-1">
+            {/* Urgent Warning */}
+            {isUrgent && (
+              <Card className="p-3 bg-warning/10 border-warning/30">
+                <p className="text-sm text-warning-foreground flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  Este contrato está com reajuste pendente ou atrasado. Aplique o índice para atualizar o valor.
+                </p>
+              </Card>
             )}
-          </div>
 
-          {/* Preview */}
-          {percentage > 0 && (
-            <Card className="p-4 bg-accent/50 border-accent">
-              <div className="text-center space-y-2">
-                <p className="text-xs text-muted-foreground">Novo Valor Calculado</p>
-                <p className="text-2xl font-bold text-primary">
-                  {newValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </p>
-                <p className="text-sm text-primary flex items-center justify-center gap-1">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  +{difference.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                  <span className="text-muted-foreground">({percentage.toFixed(2)}%)</span>
-                </p>
-              </div>
+            {/* Current Info */}
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="p-3">
+                <p className="text-[10px] text-muted-foreground uppercase">Valor Atual</p>
+                <p className="text-lg font-bold">{brl(currentValue)}</p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-[10px] text-muted-foreground uppercase">Índice Contratual</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="secondary" className="font-semibold">
+                    {INDEX_LABELS[indexKey]}
+                  </Badge>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[200px]">
+                        <p className="text-xs">Índice definido no contrato de locação</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </Card>
+            </div>
 
-              {/* Cascade Update Info */}
-              <div className="mt-3 pt-3 border-t border-border">
-                <p className="text-xs text-muted-foreground flex items-center gap-1.5 justify-center">
-                  <RefreshCw className="h-3 w-3" />
-                  Parcelas pendentes futuras serão atualizadas automaticamente
-                </p>
-              </div>
-            </Card>
-          )}
+            {/* Index Percentage Input */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Percent className="h-4 w-4 text-muted-foreground" />
+                Percentual Acumulado (12 meses)
+              </Label>
+              <PercentInput
+                placeholder="Ex: 4,52"
+                value={indexPercentage}
+                onChange={(v) => setIndexPercentage(String(v))}
+                className="text-center text-lg font-bold"
+                autoFocus
+              />
 
-          {/* Disclaimer */}
-          <Card className="p-3 bg-muted/50 border-muted">
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              <Info className="h-3 w-3 inline mr-1 -mt-0.5" />
-              O reajuste deve respeitar o índice acumulado do <strong>{INDEX_LABELS[indexKey]}</strong>. 
-              Certifique-se de consultar o valor oficial nos órgãos responsáveis (FGV/IBGE) antes de confirmar.
-            </p>
-          </Card>
+              {indexKey !== "Fixo" && (
+                <a
+                  href={indexSource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 text-xs text-primary hover:underline mt-1"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  {indexSource.label}
+                </a>
+              )}
+            </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label>Observações (opcional)</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex: Reajuste anual conforme cláusula contratual..."
-              rows={2}
-            />
-          </div>
-        </div>
+            {/* Preview */}
+            {percentage > 0 && (
+              <Card className="p-4 bg-accent/50 border-accent">
+                <div className="text-center space-y-2">
+                  <p className="text-xs text-muted-foreground">Novo Valor Calculado</p>
+                  <p className="text-2xl font-bold text-primary">{brl(newValue)}</p>
+                  <p className="text-sm text-primary flex items-center justify-center gap-1">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    +{brl(difference)}
+                    <span className="text-muted-foreground">({percentage.toFixed(2)}%)</span>
+                  </p>
+                </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleApplyAdjustment}
-            disabled={percentage <= 0 || isSubmitting}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Check className="h-4 w-4 mr-2" />
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 justify-center">
+                    <RefreshCw className="h-3 w-3" />
+                    Parcelas pendentes futuras serão atualizadas automaticamente
+                  </p>
+                </div>
+              </Card>
             )}
-            Confirmar Reajuste
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+            {/* Lançamento de aluguéis futuros */}
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="launch-future-rents"
+                  checked={launchFuture && canProject}
+                  disabled={!canProject}
+                  onCheckedChange={(v) => setLaunchFuture(v === true)}
+                  className="mt-0.5"
+                />
+                <Label
+                  htmlFor="launch-future-rents"
+                  className={`text-sm font-normal leading-snug ${!canProject ? "text-muted-foreground" : ""}`}
+                >
+                  Lançar aluguéis futuros com o novo valor reajustado
+                </Label>
+              </div>
+
+              {!canProject && (
+                <p className="text-xs text-destructive flex items-start gap-1.5 pl-6">
+                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                  <span>
+                    Não é possível lançar as cobranças automaticamente: falta{" "}
+                    <strong>{missingFields.join(" e ")}</strong> no contrato. Complete esses dados
+                    no contrato para habilitar o lançamento automático — o reajuste em si pode ser
+                    aplicado normalmente.
+                  </span>
+                </p>
+              )}
+
+              {canProject && launchFuture && projectionPreview && (
+                <Card className="p-3 space-y-1.5 bg-muted/40">
+                  <p className="text-xs font-semibold flex items-center gap-1.5">
+                    <CalendarClock className="h-3.5 w-3.5 text-primary" />
+                    O que será lançado
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <span className="text-muted-foreground">Imóvel</span>
+                    <span className="font-medium text-right">{lease.unit?.unit_number || "—"}</span>
+                    <span className="text-muted-foreground">Inquilino</span>
+                    <span className="font-medium text-right">{lease.tenant_contact?.name || "—"}</span>
+                    <span className="text-muted-foreground">Novo valor do aluguel</span>
+                    <span className="font-medium text-right">
+                      {percentage > 0 ? brl(newValue) : "—"}
+                    </span>
+                    <span className="text-muted-foreground">Início da cobrança</span>
+                    <span className="font-medium text-right">
+                      {format(projectionPreview.firstDue, "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                    <span className="text-muted-foreground">Data final</span>
+                    <span className="font-medium text-right">
+                      {projectionPreview.indefinite
+                        ? "Prazo indeterminado"
+                        : format(projectionPreview.endDate!, "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                    <span className="text-muted-foreground">Parcelas estimadas</span>
+                    <span className="font-medium text-right">
+                      {projectionPreview.indefinite
+                        ? "conforme configuração de lançamento automático do contrato"
+                        : `${projectionPreview.installments} parcela(s) mensais`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground pt-1 border-t">
+                    {projectionPreview.indefinite
+                      ? "Contrato por prazo indeterminado — lançamento contínuo conforme configuração."
+                      : "Você poderá revisar e selecionar as parcelas antes de confirmar o lançamento."}
+                  </p>
+                </Card>
+              )}
+            </div>
+
+            {/* Disclaimer */}
+            <Card className="p-3 bg-muted/50 border-muted">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <Info className="h-3 w-3 inline mr-1 -mt-0.5" />
+                O reajuste deve respeitar o índice acumulado do <strong>{INDEX_LABELS[indexKey]}</strong>.
+                Certifique-se de consultar o valor oficial nos órgãos responsáveis (FGV/IBGE) antes de confirmar.
+              </p>
+            </Card>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label>Observações (opcional)</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ex: Reajuste anual conforme cláusula contratual..."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyAdjustment} disabled={percentage <= 0 || isSubmitting}>
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
+              Confirmar Reajuste
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmLeaseProjectionDialog
         open={projectionOpen}

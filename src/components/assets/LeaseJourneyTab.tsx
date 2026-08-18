@@ -94,6 +94,13 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
      rent_amount: number;
      next_adjustment_date?: string | null;
      adjustment_index?: string | null;
+     end_date?: string | null;
+     is_indefinite_term?: boolean | null;
+     due_day?: number | null;
+     tenant_contact_id?: string | null;
+     property_id?: string | null;
+     fire_insurance?: any;
+     iptu_charge?: any;
      unit?: { unit_number: string } | null;
      tenant?: { name: string } | null;
     initial_rent?: number;
@@ -872,6 +879,13 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                adjustment_index: fullLeaseData.adjustment_index || null,
                next_adjustment_date: fullLeaseData.next_adjustment_date,
                start_date: fullLeaseData.start_date,
+               end_date: fullLeaseData.end_date ?? null,
+               is_indefinite_term: fullLeaseData.is_indefinite_term ?? null,
+               due_day: fullLeaseData.due_day ?? null,
+               tenant_contact_id: fullLeaseData.tenant_contact_id ?? null,
+               property_id: fullLeaseData.property_id ?? null,
+               fire_insurance: fullLeaseData.fire_insurance ?? null,
+               iptu_charge: fullLeaseData.iptu_charge ?? null,
                tenant_contact: fullLeaseData.tenant,
                unit: fullLeaseData.unit,
              }}
