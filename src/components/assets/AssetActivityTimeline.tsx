@@ -164,6 +164,11 @@ function isManualNote(item: any): item is ManualNote {
   return item && item.type === 'manual_note';
 }
 
+function resolveActorId(log: AuditLog): string {
+  return log.actor_user_id || log.broker_id;
+}
+
+
 type TimelineItem = AuditLog | BillingSummary | ManualNote;
 
 function isBillingSummary(item: TimelineItem): item is BillingSummary {
@@ -337,26 +342,6 @@ export const AssetActivityTimeline = ({
     staleTime: 30_000,
   });
 
-  // Fetch profile names for broker_ids in logs
-  const brokerIds = useMemo(() => {
-    return [...new Set(rawLogs.map(l => l.broker_id))];
-  }, [rawLogs]);
-
-  const { data: profileMap = {} } = useQuery<ProfileMap>({
-    queryKey: ['audit-profiles', brokerIds.join(',')],
-    queryFn: async () => {
-      if (brokerIds.length === 0) return {};
-      const { data } = await (supabase as any)
-        .from('profile_directory')
-        .select('id, full_name')
-        .in('id', brokerIds);
-      const map: ProfileMap = {};
-      (data || []).forEach((p: any) => { map[p.id] = p.full_name || 'Usuário'; });
-      return map;
-    },
-    enabled: brokerIds.length > 0,
-    staleTime: 60_000,
-  });
 
   // Fetch manual notes
   const { data: manualNotes = [] } = useQuery<ManualNote[]>({
@@ -400,6 +385,30 @@ export const AssetActivityTimeline = ({
       }));
     },
     staleTime: 30_000,
+  });
+
+  // Fetch profile names for the actor that performed each log/note
+  const resolvedIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const log of rawLogs) ids.add(resolveActorId(log));
+    for (const note of manualNotes) ids.add(note.broker_id);
+    return [...ids];
+  }, [rawLogs, manualNotes]);
+
+  const { data: profileMap = {} } = useQuery<ProfileMap>({
+    queryKey: ['audit-profiles', resolvedIds.join(',')],
+    queryFn: async () => {
+      if (resolvedIds.length === 0) return {};
+      const { data } = await (supabase as any)
+        .from('profile_directory')
+        .select('id, full_name')
+        .in('id', resolvedIds);
+      const map: ProfileMap = {};
+      (data || []).forEach((p: any) => { map[p.id] = p.full_name || 'Usuário'; });
+      return map;
+    },
+    enabled: resolvedIds.length > 0,
+    staleTime: 60_000,
   });
 
   const startEditNote = (note: ManualNote) => {
@@ -461,7 +470,7 @@ export const AssetActivityTimeline = ({
     const auditFiltered = rawLogs.filter(log => {
       if (!matchesEventType(log, eventFilter)) return false;
       if (!inPeriod(new Date(log.created_at))) return false;
-      if (userFilter !== 'all' && log.broker_id !== userFilter) return false;
+      if (userFilter !== 'all' && resolveActorId(log) !== userFilter) return false;
       return true;
     });
 
@@ -510,11 +519,11 @@ export const AssetActivityTimeline = ({
 
   // Users available in logs for filter
   const userOptions = useMemo(() => {
-    return brokerIds.map(id => ({
+    return resolvedIds.map(id => ({
       value: id,
       label: profileMap[id] || 'Usuário',
     }));
-  }, [brokerIds, profileMap]);
+  }, [resolvedIds, profileMap]);
 
   const hasActiveFilters = eventFilter !== 'all' || !isDefaultPeriod || userFilter !== 'all';
 
@@ -547,7 +556,7 @@ export const AssetActivityTimeline = ({
         ACTION_LABELS[log.action] || log.action,
         TABLE_LABELS[log.table_name] || log.table_name,
         getRecordName(log),
-        profileMap[log.broker_id] || 'Usuário',
+        profileMap[resolveActorId(log)] || 'Usuário',
         changes.map(c => `${c.label}: ${c.from} -> ${c.to}`).join('; '),
       ];
     });
@@ -895,7 +904,7 @@ export const AssetActivityTimeline = ({
 
                   const log = item;
                   const TableIcon = TABLE_ICONS[log.table_name] || FileText;
-                  const authorName = profileMap[log.broker_id] || 'Usuário';
+                  const authorName = profileMap[resolveActorId(log)] || 'Usuário';
                   const changes = getChangedFields(log);
 
                   return (
@@ -1062,7 +1071,7 @@ function BillingSummaryItem({
       <CollapsibleContent>
         <div className="ml-9 border-l-2 border-muted pl-3 space-y-0.5">
           {summary.logs.map(log => {
-            const authorName = profileMap[log.broker_id] || 'Usuário';
+            const authorName = profileMap[resolveActorId(log)] || 'Usuário';
             return (
               <div key={log.id} className="flex items-start gap-2 py-1.5 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground/70">{authorName}</span>
