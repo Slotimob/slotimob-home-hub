@@ -137,7 +137,7 @@ export function AssetActivitiesPanel({
     if (isCreateControlled) onCreateDialogOpenChange?.(open);
     else setInternalDialogOpen(open);
   };
-  const renderNewButton = showNewButton ?? !isCreateControlled;
+  const renderNewButton = (showNewButton ?? !isCreateControlled) && canManage;
 
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: startOfMonth(new Date()),
@@ -380,7 +380,9 @@ export function AssetActivitiesPanel({
       </Badge>
     );
 
-  const RowActions = ({ row }: { row: ActivityRow }) => (
+  const RowActions = ({ row }: { row: ActivityRow }) => {
+    if (!canManage) return null;
+    return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -414,7 +416,8 @@ export function AssetActivitiesPanel({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+    );
+  };
 
   const ActivityCells = ({ row, indent }: { row: ActivityRow; indent?: boolean }) => (
     <>
