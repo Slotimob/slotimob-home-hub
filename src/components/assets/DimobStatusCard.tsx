@@ -16,6 +16,10 @@ interface DimobValidation {
   resolveType?: ResolveType;
   contactId?: string | null;
   contactName?: string | null;
+  /** Current stored value, used to pre-fill the quick resolve dialog when editing. */
+  currentValue?: string | null;
+  /** When true, the item can be edited even if its status is already "ok". */
+  editableWhenOk?: boolean;
 }
 
 interface DimobStatusCardProps {
@@ -39,6 +43,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
     type: ResolveType;
     contactId?: string | null;
     contactName?: string | null;
+    initialValue?: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -80,6 +85,8 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
           ? `CIB cadastrado: ${unit.cib}` 
           : 'Número CIB não informado (obrigatório para DIMOB)',
         resolveType: 'cib',
+        currentValue: unit.cib,
+        editableWhenOk: true,
       });
 
       // Check Registration Number
@@ -251,6 +258,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
       type: validation.resolveType,
       contactId: validation.contactId,
       contactName: validation.contactName,
+      initialValue: validation.currentValue,
     });
     setResolveDialogOpen(true);
   };
@@ -344,14 +352,16 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
                     </p>
                   </div>
                 </div>
-                {canEdit && validation.status === 'pending' && validation.resolveType && (
+                {canEdit && validation.resolveType &&
+                  (validation.status === 'pending' ||
+                    (validation.status === 'ok' && validation.editableWhenOk)) && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={() => handleResolve(validation)}
                     className="shrink-0 text-xs h-7"
                   >
-                    Resolver
+                    {validation.status === 'ok' ? 'Editar' : 'Resolver'}
                   </Button>
                 )}
               </div>
@@ -386,6 +396,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
         unitId={unitId}
         contactId={selectedResolve?.contactId}
         contactName={selectedResolve?.contactName}
+        initialValue={selectedResolve?.initialValue}
         onSuccess={handleResolveSuccess}
         onCreateLease={onCreateLease}
         onEditUnit={onEditUnit}
