@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,8 @@ interface DimobQuickResolveDialogProps {
   unitId: string;
   contactId?: string | null;
   contactName?: string | null;
+  /** Pre-fills the field when editing an already filled value. */
+  initialValue?: string | null;
   onSuccess: () => void;
   onCreateLease?: () => void;
   onEditUnit?: () => void;
@@ -124,12 +126,17 @@ export function DimobQuickResolveDialog({
   unitId,
   contactId,
   contactName,
+  initialValue,
   onSuccess,
   onCreateLease,
   onEditUnit,
 }: DimobQuickResolveDialogProps) {
   const [value, setValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (open) setValue(initialValue ?? '');
+  }, [open, initialValue, resolveType]);
 
   if (!resolveType) return null;
 

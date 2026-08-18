@@ -186,8 +186,6 @@ const AlugueiDetalhe = () => {
   );
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
-  const [editingCib, setEditingCib] = useState(false);
-  const [cibValue, setCibValue] = useState("");
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [raConfigOpen, setRaConfigOpen] = useState(false);
 
@@ -301,32 +299,6 @@ const AlugueiDetalhe = () => {
     ...availableFinancialTransactions,
     ...availableManagerialTransactions,
   ];
-
-  const updateCibMutation = useMutation({
-    mutationFn: async (newCib: string) => {
-      const { error } = await supabase
-        .from("units")
-        .update({ cib: newCib || null })
-        .eq("id", unitId!);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["unit-full-data", unitId] });
-      queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-      setEditingCib(false);
-      toast({
-        title: "CIB atualizado",
-        description: "O número do CIB foi salvo com sucesso.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao salvar",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
     if (!unitConfig) return [];
@@ -474,13 +446,6 @@ const AlugueiDetalhe = () => {
     queryClient.invalidateQueries({ queryKey: ["unit-full-data", unitId] });
     queryClient.invalidateQueries({ queryKey: ["asset-health"] });
   };
-
-  const handleStartCibEdit = () => {
-    setCibValue(unitData?.cib || "");
-    setEditingCib(true);
-  };
-
-  const handleSaveCib = () => updateCibMutation.mutate(cibValue);
 
   const handleCreateLease = () => {
     if (!unitId) return;
@@ -954,106 +919,6 @@ const AlugueiDetalhe = () => {
 
           {/* Fiscal */}
           <TabsContent value="fiscal" className="mt-4 space-y-4">
-            <Card
-              className={cn(
-                "border-2",
-                unitData?.cib ? "border-green-500/30" : "border-amber-500/30"
-              )}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                      unitData?.cib
-                        ? "bg-green-500/15 text-green-600"
-                        : "bg-amber-500/15 text-amber-600"
-                    )}
-                  >
-                    {unitData?.cib ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <AlertCircle className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">CIB - Cadastro Imobiliário</p>
-                        <p className="text-xs text-muted-foreground">
-                          Obrigatório para declaração DIMOB
-                        </p>
-                      </div>
-                      {unitData?.cib && !editingCib && (
-                        <Badge
-                          variant="outline"
-                          className="border-green-500/30 text-green-600"
-                        >
-                          {unitData.cib}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {!unitData?.cib && !editingCib && canEdit && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={handleStartCibEdit}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Adicionar CIB
-                      </Button>
-                    )}
-
-                    {editingCib && (
-                      <div className="flex gap-2 mt-2">
-                        <Input
-                          value={cibValue}
-                          onChange={(e) => setCibValue(e.target.value)}
-                          placeholder="Digite o número do CIB"
-                          className="h-8 text-sm"
-                          autoFocus
-                        />
-                        <Button
-                          size="sm"
-                          className="h-8"
-                          onClick={handleSaveCib}
-                          disabled={updateCibMutation.isPending}
-                        >
-                          {updateCibMutation.isPending ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Save className="h-3 w-3" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8"
-                          onClick={() => setEditingCib(false)}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    )}
-
-                    {unitData?.cib && !editingCib && canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-2 h-7 text-xs"
-                        onClick={handleStartCibEdit}
-                      >
-                        <Pencil className="h-3 w-3 mr-1" />
-                        Alterar
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {unitData && (
               <DimobStatusCard
                 unitId={unitId!}

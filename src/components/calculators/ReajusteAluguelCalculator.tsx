@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Calculator, FileDown, TrendingUp, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { pdfSafeLabel } from '@/utils/pdfSafeText';
+import { calculateRentAdjustment } from '@/lib/rentAdjustment';
 
 const brl = (n: number) =>
   n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -53,8 +54,7 @@ export const ReajusteAluguelCalculator = () => {
       return;
     }
 
-    const newRent = currentRent * (1 + indexPercent / 100);
-    const adjustmentAmount = newRent - currentRent;
+    const { newRent, difference: adjustmentAmount } = calculateRentAdjustment(currentRent, indexPercent);
 
     setResult({
       newRent,
