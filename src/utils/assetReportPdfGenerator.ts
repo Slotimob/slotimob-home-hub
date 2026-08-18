@@ -14,6 +14,14 @@ function fmtDateTime(d: string | null): string {
   return date.toLocaleDateString('pt-BR');
 }
 
+function fmtDateTimeFull(d: string | null): string {
+  if (!d) return '—';
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return fmtDate(d);
+  return `${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+
 function fmtCurrency(v: number | null | undefined): string {
   if (v == null) return '—';
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
