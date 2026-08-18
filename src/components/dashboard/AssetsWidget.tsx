@@ -168,13 +168,19 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
             })}
           </div>
 
-          {/* Detalhamento por status */}
-          <div className="mt-3 lg:mt-4 pt-3 border-t flex flex-wrap gap-x-4 gap-y-2">
+          {/* Detalhamento por status - lista vertical */}
+          <div className="mt-3 lg:mt-4 pt-3 border-t space-y-1.5">
             {STATUS_BREAKDOWN.map(({ key, label, dot }) => (
-              <div key={key} className="flex items-center gap-1.5">
-                <span className={`h-2 w-2 rounded-full ${dot}`} />
-                <span className="text-xs text-muted-foreground">{label}</span>
-                <span className="text-xs font-semibold">{data[key]}</span>
+              <div
+                key={key}
+                className="flex items-center justify-between rounded-md px-2 py-1.5 border-l-2 bg-muted/30"
+                style={{ borderLeftColor: `var(--${key}-color, currentColor)` }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${dot}`} />
+                  <span className="text-sm text-muted-foreground">{label}</span>
+                </div>
+                <span className="text-sm font-semibold">{data[key]}</span>
               </div>
             ))}
           </div>
