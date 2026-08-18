@@ -475,11 +475,13 @@ export const AssetActivityTimeline = ({
     }));
   }, [brokerIds, profileMap]);
 
-  const hasActiveFilters = eventFilter !== 'all' || periodFilter !== '30' || userFilter !== 'all';
+  const hasActiveFilters = eventFilter !== 'all' || !isDefaultPeriod || userFilter !== 'all';
 
   const clearFilters = () => {
     setEventFilter('all');
-    setPeriodFilter('30');
+    const defRange = { from: startOfMonth(new Date()), to: new Date() };
+    setDateRange(defRange);
+    setPendingPeriod({ from: defRange.from, to: defRange.to });
     setUserFilter('all');
     setPage(1);
   };
