@@ -117,6 +117,154 @@ export function buildObligationsConfigFromLease(
   return out;
 }
 
+/** Tipos fixos aceitos em `leases.additional_obligations` */
+const FIXED_ADDITIONAL_TYPES = ["condominium", "energy", "water", "gas", "other"];
+
+const isAdditionalKey = (key: string) =>
+  FIXED_ADDITIONAL_TYPES.includes(key) || key.startsWith("custom_");
+
+/**
+ * Próxima data de vencimento (YYYY-MM-DD) a partir de um dia do mês.
+ * Usada apenas quando a obrigação está sendo ativada pela primeira vez e o
+ * contrato ainda não possui uma data definida.
+ */
+export function nextDueDateFromDay(dueDay: number, base: Date = new Date()): string {
+  const day = Math.min(Math.max(Number(dueDay) || 10, 1), 28);
+  const due = new Date(base.getFullYear(), base.getMonth(), day);
+  if (due < base) due.setMonth(due.getMonth() + 1);
+  const m = String(due.getMonth() + 1).padStart(2, "0");
+  const d = String(due.getDate()).padStart(2, "0");
+  return `${due.getFullYear()}-${m}-${d}`;
+}
+
+export interface LeaseChargesPatch {
+  due_day?: number;
+  fire_insurance?: FireInsuranceConfig;
+  iptu_charge?: IptuChargeConfig;
+  additional_obligations?: ObligationChargeConfig[];
+}
+
+export interface LeaseChargesTarget {
+  dueDay: number;
+  tenantContactId?: string | null;
+  ownerContactId?: string | null;
+  fireInsurance?: FireInsuranceConfig | null;
+  iptuCharge?: IptuChargeConfig | null;
+  additionalObligations?: ObligationChargeConfig[] | null;
+}
+
+/**
+ * Mapeamento reverso de `units.obligations_config` para os encargos do contrato
+ * (`leases.fire_insurance`, `leases.iptu_charge`, `leases.additional_obligations`
+ * e `leases.due_day`). Função irmã de `buildObligationsConfigFromLease`.
+ *
+ * Nunca sobrescreve uma `first_due_date` já existente no contrato: só define
+ * uma nova quando a obrigação está sendo ativada e o contrato não tem valor.
+ */
+export function buildLeaseChargesFromObligationsConfig(
+  config: Record<string, ObligationConfig | undefined>,
+  target: LeaseChargesTarget
+): LeaseChargesPatch {
+  const patch: LeaseChargesPatch = {};
+
+  const chargeToOf = (c: ObligationConfig): LeaseChargeResponsible => {
+    const r = String(c.responsible || "tenant").toLowerCase();
+    if (r === "owner") return "owner";
+    if (r === "agency") return "agency";
+    return "tenant";
+  };
+
+  const linkOf = (c: ObligationConfig, chargeTo: LeaseChargeResponsible) => ({
+    agency_contact_id: chargeTo === "agency" ? c.agency_contact_id ?? null : null,
+    responsible_contact_id: resolveResponsibleContactId(
+      chargeTo,
+      { agency_contact_id: c.agency_contact_id ?? null, responsible_contact_id: (c as any).responsible_contact_id ?? null },
+      target
+    ),
+  });
+
+  // Aluguel — dia de vencimento central do contrato
+  const rentDueDay = Number(config.rent?.due_day);
+  if (rentDueDay >= 1 && rentDueDay <= 31 && rentDueDay !== target.dueDay) {
+    patch.due_day = rentDueDay;
+  }
+  const baseDueDay = patch.due_day || target.dueDay || 10;
+
+  // Seguro incêndio
+  const insurance = config.insurance;
+  if (insurance) {
+    const current = target.fireInsurance || null;
+    const enabled = !!insurance.active;
+    const chargeTo = chargeToOf(insurance);
+    patch.fire_insurance = {
+      total_amount: current?.total_amount ?? 0,
+      installments: current?.installments ?? 12,
+      ...(current || {}),
+
+      ...linkOf(insurance, chargeTo),
+      enabled,
+      charge_to: chargeTo,
+      installment_amount: insurance.amount ?? current?.installment_amount ?? 0,
+      first_due_date:
+        current?.first_due_date ||
+        (enabled ? nextDueDateFromDay(insurance.due_day || baseDueDay) : null),
+    } as FireInsuranceConfig;
+  }
+
+  // IPTU
+  const iptu = config.iptu;
+  if (iptu) {
+    const current = target.iptuCharge || null;
+    const enabled = !!iptu.active;
+    const chargeTo = chargeToOf(iptu);
+    patch.iptu_charge = {
+      annual_amount: current?.annual_amount ?? 0,
+      installments: current?.installments ?? 10,
+      source: current?.source ?? "manual",
+      ...(current || {}),
+      ...linkOf(iptu, chargeTo),
+      enabled,
+      charge_to: chargeTo,
+      installment_amount: iptu.amount ?? current?.installment_amount ?? 0,
+      first_due_date:
+        current?.first_due_date ||
+        (enabled ? nextDueDateFromDay(iptu.due_day || baseDueDay) : null),
+    } as IptuChargeConfig;
+  }
+
+  // Encargos adicionais (tipos fixos + custom_<uuid>)
+  const additionalKeys = Object.keys(config).filter(
+    (k) => k !== "__meta" && isAdditionalKey(k) && !!config[k]
+  );
+  if (additionalKeys.length > 0) {
+    const existing = [...(target.additionalObligations || [])];
+    additionalKeys.forEach((key) => {
+      const c = config[key]!;
+      const chargeTo = chargeToOf(c);
+      const idx = existing.findIndex((o) => o?.type === key);
+      const current = idx >= 0 ? existing[idx] : null;
+      const next: ObligationChargeConfig = {
+        ...(current || { type: key, label: null }),
+        ...linkOf(c, chargeTo),
+        type: key,
+        enabled: !!c.active,
+        charge_to: chargeTo,
+        installment_amount: c.amount ?? current?.installment_amount ?? 0,
+        first_due_date:
+          current?.first_due_date ||
+          (c.active ? nextDueDateFromDay(c.due_day || baseDueDay) : null),
+      };
+      if (idx >= 0) existing[idx] = next;
+      else existing.push(next);
+    });
+    patch.additional_obligations = existing;
+  }
+
+  return patch;
+}
+
+
+
 /**
  * Herança automática ao finalizar/ativar o contrato.
  *

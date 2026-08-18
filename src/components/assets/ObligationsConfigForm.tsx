@@ -24,6 +24,8 @@ import {
   SYSTEM_OBLIGATION_TYPES 
 } from "@/hooks/useCustomObligationTypes";
 import { CreateCustomObligationDialog } from "./CreateCustomObligationDialog";
+import { ContractGeneratorDialog } from "./ContractGeneratorDialog";
+import { buildLeaseChargesFromObligationsConfig } from "@/lib/lease-obligations-inheritance";
 import { ContactSelector } from "@/components/ContactSelector";
 import { 
   Loader2, 
@@ -42,6 +44,7 @@ import {
   Info,
   ClipboardList,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -123,6 +126,8 @@ export function ObligationsConfigForm({
   const [meta, setMeta] = useState<ObligationsConfigMeta | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [contractOutdated, setContractOutdated] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
   const allObligationTypes = useMemo(() => [
@@ -213,15 +218,46 @@ export function ObligationsConfigForm({
         __meta: reviewedMeta,
       });
       setMeta(reviewedMeta);
+
+      // Sync reverso: propaga as obrigações do imóvel para o contrato ATIVO
+      let syncedLease = false;
+      if (activeLease && activeLease.status === "active") {
+        const patch = buildLeaseChargesFromObligationsConfig(
+          config as Record<string, any>,
+          {
+            dueDay: activeLease.due_day,
+            tenantContactId: activeLease.tenant_contact_id,
+            ownerContactId: activeLease.owner_contact_id,
+            fireInsurance: (activeLease as any).fire_insurance || null,
+            iptuCharge: (activeLease as any).iptu_charge || null,
+            additionalObligations: (activeLease as any).additional_obligations || null,
+          }
+        );
+        if (Object.keys(patch).length > 0) {
+          const { error: leaseError } = await supabase
+            .from("leases")
+            .update(patch as any)
+            .eq("id", activeLease.id);
+          if (leaseError) throw new Error(leaseError.message);
+          syncedLease = true;
+          setContractOutdated(true);
+          queryClient.invalidateQueries({ queryKey: ["lease", "unit", unitId] });
+          queryClient.invalidateQueries({ queryKey: ["leases"] });
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["asset-health"] });
       queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", unitId] });
       toast({
         title: "Configurações salvas",
-        description: wasPendingReview
+        description: syncedLease
+          ? "Obrigações atualizadas no imóvel e sincronizadas com o contrato ativo."
+          : wasPendingReview
           ? "Revisão confirmada. As obrigações herdadas do contrato foram validadas."
           : "As responsabilidades financeiras foram configuradas com sucesso.",
       });
       onSaved?.();
+
     } catch (error: any) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } finally {
@@ -391,6 +427,31 @@ export function ObligationsConfigForm({
           Novo Tipo Personalizado
         </Button>
 
+        {/* Contrato desatualizado após sync reverso */}
+        {contractOutdated && activeLease && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/40">
+            <FileText className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2 flex-1">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                Obrigações do contrato foram atualizadas
+              </p>
+              <p className="text-xs text-blue-700/90 dark:text-blue-400/90">
+                O PDF gerado anteriormente pode estar desatualizado. Gere o contrato novamente
+                para refletir as novas responsabilidades.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8"
+                onClick={() => setContractDialogOpen(true)}
+              >
+                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                Gerar contrato atualizado
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Save Button */}
         {showSaveButton && (
           <Button onClick={handleSave} disabled={isSaving} className="w-full">
@@ -404,6 +465,16 @@ export function ObligationsConfigForm({
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
+
+      {activeLease && unitId && (
+        <ContractGeneratorDialog
+          open={contractDialogOpen}
+          onOpenChange={setContractDialogOpen}
+          unitId={unitId}
+          leaseId={activeLease.id}
+        />
+      )}
+
     </>
   );
 }
