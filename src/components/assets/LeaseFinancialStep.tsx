@@ -131,18 +131,28 @@ export function getInitialAdditionalObligations(): ObligationChargeConfig[] {
   return ADDITIONAL_OBLIGATIONS.map((o) => getInitialAdditionalObligation(o.type));
 }
 
-/** Normaliza a lista vinda do banco garantindo um item por tipo da taxonomia */
+/**
+ * Normaliza a lista vinda do banco garantindo um item por tipo da taxonomia fixa
+ * e **preservando** qualquer outro tipo já salvo (ex.: `custom_<uuid>`),
+ * para não descartar configurações feitas com tipos customizados do corretor.
+ */
 export function normalizeAdditionalObligations(
   saved?: ObligationChargeConfig[] | null
 ): ObligationChargeConfig[] {
   const list = Array.isArray(saved) ? saved : [];
-  return ADDITIONAL_OBLIGATIONS.map((o) => {
+  const base = ADDITIONAL_OBLIGATIONS.map((o) => {
     const found = list.find((i) => i?.type === o.type);
     return found
       ? { ...getInitialAdditionalObligation(o.type), ...found }
       : getInitialAdditionalObligation(o.type);
   });
+  const knownTypes = new Set(ADDITIONAL_OBLIGATIONS.map((o) => o.type));
+  const extras = list
+    .filter((i) => i?.type && !knownTypes.has(i.type))
+    .map((i) => ({ ...getInitialAdditionalObligation(i.type), ...i }));
+  return [...base, ...extras];
 }
+
 
 const RESPONSIBLE_OPTIONS: { value: LeaseChargeResponsible; label: string }[] = [
   { value: "tenant", label: "Inquilino" },
