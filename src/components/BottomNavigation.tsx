@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -30,6 +30,8 @@ import { NavLink } from '@/components/NavLink';
 import { useNotificationBadges } from '@/hooks/useNotificationBadges';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Separator } from '@/components/ui/separator';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 import { PRIMARY_TABS, NAV_GROUPS, type NavItem, type NavGroup } from '@/config/navigationItems';
@@ -51,6 +53,8 @@ export function BottomNavigation() {
   const badges = useNotificationBadges();
   const { plan, isTrialActive, canUse, features, isLoading: isSubscriptionLoading } = useSubscriptionLimits();
   const { isMember } = useWorkspace();
+  const { isOwner: isPermOwner, hasPermission } = usePermissions();
+  const { isAgent } = useUserRole();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
@@ -85,13 +89,41 @@ export function BottomNavigation() {
     return location.pathname.startsWith(path);
   };
 
+  // Mirror AppSidebar filtering: plan gating + granular RBAC per moduleKey
+  const visibleGroups = useMemo(() => {
+    const canView = (moduleKey?: string) => {
+      if (isPermOwner || !isMember) return true;
+      if (!moduleKey) return true;
+      return hasPermission(moduleKey, 'view');
+    };
+
+    return NAV_GROUPS
+      .map(group => ({ ...group, items: group.items.filter(item => canView(item.moduleKey)) }))
+      .filter(group => {
+        if (group.items.length === 0) return false;
+        if (group.ownerOnly && isAgent && !isMember) return false;
+        if (group.hiddenOnPlan?.includes(plan)) {
+          if (isSubscriptionLoading) return true;
+          if (group.trialVisible && isTrialActive) return true;
+          if (group.items[0]?.url === '/ai-chat') return true;
+          return false;
+        }
+        return true;
+      });
+  }, [isPermOwner, isMember, hasPermission, isAgent, plan, isSubscriptionLoading, isTrialActive]);
+
+  const visibleTabs = useMemo(() => {
+    if (isPermOwner || !isMember) return PRIMARY_TABS;
+    return PRIMARY_TABS.filter(tab => !tab.moduleKey || hasPermission(tab.moduleKey, 'view'));
+  }, [isPermOwner, isMember, hasPermission]);
+
   const isGroupActive = (items: NavItem[]) => {
     return items.some(item => isActive(item.url));
   };
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    NAV_GROUPS.forEach(group => {
+    visibleGroups.forEach(group => {
       if (isGroupActive(group.items)) {
         initial[group.title] = true;
       }
@@ -128,7 +160,7 @@ export function BottomNavigation() {
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="flex items-center justify-around h-16">
-          {PRIMARY_TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const locked = isNavItemLocked(tab.url);
             return (
               <button
@@ -184,7 +216,7 @@ export function BottomNavigation() {
               </SheetHeader>
               
               <div className="space-y-2 py-4">
-                {NAV_GROUPS.map((group, groupIndex) => {
+                {visibleGroups.map((group, groupIndex) => {
                   const GroupIcon = group.icon;
                   const isOpen = openGroups[group.title] ?? isGroupActive(group.items);
                   const allItemsLocked = group.items.every(item => isNavItemLocked(item.url));
