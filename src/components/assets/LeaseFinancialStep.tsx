@@ -331,6 +331,27 @@ export function LeaseFinancialStep({
 
   const additionalObligations = normalizeAdditionalObligations(value.additional_obligations);
 
+  /**
+   * Opções exibidas: tipos fixos + tipos customizados do corretor (`custom_<uuid>`,
+   * mesma convenção da aba Obrigações). "Outros" fica sempre por último.
+   */
+  const obligationOptions: {
+    type: AdditionalObligationType;
+    label: string;
+    obligationKey: string;
+    isCustom?: boolean;
+  }[] = [
+    ...ADDITIONAL_OBLIGATIONS.filter((o) => o.type !== "other"),
+    ...customObligationTypes.map((t) => ({
+      type: `custom_${t.id}`,
+      label: t.name,
+      obligationKey: `custom_${t.id}`,
+      isCustom: true,
+    })),
+    ...ADDITIONAL_OBLIGATIONS.filter((o) => o.type === "other"),
+  ];
+
+
   const updateAdditional = (
     type: AdditionalObligationType,
     patch: Partial<ObligationChargeConfig>
