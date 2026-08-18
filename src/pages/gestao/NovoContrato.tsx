@@ -821,6 +821,20 @@ export default function NovoContrato() {
         });
       }
 
+      // CIB — grava também em `units.cib` (fonte única de verdade a partir de agora).
+      // `leases.cib` continua sendo gravado acima por compatibilidade.
+      if (effectiveUnitId && formData.cib && formData.cib !== unitCib) {
+        try {
+          await supabase.from("units").update({ cib: formData.cib }).eq("id", effectiveUnitId);
+          queryClient.invalidateQueries({ queryKey: ["unit-cib", effectiveUnitId] });
+          queryClient.invalidateQueries({ queryKey: ["dimob-status", effectiveUnitId] });
+          queryClient.invalidateQueries({ queryKey: ["unit-detail", effectiveUnitId] });
+        } catch (cibError) {
+          console.error("Falha ao sincronizar CIB na unidade:", cibError);
+        }
+      }
+
+
       sessionStorage.removeItem(DRAFT_KEY);
 
       // Lançamentos financeiros só acontecem após confirmação explícita do usuário.
