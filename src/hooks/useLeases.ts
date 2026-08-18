@@ -118,8 +118,12 @@ export interface IptuChargeConfig extends LeaseChargeResponsibleLink {
  * Tipos de encargo adicionais configuráveis no contrato.
  * Espelha a taxonomia da Matriz de Responsabilidades (ObligationType),
  * sem `rent` (é o próprio aluguel), `insurance` (fire_insurance) e `iptu` (iptu_charge).
+ *
+ * Aberto a `string` para aceitar também os tipos customizados do corretor
+ * (`custom_<uuid>`, mesma convenção usada em `units.obligations_config`).
+ * Valores canônicos do sistema: "condominium" | "energy" | "water" | "gas" | "other".
  */
-export type AdditionalObligationType = "condominium" | "energy" | "water" | "gas" | "other";
+export type AdditionalObligationType = string;
 
 /**
  * Encargo adicional parametrizado no contrato (leases.additional_obligations).
