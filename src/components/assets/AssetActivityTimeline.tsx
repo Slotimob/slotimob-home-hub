@@ -519,11 +519,11 @@ export const AssetActivityTimeline = ({
 
   // Users available in logs for filter
   const userOptions = useMemo(() => {
-    return brokerIds.map(id => ({
+    return resolvedIds.map(id => ({
       value: id,
       label: profileMap[id] || 'Usuário',
     }));
-  }, [brokerIds, profileMap]);
+  }, [resolvedIds, profileMap]);
 
   const hasActiveFilters = eventFilter !== 'all' || !isDefaultPeriod || userFilter !== 'all';
 
