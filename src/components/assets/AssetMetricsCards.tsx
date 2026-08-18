@@ -90,18 +90,19 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
     // Performance: Average yield
     let avgYield = 0;
     let yieldStatus: "good" | "warning" | "neutral" = "neutral";
+    let hasYieldData = false;
     
     if (rentAmount && marketValue && marketValue > 0) {
       const annualRent = rentAmount * 12;
       avgYield = (annualRent / marketValue) * 100;
       yieldStatus = avgYield >= 6 ? "good" : avgYield >= 4 ? "warning" : "neutral";
-    } else if (rentalTransactions.length >= 3) {
+      hasYieldData = true;
+    } else if (rentalTransactions.length >= 3 && marketValue && marketValue > 0) {
       const totalReceived = rentalTransactions.reduce((sum, t) => sum + t.amount, 0);
       const avgMonthly = totalReceived / rentalTransactions.length;
-      if (marketValue && marketValue > 0) {
-        avgYield = ((avgMonthly * 12) / marketValue) * 100;
-        yieldStatus = avgYield >= 6 ? "good" : avgYield >= 4 ? "warning" : "neutral";
-      }
+      avgYield = ((avgMonthly * 12) / marketValue) * 100;
+      yieldStatus = avgYield >= 6 ? "good" : avgYield >= 4 ? "warning" : "neutral";
+      hasYieldData = true;
     }
 
     // Occupancy
