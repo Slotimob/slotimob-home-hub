@@ -188,22 +188,31 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
           <div className="flex items-start gap-3">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-              statusColors[metrics.yield.status]
+              metrics.yield.hasData ? statusColors[metrics.yield.status] : "text-muted-foreground bg-muted"
             )}>
-              <TrendingUp className="h-5 w-5" />
+              {metrics.yield.hasData ? (
+                <TrendingUp className="h-5 w-5" />
+              ) : (
+                <Info className="h-5 w-5" />
+              )}
             </div>
             <div className="flex-1 min-w-0 space-y-1">
               <p className="text-xs text-muted-foreground">Rendimento</p>
-              <p className="text-xl md:text-2xl font-bold break-words">
-                {metrics.yield.value > 0 
+              <p className={cn(
+                "text-xl md:text-2xl font-bold break-words",
+                !metrics.yield.hasData && "text-muted-foreground"
+              )}>
+                {metrics.yield.hasData 
                   ? `${metrics.yield.value.toFixed(1)}% a.a.`
                   : "—"
                 }
               </p>
               <p className="text-xs text-muted-foreground">
-                {metrics.yield.value >= 6 ? "Acima da média" : 
-                 metrics.yield.value >= 4 ? "Na média" : 
-                 metrics.yield.value > 0 ? "Abaixo da média" : "Sem dados"}
+                {metrics.yield.hasData
+                  ? (metrics.yield.value >= 6 ? "Acima da média" : 
+                     metrics.yield.value >= 4 ? "Na média" : 
+                     "Abaixo da média")
+                  : "Cadastre o valor de mercado"}
               </p>
             </div>
           </div>
