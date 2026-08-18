@@ -164,6 +164,11 @@ function isManualNote(item: any): item is ManualNote {
   return item && item.type === 'manual_note';
 }
 
+function resolveActorId(log: AuditLog): string {
+  return log.actor_user_id || log.broker_id;
+}
+
+
 type TimelineItem = AuditLog | BillingSummary | ManualNote;
 
 function isBillingSummary(item: TimelineItem): item is BillingSummary {
