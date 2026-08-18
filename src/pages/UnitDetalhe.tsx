@@ -494,7 +494,7 @@ export default function UnitDetalhe() {
             <span className="sm:hidden">Fotos</span>
           </TabsTrigger>
           <TabsTrigger value="documents" className="text-xs sm:text-sm">
-            <FileText className="h-4 w-4 mr-1 sm:mr-2" />
+            <FileText className="h-4 w-4 mr-1 sm:mr-2 shrink-0" />
             <span className="hidden sm:inline">Documentos</span>
             <span className="sm:hidden">Docs</span>
           </TabsTrigger>
