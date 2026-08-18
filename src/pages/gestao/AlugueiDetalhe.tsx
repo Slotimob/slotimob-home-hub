@@ -83,7 +83,6 @@ import { AssetMetricsCards } from "@/components/assets/AssetMetricsCards";
 import { ObligationsConfigForm } from "@/components/assets/ObligationsConfigForm";
 import { DimobStatusCard } from "@/components/assets/DimobStatusCard";
 import { ContractGeneratorDialog } from "@/components/assets/ContractGeneratorDialog";
-import { CreateLeaseWizard } from "@/components/assets/CreateLeaseWizard";
 import { EditUnitDialog } from "@/components/units/EditUnitDialog";
 
 const OBLIGATION_LABELS: Record<ObligationType, string> = {
@@ -206,7 +205,6 @@ const AlugueiDetalhe = () => {
   );
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
-  const [leaseWizardOpen, setLeaseWizardOpen] = useState(false);
   const [editingCib, setEditingCib] = useState(false);
   const [cibValue, setCibValue] = useState("");
   const [showNewForm, setShowNewForm] = useState(false);
@@ -724,6 +722,15 @@ const AlugueiDetalhe = () => {
 
   const handleSaveCib = () => updateCibMutation.mutate(cibValue);
 
+  const handleCreateLease = () => {
+    if (!unitId) return;
+    const params = new URLSearchParams();
+    params.set("unitId", unitId);
+    const tenantId = unitData?.tenant_contact_id;
+    if (tenantId) params.set("tenantId", tenantId);
+    navigate(`/gestao/contratos/novo?${params.toString()}`);
+  };
+
   // ----- Loading / Not found -----
   if (loading || !user) return null;
 
@@ -840,7 +847,7 @@ const AlugueiDetalhe = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setLeaseWizardOpen(true)}
+                    onClick={handleCreateLease}
                   >
                     <Plus className="h-4 w-4 mr-1.5" />
                     Nova Locação
@@ -1301,7 +1308,7 @@ const AlugueiDetalhe = () => {
               <DimobStatusCard
                 unitId={unitId!}
                 onEditUnit={() => setEditDialogOpen(true)}
-                onCreateLease={() => setLeaseWizardOpen(true)}
+                onCreateLease={handleCreateLease}
               />
             )}
           </TabsContent>
@@ -1607,26 +1614,6 @@ const AlugueiDetalhe = () => {
             open={contractDialogOpen}
             onOpenChange={setContractDialogOpen}
             unitId={unitId}
-          />
-        )}
-
-        {unitId && (
-          <CreateLeaseWizard
-            open={leaseWizardOpen}
-            onOpenChange={setLeaseWizardOpen}
-            unitId={unitId}
-            unitName={asset.unitNumber || unitData?.unit_number || "Imóvel"}
-            ownerContactId={unitData?.owner_contact_id || undefined}
-            onSuccess={() => {
-              queryClient.invalidateQueries({
-                queryKey: ["unit-full-data", unitId],
-              });
-              queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-              toast({
-                title: "Contrato criado",
-                description: "O contrato de locação foi criado com sucesso.",
-              });
-            }}
           />
         )}
       </AppLayout>

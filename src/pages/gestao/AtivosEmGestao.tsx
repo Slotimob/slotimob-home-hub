@@ -7,8 +7,6 @@ import { useLeaseConversionContext, type LeaseConversionContext } from "@/hooks/
 import { AppLayout } from "@/components/AppLayout";
 import { AssetHealthCard } from "@/components/assets/AssetHealthCard";
 import { AssetHealthListItem } from "@/components/assets/AssetHealthListItem";
-import { AssetDetailDialog } from "@/components/assets/AssetDetailDialog";
-import { ConfigureObligationsDialog } from "@/components/assets/ConfigureObligationsDialog";
 import { AssetHealthEmptyState } from "@/components/assets/AssetHealthEmptyState";
 import { LeaseManagementSheet } from "@/components/assets/LeaseManagementSheet";
 import { CreateLeaseWizard } from "@/components/assets/CreateLeaseWizard";
@@ -76,7 +74,6 @@ const AtivosEmGestao = () => {
   const { hasPermission } = usePermissions();
   const canView = hasPermission("management_rentals", "view");
   const canCreate = hasPermission("management_rentals", "create");
-  const canEdit = hasPermission("management_rentals", "edit");
 
   const { consumeConversionContext, clearContext } = useLeaseConversionContext();
   const [crmConversionData, setCrmConversionData] = useState<LeaseConversionContext | null>(null);
@@ -87,7 +84,6 @@ const AtivosEmGestao = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [leaseSheetOpen, setLeaseSheetOpen] = useState(false);
   const [leaseWizardOpen, setLeaseWizardOpen] = useState(false);
@@ -154,22 +150,6 @@ const AtivosEmGestao = () => {
       critical: assets.filter((a) => a.overallStatus === "critical").length,
     };
   }, [assets]);
-
-  const handleConfigureClick = (unitId: string) => {
-    if (!canEdit) {
-      toast({
-        title: "Sem permissão",
-        description: "Você não tem permissão para configurar obrigações. Fale com o administrador.",
-        variant: "destructive",
-      });
-      return;
-    }
-    const asset = assets?.find((a) => a.unitId === unitId);
-    if (asset) {
-      setSelectedUnit({ id: unitId, name: asset.unitNumber });
-      setConfigDialogOpen(true);
-    }
-  };
 
   const handleAssetClick = (asset: AssetHealthType) => {
     navigate(`/gestao/alugueis?id=${asset.unitId}`);
@@ -437,7 +417,6 @@ const AtivosEmGestao = () => {
                 <AssetHealthCard
                   key={asset.unitId}
                   asset={asset}
-                  onConfigureClick={handleConfigureClick}
                   onManageClick={handleAssetClick}
                   onLinkClick={handleLinkClick}
                 />
@@ -449,7 +428,6 @@ const AtivosEmGestao = () => {
                 <AssetHealthListItem
                   key={asset.unitId}
                   asset={asset}
-                  onConfigureClick={handleConfigureClick}
                   onManageClick={handleAssetClick}
                   onLinkClick={handleLinkClick}
                 />
@@ -465,8 +443,6 @@ const AtivosEmGestao = () => {
         </div>
 
         {/* Dialogs */}
-        <ConfigureObligationsDialog open={configDialogOpen} onOpenChange={setConfigDialogOpen} unitId={selectedUnit?.id || null} unitName={selectedUnit?.name || ""} />
-
         <AssetManagementGuide open={guideOpen} onOpenChange={setGuideOpen} />
         <LinkTransactionDialog
           open={linkDialogOpen}

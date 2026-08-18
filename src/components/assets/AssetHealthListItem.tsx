@@ -1,7 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  Settings2, 
   Home, 
   Building2,
   ClipboardList,
@@ -12,7 +11,6 @@ import { ObligationTrafficLights } from "./ObligationTrafficLights";
 
 export interface AssetHealthListItemProps {
   asset: AssetHealth;
-  onConfigureClick: (unitId: string) => void;
   onManageClick: (asset: AssetHealth) => void;
   onLinkClick?: (asset: AssetHealth, obligation: ObligationHealth) => void;
 }
@@ -35,7 +33,7 @@ const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
   },
 };
 
-export function AssetHealthListItem({ asset, onConfigureClick, onManageClick, onLinkClick }: AssetHealthListItemProps) {
+export function AssetHealthListItem({ asset, onManageClick, onLinkClick }: AssetHealthListItemProps) {
   const overallConfig = OVERALL_STATUS_CONFIG[asset.overallStatus];
 
   const handleLinkClick = (obligation: ObligationHealth) => {
@@ -113,15 +111,6 @@ export function AssetHealthListItem({ asset, onConfigureClick, onManageClick, on
         >
           <ClipboardList className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Gerenciar</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1 text-[11px] px-2"
-          onClick={() => onConfigureClick(asset.unitId)}
-        >
-          <Settings2 className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Configurar</span>
         </Button>
       </div>
     </div>
