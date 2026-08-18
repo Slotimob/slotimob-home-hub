@@ -50,6 +50,6 @@ const saved: Record<string,Uint8Array> = {};
 for (const [name, n] of [['single',1],['multi',3]] as [string,number][]) { const _n=name;
   const jsPDFmod = await import('jspdf');
   await generateAssetReportPdf(build(n));
-  fs.renameSync('/dev-server/relatorio-imovel-2026-01-01-2026-08-18.pdf', `/tmp/qa/${name}.pdf`);
+  fs.copyFileSync('/dev-server/relatorio-imovel-2026-01-01-2026-08-18.pdf', `/tmp/qa/${name}.pdf`);
 }
 console.log('ok');
