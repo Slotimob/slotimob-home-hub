@@ -36,9 +36,16 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import type { DateRange as RDPRange } from 'react-day-picker';
+import { cn } from '@/lib/utils';
+import {
   FileText,
   Download,
-  FileDown,
   Loader2,
   X,
   AlertCircle,
@@ -53,8 +60,9 @@ import {
   User,
   CircleDollarSign,
   CheckCircle2,
+  CalendarDays,
 } from 'lucide-react';
-import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
+import { isToday, isYesterday, startOfMonth, endOfDay } from 'date-fns';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { RAReportConfigDialog } from '@/components/reports/RAReportConfigDialog';
@@ -76,7 +84,6 @@ import {
   formatTimestampAbsolute,
   deduplicateAuditLogs,
 } from '@/lib/audit-formatting';
-import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 import { ActivityFormDialog } from '@/components/assets/ActivityFormDialog';
 import { activityTypeLabel } from '@/lib/activity-types';
 
