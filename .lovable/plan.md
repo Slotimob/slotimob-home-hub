@@ -1,87 +1,120 @@
-# Diagnóstico — Unificação da aba Atividades (imóvel/unidade) + redesenho do Relatório Completo
+# Fases 3.3 + 3.4 — Redesenho do "Relatório Completo" (só desenho)
 
-Leitura real do código feita antes deste documento. Nada foi alterado.
+## Resposta à ambiguidade: 1 imóvel vs vários
 
-## 1. `AssetActivityTimeline.tsx` (1026 linhas) — o que é hoje
+Recomendação: **estrutura única, com a página de agregado condicional.**
 
-**Onde é usado (6 lugares, componente único, sem cópias):**
-- `src/pages/PropertyDetalhe.tsx:528` (`/properties`)
-- `src/pages/UnitDetalhe.tsx:588` (`/units` e `/real-estate`, mesma página)
-- `src/components/EditPropertyDialog.tsx:330`
-- `src/components/units/EditUnitDialog.tsx:521`
-- `src/components/UnitDetailsDialog.tsx:376`
+- `report.assets.length === 1` → **sem** página de abertura agregada. A capa já leva o nome do imóvel, e o "Sumário Financeiro Consolidado" do próprio imóvel entra como seção 2 dentro da página do imóvel. Zero redundância.
+- `report.assets.length > 1` → **página de abertura "Sumário da Carteira"** com os KPIs agregados (o que hoje é a página "Sumário Consolidado"), e cada imóvel repete a mesma seção 2, mas escopada a ele. O agregado deixa de se chamar "Consolidado" para não colidir com a seção por imóvel.
 
-Props: `assetType` ('property' | 'unit'), `assetId`, `brokerId`, `pageSize`.
+Regra de nomenclatura para não confundir:
+- Agregado (só quando N > 1): **"Sumário da Carteira"**
+- Por imóvel (sempre): **"Sumário Financeiro Consolidado"**
 
-**Fontes de dados (2 queries):**
-- `audit_logs`: duas buscas paralelas (por `table_name`+`record_id`, e por `metadata->>property_id|unit_id`), merge + `deduplicateAuditLogs`, limite 500 cada.
-- `property_activities` do ativo (com nome do contato responsável e contagem de anexos vinda de `documents.activity_id`).
+## Estrutura final proposta
 
-**Filtros atuais:** Tipo (`EVENT_GROUPS`), Período (select 7/30/90/todo — default 30), Usuário (aparece só se houver mais de um). Paginação incremental de 25.
+```text
+[Capa]  Relatório Completo do Imóvel
+        Nome do imóvel (quando N = 1)  |  "N imóveis" (quando N > 1)
+        Período: dd/mm/aaaa — dd/mm/aaaa   (ou "todo o histórico até ...")
+        Gerado em ...
 
-**Funcionalidades que o painel de manutenções NÃO tem:**
-- Agrupamento por dia ("Hoje", "Ontem", data por extenso).
-- Colapso de cobranças: >5 eventos `billing_issued` no mesmo mês viram um item resumo expansível.
-- Renderização humanizada de log de auditoria (`humanizeLog`, `getChangedFields`: campo, de → para).
-- Edição inline de nota manual (título + data) e exclusão com AlertDialog.
-- Exportação CSV e PDF próprios.
-- Botões "Incluir atividade" (`ActivityFormDialog`) e "Relatório completo" (`RAReportConfigDialog`).
+[Página agregada — SOMENTE se N > 1]  Sumário da Carteira
 
-**`AssetActivitiesPanel.tsx` (762 linhas)** lê **somente** `property_activities`. É tabela com agrupamento por `activity_group_id`, filtros de tipo/status/imóvel/período (date range com default mês atual), ações de editar/excluir/concluir/reabrir, custo estimado, vínculo com transação, escopo por `scopeUnitId`/`scopePropertyId` e criação controlada pelo pai.
+[Por imóvel, 1 página inicial cada]
+  Cabeçalho: nome, endereço, tipo
+  1. Sumário Financeiro Consolidado
+  2. Benfeitorias no Período
+  3. Manutenções e Atividades
+  4. Atividades no Período  (log completo, por último)
+```
 
-**Conclusão da pergunta "é seguro trocar por `AssetActivitiesPanel` escopado?": Não.**
-Ao contrário de `AlugueiDetalhe.tsx` (onde só interessavam manutenções), aqui o valor principal é o log de auditoria — que o painel não consulta. Trocar direto perderia auditoria, agrupamento por dia, colapso de cobranças e exportações. O caminho certo é evoluir a timeline para o padrão do painel (date range, botões, ações), reaproveitando `ActivityFormDialog` e o mesmo componente de filtro de período, em vez de substituir o componente.
+Observação: Despesas no Período (categorias + top 10) e Receitas no Período **não somem** — passam a ser blocos internos da seção 1 (ver abaixo), o que elimina o "Receitas: total" solto de uma linha só.
 
-## 2. Benfeitorias e reajuste de aluguel — de onde vêm
+## Seção "Sumário Financeiro Consolidado" (por imóvel) — campos exatos
 
-- **Benfeitorias**: tabela `asset_improvements` (`property_id`/`unit_id`, `cost`, `completed_at`, `affects_market_value`). No relatório vêm de `asset-report-data.ts:172-197`. Na timeline **não há query direta** — aparecem apenas se houver linha em `audit_logs` com `table_name = 'asset_improvements'`, para a qual já existe o grupo de filtro "Benfeitorias" (`audit-formatting.ts:254`). Se o gatilho de auditoria dessa tabela não estiver ativo, hoje elas simplesmente não aparecem na aba — isso precisa ser confirmado por query antes de implementar.
-- **Reajuste de aluguel**: gravado em `lease_adjustments` + `leases.rent_amount`; na timeline chega via `audit_logs` com ação `lease_rent_adjusted`/tabela `leases`, cobertos pelo grupo "Contratos" (`audit-formatting.ts:225-228`). Ou seja, já aparecem — desde que o log carregue `metadata.unit_id`/`property_id`; caso contrário o evento fica invisível no escopo do imóvel. Também a confirmar por query.
-- **Documentos com nome do arquivo**: grupo "Documentos" existe, mas o texto exibido depende de `getRecordName`/`humanizeLog`; hoje não há garantia de mostrar o nome do arquivo.
+Consolida hoje 3 blocos espalhados: Aquisição, Valor de Mercado e Indicadores (fim da página), mais Receitas/Despesas. Layout em 4 sub-blocos numa mesma seção:
 
-## 3. Relatório Completo — estrutura atual do PDF
+**a) Patrimônio (Aquisição × Mercado)** — tabela de 2 colunas
+| Campo | Origem |
+|---|---|
+| Valor de aquisição | `acquisition.value` |
+| Data de aquisição | `acquisition.date` |
+| Custos de aquisição (ITBI, cartório) | `acquisition.costs` |
+| Benfeitorias capitalizadas | `acquisition.total_invested − value − costs` (derivado, hoje só implícito) |
+| **Total investido** | `acquisition.total_invested` |
+| Valor de mercado atual | `market.current_value` |
+| Última atualização do valor | `market.last_updated` |
+| Valorização (R$) | `market.appreciation_abs` |
+| Valorização (%) | `market.appreciation_pct` |
+| Observações de aquisição | `acquisition.notes` (só se houver) |
 
-`RAReportConfigDialog.tsx` só escolhe escopo (todos/específicos) e liga/desliga 6 seções (`acquisition`, `market`, `expenses`, `income`, `activities`, `improvements`); os dados vêm de `buildAssetReport` (`src/lib/asset-report-data.ts`) e o desenho de `src/utils/assetReportPdfGenerator.ts`.
+**b) Resultado no período**
+| Campo | Origem |
+|---|---|
+| Receitas no período | `period.income_total` |
+| Despesas no período | `period.expenses_total` |
+| Resultado líquido | `income_total − expenses_total` (derivado; hoje só existe no agregado) |
 
-Ordem atual no PDF:
-1. Capa (título, período, nº de imóveis, data de geração) — linhas 49-65
-2. Página "Sumário Consolidado" (9 KPIs globais) — 67-97
-3. Por imóvel: **Aquisição** (118-139), **Valor de Mercado** (141-162), **Benfeitorias no Período** (164-184), **Despesas no Período** + Top 10 (186-238), **Receitas no Período** (240-251), **Atividades no Período** (253-288), **Manutenções e Atividades** (290-328), **Indicadores** (330-353)
-4. Rodapé com paginação (363-370)
+**c) Indicadores** (o bloco que hoje fica no fim, sem repetição)
+| Campo | Origem |
+|---|---|
+| ROI no período | `period.roi_pct` |
+| Yield mensal | `period.monthly_yield` |
+| Cap Rate | `period.cap_rate` |
 
-**Os 3 blocos que devem virar 1 "Sumário Financeiro Consolidado":** página de Sumário Consolidado (71-97, KPIs globais), Aquisição + Valor de Mercado (118-162) e Indicadores (330-353) — este último repete ROI/Yield/Cap Rate do sumário e contagens já mostradas nas próprias tabelas.
+Contadores que hoje estão misturados em "Indicadores" (`activities_count`, `maintenance_count`, `maintenance_estimated_cost`) **saem daqui** e viram o rodapé de totais das seções 3 e 4, onde fazem sentido.
 
-**Texto mal escrito citado:** `assetReportPdfGenerator.ts:319-326` — `Total: N atividade(s) · N pendente(s) · Custo estimado R$ X`, com abreviações "(s)", separador "·" e sem ponto final. Fica logo abaixo da tabela de Manutenções. Também há inconsistência nos cabeçalhos dessa tabela ("Custo est.", "Lanç.").
+**d) Composição das despesas** (só se `expenses_total > 0`)
+- Tabela por categoria: Categoria / Valor / % do total + linha de Total (igual hoje).
+- Tabela "Maiores despesas do período" (top 10): Descrição / Categoria / Valor / Data.
 
-Existem geradores irmãos que precisam acompanhar a mudança de estrutura: `assetReportCsvGenerator.ts`, `assetReportExcelGenerator.ts`, `assetReportDocxGenerator.ts`.
+Nenhum número de hoje é perdido: capa, KPIs agregados, aquisição, mercado, receitas, despesas, indicadores e contadores estão todos mapeados acima ou nas seções 3/4.
 
-## 4. O botão "Exportar PDF" avulso da timeline
+**Página "Sumário da Carteira" (N > 1)** mantém exatamente os 9 KPIs atuais de `report.summary`: total investido, valor de mercado total, valorização (R$ e %), receitas, despesas, resultado líquido, ROI, yield mensal médio, cap rate médio — mais uma tabela-índice de uma linha por imóvel (Imóvel / Total investido / Valor de mercado / Receitas / Despesas / Resultado), que hoje não existe e evita ter que folhear o PDF.
 
-`AssetActivityTimeline.tsx:511-535`: jsPDF em paisagem, sem capa, com uma única tabela `Data | Ação | Tipo | Registro | Usuário | Alterações` a partir de `buildExportRows()` (linhas 467-490).
+## Seção "Manutenções e Atividades" — cabeçalhos e texto
 
-**A inteligência exclusiva dele** é a coluna **"Alterações"** (`getChangedFields` → `campo: de -> para`) e a coluna **"Usuário"** (nome resolvido via `profile_directory`). O relatório completo, na seção "Atividades no Período", só traz `Data | Tipo | Descrição` (`humanizeLog`), **sem usuário e sem o diff campo a campo**. É exatamente isso que a nova seção final "Atividades no Período" do relatório precisa absorver — o que exige enriquecer `asset-report-data.ts` (`AssetReportActivity` ganha `user` e `changes`).
+Cabeçalhos atuais abreviados demais (`Custo est.`, `Lanç.`, `Anexos`) passam a:
 
-## 5. Compartilhamento entre as 3 telas
+`Data · Tipo · Atividade · Responsável · Custo estimado · Lançamento financeiro · Anexos · Status`
 
-O componente é literalmente o mesmo nas três telas (e em mais 3 diálogos). **Padronizar é barato**: mexer em `AssetActivityTimeline.tsx` propaga para todos. O custo real está no PDF/relatório, não na aba.
+com `Lançamento financeiro` exibindo "Sim/Não" e coluna estreita, e quebra de linha permitida no cabeçalho.
 
-## Fracionamento sugerido
+Texto abaixo da tabela — hoje:
+> `Total: 3 atividade(s) · 1 pendente(s) · Custo estimado R$ 1.200,00`
 
-**Fase 0 — verificação de dados (rápida, só queries)**
-Confirmar em produção: existem logs de `asset_improvements` em `audit_logs`? Os logs de `lease_rent_adjusted` carregam `metadata.unit_id`/`property_id`? Os logs de `documents` guardam o nome do arquivo? O resultado decide se a Fase 1 é só de UI ou se precisa de query direta a `asset_improvements`/`lease_adjustments` (e possivelmente trigger de auditoria).
+Proposto (2 linhas, sem parênteses de plural e com pluralização correta):
+> **Resumo do período:** 3 manutenções registradas, sendo 1 ainda pendente e 2 concluídas.
+> **Custo estimado total:** R$ 1.200,00 (valores previstos; não representam necessariamente lançamentos financeiros efetivados).
 
-**Fase 1 — aba Atividades (UI)**
-Date range picker (default mês atual) no lugar do select de atalhos; barra de ações com "Incluir Atividade", "Relatório completo" e "Exportar CSV"; remoção do "Exportar PDF" avulso. Sem mudança de fonte de dados.
+Quando houver mais itens que o limite exibido, acrescenta-se:
+> Exibindo as 120 manutenções mais recentes de 148 no período.
 
-**Fase 2 — cobertura de dados do "raio-x"**
-Fechar as lacunas apontadas pela Fase 0 (benfeitorias, reajustes, nome do arquivo em documentos), adicionando as fontes que faltarem à timeline.
+## Seção "Atividades no Período" (última) — log completo com usuário e diff
 
-**Fase 3 — dados do relatório**
-Enriquecer `asset-report-data.ts`: usuário + diff nas atividades, e consolidação dos números hoje espalhados entre sumário/aquisição/mercado/indicadores.
+Passa de tabela de 3 colunas (Data / Tipo / Descrição truncada em 90 chars) para o formato do antigo "Exportar PDF" da timeline:
 
-**Fase 4 — redesenho do PDF**
-Nova ordem (Capa → Sumário Financeiro Consolidado → Benfeitorias → Manutenções e Atividades → Atividades no Período), texto corrigido abaixo da tabela de manutenções e revisão de cabeçalhos. QA visual obrigatório com `pdftoppm`.
+`Data e hora · Usuário · Evento · Alterações`
 
-**Fase 5 — paridade dos outros formatos**
-CSV/Excel/DOCX seguindo a nova estrutura.
+- **Data e hora**: `dd/mm/aaaa HH:mm` (hoje só a data).
+- **Usuário**: nome do autor da ação.
+- **Evento**: grupo + descrição humanizada (`humanizeLog`), sem truncar em 90 caracteres — `overflow: linebreak`.
+- **Alterações**: diff campo a campo (`Campo: de → para`), uma linha por campo, reusando `getChangedFields` / `diffOldNew`. Campos ignorados continuam filtrados por `shouldIgnoreField`.
+- Rodapé com "Exibindo as N atividades mais recentes de M no período" (limite `ACTIVITIES_REPORT_LIMIT`).
+- Notas manuais entram na mesma tabela com Usuário e sem diff, como hoje.
 
-Sugiro tratar Fase 0+1 juntas e Fase 3+4 juntas; Fase 5 pode ficar por último ou ser dispensada se os outros formatos forem pouco usados.
+## O que falta em `asset-report-data.ts` (resposta direta)
+
+**Não tem hoje.** `AssetReportActivity` guarda apenas `{ date, group, description }` — a descrição já é a string humanizada e o log original é descartado. Faltam duas coisas:
+
+1. **Usuário**: os logs vêm com `actor_user_id` e `broker_id`, mas o builder nunca busca perfis. Precisa de um passo extra — coletar os ids dos logs e buscar em `profile_directory` (`id, full_name`), exatamente como `AssetActivityTimeline` já faz. Detalhe a confirmar na implementação: a timeline hoje resolve o nome por `broker_id`, o que mostra o dono da conta e não o autor real; no relatório o correto é priorizar `actor_user_id` e cair para `broker_id` como fallback.
+2. **Diff**: precisa carregar `old_data`/`new_data`/`action`/`table_name` no item de atividade (campos que a query já traz, só não são propagados) e calcular o diff. Recomendação: guardar `changes: { label, from, to }[]` já calculado no data layer, mantendo o gerador de PDF burro.
+
+Nenhuma query nova ao banco além da busca de perfis; nada de tabela, trigger ou backfill.
+
+## Arquivos afetados na implementação (fase seguinte)
+
+- `src/lib/asset-report-data.ts` — enriquecer `AssetReportActivity` (`user_name`, `changes`, `action`, `table_label`), buscar perfis, expor `period_net` por imóvel.
+- `src/utils/assetReportPdfGenerator.ts` — nova ordem de seções, página agregada condicional, novos cabeçalhos e textos.
+- `src/components/reports/RAReportConfigDialog.tsx` — sem mudança estrutural; no máximo o rótulo do checkbox "Atividades e movimentações" para refletir o log detalhado.
