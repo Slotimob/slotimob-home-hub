@@ -1,89 +1,66 @@
-# Diagnóstico + Plano — Pedidos 4 e 5
+# Fase A.6 — Unificar aba Atividades (Gestão de Ativo) com o padrão /gestao/manutencoes
 
-## PEDIDO 4 — Ordem do fluxo de Boleto no wizard de contrato
+## 1. Como `Manutencoes.tsx` está hoje (680 linhas, leitura real)
 
-Arquivo: `src/pages/gestao/NovoContrato.tsx`
+- É uma **página inteira**: `AppLayout title="Manutenções"` + header com título/descrição + botão "Nova atividade" + Card de Filtros + Card com a tabela + dialogs.
+- **Query única** (`['activities-list', brokerId, from, to]`): lê só `property_activities` filtrando `broker_id = effectiveBrokerId` e `created_at` entre o range; `limit(500)`; depois hidrata labels de `units`, `properties` e `contacts` em 3 queries `in()`.
+- **Filtros**: período (Popover + Calendar range, default = mês corrente até hoje), tipo (`ACTIVITY_TYPES`), contato responsável, ativo (`unit:<id>` / `property:<id>`), busca textual. Período é server-side; os outros 4 são client-side em `filtered`.
+- **Agrupamento**: `groupedRows` junta linhas por `activity_group_id` (grupo com 1 item vira single), ordenado por `scheduled_at || created_at` desc, com linhas expansíveis.
+- **Ações por linha**: `RowActions` (dropdown) → Editar (abre `ActivityFormDialog` com `EditingActivity` + `AssetOption`), Marcar concluída/pendente (`setCompleted`, update direto), Excluir (AlertDialog + delete). Invalida `activities-list` e `asset-manual-notes`.
+- **Export**: **não tem nenhum**.
+- **Extração**: a separação já é limpa — todo o miolo (estado de filtros, query, `groupedRows`, `setCompleted`, `handleDelete`, `openEdit`, tabela, `ActivityFormDialog`, `AlertDialog`) não depende de `AppLayout`. Dá pra extrair um componente de corpo sem refatoração estrutural; só o `AppLayout` + `<h1>`/descrição ficam na página.
 
-Estrutura atual do bloco `paymentInfo.tipo === "boleto"` (linhas 1378–1470+):
+## 2. Escopo por ativo — mudança mínima
 
-```text
-1380  const emissao = paymentInfo.emissao_boleto ?? "asaas"
-1383  "Como o boleto será emitido?"  <- 2 botões (própria / Asaas)   [PRIMEIRO]
-1403  "Dados do Pagador" (leitura: nome, doc, e-mail do inquilino)
-1433  {emissao === "asaas" && ( ... )}   <- CONDICIONAMENTO CONFIRMADO
-1437     "Configurações de Cobrança"
-           - Multa por atraso (%)        (fine_value)
-           - Juros ao mês (%)            (interest_value)
-           - Desconto (R$)               (discount_value)
-           - Dias antes do vencimento para desconto (discount_due_date_limit_days,
-             só aparece se desconto > 0)
-1487     "Enviar boleto por": checkbox E-mail (send_email), checkbox WhatsApp (send_whatsapp)
-1513  Bloco informativo, varia conforme emissao === "propria" / "asaas"
-```
+Hoje a query não tem noção de ativo (é broker inteiro). Mudança mínima:
 
-Confirmações:
-1. O condicionamento existe e é exatamente `{emissao === "asaas" && (<> ... </>)}` na linha 1433, envolvendo "Configurações de Cobrança" + "Enviar boleto por".
-2. Campos reais de cobrança são os 4 numéricos + os 2 checkboxes acima (o "dia de vencimento" NÃO está aqui — ele é `due_day`, no step `financial`).
-3. Fluxo esperado está correto: nada é emitido ao finalizar o wizard. Em `NovoContrato.tsx` a única referência a Asaas é a query `asaas-account-status` (linha 224) para checar se a conta existe; não há chamada a `create-asaas-charge` no submit. O contrato apenas grava `emissao_boleto` + configs, e a emissão real (avulsa ou automática) acontece depois na aba Cobrança/Boletos do contrato.
+- Adicionar props opcionais `scopeUnitId` / `scopePropertyId`.
+- Incluí-las na `queryKey` e, quando presentes, adicionar `.eq('unit_id', scopeUnitId)` (ou `.eq('property_id', scopePropertyId)`) à query.
+- Quando há escopo: esconder o filtro "Ativo" e a coluna "Ativo" da tabela (redundantes), e fixar `defaultAsset` + `lockAsset` no `ActivityFormDialog`.
+- Sem escopo: comportamento **byte-a-byte igual ao de hoje**.
 
-### Mudança proposta (Pedido 4)
-Dentro do bloco de boleto, reordenar para:
-1. "Dados do Pagador" (mantém no topo, é contexto de leitura).
-2. "Configurações de Cobrança" — SEMPRE visível quando tipo = boleto (remover o wrapper `emissao === "asaas" &&`).
-3. "Enviar boleto por" — também sempre visível.
-4. "Como o boleto será emitido?" (os 2 botões) — movido para o FINAL do bloco.
-5. O bloco informativo condicional permanece por último, logo abaixo da escolha de emissão.
+O filtro `broker_id` continua sempre aplicado — o escopo é aditivo, não substituto (mantém o isolamento multi-tenant).
 
-Ajuste de rótulo: quando `emissao === "propria"`, adicionar nota curta de que as configurações servem de referência/registro (não há automação). Nenhuma mudança em persistência, `useLeases.ts` ou validação de step.
+## 3. O que a aba do `AlugueiDetalhe.tsx` perde — números reais
 
-## PEDIDO 5 — Padronizar "Editar Contato" com "Novo Contato"
+Contagem no banco hoje (units com lease `active` = 17):
 
-São **2 componentes totalmente separados** — duplicação real, sem reaproveitamento:
-- `src/components/contacts/CreateContactDialog.tsx` (622 linhas)
-- `src/components/contacts/EditContactDialog.tsx` (438 linhas)
+| fonte | linhas ligadas a units com gestão ativa | total na base |
+|---|---|---|
+| `schedule_activities` | **0** | 2 |
+| `deal_activities` | **9** (concentradas em 2 units) | 9 |
+| `property_activities` | 4 | 11 |
 
-### Máscaras
-Create tem máscaras próprias (helpers de formatação, não biblioteca externa):
-- `handleDocumentChange` (linha 174): aplica `formatCPF` / `formatCNPJ` conforme `document_type`.
-- `handlePhoneChange` (linha 168): aplica `formatPhone` em `phone` e `whatsapp`.
-- `handleCepChange` (linha 145) + `handleCepBlur`: `formatCEP`, `cleanCEP` e busca ViaCEP.
-- `handleDocumentTypeChange` (linha 181): limpa o documento ao trocar CPF↔CNPJ.
-- No submit (linhas 238–250): `cleanPhone` / `cleanDocument` antes de salvar.
+Leitura: `schedule_activities` é irrelevante nessa tela (zero linhas). `deal_activities` existe, mas é histórico de CRM **pré-locação** (a negociação que originou o contrato) concentrado em 2 unidades — é contexto, não operação de gestão. Além disso a aba atual **não tem** anexos, editar/excluir, toggle de concluído, filtros de tipo/contato/busca nem agrupamento — ou seja, o que se ganha é maior do que o que se perde.
 
-Edit usa `<Input>` puro, sem máscara nenhuma:
-- Telefone: linha 249–252, `onChange` grava valor cru.
-- WhatsApp: linha 255.
-- Documento: linha 283–286, valor cru.
-- CEP: linha 293, sem `formatCEP`; `handleCepBlur` (linha 100) usa `formData.postal_code` sem limpeza.
-- Submit (linhas 156–159): grava `.trim()` cru, sem `cleanPhone`/`cleanDocument` — logo edições podem gravar formatos inconsistentes no banco.
+Também se perde o export CSV/PDF caseiro (ver item 5) e o formulário inline de nova atividade (substituído pelo `ActivityFormDialog`, que é superior).
 
-### Ordem dos campos (diferente hoje)
-- Create: Categorias → Nome → Email → Tipo de Documento → Número do Documento → Telefone → WhatsApp → CEP → Endereço → Bairro → Cidade → Estado → Orçamento → Origem → Website/Pessoa de Contato → Observações. Tem ainda seleção de unidades quando categoria "Inquilino" e `interest_type`.
-- Edit: Categorias → Nome → Email → **Telefone → WhatsApp → Tipo de Documento → Número do Documento** → CEP → ... → Observações. Não tem vínculo de unidades nem `interest_type`.
+## 4. Recomendação
 
-### Call sites
-`CreateContactDialog` (5):
-- `src/pages/ContactsUnified.tsx:616`
-- `src/components/dashboard/ShortcutsWidget.tsx:148`
-- `src/components/units/UnitFormFields.tsx:875`
-- `src/components/units/UnitSubdivisionsPanel.tsx:455`
-- `src/components/whatsapp/CrmContextPanel.tsx:566`
+Sua abordagem é sã. Recomendo com um ajuste:
 
-`EditContactDialog` (1 só):
-- `src/pages/ContactsUnified.tsx:624` — aberto por 3 gatilhos internos da mesma página: menu do `ContactCard` (linha 122), menu do `ContactListItem` (linha 155) e botão "Editar" do `ContactDetailSheet` (linha 99), todos via `onEdit`.
+- Extrair **`src/components/assets/AssetActivitiesPanel.tsx`** com todo o miolo de `Manutencoes.tsx`, props: `scopeUnitId?`, `scopePropertyId?`, `showHeader?`, `assetLabel?`.
+- `Manutencoes.tsx` vira uma casca fina: `AppLayout` + header + `<AssetActivitiesPanel />` sem escopo.
+- Aba Atividades de `AlugueiDetalhe.tsx`: `<AssetActivitiesPanel scopeUnitId={unitId} />`, removendo ~270 linhas inline (queries, merge, filtros de data, form inline, exports).
+- **Plano B (deal_activities)**: em vez de uma seção separada permanente, recomendo um **bloco colapsável somente-leitura "Histórico comercial (CRM)"** renderizado **apenas quando `scopeUnitId` existe e há linhas** — some sozinho nas 15 de 17 unidades sem dados, e preserva a informação onde ela existe. `schedule_activities` pode ser **descartado** (0 linhas, e a agenda já tem tela própria) — ou incluído no mesmo bloco colapsável a custo quase zero, já que a query é trivial. Sugiro incluir para não perder nada.
 
-### Recomendação (Pedido 5)
-Alinhar o Edit ao Create **sem unificar os componentes**, e sem tocar em nenhum call site (Edit tem só um). Unificar num componente único com modo create/edit seria a refatoração mais "limpa", mas mexeria nos 5 call sites do Create e no fluxo de vínculo de unidades — risco desnecessário agora.
+Melhor caminho do que criar mais um componente: nada de novo timeline. `AssetActivityTimeline.tsx` (audit_logs + anexos) continua onde está — ele resolve outro problema (trilha de auditoria), e não é substituído por esta fase.
 
-Trabalho no `EditContactDialog.tsx`:
-1. Importar os mesmos helpers usados no Create (`formatCPF`, `formatCNPJ`, `formatPhone`, `formatCEP`, `cleanPhone`, `cleanDocument`, `cleanCEP`).
-2. Adicionar `handlePhoneChange`, `handleDocumentChange`, `handleDocumentTypeChange`, `handleCepChange` idênticos aos do Create.
-3. Ao carregar o contato no `useEffect`, formatar os valores vindos do banco (telefone/whatsapp/documento/CEP) para exibição mascarada.
-4. No submit, limpar com `cleanPhone` / `cleanDocument` / `cleanCEP` antes de gravar — mesma normalização do Create.
-5. Reordenar os campos para a ordem do Create (documento antes de telefone) e igualar rótulos ("Nome / Razão Social *", textos de ajuda).
-6. Fora de escopo (a confirmar se você quer): trazer vínculo de unidades para "Inquilino" e `interest_type` para o Edit.
+## 5. Relatório completo do imóvel (CSV/PDF caseiro → `RAReportConfigDialog`)
 
-## Detalhes técnicos
-- Nenhuma migração de banco; nenhuma mudança em `useLeases.ts` nem em Edge Functions.
-- Pedido 4 é reordenação de JSX + remoção de um wrapper condicional; Pedido 5 é reescrita interna de um dialog.
-- Validação final: build + typecheck.
+Sim, dá pra trocar sem perda funcional relevante:
+
+- `RAReportConfigDialog` já aceita `preSelectedAssetIds` + `preSelectedAssetType` + `dateRange` + `formatLabel`, exatamente como `AssetActivityTimeline` usa hoje (linhas 925+).
+- Existem geradores para **PDF, Excel, CSV e DOCX** (`assetReportPdfGenerator/ExcelGenerator/CsvGenerator/DocxGenerator`), então o CSV atual está coberto — na verdade com mais formatos e com seções configuráveis (`AssetReportSections`).
+- Única diferença de conteúdo: o PDF caseiro lista as linhas de `deal_activities`/`schedule_activities` na tabela; o relatório RA é orientado a `property_activities` + dados do ativo. Dado o volume (item 3), é uma perda aceitável — e o bloco colapsável do item 4 mantém a informação visível na tela.
+
+Decisão proposta: substituir o dropdown "Exportar (CSV/PDF)" por um botão único **"Relatório do imóvel"** abrindo `RAReportConfigDialog` com `preSelectedAssetIds=[unitId]`, `preSelectedAssetType='unit'`, `dateRange` do filtro de período do painel.
+
+## Detalhes técnicos da execução (quando aprovado)
+
+1. Criar `src/components/assets/AssetActivitiesPanel.tsx` — move o corpo de `Manutencoes.tsx` (estado, query, `groupedRows`, `setCompleted`, `handleDelete`, `openEdit`, tabela, `ActivityFormDialog`, `AlertDialog`); adiciona props de escopo e o botão de relatório.
+2. Reescrever `src/pages/gestao/Manutencoes.tsx` como casca (`AppLayout` + header + painel sem escopo).
+3. Em `src/pages/gestao/AlugueiDetalhe.tsx`: remover as queries `schedule-activities-unit` / `deal-activities-unit` / `property-activities`, `allActivities`, `filteredActivities`, `exportActivitiesCSV`, `exportActivitiesPDF`, `handleSaveActivity`, o form inline e os estados associados; renderizar o painel escopado + o bloco colapsável de CRM/agenda.
+4. Manter `queryKey` `['activities-list', ...]` e as invalidações de `asset-manual-notes` para não quebrar sincronização com outras telas.
+5. Respeitar `canCreate`/permissões já usadas na aba atual ao renderizar as ações.
+6. Build + verificação visual das duas telas.
