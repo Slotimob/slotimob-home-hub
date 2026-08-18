@@ -128,19 +128,11 @@ export function AssetHealthCard({ asset, onManageClick, onLinkClick }: AssetHeal
               <p className="text-xs text-muted-foreground">
                 Nenhuma obrigação configurada
               </p>
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => onConfigureClick(asset.unitId)}
-                className="mt-0.5 h-6 text-xs"
-              >
-                Configurar obrigações
-              </Button>
             </div>
           )}
 
-          {/* Quick Actions - 2 buttons */}
-          <div className="pt-2 border-t space-y-1.5">
+          {/* Quick Actions */}
+          <div className="pt-2 border-t">
             <Button
               variant="default"
               size="sm"
@@ -149,15 +141,6 @@ export function AssetHealthCard({ asset, onManageClick, onLinkClick }: AssetHeal
             >
               <ClipboardList className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">Gerenciar Ativo</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full h-8 text-xs gap-1 px-2"
-              onClick={() => onConfigureClick(asset.unitId)}
-            >
-              <Settings2 className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">Configurar</span>
             </Button>
           </div>
         </CardContent>
