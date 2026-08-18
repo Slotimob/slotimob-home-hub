@@ -142,7 +142,7 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess, editAcc
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)]">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar Conta Bancária" : "Nova Conta Bancária"}</DialogTitle>
           <DialogDescription>
@@ -153,93 +153,96 @@ export function CreateBankAccountDialog({ open, onOpenChange, onSuccess, editAcc
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome da Conta *</Label>
-            <Input
-              id="name"
-              placeholder="Ex: Conta Principal, Conta PJ..."
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bankName">Banco</Label>
-            <Input
-              id="bankName"
-              placeholder="Ex: Itaú, Bradesco, Nubank..."
-              value={formData.bankName}
-              onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          {/* Área rolável: header e footer permanecem sempre visíveis */}
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1 -mr-1">
             <div className="space-y-2">
-              <Label htmlFor="agency">Agência</Label>
+              <Label htmlFor="name">Nome da Conta *</Label>
               <Input
-                id="agency"
-                placeholder="0000"
-                value={formData.agency}
-                onChange={(e) => setFormData({ ...formData, agency: e.target.value })}
+                id="name"
+                placeholder="Ex: Conta Principal, Conta PJ..."
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="accountNumber">Conta</Label>
+              <Label htmlFor="bankName">Banco</Label>
               <Input
-                id="accountNumber"
-                placeholder="00000-0"
-                value={formData.accountNumber}
-                onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                id="bankName"
+                placeholder="Ex: Itaú, Bradesco, Nubank..."
+                value={formData.bankName}
+                onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="initialBalance">Saldo de Abertura</Label>
-            <CurrencyInput
-              id="initialBalance"
-              placeholder="0,00"
-              value={formData.initialBalance}
-              onChange={(v) => setFormData({ ...formData, initialBalance: v })}
-            />
-            <div className="flex items-start gap-2 p-2 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <p className="text-[11px]">
-                Este valor é a âncora para o cálculo do saldo progressivo. 
-                {isEdit 
-                  ? "Ao alterá-lo, o saldo real e projetado serão recalculados."
-                  : "Informe o saldo atual do seu banco no momento da criação."}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Cor</Label>
-            <div className="flex gap-2 flex-wrap">
-              {COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`w-8 h-8 rounded-full transition-all ${
-                    formData.color === color ? "ring-2 ring-offset-2 ring-primary" : ""
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setFormData({ ...formData, color })}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="agency">Agência</Label>
+                <Input
+                  id="agency"
+                  placeholder="0000"
+                  value={formData.agency}
+                  onChange={(e) => setFormData({ ...formData, agency: e.target.value })}
                 />
-              ))}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="accountNumber">Conta</Label>
+                <Input
+                  id="accountNumber"
+                  placeholder="00000-0"
+                  value={formData.accountNumber}
+                  onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 rounded-md border p-3">
-            <Checkbox
-              id="isDefault"
-              checked={formData.isDefault}
-              onCheckedChange={(checked) => setFormData({ ...formData, isDefault: checked === true })}
-            />
-            <Label htmlFor="isDefault" className="text-sm font-normal cursor-pointer">
-              Definir como conta padrão
-            </Label>
+            <div className="space-y-2">
+              <Label htmlFor="initialBalance">Saldo de Abertura</Label>
+              <CurrencyInput
+                id="initialBalance"
+                placeholder="0,00"
+                value={formData.initialBalance}
+                onChange={(v) => setFormData({ ...formData, initialBalance: v })}
+              />
+              <div className="flex items-start gap-2 p-2 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <p className="text-[11px]">
+                  Este valor é a âncora para o cálculo do saldo progressivo.
+                  {isEdit
+                    ? " Ao alterá-lo, o saldo real e projetado serão recalculados."
+                    : " Informe o saldo atual do seu banco no momento da criação."}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Cor</Label>
+              <div className="flex gap-2 flex-wrap">
+                {COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`w-8 h-8 rounded-full transition-all ${
+                      formData.color === color ? "ring-2 ring-offset-2 ring-primary" : ""
+                    }`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setFormData({ ...formData, color })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-md border p-3">
+              <Checkbox
+                id="isDefault"
+                checked={formData.isDefault}
+                onCheckedChange={(checked) => setFormData({ ...formData, isDefault: checked === true })}
+              />
+              <Label htmlFor="isDefault" className="text-sm font-normal cursor-pointer">
+                Definir como conta padrão
+              </Label>
+            </div>
           </div>
 
           <DialogFooter>
