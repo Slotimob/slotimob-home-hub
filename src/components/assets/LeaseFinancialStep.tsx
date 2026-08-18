@@ -334,19 +334,20 @@ export function LeaseFinancialStep({
   const updateAdditional = (
     type: AdditionalObligationType,
     patch: Partial<ObligationChargeConfig>
-  ) =>
-    onChange({
-      additional_obligations: additionalObligations.map((o) =>
-        o.type === type ? { ...o, ...patch } : o
-      ),
-    });
+  ) => {
+    const exists = additionalObligations.some((o) => o.type === type);
+    const next = exists
+      ? additionalObligations.map((o) => (o.type === type ? { ...o, ...patch } : o))
+      : [...additionalObligations, { ...getInitialAdditionalObligation(type), ...patch }];
+    onChange({ additional_obligations: next });
+  };
 
   const toggleAdditional = (type: AdditionalObligationType, enabled: boolean) => {
     if (!enabled) {
       updateAdditional(type, { enabled: false });
       return;
     }
-    const meta = ADDITIONAL_OBLIGATIONS.find((o) => o.type === type);
+    const meta = obligationOptions.find((o) => o.type === type);
     const current = additionalObligations.find((o) => o.type === type);
     updateAdditional(type, {
       enabled: true,
@@ -354,8 +355,10 @@ export function LeaseFinancialStep({
         current?.first_due_date || dueDateFromObligation(meta?.obligationKey || type),
       charge_to:
         current?.charge_to || responsibleFromObligation(meta?.obligationKey || type),
+      label: current?.label ?? (meta?.isCustom ? meta.label : null),
     });
   };
+
 
   const toggleFireInsurance = (enabled: boolean) => {
     if (!enabled) {
