@@ -55,7 +55,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { format, parseISO, startOfMonth, endOfDay } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfDay, subYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import {
@@ -139,10 +139,10 @@ export function AssetActivitiesPanel({
   };
   const renderNewButton = (showNewButton ?? !isCreateControlled) && canManage;
 
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: startOfMonth(new Date()),
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => ({
+    from: isScoped ? subYears(new Date(), 2) : startOfMonth(new Date()),
     to: new Date(),
-  });
+  }));
   const [periodOpen, setPeriodOpen] = useState(false);
   const [pendingPeriod, setPendingPeriod] = useState<RDPRange | undefined>({
     from: dateRange.from,
