@@ -580,16 +580,43 @@ export const AssetActivityTimeline = ({
             </SelectContent>
           </Select>
 
-          <Select value={periodFilter} onValueChange={(v) => { setPeriodFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
-              <SelectValue placeholder="Período" />
-            </SelectTrigger>
-            <SelectContent>
-              {PERIOD_FILTERS.map(f => (
-                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  'h-8 text-xs justify-start font-normal min-w-0 w-[200px]',
+                  !dateRange.from && 'text-muted-foreground',
+                )}
+              >
+                <CalendarDays className="mr-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  {dateRange.from && dateRange.to
+                    ? `${format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`
+                    : 'Selecione o período'}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                selected={pendingPeriod}
+                onSelect={(range) => {
+                  setPendingPeriod(range);
+                  if (range?.from && range?.to) {
+                    setDateRange({ from: range.from, to: range.to });
+                    setPage(1);
+                    setPeriodOpen(false);
+                  }
+                }}
+                initialFocus
+                numberOfMonths={2}
+                locale={ptBR}
+                className={cn('p-3 pointer-events-auto')}
+              />
+            </PopoverContent>
+          </Popover>
 
           {userOptions.length > 1 && (
             <Select value={userFilter} onValueChange={(v) => { setUserFilter(v); setPage(1); }}>
