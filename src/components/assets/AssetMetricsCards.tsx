@@ -29,7 +29,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
 
   // Fetch lease data for occupancy metrics
   const { data: activeLease } = useQuery({
-    queryKey: ["unit-active-lease", unitId],
+    queryKey: ["unit-active-lease", unitId, brokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leases")
@@ -47,7 +47,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
 
   // Fetch last ended lease for vacancy calculation
   const { data: lastLease } = useQuery({
-    queryKey: ["unit-last-lease", unitId],
+    queryKey: ["unit-last-lease", unitId, brokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leases")
@@ -66,7 +66,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
 
   // Fetch recent rental transactions for yield calculation
   const { data: rentalTransactions = [] } = useQuery({
-    queryKey: ["unit-rental-transactions", unitId],
+    queryKey: ["unit-rental-transactions", unitId, brokerId],
     queryFn: async () => {
       const sixMonthsAgo = format(addMonths(new Date(), -6), "yyyy-MM-dd");
       const { data, error } = await supabase
