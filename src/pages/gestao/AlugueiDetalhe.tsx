@@ -242,6 +242,11 @@ const AlugueiDetalhe = () => {
     enabled: !!unitId,
   });
 
+  const unitLabel =
+    (unitData as any)?.unit_number || (unitData as any)?.address || "Esta unidade";
+
+
+
   const { data: unitConfig } = useQuery({
     queryKey: ["unit-obligations-config", unitId],
     queryFn: async () => {
