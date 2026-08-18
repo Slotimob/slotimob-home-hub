@@ -422,6 +422,31 @@ export function ObligationsConfigForm({
           Novo Tipo Personalizado
         </Button>
 
+        {/* Contrato desatualizado após sync reverso */}
+        {contractOutdated && activeLease && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/40">
+            <FileText className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2 flex-1">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                Obrigações do contrato foram atualizadas
+              </p>
+              <p className="text-xs text-blue-700/90 dark:text-blue-400/90">
+                O PDF gerado anteriormente pode estar desatualizado. Gere o contrato novamente
+                para refletir as novas responsabilidades.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8"
+                onClick={() => setContractDialogOpen(true)}
+              >
+                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                Gerar contrato atualizado
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Save Button */}
         {showSaveButton && (
           <Button onClick={handleSave} disabled={isSaving} className="w-full">
@@ -435,6 +460,16 @@ export function ObligationsConfigForm({
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
+
+      {activeLease && unitId && (
+        <ContractGeneratorDialog
+          open={contractDialogOpen}
+          onOpenChange={setContractDialogOpen}
+          unitId={unitId}
+          leaseId={activeLease.id}
+        />
+      )}
+
     </>
   );
 }
