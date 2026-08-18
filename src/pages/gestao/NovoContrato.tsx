@@ -1847,7 +1847,13 @@ export default function NovoContrato() {
                   onChange={(e) => setFormData({ ...formData, cib: e.target.value })}
                   placeholder="Ex: 0000.0000.0000.0000-00"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {unitCib
+                    ? "Valor cadastrado no imóvel. Alterações aqui atualizam o cadastro do imóvel."
+                    : "O CIB é um atributo do imóvel: ao salvar, ele também será gravado no cadastro da unidade."}
+                </p>
               </div>
+
 
               <div className="flex items-center justify-between gap-3 p-3 border rounded-lg">
                 <div className="flex-1">
