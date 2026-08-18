@@ -415,16 +415,18 @@ export const AssetActivityTimeline = ({
 
   // Filter logs
   const filteredLogs = useMemo(() => {
+    const inPeriod = (d: Date) => d >= periodStartDate && d <= periodEndDate;
+
     const auditFiltered = rawLogs.filter(log => {
       if (!matchesEventType(log, eventFilter)) return false;
-      if (periodStartDate && new Date(log.created_at) < periodStartDate) return false;
+      if (!inPeriod(new Date(log.created_at))) return false;
       if (userFilter !== 'all' && log.broker_id !== userFilter) return false;
       return true;
     });
 
     const notesFiltered = manualNotes.filter(note => {
       const nDate = note.scheduled_at ? new Date(note.scheduled_at) : new Date(note.created_at);
-      if (periodStartDate && nDate < periodStartDate) return false;
+      if (!inPeriod(nDate)) return false;
       if (userFilter !== 'all' && note.broker_id !== userFilter) return false;
       return true;
     });
@@ -434,7 +436,7 @@ export const AssetActivityTimeline = ({
       const dateB = isManualNote(b) ? (b.scheduled_at ?? b.created_at) : b.created_at;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
-  }, [rawLogs, manualNotes, eventFilter, periodStartDate, userFilter]);
+  }, [rawLogs, manualNotes, eventFilter, periodStartDate, periodEndDate, userFilter]);
 
   // Collapse billing and paginate
   const timelineItems = useMemo(() => {
