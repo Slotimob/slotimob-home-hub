@@ -64,7 +64,8 @@ export async function generateAssetReportPdf(report: AssetReportData) {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(28);
   doc.text('Relatório Completo', pageW / 2, 80, { align: 'center' });
-  doc.text('do Imóvel', pageW / 2, 95, { align: 'center' });
+  doc.text(multiAsset ? 'da Carteira' : 'do Imóvel', pageW / 2, 95, { align: 'center' });
+
 
   doc.setFontSize(14);
   const coverSubject = multiAsset
