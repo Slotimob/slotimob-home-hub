@@ -3,7 +3,6 @@ import {
   Building2,
   Users,
   CalendarDays,
-  Menu,
   LayoutGrid,
   MessageCircle,
   FileText,
@@ -22,7 +21,6 @@ import {
   HeartPulse,
   TrendingUp,
   UsersRound,
-  Shield,
   LucideIcon,
   ClipboardList,
   FileSignature,
@@ -30,6 +28,8 @@ import {
   Briefcase,
   Wrench,
   Landmark,
+  Sparkles,
+  HandCoins,
 } from 'lucide-react';
 
 
@@ -38,6 +38,8 @@ export interface NavItem {
   url: string;
   icon: LucideIcon;
   badgeKey?: 'leads' | 'pipeline' | 'schedule' | 'whatsapp';
+  /** Permission module key for granular RBAC filtering (mirrors AppSidebar) */
+  moduleKey?: string;
 }
 
 export interface NavGroup {
@@ -46,119 +48,148 @@ export interface NavGroup {
   items: NavItem[];
   ownerOnly?: boolean;
   hiddenOnPlan?: string[];
+  trialVisible?: boolean;
+  /** Group-level permission module key */
+  moduleKey?: string;
 }
 
 /**
  * Single source of truth for navigation.
- * Both AppSidebar and BottomNavigation consume this.
+ * Structure, order and labels mirror `menuItems` in src/components/AppSidebar.tsx.
  */
 export const PRIMARY_TABS: NavItem[] = [
-  { title: 'Home', url: '/dashboard', icon: Home },
-  { title: 'Gestão', url: '/gestao/alugueis', icon: ClipboardList },
-  { title: 'Financeiro', url: '/finance', icon: Wallet },
-  { title: 'Pipeline', url: '/pipeline', icon: Filter, badgeKey: 'pipeline' },
-  { title: 'Contatos', url: '/contacts', icon: Users, badgeKey: 'leads' },
+  { title: 'Home', url: '/dashboard', icon: Home, moduleKey: 'dashboard' },
+  { title: 'Gestão', url: '/gestao/alugueis', icon: ClipboardList, moduleKey: 'management_rentals' },
+  { title: 'Financeiro', url: '/finance', icon: Wallet, moduleKey: 'finance_overview' },
+  { title: 'Pipeline', url: '/pipeline', icon: Filter, badgeKey: 'pipeline', moduleKey: 'crm_pipeline' },
+  { title: 'Contatos', url: '/contacts', icon: Users, badgeKey: 'leads', moduleKey: 'crm_contacts' },
 ];
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    title: 'Principal',
-    icon: Home,
+    title: 'Chat IA',
+    icon: Sparkles,
+    hiddenOnPlan: ['free', 'essencial'],
+    trialVisible: true,
+    moduleKey: 'chat',
     items: [
-      { title: 'Dashboard', url: '/dashboard', icon: Home },
-      { title: 'Pipeline', url: '/pipeline', icon: Filter, badgeKey: 'pipeline' },
-      { title: 'Agenda', url: '/schedule', icon: CalendarDays, badgeKey: 'schedule' },
+      { title: 'Chat IA', url: '/ai-chat', icon: Sparkles, moduleKey: 'chat' },
+    ],
+  },
+  {
+    title: 'Dashboard',
+    icon: Home,
+    moduleKey: 'dashboard',
+    items: [
+      { title: 'Dashboard', url: '/dashboard', icon: Home, moduleKey: 'dashboard' },
     ],
   },
   {
     title: 'Gestão',
     icon: ClipboardList,
+    moduleKey: 'management_rentals',
     items: [
-      { title: 'Aluguéis', url: '/gestao/alugueis', icon: HeartPulse },
-      { title: 'Contratos', url: '/gestao/contratos', icon: FileSignature },
-      { title: 'Gerencial', url: '/gestao/gerencial', icon: Briefcase },
-      { title: 'Manutenções', url: '/gestao/manutencoes', icon: Wrench },
-      { title: 'Afazeres', url: '/gestao/afazeres', icon: CheckSquare },
-      { title: 'Boletos', url: '/gestao/boletos', icon: Receipt },
+      { title: 'Aluguéis', url: '/gestao/alugueis', icon: HeartPulse, moduleKey: 'management_rentals' },
+      { title: 'Contratos', url: '/gestao/contratos', icon: FileSignature, moduleKey: 'management_contracts' },
+      { title: 'Gerencial', url: '/gestao/gerencial', icon: Briefcase, moduleKey: 'management_reports' },
+      { title: 'Manutenções', url: '/gestao/manutencoes', icon: Wrench, moduleKey: 'management_tasks' },
+      { title: 'Afazeres', url: '/gestao/afazeres', icon: CheckSquare, moduleKey: 'management_tasks' },
+      { title: 'Boletos', url: '/gestao/boletos', icon: Receipt, moduleKey: 'management_rentals' },
     ],
   },
   {
     title: 'Ativos',
     icon: Building2,
     items: [
-      { title: 'Empreendimentos', url: '/properties', icon: Building2 },
-      { title: 'Imóveis', url: '/real-estate', icon: HomeIcon },
-      { title: 'Unidades', url: '/units', icon: LayoutGrid },
-    ],
-  },
-  {
-    title: 'Contatos',
-    icon: Users,
-    items: [
-      { title: 'Proprietários', url: '/contacts/owners', icon: Users },
-      { title: 'Leads', url: '/contacts/leads', icon: Users, badgeKey: 'leads' },
-      { title: 'Empresas', url: '/contacts/companies', icon: Building2 },
+      { title: 'Empreendimentos', url: '/properties', icon: Building2, moduleKey: 'assets_properties' },
+      { title: 'Unidades', url: '/units', icon: LayoutGrid, moduleKey: 'assets_units' },
+      { title: 'Imóveis Avulsos', url: '/real-estate', icon: HomeIcon, moduleKey: 'assets_standalone' },
     ],
   },
   {
     title: 'Financeiro',
     icon: Wallet,
     ownerOnly: true,
+    moduleKey: 'finance_overview',
     items: [
-      { title: 'Visão Geral', url: '/finance', icon: Wallet },
-      { title: 'Bancos', url: '/finance/bancos', icon: Landmark },
-      { title: 'DRE', url: '/finance/dre', icon: BarChart3 },
-      { title: 'Lançamentos', url: '/finance/transactions', icon: Receipt },
-      { title: 'Conciliação', url: '/finance/reconciliation', icon: ArrowLeftRight },
-      { title: 'Categorias', url: '/finance/categories', icon: Filter },
-    ],
-  },
-
-  {
-    title: 'Documentos',
-    icon: FileText,
-    items: [
-      { title: 'Meus Documentos', url: '/documents', icon: FileText },
-      { title: 'Modelos Padrão', url: '/documents/templates', icon: FileText },
-      { title: 'Histórico', url: '/documents/history', icon: History },
+      { title: 'Visão Geral', url: '/finance', icon: Wallet, moduleKey: 'finance_overview' },
+      { title: 'Bancos', url: '/finance/bancos', icon: Landmark, moduleKey: 'finance_bank_accounts' },
+      { title: 'DRE', url: '/finance/dre', icon: BarChart3, moduleKey: 'finance_dre' },
+      { title: 'Lançamentos', url: '/finance/transactions', icon: Receipt, moduleKey: 'finance_transactions' },
+      { title: 'Conciliação', url: '/finance/reconciliation', icon: ArrowLeftRight, moduleKey: 'finance_reconciliation' },
+      { title: 'Categorias', url: '/finance/categories', icon: Filter, moduleKey: 'finance_categories' },
     ],
   },
   {
-    title: 'Calculadoras',
-    icon: Calculator,
+    title: 'Comercial',
+    icon: Users,
     items: [
-      { title: 'Todas as calculadoras', url: '/simulator', icon: Calculator },
-      { title: 'Financiamento', url: '/simulator/financiamento-imobiliario', icon: Calculator },
-      { title: 'Reajuste de Aluguel', url: '/simulator/reajuste-de-aluguel', icon: Calculator },
-      { title: 'Rentabilidade', url: '/simulator/rentabilidade-imobiliaria', icon: TrendingUp },
-      { title: 'Comprar ou Alugar', url: '/simulator/comprar-ou-alugar', icon: Calculator },
+      { title: 'Mensagens', url: '/whatsapp', icon: MessageCircle, badgeKey: 'whatsapp', moduleKey: 'crm_whatsapp' },
+      { title: 'Propostas', url: '/crm/propostas', icon: HandCoins, moduleKey: 'management_proposals' },
+      { title: 'Pipeline', url: '/pipeline', icon: Filter, badgeKey: 'pipeline', moduleKey: 'crm_pipeline' },
+      { title: 'Contatos', url: '/contacts', icon: Users, badgeKey: 'leads', moduleKey: 'crm_contacts' },
+      { title: 'Agenda', url: '/schedule', icon: CalendarDays, badgeKey: 'schedule', moduleKey: 'crm_schedule' },
     ],
   },
   {
     title: 'Relatórios',
     icon: BarChart3,
     ownerOnly: true,
+    moduleKey: 'reports',
     items: [
-      { title: 'Visão Geral', url: '/reports', icon: BarChart3 },
-      { title: 'Resumo Semanal', url: '/reports/weekly', icon: BarChart3 },
-      { title: 'Resumo Mensal', url: '/reports/monthly', icon: BarChart3 },
+      { title: 'Relatórios', url: '/reports', icon: BarChart3, moduleKey: 'reports' },
+    ],
+  },
+  {
+    title: 'Documentos',
+    icon: FileText,
+    moduleKey: 'documents',
+    items: [
+      { title: 'Documentos', url: '/documents', icon: FileText, moduleKey: 'documents' },
+    ],
+  },
+  {
+    title: 'Calculadoras',
+    icon: Calculator,
+    items: [
+      { title: 'Calculadoras', url: '/simulator', icon: Calculator },
     ],
   },
   {
     title: 'Integrações',
     icon: Plug,
+    moduleKey: 'integrations',
     items: [
-      { title: 'Conexões', url: '/integrations', icon: Plug },
-      { title: 'Portais', url: '/portals', icon: Globe },
-      { title: 'WhatsApp', url: '/whatsapp', icon: MessageCircle, badgeKey: 'whatsapp' },
+      { title: 'Integrações', url: '/integrations', icon: Plug, moduleKey: 'integrations' },
+      { title: 'Portais', url: '/portals', icon: Globe, moduleKey: 'integrations' },
     ],
   },
   {
-    title: 'Outros',
-    icon: Settings,
+    title: 'Treinamentos',
+    icon: GraduationCap,
     items: [
       { title: 'Treinamentos', url: '/training', icon: GraduationCap },
+    ],
+  },
+  {
+    title: 'Usuários',
+    icon: UsersRound,
+    hiddenOnPlan: ['essencial', 'free'],
+    items: [
+      { title: 'Usuários', url: '/users', icon: UsersRound },
+    ],
+  },
+  {
+    title: 'Histórico',
+    icon: History,
+    items: [
       { title: 'Histórico', url: '/history', icon: History },
+    ],
+  },
+  {
+    title: 'Configurações',
+    icon: Settings,
+    items: [
       { title: 'Configurações', url: '/settings', icon: Settings },
     ],
   },

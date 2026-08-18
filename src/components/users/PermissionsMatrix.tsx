@@ -53,6 +53,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   // Financeiro group
   { key: '_group_finance', label: 'Financeiro', actions: [], isGroupHeader: true },
   { key: 'finance_overview', label: 'Visão Geral', actions: ['view'], indent: true },
+  { key: 'finance_bank_accounts', label: 'Bancos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'finance_transactions', label: 'Lançamentos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'finance_dre', label: 'DRE', actions: ['view'], indent: true },
   { key: 'finance_reconciliation', label: 'Conciliação', actions: ['view', 'create', 'edit', 'delete'], indent: true },
