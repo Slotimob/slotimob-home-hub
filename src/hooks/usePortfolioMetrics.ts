@@ -5,6 +5,8 @@ export interface PortfolioMetrics {
   // Total Portfolio Value
   totalPortfolioValue: number;
   totalAssetsCount: number;
+  soldUnitsCount: number;
+  totalRentedUnitsCount: number;
   
   // Rental Yield (for managed assets only)
   annualRentalYield: number; // percentage
@@ -23,6 +25,8 @@ export interface PortfolioMetrics {
 const DEFAULT_METRICS: PortfolioMetrics = {
   totalPortfolioValue: 0,
   totalAssetsCount: 0,
+  soldUnitsCount: 0,
+  totalRentedUnitsCount: 0,
   annualRentalYield: 0,
   monthlyRentalYield: 0,
   totalAnnualRent: 0,
@@ -115,9 +119,15 @@ export function usePortfolioMetrics() {
         ? (vacantUnits.length / rentalManagedAssets.length) * 100
         : 0;
 
+      // Informational counts (no impact on existing formulas)
+      const soldUnitsCount = units.filter(u => u.status === 'sold').length;
+      const totalRentedUnitsCount = units.filter(u => u.status === 'rented').length;
+
       setMetrics({
         totalPortfolioValue,
         totalAssetsCount: portfolioAssets.length,
+        soldUnitsCount,
+        totalRentedUnitsCount,
         annualRentalYield,
         monthlyRentalYield,
         totalAnnualRent,
