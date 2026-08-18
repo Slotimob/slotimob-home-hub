@@ -422,6 +422,17 @@ const AtivosEmGestao = () => {
                 />
               ))}
             </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredAssets.map((asset) => (
+                <AssetHealthListItem
+                  key={asset.unitId}
+                  asset={asset}
+                  onManageClick={handleAssetClick}
+                  onLinkClick={handleLinkClick}
+                />
+              ))}
+            </div>
           )}
 
           {filteredAssets.length > 0 && (
