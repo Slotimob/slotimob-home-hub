@@ -25,11 +25,12 @@ const STATUS_BREAKDOWN: Array<{
   key: 'rented' | 'reserved' | 'available' | 'sold';
   label: string;
   dot: string;
+  borderLeft: string;
 }> = [
-  { key: 'available', label: 'Disponíveis', dot: 'bg-emerald-500' },
-  { key: 'rented', label: 'Alugados', dot: 'bg-blue-500' },
-  { key: 'reserved', label: 'Reservados', dot: 'bg-amber-500' },
-  { key: 'sold', label: 'Vendidos', dot: 'bg-purple-500' },
+  { key: 'available', label: 'Disponíveis', dot: 'bg-emerald-500', borderLeft: 'border-l-emerald-500' },
+  { key: 'rented', label: 'Alugados', dot: 'bg-blue-500', borderLeft: 'border-l-blue-500' },
+  { key: 'reserved', label: 'Reservados', dot: 'bg-amber-500', borderLeft: 'border-l-amber-500' },
+  { key: 'sold', label: 'Vendidos', dot: 'bg-purple-500', borderLeft: 'border-l-purple-500' },
 ];
 
 interface AssetsWidgetProps {
@@ -168,13 +169,18 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
             })}
           </div>
 
-          {/* Detalhamento por status */}
-          <div className="mt-3 lg:mt-4 pt-3 border-t flex flex-wrap gap-x-4 gap-y-2">
-            {STATUS_BREAKDOWN.map(({ key, label, dot }) => (
-              <div key={key} className="flex items-center gap-1.5">
-                <span className={`h-2 w-2 rounded-full ${dot}`} />
-                <span className="text-xs text-muted-foreground">{label}</span>
-                <span className="text-xs font-semibold">{data[key]}</span>
+          {/* Detalhamento por status - lista vertical */}
+          <div className="mt-3 lg:mt-4 pt-3 border-t space-y-1.5">
+            {STATUS_BREAKDOWN.map(({ key, label, dot, borderLeft }) => (
+              <div
+                key={key}
+                className={`flex items-center justify-between rounded-md px-2 py-1.5 border-l-2 bg-muted/30 ${borderLeft}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${dot}`} />
+                  <span className="text-sm text-muted-foreground">{label}</span>
+                </div>
+                <span className="text-sm font-semibold">{data[key]}</span>
               </div>
             ))}
           </div>
