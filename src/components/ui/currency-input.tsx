@@ -32,27 +32,51 @@ const formatDisplayValue = (value: string, locale: string = 'pt-BR'): string => 
 /**
  * Parses a formatted display value back to a raw numeric string.
  *
- * The decimal separator is the LAST "." or "," in the string, provided it is
- * followed by exactly 1 or 2 digits. Every separator before it is a thousand
- * separator and is removed. Works for "1.500,50", "1500.50" and "1500,50".
+ * Rules:
+ * - If both "." and "," are present, the LAST one is the decimal separator and
+ *   every earlier separator is a thousand separator ("1.500,50" -> 1500.50).
+ * - A single "," is ALWAYS a decimal separator, with any number of decimals
+ *   ("4,538" -> 4.538, "4,5" -> 4.5).
+ * - A single "." is a decimal separator UNLESS the string looks like a
+ *   thousand-grouped number ("1.500" / "1.500.000" -> 1500 / 1500000).
+ *   When `allowThousandsGrouping` is false (e.g. percentages, where grouping
+ *   never happens), a single "." is always decimal ("4.538" -> 4.538).
  */
-export const parseInputValue = (displayValue: string): string => {
+export const parseInputValue = (
+  displayValue: string,
+  options?: { allowThousandsGrouping?: boolean }
+): string => {
   if (!displayValue) return '';
 
+  const allowThousandsGrouping = options?.allowThousandsGrouping ?? true;
   const sanitized = displayValue.replace(/[^\d.,]/g, '');
   if (!sanitized) return '';
 
-  const lastSepIndex = Math.max(sanitized.lastIndexOf('.'), sanitized.lastIndexOf(','));
+  const lastDot = sanitized.lastIndexOf('.');
+  const lastComma = sanitized.lastIndexOf(',');
+  const lastSepIndex = Math.max(lastDot, lastComma);
   let cleaned: string;
 
   if (lastSepIndex === -1) {
     cleaned = sanitized;
   } else {
+    const hasBoth = lastDot !== -1 && lastComma !== -1;
+    const lastSepChar = sanitized[lastSepIndex];
     const decimals = sanitized.slice(lastSepIndex + 1);
-    const isDecimalSeparator = /^\d{1,2}$/.test(decimals);
+    const hasDecimalDigits = /^\d+$/.test(decimals);
+
+    // Dot-only strings that look like thousand grouping: 1.500 / 1.500.000
+    const looksLikeGrouping =
+      !hasBoth &&
+      lastSepChar === '.' &&
+      allowThousandsGrouping &&
+      /^\d{1,3}(\.\d{3})+$/.test(sanitized);
+
+    const isDecimalSeparator = hasDecimalDigits && !looksLikeGrouping;
+
     if (isDecimalSeparator) {
       const intPart = sanitized.slice(0, lastSepIndex).replace(/[.,]/g, '');
-      cleaned = `${intPart}.${decimals}`;
+      cleaned = `${intPart || '0'}.${decimals}`;
     } else {
       cleaned = sanitized.replace(/[.,]/g, '');
     }
@@ -63,6 +87,7 @@ export const parseInputValue = (displayValue: string): string => {
 
   return parsed.toString();
 };
+
 
 
 /**
