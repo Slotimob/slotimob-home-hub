@@ -111,8 +111,8 @@ const Finance = () => {
         <div className="space-y-4 sm:space-y-6">
           {/* Half/Half row: Upcoming Receipts | Upcoming Payments */}
           <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-            <FinanceUpcomingReceipts unitId={filters.unitId} />
-            <FinanceUpcomingPayments unitId={filters.unitId} />
+            <FinanceUpcomingReceipts unitId={filters.unitId} dateFrom={filters.dateFrom} dateTo={filters.dateTo} />
+            <FinanceUpcomingPayments unitId={filters.unitId} dateFrom={filters.dateFrom} dateTo={filters.dateTo} />
           </div>
           
           {/* Half/Half row: Bank Accounts | Recent Transactions */}
