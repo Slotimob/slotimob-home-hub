@@ -342,24 +342,27 @@ export const AssetActivityTimeline = ({
     staleTime: 30_000,
   });
 
-  // Fetch profile names for broker_ids in logs
-  const brokerIds = useMemo(() => {
-    return [...new Set(rawLogs.map(l => l.broker_id))];
-  }, [rawLogs]);
+  // Fetch profile names for the actor that performed each log/note
+  const resolvedIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const log of rawLogs) ids.add(resolveActorId(log));
+    for (const note of manualNotes) ids.add(note.broker_id);
+    return [...ids];
+  }, [rawLogs, manualNotes]);
 
   const { data: profileMap = {} } = useQuery<ProfileMap>({
-    queryKey: ['audit-profiles', brokerIds.join(',')],
+    queryKey: ['audit-profiles', resolvedIds.join(',')],
     queryFn: async () => {
-      if (brokerIds.length === 0) return {};
+      if (resolvedIds.length === 0) return {};
       const { data } = await (supabase as any)
         .from('profile_directory')
         .select('id, full_name')
-        .in('id', brokerIds);
+        .in('id', resolvedIds);
       const map: ProfileMap = {};
       (data || []).forEach((p: any) => { map[p.id] = p.full_name || 'Usuário'; });
       return map;
     },
-    enabled: brokerIds.length > 0,
+    enabled: resolvedIds.length > 0,
     staleTime: 60_000,
   });
 
