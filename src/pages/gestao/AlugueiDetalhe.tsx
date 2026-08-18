@@ -40,7 +40,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { AssetActivitiesPanel } from "@/components/assets/AssetActivitiesPanel";
 import { UnitCrmHistoryCard } from "@/components/assets/UnitCrmHistoryCard";
 import { RAReportConfigDialog } from "@/components/reports/RAReportConfigDialog";
-import { generateAssetReportPdf } from "@/lib/asset-report-pdf";
+import { generateAssetReportPdf } from "@/utils/assetReportPdfGenerator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
