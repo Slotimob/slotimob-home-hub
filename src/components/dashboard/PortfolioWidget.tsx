@@ -127,6 +127,9 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
                       <p className="text-muted-foreground">
                         Preencha o campo "Valor de Mercado" no cadastro de cada imóvel.
                       </p>
+                      <p className="text-muted-foreground">
+                        Imóveis com status <strong>"Vendido"</strong> são excluídos — por isso o número de ativos aqui pode ser menor que o total do bloco "Contagem de Ativos" ao lado.
+                      </p>
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -146,6 +149,12 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
               <p className="text-xs text-muted-foreground">
                 Valor estimado de venda de {metrics.totalAssetsCount} {metrics.totalAssetsCount === 1 ? 'ativo' : 'ativos'}
               </p>
+
+              {metrics.soldUnitsCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                  {metrics.soldUnitsCount} {metrics.soldUnitsCount === 1 ? 'vendido não conta' : 'vendidos não contam'} no patrimônio
+                </span>
+              )}
             </div>
           </div>
 
@@ -188,6 +197,9 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
                         <li>Status deve ser "Alugado" (vagos não entram no cálculo)</li>
                         <li>Preencha "Valor do Aluguel" e "Valor de Mercado"</li>
                       </ul>
+                      <p className="text-muted-foreground">
+                        Só entram imóveis marcados como <strong>"Sob Gestão"</strong> com intenção de locação. Por isso este número costuma ser <strong>menor</strong> que o total de alugados do bloco "Contagem de Ativos" ao lado.
+                      </p>
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -205,7 +217,7 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <p className="text-xs text-muted-foreground cursor-help break-words">
-                    {metrics.monthlyRentalYield.toFixed(2)}% a.m. • {metrics.managedAssetsCount} {metrics.managedAssetsCount === 1 ? 'ativo gerido' : 'ativos geridos'}
+                    {metrics.monthlyRentalYield.toFixed(2)}% a.m. • {metrics.managedAssetsCount} de {metrics.totalRentedUnitsCount} {metrics.totalRentedUnitsCount === 1 ? 'alugado' : 'alugados'} sob gestão
                   </p>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
@@ -257,6 +269,9 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
                         <li>Defina a intenção como "Locação" ou "Ambos"</li>
                         <li>Status "Disponível" indica vaga (não depende mais do campo "Ocupado")</li>
                       </ul>
+                      <p className="text-muted-foreground">
+                        O denominador considera <strong>apenas</strong> imóveis "Sob Gestão" com intenção de locação — por isso é menor que o total de disponíveis do bloco "Contagem de Ativos" ao lado.
+                      </p>
                       <p className="text-amber-600 text-xs mt-2 flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
                         Acima de 10% gera alerta visual
@@ -274,7 +289,7 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
 
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs text-muted-foreground break-words">
-                  {metrics.vacantUnitsCount} {metrics.vacantUnitsCount === 1 ? 'vago' : 'vagos'} de {metrics.totalManagedForVacancy}
+                  {metrics.vacantUnitsCount} {metrics.vacantUnitsCount === 1 ? 'vago' : 'vagos'} de {metrics.totalManagedForVacancy} sob gestão de aluguel
                 </p>
 
                 {metrics.vacantUnitsCount > 0 && (
