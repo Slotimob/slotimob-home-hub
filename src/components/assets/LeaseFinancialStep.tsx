@@ -268,6 +268,8 @@ export function LeaseFinancialStep({
 }: LeaseFinancialStepProps) {
   const [adjustmentTouched, setAdjustmentTouched] = useState(adjustmentLocked);
   const suggestedRef = useRef<string>("");
+  const { data: customObligationTypes = [] } = useCustomObligationTypes();
+
 
   const suggestNextAdjustment = (): string => {
     const start = parseLocalDate(value.start_date);
