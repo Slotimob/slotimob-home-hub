@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Calculator, FileDown, TrendingUp, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { pdfSafeLabel } from '@/utils/pdfSafeText';
+import { calculateRentAdjustment } from '@/lib/rentAdjustment';
 
 const brl = (n: number) =>
   n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
