@@ -168,7 +168,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
     }
 
     return {
-      yield: { value: avgYield, status: yieldStatus },
+      yield: { value: avgYield, status: yieldStatus, hasData: hasYieldData },
       occupancy: { label: occupancyLabel, status: occupancyStatus, days: occupancyDays },
       nextAction: { label: nextActionLabel, date: nextActionDate, urgent: nextActionUrgent },
     };
