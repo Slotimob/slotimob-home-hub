@@ -53,7 +53,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
         .from("leases")
         .select("id, end_date, status")
         .eq("unit_id", unitId)
-        .neq("status", "active")
+        .in("status", ["active", "terminated"])
         .order("end_date", { ascending: false })
         .limit(1)
         .maybeSingle();
