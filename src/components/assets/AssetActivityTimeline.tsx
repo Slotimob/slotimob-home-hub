@@ -342,29 +342,6 @@ export const AssetActivityTimeline = ({
     staleTime: 30_000,
   });
 
-  // Fetch profile names for the actor that performed each log/note
-  const resolvedIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const log of rawLogs) ids.add(resolveActorId(log));
-    for (const note of manualNotes) ids.add(note.broker_id);
-    return [...ids];
-  }, [rawLogs, manualNotes]);
-
-  const { data: profileMap = {} } = useQuery<ProfileMap>({
-    queryKey: ['audit-profiles', resolvedIds.join(',')],
-    queryFn: async () => {
-      if (resolvedIds.length === 0) return {};
-      const { data } = await (supabase as any)
-        .from('profile_directory')
-        .select('id, full_name')
-        .in('id', resolvedIds);
-      const map: ProfileMap = {};
-      (data || []).forEach((p: any) => { map[p.id] = p.full_name || 'Usuário'; });
-      return map;
-    },
-    enabled: resolvedIds.length > 0,
-    staleTime: 60_000,
-  });
 
   // Fetch manual notes
   const { data: manualNotes = [] } = useQuery<ManualNote[]>({
