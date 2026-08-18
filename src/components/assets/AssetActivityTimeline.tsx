@@ -663,28 +663,16 @@ export const AssetActivityTimeline = ({
             </Tooltip>
           </TooltipProvider>
           {filteredLogs.length > 0 && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportCSV}>
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Exportar CSV</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportPDF}>
-                      <FileDown className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Exportar PDF</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportCSV}>
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Exportar CSV</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </div>
