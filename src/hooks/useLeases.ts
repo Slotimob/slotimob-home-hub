@@ -188,6 +188,7 @@ export interface Lease {
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
   additional_obligations?: ObligationChargeConfig[] | null;
+  property_id?: string | null;
   // Joined data
   tenant?: {
     id: string;

@@ -163,7 +163,6 @@ export function useActionCenterPending(): ActionCenterData {
         .eq("type", "expense")
         .eq("status", "pending")
         .not("due_date", "is", null)
-        .not("unit_id", "is", null)
         .lte("due_date", iso(upcomingLimit))
         .order("due_date", { ascending: true });
 
