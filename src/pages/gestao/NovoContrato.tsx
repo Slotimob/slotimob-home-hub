@@ -230,6 +230,22 @@ export default function NovoContrato() {
     enabled: !!user && !!effectiveUnitId && !isEditMode && !selectedUnitInfo,
   });
 
+  // CIB — fonte única de verdade é `units.cib`. Buscamos sempre (inclusive em edição)
+  // para pré-preencher o campo do wizard e manter os dois campos sincronizados ao salvar.
+  const { data: unitCib } = useQuery({
+    queryKey: ["unit-cib", effectiveUnitId, effectiveBrokerId],
+    queryFn: async () => {
+      if (!effectiveUnitId) return null;
+      const { data } = await supabase
+        .from("units")
+        .select("id, cib")
+        .eq("id", effectiveUnitId)
+        .maybeSingle();
+      return ((data as any)?.cib as string | null) ?? null;
+    },
+    enabled: !!user && !!effectiveUnitId,
+  });
+
   // Frações (subdivisões) da unidade — só relevante quando a unit tem has_subdivisions
   const { data: unitSubdivisionFlag } = useQuery({
     queryKey: ["unit-has-subdivisions", effectiveUnitId],
@@ -407,6 +423,14 @@ export default function NovoContrato() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unitInfo?.id, tenantIdParam]);
+
+  // CIB: o valor mestre vive em `units.cib`. Se a unidade já tem CIB, ele prevalece
+  // sobre o valor legado gravado em `leases.cib` (fallback apenas quando a unit está vazia).
+  useEffect(() => {
+    if (!unitCib) return;
+    setFormData((prev) => (prev.cib === unitCib ? prev : { ...prev, cib: unitCib }));
+  }, [unitCib]);
+
 
 
   const needsSpouseData =
@@ -796,6 +820,20 @@ export default function NovoContrato() {
           description: "As obrigações foram herdadas para o imóvel e aguardam sua revisão.",
         });
       }
+
+      // CIB — grava também em `units.cib` (fonte única de verdade a partir de agora).
+      // `leases.cib` continua sendo gravado acima por compatibilidade.
+      if (effectiveUnitId && formData.cib && formData.cib !== unitCib) {
+        try {
+          await supabase.from("units").update({ cib: formData.cib }).eq("id", effectiveUnitId);
+          queryClient.invalidateQueries({ queryKey: ["unit-cib", effectiveUnitId] });
+          queryClient.invalidateQueries({ queryKey: ["dimob-status", effectiveUnitId] });
+          queryClient.invalidateQueries({ queryKey: ["unit-detail", effectiveUnitId] });
+        } catch (cibError) {
+          console.error("Falha ao sincronizar CIB na unidade:", cibError);
+        }
+      }
+
 
       sessionStorage.removeItem(DRAFT_KEY);
 
@@ -1809,7 +1847,13 @@ export default function NovoContrato() {
                   onChange={(e) => setFormData({ ...formData, cib: e.target.value })}
                   placeholder="Ex: 0000.0000.0000.0000-00"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {unitCib
+                    ? "Valor cadastrado no imóvel. Alterações aqui atualizam o cadastro do imóvel."
+                    : "O CIB é um atributo do imóvel: ao salvar, ele também será gravado no cadastro da unidade."}
+                </p>
               </div>
+
 
               <div className="flex items-center justify-between gap-3 p-3 border rounded-lg">
                 <div className="flex-1">
