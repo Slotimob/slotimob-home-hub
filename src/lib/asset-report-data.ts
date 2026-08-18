@@ -12,7 +12,7 @@ import {
   computeCapRate,
 } from './asset-financials';
 import { ASSET_EXPENSE_CATEGORIES } from './asset-expense-categories';
-import { EVENT_GROUPS, humanizeLog, type AuditLog } from './audit-formatting';
+import { EVENT_GROUPS, humanizeLog, getChangedFields, TABLE_LABELS, type AuditLog } from './audit-formatting';
 import { activityTypeLabel } from './activity-types';
 
 /** Max activity rows rendered per asset in the report */
@@ -22,7 +22,14 @@ export interface AssetReportActivity {
   date: string;
   group: string;
   description: string;
+  /** Nome do autor da ação (actor_user_id, fallback broker_id) */
+  user_name: string;
+  /** Diff campo a campo (vazio para eventos sem alteração detectável) */
+  changes: Array<{ label: string; from: string; to: string }>;
+  action: string | null;
+  table_label: string | null;
 }
+
 
 /** Manutenção / atividade registrada manualmente (property_activities) */
 export interface AssetReportMaintenanceItem {
