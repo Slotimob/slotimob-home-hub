@@ -36,9 +36,16 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import type { DateRange as RDPRange } from 'react-day-picker';
+import { cn } from '@/lib/utils';
+import {
   FileText,
   Download,
-  FileDown,
   Loader2,
   X,
   AlertCircle,
@@ -53,8 +60,9 @@ import {
   User,
   CircleDollarSign,
   CheckCircle2,
+  CalendarDays,
 } from 'lucide-react';
-import { isToday, isYesterday, subDays, subMonths } from 'date-fns';
+import { isToday, isYesterday, startOfMonth, endOfDay } from 'date-fns';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { RAReportConfigDialog } from '@/components/reports/RAReportConfigDialog';
@@ -76,7 +84,6 @@ import {
   formatTimestampAbsolute,
   deduplicateAuditLogs,
 } from '@/lib/audit-formatting';
-import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 import { ActivityFormDialog } from '@/components/assets/ActivityFormDialog';
 import { activityTypeLabel } from '@/lib/activity-types';
 
@@ -214,7 +221,15 @@ export const AssetActivityTimeline = ({
 }: AssetActivityTimelineProps) => {
   const { toast } = useToast();
   const [eventFilter, setEventFilter] = useState('all');
-  const [periodFilter, setPeriodFilter] = useState('30');
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => ({
+    from: startOfMonth(new Date()),
+    to: new Date(),
+  }));
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [pendingPeriod, setPendingPeriod] = useState<RDPRange | undefined>({
+    from: dateRange.from,
+    to: dateRange.to,
+  });
   const [userFilter, setUserFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [raConfigOpen, setRaConfigOpen] = useState(false);
@@ -228,12 +243,16 @@ export const AssetActivityTimeline = ({
   const [deleteNoteTarget, setDeleteNoteTarget] = useState<ManualNote | null>(null);
   const [deletingNote, setDeletingNote] = useState(false);
 
-  // Build date filter
-  const periodStartDate = useMemo(() => {
-    if (periodFilter === 'all') return null;
-    const days = parseInt(periodFilter);
-    return days <= 90 ? subDays(new Date(), days) : subMonths(new Date(), 12);
-  }, [periodFilter]);
+  // Build date filter (range: início do mês atual até hoje, por padrão)
+  const periodStartDate = useMemo(() => dateRange.from, [dateRange.from]);
+  const periodEndDate = useMemo(() => endOfDay(dateRange.to), [dateRange.to]);
+  const isDefaultPeriod = useMemo(() => {
+    const defFrom = startOfMonth(new Date());
+    return (
+      format(dateRange.from, 'yyyy-MM-dd') === format(defFrom, 'yyyy-MM-dd') &&
+      format(dateRange.to, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+    );
+  }, [dateRange]);
 
   // Fetch audit logs
   const { data: rawLogs = [], isLoading, isError, refetch } = useQuery({
@@ -396,16 +415,18 @@ export const AssetActivityTimeline = ({
 
   // Filter logs
   const filteredLogs = useMemo(() => {
+    const inPeriod = (d: Date) => d >= periodStartDate && d <= periodEndDate;
+
     const auditFiltered = rawLogs.filter(log => {
       if (!matchesEventType(log, eventFilter)) return false;
-      if (periodStartDate && new Date(log.created_at) < periodStartDate) return false;
+      if (!inPeriod(new Date(log.created_at))) return false;
       if (userFilter !== 'all' && log.broker_id !== userFilter) return false;
       return true;
     });
 
     const notesFiltered = manualNotes.filter(note => {
       const nDate = note.scheduled_at ? new Date(note.scheduled_at) : new Date(note.created_at);
-      if (periodStartDate && nDate < periodStartDate) return false;
+      if (!inPeriod(nDate)) return false;
       if (userFilter !== 'all' && note.broker_id !== userFilter) return false;
       return true;
     });
@@ -415,7 +436,7 @@ export const AssetActivityTimeline = ({
       const dateB = isManualNote(b) ? (b.scheduled_at ?? b.created_at) : b.created_at;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
-  }, [rawLogs, manualNotes, eventFilter, periodStartDate, userFilter]);
+  }, [rawLogs, manualNotes, eventFilter, periodStartDate, periodEndDate, userFilter]);
 
   // Collapse billing and paginate
   const timelineItems = useMemo(() => {
@@ -454,11 +475,13 @@ export const AssetActivityTimeline = ({
     }));
   }, [brokerIds, profileMap]);
 
-  const hasActiveFilters = eventFilter !== 'all' || periodFilter !== '30' || userFilter !== 'all';
+  const hasActiveFilters = eventFilter !== 'all' || !isDefaultPeriod || userFilter !== 'all';
 
   const clearFilters = () => {
     setEventFilter('all');
-    setPeriodFilter('30');
+    const defRange = { from: startOfMonth(new Date()), to: new Date() };
+    setDateRange(defRange);
+    setPendingPeriod({ from: defRange.from, to: defRange.to });
     setUserFilter('all');
     setPage(1);
   };
@@ -507,32 +530,7 @@ export const AssetActivityTimeline = ({
     URL.revokeObjectURL(url);
   }, [buildExportRows, assetType, assetId]);
 
-  // Export PDF
-  const exportPDF = useCallback(async () => {
-    const { default: jsPDF } = await import('jspdf');
-    const { default: autoTable } = await import('jspdf-autotable');
-
-    const doc = new jsPDF({ orientation: 'landscape' });
-    doc.setFontSize(14);
-    doc.text(pdfSafeLabel('Histórico de Atividades'), 14, 15);
-    doc.setFontSize(9);
-    doc.text(pdfSafeLabel(`${filteredLogs.length} registros`), 14, 22);
-
-    const limits = [40, 24, 24, 30, 20, 60];
-    const tableData = buildExportRows().map(row =>
-      row.map((cell, i) => pdfSafeText(cell, { maxLength: limits[i], preserveLineBreaks: false }))
-    );
-
-    autoTable(doc, {
-      startY: 28,
-      head: [['Data', 'Ação', 'Tipo', 'Registro', 'Usuário', 'Alterações']],
-      body: tableData,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [59, 130, 246] },
-    });
-
-    doc.save(`atividades-${assetType}-${assetId.slice(0, 8)}.pdf`);
-  }, [buildExportRows, filteredLogs, assetType, assetId]);
+  // (Exportação em PDF avulsa removida — absorvida pelo "Relatório completo")
 
 
   // ── Render ─────────────────────────────────────────────
@@ -582,16 +580,43 @@ export const AssetActivityTimeline = ({
             </SelectContent>
           </Select>
 
-          <Select value={periodFilter} onValueChange={(v) => { setPeriodFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
-              <SelectValue placeholder="Período" />
-            </SelectTrigger>
-            <SelectContent>
-              {PERIOD_FILTERS.map(f => (
-                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  'h-8 text-xs justify-start font-normal min-w-0 w-[200px]',
+                  !dateRange.from && 'text-muted-foreground',
+                )}
+              >
+                <CalendarDays className="mr-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  {dateRange.from && dateRange.to
+                    ? `${format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`
+                    : 'Selecione o período'}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                selected={pendingPeriod}
+                onSelect={(range) => {
+                  setPendingPeriod(range);
+                  if (range?.from && range?.to) {
+                    setDateRange({ from: range.from, to: range.to });
+                    setPage(1);
+                    setPeriodOpen(false);
+                  }
+                }}
+                initialFocus
+                numberOfMonths={2}
+                locale={ptBR}
+                className={cn('p-3 pointer-events-auto')}
+              />
+            </PopoverContent>
+          </Popover>
 
           {userOptions.length > 1 && (
             <Select value={userFilter} onValueChange={(v) => { setUserFilter(v); setPage(1); }}>
@@ -638,28 +663,16 @@ export const AssetActivityTimeline = ({
             </Tooltip>
           </TooltipProvider>
           {filteredLogs.length > 0 && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportCSV}>
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Exportar CSV</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportPDF}>
-                      <FileDown className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Exportar PDF</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportCSV}>
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Exportar CSV</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </div>
@@ -926,8 +939,8 @@ export const AssetActivityTimeline = ({
         open={raConfigOpen}
         onOpenChange={setRaConfigOpen}
         dateRange={{
-          from: periodStartDate,
-          to: new Date(),
+          from: dateRange.from,
+          to: dateRange.to,
         }}
         onGenerate={async (data) => {
           try {
