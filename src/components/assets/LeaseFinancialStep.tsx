@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ContactSelector } from "@/components/ContactSelector";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
+import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
 import type {
   AdditionalObligationType,
   FireInsuranceConfig,
@@ -131,18 +132,28 @@ export function getInitialAdditionalObligations(): ObligationChargeConfig[] {
   return ADDITIONAL_OBLIGATIONS.map((o) => getInitialAdditionalObligation(o.type));
 }
 
-/** Normaliza a lista vinda do banco garantindo um item por tipo da taxonomia */
+/**
+ * Normaliza a lista vinda do banco garantindo um item por tipo da taxonomia fixa
+ * e **preservando** qualquer outro tipo já salvo (ex.: `custom_<uuid>`),
+ * para não descartar configurações feitas com tipos customizados do corretor.
+ */
 export function normalizeAdditionalObligations(
   saved?: ObligationChargeConfig[] | null
 ): ObligationChargeConfig[] {
   const list = Array.isArray(saved) ? saved : [];
-  return ADDITIONAL_OBLIGATIONS.map((o) => {
+  const base = ADDITIONAL_OBLIGATIONS.map((o) => {
     const found = list.find((i) => i?.type === o.type);
     return found
       ? { ...getInitialAdditionalObligation(o.type), ...found }
       : getInitialAdditionalObligation(o.type);
   });
+  const knownTypes = new Set(ADDITIONAL_OBLIGATIONS.map((o) => o.type));
+  const extras = list
+    .filter((i) => i?.type && !knownTypes.has(i.type))
+    .map((i) => ({ ...getInitialAdditionalObligation(i.type), ...i }));
+  return [...base, ...extras];
 }
+
 
 const RESPONSIBLE_OPTIONS: { value: LeaseChargeResponsible; label: string }[] = [
   { value: "tenant", label: "Inquilino" },
@@ -258,6 +269,8 @@ export function LeaseFinancialStep({
 }: LeaseFinancialStepProps) {
   const [adjustmentTouched, setAdjustmentTouched] = useState(adjustmentLocked);
   const suggestedRef = useRef<string>("");
+  const { data: customObligationTypes = [] } = useCustomObligationTypes();
+
 
   const suggestNextAdjustment = (): string => {
     const start = parseLocalDate(value.start_date);
@@ -321,22 +334,44 @@ export function LeaseFinancialStep({
 
   const additionalObligations = normalizeAdditionalObligations(value.additional_obligations);
 
+  /**
+   * Opções exibidas: tipos fixos + tipos customizados do corretor (`custom_<uuid>`,
+   * mesma convenção da aba Obrigações). "Outros" fica sempre por último.
+   */
+  const obligationOptions: {
+    type: AdditionalObligationType;
+    label: string;
+    obligationKey: string;
+    isCustom?: boolean;
+  }[] = [
+    ...ADDITIONAL_OBLIGATIONS.filter((o) => o.type !== "other"),
+    ...customObligationTypes.map((t) => ({
+      type: `custom_${t.id}`,
+      label: t.name,
+      obligationKey: `custom_${t.id}`,
+      isCustom: true,
+    })),
+    ...ADDITIONAL_OBLIGATIONS.filter((o) => o.type === "other"),
+  ];
+
+
   const updateAdditional = (
     type: AdditionalObligationType,
     patch: Partial<ObligationChargeConfig>
-  ) =>
-    onChange({
-      additional_obligations: additionalObligations.map((o) =>
-        o.type === type ? { ...o, ...patch } : o
-      ),
-    });
+  ) => {
+    const exists = additionalObligations.some((o) => o.type === type);
+    const next = exists
+      ? additionalObligations.map((o) => (o.type === type ? { ...o, ...patch } : o))
+      : [...additionalObligations, { ...getInitialAdditionalObligation(type), ...patch }];
+    onChange({ additional_obligations: next });
+  };
 
   const toggleAdditional = (type: AdditionalObligationType, enabled: boolean) => {
     if (!enabled) {
       updateAdditional(type, { enabled: false });
       return;
     }
-    const meta = ADDITIONAL_OBLIGATIONS.find((o) => o.type === type);
+    const meta = obligationOptions.find((o) => o.type === type);
     const current = additionalObligations.find((o) => o.type === type);
     updateAdditional(type, {
       enabled: true,
@@ -344,8 +379,10 @@ export function LeaseFinancialStep({
         current?.first_due_date || dueDateFromObligation(meta?.obligationKey || type),
       charge_to:
         current?.charge_to || responsibleFromObligation(meta?.obligationKey || type),
+      label: current?.label ?? (meta?.isCustom ? meta.label : null),
     });
   };
+
 
   const toggleFireInsurance = (enabled: boolean) => {
     if (!enabled) {
@@ -801,7 +838,7 @@ export function LeaseFinancialStep({
             )}
           </div>
 
-          {ADDITIONAL_OBLIGATIONS.map((meta) => {
+          {obligationOptions.map((meta) => {
             const cfg =
               additionalObligations.find((o) => o.type === meta.type) ||
               getInitialAdditionalObligation(meta.type);
