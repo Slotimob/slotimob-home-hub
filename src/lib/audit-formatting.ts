@@ -392,6 +392,20 @@ export function humanizeLog(log: AuditLog): string {
       const pct = meta.adjustment_pct != null ? ` (${meta.adjustment_pct}%)` : '';
       return `reajustou aluguel: ${oldAmt} → ${newAmt}${pct}`;
     }
+    case 'document_created':
+    case 'property_document_created':
+    case 'document_updated':
+    case 'document_deleted':
+    case 'property_document_deleted': {
+      const data = log.new_data || log.old_data || {};
+      const fileName = data.file_name || data.title || meta.file_name || meta.title || '';
+      const verb = log.action.includes('deleted')
+        ? 'removeu documento'
+        : log.action.includes('updated')
+          ? 'atualizou documento'
+          : 'anexou documento';
+      return fileName ? `${verb} "${fileName}"` : verb;
+    }
     case 'visit_completed':
       return `visita realizada${meta.scheduled_at ? ` em ${formatDateBR(meta.scheduled_at)}` : ''}`;
     case 'billing_issued': {

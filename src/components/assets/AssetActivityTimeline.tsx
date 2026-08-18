@@ -261,7 +261,23 @@ export const AssetActivityTimeline = ({
       const metadataKey = assetType === 'property' ? 'property_id' : 'unit_id';
       const tableName = assetType === 'property' ? 'properties' : 'units';
 
-      const [directResult, metaResult] = await Promise.all([
+      // Escopo por herança: no empreendimento, também consideramos as unidades filhas,
+      // pois muitos logs (reajuste, benfeitorias) só carregam unit_id.
+      let childUnitIds: string[] = [];
+      if (assetType === 'property') {
+        const { data: unitRows } = await supabase
+          .from('units')
+          .select('id')
+          .eq('property_id', assetId)
+          .limit(500);
+        childUnitIds = (unitRows || []).map((u: any) => u.id);
+      }
+
+      const scopedIds = assetType === 'property' ? [assetId, ...childUnitIds] : [assetId];
+      const inList = `(${scopedIds.join(',')})`;
+
+      const queries: any[] = [
+        // 1. Log direto no próprio registro do ativo
         supabase
           .from('audit_logs')
           .select('*')
@@ -269,21 +285,46 @@ export const AssetActivityTimeline = ({
           .eq('record_id', assetId)
           .order('created_at', { ascending: false })
           .limit(500),
+        // 2. Escopo via metadata (padrão atual)
         supabase
           .from('audit_logs')
           .select('*')
           .filter(`metadata->>${metadataKey}`, 'eq', assetId)
           .order('created_at', { ascending: false })
           .limit(500),
-      ]);
+        // 3. Fallback: escopo pelas colunas do registro auditado (new_data/old_data)
+        supabase
+          .from('audit_logs')
+          .select('*')
+          .or(
+            `new_data->>${metadataKey}.eq.${assetId},old_data->>${metadataKey}.eq.${assetId}`
+          )
+          .order('created_at', { ascending: false })
+          .limit(500),
+      ];
 
-      const directLogs = directResult.data || [];
-      const metaLogs = metaResult.data || [];
+      // 4. Herança unidade → imóvel: logs que só conhecem unit_id
+      if (assetType === 'property' && childUnitIds.length > 0) {
+        queries.push(
+          supabase
+            .from('audit_logs')
+            .select('*')
+            .or(
+              `metadata->>unit_id.in.${inList},new_data->>unit_id.in.${inList},old_data->>unit_id.in.${inList}`
+            )
+            .order('created_at', { ascending: false })
+            .limit(500)
+        );
+      }
+
+      const results = await Promise.all(queries);
 
       // Merge and deduplicate by id
       const map = new Map<string, AuditLog>();
-      for (const log of [...directLogs, ...metaLogs]) {
-        map.set(log.id, log as AuditLog);
+      for (const res of results) {
+        for (const log of (res?.data || [])) {
+          map.set(log.id, log as AuditLog);
+        }
       }
 
       const merged = Array.from(map.values()).sort(
