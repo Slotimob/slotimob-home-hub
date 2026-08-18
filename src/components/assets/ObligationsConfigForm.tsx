@@ -24,6 +24,8 @@ import {
   SYSTEM_OBLIGATION_TYPES 
 } from "@/hooks/useCustomObligationTypes";
 import { CreateCustomObligationDialog } from "./CreateCustomObligationDialog";
+import { ContractGeneratorDialog } from "./ContractGeneratorDialog";
+import { buildLeaseChargesFromObligationsConfig } from "@/lib/lease-obligations-inheritance";
 import { ContactSelector } from "@/components/ContactSelector";
 import { 
   Loader2, 
@@ -42,6 +44,7 @@ import {
   Info,
   ClipboardList,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -123,6 +126,8 @@ export function ObligationsConfigForm({
   const [meta, setMeta] = useState<ObligationsConfigMeta | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [contractOutdated, setContractOutdated] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
   const allObligationTypes = useMemo(() => [
