@@ -42,7 +42,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   { key: 'management_contracts', label: 'Contratos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_boletos', label: 'Boletos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'management_reports', label: 'Gerencial', actions: ['view', 'create', 'edit', 'delete'], indent: true },
-  { key: 'management_tasks', label: 'Afazeres', actions: ['view', 'create', 'edit', 'delete'], indent: true },
+  { key: 'management_tasks', label: 'Manutenções e Afazeres', actions: ['view', 'create', 'edit', 'delete'], indent: true },
 
   // Ativos group
   { key: '_group_assets', label: 'Ativos', actions: [], isGroupHeader: true },
@@ -59,8 +59,8 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
   { key: 'finance_reconciliation', label: 'Conciliação', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'finance_categories', label: 'Categorias', actions: ['view', 'create', 'edit', 'delete'], indent: true },
 
-  // CRM group
-  { key: '_group_crm', label: 'CRM', actions: [], isGroupHeader: true },
+  // Comercial group
+  { key: '_group_crm', label: 'Comercial', actions: [], isGroupHeader: true },
   { key: 'crm_admin', label: 'Admin CRM (Ver tudo)', actions: ['view'], indent: true },
   { key: 'crm_pipeline', label: 'Pipeline', actions: ['view', 'create', 'edit', 'delete'], indent: true },
   { key: 'crm_contacts', label: 'Contatos', actions: ['view', 'create', 'edit', 'delete'], indent: true },
@@ -79,6 +79,7 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
 
 const MODULE_TOOLTIPS: Record<string, string> = {
   dashboard: 'Ao liberar a visualização, o utilizador poderá ver movimentos financeiros e métricas de CRM globais.',
+  management_tasks: 'Controla o acesso às páginas Manutenções e Afazeres em conjunto.',
   crm_admin: 'Ao ativar, o membro verá TODAS as negociações e atividades da equipa, não apenas as que lhe foram atribuídas.',
   reports: 'Ao liberar a visualização, o utilizador poderá exportar todos os relatórios da imobiliária, incluindo dados financeiros.',
   integrations: 'Ao liberar, o utilizador terá a opção de conectar o seu próprio WhatsApp no módulo CRM.',

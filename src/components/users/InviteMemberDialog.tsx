@@ -73,15 +73,15 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto w-[calc(100%-2rem)] sm:w-full">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-3xl max-w-[calc(100vw-2rem)] p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="p-6 pb-4 border-b shrink-0">
             <DialogTitle>Convidar Membro</DialogTitle>
             <DialogDescription>
               Um email será enviado com um link para o convidado criar sua conta e ingressar na equipe.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto px-6 py-4 flex-1">
             <div className="space-y-2">
               <Label htmlFor="invite-email">Email do convidado</Label>
               <div className="relative">
@@ -118,6 +118,9 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
               grantableScope={scope === 'delegate' ? grantableScope : undefined}
             />
 
+          </div>
+
+          <div className="border-t p-4 shrink-0">
             <Button
               className="w-full gap-2"
               onClick={handleInviteClick}
