@@ -230,6 +230,22 @@ export default function NovoContrato() {
     enabled: !!user && !!effectiveUnitId && !isEditMode && !selectedUnitInfo,
   });
 
+  // CIB — fonte única de verdade é `units.cib`. Buscamos sempre (inclusive em edição)
+  // para pré-preencher o campo do wizard e manter os dois campos sincronizados ao salvar.
+  const { data: unitCib } = useQuery({
+    queryKey: ["unit-cib", effectiveUnitId, effectiveBrokerId],
+    queryFn: async () => {
+      if (!effectiveUnitId) return null;
+      const { data } = await supabase
+        .from("units")
+        .select("id, cib")
+        .eq("id", effectiveUnitId)
+        .maybeSingle();
+      return ((data as any)?.cib as string | null) ?? null;
+    },
+    enabled: !!user && !!effectiveUnitId,
+  });
+
   // Frações (subdivisões) da unidade — só relevante quando a unit tem has_subdivisions
   const { data: unitSubdivisionFlag } = useQuery({
     queryKey: ["unit-has-subdivisions", effectiveUnitId],
