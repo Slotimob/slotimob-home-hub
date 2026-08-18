@@ -939,8 +939,8 @@ export const AssetActivityTimeline = ({
         open={raConfigOpen}
         onOpenChange={setRaConfigOpen}
         dateRange={{
-          from: periodStartDate,
-          to: new Date(),
+          from: dateRange.from,
+          to: dateRange.to,
         }}
         onGenerate={async (data) => {
           try {
