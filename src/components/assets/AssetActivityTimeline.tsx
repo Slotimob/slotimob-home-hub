@@ -221,7 +221,15 @@ export const AssetActivityTimeline = ({
 }: AssetActivityTimelineProps) => {
   const { toast } = useToast();
   const [eventFilter, setEventFilter] = useState('all');
-  const [periodFilter, setPeriodFilter] = useState('30');
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => ({
+    from: startOfMonth(new Date()),
+    to: new Date(),
+  }));
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [pendingPeriod, setPendingPeriod] = useState<RDPRange | undefined>({
+    from: dateRange.from,
+    to: dateRange.to,
+  });
   const [userFilter, setUserFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [raConfigOpen, setRaConfigOpen] = useState(false);
@@ -235,12 +243,16 @@ export const AssetActivityTimeline = ({
   const [deleteNoteTarget, setDeleteNoteTarget] = useState<ManualNote | null>(null);
   const [deletingNote, setDeletingNote] = useState(false);
 
-  // Build date filter
-  const periodStartDate = useMemo(() => {
-    if (periodFilter === 'all') return null;
-    const days = parseInt(periodFilter);
-    return days <= 90 ? subDays(new Date(), days) : subMonths(new Date(), 12);
-  }, [periodFilter]);
+  // Build date filter (range: início do mês atual até hoje, por padrão)
+  const periodStartDate = useMemo(() => dateRange.from, [dateRange.from]);
+  const periodEndDate = useMemo(() => endOfDay(dateRange.to), [dateRange.to]);
+  const isDefaultPeriod = useMemo(() => {
+    const defFrom = startOfMonth(new Date());
+    return (
+      format(dateRange.from, 'yyyy-MM-dd') === format(defFrom, 'yyyy-MM-dd') &&
+      format(dateRange.to, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+    );
+  }, [dateRange]);
 
   // Fetch audit logs
   const { data: rawLogs = [], isLoading, isError, refetch } = useQuery({
