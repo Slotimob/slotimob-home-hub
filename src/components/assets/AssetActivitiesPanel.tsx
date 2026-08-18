@@ -104,6 +104,8 @@ export interface AssetActivitiesPanelProps {
   showAssetColumn?: boolean;
   /** Render the internal "Nova atividade" button (default: true when uncontrolled) */
   showNewButton?: boolean;
+  /** When false, hides the create button and the per-row actions (read-only) */
+  canManage?: boolean;
   /** Controlled create dialog — lets the parent render its own trigger button */
   createDialogOpen?: boolean;
   onCreateDialogOpenChange?: (open: boolean) => void;
@@ -115,6 +117,7 @@ export function AssetActivitiesPanel({
   scopeAssetLabel,
   showAssetColumn = true,
   showNewButton,
+  canManage = true,
   createDialogOpen,
   onCreateDialogOpenChange,
 }: AssetActivitiesPanelProps) {
@@ -134,7 +137,7 @@ export function AssetActivitiesPanel({
     if (isCreateControlled) onCreateDialogOpenChange?.(open);
     else setInternalDialogOpen(open);
   };
-  const renderNewButton = showNewButton ?? !isCreateControlled;
+  const renderNewButton = (showNewButton ?? !isCreateControlled) && canManage;
 
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: startOfMonth(new Date()),
@@ -377,7 +380,9 @@ export function AssetActivitiesPanel({
       </Badge>
     );
 
-  const RowActions = ({ row }: { row: ActivityRow }) => (
+  const RowActions = ({ row }: { row: ActivityRow }) => {
+    if (!canManage) return null;
+    return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -411,7 +416,8 @@ export function AssetActivitiesPanel({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+    );
+  };
 
   const ActivityCells = ({ row, indent }: { row: ActivityRow; indent?: boolean }) => (
     <>

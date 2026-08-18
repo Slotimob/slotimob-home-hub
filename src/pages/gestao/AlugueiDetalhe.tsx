@@ -23,40 +23,21 @@ import {
   type LucideIcon,
   Loader2,
   Save,
-  MapPin,
-  Wrench,
-  File,
-  Phone,
-  Users,
-  Circle,
-  Download,
-  FileSpreadsheet,
-  Calendar as CalendarIcon,
 } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 import { AppLayout } from "@/components/AppLayout";
 import { SEOHead } from "@/components/SEOHead";
+import { AssetActivitiesPanel } from "@/components/assets/AssetActivitiesPanel";
+import { UnitCrmHistoryCard } from "@/components/assets/UnitCrmHistoryCard";
+import { RAReportConfigDialog } from "@/components/reports/RAReportConfigDialog";
+import { generateAssetReportPdf } from "@/utils/assetReportPdfGenerator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -207,18 +188,8 @@ const AlugueiDetalhe = () => {
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
   const [editingCib, setEditingCib] = useState(false);
   const [cibValue, setCibValue] = useState("");
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [activityDateFrom, setActivityDateFrom] = useState("");
-  const [activityDateTo, setActivityDateTo] = useState("");
-  const [newActivity, setNewActivity] = useState({
-    activity_type: "note",
-    title: "",
-    description: "",
-    scheduled_at: "",
-    responsible_name: "",
-    outcome: "",
-  });
-  const [savingActivity, setSavingActivity] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [raConfigOpen, setRaConfigOpen] = useState(false);
 
   const competencyPeriod = format(currentMonth, "yyyy-MM");
   const monthLabel = format(currentMonth, "MMMM yyyy", { locale: ptBR });
@@ -247,6 +218,11 @@ const AlugueiDetalhe = () => {
     },
     enabled: !!unitId,
   });
+
+  const unitLabel =
+    (unitData as any)?.unit_number || (unitData as any)?.address || "Esta unidade";
+
+
 
   const { data: unitConfig } = useQuery({
     queryKey: ["unit-obligations-config", unitId],
@@ -351,222 +327,6 @@ const AlugueiDetalhe = () => {
       });
     },
   });
-
-  // Activities
-  const { data: scheduleActivities } = useQuery({
-    queryKey: ["schedule-activities-unit", unitId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("schedule_activities")
-        .select(
-          "id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at"
-        )
-        .eq("unit_id", unitId!)
-        .order("scheduled_at", { ascending: false });
-      return (data || []).map((r) => ({ ...r, source: "agenda" as const }));
-    },
-    enabled: !!unitId && activeTab === "activities",
-  });
-
-  const { data: dealActivities } = useQuery({
-    queryKey: ["deal-activities-unit", unitId],
-    queryFn: async () => {
-      const { data: deals } = await supabase
-        .from("deals")
-        .select("id")
-        .eq("unit_id", unitId!);
-      if (!deals?.length) return [];
-      const dealIds = deals.map((d) => d.id);
-      const { data } = await supabase
-        .from("deal_activities")
-        .select(
-          "id, title, description, activity_type, scheduled_at, completed_at, created_at"
-        )
-        .in("deal_id", dealIds)
-        .order("created_at", { ascending: false });
-      return (data || []).map((r) => ({
-        ...r,
-        source: "pipeline" as const,
-        is_completed: !!r.completed_at,
-      }));
-    },
-    enabled: !!unitId && activeTab === "activities",
-  });
-
-  const { data: propertyActivities, refetch: refetchPropertyActivities } = useQuery(
-    {
-      queryKey: ["property-activities", unitId],
-      queryFn: async () => {
-        const { data } = await supabase
-          .from("property_activities")
-          .select(
-            "id, title, description, activity_type, scheduled_at, is_completed, completed_at, created_at, responsible_name, outcome"
-          )
-          .eq("unit_id", unitId!)
-          .order("created_at", { ascending: false });
-        return (data || []).map((r) => ({ ...r, source: "manual" as const }));
-      },
-      enabled: !!unitId && activeTab === "activities",
-    }
-  );
-
-  const allActivities = useMemo(() => {
-    const all = [
-      ...(scheduleActivities || []),
-      ...(dealActivities || []),
-      ...(propertyActivities || []),
-    ];
-    return all.sort((a: any, b: any) => {
-      const dateA = new Date(a.scheduled_at || a.created_at).getTime();
-      const dateB = new Date(b.scheduled_at || b.created_at).getTime();
-      return dateB - dateA;
-    });
-  }, [scheduleActivities, dealActivities, propertyActivities]);
-
-  const filteredActivities = useMemo(() => {
-    return allActivities.filter((a: any) => {
-      const date = new Date(a.scheduled_at || a.created_at);
-      if (activityDateFrom && date < new Date(activityDateFrom)) return false;
-      if (activityDateTo && date > new Date(activityDateTo + "T23:59:59"))
-        return false;
-      return true;
-    });
-  }, [allActivities, activityDateFrom, activityDateTo]);
-
-  const exportActivitiesCSV = () => {
-    import("papaparse").then((Papa) => {
-      const rows = filteredActivities.map((a: any) => ({
-        Tipo: a.activity_type,
-        Título: a.title,
-        Descrição: a.description || "",
-        Data:
-          a.scheduled_at || a.created_at
-            ? format(
-                new Date(a.scheduled_at || a.created_at),
-                "dd/MM/yyyy HH:mm",
-                { locale: ptBR }
-              )
-            : "",
-        Fonte:
-          (
-            { agenda: "Agenda", pipeline: "Pipeline", manual: "Manual" } as Record<
-              string,
-              string
-            >
-          )[a.source] || a.source,
-        Concluído: a.is_completed ? "Sim" : "Não",
-        Responsável: a.responsible_name || "",
-        Resultado: a.outcome || "",
-      }));
-      const csv = Papa.unparse(rows);
-      const blob = new Blob(["\ufeff" + csv], {
-        type: "text/csv;charset=utf-8;",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `atividades-${unitId || "imovel"}-${new Date()
-        .toISOString()
-        .slice(0, 10)}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
-    });
-  };
-
-  const exportActivitiesPDF = async () => {
-    const { jsPDF } = await import("jspdf");
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    doc.setFontSize(16);
-    doc.text("Histórico de Atividades", 14, 18);
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Imóvel: ${unitId || ""}`, 14, 26);
-    doc.text(
-      `Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`,
-      14,
-      32
-    );
-    let y = 42;
-    doc.setFontSize(9);
-    doc.setTextColor(60);
-    doc.setFont("helvetica", "bold");
-    const cols = ["Data", "Tipo", "Título", "Fonte", "Resp.", "Resultado", "Status"];
-    const colWidths = [24, 18, 56, 18, 22, 22, 20];
-    let x = 14;
-    cols.forEach((col, i) => {
-      doc.text(col, x, y);
-      x += colWidths[i];
-    });
-    doc.setDrawColor(200);
-    doc.line(14, y + 2, 196, y + 2);
-    y += 7;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    filteredActivities.forEach((a: any) => {
-      if (y > 270) {
-        doc.addPage();
-        y = 18;
-      }
-      const date =
-        a.scheduled_at || a.created_at
-          ? format(new Date(a.scheduled_at || a.created_at), "dd/MM/yy HH:mm")
-          : "";
-      const source =
-        (
-          { agenda: "Agenda", pipeline: "Pipeline", manual: "Manual" } as Record<
-            string,
-            string
-          >
-        )[a.source] || "";
-      const status = a.is_completed ? "Concluído" : "Pendente";
-      const rowData = [
-        date,
-        a.activity_type,
-        a.title,
-        source,
-        a.responsible_name || "",
-        a.outcome || "",
-        status,
-      ];
-      x = 14;
-      rowData.forEach((val, i) => {
-        const maxW = colWidths[i] - 2;
-        const text = doc.splitTextToSize(String(val || ""), maxW);
-        doc.text(text[0], x, y);
-        x += colWidths[i];
-      });
-      y += 6;
-    });
-    doc.save(
-      `atividades-${unitId || "imovel"}-${new Date().toISOString().slice(0, 10)}.pdf`
-    );
-  };
-
-  const handleSaveActivity = async () => {
-    if (!newActivity.title.trim() || !unitId) return;
-    setSavingActivity(true);
-    await supabase.from("property_activities").insert({
-      unit_id: unitId,
-      broker_id: effectiveBrokerId || user?.id,
-      activity_type: newActivity.activity_type,
-      title: newActivity.title,
-      description: newActivity.description || null,
-      scheduled_at: newActivity.scheduled_at || null,
-      responsible_name: newActivity.responsible_name || null,
-      outcome: newActivity.outcome || null,
-    });
-    setNewActivity({
-      activity_type: "note",
-      title: "",
-      description: "",
-      scheduled_at: "",
-      responsible_name: "",
-      outcome: "",
-    });
-    setShowNewForm(false);
-    setSavingActivity(false);
-    refetchPropertyActivities();
-  };
 
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
     if (!unitConfig) return [];
@@ -1315,278 +1075,28 @@ const AlugueiDetalhe = () => {
 
           {/* Activities */}
           <TabsContent value="activities" className="mt-4 space-y-4">
-            <div className="space-y-3">
-              <div className="flex gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <CalendarIcon className="h-3.5 w-3.5" />
-                  <span>Período:</span>
-                </div>
-                <Input
-                  type="date"
-                  className="h-7 text-xs w-[130px]"
-                  value={activityDateFrom}
-                  onChange={(e) => setActivityDateFrom(e.target.value)}
-                />
-                <span className="text-xs text-muted-foreground self-center">até</span>
-                <Input
-                  type="date"
-                  className="h-7 text-xs w-[130px]"
-                  value={activityDateTo}
-                  onChange={(e) => setActivityDateTo(e.target.value)}
-                />
-                {(activityDateFrom || activityDateTo) && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs px-2"
-                    onClick={() => {
-                      setActivityDateFrom("");
-                      setActivityDateTo("");
-                    }}
-                  >
-                    Limpar
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  {filteredActivities.length} registro(s)
-                </p>
-                <div className="flex gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="sm" variant="outline">
-                        <Download className="h-3.5 w-3.5 mr-1" />
-                        Exportar
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={exportActivitiesCSV}>
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        CSV
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={exportActivitiesPDF}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        PDF
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  {canCreate && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setShowNewForm((v) => !v)}
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      Nova atividade
-                    </Button>
-                  )}
-                </div>
-              </div>
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="outline" onClick={() => setRaConfigOpen(true)}>
+                <FileText className="h-3.5 w-3.5 mr-1" />
+                Relatório do imóvel
+              </Button>
+              {canCreate && (
+                <Button size="sm" onClick={() => setActivityDialogOpen(true)}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Nova atividade
+                </Button>
+              )}
             </div>
 
-            {showNewForm && canCreate && (
-              <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Tipo</Label>
-                    <Select
-                      value={newActivity.activity_type}
-                      onValueChange={(v) =>
-                        setNewActivity((p) => ({ ...p, activity_type: v }))
-                      }
-                    >
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="note">Nota</SelectItem>
-                        <SelectItem value="visit">Visita</SelectItem>
-                        <SelectItem value="maintenance">Manutenção</SelectItem>
-                        <SelectItem value="document">Documento</SelectItem>
-                        <SelectItem value="other">Outro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Data (opcional)</Label>
-                    <Input
-                      type="date"
-                      className="h-8 text-xs"
-                      value={newActivity.scheduled_at}
-                      onChange={(e) =>
-                        setNewActivity((p) => ({
-                          ...p,
-                          scheduled_at: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Título *</Label>
-                  <Input
-                    className="h-8 text-xs"
-                    placeholder="Descreva a atividade..."
-                    value={newActivity.title}
-                    onChange={(e) =>
-                      setNewActivity((p) => ({ ...p, title: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Observações (opcional)</Label>
-                  <Textarea
-                    className="text-xs min-h-[60px]"
-                    value={newActivity.description}
-                    onChange={(e) =>
-                      setNewActivity((p) => ({ ...p, description: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Responsável</Label>
-                    <Input
-                      placeholder="Nome do responsável"
-                      value={newActivity.responsible_name}
-                      onChange={(e) =>
-                        setNewActivity((prev) => ({
-                          ...prev,
-                          responsible_name: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Resultado</Label>
-                    <Input
-                      placeholder="Resultado ou observação"
-                      value={newActivity.outcome}
-                      onChange={(e) =>
-                        setNewActivity((prev) => ({
-                          ...prev,
-                          outcome: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setShowNewForm(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveActivity}
-                    disabled={!newActivity.title.trim() || savingActivity}
-                  >
-                    {savingActivity && (
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    )}
-                    Salvar
-                  </Button>
-                </div>
-              </div>
-            )}
+            <AssetActivitiesPanel
+              scopeUnitId={unitId}
+              scopeAssetLabel={unitLabel}
+              canManage={canEdit || canCreate}
+              createDialogOpen={activityDialogOpen}
+              onCreateDialogOpenChange={setActivityDialogOpen}
+            />
 
-            {filteredActivities.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                <Clock className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">Nenhuma atividade registrada</p>
-                <p className="text-xs mt-1">
-                  Clique em "Nova atividade" para registrar
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredActivities.map((activity: any) => {
-                  const activityIcons: Record<string, React.ReactNode> = {
-                    note: <FileText className="h-3.5 w-3.5" />,
-                    visit: <MapPin className="h-3.5 w-3.5" />,
-                    maintenance: <Wrench className="h-3.5 w-3.5" />,
-                    document: <File className="h-3.5 w-3.5" />,
-                    call: <Phone className="h-3.5 w-3.5" />,
-                    meeting: <Users className="h-3.5 w-3.5" />,
-                    other: <Circle className="h-3.5 w-3.5" />,
-                  };
-                  const sourceBadge: Record<string, string> = {
-                    agenda: "Agenda",
-                    pipeline: "Pipeline",
-                    manual: "Manual",
-                  };
-                  const displayDate = activity.scheduled_at || activity.created_at;
-                  return (
-                    <div
-                      key={`${activity.source}-${activity.id}`}
-                      className="flex gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors"
-                    >
-                      <div
-                        className={cn(
-                          "h-7 w-7 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                          activity.is_completed
-                            ? "bg-green-100 text-green-600"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {activityIcons[activity.activity_type] ||
-                          activityIcons.other}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p
-                            className={cn(
-                              "text-sm font-medium truncate",
-                              activity.is_completed &&
-                                "line-through text-muted-foreground"
-                            )}
-                          >
-                            {activity.title}
-                          </p>
-                          <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground shrink-0">
-                            {sourceBadge[activity.source]}
-                          </span>
-                        </div>
-                        {activity.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                            {activity.description}
-                          </p>
-                        )}
-                        {activity.source === "manual" &&
-                          activity.responsible_name && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              Responsável:{" "}
-                              <span className="font-medium text-foreground">
-                                {activity.responsible_name}
-                              </span>
-                            </p>
-                          )}
-                        {activity.source === "manual" && activity.outcome && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Resultado:{" "}
-                            <span className="font-medium text-foreground">
-                              {activity.outcome}
-                            </span>
-                          </p>
-                        )}
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {format(
-                            new Date(displayDate),
-                            "dd 'de' MMM 'de' yyyy, HH:mm",
-                            { locale: ptBR }
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <UnitCrmHistoryCard unitId={unitId} />
           </TabsContent>
         </Tabs>
 
@@ -1614,6 +1124,29 @@ const AlugueiDetalhe = () => {
             open={contractDialogOpen}
             onOpenChange={setContractDialogOpen}
             unitId={unitId}
+          />
+        )}
+        {unitId && (
+          <RAReportConfigDialog
+            open={raConfigOpen}
+            onOpenChange={setRaConfigOpen}
+            dateRange={{ from: null, to: new Date() }}
+            onGenerate={async (data) => {
+              try {
+                await generateAssetReportPdf(data);
+                toast({ title: "PDF gerado com sucesso!", duration: 1000 });
+              } catch (e: any) {
+                toast({
+                  title: "Erro ao gerar relatório",
+                  description: e.message,
+                  variant: "destructive",
+                  duration: 1000,
+                });
+              }
+            }}
+            preSelectedAssetIds={[unitId]}
+            preSelectedAssetType="unit"
+            formatLabel="PDF"
           />
         )}
       </AppLayout>
