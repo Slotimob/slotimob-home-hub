@@ -1,96 +1,87 @@
-# Fase A.7 — Mapeamento (sem código)
+# Diagnóstico — Unificação da aba Atividades (imóvel/unidade) + redesenho do Relatório Completo
 
-## Ponto 1 — CSS do submenu de tabs
+Leitura real do código feita antes deste documento. Nada foi alterado.
 
-### 1. Como está hoje (`src/pages/gestao/AlugueiDetalhe.tsx`, linhas 622-636)
+## 1. `AssetActivityTimeline.tsx` (1026 linhas) — o que é hoje
 
-```tsx
-<Tabs value={activeTab} onValueChange={setActiveTab}>
-  <TabsList className="grid w-full grid-cols-4">
-    <TabsTrigger value="overview" className="text-xs">Visão Geral</TabsTrigger>
-    <TabsTrigger value="obligations" className="text-xs">Obrigações</TabsTrigger>
-    <TabsTrigger value="fiscal" className="text-xs">Fiscal</TabsTrigger>
-    <TabsTrigger value="activities" className="text-xs">Atividades</TabsTrigger>
-  </TabsList>
-```
+**Onde é usado (6 lugares, componente único, sem cópias):**
+- `src/pages/PropertyDetalhe.tsx:528` (`/properties`)
+- `src/pages/UnitDetalhe.tsx:588` (`/units` e `/real-estate`, mesma página)
+- `src/components/EditPropertyDialog.tsx:330`
+- `src/components/units/EditUnitDialog.tsx:521`
+- `src/components/UnitDetailsDialog.tsx:376`
 
-Nenhum override de cor local. Todo o visual vem do shadcn base em `src/components/ui/tabs.tsx`:
+Props: `assetType` ('property' | 'unit'), `assetId`, `brokerId`, `pageSize`.
 
-- `TabsList`: `inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground`
-- `TabsTrigger`: `... rounded-sm px-3 py-1.5 text-sm font-medium ... data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm ...`
+**Fontes de dados (2 queries):**
+- `audit_logs`: duas buscas paralelas (por `table_name`+`record_id`, e por `metadata->>property_id|unit_id`), merge + `deduplicateAuditLogs`, limite 500 cada.
+- `property_activities` do ativo (com nome do contato responsável e contagem de anexos vinda de `documents.activity_id`).
 
-Não há variant customizada de Tabs no projeto — só o componente base.
+**Filtros atuais:** Tipo (`EVENT_GROUPS`), Período (select 7/30/90/todo — default 30), Usuário (aparece só se houver mais de um). Paginação incremental de 25.
 
-### 2. Comparação com outros lugares
+**Funcionalidades que o painel de manutenções NÃO tem:**
+- Agrupamento por dia ("Hoje", "Ontem", data por extenso).
+- Colapso de cobranças: >5 eventos `billing_issued` no mesmo mês viram um item resumo expansível.
+- Renderização humanizada de log de auditoria (`humanizeLog`, `getChangedFields`: campo, de → para).
+- Edição inline de nota manual (título + data) e exclusão com AlertDialog.
+- Exportação CSV e PDF próprios.
+- Botões "Incluir atividade" (`ActivityFormDialog`) e "Relatório completo" (`RAReportConfigDialog`).
 
-| Local | Classes do `TabsList` |
-|---|---|
-| `src/pages/gestao/ContratoDetalhe.tsx:478` | `grid w-full grid-cols-6` |
-| `src/pages/PropertyDetalhe.tsx:409` | `grid w-full grid-cols-6` |
-| `src/pages/UnitDetalhe.tsx:475` | `grid w-full grid-cols-7/8` |
-| `src/components/assets/AssetDetailDialog.tsx:717` | `grid w-full grid-cols-4` |
-| `src/pages/Training.tsx:291` | `inline-flex h-auto p-1 bg-muted/50` |
-| `src/components/ui/view-mode-tabs.tsx:29` | `h-10 p-1 bg-muted/50` |
+**`AssetActivitiesPanel.tsx` (762 linhas)** lê **somente** `property_activities`. É tabela com agrupamento por `activity_group_id`, filtros de tipo/status/imóvel/período (date range com default mês atual), ações de editar/excluir/concluir/reabrir, custo estimado, vínculo com transação, escopo por `scopeUnitId`/`scopePropertyId` e criação controlada pelo pai.
 
-Ou seja: o padrão dominante nas páginas de detalhe é exatamente o mesmo que `AlugueiDetalhe.tsx` usa (`grid w-full grid-cols-N`, sem cor local). A única variação existente no sistema é `bg-muted/50` (Training / view-mode-tabs), que é *mais* claro, não mais contrastado.
+**Conclusão da pergunta "é seguro trocar por `AssetActivitiesPanel` escopado?": Não.**
+Ao contrário de `AlugueiDetalhe.tsx` (onde só interessavam manutenções), aqui o valor principal é o log de auditoria — que o painel não consulta. Trocar direto perderia auditoria, agrupamento por dia, colapso de cobranças e exportações. O caminho certo é evoluir a timeline para o padrão do painel (date range, botões, ações), reaproveitando `ActivityFormDialog` e o mesmo componente de filtro de período, em vez de substituir o componente.
 
-### 3. Causa exata da diferença
+## 2. Benfeitorias e reajuste de aluguel — de onde vêm
 
-Não é classe faltando nem override local nem cor hardcoded — o `AlugueiDetalhe` segue o padrão. A causa é de **tokens do design system** em `src/index.css`:
+- **Benfeitorias**: tabela `asset_improvements` (`property_id`/`unit_id`, `cost`, `completed_at`, `affects_market_value`). No relatório vêm de `asset-report-data.ts:172-197`. Na timeline **não há query direta** — aparecem apenas se houver linha em `audit_logs` com `table_name = 'asset_improvements'`, para a qual já existe o grupo de filtro "Benfeitorias" (`audit-formatting.ts:254`). Se o gatilho de auditoria dessa tabela não estiver ativo, hoje elas simplesmente não aparecem na aba — isso precisa ser confirmado por query antes de implementar.
+- **Reajuste de aluguel**: gravado em `lease_adjustments` + `leases.rent_amount`; na timeline chega via `audit_logs` com ação `lease_rent_adjusted`/tabela `leases`, cobertos pelo grupo "Contratos" (`audit-formatting.ts:225-228`). Ou seja, já aparecem — desde que o log carregue `metadata.unit_id`/`property_id`; caso contrário o evento fica invisível no escopo do imóvel. Também a confirmar por query.
+- **Documentos com nome do arquivo**: grupo "Documentos" existe, mas o texto exibido depende de `getRecordName`/`humanizeLog`; hoje não há garantia de mostrar o nome do arquivo.
 
-- `--background: 0 0% 97%` (foi escurecido de 100% para 97% numa mudança anterior)
-- `--muted: 246 30% 96%`
-- `--card: 0 0% 100%`
+## 3. Relatório Completo — estrutura atual do PDF
 
-O fundo do `TabsList` (`bg-muted`, L=96%) ficou a ~1% de luminância do fundo da página (`bg-background`, L=97%) → a faixa some. Pior: o trigger ativo é `data-[state=active]:bg-background`, ou seja, também 97% — o ativo tem quase o mesmo tom da faixa, restando só o `shadow-sm` para diferenciar.
+`RAReportConfigDialog.tsx` só escolhe escopo (todos/específicos) e liga/desliga 6 seções (`acquisition`, `market`, `expenses`, `income`, `activities`, `improvements`); os dados vêm de `buildAssetReport` (`src/lib/asset-report-data.ts`) e o desenho de `src/utils/assetReportPdfGenerator.ts`.
 
-Por que "outras páginas parecem certas": em telas onde as tabs ficam sobre um `Card` branco (`--card: 100%`) ou sobre superfícies mais escuras, a mesma faixa 96% aparece nítida. Em `/gestao/alugueis` (detalhe) as tabs ficam direto sobre o fundo 97% da página, sem card, então o contraste efetivo é quase zero.
+Ordem atual no PDF:
+1. Capa (título, período, nº de imóveis, data de geração) — linhas 49-65
+2. Página "Sumário Consolidado" (9 KPIs globais) — 67-97
+3. Por imóvel: **Aquisição** (118-139), **Valor de Mercado** (141-162), **Benfeitorias no Período** (164-184), **Despesas no Período** + Top 10 (186-238), **Receitas no Período** (240-251), **Atividades no Período** (253-288), **Manutenções e Atividades** (290-328), **Indicadores** (330-353)
+4. Rodapé com paginação (363-370)
 
-Fixes possíveis (a decidir na implementação):
-- **Global (recomendado)**: escurecer levemente `--muted` (ex.: L 92-93%) e trocar o ativo para `bg-card` (branco 100%) no `TabsTrigger` base — corrige o sistema inteiro de uma vez.
-- **Local**: adicionar `bg-muted border border-border` no `TabsList` desta página e `data-[state=active]:bg-card` nos triggers — resolve só aqui, mas cria divergência do padrão.
+**Os 3 blocos que devem virar 1 "Sumário Financeiro Consolidado":** página de Sumário Consolidado (71-97, KPIs globais), Aquisição + Valor de Mercado (118-162) e Indicadores (330-353) — este último repete ROI/Yield/Cap Rate do sumário e contagens já mostradas nas próprias tabelas.
 
-## Ponto 2 — Botão "Como funciona?"
+**Texto mal escrito citado:** `assetReportPdfGenerator.ts:319-326` — `Total: N atividade(s) · N pendente(s) · Custo estimado R$ X`, com abreviações "(s)", separador "·" e sem ponto final. Fica logo abaixo da tabela de Manutenções. Também há inconsistência nos cabeçalhos dessa tabela ("Custo est.", "Lanç.").
 
-### 1. Onde fica
+Existem geradores irmãos que precisam acompanhar a mudança de estrutura: `assetReportCsvGenerator.ts`, `assetReportExcelGenerator.ts`, `assetReportDocxGenerator.ts`.
 
-- Botão: `src/pages/gestao/AtivosEmGestao.tsx:269-272` (`variant="outline"`, ícone `BookOpen`, label "Como funciona?"), abre estado `guideOpen`.
-- Conteúdo: `src/components/assets/AssetManagementGuide.tsx` — Dialog com array `steps` **hardcoded** (4 passos + dica final).
+## 4. O botão "Exportar PDF" avulso da timeline
 
-### Texto atual completo
+`AssetActivityTimeline.tsx:511-535`: jsPDF em paisagem, sem capa, com uma única tabela `Data | Ação | Tipo | Registro | Usuário | Alterações` a partir de `buildExportRows()` (linhas 467-490).
 
-Título: `📖 Como funciona a Gestão de Ativos?`
+**A inteligência exclusiva dele** é a coluna **"Alterações"** (`getChangedFields` → `campo: de -> para`) e a coluna **"Usuário"** (nome resolvido via `profile_directory`). O relatório completo, na seção "Atividades no Período", só traz `Data | Tipo | Descrição` (`humanizeLog`), **sem usuário e sem o diff campo a campo**. É exatamente isso que a nova seção final "Atividades no Período" do relatório precisa absorver — o que exige enriquecer `asset-report-data.ts` (`AssetReportActivity` ganha `user` e `changes`).
 
-**1. Configure suas Obrigações**
-- Abra o card do ativo e clique em "Configurar".
-- Ative as obrigações que deseja acompanhar (Aluguel, IPTU, Condomínio...).
-- Defina o dia de vencimento e o responsável pelo pagamento.
+## 5. Compartilhamento entre as 3 telas
 
-**2. Financeiro vs. Gerencial** — badge "Gerencial"
-- Financeiro — lê os lançamentos do seu caixa real (DRE).
-- Gerencial — apenas conferência de recibos de terceiros, sem impacto no fluxo de caixa.
+O componente é literalmente o mesmo nas três telas (e em mais 3 diálogos). **Padronizar é barato**: mexer em `AssetActivityTimeline.tsx` propaga para todos. O custo real está no PDF/relatório, não na aba.
 
-**3. Faça os Lançamentos**
-- Receitas e despesas financeiras → aba Financeiro.
-- Conferências gerenciais → aba Gerencial.
-- O sistema identifica automaticamente o tipo pelo período de competência.
+## Fracionamento sugerido
 
-**4. Conciliação e Vínculo Manual**
-- O semáforo fica verde quando o match é automático.
-- Se o valor ou data divergirem, use o botão "Vincular" para ensinar o sistema.
-- A partir do vínculo, o status atualiza instantaneamente.
+**Fase 0 — verificação de dados (rápida, só queries)**
+Confirmar em produção: existem logs de `asset_improvements` em `audit_logs`? Os logs de `lease_rent_adjusted` carregam `metadata.unit_id`/`property_id`? Os logs de `documents` guardam o nome do arquivo? O resultado decide se a Fase 1 é só de UI ou se precisa de query direta a `asset_improvements`/`lease_adjustments` (e possivelmente trigger de auditoria).
 
-Rodapé (dica verde): "Dica: Quanto mais lançamentos vinculados, mais preciso fica o semáforo de saúde do ativo."
+**Fase 1 — aba Atividades (UI)**
+Date range picker (default mês atual) no lugar do select de atalhos; barra de ações com "Incluir Atividade", "Relatório completo" e "Exportar CSV"; remoção do "Exportar PDF" avulso. Sem mudança de fonte de dados.
 
-### 2. O que está desatualizado
+**Fase 2 — cobertura de dados do "raio-x"**
+Fechar as lacunas apontadas pela Fase 0 (benfeitorias, reajustes, nome do arquivo em documentos), adicionando as fontes que faltarem à timeline.
 
-| Trecho | Problema | Origem |
-|---|---|---|
-| Passo 1, bullet 1: 'clique em "Configurar"' | Botão não existe mais; obrigações se editam dentro de "Gerenciar" → aba Obrigações | (a) |
-| Passo 1 em geral | Não menciona que a config de obrigações do imóvel agora **sincroniza nos dois sentidos** com o contrato ativo, nem o aviso/atalho de regenerar o PDF quando o contrato fica desatualizado | (d) |
-| Passos 3 e 4 ("aba Financeiro" / "aba Gerencial") | As abas de Gerenciar hoje são **Visão Geral / Obrigações / Fiscal / Atividades** — não existem abas com esses nomes; a distinção Financeiro vs Gerencial continua válida como conceito, mas a navegação descrita está errada | reorganização das abas |
-| Ausente | Fluxo "Nova Locação" agora abre a tela cheia de contrato pré-preenchida (`/gestao/contratos/novo` com unidade e inquilino), não popup | (b) |
-| Ausente | Aba Fiscal usa o CIB unificado do imóvel (`units.cib`) como fonte única | (c) |
-| Ausente | Aba Atividades passou a usar o mesmo padrão de `/gestao/manutencoes` (mesmos filtros, tabela e ações) + card colapsável de histórico comercial (CRM) | (e) |
+**Fase 3 — dados do relatório**
+Enriquecer `asset-report-data.ts`: usuário + diff nas atividades, e consolidação dos números hoje espalhados entre sumário/aquisição/mercado/indicadores.
 
-Restam corretos e podem ser mantidos: passo 2 (Financeiro vs Gerencial), a lógica do semáforo e o "Vincular" da conciliação, e a dica final.
+**Fase 4 — redesenho do PDF**
+Nova ordem (Capa → Sumário Financeiro Consolidado → Benfeitorias → Manutenções e Atividades → Atividades no Período), texto corrigido abaixo da tabela de manutenções e revisão de cabeçalhos. QA visual obrigatório com `pdftoppm`.
+
+**Fase 5 — paridade dos outros formatos**
+CSV/Excel/DOCX seguindo a nova estrutura.
+
+Sugiro tratar Fase 0+1 juntas e Fase 3+4 juntas; Fase 5 pode ficar por último ou ser dispensada se os outros formatos forem pouco usados.
