@@ -145,7 +145,7 @@ export const modules: TourModule[] = [
     ],
     features: [
       { icon: MessageSquare, title: 'WhatsApp com Contexto', desc: 'Histórico do cliente e do imóvel na mesma tela de conversa.' },
-      { icon: Shuffle, title: 'Roleta de Leads', desc: 'Em breve: distribuição automática e justa entre corretores da equipe.' },
+      { icon: Shuffle, title: 'Distribuição de Leads do WhatsApp', desc: 'Leads que chegam pelo WhatsApp são distribuídos automaticamente entre os corretores da equipe. Em breve: expansão para outros canais.' },
       { icon: FileText, title: 'Contratos Automáticos', desc: 'Gere contratos com dados já preenchidos do sistema.' },
       { icon: Phone, title: 'Registro de Ligações', desc: 'Registre cada ligação e associe ao lead automaticamente.' },
       { icon: Eye, title: 'Visão 360° do Lead', desc: 'Tudo sobre o cliente em uma única tela: conversas, visitas, propostas.' },
