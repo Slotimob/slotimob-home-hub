@@ -164,7 +164,7 @@ export async function generateAssetReportPdf(report: AssetReportData) {
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
       doc.text(pdfSafeLabel(title), margin, y);
-      y += 2;
+      y += 3;
     }
 
     // Header
@@ -403,7 +403,7 @@ export async function generateAssetReportPdf(report: AssetReportData) {
           pdfSafeText(a.user_name || 'Sistema').slice(0, 28),
           `${a.group}\n${pdfSafeText(a.description)}`,
           (a.changes || []).length
-            ? a.changes.map(c => `${pdfSafeText(c.label)}: ${pdfSafeText(c.from)} -> ${pdfSafeText(c.to)}`).join('\n')
+            ? a.changes.map(c => `${pdfSafeText(c.label)}: ${pdfSafeText(c.from)} » ${pdfSafeText(c.to)}`).join('\n')
             : '—',
         ])),
         theme: 'striped',
