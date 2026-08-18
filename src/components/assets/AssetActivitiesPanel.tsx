@@ -104,6 +104,8 @@ export interface AssetActivitiesPanelProps {
   showAssetColumn?: boolean;
   /** Render the internal "Nova atividade" button (default: true when uncontrolled) */
   showNewButton?: boolean;
+  /** When false, hides the create button and the per-row actions (read-only) */
+  canManage?: boolean;
   /** Controlled create dialog — lets the parent render its own trigger button */
   createDialogOpen?: boolean;
   onCreateDialogOpenChange?: (open: boolean) => void;
@@ -115,6 +117,7 @@ export function AssetActivitiesPanel({
   scopeAssetLabel,
   showAssetColumn = true,
   showNewButton,
+  canManage = true,
   createDialogOpen,
   onCreateDialogOpenChange,
 }: AssetActivitiesPanelProps) {
