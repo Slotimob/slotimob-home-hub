@@ -155,7 +155,8 @@ export async function generateAssetReportPdf(report: AssetReportData) {
       doc.setTextColor(30, 58, 95);
       doc.setFontSize(12);
       doc.text(pdfSafeLabel(title), margin, y);
-      y += 2;
+      y += 7;
+
     }
 
     function subTitle(title: string) {
