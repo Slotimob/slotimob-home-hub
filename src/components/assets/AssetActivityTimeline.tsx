@@ -470,7 +470,7 @@ export const AssetActivityTimeline = ({
     const auditFiltered = rawLogs.filter(log => {
       if (!matchesEventType(log, eventFilter)) return false;
       if (!inPeriod(new Date(log.created_at))) return false;
-      if (userFilter !== 'all' && log.broker_id !== userFilter) return false;
+      if (userFilter !== 'all' && resolveActorId(log) !== userFilter) return false;
       return true;
     });
 
@@ -556,7 +556,7 @@ export const AssetActivityTimeline = ({
         ACTION_LABELS[log.action] || log.action,
         TABLE_LABELS[log.table_name] || log.table_name,
         getRecordName(log),
-        profileMap[log.broker_id] || 'Usuário',
+        profileMap[resolveActorId(log)] || 'Usuário',
         changes.map(c => `${c.label}: ${c.from} -> ${c.to}`).join('; '),
       ];
     });
@@ -904,7 +904,7 @@ export const AssetActivityTimeline = ({
 
                   const log = item;
                   const TableIcon = TABLE_ICONS[log.table_name] || FileText;
-                  const authorName = profileMap[log.broker_id] || 'Usuário';
+                  const authorName = profileMap[resolveActorId(log)] || 'Usuário';
                   const changes = getChangedFields(log);
 
                   return (
@@ -1071,7 +1071,7 @@ function BillingSummaryItem({
       <CollapsibleContent>
         <div className="ml-9 border-l-2 border-muted pl-3 space-y-0.5">
           {summary.logs.map(log => {
-            const authorName = profileMap[log.broker_id] || 'Usuário';
+            const authorName = profileMap[resolveActorId(log)] || 'Usuário';
             return (
               <div key={log.id} className="flex items-start gap-2 py-1.5 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground/70">{authorName}</span>
