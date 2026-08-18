@@ -174,7 +174,9 @@ const PercentInput = React.forwardRef<HTMLInputElement, PercentInputProps>(
 
     React.useEffect(() => {
       if (!isFocused) {
-        const num = typeof value === 'number' ? value : parseFloat(parseInputValue(String(value ?? '')));
+        const num = typeof value === 'number'
+        ? value
+        : parseFloat(parseInputValue(String(value ?? ''), { allowThousandsGrouping: false }));
         setDisplayValue(isNaN(num) || value === '' || value === null || value === undefined
           ? ''
           : String(num).replace('.', ','));
@@ -184,7 +186,7 @@ const PercentInput = React.forwardRef<HTMLInputElement, PercentInputProps>(
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const sanitized = e.target.value.replace(/[^\d.,]/g, '');
       setDisplayValue(sanitized);
-      const raw = parseInputValue(sanitized);
+      const raw = parseInputValue(sanitized, { allowThousandsGrouping: false });
       const num = parseFloat(raw);
       if (isNaN(num)) {
         onChange(0);
@@ -208,7 +210,7 @@ const PercentInput = React.forwardRef<HTMLInputElement, PercentInputProps>(
           }}
           onBlur={(e) => {
             setIsFocused(false);
-            const num = parseFloat(parseInputValue(displayValue));
+            const num = parseFloat(parseInputValue(displayValue, { allowThousandsGrouping: false }));
             setDisplayValue(isNaN(num) ? '' : String(Math.min(num, max)).replace('.', ','));
             props.onBlur?.(e);
           }}
