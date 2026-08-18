@@ -29,8 +29,9 @@ export function pdfSafeText(
   // Trocar por equivalente seguro.
   s = s
     .replace(/\\/g, '\u29F5')   // backslash → reverse solidus operator
-    .replace(/\(/g, '［')        // parens → fullwidth brackets
-    .replace(/\)/g, '］')
+    .replace(/\(/g, '[')         // parens → colchetes (renderizáveis em WinAnsi)
+    .replace(/\)/g, ']')
+
     .replace(/</g, '‹')          // angle → single guillemets
     .replace(/>/g, '›')
     .replace(/\x00/g, '');       // null byte → remove

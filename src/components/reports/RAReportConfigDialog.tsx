@@ -128,7 +128,7 @@ export function RAReportConfigDialog({
     { key: 'market', label: 'Valor de mercado e valorização' },
     { key: 'expenses', label: 'Despesas (com breakdown por categoria)' },
     { key: 'income', label: 'Receitas' },
-    { key: 'activities', label: 'Atividades e movimentações' },
+    { key: 'activities', label: 'Atividades e movimentações (log detalhado com usuário e alterações)' },
     { key: 'improvements', label: 'Benfeitorias no período' },
   ];
 
