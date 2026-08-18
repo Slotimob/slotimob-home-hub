@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { 
   Home, 
   Building2, 
-  Settings2,
   ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,7 +13,6 @@ import { ObligationTrafficLights } from "./ObligationTrafficLights";
 
 interface AssetHealthCardProps {
   asset: AssetHealth;
-  onConfigureClick: (unitId: string) => void;
   onManageClick: (asset: AssetHealth) => void;
   onLinkClick?: (asset: AssetHealth, obligation: ObligationHealth) => void;
 }
@@ -37,7 +35,7 @@ const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
   },
 };
 
-export function AssetHealthCard({ asset, onConfigureClick, onManageClick, onLinkClick }: AssetHealthCardProps) {
+export function AssetHealthCard({ asset, onManageClick, onLinkClick }: AssetHealthCardProps) {
   const overallConfig = OVERALL_STATUS_CONFIG[asset.overallStatus];
   const activeObligations = asset.obligations.filter(o => o.status !== "ignored");
 

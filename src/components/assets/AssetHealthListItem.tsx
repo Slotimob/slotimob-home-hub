@@ -1,7 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  Settings2, 
   Home, 
   Building2,
   ClipboardList,
@@ -12,7 +11,6 @@ import { ObligationTrafficLights } from "./ObligationTrafficLights";
 
 export interface AssetHealthListItemProps {
   asset: AssetHealth;
-  onConfigureClick: (unitId: string) => void;
   onManageClick: (asset: AssetHealth) => void;
   onLinkClick?: (asset: AssetHealth, obligation: ObligationHealth) => void;
 }
