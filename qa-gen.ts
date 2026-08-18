@@ -47,14 +47,9 @@ function build(n: number): AssetReportData {
 const saved: Record<string,Uint8Array> = {};
 (globalThis as any).__save = saved;
 
-for (const [name, n] of [['single',1],['multi',3]] as [string,number][]) {
+for (const [name, n] of [['single',1],['multi',3]] as [string,number][]) { const _n=name;
   const jsPDFmod = await import('jspdf');
-  const origSave = jsPDFmod.default.prototype.save;
-  jsPDFmod.default.prototype.save = function() {
-    fs.writeFileSync(`/tmp/qa/${name}.pdf`, Buffer.from(this.output('arraybuffer')));
-    return this;
-  };
   await generateAssetReportPdf(build(n));
-  jsPDFmod.default.prototype.save = origSave;
+  fs.renameSync('/dev-server/relatorio-imovel-2026-01-01-2026-08-18.pdf', `/tmp/qa/${name}.pdf`);
 }
 console.log('ok');
