@@ -25,11 +25,12 @@ const STATUS_BREAKDOWN: Array<{
   key: 'rented' | 'reserved' | 'available' | 'sold';
   label: string;
   dot: string;
+  borderLeft: string;
 }> = [
-  { key: 'available', label: 'Disponíveis', dot: 'bg-emerald-500' },
-  { key: 'rented', label: 'Alugados', dot: 'bg-blue-500' },
-  { key: 'reserved', label: 'Reservados', dot: 'bg-amber-500' },
-  { key: 'sold', label: 'Vendidos', dot: 'bg-purple-500' },
+  { key: 'available', label: 'Disponíveis', dot: 'bg-emerald-500', borderLeft: 'border-l-emerald-500' },
+  { key: 'rented', label: 'Alugados', dot: 'bg-blue-500', borderLeft: 'border-l-blue-500' },
+  { key: 'reserved', label: 'Reservados', dot: 'bg-amber-500', borderLeft: 'border-l-amber-500' },
+  { key: 'sold', label: 'Vendidos', dot: 'bg-purple-500', borderLeft: 'border-l-purple-500' },
 ];
 
 interface AssetsWidgetProps {
