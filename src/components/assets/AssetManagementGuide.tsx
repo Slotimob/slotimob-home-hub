@@ -4,7 +4,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
   Settings2,
@@ -25,9 +24,11 @@ const steps = [
     icon: Settings2,
     title: "1. Configure suas Obrigações",
     bullets: [
-      'Abra o card do ativo e clique em "Configurar".',
-      "Ative as obrigações que deseja acompanhar (Aluguel, IPTU, Condomínio...).",
+      'Abra o card do ativo e clique em "Gerenciar" → aba Obrigações.',
+      "Ative as obrigações que deseja acompanhar (Aluguel, IPTU, Condomínio, Seguro...).",
       "Defina o dia de vencimento e o responsável pelo pagamento.",
+      "A configuração do imóvel e do contrato ativo ficam sincronizadas nos dois sentidos — editar em uma reflete na outra, incluindo obrigações personalizadas.",
+      "Quando o contrato ficar desatualizado por causa dessa sincronização, um aviso aparece com um botão para gerar o PDF atualizado.",
     ],
   },
   {
@@ -43,9 +44,11 @@ const steps = [
     icon: ClipboardCheck,
     title: "3. Faça os Lançamentos",
     bullets: [
-      "Receitas e despesas financeiras → aba Financeiro.",
-      "Conferências gerenciais → aba Gerencial.",
+      "Receitas e despesas financeiras → fluxo normal de obrigações/lançamentos da tela unificada.",
+      "Conferências gerenciais → fluxo de conciliação da tela unificada.",
       "O sistema identifica automaticamente o tipo pelo período de competência.",
+      "A aba Atividades agora segue o mesmo padrão de /gestao/manutencoes (filtros, tabela, edição) e inclui um card de histórico comercial (CRM) quando existir negociação prévia daquela unidade.",
+      "Nova Locação agora abre a tela completa de contrato já pré-preenchida, em vez de um popup.",
     ],
   },
   {
@@ -68,7 +71,7 @@ export function AssetManagementGuide({ open, onOpenChange }: AssetManagementGuid
             📖 Como funciona a Gestão de Ativos?
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] pr-2">
+        <div className="max-h-[60vh] overflow-y-auto pr-2">
           <div className="space-y-5 pb-2">
             {steps.map((step, i) => (
               <div key={i} className="flex gap-3">
@@ -103,8 +106,9 @@ export function AssetManagementGuide({ open, onOpenChange }: AssetManagementGuid
               </p>
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
+
