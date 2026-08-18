@@ -487,14 +487,16 @@ export function AssetActivitiesPanel({
                   <Button
                     variant="outline"
                     className={cn(
-                      'w-full justify-start text-left font-normal h-10',
+                      'w-full justify-start text-left font-normal h-10 min-w-0',
                       !dateRange.from && 'text-muted-foreground'
                     )}
                   >
-                    <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {dateRange.from && dateRange.to
-                      ? `${format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`
-                      : 'Selecione o período'}
+                    <CalendarDays className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                      {dateRange.from && dateRange.to
+                        ? `${format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} - ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`
+                        : 'Selecione o período'}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
