@@ -9,14 +9,22 @@ import { ptBR } from "date-fns/locale";
 
 interface FinanceUpcomingPaymentsProps {
   unitId?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
-export function FinanceUpcomingPayments({ unitId }: FinanceUpcomingPaymentsProps) {
+export function FinanceUpcomingPayments({ unitId, dateFrom, dateTo }: FinanceUpcomingPaymentsProps) {
   const today = new Date();
-  const nextWeek = addDays(today, 7);
+  // Fallback to a 7-day window when the page has no active date filter
+  const rangeStart = dateFrom || format(today, "yyyy-MM-dd");
+  const rangeEnd = dateTo || format(addDays(today, 7), "yyyy-MM-dd");
+
+  const periodLabel = dateFrom && dateTo
+    ? `de ${format(new Date(`${dateFrom}T00:00:00`), "dd/MM", { locale: ptBR })} a ${format(new Date(`${dateTo}T00:00:00`), "dd/MM", { locale: ptBR })}`
+    : "nos próximos 7 dias";
 
   const { data: payments, isLoading } = useQuery({
-    queryKey: ["finance-upcoming-payments", unitId],
+    queryKey: ["finance-upcoming-payments", unitId, rangeStart, rangeEnd],
     queryFn: async () => {
       let query = supabase
         .from("financial_transactions")
@@ -26,7 +34,8 @@ export function FinanceUpcomingPayments({ unitId }: FinanceUpcomingPaymentsProps
         `)
         .eq("status", "pending")
         .eq("type", "expense")
-        .lte("due_date", format(nextWeek, "yyyy-MM-dd"))
+        .gte("due_date", rangeStart)
+        .lte("due_date", rangeEnd)
         .order("due_date", { ascending: true })
         .limit(5);
 
@@ -82,7 +91,7 @@ export function FinanceUpcomingPayments({ unitId }: FinanceUpcomingPaymentsProps
           <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
           Próximos Vencimentos
         </CardTitle>
-        <CardDescription className="text-xs">Despesas a pagar em até 7 dias</CardDescription>
+        <CardDescription className="text-xs">Despesas a pagar {periodLabel}</CardDescription>
       </CardHeader>
       <CardContent className="p-3 pt-0">
         {payments && payments.length > 0 ? (
