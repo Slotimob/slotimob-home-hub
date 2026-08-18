@@ -1,66 +1,96 @@
-# Fase A.6 — Unificar aba Atividades (Gestão de Ativo) com o padrão /gestao/manutencoes
+# Fase A.7 — Mapeamento (sem código)
 
-## 1. Como `Manutencoes.tsx` está hoje (680 linhas, leitura real)
+## Ponto 1 — CSS do submenu de tabs
 
-- É uma **página inteira**: `AppLayout title="Manutenções"` + header com título/descrição + botão "Nova atividade" + Card de Filtros + Card com a tabela + dialogs.
-- **Query única** (`['activities-list', brokerId, from, to]`): lê só `property_activities` filtrando `broker_id = effectiveBrokerId` e `created_at` entre o range; `limit(500)`; depois hidrata labels de `units`, `properties` e `contacts` em 3 queries `in()`.
-- **Filtros**: período (Popover + Calendar range, default = mês corrente até hoje), tipo (`ACTIVITY_TYPES`), contato responsável, ativo (`unit:<id>` / `property:<id>`), busca textual. Período é server-side; os outros 4 são client-side em `filtered`.
-- **Agrupamento**: `groupedRows` junta linhas por `activity_group_id` (grupo com 1 item vira single), ordenado por `scheduled_at || created_at` desc, com linhas expansíveis.
-- **Ações por linha**: `RowActions` (dropdown) → Editar (abre `ActivityFormDialog` com `EditingActivity` + `AssetOption`), Marcar concluída/pendente (`setCompleted`, update direto), Excluir (AlertDialog + delete). Invalida `activities-list` e `asset-manual-notes`.
-- **Export**: **não tem nenhum**.
-- **Extração**: a separação já é limpa — todo o miolo (estado de filtros, query, `groupedRows`, `setCompleted`, `handleDelete`, `openEdit`, tabela, `ActivityFormDialog`, `AlertDialog`) não depende de `AppLayout`. Dá pra extrair um componente de corpo sem refatoração estrutural; só o `AppLayout` + `<h1>`/descrição ficam na página.
+### 1. Como está hoje (`src/pages/gestao/AlugueiDetalhe.tsx`, linhas 622-636)
 
-## 2. Escopo por ativo — mudança mínima
+```tsx
+<Tabs value={activeTab} onValueChange={setActiveTab}>
+  <TabsList className="grid w-full grid-cols-4">
+    <TabsTrigger value="overview" className="text-xs">Visão Geral</TabsTrigger>
+    <TabsTrigger value="obligations" className="text-xs">Obrigações</TabsTrigger>
+    <TabsTrigger value="fiscal" className="text-xs">Fiscal</TabsTrigger>
+    <TabsTrigger value="activities" className="text-xs">Atividades</TabsTrigger>
+  </TabsList>
+```
 
-Hoje a query não tem noção de ativo (é broker inteiro). Mudança mínima:
+Nenhum override de cor local. Todo o visual vem do shadcn base em `src/components/ui/tabs.tsx`:
 
-- Adicionar props opcionais `scopeUnitId` / `scopePropertyId`.
-- Incluí-las na `queryKey` e, quando presentes, adicionar `.eq('unit_id', scopeUnitId)` (ou `.eq('property_id', scopePropertyId)`) à query.
-- Quando há escopo: esconder o filtro "Ativo" e a coluna "Ativo" da tabela (redundantes), e fixar `defaultAsset` + `lockAsset` no `ActivityFormDialog`.
-- Sem escopo: comportamento **byte-a-byte igual ao de hoje**.
+- `TabsList`: `inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground`
+- `TabsTrigger`: `... rounded-sm px-3 py-1.5 text-sm font-medium ... data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm ...`
 
-O filtro `broker_id` continua sempre aplicado — o escopo é aditivo, não substituto (mantém o isolamento multi-tenant).
+Não há variant customizada de Tabs no projeto — só o componente base.
 
-## 3. O que a aba do `AlugueiDetalhe.tsx` perde — números reais
+### 2. Comparação com outros lugares
 
-Contagem no banco hoje (units com lease `active` = 17):
+| Local | Classes do `TabsList` |
+|---|---|
+| `src/pages/gestao/ContratoDetalhe.tsx:478` | `grid w-full grid-cols-6` |
+| `src/pages/PropertyDetalhe.tsx:409` | `grid w-full grid-cols-6` |
+| `src/pages/UnitDetalhe.tsx:475` | `grid w-full grid-cols-7/8` |
+| `src/components/assets/AssetDetailDialog.tsx:717` | `grid w-full grid-cols-4` |
+| `src/pages/Training.tsx:291` | `inline-flex h-auto p-1 bg-muted/50` |
+| `src/components/ui/view-mode-tabs.tsx:29` | `h-10 p-1 bg-muted/50` |
 
-| fonte | linhas ligadas a units com gestão ativa | total na base |
+Ou seja: o padrão dominante nas páginas de detalhe é exatamente o mesmo que `AlugueiDetalhe.tsx` usa (`grid w-full grid-cols-N`, sem cor local). A única variação existente no sistema é `bg-muted/50` (Training / view-mode-tabs), que é *mais* claro, não mais contrastado.
+
+### 3. Causa exata da diferença
+
+Não é classe faltando nem override local nem cor hardcoded — o `AlugueiDetalhe` segue o padrão. A causa é de **tokens do design system** em `src/index.css`:
+
+- `--background: 0 0% 97%` (foi escurecido de 100% para 97% numa mudança anterior)
+- `--muted: 246 30% 96%`
+- `--card: 0 0% 100%`
+
+O fundo do `TabsList` (`bg-muted`, L=96%) ficou a ~1% de luminância do fundo da página (`bg-background`, L=97%) → a faixa some. Pior: o trigger ativo é `data-[state=active]:bg-background`, ou seja, também 97% — o ativo tem quase o mesmo tom da faixa, restando só o `shadow-sm` para diferenciar.
+
+Por que "outras páginas parecem certas": em telas onde as tabs ficam sobre um `Card` branco (`--card: 100%`) ou sobre superfícies mais escuras, a mesma faixa 96% aparece nítida. Em `/gestao/alugueis` (detalhe) as tabs ficam direto sobre o fundo 97% da página, sem card, então o contraste efetivo é quase zero.
+
+Fixes possíveis (a decidir na implementação):
+- **Global (recomendado)**: escurecer levemente `--muted` (ex.: L 92-93%) e trocar o ativo para `bg-card` (branco 100%) no `TabsTrigger` base — corrige o sistema inteiro de uma vez.
+- **Local**: adicionar `bg-muted border border-border` no `TabsList` desta página e `data-[state=active]:bg-card` nos triggers — resolve só aqui, mas cria divergência do padrão.
+
+## Ponto 2 — Botão "Como funciona?"
+
+### 1. Onde fica
+
+- Botão: `src/pages/gestao/AtivosEmGestao.tsx:269-272` (`variant="outline"`, ícone `BookOpen`, label "Como funciona?"), abre estado `guideOpen`.
+- Conteúdo: `src/components/assets/AssetManagementGuide.tsx` — Dialog com array `steps` **hardcoded** (4 passos + dica final).
+
+### Texto atual completo
+
+Título: `📖 Como funciona a Gestão de Ativos?`
+
+**1. Configure suas Obrigações**
+- Abra o card do ativo e clique em "Configurar".
+- Ative as obrigações que deseja acompanhar (Aluguel, IPTU, Condomínio...).
+- Defina o dia de vencimento e o responsável pelo pagamento.
+
+**2. Financeiro vs. Gerencial** — badge "Gerencial"
+- Financeiro — lê os lançamentos do seu caixa real (DRE).
+- Gerencial — apenas conferência de recibos de terceiros, sem impacto no fluxo de caixa.
+
+**3. Faça os Lançamentos**
+- Receitas e despesas financeiras → aba Financeiro.
+- Conferências gerenciais → aba Gerencial.
+- O sistema identifica automaticamente o tipo pelo período de competência.
+
+**4. Conciliação e Vínculo Manual**
+- O semáforo fica verde quando o match é automático.
+- Se o valor ou data divergirem, use o botão "Vincular" para ensinar o sistema.
+- A partir do vínculo, o status atualiza instantaneamente.
+
+Rodapé (dica verde): "Dica: Quanto mais lançamentos vinculados, mais preciso fica o semáforo de saúde do ativo."
+
+### 2. O que está desatualizado
+
+| Trecho | Problema | Origem |
 |---|---|---|
-| `schedule_activities` | **0** | 2 |
-| `deal_activities` | **9** (concentradas em 2 units) | 9 |
-| `property_activities` | 4 | 11 |
+| Passo 1, bullet 1: 'clique em "Configurar"' | Botão não existe mais; obrigações se editam dentro de "Gerenciar" → aba Obrigações | (a) |
+| Passo 1 em geral | Não menciona que a config de obrigações do imóvel agora **sincroniza nos dois sentidos** com o contrato ativo, nem o aviso/atalho de regenerar o PDF quando o contrato fica desatualizado | (d) |
+| Passos 3 e 4 ("aba Financeiro" / "aba Gerencial") | As abas de Gerenciar hoje são **Visão Geral / Obrigações / Fiscal / Atividades** — não existem abas com esses nomes; a distinção Financeiro vs Gerencial continua válida como conceito, mas a navegação descrita está errada | reorganização das abas |
+| Ausente | Fluxo "Nova Locação" agora abre a tela cheia de contrato pré-preenchida (`/gestao/contratos/novo` com unidade e inquilino), não popup | (b) |
+| Ausente | Aba Fiscal usa o CIB unificado do imóvel (`units.cib`) como fonte única | (c) |
+| Ausente | Aba Atividades passou a usar o mesmo padrão de `/gestao/manutencoes` (mesmos filtros, tabela e ações) + card colapsável de histórico comercial (CRM) | (e) |
 
-Leitura: `schedule_activities` é irrelevante nessa tela (zero linhas). `deal_activities` existe, mas é histórico de CRM **pré-locação** (a negociação que originou o contrato) concentrado em 2 unidades — é contexto, não operação de gestão. Além disso a aba atual **não tem** anexos, editar/excluir, toggle de concluído, filtros de tipo/contato/busca nem agrupamento — ou seja, o que se ganha é maior do que o que se perde.
-
-Também se perde o export CSV/PDF caseiro (ver item 5) e o formulário inline de nova atividade (substituído pelo `ActivityFormDialog`, que é superior).
-
-## 4. Recomendação
-
-Sua abordagem é sã. Recomendo com um ajuste:
-
-- Extrair **`src/components/assets/AssetActivitiesPanel.tsx`** com todo o miolo de `Manutencoes.tsx`, props: `scopeUnitId?`, `scopePropertyId?`, `showHeader?`, `assetLabel?`.
-- `Manutencoes.tsx` vira uma casca fina: `AppLayout` + header + `<AssetActivitiesPanel />` sem escopo.
-- Aba Atividades de `AlugueiDetalhe.tsx`: `<AssetActivitiesPanel scopeUnitId={unitId} />`, removendo ~270 linhas inline (queries, merge, filtros de data, form inline, exports).
-- **Plano B (deal_activities)**: em vez de uma seção separada permanente, recomendo um **bloco colapsável somente-leitura "Histórico comercial (CRM)"** renderizado **apenas quando `scopeUnitId` existe e há linhas** — some sozinho nas 15 de 17 unidades sem dados, e preserva a informação onde ela existe. `schedule_activities` pode ser **descartado** (0 linhas, e a agenda já tem tela própria) — ou incluído no mesmo bloco colapsável a custo quase zero, já que a query é trivial. Sugiro incluir para não perder nada.
-
-Melhor caminho do que criar mais um componente: nada de novo timeline. `AssetActivityTimeline.tsx` (audit_logs + anexos) continua onde está — ele resolve outro problema (trilha de auditoria), e não é substituído por esta fase.
-
-## 5. Relatório completo do imóvel (CSV/PDF caseiro → `RAReportConfigDialog`)
-
-Sim, dá pra trocar sem perda funcional relevante:
-
-- `RAReportConfigDialog` já aceita `preSelectedAssetIds` + `preSelectedAssetType` + `dateRange` + `formatLabel`, exatamente como `AssetActivityTimeline` usa hoje (linhas 925+).
-- Existem geradores para **PDF, Excel, CSV e DOCX** (`assetReportPdfGenerator/ExcelGenerator/CsvGenerator/DocxGenerator`), então o CSV atual está coberto — na verdade com mais formatos e com seções configuráveis (`AssetReportSections`).
-- Única diferença de conteúdo: o PDF caseiro lista as linhas de `deal_activities`/`schedule_activities` na tabela; o relatório RA é orientado a `property_activities` + dados do ativo. Dado o volume (item 3), é uma perda aceitável — e o bloco colapsável do item 4 mantém a informação visível na tela.
-
-Decisão proposta: substituir o dropdown "Exportar (CSV/PDF)" por um botão único **"Relatório do imóvel"** abrindo `RAReportConfigDialog` com `preSelectedAssetIds=[unitId]`, `preSelectedAssetType='unit'`, `dateRange` do filtro de período do painel.
-
-## Detalhes técnicos da execução (quando aprovado)
-
-1. Criar `src/components/assets/AssetActivitiesPanel.tsx` — move o corpo de `Manutencoes.tsx` (estado, query, `groupedRows`, `setCompleted`, `handleDelete`, `openEdit`, tabela, `ActivityFormDialog`, `AlertDialog`); adiciona props de escopo e o botão de relatório.
-2. Reescrever `src/pages/gestao/Manutencoes.tsx` como casca (`AppLayout` + header + painel sem escopo).
-3. Em `src/pages/gestao/AlugueiDetalhe.tsx`: remover as queries `schedule-activities-unit` / `deal-activities-unit` / `property-activities`, `allActivities`, `filteredActivities`, `exportActivitiesCSV`, `exportActivitiesPDF`, `handleSaveActivity`, o form inline e os estados associados; renderizar o painel escopado + o bloco colapsável de CRM/agenda.
-4. Manter `queryKey` `['activities-list', ...]` e as invalidações de `asset-manual-notes` para não quebrar sincronização com outras telas.
-5. Respeitar `canCreate`/permissões já usadas na aba atual ao renderizar as ações.
-6. Build + verificação visual das duas telas.
+Restam corretos e podem ser mantidos: passo 2 (Financeiro vs Gerencial), a lógica do semáforo e o "Vincular" da conciliação, e a dica final.
