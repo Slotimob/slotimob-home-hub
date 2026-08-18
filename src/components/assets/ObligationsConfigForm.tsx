@@ -213,15 +213,46 @@ export function ObligationsConfigForm({
         __meta: reviewedMeta,
       });
       setMeta(reviewedMeta);
+
+      // Sync reverso: propaga as obrigações do imóvel para o contrato ATIVO
+      let syncedLease = false;
+      if (activeLease && activeLease.status === "active") {
+        const patch = buildLeaseChargesFromObligationsConfig(
+          config as Record<string, any>,
+          {
+            dueDay: activeLease.due_day,
+            tenantContactId: activeLease.tenant_contact_id,
+            ownerContactId: activeLease.owner_contact_id,
+            fireInsurance: (activeLease as any).fire_insurance || null,
+            iptuCharge: (activeLease as any).iptu_charge || null,
+            additionalObligations: (activeLease as any).additional_obligations || null,
+          }
+        );
+        if (Object.keys(patch).length > 0) {
+          const { error: leaseError } = await supabase
+            .from("leases")
+            .update(patch as any)
+            .eq("id", activeLease.id);
+          if (leaseError) throw new Error(leaseError.message);
+          syncedLease = true;
+          setContractOutdated(true);
+          queryClient.invalidateQueries({ queryKey: ["lease", "unit", unitId] });
+          queryClient.invalidateQueries({ queryKey: ["leases"] });
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["asset-health"] });
       queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", unitId] });
       toast({
         title: "Configurações salvas",
-        description: wasPendingReview
+        description: syncedLease
+          ? "Obrigações atualizadas no imóvel e sincronizadas com o contrato ativo."
+          : wasPendingReview
           ? "Revisão confirmada. As obrigações herdadas do contrato foram validadas."
           : "As responsabilidades financeiras foram configuradas com sucesso.",
       });
       onSaved?.();
+
     } catch (error: any) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } finally {
