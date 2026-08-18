@@ -838,7 +838,7 @@ export function LeaseFinancialStep({
             )}
           </div>
 
-          {ADDITIONAL_OBLIGATIONS.map((meta) => {
+          {obligationOptions.map((meta) => {
             const cfg =
               additionalObligations.find((o) => o.type === meta.type) ||
               getInitialAdditionalObligation(meta.type);
