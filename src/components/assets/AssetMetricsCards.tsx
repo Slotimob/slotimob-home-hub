@@ -10,10 +10,12 @@ import {
   Calendar,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface AssetMetricsCardsProps {
   unitId: string;
@@ -22,9 +24,12 @@ interface AssetMetricsCardsProps {
 }
 
 export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetricsCardsProps) {
+  const { effectiveBrokerId } = useWorkspace();
+  const brokerId = effectiveBrokerId || undefined;
+
   // Fetch lease data for occupancy metrics
   const { data: activeLease } = useQuery({
-    queryKey: ["unit-active-lease", unitId],
+    queryKey: ["unit-active-lease", unitId, brokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leases")
@@ -42,13 +47,13 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
 
   // Fetch last ended lease for vacancy calculation
   const { data: lastLease } = useQuery({
-    queryKey: ["unit-last-lease", unitId],
+    queryKey: ["unit-last-lease", unitId, brokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leases")
         .select("id, end_date, status")
         .eq("unit_id", unitId)
-        .neq("status", "active")
+        .in("status", ["active", "terminated"])
         .order("end_date", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -61,7 +66,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
 
   // Fetch recent rental transactions for yield calculation
   const { data: rentalTransactions = [] } = useQuery({
-    queryKey: ["unit-rental-transactions", unitId],
+    queryKey: ["unit-rental-transactions", unitId, brokerId],
     queryFn: async () => {
       const sixMonthsAgo = format(addMonths(new Date(), -6), "yyyy-MM-dd");
       const { data, error } = await supabase
@@ -85,18 +90,19 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
     // Performance: Average yield
     let avgYield = 0;
     let yieldStatus: "good" | "warning" | "neutral" = "neutral";
+    let hasYieldData = false;
     
     if (rentAmount && marketValue && marketValue > 0) {
       const annualRent = rentAmount * 12;
       avgYield = (annualRent / marketValue) * 100;
       yieldStatus = avgYield >= 6 ? "good" : avgYield >= 4 ? "warning" : "neutral";
-    } else if (rentalTransactions.length >= 3) {
+      hasYieldData = true;
+    } else if (rentalTransactions.length >= 3 && marketValue && marketValue > 0) {
       const totalReceived = rentalTransactions.reduce((sum, t) => sum + t.amount, 0);
       const avgMonthly = totalReceived / rentalTransactions.length;
-      if (marketValue && marketValue > 0) {
-        avgYield = ((avgMonthly * 12) / marketValue) * 100;
-        yieldStatus = avgYield >= 6 ? "good" : avgYield >= 4 ? "warning" : "neutral";
-      }
+      avgYield = ((avgMonthly * 12) / marketValue) * 100;
+      yieldStatus = avgYield >= 6 ? "good" : avgYield >= 4 ? "warning" : "neutral";
+      hasYieldData = true;
     }
 
     // Occupancy
@@ -107,9 +113,16 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
     if (activeLease) {
       const startDate = parseISO(activeLease.start_date);
       const months = differenceInMonths(today, startDate);
-      occupancyLabel = months > 0 ? `Ocupado há ${months} meses` : "Ocupado recentemente";
+      const days = differenceInDays(today, startDate);
+      if (months > 0) {
+        occupancyLabel = `Ocupado há ${months} meses`;
+      } else if (days > 0) {
+        occupancyLabel = `Ocupado há ${days} dias`;
+      } else {
+        occupancyLabel = "Ocupado recentemente";
+      }
       occupancyStatus = "good";
-      occupancyDays = differenceInDays(today, startDate);
+      occupancyDays = days;
     } else if (lastLease?.end_date) {
       const endDate = parseISO(lastLease.end_date);
       const daysVacant = differenceInDays(today, endDate);
@@ -155,7 +168,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
     }
 
     return {
-      yield: { value: avgYield, status: yieldStatus },
+      yield: { value: avgYield, status: yieldStatus, hasData: hasYieldData },
       occupancy: { label: occupancyLabel, status: occupancyStatus, days: occupancyDays },
       nextAction: { label: nextActionLabel, date: nextActionDate, urgent: nextActionUrgent },
     };
@@ -175,22 +188,31 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
           <div className="flex items-start gap-3">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-              statusColors[metrics.yield.status]
+              metrics.yield.hasData ? statusColors[metrics.yield.status] : "text-muted-foreground bg-muted"
             )}>
-              <TrendingUp className="h-5 w-5" />
+              {metrics.yield.hasData ? (
+                <TrendingUp className="h-5 w-5" />
+              ) : (
+                <Info className="h-5 w-5" />
+              )}
             </div>
             <div className="flex-1 min-w-0 space-y-1">
               <p className="text-xs text-muted-foreground">Rendimento</p>
-              <p className="text-xl md:text-2xl font-bold break-words">
-                {metrics.yield.value > 0 
+              <p className={cn(
+                "text-xl md:text-2xl font-bold break-words",
+                !metrics.yield.hasData && "text-muted-foreground"
+              )}>
+                {metrics.yield.hasData 
                   ? `${metrics.yield.value.toFixed(1)}% a.a.`
                   : "—"
                 }
               </p>
               <p className="text-xs text-muted-foreground">
-                {metrics.yield.value >= 6 ? "Acima da média" : 
-                 metrics.yield.value >= 4 ? "Na média" : 
-                 metrics.yield.value > 0 ? "Abaixo da média" : "Sem dados"}
+                {metrics.yield.hasData
+                  ? (metrics.yield.value >= 6 ? "Acima da média" : 
+                     metrics.yield.value >= 4 ? "Na média" : 
+                     "Abaixo da média")
+                  : "Cadastre o valor de mercado"}
               </p>
             </div>
           </div>
