@@ -75,7 +75,7 @@ const plansMeta: PlanMeta[] = [
     tagline: 'Escale com equipe',
     units: '150 unidades',
     users: '4 usuários',
-    features: ['Tudo do Pro', 'Gestão de equipe', 'Roleta de leads', 'Split de comissões'],
+    features: ['Tudo do Pro', 'Gestão de equipe', 'Distribuição automática de leads do WhatsApp'],
     popular: false,
   },
 ];

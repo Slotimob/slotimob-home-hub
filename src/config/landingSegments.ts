@@ -37,7 +37,7 @@ export const SEGMENTS: Record<string, LandingSegment> = {
       highlightLine: 'corretores de elite usam.',
       subtitle: 'Pare de perder leads no vácuo. Centralize seu WhatsApp, automatize seu funil e venda 3x mais com a inteligência da SlotiMob.',
     },
-    socialProof: ['Roleta de leads automática', 'Histórico infinito de conversas', 'Chat unificado com IA'],
+    socialProof: ['Distribuição automática de leads do WhatsApp', 'Histórico infinito de conversas', 'Chat unificado com IA'],
   },
   proprietarios: {
     slug: 'proprietarios',
@@ -65,7 +65,7 @@ export const SEGMENTS: Record<string, LandingSegment> = {
       highlightLine: 'crescer com ordem.',
       subtitle: 'Distribua leads automaticamente para sua equipe e supervisione cada atendimento. Gestão completa do lead ao fechamento.',
     },
-    socialProof: ['Visão de supervisor (Master)', 'Distribuição Round Robin', 'Métricas de performance'],
+    socialProof: ['Visão de supervisor (Master)', 'Distribuição automática de leads do WhatsApp', 'Métricas de performance'],
   },
 };
 
