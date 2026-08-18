@@ -113,9 +113,16 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
     if (activeLease) {
       const startDate = parseISO(activeLease.start_date);
       const months = differenceInMonths(today, startDate);
-      occupancyLabel = months > 0 ? `Ocupado há ${months} meses` : "Ocupado recentemente";
+      const days = differenceInDays(today, startDate);
+      if (months > 0) {
+        occupancyLabel = `Ocupado há ${months} meses`;
+      } else if (days > 0) {
+        occupancyLabel = `Ocupado há ${days} dias`;
+      } else {
+        occupancyLabel = "Ocupado recentemente";
+      }
       occupancyStatus = "good";
-      occupancyDays = differenceInDays(today, startDate);
+      occupancyDays = days;
     } else if (lastLease?.end_date) {
       const endDate = parseISO(lastLease.end_date);
       const daysVacant = differenceInDays(today, endDate);
