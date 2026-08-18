@@ -199,8 +199,8 @@ export function buildLeaseChargesFromObligationsConfig(
     patch.fire_insurance = {
       total_amount: current?.total_amount ?? 0,
       installments: current?.installments ?? 12,
-      installment_amount: insurance.amount ?? current?.installment_amount ?? 0,
       ...(current || {}),
+
       ...linkOf(insurance, chargeTo),
       enabled,
       charge_to: chargeTo,
