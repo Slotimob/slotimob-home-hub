@@ -14,7 +14,7 @@ export default function LpDemo() {
           <div>
             <Reveal delay={60}>
               <h2 className="lp-display text-[38px] md:text-[64px] leading-none mb-6">
-                veja o sistema
+                conheça o sistema
                 <br />
                 <em className="lp-serif" style={{ fontStyle: 'italic', color: '#14D9B4' }}>antes</em> de assinar.
               </h2>
