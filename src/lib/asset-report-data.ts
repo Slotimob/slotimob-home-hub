@@ -274,6 +274,8 @@ export async function buildAssetReport(params: {
 
   let activitiesMap: Record<string, { count: number; byType: Record<string, number>; items: AssetReportActivity[] }> = {};
   if (sections.activities) {
+    const rawPerAsset: Record<string, { logs: AuditLog[]; notes: any[] }> = {};
+
     const loadActivities = async (id: string, kind: 'property' | 'unit') => {
       const metaKey = kind === 'property' ? 'property_id' : 'unit_id';
       const tableName = kind === 'property' ? 'properties' : 'units';
@@ -298,7 +300,7 @@ export async function buildAssetReport(params: {
           .limit(500),
         supabase
           .from('property_activities')
-          .select('id, title, scheduled_at, created_at')
+          .select('id, title, scheduled_at, created_at, broker_id')
           .eq(metaKey, id)
           .order('created_at', { ascending: false })
           .limit(500),
@@ -309,10 +311,40 @@ export async function buildAssetReport(params: {
         logMap.set((l as any).id, l as unknown as AuditLog);
       }
 
+      rawPerAsset[id] = { logs: [...logMap.values()], notes: (notesRes.data || []) as any[] };
+    };
+
+    await Promise.all([
+      ...propertyIds.map(pid => loadActivities(pid, 'property')),
+      ...unitIds.map(uid => loadActivities(uid, 'unit')),
+    ]);
+
+    // ── Resolve nomes de usuário: prioriza actor_user_id, fallback broker_id ──
+    const userIds = new Set<string>();
+    for (const { logs, notes } of Object.values(rawPerAsset)) {
+      for (const l of logs) {
+        if (l.actor_user_id) userIds.add(l.actor_user_id);
+        else if (l.broker_id) userIds.add(l.broker_id);
+      }
+      for (const n of notes) if (n.broker_id) userIds.add(n.broker_id);
+    }
+
+    const nameMap: Record<string, string> = {};
+    if (userIds.size > 0) {
+      const { data: profiles = [] } = await (supabase as any)
+        .from('profile_directory')
+        .select('id, full_name')
+        .in('id', [...userIds]);
+      (profiles || []).forEach((p: any) => { nameMap[p.id] = p.full_name || 'Usuário'; });
+    }
+    const resolveName = (log: AuditLog) =>
+      nameMap[log.actor_user_id || ''] || nameMap[log.broker_id || ''] || 'Sistema';
+
+    for (const [id, { logs, notes }] of Object.entries(rawPerAsset)) {
       const byType: Record<string, number> = {};
       const items: AssetReportActivity[] = [];
 
-      for (const log of logMap.values()) {
+      for (const log of logs) {
         const groupKey = Object.keys(EVENT_GROUPS).find(k => EVENT_GROUPS[k].match(log));
         const groupLabel = groupKey ? EVENT_GROUPS[groupKey].label : 'Outros';
         byType[groupLabel] = (byType[groupLabel] || 0) + 1;
@@ -320,10 +352,14 @@ export async function buildAssetReport(params: {
           date: log.created_at,
           group: groupLabel,
           description: humanizeLog(log),
+          user_name: resolveName(log),
+          changes: getChangedFields(log),
+          action: log.action ?? null,
+          table_label: TABLE_LABELS[log.table_name] ?? log.table_name ?? null,
         });
       }
 
-      for (const note of (notesRes.data || []) as any[]) {
+      for (const note of notes) {
         const d = note.scheduled_at || note.created_at;
         if (!d) continue;
         const dayStr = String(d).slice(0, 10);
@@ -333,6 +369,10 @@ export async function buildAssetReport(params: {
           date: d,
           group: 'Notas manuais',
           description: note.title || 'Nota manual',
+          user_name: nameMap[note.broker_id] || 'Sistema',
+          changes: [],
+          action: null,
+          table_label: 'Nota manual',
         });
       }
 
@@ -343,13 +383,9 @@ export async function buildAssetReport(params: {
         byType,
         items: items.slice(0, ACTIVITIES_REPORT_LIMIT),
       };
-    };
-
-    await Promise.all([
-      ...propertyIds.map(pid => loadActivities(pid, 'property')),
-      ...unitIds.map(uid => loadActivities(uid, 'unit')),
-    ]);
+    }
   }
+
 
   // ── Manutenções / atividades registradas manualmente ──
   const maintenanceMap: Record<string, AssetReportMaintenanceItem[]> = {};
