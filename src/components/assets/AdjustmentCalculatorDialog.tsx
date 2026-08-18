@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { PercentInput } from "@/components/ui/currency-input";
+import { calculateRentAdjustment } from "@/lib/rentAdjustment";
 
 interface LeaseForAdjustment {
   id: string;
@@ -128,8 +129,9 @@ export function AdjustmentCalculatorDialog({
 
   const currentValue = lease?.rent_amount ?? 0;
   const percentage = parseFloat(indexPercentage) || 0;
-  const newValue = currentValue * (1 + percentage / 100);
-  const difference = newValue - currentValue;
+  // Shared math: keeps every decimal of the index and rounds money to cents
+  // before it is persisted (lease_adjustments / leases / financial_transactions).
+  const { newRent: newValue, difference } = calculateRentAdjustment(currentValue, percentage);
   const indexKey = lease?.adjustment_index || "IGPM";
   const indexSource = INDEX_SOURCES[indexKey] || INDEX_SOURCES.IGPM;
 

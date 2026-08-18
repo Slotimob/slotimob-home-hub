@@ -53,8 +53,7 @@ export const ReajusteAluguelCalculator = () => {
       return;
     }
 
-    const newRent = currentRent * (1 + indexPercent / 100);
-    const adjustmentAmount = newRent - currentRent;
+    const { newRent, difference: adjustmentAmount } = calculateRentAdjustment(currentRent, indexPercent);
 
     setResult({
       newRent,
