@@ -722,6 +722,15 @@ const AlugueiDetalhe = () => {
 
   const handleSaveCib = () => updateCibMutation.mutate(cibValue);
 
+  const handleCreateLease = () => {
+    if (!unitId) return;
+    const params = new URLSearchParams();
+    params.set("unitId", unitId);
+    const tenantId = unitData?.tenant_contact_id;
+    if (tenantId) params.set("tenantId", tenantId);
+    navigate(`/gestao/contratos/novo?${params.toString()}`);
+  };
+
   // ----- Loading / Not found -----
   if (loading || !user) return null;
 
