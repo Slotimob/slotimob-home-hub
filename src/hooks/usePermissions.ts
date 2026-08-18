@@ -47,6 +47,7 @@ export const PERMISSION_MODULES_KEYS = [
   'assets_standalone',
   // Financeiro
   'finance_overview',
+  'finance_bank_accounts',
   'finance_transactions',
   'finance_dre',
   'finance_reconciliation',

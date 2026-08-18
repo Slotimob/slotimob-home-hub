@@ -173,6 +173,7 @@ export function AppSidebar() {
       moduleKey: 'finance_overview', // group-level: visible if any finance_* is granted
       items: [
         { title: 'Visão Geral', url: '/finance', moduleKey: 'finance_overview' },
+        { title: 'Bancos', url: '/finance/bancos', moduleKey: 'finance_bank_accounts' },
         { title: 'DRE', url: '/finance/dre', moduleKey: 'finance_dre' },
         { title: 'Lançamentos', url: '/finance/transactions', moduleKey: 'finance_transactions' },
         { title: 'Conciliação', url: '/finance/reconciliation', moduleKey: 'finance_reconciliation' },
