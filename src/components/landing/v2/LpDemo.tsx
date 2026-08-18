@@ -14,7 +14,7 @@ export default function LpDemo() {
           <div>
             <Reveal delay={60}>
               <h2 className="lp-display text-[38px] md:text-[64px] leading-none mb-6">
-                veja o sistema
+                conheça o sistema
                 <br />
                 <em className="lp-serif" style={{ fontStyle: 'italic', color: '#14D9B4' }}>antes</em> de assinar.
               </h2>
@@ -46,13 +46,20 @@ export default function LpDemo() {
               </ul>
             </Reveal>
             <Reveal delay={180}>
-              <Link
-                to="/checkout?plan=pro&trial=true"
-                className="lp-btn lp-btn-primary inline-flex items-center gap-2"
-                style={{ background: '#FFFFFF', color: '#0B0073' }}
-              >
-                começar trial grátis <ArrowUpRight className="w-4 h-4" />
-              </Link>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  to="/presentation"
+                  className="lp-btn lp-btn-primary inline-flex items-center gap-2"
+                >
+                  conheça o tour <ArrowUpRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  to="/checkout?plan=pro&trial=true"
+                  className="lp-btn lp-btn-ghost inline-flex items-center gap-2"
+                >
+                  começar trial grátis
+                </Link>
+              </div>
             </Reveal>
           </div>
 
