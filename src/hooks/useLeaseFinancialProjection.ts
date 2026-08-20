@@ -2,14 +2,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { format } from "date-fns";
-import type { PlannedInstallment, PlannedObligation } from "@/lib/lease-projection";
+import { format, getDate, parseISO } from "date-fns";
+import {
+  calculateDueDate,
+  type PlannedInstallment,
+  type PlannedObligation,
+} from "@/lib/lease-projection";
 
 export interface LeaseProjectionParams {
   leaseId: string;
   unitId: string;
   tenantContactId: string;
   propertyId?: string | null;
+  /** Data de início do contrato: define o DIA do mês usado na data de emissão. */
+  leaseStartDate?: string | null;
   /** Parcelas já confirmadas pelo usuário no dialog. Nada é inserido sem isso. */
   installments: PlannedInstallment[];
 }
@@ -108,17 +114,31 @@ export function useLeaseFinancialProjection() {
     mutationFn: async (params: LeaseProjectionParams): Promise<{ count: number }> => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { leaseId, unitId, tenantContactId, propertyId, installments } = params;
+      const { leaseId, unitId, tenantContactId, propertyId, leaseStartDate, installments } =
+        params;
 
       if (!installments || installments.length === 0) return { count: 0 };
 
       // Idempotência por competência: recarrega o estado atual e descarta duplicatas.
       const existing = await fetchExistingCompetencies(leaseId);
-      const toInsert = installments.filter((i) => !existing.has(i.key));
+      const toInsert = installments.filter((i) => !existing.has(i.dedupKey ?? i.key));
 
       if (toInsert.length === 0) return { count: 0 };
 
       const categoryIds = await resolveCategoryIds();
+
+      /**
+       * Data de emissão (regime de competência): dia do mês em que o contrato começou,
+       * aplicado dentro do mês de competência do lançamento. O clamp de meses curtos
+       * reaproveita `calculateDueDate` (ex.: contrato dia 31 + fevereiro => 28/29).
+       */
+      const contractDay = leaseStartDate ? getDate(parseISO(leaseStartDate)) : null;
+      const resolveTransactionDate = (i: PlannedInstallment): string => {
+        if (!contractDay || !/^\d{4}-\d{2}$/.test(i.competencyPeriod)) return i.dueDate;
+        const competencyMonth = parseISO(`${i.competencyPeriod}-01`);
+        if (Number.isNaN(competencyMonth.getTime())) return i.dueDate;
+        return format(calculateDueDate(competencyMonth, contractDay), "yyyy-MM-dd");
+      };
 
       const transactions: FinancialTransaction[] = toInsert.map((i) => ({
         broker_id: effectiveBrokerId || user.id,
@@ -127,7 +147,7 @@ export function useLeaseFinancialProjection() {
         type: "income",
         description: i.description,
         amount: i.amount,
-        transaction_date: i.dueDate,
+        transaction_date: resolveTransactionDate(i),
         due_date: i.dueDate,
         status: "pending",
         obligation_type: i.obligationType,
