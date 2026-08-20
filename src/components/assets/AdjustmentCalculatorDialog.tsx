@@ -70,12 +70,15 @@ interface AdjustmentCalculatorDialogProps {
   isUrgent?: boolean; // Shows if this is an overdue or current month adjustment
 }
 
-const INDEX_LABELS: Record<string, string> = {
-  IGPM: "IGP-M",
-  IPCA: "IPCA",
-  INPC: "INPC",
-  Fixo: "Fixo",
+const INDEX_SOURCES: Record<string, { url: string; label: string }> = {
+  IGPM: { url: "https://www.ibge.gov.br/", label: "Consultar IGP-M (FGV)" },
+  IPCA: { url: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html", label: "Consultar IPCA (IBGE)" },
+  INPC: { url: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9258-indice-nacional-de-precos-ao-consumidor.html", label: "Consultar INPC (IBGE)" },
+  Fixo: { url: "#", label: "Índice Fixo" },
 };
+
+const brl = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function AdjustmentCalculatorDialog({
   open,
@@ -124,17 +127,25 @@ export function AdjustmentCalculatorDialog({
 
   const canProject = missingFields.length === 0;
 
+  // Preview usa a mesma janela que a geração real em ConfirmLeaseProjectionDialog.
   const projectionPreview = useMemo(() => {
     if (!lease || !canProject || !lease.due_day) return null;
-    const today = new Date();
-    const firstDue = firstDueDateAfter(today, lease.due_day);
-    const endDate = lease.end_date ? parseISO(lease.end_date) : null;
+    const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+    const nextAdjustmentDate = format(
+      addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+      "yyyy-MM-dd"
+    );
+    const window = calculateProjectionWindow({
+      startDate: currentAdjustmentDate,
+      endDate: lease.end_date,
+      nextAdjustmentDate,
+      isIndefiniteTerm: lease.is_indefinite_term,
+    });
+    const firstDue = window.start ? calculateDueDate(window.start, lease.due_day) : null;
+    const endDate = window.end;
     const indefinite = !!lease.is_indefinite_term || !endDate;
-    const installments =
-      !indefinite && endDate
-        ? Math.max(0, differenceInCalendarMonths(endDate, firstDue) + 1)
-        : null;
-    return { firstDue, endDate, indefinite, installments };
+    const installments = window.blocked ? 0 : window.months;
+    return { firstDue, endDate, indefinite, installments, reasonLabel: window.reasonLabel };
   }, [lease, canProject]);
 
   if (!lease) return null;
