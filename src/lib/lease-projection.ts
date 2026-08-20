@@ -187,6 +187,8 @@ export type PlannedObligation = "rent" | "fire_insurance" | "iptu";
 export interface PlannedInstallment {
   /** Chave estável para checkbox/dedup na UI. */
   key: string;
+  /** Chave de idempotência por competência (`tipo:yyyy-MM`). Default: igual a `key`. */
+  dedupKey?: string;
   obligationType: PlannedObligation;
   competencyPeriod: string;
   competencyLabel: string;
@@ -236,6 +238,7 @@ export function buildRentInstallments({
 
     result.push({
       key: `rent:${competencyPeriod}`,
+      dedupKey: `rent:${competencyPeriod}`,
       obligationType: "rent",
       competencyPeriod,
       competencyLabel: monthLabel(competencyDate),
@@ -258,6 +261,12 @@ export interface BuildChargeInstallmentsInput {
   /** Fallback quando a config não tem primeiro vencimento. */
   fallbackStartDate: string | Date;
   fallbackDueDay: number;
+  /**
+   * Competência FIXA de referência do ciclo anual (data de início do ciclo/janela).
+   * IPTU/seguro são obrigações anuais: mesmo parceladas em N vezes, todas as parcelas
+   * pertencem à MESMA competência. Default: `fallbackStartDate`.
+   */
+  cycleStartDate?: string | Date | null;
   existingCompetencies?: Set<string>;
 }
 
@@ -269,6 +278,7 @@ export function buildChargeInstallments({
   firstDueDate,
   fallbackStartDate,
   fallbackDueDay,
+  cycleStartDate,
   existingCompetencies,
 }: BuildChargeInstallmentsInput): PlannedInstallment[] {
   const count = Math.max(0, Math.floor(installments));
@@ -278,25 +288,33 @@ export function buildChargeInstallments({
     toDate(firstDueDate) ??
     calculateDueDate(toDate(fallbackStartDate) ?? new Date(), fallbackDueDay);
   const dueDay = getDate(first);
+
+  // Competência única do ciclo: início da janela/contrato (fallback: 1º vencimento).
+  const cycleBase =
+    toDate(cycleStartDate ?? null) ?? toDate(fallbackStartDate) ?? first;
+  const competencyDate = startOfMonth(cycleBase);
+  const competencyPeriod = format(competencyDate, "yyyy-MM");
+  const dedupKey = `${obligationType}:${competencyPeriod}`;
+  const alreadyExists = existingCompetencies?.has(dedupKey) ?? false;
+
   const result: PlannedInstallment[] = [];
 
   for (let i = 0; i < count; i++) {
     const dueDate = calculateDueDate(addMonths(first, i), dueDay);
-    const competencyPeriod = format(dueDate, "yyyy-MM");
-    const key = `${obligationType}:${competencyPeriod}`;
 
     result.push({
-      key,
+      key: `${dedupKey}:${i + 1}`,
+      dedupKey,
       obligationType,
       competencyPeriod,
-      competencyLabel: monthLabel(dueDate),
+      competencyLabel: monthLabel(competencyDate),
       dueDate: format(dueDate, "yyyy-MM-dd"),
       amount: installmentAmount,
       description:
         count > 1
-          ? `${label} ${i + 1}/${count} — ${monthLabel(dueDate)}`
-          : `${label} — ${monthLabel(dueDate)}`,
-      alreadyExists: existingCompetencies?.has(key) ?? false,
+          ? `${label} ${i + 1}/${count} — ${monthLabel(competencyDate)}`
+          : `${label} — ${monthLabel(competencyDate)}`,
+      alreadyExists,
     });
   }
 
