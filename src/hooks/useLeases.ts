@@ -461,7 +461,11 @@ export function useCreateLease() {
       // em ConfirmLeaseProjectionDialog (ver src/lib/lease-projection.ts).
       const projectionsGenerated = 0;
 
+      // Sincronização best-effort do status da unidade (sugestão automática)
+      await syncUnitStatusForLease(data.unit_id);
+
       return { lease, projectionsGenerated };
+
     },
     onSuccess: async () => {
       await invalidateLeaseQueries(queryClient);
