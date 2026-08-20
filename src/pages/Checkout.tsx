@@ -761,9 +761,10 @@ export default function Checkout() {
               )}
             </div>
 
-            <p className="text-xs text-muted-foreground text-center">
-              🔒 7 dias grátis · sem cartão · cancele quando quiser
-            </p>
+            <div className="flex items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-medium text-foreground">
+              <Lock className="h-5 w-5 text-accent" />
+              <span>7 dias grátis · sem cartão · cancele quando quiser</span>
+            </div>
           </div>
 
           {/* RIGHT — Account + Payment + CTA */}
