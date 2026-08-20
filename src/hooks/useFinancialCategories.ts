@@ -89,7 +89,7 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
 
       // Insert default categories with enforced colors
       const categoriesToInsert = DEFAULT_FINANCIAL_CATEGORIES.map(cat => ({
-        broker_id: effectiveBrokerId || user.id,
+        broker_id: brokerId,
         name: cat.name,
         type: cat.type,
         category_group: cat.group,
@@ -99,9 +99,13 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
         is_default: true,
       }));
 
+      // Upsert idempotente: corridas paralelas não geram duplicatas nem erro
       const { error } = await supabase
         .from("financial_categories")
-        .insert(categoriesToInsert);
+        .upsert(categoriesToInsert, {
+          onConflict: "broker_id,name,type",
+          ignoreDuplicates: true,
+        });
 
       if (error) throw error;
     },
