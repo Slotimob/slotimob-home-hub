@@ -405,13 +405,28 @@ export default function Checkout() {
 
       if (fiscalFnError || fiscalData?.error) {
         const captchaMessage = translateCaptchaError(fiscalFnError) ?? translateCaptchaError(fiscalData?.error);
-        const msg = captchaMessage || fiscalData?.error || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
-        setCheckoutError(msg);
-        if (captchaMessage) {
-          toast.error('Verificação de segurança', { description: captchaMessage });
+        const rawMsg = fiscalData?.error || fiscalFnError?.message || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
+        const isDuplicateFiscal = isDuplicateFiscalError(rawMsg) || isDuplicateFiscalError(fiscalFnError?.message);
+
+        if (isDuplicateFiscal && currentUserId) {
+          setCheckoutError(
+            'Este CPF/CNPJ já está cadastrado em outra conta. Sua conta do Slotimob já foi criada — você pode corrigir seus dados fiscais depois em Configurações, ou entrar no painel agora.'
+          );
+          setFiscalDuplicateAccountError(true);
+          toast.error('Dados fiscais duplicados', {
+            description: 'Sua conta já foi criada. Corrija o CPF/CNPJ em Configurações ou entre no painel.',
+          });
         } else {
-          toast.error(msg);
+          const msg = captchaMessage || rawMsg;
+          setCheckoutError(msg);
+          setFiscalDuplicateAccountError(false);
+          if (captchaMessage) {
+            toast.error('Verificação de segurança', { description: captchaMessage });
+          } else {
+            toast.error(msg);
+          }
         }
+
         setIsCheckingOut(false);
         resetCaptcha();
         return;
