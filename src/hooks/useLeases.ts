@@ -7,6 +7,8 @@ import { useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
 import { format } from "date-fns";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import { syncUnitStatusForLease } from "@/lib/unit-status-sync";
+
 
 export interface GuarantorData {
   nome: string;
@@ -459,7 +461,11 @@ export function useCreateLease() {
       // em ConfirmLeaseProjectionDialog (ver src/lib/lease-projection.ts).
       const projectionsGenerated = 0;
 
+      // Sincronização best-effort do status da unidade (sugestão automática)
+      await syncUnitStatusForLease(data.unit_id);
+
       return { lease, projectionsGenerated };
+
     },
     onSuccess: async () => {
       await invalidateLeaseQueries(queryClient);
@@ -488,12 +494,20 @@ export function useUpdateLease() {
           (data.additional_obligations as unknown as Json) ?? [];
       }
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("leases")
         .update(updateData)
-        .eq("id", id);
+        .eq("id", id)
+        .select("unit_id")
+        .maybeSingle();
 
       if (error) throw new Error(error.message || error.details || "Erro ao salvar");
+
+      // Sincronização best-effort do status da unidade quando o status do contrato muda
+      if (data.status !== undefined && updated?.unit_id) {
+        await syncUnitStatusForLease(updated.unit_id);
+      }
+
     },
     onSuccess: async () => {
       await invalidateLeaseQueries(queryClient);
@@ -607,7 +621,11 @@ export function useTerminateLease() {
         // Don't throw - lease was already terminated
       }
 
+      // Sincronização best-effort do status da unidade (sugestão automática)
+      await syncUnitStatusForLease(lease.unit_id);
+
       return { deletedTransactions: deletedCount };
+
     },
     onSuccess: async () => {
       await invalidateLeaseQueries(queryClient);

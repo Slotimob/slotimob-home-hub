@@ -62,10 +62,38 @@ export const DealClosingDialog = ({
   // Calculate commission
   const commissionValue = (saleValue * commissionRate) / 100;
 
+  // Intent type da unidade (desempate quando o deal não tem business_type explícito)
+  const [unitIntentType, setUnitIntentType] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const unitId = deal?.unit?.id;
+    if (!open || !unitId) {
+      setUnitIntentType(null);
+      return;
+    }
+    supabase
+      .from('units')
+      .select('intent_type')
+      .eq('id', unitId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setUnitIntentType((data as any)?.intent_type ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, deal?.unit?.id]);
+
   // Get business type label
-  const businessType = (deal as any)?.business_type || 'sale';
-  const statusLabel = businessType === 'rental' ? 'Alugado' : 'Vendido';
-  const statusValue = businessType === 'rental' ? 'rented' : 'sold';
+  const explicitBusinessType = (deal as any)?.business_type as string | undefined;
+  const isRentalDeal = explicitBusinessType
+    ? explicitBusinessType === 'rental'
+    : unitIntentType === 'rental';
+  const businessType = isRentalDeal ? 'rental' : 'sale';
+  const statusLabel = isRentalDeal ? 'Alugado' : 'Vendido';
+  const statusValue = isRentalDeal ? 'rented' : 'sold';
+
 
   // Check if this deal can be converted to a lease
   const canCreateLease = businessType === 'rental' && deal?.unit?.id;
