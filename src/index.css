@@ -371,89 +371,10 @@ All colors MUST be HSL.
   100% { transform: translateX(200%); }
 }
 
-/* Rotating glow effect for cards */
-@keyframes border-rotate {
-  0% {
-    --angle: 0deg;
-  }
-  100% {
-    --angle: 360deg;
-  }
-}
-
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-:root {
-  --glow-intensity: 0.5;
-  --glow-color-rgb: var(--primary-rgb);
-  --stage-glow-rgb: var(--primary-rgb);
-  --card-glow-rgb: var(--glow-color-rgb, var(--primary-rgb));
-}
-
+/* .card-glow-hover is kept as a neutral class for backwards compatibility.
+   The animated rotating glow effect has been removed per product decision. */
 .card-glow-hover {
-  @apply relative transition-all duration-300;
-  --card-glow-rgb: var(--glow-color-rgb, var(--primary-rgb));
-}
-
-/* Color variants for glow */
-.glow-green { --card-glow-rgb: 34, 197, 94; }
-.glow-blue { --card-glow-rgb: 59, 130, 246; }
-.glow-yellow { --card-glow-rgb: 234, 179, 8; }
-.glow-red { --card-glow-rgb: 239, 68, 68; }
-.glow-purple { --card-glow-rgb: 168, 85, 247; }
-.glow-pink { --card-glow-rgb: 236, 72, 153; }
-.glow-orange { --card-glow-rgb: 249, 115, 22; }
-.glow-indigo { --card-glow-rgb: 99, 102, 241; }
-.glow-cyan { --card-glow-rgb: 6, 182, 212; }
-.glow-teal { --card-glow-rgb: 20, 184, 166; }
-
-.card-glow-hover::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: calc(var(--radius) + 2px);
-  padding: 2px;
-  background: conic-gradient(
-    from var(--angle, 0deg) at 50% 50%,
-    transparent 0deg,
-    transparent 60deg,
-    rgba(var(--card-glow-rgb), calc(0.5 * var(--glow-intensity))) 90deg,
-    rgba(var(--card-glow-rgb), calc(0.8 * var(--glow-intensity))) 120deg,
-    rgba(var(--card-glow-rgb), calc(0.5 * var(--glow-intensity))) 150deg,
-    transparent 180deg,
-    transparent 360deg
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.card-glow-hover:hover::before {
-  opacity: 1;
-  animation: border-rotate 3s linear infinite;
-}
-
-.card-glow-hover:hover {
-  @apply -translate-y-0.5;
-  box-shadow: 0 4px 20px -4px rgba(var(--card-glow-rgb), calc(0.15 * var(--glow-intensity)));
-}
-
-/* Disable glow when intensity is 0 */
-.glow-disabled .card-glow-hover::before,
-.glow-disabled .card-glow-hover:hover::before {
-  display: none;
-}
-
-.glow-disabled .card-glow-hover:hover {
-  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
+  /* no visual effect */
 }
 
 /* Pipeline styled horizontal scrollbar */
