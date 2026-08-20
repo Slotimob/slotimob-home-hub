@@ -557,6 +557,10 @@ export function ContractsTab() {
       
       if (error) throw error;
 
+      // Sincronização best-effort do status da unidade
+      await syncUnitStatusForLease(deletingLease.unit_id);
+
+
       toast.success("Contrato excluído com sucesso", {
         description: "O registro foi removido permanentemente do banco de dados.",
       });
