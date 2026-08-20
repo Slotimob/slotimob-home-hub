@@ -97,6 +97,12 @@ const ADDONS = [
   { id: 'extra-user', label: '+1 usuário', price: 49.9 },
 ];
 
+const DUPLICATE_FISCAL_ERROR_FRAGMENT = 'cpf/cnpj já está cadastrado em outra conta';
+
+const isDuplicateFiscalError = (msg?: string | null): boolean =>
+  !!msg && msg.toLowerCase().includes(DUPLICATE_FISCAL_ERROR_FRAGMENT);
+
+
 // ============================================================================
 // Google icon
 // ============================================================================
