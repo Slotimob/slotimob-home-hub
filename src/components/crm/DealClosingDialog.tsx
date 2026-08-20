@@ -397,7 +397,7 @@ export const DealClosingDialog = ({
           )}
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0 px-6 py-4 border-t bg-background">
           <Button variant="outline" onClick={handleSkip} className="w-full sm:w-auto">
             Pular
           </Button>
