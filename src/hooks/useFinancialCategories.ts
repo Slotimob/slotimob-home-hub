@@ -25,6 +25,10 @@ interface CategoryWithMeta {
   tooltip?: string;
 }
 
+// Module-level guard: garante que o auto-seed rode apenas UMA vez por sessão,
+// mesmo com várias instâncias do hook montadas simultaneamente na mesma tela.
+const autoSeedAttempted = new Set<string>();
+
 export function useFinancialCategories(type?: 'income' | 'expense') {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -69,16 +73,19 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
+      const brokerId = effectiveBrokerId || user.id;
+
       // Check if user already has categories
       const { data: existing } = await supabase
         .from("financial_categories")
         .select("id")
-        .eq("broker_id", user.id)
+        .eq("broker_id", brokerId)
         .limit(1);
 
       if (existing && existing.length > 0) {
         throw new Error("Categorias já existem para este usuário");
       }
+
 
       // Insert default categories with enforced colors
       const categoriesToInsert = DEFAULT_FINANCIAL_CATEGORIES.map(cat => ({
