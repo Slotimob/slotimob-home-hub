@@ -7,9 +7,11 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  /* Tema: Branco e Verde */
+  /* ===== Tema Claro (base: antigo "light-green") ===== */
+  :root,
+  :root[data-theme="light"],
   :root[data-theme="light-green"] {
-    --background: 0 0% 97%;
+    --background: 246 22% 92%;
     --foreground: 246 100% 23%;
     --card: 0 0% 100%;
     --card-foreground: 246 100% 23%;
@@ -20,23 +22,23 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%;
     --secondary: 170 62% 49%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 246 30% 96%;
-    --muted-foreground: 246 20% 50%;
+    --muted: 246 25% 95%;
+    --muted-foreground: 246 20% 45%;
     --accent: 170 85% 45%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 246 20% 88%;
-    --input: 246 20% 88%;
+    --border: 246 20% 85%;
+    --input: 246 20% 85%;
     --ring: 170 62% 49%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 246 100% 23%;
     --sidebar-primary: 246 100% 23%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 170 62% 95%;
     --sidebar-accent-foreground: 246 100% 23%;
-    --sidebar-border: 246 20% 88%;
+    --sidebar-border: 246 20% 85%;
     --sidebar-ring: 170 62% 49%;
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -49,126 +51,8 @@ All colors MUST be HSL.
     --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(170, 62%, 49%));
   }
 
-  /* Tema: Branco e Azul */
-  :root[data-theme="light-blue"] {
-    --background: 0 0% 97%;
-    --foreground: 246 100% 23%;
-    --card: 0 0% 100%;
-    --card-foreground: 246 100% 23%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 246 100% 23%;
-    --primary: 246 100% 23%;
-    --primary-rgb: 23, 0, 117;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 246 100% 23%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 246 30% 96%;
-    --muted-foreground: 246 20% 50%;
-    --accent: 246 100% 23%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 246 20% 88%;
-    --input: 246 20% 88%;
-    --ring: 246 100% 23%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 246 100% 23%;
-    --sidebar-primary: 246 100% 23%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 246 100% 95%;
-    --sidebar-accent-foreground: 246 100% 23%;
-    --sidebar-border: 246 20% 88%;
-    --sidebar-ring: 246 100% 23%;
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --info: 246 100% 23%;
-    --info-foreground: 0 0% 100%;
-    --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(246, 100%, 23%));
-    --gradient-secondary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(246, 100%, 23%));
-    --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(246, 100%, 23%));
-  }
-
-  /* Tema: Branco e Roxo */
-  :root[data-theme="light-purple"] {
-    --background: 0 0% 97%;
-    --foreground: 246 100% 23%;
-    --card: 0 0% 100%;
-    --card-foreground: 246 100% 23%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 246 100% 23%;
-    --primary: 246 100% 23%;
-    --primary-rgb: 23, 0, 117;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 170 62% 49%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 246 30% 96%;
-    --muted-foreground: 246 20% 50%;
-    --accent: 267 75% 40%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 246 20% 88%;
-    --input: 246 20% 88%;
-    --ring: 267 75% 40%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 246 100% 23%;
-    --sidebar-primary: 246 100% 23%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 267 75% 95%;
-    --sidebar-accent-foreground: 246 100% 23%;
-    --sidebar-border: 246 20% 88%;
-    --sidebar-ring: 267 75% 40%;
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --info: 170 62% 49%;
-    --info-foreground: 0 0% 100%;
-    --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(267, 75%, 40%));
-    --gradient-secondary: linear-gradient(135deg, hsl(267, 75%, 40%), hsl(170, 62%, 49%));
-    --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(267, 75%, 40%), hsl(170, 62%, 49%));
-  }
-
-  /* Tema: Modo Escuro com Verde (padrão: roxo → verde) */
-  :root[data-theme="dark-green"] {
-    --background: 246 50% 8%;
-    --foreground: 0 0% 98%;
-    --card: 246 40% 12%;
-    --card-foreground: 0 0% 98%;
-    --popover: 246 40% 12%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 170 62% 60%;
-    --primary-rgb: 69, 201, 183;
-    --primary-foreground: 246 100% 15%;
-    --secondary: 170 62% 60%;
-    --secondary-foreground: 246 100% 15%;
-    --muted: 246 30% 20%;
-    --muted-foreground: 246 15% 70%;
-    --accent: 170 85% 50%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 246 30% 25%;
-    --input: 246 30% 25%;
-    --ring: 170 62% 60%;
-    --sidebar-background: 246 50% 8%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 170 62% 60%;
-    --sidebar-primary-foreground: 246 100% 15%;
-    --sidebar-accent: 246 40% 18%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 246 30% 25%;
-    --sidebar-ring: 170 62% 60%;
-    --gradient-primary: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(170, 62%, 55%));
-    --gradient-secondary: linear-gradient(135deg, hsl(170, 62%, 55%), hsl(170, 62%, 55%));
-    --gradient-full: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(170, 62%, 55%));
-  }
-
-  /* Tema: Modo Escuro com Roxo */
+  /* ===== Tema Escuro (base: antigo "dark-purple") ===== */
+  :root[data-theme="dark"],
   :root[data-theme="dark-purple"] {
     --background: 246 50% 8%;
     --foreground: 0 0% 98%;
@@ -190,6 +74,7 @@ All colors MUST be HSL.
     --border: 246 30% 25%;
     --input: 246 30% 25%;
     --ring: 267 75% 65%;
+    --radius: 0.5rem;
     --sidebar-background: 246 50% 8%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 267 75% 65%;
@@ -198,53 +83,18 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 246 30% 25%;
     --sidebar-ring: 267 75% 65%;
-    --gradient-primary: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(267, 75%, 50%));
-    --gradient-secondary: linear-gradient(135deg, hsl(267, 75%, 50%), hsl(170, 62%, 55%));
-    --gradient-full: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(267, 75%, 50%), hsl(170, 62%, 55%));
-  }
-
-  /* Fallback para root sem data-theme (usar tema padrão light-purple) */
-  :root {
-    --background: 0 0% 97%;
-    --foreground: 246 100% 23%;
-    --card: 0 0% 100%;
-    --card-foreground: 246 100% 23%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 246 100% 23%;
-    --primary: 246 100% 23%;
-    --primary-rgb: 23, 0, 117;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 170 62% 49%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 246 30% 96%;
-    --muted-foreground: 246 20% 50%;
-    --accent: 267 75% 40%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 246 20% 88%;
-    --input: 246 20% 88%;
-    --ring: 267 75% 40%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 246 100% 23%;
-    --sidebar-primary: 246 100% 23%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 267 75% 95%;
-    --sidebar-accent-foreground: 246 100% 23%;
-    --sidebar-border: 246 20% 88%;
-    --sidebar-ring: 267 75% 40%;
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     --info: 170 62% 49%;
     --info-foreground: 0 0% 100%;
-    --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(267, 75%, 40%));
-    --gradient-secondary: linear-gradient(135deg, hsl(267, 75%, 40%), hsl(170, 62%, 49%));
-    --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(267, 75%, 40%), hsl(170, 62%, 49%));
+    --gradient-primary: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(267, 75%, 50%));
+    --gradient-secondary: linear-gradient(135deg, hsl(267, 75%, 50%), hsl(170, 62%, 55%));
+    --gradient-full: linear-gradient(135deg, hsl(246, 60%, 35%), hsl(267, 75%, 50%), hsl(170, 62%, 55%));
   }
 }
+
 
 @layer base {
   /* Fix Radix UI pointer-events lock after modal close */
