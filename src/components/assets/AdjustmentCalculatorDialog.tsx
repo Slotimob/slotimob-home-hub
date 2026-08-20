@@ -27,7 +27,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { format, addYears, addMonths, setDate, differenceInCalendarMonths, parseISO, isBefore, lastDayOfMonth } from "date-fns";
+import { format, addMonths, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { PercentInput } from "@/components/ui/currency-input";
 import { calculateRentAdjustment } from "@/lib/rentAdjustment";
+import { calculateProjectionWindow, calculateDueDate } from "@/lib/lease-projection";
 
 interface LeaseForAdjustment {
   id: string;
@@ -50,6 +51,7 @@ interface LeaseForAdjustment {
   due_day?: number | null;
   tenant_contact_id?: string | null;
   property_id?: string | null;
+  adjustment_periodicity_months?: number | null;
   fire_insurance?: any;
   iptu_charge?: any;
   tenant_contact?: {
@@ -84,19 +86,6 @@ const INDEX_SOURCES: Record<string, { url: string; label: string }> = {
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-/** Primeira cobrança após o reajuste: próxima ocorrência do dia de vencimento. */
-function firstDueDateAfter(base: Date, dueDay: number): Date {
-  const clamp = (d: Date) => {
-    const last = lastDayOfMonth(d).getDate();
-    return setDate(d, Math.min(dueDay, last));
-  };
-  let candidate = clamp(base);
-  if (isBefore(candidate, base)) {
-    candidate = clamp(addMonths(base, 1));
-  }
-  return candidate;
-}
 
 export function AdjustmentCalculatorDialog({
   open,
@@ -145,17 +134,25 @@ export function AdjustmentCalculatorDialog({
 
   const canProject = missingFields.length === 0;
 
+  // Preview usa a mesma janela que a geração real em ConfirmLeaseProjectionDialog.
   const projectionPreview = useMemo(() => {
     if (!lease || !canProject || !lease.due_day) return null;
-    const today = new Date();
-    const firstDue = firstDueDateAfter(today, lease.due_day);
-    const endDate = lease.end_date ? parseISO(lease.end_date) : null;
+    const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+    const nextAdjustmentDate = format(
+      addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+      "yyyy-MM-dd"
+    );
+    const window = calculateProjectionWindow({
+      startDate: currentAdjustmentDate,
+      endDate: lease.end_date,
+      nextAdjustmentDate,
+      isIndefiniteTerm: lease.is_indefinite_term,
+    });
+    const firstDue = window.start ? calculateDueDate(window.start, lease.due_day) : null;
+    const endDate = window.end;
     const indefinite = !!lease.is_indefinite_term || !endDate;
-    const installments =
-      !indefinite && endDate
-        ? Math.max(0, differenceInCalendarMonths(endDate, firstDue) + 1)
-        : null;
-    return { firstDue, endDate, indefinite, installments };
+    const installments = window.blocked ? 0 : window.months;
+    return { firstDue, endDate, indefinite, installments, reasonLabel: window.reasonLabel };
   }, [lease, canProject]);
 
   if (!lease) return null;
@@ -166,10 +163,10 @@ export function AdjustmentCalculatorDialog({
     setIsSubmitting(true);
 
     try {
-      // Calculate next adjustment date (current + 12 months)
+      // Calculate next adjustment date (current + periodicity)
       const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
       const nextAdjustmentDate = format(
-        addYears(new Date(currentAdjustmentDate), 1),
+        addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
         "yyyy-MM-dd"
       );
 
