@@ -1116,8 +1116,19 @@ export default function Checkout() {
               /* CTA */
               <div className="space-y-3">
                 {checkoutError && (
-                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
+                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 space-y-2">
                     <p className="text-sm text-destructive text-center">{checkoutError}</p>
+                    {fiscalDuplicateAccountError && (
+                      <Link to="/dashboard">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
+                        >
+                          Entrar no painel
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 )}
 
