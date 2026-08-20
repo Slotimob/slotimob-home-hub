@@ -27,6 +27,7 @@ interface DashboardCustomizeSheetProps {
 // Ordem espelha a ordem de exibição dos blocos no Dashboard
 const WIDGET_LABELS: Record<keyof DashboardWidgetPreferences, { label: string; description: string }> = {
   assets: { label: '1. Contagem de Ativos', description: 'Unidades e imóveis avulsos por status' },
+  portfolio: { label: '2. Patrimônio', description: 'Valor de mercado, yield e vacância (card único)' },
   alugueis: { label: '3. Aluguéis', description: 'Aluguéis recebidos, a receber e em atraso' },
   delinquency: { label: '3. Inadimplência', description: 'Aging de cobranças em atraso' },
   afazeres: { label: '4. Afazeres (resumo)', description: 'Resumo de pendências de gestão' },
@@ -38,6 +39,7 @@ const WIDGET_LABELS: Record<keyof DashboardWidgetPreferences, { label: string; d
 // Ordem de renderização dos toggles na lista
 const WIDGET_ORDER: Array<keyof DashboardWidgetPreferences> = [
   'assets',
+  'portfolio',
   'alugueis',
   'delinquency',
   'afazeres',

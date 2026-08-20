@@ -182,12 +182,16 @@ const Dashboard = () => {
                 {/* ═══════════════════════════════════════════════════════════════
                     BLOCO 1+2: CONTAGEM DE ATIVOS | PATRIMÔNIO/YIELD/VACÂNCIA
                     ═══════════════════════════════════════════════════════════════ */}
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                  {preferences.widgets.assets && (
-                    <AssetsWidget />
-                  )}
-                  <PortfolioWidget refreshKey={refreshKey} />
-                </section>
+                {(preferences.widgets.assets || preferences.widgets.portfolio) && (
+                  <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                    {preferences.widgets.assets && (
+                      <AssetsWidget />
+                    )}
+                    {preferences.widgets.portfolio && (
+                      <PortfolioWidget refreshKey={refreshKey} />
+                    )}
+                  </section>
+                )}
 
                 {/* ═══════════════════════════════════════════════════════════════
                     BLOCO 3: ALUGUÉIS | INADIMPLÊNCIA
