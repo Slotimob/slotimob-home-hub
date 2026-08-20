@@ -210,7 +210,9 @@ export const DealClosingDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col gap-0 p-0">
+        <div className="px-6 pt-6 pb-4 shrink-0">
+
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PartyPopper className="h-5 w-5 text-green-500" />
@@ -220,8 +222,10 @@ export const DealClosingDialog = ({
             Configure as ações de fechamento do negócio
           </DialogDescription>
         </DialogHeader>
+        </div>
 
-        <div className="space-y-6 py-4">
+        <div className="flex-1 min-h-0 max-h-[65vh] overflow-y-auto px-6 space-y-6 pb-4">
+
           {/* Deal info */}
           <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
             <div className="flex items-center gap-3">
@@ -393,7 +397,7 @@ export const DealClosingDialog = ({
           )}
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0 px-6 py-4 border-t bg-background">
           <Button variant="outline" onClick={handleSkip} className="w-full sm:w-auto">
             Pular
           </Button>
