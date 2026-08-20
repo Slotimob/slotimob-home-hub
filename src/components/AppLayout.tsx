@@ -35,8 +35,9 @@ export function AppLayout({ children, title, titleExtra, headerActions, fullBlee
           .maybeSingle();
 
         if (!cancelled && data?.theme_preference) {
-          localStorage.setItem('slotimob-theme', data.theme_preference);
-          document.documentElement.setAttribute('data-theme', data.theme_preference);
+          const normalized = normalizeTheme(data.theme_preference);
+          localStorage.setItem('slotimob-theme', normalized);
+          applyTheme(normalized);
         }
       } catch {
         // fail silently
