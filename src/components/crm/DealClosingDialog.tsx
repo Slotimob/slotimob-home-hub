@@ -222,8 +222,10 @@ export const DealClosingDialog = ({
             Configure as ações de fechamento do negócio
           </DialogDescription>
         </DialogHeader>
+        </div>
 
-        <div className="space-y-6 py-4">
+        <div className="flex-1 min-h-0 max-h-[65vh] overflow-y-auto px-6 space-y-6 pb-4">
+
           {/* Deal info */}
           <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
             <div className="flex items-center gap-3">
