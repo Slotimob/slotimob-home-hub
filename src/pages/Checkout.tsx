@@ -97,6 +97,12 @@ const ADDONS = [
   { id: 'extra-user', label: '+1 usuário', price: 49.9 },
 ];
 
+const DUPLICATE_FISCAL_ERROR_FRAGMENT = 'cpf/cnpj já está cadastrado em outra conta';
+
+const isDuplicateFiscalError = (msg?: string | null): boolean =>
+  !!msg && msg.toLowerCase().includes(DUPLICATE_FISCAL_ERROR_FRAGMENT);
+
+
 // ============================================================================
 // Google icon
 // ============================================================================
@@ -159,6 +165,7 @@ export default function Checkout() {
   // Checkout
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [fiscalDuplicateAccountError, setFiscalDuplicateAccountError] = useState(false);
   const [billingType, setBillingType] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
   const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
 
@@ -278,6 +285,7 @@ export default function Checkout() {
   const handleCheckout = async (e?: FormEvent) => {
     e?.preventDefault();
     setCheckoutError(null);
+    setFiscalDuplicateAccountError(false);
     setAuthError(null);
 
     let currentUserId = user?.id;
@@ -397,13 +405,28 @@ export default function Checkout() {
 
       if (fiscalFnError || fiscalData?.error) {
         const captchaMessage = translateCaptchaError(fiscalFnError) ?? translateCaptchaError(fiscalData?.error);
-        const msg = captchaMessage || fiscalData?.error || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
-        setCheckoutError(msg);
-        if (captchaMessage) {
-          toast.error('Verificação de segurança', { description: captchaMessage });
+        const rawMsg = fiscalData?.error || fiscalFnError?.message || 'Não foi possível salvar seus dados fiscais. Tente novamente.';
+        const isDuplicateFiscal = isDuplicateFiscalError(rawMsg) || isDuplicateFiscalError(fiscalFnError?.message);
+
+        if (isDuplicateFiscal && currentUserId) {
+          setCheckoutError(
+            'Este CPF/CNPJ já está cadastrado em outra conta. Sua conta do Slotimob já foi criada — você pode corrigir seus dados fiscais depois em Configurações, ou entrar no painel agora.'
+          );
+          setFiscalDuplicateAccountError(true);
+          toast.error('Dados fiscais duplicados', {
+            description: 'Sua conta já foi criada. Corrija o CPF/CNPJ em Configurações ou entre no painel.',
+          });
         } else {
-          toast.error(msg);
+          const msg = captchaMessage || rawMsg;
+          setCheckoutError(msg);
+          setFiscalDuplicateAccountError(false);
+          if (captchaMessage) {
+            toast.error('Verificação de segurança', { description: captchaMessage });
+          } else {
+            toast.error(msg);
+          }
         }
+
         setIsCheckingOut(false);
         resetCaptcha();
         return;
@@ -1093,8 +1116,19 @@ export default function Checkout() {
               /* CTA */
               <div className="space-y-3">
                 {checkoutError && (
-                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
+                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 space-y-2">
                     <p className="text-sm text-destructive text-center">{checkoutError}</p>
+                    {fiscalDuplicateAccountError && (
+                      <Link to="/dashboard">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
+                        >
+                          Entrar no painel
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 )}
 
