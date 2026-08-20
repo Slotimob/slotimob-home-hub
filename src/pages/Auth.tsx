@@ -216,6 +216,8 @@ const GoogleIcon = () => (
 // ─── Component ───
 
 const Auth = () => {
+  useForceLightTheme();
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('token');
