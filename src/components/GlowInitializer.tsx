@@ -9,10 +9,6 @@ import { cleanupExpiredDrafts } from '@/hooks/useFormDraft';
 export function GlowInitializer() {
   useEffect(() => {
     cleanupExpiredDrafts();
-
-    // Fix glow intensity at 50% — no user-configurable setting
-    document.documentElement.style.setProperty('--glow-intensity', '0.5');
-    document.documentElement.classList.remove('glow-disabled');
   }, []);
 
   return null;
