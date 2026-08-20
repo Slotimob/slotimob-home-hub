@@ -187,6 +187,8 @@ export type PlannedObligation = "rent" | "fire_insurance" | "iptu";
 export interface PlannedInstallment {
   /** Chave estável para checkbox/dedup na UI. */
   key: string;
+  /** Chave de idempotência por competência (`tipo:yyyy-MM`). Default: igual a `key`. */
+  dedupKey?: string;
   obligationType: PlannedObligation;
   competencyPeriod: string;
   competencyLabel: string;
@@ -236,6 +238,7 @@ export function buildRentInstallments({
 
     result.push({
       key: `rent:${competencyPeriod}`,
+      dedupKey: `rent:${competencyPeriod}`,
       obligationType: "rent",
       competencyPeriod,
       competencyLabel: monthLabel(competencyDate),
