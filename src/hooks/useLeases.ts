@@ -494,12 +494,20 @@ export function useUpdateLease() {
           (data.additional_obligations as unknown as Json) ?? [];
       }
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("leases")
         .update(updateData)
-        .eq("id", id);
+        .eq("id", id)
+        .select("unit_id")
+        .maybeSingle();
 
       if (error) throw new Error(error.message || error.details || "Erro ao salvar");
+
+      // Sincronização best-effort do status da unidade quando o status do contrato muda
+      if (data.status !== undefined && updated?.unit_id) {
+        await syncUnitStatusForLease(updated.unit_id);
+      }
+
     },
     onSuccess: async () => {
       await invalidateLeaseQueries(queryClient);
