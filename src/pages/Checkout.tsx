@@ -117,6 +117,8 @@ function GoogleIcon() {
 // ============================================================================
 
 export default function Checkout() {
+  useForceLightTheme();
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
