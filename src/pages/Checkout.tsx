@@ -159,6 +159,7 @@ export default function Checkout() {
   // Checkout
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [fiscalDuplicateAccountError, setFiscalDuplicateAccountError] = useState(false);
   const [billingType, setBillingType] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
   const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
 
