@@ -70,6 +70,13 @@ interface AdjustmentCalculatorDialogProps {
   isUrgent?: boolean; // Shows if this is an overdue or current month adjustment
 }
 
+const INDEX_LABELS: Record<string, string> = {
+  IGPM: "IGP-M",
+  IPCA: "IPCA",
+  INPC: "INPC",
+  Fixo: "Fixo",
+};
+
 const INDEX_SOURCES: Record<string, { url: string; label: string }> = {
   IGPM: { url: "https://www.ibge.gov.br/", label: "Consultar IGP-M (FGV)" },
   IPCA: { url: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html", label: "Consultar IPCA (IBGE)" },
@@ -156,10 +163,10 @@ export function AdjustmentCalculatorDialog({
     setIsSubmitting(true);
 
     try {
-      // Calculate next adjustment date (current + 12 months)
+      // Calculate next adjustment date (current + periodicity)
       const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
       const nextAdjustmentDate = format(
-        addYears(new Date(currentAdjustmentDate), 1),
+        addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
         "yyyy-MM-dd"
       );
 
