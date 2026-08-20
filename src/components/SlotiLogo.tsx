@@ -8,12 +8,12 @@ interface SlotiLogoProps {
 }
 
 export const SlotiLogo = ({ className = '', size = 'md' }: SlotiLogoProps) => {
-  const [currentTheme, setCurrentTheme] = useState('light-purple');
+  const [currentTheme, setCurrentTheme] = useState('light');
 
   useEffect(() => {
     // Check initial theme
     const checkTheme = () => {
-      const theme = document.documentElement.getAttribute('data-theme') || 'light-purple';
+      const theme = document.documentElement.getAttribute('data-theme') || 'light';
       setCurrentTheme(theme);
     };
 

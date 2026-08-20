@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { normalizeTheme, applyTheme, type AppTheme } from '@/lib/theme';
 import { useToast } from '@/hooks/use-toast';
 import { validatePassword, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
 import { useQueryClient } from '@tanstack/react-query';
@@ -101,7 +102,7 @@ const Settings = () => {
   const queryClient = useQueryClient();
 
   const [profile, setProfile] = useState<any>(null);
-  const [theme, setTheme] = useState('light-purple');
+  const [theme, setTheme] = useState<AppTheme>('light');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -158,7 +159,7 @@ const Settings = () => {
         setPhone(data.phone || '');
         setAvatarUrl(data.avatar_url || '');
         setCreciUrl(data.creci_document_url || '');
-        setTheme(data.theme_preference || 'light-purple');
+        setTheme(normalizeTheme(data.theme_preference));
         setBioMini(data.bio_mini || '');
         setLinkedinUrl(data.linkedin_url || '');
         setInstagramUrl(data.instagram_url || '');
@@ -181,9 +182,10 @@ const Settings = () => {
     }
   };
 
-  const updateTheme = async (newTheme: string) => {
+  const updateTheme = async (value: string) => {
+    const newTheme = normalizeTheme(value);
     setTheme(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+    applyTheme(newTheme);
     localStorage.setItem('slotimob-theme', newTheme);
     try {
       const { error } = await supabase.from('profiles').update({ theme_preference: newTheme }).eq('id', user?.id);
@@ -824,11 +826,8 @@ const Settings = () => {
             <Select value={theme} onValueChange={updateTheme}>
               <SelectTrigger id="theme-select"><SelectValue placeholder="Selecione um tema" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="light-green">Claro — Verde</SelectItem>
-                <SelectItem value="light-blue">Claro — Azul</SelectItem>
-                <SelectItem value="light-purple">Claro — Roxo</SelectItem>
-                <SelectItem value="dark-green">Escuro — Verde</SelectItem>
-                <SelectItem value="dark-purple">Escuro — Roxo</SelectItem>
+                <SelectItem value="light">Claro</SelectItem>
+                <SelectItem value="dark">Escuro</SelectItem>
               </SelectContent>
             </Select>
           </div>

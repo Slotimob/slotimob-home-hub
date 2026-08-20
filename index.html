@@ -83,7 +83,7 @@
         var t = localStorage.getItem('slotimob-theme');
         // Only apply if we're NOT on the landing (/ or /lp/*)
         var isLanding = window.location.pathname === '/' || window.location.pathname.startsWith('/lp/');
-        if (t && !isLanding) document.documentElement.setAttribute('data-theme', t);
+        if (t && !isLanding) document.documentElement.setAttribute('data-theme', String(t).toLowerCase().indexOf('dark') === 0 ? 'dark' : 'light');
       })();
     </script>
     <div id="root"></div>
