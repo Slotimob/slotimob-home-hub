@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, FileText, Search, Download, Trash2, Building2, ExternalLink } from 'lucide-react';
+import { Plus, FileText, Search, Download, Trash2, Building2, ExternalLink, AlertTriangle } from 'lucide-react';
 import { HeaderButton } from "@/components/ui/header-button";
 import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { useToast } from '@/hooks/use-toast';
@@ -109,6 +109,7 @@ const Documents = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [deleteDoc, setDeleteDoc] = useState<Document | null>(null);
+  const [missingFiles, setMissingFiles] = useState<Set<string>>(new Set());
 
   // Docs from property_documents table
   const { data: propertyDocs = [] } = useQuery({
@@ -212,6 +213,45 @@ const Documents = () => {
     setFilteredDocuments(filtered);
   }, [searchTerm, filterType, documents]);
 
+  const MISSING_FILE_MESSAGE =
+    'Este arquivo não está mais disponível para download. Entre em contato com o suporte.';
+
+  const isMissingFileError = (error: any) => {
+    const msg = `${error?.message || ''} ${error?.error || ''}`.toLowerCase();
+    const status = error?.statusCode ?? error?.status;
+    return (
+      msg.includes('object not found') ||
+      msg.includes('not_found') ||
+      msg.includes('not found') ||
+      msg.includes('does not exist') ||
+      String(status) === '404'
+    );
+  };
+
+  // Verifica em lote quais arquivos ainda existem no storage
+  const checkMissingFiles = async (docs: Document[]) => {
+    const paths = docs.map((d) => d.file_path).filter(Boolean) as string[];
+    const missing = new Set<string>(
+      docs.filter((d) => !d.file_path).map((d) => d.id)
+    );
+    if (paths.length > 0) {
+      try {
+        const { data } = await supabase.storage
+          .from('documents')
+          .createSignedUrls(paths, 60);
+        const failedPaths = new Set(
+          (data || []).filter((r: any) => r.error || !r.signedUrl).map((r: any) => r.path)
+        );
+        docs.forEach((d) => {
+          if (d.file_path && failedPaths.has(d.file_path)) missing.add(d.id);
+        });
+      } catch {
+        // silencioso: verificação é apenas informativa
+      }
+    }
+    setMissingFiles(missing);
+  };
+
   const loadDocuments = async () => {
     try {
       const { data, error } = await supabase
@@ -220,8 +260,10 @@ const Documents = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments((data as Document[]) || []);
-      setFilteredDocuments((data as Document[]) || []);
+      const docs = (data as Document[]) || [];
+      setDocuments(docs);
+      setFilteredDocuments(docs);
+      void checkMissingFiles(docs);
     } catch (error: any) {
       toast({
         title: 'Erro ao carregar documentos',
@@ -234,6 +276,15 @@ const Documents = () => {
   };
 
   const handleDownload = async (doc: Document) => {
+    if (!doc.file_path) {
+      setMissingFiles((prev) => new Set(prev).add(doc.id));
+      toast({
+        title: 'Arquivo indisponível',
+        description: MISSING_FILE_MESSAGE,
+        variant: 'destructive',
+      });
+      return;
+    }
     try {
       const { data, error } = await supabase.storage
         .from('documents')
@@ -250,6 +301,15 @@ const Documents = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error: any) {
+      if (isMissingFileError(error)) {
+        setMissingFiles((prev) => new Set(prev).add(doc.id));
+        toast({
+          title: 'Arquivo indisponível',
+          description: MISSING_FILE_MESSAGE,
+          variant: 'destructive',
+        });
+        return;
+      }
       toast({
         title: 'Erro ao baixar documento',
         description: error.message,
@@ -271,6 +331,10 @@ const Documents = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error: any) {
+      if (isMissingFileError(error)) {
+        toast({ title: 'Arquivo indisponível', description: MISSING_FILE_MESSAGE, variant: 'destructive' });
+        return;
+      }
       toast({ title: 'Erro ao baixar documento', description: error.message, variant: 'destructive' });
     }
   };
@@ -443,7 +507,17 @@ const Documents = () => {
                           {/* Nome */}
                           <TableCell>
                             <div className="flex flex-col gap-0.5">
-                              <span className="font-medium text-foreground line-clamp-1">{doc.title}</span>
+                              <span className="font-medium text-foreground line-clamp-1 flex items-center gap-1.5">
+                                {missingFiles.has(doc.id) && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>{MISSING_FILE_MESSAGE}</TooltipContent>
+                                  </Tooltip>
+                                )}
+                                {doc.title}
+                              </span>
                               {doc.description && (
                                 <span className="text-xs text-muted-foreground line-clamp-1">{doc.description}</span>
                               )}
