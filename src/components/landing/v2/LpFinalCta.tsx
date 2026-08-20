@@ -24,7 +24,7 @@ export function LpFinalCta() {
               Começar 7 dias grátis
             </CTAButton>
             <CTAButton
-              href="https://wa.me/5511999999999?text=Olá,%20quero%20saber%20mais%20sobre%20o%20Slotimob"
+              href={CONSULTOR_LINK}
               variant="secondary"
               size="lg"
               external
