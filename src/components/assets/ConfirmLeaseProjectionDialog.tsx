@@ -162,6 +162,7 @@ export function ConfirmLeaseProjectionDialog({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [launchInsurance, setLaunchInsurance] = useState(true);
   const [launchIptu, setLaunchIptu] = useState(true);
+  const [launchFromMonth, setLaunchFromMonth] = useState("");
 
   // Reset ao abrir
   useEffect(() => {
@@ -172,6 +173,7 @@ export function ConfirmLeaseProjectionDialog({
     setFirstDueDate(format(calculateDueDate(base, lease.due_day || 10), "yyyy-MM-dd"));
     setLaunchInsurance(!!lease.fire_insurance?.enabled);
     setLaunchIptu(!!lease.iptu_charge?.enabled);
+    setLaunchFromMonth("");
     setSelected(new Set());
   }, [open, lease?.id, window?.months, rentAmountDefault, startDate]);
 
@@ -198,6 +200,7 @@ export function ConfirmLeaseProjectionDialog({
       firstDueDate: cfg.first_due_date,
       fallbackStartDate: startDate,
       fallbackDueDay: lease.due_day || 10,
+      cycleStartDate: startDate,
       existingCompetencies,
     });
   }, [lease, startDate, existingCompetencies]);
@@ -213,6 +216,7 @@ export function ConfirmLeaseProjectionDialog({
       firstDueDate: cfg.first_due_date,
       fallbackStartDate: startDate,
       fallbackDueDay: lease.due_day || 10,
+      cycleStartDate: startDate,
       existingCompetencies,
     });
   }, [lease, startDate, existingCompetencies]);
@@ -222,11 +226,13 @@ export function ConfirmLeaseProjectionDialog({
     if (!open) return;
     const next = new Set<string>();
     for (const i of [...rentInstallments, ...insuranceInstallments, ...iptuInstallments]) {
-      if (!i.alreadyExists) next.add(i.key);
+      if (i.alreadyExists) continue;
+      if (launchFromMonth && i.competencyPeriod < launchFromMonth) continue;
+      next.add(i.key);
     }
     setSelected(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, rentInstallments.length, insuranceInstallments.length, iptuInstallments.length, loadingExisting]);
+  }, [open, rentInstallments.length, insuranceInstallments.length, iptuInstallments.length, loadingExisting, launchFromMonth]);
 
   const toggle = (key: string) =>
     setSelected((prev) => {
@@ -271,6 +277,7 @@ export function ConfirmLeaseProjectionDialog({
         unitId: lease.unit_id,
         tenantContactId: lease.tenant_contact_id,
         propertyId: lease.property_id,
+        leaseStartDate: lease.start_date,
         installments: confirmedInstallments,
       });
 
@@ -396,6 +403,37 @@ export function ConfirmLeaseProjectionDialog({
                   value={firstDueDate}
                   onChange={(e) => setFirstDueDate(e.target.value)}
                 />
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Contrato retroativo? Escolha a partir de qual competência lançar — as
+                competências anteriores são desmarcadas automaticamente (você ainda pode
+                marcar linha a linha depois).
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Label htmlFor="launch-from" className="text-xs font-medium">
+                  Lançar a partir de
+                </Label>
+                <Input
+                  id="launch-from"
+                  type="month"
+                  className="h-9 w-[170px]"
+                  value={launchFromMonth}
+                  onChange={(e) => setLaunchFromMonth(e.target.value)}
+                />
+                {launchFromMonth && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-9"
+                    onClick={() => setLaunchFromMonth("")}
+                  >
+                    Limpar
+                  </Button>
+                )}
               </div>
             </div>
 
