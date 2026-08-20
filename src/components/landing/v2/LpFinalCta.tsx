@@ -1,6 +1,9 @@
 import SectionWrapper from '@/components/marketing/SectionWrapper';
 import CTAButton from '@/components/marketing/CTAButton';
+import { buildWhatsAppLink } from '@/lib/constants';
 import { Reveal } from './Reveal';
+
+const CONSULTOR_LINK = buildWhatsAppLink('Olá, quero saber mais sobre o Slotimob');
 
 export function LpFinalCta() {
   return (
@@ -21,7 +24,7 @@ export function LpFinalCta() {
               Começar 7 dias grátis
             </CTAButton>
             <CTAButton
-              href="https://wa.me/5511999999999?text=Olá,%20quero%20saber%20mais%20sobre%20o%20Slotimob"
+              href={CONSULTOR_LINK}
               variant="secondary"
               size="lg"
               external

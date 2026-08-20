@@ -1,7 +1,9 @@
 import { MessageCircle } from 'lucide-react';
+import { buildWhatsAppLink } from '@/lib/constants';
 
-const WHATSAPP_LINK =
-  'https://wa.me/554137987325?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Slotimob%20e%20queria%20saber%20mais.';
+const WHATSAPP_LINK = buildWhatsAppLink(
+  'Olá! Vim pelo site da Slotimob e queria saber mais.',
+);
 
 export function WhatsAppButton() {
   return (
