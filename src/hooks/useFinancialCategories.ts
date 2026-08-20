@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_FINANCIAL_CATEGORIES, CATEGORY_COLORS, CATEGORIES_WITH_TOOLTIPS } from "@/utils/financialConstants";
@@ -24,6 +24,10 @@ interface CategoryWithMeta {
   priority?: number;
   tooltip?: string;
 }
+
+// Module-level guard: garante que o auto-seed rode apenas UMA vez por sessão,
+// mesmo com várias instâncias do hook montadas simultaneamente na mesma tela.
+const autoSeedAttempted = new Set<string>();
 
 export function useFinancialCategories(type?: 'income' | 'expense') {
   const { toast } = useToast();
@@ -69,20 +73,23 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
+      const brokerId = effectiveBrokerId || user.id;
+
       // Check if user already has categories
       const { data: existing } = await supabase
         .from("financial_categories")
         .select("id")
-        .eq("broker_id", user.id)
+        .eq("broker_id", brokerId)
         .limit(1);
 
       if (existing && existing.length > 0) {
         throw new Error("Categorias já existem para este usuário");
       }
 
+
       // Insert default categories with enforced colors
       const categoriesToInsert = DEFAULT_FINANCIAL_CATEGORIES.map(cat => ({
-        broker_id: effectiveBrokerId || user.id,
+        broker_id: brokerId,
         name: cat.name,
         type: cat.type,
         category_group: cat.group,
@@ -92,9 +99,13 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
         is_default: true,
       }));
 
+      // Upsert idempotente: corridas paralelas não geram duplicatas nem erro
       const { error } = await supabase
         .from("financial_categories")
-        .insert(categoriesToInsert);
+        .upsert(categoriesToInsert, {
+          onConflict: "broker_id,name,type",
+          ignoreDuplicates: true,
+        });
 
       if (error) throw error;
     },
@@ -248,16 +259,15 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
     },
   });
 
-  const hasAttemptedSeed = useRef(false);
-
   useEffect(() => {
     if (isLoading) return;
-    if (hasAttemptedSeed.current) return;
     if (!effectiveBrokerId) return;
     if (categories.length > 0) return;
     if (seedDefaultCategories.isPending) return;
+    // Guard global (module-level): apenas a primeira instância montada dispara o seed
+    if (autoSeedAttempted.has(effectiveBrokerId)) return;
 
-    hasAttemptedSeed.current = true;
+    autoSeedAttempted.add(effectiveBrokerId);
     seedDefaultCategories.mutate();
   }, [isLoading, effectiveBrokerId, categories.length, seedDefaultCategories.isPending, seedDefaultCategories.mutate]);
 
