@@ -33,7 +33,7 @@ interface FinancialTransaction {
 
 /** Categoria financeira por tipo de obrigação. Ausência => category_id null. */
 const CATEGORY_NAMES: Record<PlannedObligation, string[]> = {
-  rent: ["Aluguel Recebido", "Receita de Aluguel", "Aluguel"],
+  rent: ["Aluguéis", "Receita de Aluguel", "Aluguel"],
   fire_insurance: ["Seguro Incêndio", "Seguros"],
   iptu: ["IPTU", "Impostos"],
 };
@@ -55,7 +55,7 @@ async function resolveCategoryIds(): Promise<Record<PlannedObligation, string | 
 
   for (const key of Object.keys(CATEGORY_NAMES) as PlannedObligation[]) {
     for (const name of CATEGORY_NAMES[key]) {
-      const match = data.find((c: any) => c.name === name);
+      const match = data.find((c: any) => c.name === name && c.type === "income");
       if (match) {
         result[key] = match.id;
         break;

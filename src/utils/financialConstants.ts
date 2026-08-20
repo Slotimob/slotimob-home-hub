@@ -33,7 +33,7 @@ export const DEFAULT_FINANCIAL_CATEGORIES: FinancialCategory[] = [
   // === RECEITAS (Verde #22c55e) ===
   // Priority 1-10: Core income categories
   { 
-    name: "Aluguel Recebido", 
+    name: "Aluguéis", 
     type: "income", 
     group: "Operacional", 
     dre_type: "gross_revenue", 
@@ -83,6 +83,62 @@ export const DEFAULT_FINANCIAL_CATEGORIES: FinancialCategory[] = [
     priority: 20
   },
 
+  // === ENCARGOS DE LOCAÇÃO (Receita) ===
+  { 
+    name: "IPTU", 
+    type: "income", 
+    group: "Encargos de Locação", 
+    dre_type: "gross_revenue", 
+    color: CATEGORY_COLORS.income,
+    priority: 5,
+    tooltip: "Valor do IPTU repassado pelo inquilino"
+  },
+  { 
+    name: "Seguro Incêndio", 
+    type: "income", 
+    group: "Encargos de Locação", 
+    dre_type: "gross_revenue", 
+    color: CATEGORY_COLORS.income,
+    priority: 6,
+    tooltip: "Valor do seguro incêndio repassado pelo inquilino"
+  },
+  { 
+    name: "Condomínio", 
+    type: "income", 
+    group: "Encargos de Locação", 
+    dre_type: "gross_revenue", 
+    color: CATEGORY_COLORS.income,
+    priority: 7,
+    tooltip: "Valor do condomínio repassado pelo inquilino"
+  },
+  { 
+    name: "Energia", 
+    type: "income", 
+    group: "Encargos de Locação", 
+    dre_type: "gross_revenue", 
+    color: CATEGORY_COLORS.income,
+    priority: 8,
+    tooltip: "Valor da energia elétrica repassado pelo inquilino"
+  },
+  { 
+    name: "Água", 
+    type: "income", 
+    group: "Encargos de Locação", 
+    dre_type: "gross_revenue", 
+    color: CATEGORY_COLORS.income,
+    priority: 9,
+    tooltip: "Valor da água repassado pelo inquilino"
+  },
+  { 
+    name: "Gás", 
+    type: "income", 
+    group: "Encargos de Locação", 
+    dre_type: "gross_revenue", 
+    color: CATEGORY_COLORS.income,
+    priority: 10,
+    tooltip: "Valor do gás repassado pelo inquilino"
+  },
+
   // === DESPESAS VARIÁVEIS (Custo Direto) ===
   { 
     name: "Repasse a Proprietário", 
@@ -110,6 +166,60 @@ export const DEFAULT_FINANCIAL_CATEGORIES: FinancialCategory[] = [
     color: CATEGORY_COLORS.expense,
     priority: 3,
     tooltip: "Reparos e manutenções em imóveis administrados"
+  },
+  { 
+    name: "Repasse de IPTU", 
+    type: "expense", 
+    group: "Encargos de Locação", 
+    dre_type: "variable_cost", 
+    color: CATEGORY_COLORS.expense,
+    priority: 4,
+    tooltip: "Valor do IPTU recebido do inquilino e repassado ao proprietário"
+  },
+  { 
+    name: "Repasse de Seguro Incêndio", 
+    type: "expense", 
+    group: "Encargos de Locação", 
+    dre_type: "variable_cost", 
+    color: CATEGORY_COLORS.expense,
+    priority: 5,
+    tooltip: "Valor do seguro incêndio recebido do inquilino e repassado ao proprietário"
+  },
+  { 
+    name: "Repasse de Condomínio", 
+    type: "expense", 
+    group: "Encargos de Locação", 
+    dre_type: "variable_cost", 
+    color: CATEGORY_COLORS.expense,
+    priority: 6,
+    tooltip: "Valor do condomínio recebido do inquilino e repassado ao proprietário"
+  },
+  { 
+    name: "Repasse de Energia", 
+    type: "expense", 
+    group: "Encargos de Locação", 
+    dre_type: "variable_cost", 
+    color: CATEGORY_COLORS.expense,
+    priority: 7,
+    tooltip: "Valor da energia elétrica recebido do inquilino e repassado ao proprietário"
+  },
+  { 
+    name: "Repasse de Água", 
+    type: "expense", 
+    group: "Encargos de Locação", 
+    dre_type: "variable_cost", 
+    color: CATEGORY_COLORS.expense,
+    priority: 8,
+    tooltip: "Valor da água recebido do inquilino e repassado ao proprietário"
+  },
+  { 
+    name: "Repasse de Gás", 
+    type: "expense", 
+    group: "Encargos de Locação", 
+    dre_type: "variable_cost", 
+    color: CATEGORY_COLORS.expense,
+    priority: 9,
+    tooltip: "Valor do gás recebido do inquilino e repassado ao proprietário"
   },
 
   // === IMPOSTOS E DEDUÇÕES ===
@@ -265,8 +375,8 @@ export const DRE_TYPE_LABELS: Record<string, string> = {
 
 // Category groups by type
 export const CATEGORY_GROUPS: Record<'income' | 'expense', string[]> = {
-  income: ["Operacional", "Serviços", "Parcerias", "Financeiro", "Outros"],
-  expense: ["Custo de Venda", "Impostos", "Marketing", "Administrativo", "Pessoal", "Financeiro", "Sócios", "Outros"],
+  income: ["Operacional", "Encargos de Locação", "Serviços", "Parcerias", "Financeiro", "Outros"],
+  expense: ["Custo de Venda", "Encargos de Locação", "Impostos", "Marketing", "Administrativo", "Pessoal", "Financeiro", "Sócios", "Outros"],
 };
 
 // DRE Types for income categories
