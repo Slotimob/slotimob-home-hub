@@ -27,7 +27,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { format, addYears, addMonths, setDate, differenceInCalendarMonths, parseISO, isBefore, lastDayOfMonth } from "date-fns";
+import { format, addMonths, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { PercentInput } from "@/components/ui/currency-input";
 import { calculateRentAdjustment } from "@/lib/rentAdjustment";
+import { calculateProjectionWindow, calculateDueDate } from "@/lib/lease-projection";
 
 interface LeaseForAdjustment {
   id: string;
@@ -50,6 +51,7 @@ interface LeaseForAdjustment {
   due_day?: number | null;
   tenant_contact_id?: string | null;
   property_id?: string | null;
+  adjustment_periodicity_months?: number | null;
   fire_insurance?: any;
   iptu_charge?: any;
   tenant_contact?: {
@@ -74,29 +76,6 @@ const INDEX_LABELS: Record<string, string> = {
   INPC: "INPC",
   Fixo: "Fixo",
 };
-
-const INDEX_SOURCES: Record<string, { url: string; label: string }> = {
-  IGPM: { url: "https://www.ibge.gov.br/", label: "Consultar IGP-M (FGV)" },
-  IPCA: { url: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-indice-nacional-de-precos-ao-consumidor-amplo.html", label: "Consultar IPCA (IBGE)" },
-  INPC: { url: "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9258-indice-nacional-de-precos-ao-consumidor.html", label: "Consultar INPC (IBGE)" },
-  Fixo: { url: "#", label: "Índice Fixo" },
-};
-
-const brl = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-/** Primeira cobrança após o reajuste: próxima ocorrência do dia de vencimento. */
-function firstDueDateAfter(base: Date, dueDay: number): Date {
-  const clamp = (d: Date) => {
-    const last = lastDayOfMonth(d).getDate();
-    return setDate(d, Math.min(dueDay, last));
-  };
-  let candidate = clamp(base);
-  if (isBefore(candidate, base)) {
-    candidate = clamp(addMonths(base, 1));
-  }
-  return candidate;
-}
 
 export function AdjustmentCalculatorDialog({
   open,
