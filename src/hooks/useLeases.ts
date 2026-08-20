@@ -607,7 +607,11 @@ export function useTerminateLease() {
         // Don't throw - lease was already terminated
       }
 
+      // Sincronização best-effort do status da unidade (sugestão automática)
+      await syncUnitStatusForLease(lease.unit_id);
+
       return { deletedTransactions: deletedCount };
+
     },
     onSuccess: async () => {
       await invalidateLeaseQueries(queryClient);
