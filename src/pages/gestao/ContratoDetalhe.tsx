@@ -82,6 +82,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useUpdateLease, generateBillingMessage, type BillingLog, type BillingAutomation } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { syncUnitStatusForLease } from "@/lib/unit-status-sync";
 import { cn, formatPhoneForWhatsApp } from "@/lib/utils";
 import { toast as sonnerToast } from "sonner";
 import {
