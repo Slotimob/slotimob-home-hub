@@ -315,6 +315,10 @@ export default function ContratoDetalhe() {
         .eq("broker_id", effectiveBrokerId || user.id);
       if (error) throw error;
 
+      // Sincronização best-effort do status da unidade
+      await syncUnitStatusForLease(lease.unit_id);
+
+
       sonnerToast.success("Contrato excluído com sucesso");
       queryClient.invalidateQueries({ queryKey: ["leases"] });
       queryClient.invalidateQueries({ queryKey: ["units"] });
