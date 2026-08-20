@@ -285,6 +285,7 @@ export default function Checkout() {
   const handleCheckout = async (e?: FormEvent) => {
     e?.preventDefault();
     setCheckoutError(null);
+    setFiscalDuplicateAccountError(false);
     setAuthError(null);
 
     let currentUserId = user?.id;
