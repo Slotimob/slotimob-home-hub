@@ -210,7 +210,9 @@ export const DealClosingDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col gap-0 p-0">
+        <div className="px-6 pt-6 pb-4 shrink-0">
+
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PartyPopper className="h-5 w-5 text-green-500" />
