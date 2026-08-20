@@ -259,16 +259,15 @@ export function useFinancialCategories(type?: 'income' | 'expense') {
     },
   });
 
-  const hasAttemptedSeed = useRef(false);
-
   useEffect(() => {
     if (isLoading) return;
-    if (hasAttemptedSeed.current) return;
     if (!effectiveBrokerId) return;
     if (categories.length > 0) return;
     if (seedDefaultCategories.isPending) return;
+    // Guard global (module-level): apenas a primeira instância montada dispara o seed
+    if (autoSeedAttempted.has(effectiveBrokerId)) return;
 
-    hasAttemptedSeed.current = true;
+    autoSeedAttempted.add(effectiveBrokerId);
     seedDefaultCategories.mutate();
   }, [isLoading, effectiveBrokerId, categories.length, seedDefaultCategories.isPending, seedDefaultCategories.mutate]);
 
