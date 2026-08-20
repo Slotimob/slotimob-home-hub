@@ -7,6 +7,8 @@ import { useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
 import { format } from "date-fns";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import { syncUnitStatusForLease } from "@/lib/unit-status-sync";
+
 
 export interface GuarantorData {
   nome: string;
