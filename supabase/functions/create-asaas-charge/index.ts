@@ -121,6 +121,42 @@ Deno.serve(async (req) => {
     const tenant = (lease as any).tenant_contact;
     if (!tenant) return resp({ error: "Inquilino não cadastrado neste contrato." });
 
+    // Boleto e PIX exigem CPF/CNPJ do pagador
+    if (!tenant.document_number || !String(tenant.document_number).replace(/\D/g, "")) {
+      return resp({ error: "Inquilino sem CPF/CNPJ cadastrado. Complete o cadastro do contato antes de emitir a cobrança." });
+    }
+
+    // Guarda de duplicidade: cobrança já existente para o mesmo contrato e vencimento
+    const { data: existingCharge } = await supabase
+      .from("asaas_payments")
+      .select("*")
+      .eq("lease_id", lease_id)
+      .eq("due_date", due_date)
+      .not("status", "in", "(CANCELLED,REFUNDED)")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingCharge) {
+      console.log(`[create-asaas-charge] cobrança já existe para lease ${lease_id} em ${due_date}`);
+      return resp({
+        success: true,
+        already_exists: true,
+        id: existingCharge.id,
+        asaas_payment_id: existingCharge.asaas_payment_id,
+        billing_type: existingCharge.billing_type,
+        value: existingCharge.value,
+        due_date: existingCharge.due_date,
+        status: existingCharge.status,
+        bank_slip_url: existingCharge.bank_slip_url,
+        pix_qr_code: existingCharge.pix_qr_code,
+        pix_copy_paste: existingCharge.pix_copy_paste,
+        invoice_url: existingCharge.invoice_url,
+        tenant_name: tenant.name,
+        unit_name: (lease as any).unit?.name || "",
+      });
+    }
+
     let asaasCustomerId: string | null = null;
 
     const { data: existingCustomer } = await supabase
