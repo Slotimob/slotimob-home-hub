@@ -241,7 +241,7 @@ export default function LandingPage() {
         <Suspense fallback={<div style={{ minHeight: 200 }} aria-hidden />}>
           <LpDemo />
         </Suspense>
-        <section className="py-12 md:py-16 bg-muted/30 border-y border-border">
+        <section className="py-12 md:py-16 bg-section border-y border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <SocialProofNumbers />
           </div>

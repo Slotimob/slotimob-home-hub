@@ -41,7 +41,7 @@ const faqs = [
 
 export function LpFaq() {
   return (
-    <SectionWrapper background="white" id="faq">
+    <SectionWrapper background="section" id="faq">
       <div className="text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
           Perguntas frequentes
