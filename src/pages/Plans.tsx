@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 /* ─── DIFERENCIAL ─── */
 function DiferencialSection() {
   return (
-    <section className="py-14 md:py-20" style={{ background: '#fff', borderBottom: '1px solid var(--lp-line)' }}>
+    <section className="py-14 md:py-20" style={{ background: 'hsl(var(--background))', borderBottom: '1px solid var(--lp-line)' }}>
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
         <p className="lp-eyebrow mb-4">diferencial slotimob</p>
         <h2 className="lp-display text-[32px] md:text-[56px] leading-tight mb-4" style={{ color: 'var(--lp-ink)' }}>

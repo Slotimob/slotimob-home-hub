@@ -293,7 +293,7 @@ export function PricingSection() {
 
           {/* Start trial highlight */}
           {isStart &&
-          <div className="mb-5 rounded-lg p-3 border border-dashed border-muted-foreground/30 bg-muted/50">
+          <div className="mb-5 rounded-lg p-3 border border-dashed border-muted-foreground/30 bg-section">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Zap className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs font-semibold text-muted-foreground uppercase">7 dias de PRO</span>
@@ -309,7 +309,7 @@ export function PricingSection() {
           <div className="mb-5">
               <div className={cn(
               'rounded-lg p-3 border border-dashed',
-              isPro ? 'border-accent/50 bg-accent/5' : 'border-muted-foreground/30 bg-muted/50'
+              isPro ? 'border-accent/50 bg-accent/5' : 'border-muted-foreground/30 bg-section'
             )}>
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Zap className={cn('h-4 w-4', isPro ? 'text-accent' : 'text-muted-foreground')} />

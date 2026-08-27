@@ -4,13 +4,14 @@ interface SectionWrapperProps {
   children: React.ReactNode;
   className?: string;
   id?: string;
-  background?: 'white' | 'muted' | 'primary';
+  background?: 'white' | 'muted' | 'primary' | 'section';
 }
 
 const bgMap: Record<NonNullable<SectionWrapperProps['background']>, string> = {
   white: 'bg-background text-foreground',
   muted: 'bg-muted/30 text-foreground',
   primary: 'bg-primary text-primary-foreground',
+  section: 'bg-section text-section-foreground',
 };
 
 export default function SectionWrapper({
