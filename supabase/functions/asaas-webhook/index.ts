@@ -11,28 +11,51 @@ function ok() {
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers: JSON_H });
 }
 
+function unauthorized() {
+  return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: JSON_H });
+}
+
+const STATUS_RANK: Record<string, number> = {
+  PENDING: 0,
+  OVERDUE: 1,
+  CONFIRMED: 2,
+  RECEIVED: 3,
+};
+const TERMINAL_STATUSES = new Set(["CANCELLED", "REFUNDED"]);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
   try {
-    const token = req.headers.get("asaas-access-token");
-    const expected = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
-    if (!token || !expected || token !== expected) {
-      console.warn("[asaas-webhook] Invalid or missing token");
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: JSON_H });
-    }
-
-    const body = await req.json();
-    const { event, payment } = body;
-
-    console.log(`[asaas-webhook] event=${event} payment=${payment?.id} status=${payment?.status}`);
-
-    if (!payment?.id || !event) return ok();
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    const token = req.headers.get("asaas-access-token");
+    if (!token) {
+      console.warn("[asaas-webhook] Missing token");
+      return unauthorized();
+    }
+
+    const { data: account } = await supabase
+      .from("asaas_accounts")
+      .select("broker_id")
+      .eq("webhook_token", token)
+      .maybeSingle();
+
+    if (!account) {
+      console.warn("[asaas-webhook] Token não corresponde a nenhuma subconta");
+      return unauthorized();
+    }
+    const brokerId = account.broker_id as string;
+
+    const body = await req.json();
+    const { event, payment } = body;
+
+    console.log(`[asaas-webhook] broker=${brokerId} event=${event} payment=${payment?.id} status=${payment?.status}`);
+
+    if (!payment?.id || !event) return ok();
 
     const statusMap: Record<string, string> = {
       PAYMENT_CREATED: "PENDING",
@@ -49,26 +72,43 @@ Deno.serve(async (req) => {
       .from("asaas_payments")
       .select("id, status")
       .eq("asaas_payment_id", payment.id)
+      .eq("broker_id", brokerId)
       .maybeSingle();
 
     if (findErr) console.error("[asaas-webhook] Find error:", findErr);
 
     if (existing) {
-      const updatePayload: Record<string, unknown> = { status: newStatus };
+      const updatePayload: Record<string, unknown> = {};
+
+      const currentStatus = String(existing.status ?? "");
+      const canApplyStatus =
+        TERMINAL_STATUSES.has(newStatus) ||
+        TERMINAL_STATUSES.has(currentStatus) === false &&
+          (STATUS_RANK[newStatus] ?? -1) >= (STATUS_RANK[currentStatus] ?? -1);
+
+      if (canApplyStatus) {
+        updatePayload.status = newStatus;
+      } else {
+        console.warn(`[asaas-webhook] Ignorando regressão de status ${currentStatus} -> ${newStatus} (payment ${payment.id})`);
+      }
+
       if (payment.bankSlipUrl) updatePayload.bank_slip_url = payment.bankSlipUrl;
       if (payment.invoiceUrl) updatePayload.invoice_url = payment.invoiceUrl;
       if (payment.dueDate) updatePayload.due_date = payment.dueDate;
       if (payment.value !== undefined && payment.value !== null) updatePayload.value = payment.value;
 
-      const { error: updateErr } = await supabase
-        .from("asaas_payments")
-        .update(updatePayload)
-        .eq("id", existing.id);
+      if (Object.keys(updatePayload).length > 0) {
+        const { error: updateErr } = await supabase
+          .from("asaas_payments")
+          .update(updatePayload)
+          .eq("id", existing.id)
+          .eq("broker_id", brokerId);
 
-      if (updateErr) {
-        console.error("[asaas-webhook] Update error:", updateErr);
-      } else {
-        console.log(`[asaas-webhook] Payment ${payment.id} updated to ${newStatus}`);
+        if (updateErr) {
+          console.error("[asaas-webhook] Update error:", updateErr);
+        } else {
+          console.log(`[asaas-webhook] Payment ${payment.id} updated (${JSON.stringify(Object.keys(updatePayload))})`);
+        }
       }
     } else {
       // Resolve lease: prefer subscription lookup, fallback to externalReference
@@ -79,22 +119,28 @@ Deno.serve(async (req) => {
           .from("leases")
           .select("id, broker_id, billing_automation")
           .eq("billing_automation->asaas_subscription->>id", payment.subscription)
+          .eq("broker_id", brokerId)
           .maybeSingle();
         if (bySub) leaseRow = { id: bySub.id, broker_id: bySub.broker_id };
       }
 
       if (!leaseRow && payment.externalReference) {
-        const { data: byExt } = await supabase
-          .from("leases")
-          .select("id, broker_id")
-          .eq("id", payment.externalReference)
-          .maybeSingle();
-        if (byExt) leaseRow = { id: byExt.id, broker_id: byExt.broker_id };
+        const m = String(payment.externalReference || "").match(/^slotimob:lease:([0-9a-f-]{36})/i);
+        const leaseIdFromRef = m?.[1] ?? null;
+        if (leaseIdFromRef) {
+          const { data: byExt } = await supabase
+            .from("leases")
+            .select("id, broker_id")
+            .eq("id", leaseIdFromRef)
+            .eq("broker_id", brokerId)
+            .maybeSingle();
+          if (byExt) leaseRow = { id: byExt.id, broker_id: byExt.broker_id };
+        }
       }
 
-      if (leaseRow) {
+      if (leaseRow && leaseRow.broker_id === brokerId) {
         const { error: insErr } = await supabase.from("asaas_payments").insert({
-          broker_id: leaseRow.broker_id,
+          broker_id: brokerId,
           lease_id: leaseRow.id,
           asaas_payment_id: payment.id,
           asaas_subscription_id: payment.subscription ?? null,
@@ -116,6 +162,6 @@ Deno.serve(async (req) => {
 
   } catch (err) {
     console.error("[asaas-webhook] Error:", err);
-    return ok();
+    return new Response(JSON.stringify({ error: "Internal error" }), { status: 500, headers: JSON_H });
   }
 });
