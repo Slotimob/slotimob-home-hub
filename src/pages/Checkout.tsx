@@ -486,6 +486,15 @@ export default function Checkout() {
         return;
       }
 
+      if (data?.error === 'email_nao_verificado') {
+        setForceEmailVerification(true);
+        setEmailVerifiedLocally(false);
+        setCheckoutError(null);
+        toast.error(data.message || 'Confirme seu e-mail antes de continuar com o pagamento.');
+        resetCaptcha();
+        return;
+      }
+
       if (data?.error) {
         setCheckoutError(data.error);
         toast.error(data.error);
