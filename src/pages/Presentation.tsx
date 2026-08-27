@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SEOHead } from '@/components/SEOHead';
-import { LandingThemeProvider } from '@/components/LandingThemeProvider';
+import { SiteThemeProvider } from '@/components/SiteThemeProvider';
 import { LpHeader } from '@/components/landing/v2/LpHeader';
 import { LpFooter } from '@/components/landing/v2/LpFooter';
 import '@/components/landing/v2/lp.css';
@@ -15,7 +15,7 @@ export default function Presentation() {
   const activeModule = modules.find((m) => m.id === activeId) ?? modules[0];
 
   return (
-    <LandingThemeProvider>
+    <SiteThemeProvider>
       <div data-lp="v2">
         <SEOHead
           title="Como funciona o Slotimob — veja cada módulo em 2 minutos"
@@ -121,6 +121,6 @@ export default function Presentation() {
 
         <LpFooter />
       </div>
-    </LandingThemeProvider>
+    </SiteThemeProvider>
   );
 }

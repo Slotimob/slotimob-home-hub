@@ -13,7 +13,7 @@ import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
 import { RequireFeature } from "@/components/subscription/RequireFeature";
-import { LandingThemeProvider } from "@/components/LandingThemeProvider";
+import { SiteThemeProvider } from "@/components/SiteThemeProvider";
 import { SuspenseFallback } from "@/components/SuspenseFallback";
 import { CookieConsent } from "@/components/CookieConsent";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
