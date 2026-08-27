@@ -269,6 +269,13 @@ Deno.serve(async (req) => {
       }
     }
 
+    const pixPendingWarning = billing_type === "PIX" && !pixCopyPaste
+      ? "O QR Code do PIX ainda está sendo gerado pela Asaas. Atualize a página em alguns segundos."
+      : null;
+    if (pixPendingWarning) console.warn(`[create-asaas-charge] PIX sem QR code para ${asaasPaymentId}`);
+
+
+
     const { data: savedPayment, error: saveErr } = await supabase
       .from("asaas_payments")
       .insert({
