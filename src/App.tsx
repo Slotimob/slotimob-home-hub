@@ -92,6 +92,9 @@ const queryClient = new QueryClient();
 /** Wrap a page element with AuthGuard */
 const guarded = (element: React.ReactNode) => <AuthGuard>{element}</AuthGuard>;
 
+/** Wrap a public page with the institutional site theme (independent from the app theme) */
+const site = (element: React.ReactNode) => <SiteThemeProvider>{element}</SiteThemeProvider>;
+
 /** Renders contract detail when ?id= is present, otherwise the list page */
 const ContratosRoute = () => {
   const [searchParams] = useSearchParams();
