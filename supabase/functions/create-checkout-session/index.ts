@@ -93,6 +93,33 @@ serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Rate limit: 5 tentativas de checkout / 10 min por usuário
+    const rlWindowStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: recentAttempts, error: rlError } = await supabase
+      .from("rate_limits")
+      .select("id")
+      .eq("identifier", userId)
+      .eq("endpoint", "checkout_session")
+      .gte("window_start", rlWindowStart);
+
+    if (rlError) {
+      console.error("[checkout] erro ao consultar rate_limits:", rlError.message);
+    }
+
+    if ((recentAttempts?.length ?? 0) >= 5) {
+      console.log("[checkout] rate limit atingido");
+      return new Response(JSON.stringify({
+        error: "Muitas tentativas de pagamento. Aguarde alguns minutos."
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    await supabase.from("rate_limits").insert({
+      identifier: userId,
+      endpoint: "checkout_session",
+      request_count: 1,
+      window_start: new Date().toISOString(),
+    });
+
 
     const body = await req.json();
     const { product_type, plan_id, billing_cycle, billing_type, addon_id, credit_pack_id } = body;
