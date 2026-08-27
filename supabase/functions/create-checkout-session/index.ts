@@ -93,6 +93,33 @@ serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Rate limit: 5 tentativas de checkout / 10 min por usuário
+    const rlWindowStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: recentAttempts, error: rlError } = await supabase
+      .from("rate_limits")
+      .select("id")
+      .eq("identifier", userId)
+      .eq("endpoint", "checkout_session")
+      .gte("window_start", rlWindowStart);
+
+    if (rlError) {
+      console.error("[checkout] erro ao consultar rate_limits:", rlError.message);
+    }
+
+    if ((recentAttempts?.length ?? 0) >= 5) {
+      console.log("[checkout] rate limit atingido");
+      return new Response(JSON.stringify({
+        error: "Muitas tentativas de pagamento. Aguarde alguns minutos."
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    await supabase.from("rate_limits").insert({
+      identifier: userId,
+      endpoint: "checkout_session",
+      request_count: 1,
+      window_start: new Date().toISOString(),
+    });
+
 
     const body = await req.json();
     const { product_type, plan_id, billing_cycle, billing_type, addon_id, credit_pack_id } = body;
@@ -218,6 +245,48 @@ serve(async (req) => {
           // Não bloquear o upgrade por causa disso — continuar criando a nova subscription
         }
       }
+
+      // ── Guarda de duplicidade: mesmo plano, sem upgrade, assinatura já existente ──
+      if (subscription?.asaas_subscription_id && subscription?.plan_id === plan_id && !isUpgrade) {
+        try {
+          const existingPayments = await asaasRequest(`/subscriptions/${subscription.asaas_subscription_id}/payments`);
+          const firstExisting = existingPayments?.data?.[0] ?? null;
+          if (firstExisting) {
+            console.log(`[checkout] pedido duplicado, reaproveitando subscription ${subscription.asaas_subscription_id}`);
+            if (asaasBillingType === "PIX") {
+              const pixData = await asaasRequest(`/payments/${firstExisting.id}/pixQrCode`);
+              return new Response(JSON.stringify({
+                type: "pix",
+                reused: true,
+                pix: {
+                  encodedImage: pixData.encodedImage,
+                  payload: pixData.payload,
+                  expirationDate: pixData.expirationDate,
+                },
+              }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            }
+            if (asaasBillingType === "BOLETO") {
+              return new Response(JSON.stringify({
+                type: "boleto",
+                reused: true,
+                boleto: {
+                  bankSlipUrl: firstExisting.bankSlipUrl,
+                  barCode: firstExisting.barCode ?? null,
+                  dueDate: firstExisting.dueDate,
+                },
+              }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            }
+            const reusedUrl = firstExisting.invoiceUrl || `https://www.asaas.com/i/${firstExisting.id}`;
+            return new Response(JSON.stringify({ type: "redirect", reused: true, url: reusedUrl }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          console.warn("[checkout] assinatura existente sem pagamentos, seguindo criação normal");
+        } catch (dupErr) {
+          console.warn("[checkout] falha ao reaproveitar assinatura existente:", dupErr instanceof Error ? dupErr.message : dupErr);
+        }
+      }
+
 
       // Se houver data de renovação do plano atual, usar como nextDueDate do novo (sem cobrança dupla)
       const upgradeDueDate = isUpgrade && subscription?.current_period_end
@@ -402,10 +471,10 @@ serve(async (req) => {
     });
 
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : "Erro interno ao processar checkout";
-    console.error("[create-checkout-session]", errMsg);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[create-checkout-session]", errMsg, err);
     return new Response(
-      JSON.stringify({ error: errMsg }),
+      JSON.stringify({ error: "Não foi possível processar o pagamento. Tente novamente." }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

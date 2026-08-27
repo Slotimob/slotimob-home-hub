@@ -37,6 +37,27 @@ Deno.serve(async (req) => {
       return resp({ error: "billing_type deve ser BOLETO ou PIX." });
     }
 
+    // Valida due_date: formato YYYY-MM-DD e não pode ser no passado
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(due_date)) || Number.isNaN(new Date(`${due_date}T12:00:00`).getTime())) {
+      return resp({ error: "A data de vencimento não pode ser no passado." });
+    }
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (String(due_date) < todayStr) {
+      return resp({ error: "A data de vencimento não pode ser no passado." });
+    }
+
+    // Valida amount_override quando enviado
+    let overrideValue: number | null = null;
+    if (amount_override !== undefined && amount_override !== null && amount_override !== "") {
+      const parsed = Math.abs(parseFloat(String(amount_override)));
+      if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 1000000) {
+        return resp({ error: "Valor da cobrança inválido." });
+      }
+      overrideValue = parsed;
+    }
+
+
+
     // Resolve effective broker: members act under the owner's Asaas subaccount.
     let effectiveBrokerId = user.id;
     const { data: membership } = await supabase
@@ -99,6 +120,42 @@ Deno.serve(async (req) => {
 
     const tenant = (lease as any).tenant_contact;
     if (!tenant) return resp({ error: "Inquilino não cadastrado neste contrato." });
+
+    // Boleto e PIX exigem CPF/CNPJ do pagador
+    if (!tenant.document_number || !String(tenant.document_number).replace(/\D/g, "")) {
+      return resp({ error: "Inquilino sem CPF/CNPJ cadastrado. Complete o cadastro do contato antes de emitir a cobrança." });
+    }
+
+    // Guarda de duplicidade: cobrança já existente para o mesmo contrato e vencimento
+    const { data: existingCharge } = await supabase
+      .from("asaas_payments")
+      .select("*")
+      .eq("lease_id", lease_id)
+      .eq("due_date", due_date)
+      .not("status", "in", "(CANCELLED,REFUNDED)")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingCharge) {
+      console.log(`[create-asaas-charge] cobrança já existe para lease ${lease_id} em ${due_date}`);
+      return resp({
+        success: true,
+        already_exists: true,
+        id: existingCharge.id,
+        asaas_payment_id: existingCharge.asaas_payment_id,
+        billing_type: existingCharge.billing_type,
+        value: existingCharge.value,
+        due_date: existingCharge.due_date,
+        status: existingCharge.status,
+        bank_slip_url: existingCharge.bank_slip_url,
+        pix_qr_code: existingCharge.pix_qr_code,
+        pix_copy_paste: existingCharge.pix_copy_paste,
+        invoice_url: existingCharge.invoice_url,
+        tenant_name: tenant.name,
+        unit_name: (lease as any).unit?.name || "",
+      });
+    }
 
     let asaasCustomerId: string | null = null;
 
@@ -164,7 +221,7 @@ Deno.serve(async (req) => {
 
     if (!asaasCustomerId) return resp({ error: "Não foi possível identificar o cliente no Asaas." });
 
-    const value = amount_override ? Math.abs(parseFloat(String(amount_override))) : Number(lease.rent_amount);
+    const value = overrideValue ?? Number(lease.rent_amount);
     const unitName = (lease as any).unit?.name || "";
     const dueDateObj = new Date(due_date + "T12:00:00");
     const monthYear = dueDateObj.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
@@ -212,6 +269,13 @@ Deno.serve(async (req) => {
       }
     }
 
+    const pixPendingWarning = billing_type === "PIX" && !pixCopyPaste
+      ? "O QR Code do PIX ainda está sendo gerado pela Asaas. Atualize a página em alguns segundos."
+      : null;
+    if (pixPendingWarning) console.warn(`[create-asaas-charge] PIX sem QR code para ${asaasPaymentId}`);
+
+
+
     const { data: savedPayment, error: saveErr } = await supabase
       .from("asaas_payments")
       .insert({
@@ -234,7 +298,9 @@ Deno.serve(async (req) => {
       console.error("[create-asaas-charge] DB save error:", saveErr);
       return resp({
         success: true,
-        warning: "Cobrança criada no Asaas mas erro ao salvar localmente.",
+        warning: pixPendingWarning
+          ? "Cobrança criada no Asaas mas erro ao salvar localmente. " + pixPendingWarning
+          : "Cobrança criada no Asaas mas erro ao salvar localmente.",
         asaas_payment_id: asaasPaymentId,
         billing_type,
         value,
@@ -262,6 +328,7 @@ Deno.serve(async (req) => {
       invoice_url: invoiceUrl,
       tenant_name: tenant.name,
       unit_name: unitName,
+      ...(pixPendingWarning ? { warning: pixPendingWarning } : {}),
     });
 
   } catch (err) {
