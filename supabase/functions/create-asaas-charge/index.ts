@@ -298,7 +298,9 @@ Deno.serve(async (req) => {
       console.error("[create-asaas-charge] DB save error:", saveErr);
       return resp({
         success: true,
-        warning: "Cobrança criada no Asaas mas erro ao salvar localmente.",
+        warning: pixPendingWarning
+          ? "Cobrança criada no Asaas mas erro ao salvar localmente. " + pixPendingWarning
+          : "Cobrança criada no Asaas mas erro ao salvar localmente.",
         asaas_payment_id: asaasPaymentId,
         billing_type,
         value,
@@ -326,6 +328,7 @@ Deno.serve(async (req) => {
       invoice_url: invoiceUrl,
       tenant_name: tenant.name,
       unit_name: unitName,
+      ...(pixPendingWarning ? { warning: pixPendingWarning } : {}),
     });
 
   } catch (err) {
