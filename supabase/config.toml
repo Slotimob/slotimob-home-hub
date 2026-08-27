@@ -139,4 +139,11 @@ verify_jwt = false
 [functions.validate-signup]
 verify_jwt = false
 
+[functions.send-email-verification]
+verify_jwt = false
+
+[functions.verify-email-code]
+verify_jwt = false
+
+
 
