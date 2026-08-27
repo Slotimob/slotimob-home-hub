@@ -79,6 +79,21 @@ serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Trava: e-mail precisa estar verificado antes de qualquer chamada à Asaas
+    const { data: verifyProfile } = await supabase
+      .from("profiles")
+      .select("email_verified_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!verifyProfile?.email_verified_at) {
+      return new Response(JSON.stringify({
+        error: "email_nao_verificado",
+        message: "Confirme seu e-mail antes de continuar com o pagamento."
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+
     const body = await req.json();
     const { product_type, plan_id, billing_cycle, billing_type, addon_id, credit_pack_id } = body;
     console.log("[checkout] body recebido:", JSON.stringify({ product_type, plan_id, billing_cycle, billing_type }));
