@@ -81,10 +81,11 @@ Deno.serve(async (req) => {
       const updatePayload: Record<string, unknown> = {};
 
       const currentStatus = String(existing.status ?? "");
-      const canApplyStatus =
-        TERMINAL_STATUSES.has(newStatus) ||
-        TERMINAL_STATUSES.has(currentStatus) === false &&
-          (STATUS_RANK[newStatus] ?? -1) >= (STATUS_RANK[currentStatus] ?? -1);
+      const canApplyStatus = TERMINAL_STATUSES.has(newStatus)
+        ? true
+        : TERMINAL_STATUSES.has(currentStatus)
+          ? false
+          : (STATUS_RANK[newStatus] ?? -1) >= (STATUS_RANK[currentStatus] ?? -1);
 
       if (canApplyStatus) {
         updatePayload.status = newStatus;
