@@ -42,7 +42,7 @@ function useWhatsAppAnyConnection() {
     const fetch = async () => {
       const { data, error } = await supabase
         .from('whatsapp_connections')
-        .select('*')
+        .select('api_provider, broker_id, connected_at, connection_status, created_at, evolution_api_url, id, instance_name, phone_number, phone_number_id, qr_code, qr_code_base64, status, updated_at, waba_id, webhook_url')
         .eq('broker_id', effectiveBrokerId)
         .limit(1)
         .maybeSingle();
