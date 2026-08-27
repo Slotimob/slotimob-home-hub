@@ -176,6 +176,7 @@ export default function Checkout() {
 
   // ── Verificação de e-mail (checagem proativa) ──────────────────────────
   const [emailVerifiedLocally, setEmailVerifiedLocally] = useState(false);
+  const [forceEmailVerification, setForceEmailVerification] = useState(false);
 
   const { data: emailVerifiedAt, isLoading: verificationLoading } = useQuery({
     queryKey: ['checkout-email-verified', user?.id],
@@ -191,7 +192,9 @@ export default function Checkout() {
   });
 
   const needsEmailVerification =
-    !!user && !emailVerifiedLocally && !verificationLoading && !emailVerifiedAt;
+    !!user &&
+    !emailVerifiedLocally &&
+    (forceEmailVerification || (!verificationLoading && !emailVerifiedAt));
 
   // URL sync
   useEffect(() => {
