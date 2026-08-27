@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
 
     if (!asaasCustomerId) return resp({ error: "Não foi possível identificar o cliente no Asaas." });
 
-    const value = amount_override ? Math.abs(parseFloat(String(amount_override))) : Number(lease.rent_amount);
+    const value = overrideValue ?? Number(lease.rent_amount);
     const unitName = (lease as any).unit?.name || "";
     const dueDateObj = new Date(due_date + "T12:00:00");
     const monthYear = dueDateObj.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
