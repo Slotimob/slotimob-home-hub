@@ -97,28 +97,40 @@ Deno.serve(async (req) => {
       encryptedKey = encData as string;
     }
 
+    let accountRowId: string | null = existing?.id ?? null;
+    let brokerWebhookToken: string | null = null;
+
     if (existing) {
-      await supabase.from("asaas_accounts").update({
+      const { data: updated, error: updateErr } = await supabase.from("asaas_accounts").update({
         asaas_account_id: asaasAccountId,
         asaas_api_key_encrypted: encryptedKey,
         wallet_id: walletId ?? null,
         status: "active",
         cpf_cnpj: cleanCpf,
-      }).eq("id", existing.id);
+      }).eq("id", existing.id).select("id, webhook_token").single();
+      if (updateErr) {
+        console.error("[setup-asaas-account] DB error:", updateErr);
+        return resp({ error: "Subconta criada no Asaas mas erro ao salvar no banco: " + updateErr.message });
+      }
+      accountRowId = updated?.id ?? existing.id;
+      brokerWebhookToken = (updated?.webhook_token as string) ?? null;
     } else {
-      const { error: insertErr } = await supabase.from("asaas_accounts").insert({
+      const { data: inserted, error: insertErr } = await supabase.from("asaas_accounts").insert({
         broker_id: user.id,
         asaas_account_id: asaasAccountId,
         asaas_api_key_encrypted: encryptedKey,
         wallet_id: walletId ?? null,
         status: "active",
         cpf_cnpj: cleanCpf,
-      });
+      }).select("id, webhook_token").single();
       if (insertErr) {
         console.error("[setup-asaas-account] DB error:", insertErr);
         return resp({ error: "Subconta criada no Asaas mas erro ao salvar no banco: " + insertErr.message });
       }
+      accountRowId = inserted?.id ?? null;
+      brokerWebhookToken = (inserted?.webhook_token as string) ?? null;
     }
+
 
     if (subKey) {
       const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
