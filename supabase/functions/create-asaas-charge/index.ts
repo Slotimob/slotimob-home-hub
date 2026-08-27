@@ -37,6 +37,27 @@ Deno.serve(async (req) => {
       return resp({ error: "billing_type deve ser BOLETO ou PIX." });
     }
 
+    // Valida due_date: formato YYYY-MM-DD e não pode ser no passado
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(due_date)) || Number.isNaN(new Date(`${due_date}T12:00:00`).getTime())) {
+      return resp({ error: "A data de vencimento não pode ser no passado." });
+    }
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (String(due_date) < todayStr) {
+      return resp({ error: "A data de vencimento não pode ser no passado." });
+    }
+
+    // Valida amount_override quando enviado
+    let overrideValue: number | null = null;
+    if (amount_override !== undefined && amount_override !== null && amount_override !== "") {
+      const parsed = Math.abs(parseFloat(String(amount_override)));
+      if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 1000000) {
+        return resp({ error: "Valor da cobrança inválido." });
+      }
+      overrideValue = parsed;
+    }
+
+
+
     // Resolve effective broker: members act under the owner's Asaas subaccount.
     let effectiveBrokerId = user.id;
     const { data: membership } = await supabase
