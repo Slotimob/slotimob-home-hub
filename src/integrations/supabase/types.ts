@@ -328,6 +328,8 @@ export type Database = {
           status: string | null
           updated_at: string | null
           wallet_id: string | null
+          webhook_registered_at: string | null
+          webhook_token: string
         }
         Insert: {
           asaas_account_id: string
@@ -339,6 +341,8 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           wallet_id?: string | null
+          webhook_registered_at?: string | null
+          webhook_token?: string
         }
         Update: {
           asaas_account_id?: string
@@ -350,6 +354,8 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           wallet_id?: string | null
+          webhook_registered_at?: string | null
+          webhook_token?: string
         }
         Relationships: [
           {

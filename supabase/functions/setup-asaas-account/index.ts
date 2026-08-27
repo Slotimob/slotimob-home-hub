@@ -97,31 +97,42 @@ Deno.serve(async (req) => {
       encryptedKey = encData as string;
     }
 
+    let accountRowId: string | null = existing?.id ?? null;
+    let brokerWebhookToken: string | null = null;
+
     if (existing) {
-      await supabase.from("asaas_accounts").update({
+      const { data: updated, error: updateErr } = await supabase.from("asaas_accounts").update({
         asaas_account_id: asaasAccountId,
         asaas_api_key_encrypted: encryptedKey,
         wallet_id: walletId ?? null,
         status: "active",
         cpf_cnpj: cleanCpf,
-      }).eq("id", existing.id);
+      }).eq("id", existing.id).select("id, webhook_token").single();
+      if (updateErr) {
+        console.error("[setup-asaas-account] DB error:", updateErr);
+        return resp({ error: "Subconta criada no Asaas mas erro ao salvar no banco: " + updateErr.message });
+      }
+      accountRowId = updated?.id ?? existing.id;
+      brokerWebhookToken = (updated?.webhook_token as string) ?? null;
     } else {
-      const { error: insertErr } = await supabase.from("asaas_accounts").insert({
+      const { data: inserted, error: insertErr } = await supabase.from("asaas_accounts").insert({
         broker_id: user.id,
         asaas_account_id: asaasAccountId,
         asaas_api_key_encrypted: encryptedKey,
         wallet_id: walletId ?? null,
         status: "active",
         cpf_cnpj: cleanCpf,
-      });
+      }).select("id, webhook_token").single();
       if (insertErr) {
         console.error("[setup-asaas-account] DB error:", insertErr);
         return resp({ error: "Subconta criada no Asaas mas erro ao salvar no banco: " + insertErr.message });
       }
+      accountRowId = inserted?.id ?? null;
+      brokerWebhookToken = (inserted?.webhook_token as string) ?? null;
     }
 
-    if (subKey) {
-      const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
+
+    if (subKey && brokerWebhookToken) {
       const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/asaas-webhook`;
       fetch(`${ASAAS}/webhooks`, {
         method: "POST",
@@ -134,10 +145,24 @@ Deno.serve(async (req) => {
           interrupted: false,
           sendType: "SEQUENTIALLY",
           events: ["PAYMENT_CREATED", "PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_OVERDUE", "PAYMENT_CANCELLED", "PAYMENT_UPDATED"],
-          authToken: webhookToken,
+          authToken: brokerWebhookToken,
         }),
-      }).catch(e => console.warn("[setup-asaas-account] Webhook reg failed:", e));
+      })
+        .then(async (r) => {
+          if (!r.ok) {
+            console.warn("[setup-asaas-account] Webhook reg returned", r.status, await r.text());
+            return;
+          }
+          if (accountRowId) {
+            await supabase
+              .from("asaas_accounts")
+              .update({ webhook_registered_at: new Date().toISOString() })
+              .eq("id", accountRowId);
+          }
+        })
+        .catch(e => console.warn("[setup-asaas-account] Webhook reg failed:", e));
     }
+
 
     console.log(`[setup-asaas-account] Sub-account ${asaasAccountId} created for broker ${user.id}`);
     return resp({ success: true, asaas_account_id: asaasAccountId, already_exists: false });
