@@ -80,12 +80,13 @@
     <!-- End Google Tag Manager (noscript) -->
     <script>
       // Apply saved theme only for returning authenticated users.
-      // Landing page overrides this with its own fixed dark theme.
+      // Public/institutional pages use their own fixed "site" theme.
       (function() {
         var t = localStorage.getItem('slotimob-theme');
-        // Only apply if we're NOT on the landing (/ or /lp/*)
-        var isLanding = window.location.pathname === '/' || window.location.pathname.startsWith('/lp/');
-        if (t && !isLanding) document.documentElement.setAttribute('data-theme', String(t).toLowerCase().indexOf('dark') === 0 ? 'dark' : 'light');
+        var PUBLIC_PREFIXES = ['/lp/','/blog','/calculadoras','/auth','/reset-password','/legal','/apresentacao','/checkout','/planos','/sobre','/demo'];
+        var p = window.location.pathname;
+        var isPublic = p === '/' || PUBLIC_PREFIXES.some(function(x){ return p === x || p.indexOf(x) === 0; });
+        if (t && !isPublic) document.documentElement.setAttribute('data-theme', String(t).toLowerCase().indexOf('dark') === 0 ? 'dark' : 'light');
       })();
     </script>
     <div id="root"></div>
