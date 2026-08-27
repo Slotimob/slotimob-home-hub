@@ -471,10 +471,10 @@ serve(async (req) => {
     });
 
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : "Erro interno ao processar checkout";
-    console.error("[create-checkout-session]", errMsg);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[create-checkout-session]", errMsg, err);
     return new Response(
-      JSON.stringify({ error: errMsg }),
+      JSON.stringify({ error: "Não foi possível processar o pagamento. Tente novamente." }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
