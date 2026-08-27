@@ -33,6 +33,8 @@ import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { translateAuthError } from '@/lib/authErrors';
 import { validatePassword, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
+import { useQuery } from '@tanstack/react-query';
+import EmailVerificationStep from '@/components/checkout/EmailVerificationStep';
 
 // ============================================================================
 // Types & Meta
@@ -171,6 +173,28 @@ export default function Checkout() {
 
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
   const { slots } = useEarlyAdopterCount();
+
+  // ── Verificação de e-mail (checagem proativa) ──────────────────────────
+  const [emailVerifiedLocally, setEmailVerifiedLocally] = useState(false);
+  const [forceEmailVerification, setForceEmailVerification] = useState(false);
+
+  const { data: emailVerifiedAt, isLoading: verificationLoading } = useQuery({
+    queryKey: ['checkout-email-verified', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('email_verified_at')
+        .eq('id', user!.id)
+        .maybeSingle();
+      return data?.email_verified_at ?? null;
+    },
+  });
+
+  const needsEmailVerification =
+    !!user &&
+    !emailVerifiedLocally &&
+    (forceEmailVerification || (!verificationLoading && !emailVerifiedAt));
 
   // URL sync
   useEffect(() => {
@@ -458,6 +482,15 @@ export default function Checkout() {
         const msg = fnError?.message || 'Erro ao iniciar checkout. Tente novamente.';
         setCheckoutError(msg);
         toast.error(msg);
+        resetCaptcha();
+        return;
+      }
+
+      if (data?.error === 'email_nao_verificado') {
+        setForceEmailVerification(true);
+        setEmailVerifiedLocally(false);
+        setCheckoutError(null);
+        toast.error(data.message || 'Confirme seu e-mail antes de continuar com o pagamento.');
         resetCaptcha();
         return;
       }
@@ -893,6 +926,18 @@ export default function Checkout() {
               )}
             </div>
 
+            {needsEmailVerification && user?.email && (
+              <EmailVerificationStep
+                email={user.email}
+                onVerified={() => {
+                  setEmailVerifiedLocally(true);
+                  setForceEmailVerification(false);
+                }}
+              />
+            )}
+
+            {!needsEmailVerification && (
+              <>
             {/* Dados Fiscais */}
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
               <h3 className="font-semibold text-foreground">Dados fiscais</h3>
@@ -1165,6 +1210,8 @@ export default function Checkout() {
                   </span>
                 </div>
               </div>
+            )}
+              </>
             )}
           </div>
         </div>
