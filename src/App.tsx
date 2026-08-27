@@ -13,7 +13,7 @@ import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
 import { RequireFeature } from "@/components/subscription/RequireFeature";
-import { LandingThemeProvider } from "@/components/LandingThemeProvider";
+import { SiteThemeProvider } from "@/components/SiteThemeProvider";
 import { SuspenseFallback } from "@/components/SuspenseFallback";
 import { CookieConsent } from "@/components/CookieConsent";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
@@ -92,6 +92,9 @@ const queryClient = new QueryClient();
 /** Wrap a page element with AuthGuard */
 const guarded = (element: React.ReactNode) => <AuthGuard>{element}</AuthGuard>;
 
+/** Wrap a public page with the institutional site theme (independent from the app theme) */
+const site = (element: React.ReactNode) => <SiteThemeProvider>{element}</SiteThemeProvider>;
+
 /** Renders contract detail when ?id= is present, otherwise the list page */
 const ContratosRoute = () => {
   const [searchParams] = useSearchParams();
@@ -138,25 +141,25 @@ const App = () => (
             <Suspense fallback={<SuspenseFallback />}>
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/lp/:segment" element={<LandingPage />} />
-              <Route path="/demo" element={<ProductDemo />} />
-              <Route path="/auth" element={<LandingThemeProvider><Auth /></LandingThemeProvider>} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/legal" element={<Legal />} />
+              <Route path="/" element={site(<LandingPage />)} />
+              <Route path="/lp/:segment" element={site(<LandingPage />)} />
+              <Route path="/demo" element={site(<ProductDemo />)} />
+              <Route path="/auth" element={site(<Auth />)} />
+              <Route path="/auth/callback" element={site(<AuthCallback />)} />
+              <Route path="/reset-password" element={site(<ResetPassword />)} />
+              <Route path="/legal" element={site(<Legal />)} />
               <Route path="/refund-policy" element={<Navigate to="/legal?tab=refund" replace />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:slug" element={<BlogPostPage />} />
-              <Route path="/calculadoras" element={<Calculators />} />
-              <Route path="/calculadoras/:slug" element={<CalculatorDetail />} />
-              <Route path="/apresentacao" element={<Presentation />} />
+              <Route path="/blog" element={site(<Blog />)} />
+              <Route path="/blog/:slug" element={site(<BlogPostPage />)} />
+              <Route path="/calculadoras" element={site(<Calculators />)} />
+              <Route path="/calculadoras/:slug" element={site(<CalculatorDetail />)} />
+              <Route path="/apresentacao" element={site(<Presentation />)} />
               <Route path="/presentation" element={<Navigate to="/apresentacao" replace />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/planos" element={<Plans />} />
-              <Route path="/checkout/success" element={<CheckoutSuccess />} />
-             <Route path="/checkout/cancel" element={<CheckoutCancel />} />
-             <Route path="/sobre" element={<Sobre />} />
+              <Route path="/checkout" element={site(<Checkout />)} />
+              <Route path="/planos" element={site(<Plans />)} />
+              <Route path="/checkout/success" element={site(<CheckoutSuccess />)} />
+             <Route path="/checkout/cancel" element={site(<CheckoutCancel />)} />
+             <Route path="/sobre" element={site(<Sobre />)} />
              
              <Route path="/termos-de-uso" element={<Navigate to="/legal?tab=terms" replace />} />
              <Route path="/politica-de-privacidade" element={<Navigate to="/legal?tab=privacy" replace />} />
