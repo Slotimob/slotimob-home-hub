@@ -926,6 +926,18 @@ export default function Checkout() {
               )}
             </div>
 
+            {needsEmailVerification && user?.email && (
+              <EmailVerificationStep
+                email={user.email}
+                onVerified={() => {
+                  setEmailVerifiedLocally(true);
+                  setForceEmailVerification(false);
+                }}
+              />
+            )}
+
+            {!needsEmailVerification && (
+              <>
             {/* Dados Fiscais */}
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
               <h3 className="font-semibold text-foreground">Dados fiscais</h3>
