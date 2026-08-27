@@ -138,13 +138,13 @@ export default function BoletosEmGestao() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/asaas-payment-action`,
+        `${ENV.SUPABASE_URL}/functions/v1/asaas-payment-action`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session?.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'apikey': ENV.SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({ payment_id: paymentId, action, ...extraPayload }),
         }

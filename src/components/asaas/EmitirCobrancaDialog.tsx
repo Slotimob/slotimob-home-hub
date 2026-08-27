@@ -172,13 +172,13 @@ export function EmitirCobrancaDialog({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-asaas-charge`,
+        `${ENV.SUPABASE_URL}/functions/v1/create-asaas-charge`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${session?.access_token}`,
-            "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
+            "apikey": ENV.SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
             lease_id: selectedLeaseId,
