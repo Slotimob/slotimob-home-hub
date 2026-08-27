@@ -2431,6 +2431,39 @@ export type Database = {
           },
         ]
       }
+      email_verifications: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       financial_categories: {
         Row: {
           broker_id: string
@@ -3661,6 +3694,7 @@ export type Database = {
           dark_mode_preference: boolean | null
           dashboard_settings: Json | null
           email: string
+          email_verified_at: string | null
           feed_token: string | null
           full_name: string
           glow_intensity: number | null
@@ -3702,6 +3736,7 @@ export type Database = {
           dark_mode_preference?: boolean | null
           dashboard_settings?: Json | null
           email: string
+          email_verified_at?: string | null
           feed_token?: string | null
           full_name: string
           glow_intensity?: number | null
@@ -3743,6 +3778,7 @@ export type Database = {
           dark_mode_preference?: boolean | null
           dashboard_settings?: Json | null
           email?: string
+          email_verified_at?: string | null
           feed_token?: string | null
           full_name?: string
           glow_intensity?: number | null
@@ -5977,6 +6013,7 @@ export type Database = {
         Returns: Json
       }
       claim_early_adopter_slot: { Args: { p_plan_id: string }; Returns: Json }
+      cleanup_expired_email_verifications: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       complete_access_review: {
         Args: { p_cycle_id: string; p_notes?: string }
