@@ -174,6 +174,25 @@ export default function Checkout() {
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
   const { slots } = useEarlyAdopterCount();
 
+  // ── Verificação de e-mail (checagem proativa) ──────────────────────────
+  const [emailVerifiedLocally, setEmailVerifiedLocally] = useState(false);
+
+  const { data: emailVerifiedAt, isLoading: verificationLoading } = useQuery({
+    queryKey: ['checkout-email-verified', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('email_verified_at')
+        .eq('id', user!.id)
+        .maybeSingle();
+      return data?.email_verified_at ?? null;
+    },
+  });
+
+  const needsEmailVerification =
+    !!user && !emailVerifiedLocally && !verificationLoading && !emailVerifiedAt;
+
   // URL sync
   useEffect(() => {
     const cycle = isAnnual ? 'annual' : 'monthly';
