@@ -132,8 +132,7 @@ Deno.serve(async (req) => {
     }
 
 
-    if (subKey) {
-      const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
+    if (subKey && brokerWebhookToken) {
       const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/asaas-webhook`;
       fetch(`${ASAAS}/webhooks`, {
         method: "POST",
@@ -146,10 +145,24 @@ Deno.serve(async (req) => {
           interrupted: false,
           sendType: "SEQUENTIALLY",
           events: ["PAYMENT_CREATED", "PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_OVERDUE", "PAYMENT_CANCELLED", "PAYMENT_UPDATED"],
-          authToken: webhookToken,
+          authToken: brokerWebhookToken,
         }),
-      }).catch(e => console.warn("[setup-asaas-account] Webhook reg failed:", e));
+      })
+        .then(async (r) => {
+          if (!r.ok) {
+            console.warn("[setup-asaas-account] Webhook reg returned", r.status, await r.text());
+            return;
+          }
+          if (accountRowId) {
+            await supabase
+              .from("asaas_accounts")
+              .update({ webhook_registered_at: new Date().toISOString() })
+              .eq("id", accountRowId);
+          }
+        })
+        .catch(e => console.warn("[setup-asaas-account] Webhook reg failed:", e));
     }
+
 
     console.log(`[setup-asaas-account] Sub-account ${asaasAccountId} created for broker ${user.id}`);
     return resp({ success: true, asaas_account_id: asaasAccountId, already_exists: false });
