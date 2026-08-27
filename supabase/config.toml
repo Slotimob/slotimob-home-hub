@@ -73,9 +73,70 @@ verify_jwt = false
 [functions.save-fiscal-data]
 verify_jwt = false
 
-[functions.send-email-verification]
+[functions.asaas-platform-webhook]
 verify_jwt = false
 
-[functions.verify-email-code]
+[functions.cancel-subscription]
 verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.check-visit-reminders]
+verify_jwt = false
+
+[functions.confirm-visit]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.export-all-data]
+verify_jwt = false
+
+[functions.facebook-leads-webhook]
+verify_jwt = false
+
+[functions.get-delivery-url]
+verify_jwt = false
+
+[functions.import-all-data]
+verify_jwt = false
+
+[functions.integrations-manage]
+verify_jwt = false
+
+[functions.manage-addons]
+verify_jwt = false
+
+[functions.migrate-credentials]
+verify_jwt = false
+
+[functions.notify-terms-update]
+verify_jwt = false
+
+[functions.portal-connections]
+verify_jwt = false
+
+[functions.purge-expired-deliveries]
+verify_jwt = false
+
+[functions.send-document-email]
+verify_jwt = false
+
+[functions.send-invite-email]
+verify_jwt = false
+
+[functions.send-visit-reminder]
+verify_jwt = false
+
+[functions.send-weekly-report]
+verify_jwt = false
+
+[functions.upload-export-delivery]
+verify_jwt = false
+
+[functions.validate-signup]
+verify_jwt = false
+
 
