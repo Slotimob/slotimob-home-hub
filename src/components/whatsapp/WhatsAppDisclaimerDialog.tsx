@@ -33,10 +33,10 @@ export const WhatsAppDisclaimerDialog = ({ open, onOpenChange, onAccept }: Whats
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-yellow-500" />
-            <DialogTitle>Termos de Uso — WhatsApp</DialogTitle>
+            <DialogTitle>Aviso de risco — Conexão do WhatsApp</DialogTitle>
           </div>
           <DialogDescription>
-            Leia atentamente antes de conectar seu número.
+            Leia antes de conectar seu número. Este aviso aparece a cada nova conexão.
           </DialogDescription>
         </DialogHeader>
 
@@ -45,10 +45,11 @@ export const WhatsAppDisclaimerDialog = ({ open, onOpenChange, onAccept }: Whats
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium text-foreground">Risco de Banimento pela Meta</p>
+                <p className="font-medium text-foreground">A conexão usa uma API não oficial do WhatsApp</p>
                 <p className="mt-1">
-                  A Meta (proprietária do WhatsApp) pode banir permanentemente números que violem suas políticas de uso. 
-                  Essa ação é irreversível e está fora do controle da nossa plataforma.
+                  A Slotimob conecta seu número por uma integração que não é a API oficial do WhatsApp.
+                  Por isso, o WhatsApp pode <strong>bloquear ou banir seu número</strong> se identificar uso fora das regras dele.
+                  Esse bloqueio é feito pelo WhatsApp e não pode ser revertido pela Slotimob.
                 </p>
               </div>
             </div>
@@ -57,26 +58,38 @@ export const WhatsAppDisclaimerDialog = ({ open, onOpenChange, onAccept }: Whats
           <div className="space-y-2">
             <p className="font-medium text-foreground flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
-              Boas Práticas Obrigatórias
+              O que aumenta o risco de bloqueio
             </p>
             <ul className="space-y-1.5 list-disc list-inside ml-1">
-              <li><strong>Não envie SPAM:</strong> mensagens em massa para contatos que não autorizaram o recebimento são proibidas.</li>
-              <li><strong>Aqueça o chip:</strong> números novos devem iniciar com volume baixo de mensagens e aumentar gradualmente.</li>
-              <li><strong>Respeite a frequência:</strong> evite enviar muitas mensagens em intervalos curtos.</li>
-              <li><strong>Conteúdo relevante:</strong> envie apenas mensagens pertinentes ao contexto imobiliário e ao relacionamento com o cliente.</li>
-              <li><strong>Permita opt-out:</strong> sempre ofereça uma forma do contato parar de receber mensagens.</li>
+              <li><strong>Disparo em massa e spam:</strong> enviar muitas mensagens de uma vez ou para quem não pediu contato.</li>
+              <li><strong>Mensagem não solicitada:</strong> falar com quem nunca autorizou receber contato seu.</li>
+              <li><strong>Número novo com volume alto:</strong> comece devagar e aumente aos poucos.</li>
+              <li><strong>Muitas mensagens em pouco tempo:</strong> respeite intervalos entre os envios.</li>
+              <li><strong>Sem opção de sair:</strong> sempre permita que a pessoa peça para não receber mais mensagens.</li>
             </ul>
           </div>
 
           <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
-            <p className="font-medium text-foreground">Isenção de Responsabilidade</p>
+            <p className="font-medium text-foreground">De quem é o risco</p>
             <p>
-              A plataforma Sloti disponibiliza a integração com o WhatsApp como ferramenta de produtividade. 
-              <strong> Não nos responsabilizamos por banimentos, suspensões ou qualquer penalidade aplicada pela Meta</strong> em 
-              decorrência do uso inadequado do serviço pelo usuário. O uso do recurso implica total ciência e aceitação destes termos.
+              O número conectado é seu e o uso é feito por você. O risco de bloqueio pelo WhatsApp é seu, não da Slotimob.
+              A plataforma oferece a integração como ferramenta de trabalho, mas não controla as decisões do WhatsApp sobre o seu número.
             </p>
           </div>
         </div>
+
+        <div className="flex items-start gap-3 pt-2">
+          <Checkbox
+            id="whatsapp-terms"
+            checked={accepted}
+            onCheckedChange={(v) => setAccepted(v === true)}
+            disabled={isSubmitting}
+          />
+          <label htmlFor="whatsapp-terms" className="text-sm leading-tight cursor-pointer select-none">
+            Li o aviso, entendi que a API não é oficial e assumo o risco de bloqueio do meu número.
+          </label>
+        </div>
+
 
         <div className="flex items-start gap-3 pt-2">
           <Checkbox
