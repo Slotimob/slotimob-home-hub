@@ -1143,6 +1143,7 @@ export type Database = {
           created_at: string
           description: string
           entry_date: string
+          fitid: string | null
           id: string
           import_id: string | null
           imported_at: string
@@ -1157,6 +1158,7 @@ export type Database = {
           created_at?: string
           description: string
           entry_date: string
+          fitid?: string | null
           id?: string
           import_id?: string | null
           imported_at?: string
@@ -1171,6 +1173,7 @@ export type Database = {
           created_at?: string
           description?: string
           entry_date?: string
+          fitid?: string | null
           id?: string
           import_id?: string | null
           imported_at?: string
