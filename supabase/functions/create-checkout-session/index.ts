@@ -289,7 +289,7 @@ serve(async (req) => {
         externalReference: extRef,
       });
 
-      await supabase
+      const { error: subUpdateError } = await supabase
         .from("subscriptions")
         .update({
           asaas_subscription_id: sub.id,
@@ -297,9 +297,12 @@ serve(async (req) => {
           asaas_customer_id: asaasCustomerId,
           plan_id: plan_id,
           cancel_at_period_end: false,
-          ...(useEarlyAdopter ? { price_locked: true, is_early_adopter: true } : {}),
         })
         .eq("user_id", userId);
+
+      if (subUpdateError) {
+        console.error("[checkout] falha ao salvar assinatura local:", subUpdateError);
+      }
 
       // PIX: buscar QR code inline
       if (asaasBillingType === "PIX") {
