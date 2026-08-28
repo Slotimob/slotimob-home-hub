@@ -11,7 +11,7 @@ All colors MUST be HSL.
   :root,
   :root[data-theme="light"],
   :root[data-theme="light-green"] {
-    --background: 246 22% 92%;
+    --background: 246 20% 94%;
     --foreground: 246 100% 23%;
     --card: 0 0% 100%;
     --card-foreground: 246 100% 23%;
@@ -22,7 +22,7 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%;
     --secondary: 170 62% 49%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 246 16% 86%;
+    --muted: 246 18% 89%;
     --muted-foreground: 246 25% 38%;
     --accent: 170 85% 45%;
     --accent-foreground: 0 0% 100%;
