@@ -1,120 +1,60 @@
-# Fases 3.3 + 3.4 — Redesenho do "Relatório Completo" (só desenho)
+# Auditoria — Conciliação Bancária (diagnóstico, sem alterações)
 
-## Resposta à ambiguidade: 1 imóvel vs vários
+Arquivos lidos: `src/pages/FinanceReconciliation.tsx`, `ImportStatementDialog.tsx`, `ReconciliationPanel.tsx`, `ReconciliationMatcherDialog.tsx`, `ReconciliationMismatchDialog.tsx`, `ReconciliationPendingListGrouped.tsx`, `ReconciliationHistoryTable.tsx`, `StatementImportHistoryDialog.tsx`, `TransactionsTableInfinite.tsx` + schema/RLS/índices/triggers de `bank_statement_entries`, `bank_statement_imports`, `bank_accounts`, `balance_audits`.
 
-Recomendação: **estrutura única, com a página de agregado condicional.**
+Observação de nomenclatura: não existe tabela `bank_transactions`; o extrato vive em `bank_statement_entries`.
 
-- `report.assets.length === 1` → **sem** página de abertura agregada. A capa já leva o nome do imóvel, e o "Sumário Financeiro Consolidado" do próprio imóvel entra como seção 2 dentro da página do imóvel. Zero redundância.
-- `report.assets.length > 1` → **página de abertura "Sumário da Carteira"** com os KPIs agregados (o que hoje é a página "Sumário Consolidado"), e cada imóvel repete a mesma seção 2, mas escopada a ele. O agregado deixa de se chamar "Consolidado" para não colidir com a seção por imóvel.
+## 1. Veredito das 10 práticas
 
-Regra de nomenclatura para não confundir:
-- Agregado (só quando N > 1): **"Sumário da Carteira"**
-- Por imóvel (sempre): **"Sumário Financeiro Consolidado"**
+| # | Prática | Veredito | Evidência |
+|---|---|---|---|
+| 1 | Importação de extrato | Parcial | OFX e CSV (`ImportStatementDialog.tsx:110-140`); sem CNAB. Duplicata só compara **nome do arquivo importado hoje** (`:57-99`) e é apenas aviso, não bloqueio |
+| 2 | Matching automático | Parcial | Só valor exato ±R$0,01, sem data e sem score no auto (`ReconciliationPanel.tsx:180-190`). No matcher manual há sugestão com valor + tipo + ±3 dias (`ReconciliationMatcherDialog.tsx:104-118`), mas binário, sem score |
+| 3 | Sugestão vs. conciliação silenciosa | Parcial | O botão "Conciliação automática" grava direto no banco sem revisão prévia (`ReconciliationPanel.tsx:178-215`); o fluxo manual sim pede seleção humana |
+| 4 | Conciliação parcial | Não existe | `bank_statement_entries.transaction_id` é 1 uuid; divergência de valor só gera aviso e concilia integral (`ReconciliationMismatchDialog.tsx`, `ReconciliationPanel.tsx:127-137`) |
+| 5 | Muitos-para-um | Não existe | Modelo é 1 entrada ↔ 1 lançamento (FK única, sem tabela de vínculo) |
+| 6 | Desfazer conciliação | Parcial | Existe com confirmação (`ReconciliationHistoryTable.tsx:86-120`), mas **não grava trilha** — só limpa `is_reconciled`/`transaction_id`/`reconciled_at` |
+| 7 | Fechamento de período | Não existe | `balance_audits` marca datas como "Auditado" (badge visual), mas nada impede desconciliar ou editar essas datas |
+| 8 | Relatório de diferenças | Parcial | Cards mostram importado/conciliado/pendente do lado extrato (`FinanceReconciliation.tsx:78-120`) e há aba Conferência (`BalanceAuditPanel`), mas não há total do que sobrou **do lado dos lançamentos** nem número único de diferença dos dois lados |
+| 9 | Idempotência da importação | Não existe | Nenhum índice único em `bank_statement_entries` (só PK e índices comuns); nenhum hash de arquivo nem FITID do OFX é gravado — reimportar o mesmo OFX **duplica todas as linhas** |
+| 10 | Trilha de auditoria | Não existe | Nenhum trigger em `bank_statement_entries` / `financial_transactions` (consulta a `information_schema.triggers` retornou vazio); nenhuma coluna `reconciled_by` |
 
-## Estrutura final proposta
+## 2. Perguntas de confiabilidade
 
-```text
-[Capa]  Relatório Completo do Imóvel
-        Nome do imóvel (quando N = 1)  |  "N imóveis" (quando N > 1)
-        Período: dd/mm/aaaa — dd/mm/aaaa   (ou "todo o histórico até ...")
-        Gerado em ...
+**Editar o valor do lançamento depois de conciliar?**
+A conciliação continua válida e silenciosamente errada. Nada em `CreateTransactionDialog`/`TransactionsTableInfinite` reseta `is_reconciled` ao alterar `amount`, e não há constraint/trigger conferindo igualdade. Pior: excluir o lançamento dispara `ON DELETE SET NULL` em `bank_statement_entries.transaction_id`, mas `is_reconciled` **fica true** — a entrada some das pendências e vira um conciliado órfão sem contraparte.
 
-[Página agregada — SOMENTE se N > 1]  Sumário da Carteira
+**A conciliação escreve em `financial_transactions` sem confirmação explícita?**
+Sim, em dois pontos. `ReconciliationPanel.handleAutoReconcile` (`:178-215`) grava `is_reconciled`/`reconciled_at` em lote com um clique, sem preview. E `ReconciliationMatcherDialog.handleReconcile` (`:137-160`) além de conciliar altera `status: "paid"`, `paid_date = hoje` e `bank_account_id` do lançamento — muda dado financeiro que o usuário não pediu para mudar, com data de pagamento "hoje" em vez da data do extrato.
 
-[Por imóvel, 1 página inicial cada]
-  Cabeçalho: nome, endereço, tipo
-  1. Sumário Financeiro Consolidado
-  2. Benfeitorias no Período
-  3. Manutenções e Atividades
-  4. Atividades no Período  (log completo, por último)
-```
+**Respeita `broker_id`?**
+Não há vazamento entre brokers, mas há um problema de workspace. `bank_statement_entries`, `bank_statement_imports` e `balance_audits` usam RLS `auth.uid() = broker_id`, enquanto `bank_accounts` usa `get_workspace_user_ids(auth.uid())`. Consequência: o importador grava `broker_id = effectiveBrokerId` (`ImportStatementDialog.tsx:286`), então um **membro da equipe** tem o insert recusado pela RLS e não enxerga o extrato do dono — a conta bancária aparece, o extrato não. Isolamento está seguro; multi-tenancy interno está quebrado.
 
-Observação: Despesas no Período (categorias + top 10) e Receitas no Período **não somem** — passam a ser blocos internos da seção 1 (ver abaixo), o que elimina o "Receitas: total" solto de uma linha só.
+## 3. O que realmente vale mudar (priorizado)
 
-## Seção "Sumário Financeiro Consolidado" (por imóvel) — campos exatos
+### (a) Risco de dado errado
+1. Idempotência da importação: gravar `fitid` (OFX) + hash do arquivo e índice único `(bank_account_id, fitid)` / `(bank_account_id, entry_date, amount, description)`, pulando duplicadas no insert. **Médio**
+2. Órfão pós-exclusão: ao desvincular (`transaction_id → null`), zerar `is_reconciled` — trigger no banco resolve os dois caminhos (delete e update). **Pequeno**
+3. Invalidar conciliação quando o valor do lançamento muda: trigger que zera `is_reconciled` das duas pontas ao alterar `amount`. **Pequeno**
+4. RLS de workspace em `bank_statement_entries`/`imports`/`balance_audits`, alinhando com `bank_accounts`. **Pequeno** (migração), impacto alto
+5. Parar de sobrescrever `status`/`paid_date`/`bank_account_id` no `ReconciliationMatcherDialog`; se mantiver, usar `paid_date = entry_date` do extrato e avisar. **Pequeno**
 
-Consolida hoje 3 blocos espalhados: Aquisição, Valor de Mercado e Indicadores (fim da página), mais Receitas/Despesas. Layout em 4 sub-blocos numa mesma seção:
+### (b) Ganho de confiabilidade
+6. Auto-conciliação virar **preview**: listar os pares propostos com score (valor + proximidade de data + similaridade de descrição) e só gravar após confirmação. **Médio**
+7. Trilha: colunas `reconciled_by` / `unreconciled_by`+`unreconciled_at`, ou trigger de audit_log nas duas tabelas. **Pequeno a médio**
+8. Relatório de diferenças completo: pendentes dos dois lados com totais e delta único. **Pequeno**
+9. Duplicata de arquivo: comparar hash em vez de nome, e em qualquer data, não só "hoje". **Pequeno** (cai junto com o item 1)
 
-**a) Patrimônio (Aquisição × Mercado)** — tabela de 2 colunas
-| Campo | Origem |
-|---|---|
-| Valor de aquisição | `acquisition.value` |
-| Data de aquisição | `acquisition.date` |
-| Custos de aquisição (ITBI, cartório) | `acquisition.costs` |
-| Benfeitorias capitalizadas | `acquisition.total_invested − value − costs` (derivado, hoje só implícito) |
-| **Total investido** | `acquisition.total_invested` |
-| Valor de mercado atual | `market.current_value` |
-| Última atualização do valor | `market.last_updated` |
-| Valorização (R$) | `market.appreciation_abs` |
-| Valorização (%) | `market.appreciation_pct` |
-| Observações de aquisição | `acquisition.notes` (só se houver) |
+### (c) Só conforto de UX
+10. Filtro de data também na lista de lançamentos pendentes (hoje só o extrato é filtrado — `ReconciliationPanel.tsx:57-71`). **Pequeno**
+11. Suporte a CNAB / arrastar-e-soltar arquivo. **Grande**, baixo retorno agora
 
-**b) Resultado no período**
-| Campo | Origem |
-|---|---|
-| Receitas no período | `period.income_total` |
-| Despesas no período | `period.expenses_total` |
-| Resultado líquido | `income_total − expenses_total` (derivado; hoje só existe no agregado) |
+## 4. O que NÃO vale mexer
 
-**c) Indicadores** (o bloco que hoje fica no fim, sem repetição)
-| Campo | Origem |
-|---|---|
-| ROI no período | `period.roi_pct` |
-| Yield mensal | `period.monthly_yield` |
-| Cap Rate | `period.cap_rate` |
+- **Conciliação parcial e N:1** — exigem tabela de vínculo nova, reescrita das telas e migração dos dados já conciliados. Para gestão imobiliária o caso 1:1 cobre quase tudo; risco de quebrar muito maior que o ganho.
+- **Fechamento de período com trava** — `balance_audits` já dá o sinal visual de "Auditado". Uma trava dura tende a travar o usuário em correção legítima. Deixar como está.
+- **Parser OFX/CSV atual** — a detecção de delimitador, datas em múltiplos formatos e extração de LEDGERBAL/AVAILBAL estão corretas e cobrem os bancos brasileiros comuns. Só acrescentar FITID, sem reescrever.
+- **Layout, abas e agrupamento por data** (`ReconciliationPendingListGrouped`, cards de resumo) — está bom, responsivo e legível. Redesenho aqui é custo sem retorno.
+- **`ReconciliationMismatchDialog`** — o aviso de divergência já existe e funciona; o problema não é o diálogo, é o que acontece depois.
 
-Contadores que hoje estão misturados em "Indicadores" (`activities_count`, `maintenance_count`, `maintenance_estimated_cost`) **saem daqui** e viram o rodapé de totais das seções 3 e 4, onde fazem sentido.
-
-**d) Composição das despesas** (só se `expenses_total > 0`)
-- Tabela por categoria: Categoria / Valor / % do total + linha de Total (igual hoje).
-- Tabela "Maiores despesas do período" (top 10): Descrição / Categoria / Valor / Data.
-
-Nenhum número de hoje é perdido: capa, KPIs agregados, aquisição, mercado, receitas, despesas, indicadores e contadores estão todos mapeados acima ou nas seções 3/4.
-
-**Página "Sumário da Carteira" (N > 1)** mantém exatamente os 9 KPIs atuais de `report.summary`: total investido, valor de mercado total, valorização (R$ e %), receitas, despesas, resultado líquido, ROI, yield mensal médio, cap rate médio — mais uma tabela-índice de uma linha por imóvel (Imóvel / Total investido / Valor de mercado / Receitas / Despesas / Resultado), que hoje não existe e evita ter que folhear o PDF.
-
-## Seção "Manutenções e Atividades" — cabeçalhos e texto
-
-Cabeçalhos atuais abreviados demais (`Custo est.`, `Lanç.`, `Anexos`) passam a:
-
-`Data · Tipo · Atividade · Responsável · Custo estimado · Lançamento financeiro · Anexos · Status`
-
-com `Lançamento financeiro` exibindo "Sim/Não" e coluna estreita, e quebra de linha permitida no cabeçalho.
-
-Texto abaixo da tabela — hoje:
-> `Total: 3 atividade(s) · 1 pendente(s) · Custo estimado R$ 1.200,00`
-
-Proposto (2 linhas, sem parênteses de plural e com pluralização correta):
-> **Resumo do período:** 3 manutenções registradas, sendo 1 ainda pendente e 2 concluídas.
-> **Custo estimado total:** R$ 1.200,00 (valores previstos; não representam necessariamente lançamentos financeiros efetivados).
-
-Quando houver mais itens que o limite exibido, acrescenta-se:
-> Exibindo as 120 manutenções mais recentes de 148 no período.
-
-## Seção "Atividades no Período" (última) — log completo com usuário e diff
-
-Passa de tabela de 3 colunas (Data / Tipo / Descrição truncada em 90 chars) para o formato do antigo "Exportar PDF" da timeline:
-
-`Data e hora · Usuário · Evento · Alterações`
-
-- **Data e hora**: `dd/mm/aaaa HH:mm` (hoje só a data).
-- **Usuário**: nome do autor da ação.
-- **Evento**: grupo + descrição humanizada (`humanizeLog`), sem truncar em 90 caracteres — `overflow: linebreak`.
-- **Alterações**: diff campo a campo (`Campo: de → para`), uma linha por campo, reusando `getChangedFields` / `diffOldNew`. Campos ignorados continuam filtrados por `shouldIgnoreField`.
-- Rodapé com "Exibindo as N atividades mais recentes de M no período" (limite `ACTIVITIES_REPORT_LIMIT`).
-- Notas manuais entram na mesma tabela com Usuário e sem diff, como hoje.
-
-## O que falta em `asset-report-data.ts` (resposta direta)
-
-**Não tem hoje.** `AssetReportActivity` guarda apenas `{ date, group, description }` — a descrição já é a string humanizada e o log original é descartado. Faltam duas coisas:
-
-1. **Usuário**: os logs vêm com `actor_user_id` e `broker_id`, mas o builder nunca busca perfis. Precisa de um passo extra — coletar os ids dos logs e buscar em `profile_directory` (`id, full_name`), exatamente como `AssetActivityTimeline` já faz. Detalhe a confirmar na implementação: a timeline hoje resolve o nome por `broker_id`, o que mostra o dono da conta e não o autor real; no relatório o correto é priorizar `actor_user_id` e cair para `broker_id` como fallback.
-2. **Diff**: precisa carregar `old_data`/`new_data`/`action`/`table_name` no item de atividade (campos que a query já traz, só não são propagados) e calcular o diff. Recomendação: guardar `changes: { label, from, to }[]` já calculado no data layer, mantendo o gerador de PDF burro.
-
-Nenhuma query nova ao banco além da busca de perfis; nada de tabela, trigger ou backfill.
-
-## Arquivos afetados na implementação (fase seguinte)
-
-- `src/lib/asset-report-data.ts` — enriquecer `AssetReportActivity` (`user_name`, `changes`, `action`, `table_label`), buscar perfis, expor `period_net` por imóvel.
-- `src/utils/assetReportPdfGenerator.ts` — nova ordem de seções, página agregada condicional, novos cabeçalhos e textos.
-- `src/components/reports/RAReportConfigDialog.tsx` — sem mudança estrutural; no máximo o rótulo do checkbox "Atividades e movimentações" para refletir o log detalhado.
+Recomendação de execução, se aprovado: fazer só o bloco (a) numa leva (uma migração + ajustes pontuais em 2 arquivos), medir, e só então decidir sobre o bloco (b).
