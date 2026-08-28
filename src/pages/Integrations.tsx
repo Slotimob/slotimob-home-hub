@@ -103,7 +103,7 @@ const Integrations = () => {
   const [qrTimer, setQrTimer] = useState<number | null>(null);
   const [qrExpired, setQrExpired] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
+
 
   // Realtime sync job listener
   const activeJob = useSyncJobListener(effectiveBrokerId);
