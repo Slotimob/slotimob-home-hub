@@ -660,11 +660,6 @@ export default function Checkout() {
                             Popular
                           </Badge>
                         )}
-                        {earlyAdopter && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-accent/10 text-accent border-accent/20">
-                            Early
-                          </Badge>
-                        )}
                       </div>
                       <span className="text-xs text-muted-foreground">{plan.tagline}</span>
                     </div>
