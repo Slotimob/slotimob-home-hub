@@ -142,11 +142,6 @@ export const SubscriptionManagement = () => {
                 <Clock className="h-4 w-4" />
                 <span>{trialDaysRemaining} {trialDaysRemaining === 1 ? 'dia restante' : 'dias restantes'}</span>
               </div>
-              {slots.pro && slots.pro.remaining > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  🎉 Ainda há <strong>{slots.pro.remaining}</strong> vagas Early Adopter com desconto!
-                </p>
-              )}
               <Button
                 className="mt-2 gap-2"
                 onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')}
@@ -168,11 +163,6 @@ export const SubscriptionManagement = () => {
               <p className="text-sm text-muted-foreground">
                 Faça upgrade para o plano PRO e tenha acesso a IA, WhatsApp e mais.
               </p>
-              {slots.pro && slots.pro.remaining > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  🎉 {slots.pro.remaining} vagas Early Adopter disponíveis!
-                </p>
-              )}
             </div>
             <Button onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')} className="gap-2">
               <Crown className="h-4 w-4" />
