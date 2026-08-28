@@ -246,16 +246,9 @@ export default function Checkout() {
     []
   );
 
-  const isEarlyAdopterAvailable = (planId: PaidPlan): boolean => {
-    return true; // Sempre usa preço de Promoção de Lançamento
-  };
-
   const getDisplayPrice = (planId: PaidPlan): number => {
     const p = pricing?.[planId];
     if (!p) return 0;
-    if (isEarlyAdopterAvailable(planId)) {
-      return isAnnual ? p.price_annual_early_adopter || p.price_early_adopter : p.price_early_adopter;
-    }
     return isAnnual ? p.price_annual : p.price_original;
   };
 
@@ -636,7 +629,6 @@ export default function Checkout() {
                 const selected = plan.id === selectedPlan;
                 const isPaid = !plan.isFree;
                 const paidId = plan.id as PaidPlan;
-                const earlyAdopter = isPaid && isEarlyAdopterAvailable(paidId);
                 const price = isPaid ? getDisplayPrice(paidId) : 0;
 
                 return (
