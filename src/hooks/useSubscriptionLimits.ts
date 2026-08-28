@@ -230,6 +230,12 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
     };
   }
 
+  // Pagamento pendente: derruba as permissões para o plano Start, qualquer que seja o plan_id gravado
+  if (isPendingPayment) {
+    features = startPlanFeatures || defaultFeatures;
+  }
+
+
   const canUse = (feature: keyof PlanFeatures): boolean => {
     const value = features[feature];
     if (typeof value === 'boolean') return value;
