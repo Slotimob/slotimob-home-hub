@@ -48,6 +48,8 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
+        globIgnores: ["push-sw.js"],
+        importScripts: ["/push-sw.js"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         skipWaiting: true,
