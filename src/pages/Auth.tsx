@@ -19,7 +19,7 @@ import { MfaChallengeForm } from '@/components/security/MfaChallengeForm';
 
 import { toast as sonnerToast } from 'sonner';
 import { trackLeadSignup, trackStartTrial } from '@/components/TrackingProvider';
-import { useForceLightTheme } from '@/hooks/useForceLightTheme';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserPlus, ArrowLeft, BarChart3, MessageSquare, Wallet, Building2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -216,7 +216,7 @@ const GoogleIcon = () => (
 // ─── Component ───
 
 const Auth = () => {
-  useForceLightTheme();
+  
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
