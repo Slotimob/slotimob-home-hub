@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { normalizeTheme } from '@/lib/theme';
+import { isPublicPath, normalizeTheme } from '@/lib/theme';
 
 /**
  * Forces the institutional site theme on public pages.
@@ -14,6 +14,11 @@ export function SiteThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.setAttribute('data-theme', SITE_THEME);
 
     return () => {
+      // Navegação entre rotas públicas: mantém o tema "site" e deixa o
+      // provider da próxima rota assumir, sem restaurar o tema do app
+      // (evita flash do fundo cinza enquanto o chunk lazy carrega).
+      if (isPublicPath(window.location.pathname)) return;
+
       const savedTheme = localStorage.getItem('slotimob-theme');
       if (savedTheme) {
         document.documentElement.setAttribute('data-theme', normalizeTheme(savedTheme));
