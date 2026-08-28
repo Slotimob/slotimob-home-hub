@@ -184,9 +184,6 @@ function PricingHero() {
         <p className="text-[15px] md:text-[17px] max-w-[50ch] mx-auto leading-relaxed" style={{ color: 'var(--lp-ink-soft)' }}>
           Comece grátis com o plano Start (inclui 7 dias do Pro). Faça upgrade só quando fizer sentido para o seu volume.
         </p>
-        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold" style={{ background: 'rgba(20,217,180,0.12)', color: 'var(--lp-accent)', border: '1px solid rgba(20,217,180,0.3)' }}>
-          🏷️ Promoção de Lançamento — preço travado enquanto a assinatura estiver ativa
-        </div>
       </div>
     </section>
   );
@@ -264,7 +261,6 @@ function AddonsSection() {
 function PricingFaq() {
   const faqs = [
     { q: 'Posso mudar de plano depois?', a: 'Sim. Você pode fazer upgrade ou downgrade a qualquer momento. No upgrade, a diferença de valor é cobrada proporcionalmente.' },
-    { q: 'O preço da Promoção de Lançamento é para sempre?', a: 'Sim. O preço fica travado enquanto a assinatura estiver ativa. Se cancelar e reativar, pode perder o desconto de lançamento.' },
     { q: 'Quais formas de pagamento são aceitas?', a: 'Cartão de crédito, boleto bancário e PIX — todos processados pela Asaas, parceiro financeiro homologado pelo Banco Central.' },
     { q: 'O plano anual tem desconto?', a: 'Sim. No anual você economiza o equivalente a 2 meses comparado ao mensal. O valor é cobrado à vista anualmente.' },
     { q: 'Os add-ons são cobrados junto com a assinatura?', a: 'Sim. Os add-ons são cobrados mensalmente e cancelados individualmente a qualquer momento, sem afetar o plano principal.' },
