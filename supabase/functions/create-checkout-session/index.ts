@@ -182,10 +182,6 @@ serve(async (req) => {
         });
       }
 
-      // Early adopter: já tem lock, ou verificar vagas restantes
-      // Período de Promoção de Lançamento: sempre usa preço EA
-      const useEarlyAdopter = true;
-
       const isAnnual = billing_cycle === "annual";
       let value: number;
       let cycle: string;
@@ -193,23 +189,12 @@ serve(async (req) => {
 
       if (isAnnual) {
         cycle = "YEARLY";
-        if (useEarlyAdopter && plan.price_annual_early_adopter) {
-          // price_annual_early_adopter está salvo como valor mensal; total = × 12
-          value = Number(plan.price_annual_early_adopter) * 12;
-          extRef = `${userId}:${plan_id}:yearly:ea`;
-        } else {
-          value = Number(plan.price_annual); // já é o total anual
-          extRef = `${userId}:${plan_id}:yearly`;
-        }
+        value = Number(plan.price_annual); // total anual
+        extRef = `${userId}:${plan_id}:yearly`;
       } else {
         cycle = "MONTHLY";
-        if (useEarlyAdopter && plan.price_early_adopter) {
-          value = Number(plan.price_early_adopter);
-          extRef = `${userId}:${plan_id}:monthly:ea`;
-        } else {
-          value = Number(plan.price_original);
-          extRef = `${userId}:${plan_id}:monthly`;
-        }
+        value = Number(plan.price_original);
+        extRef = `${userId}:${plan_id}:monthly`;
       }
 
       const planName = plan_id.charAt(0).toUpperCase() + plan_id.slice(1);
