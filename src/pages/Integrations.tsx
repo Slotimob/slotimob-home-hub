@@ -28,6 +28,8 @@ const COMPATIBLE_PORTALS = [
 ];
 
 const QR_EXPIRY_SECONDS = 45;
+const WHATSAPP_TERMS_VERSION = '1.0';
+
 
 /** Hook to listen for sync job progress via Realtime */
 function useSyncJobListener(effectiveBrokerId: string | null) {
@@ -103,7 +105,7 @@ const Integrations = () => {
   const [qrTimer, setQrTimer] = useState<number | null>(null);
   const [qrExpired, setQrExpired] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
+
 
   // Realtime sync job listener
   const activeJob = useSyncJobListener(effectiveBrokerId);
@@ -112,18 +114,8 @@ const Integrations = () => {
   const instancesLimit = features?.whatsapp_instances_limit ?? 0;
   const canConnect = instancesLimit > 0;
 
-  // Check if user already accepted WhatsApp terms
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('whatsapp_terms_acceptances')
-      .select('id')
-      .eq('broker_id', user.id)
-      .limit(1)
-      .then(({ data }) => {
-        setHasAcceptedTerms(data && data.length > 0);
-      });
-  }, [user]);
+
+
 
   // Derived states
   const isConnected = connection?.status === 'connected' || connection?.connection_status === 'open';
@@ -374,7 +366,7 @@ const Integrations = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => { setTimedOut(false); handleConnectWhatsApp(); }}
+                    onClick={() => { setTimedOut(false); setShowDisclaimer(true); }}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Tentar Novamente
@@ -521,13 +513,8 @@ const Integrations = () => {
                     )}
                   </div>
                 ) : !isPreparing && !hasQrCode && !timedOut && canConnect ? (
-                  <Button className="w-full" onClick={() => {
-                    if (hasAcceptedTerms) {
-                      handleConnectWhatsApp();
-                    } else {
-                      setShowDisclaimer(true);
-                    }
-                  }} disabled={isConnecting || hasAcceptedTerms === null}>
+                  <Button className="w-full" onClick={() => setShowDisclaimer(true)} disabled={isConnecting}>
+
                     {isConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
                     Conectar WhatsApp
                   </Button>
@@ -614,13 +601,22 @@ const Integrations = () => {
         open={showDisclaimer}
         onOpenChange={setShowDisclaimer}
         onAccept={async () => {
-          await supabase.from('whatsapp_terms_acceptances').insert({
-            broker_id: user!.id,
-          });
-          setHasAcceptedTerms(true);
+          const { error: acceptanceError } = await supabase
+            .from('whatsapp_terms_acceptances')
+            .insert({
+              broker_id: effectiveBrokerId || user!.id,
+              accepted_at: new Date().toISOString(),
+              user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+              context: 'integrations_connect',
+              terms_version: WHATSAPP_TERMS_VERSION,
+            });
+          if (acceptanceError) {
+            console.error('Falha ao registrar aceite dos termos do WhatsApp:', acceptanceError);
+          }
           await handleConnectWhatsApp();
         }}
       />
+
     </AppLayout>
   );
 };
