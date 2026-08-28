@@ -130,6 +130,11 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(170, 62%, 49%));
     --gradient-secondary: linear-gradient(135deg, hsl(170, 62%, 49%), hsl(170, 62%, 49%));
     --gradient-full: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(170, 62%, 49%));
+
+    /* escala tipográfica do site institucional: ~6% maior que o padrão de 16px.
+       Só vale nas rotas públicas, porque o escopo é o data-theme="site".
+       O app logado não é afetado. */
+    font-size: 17px;
   }
 }
 
