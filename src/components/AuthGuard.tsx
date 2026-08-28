@@ -1,18 +1,26 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/hooks/useAuth';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { SlotiLogo } from '@/components/SlotiLogo';
+import { PendingPaymentScreen } from '@/components/subscription/PendingPaymentScreen';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
+// Rotas que continuam acessíveis mesmo com pagamento pendente
+const PENDING_PAYMENT_ALLOWED_PREFIXES = ['/settings', '/checkout', '/logout', '/auth'];
+
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const { isAuthReady, user } = useAuthContext();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { isPendingPayment, isLoading: isLimitsLoading } = useSubscriptionLimits();
   const [profileChecked, setProfileChecked] = useState(false);
+
 
   useEffect(() => {
     if (!isAuthReady || !user) {
