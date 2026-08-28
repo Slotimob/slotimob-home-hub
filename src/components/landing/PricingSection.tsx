@@ -110,48 +110,25 @@ export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { slots } = useEarlyAdopterCount();
   const { data: pricing } = usePlanPricing();
-
-  const getEarlyAdopterAvailable = (planId: PlanId): boolean => {
-    if (planId === 'start') return false;
-    return true; // Sempre exibe preço de Promoção de Lançamento
-  };
-
-  const getRemainingSlots = (planId: PlanId): number | null => {
-    if (planId === 'start') return null;
-    const slotData = slots[planId as 'essencial' | 'pro' | 'business'];
-    return slotData ? slotData.remaining : null;
-  };
 
   const getDisplayPrice = (planId: PlanId): number => {
     const p = pricing?.[planId];
     if (!p) return 0;
     if (planId === 'start') return 0;
-    const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) {
-      // EA annual prices are already stored as monthly equivalents
-      return isAnnual ? p.price_annual_early_adopter : p.price_early_adopter;
-    }
-    // For regular prices, divide annual total by 12 to show monthly equivalent
+    // Divide annual total by 12 to show monthly equivalent
     return isAnnual ? p.price_annual / 12 : p.price_original;
   };
 
   const getAnnualTotal = (planId: PlanId): number | null => {
     const p = pricing?.[planId];
     if (!p || planId === 'start' || !isAnnual) return null;
-    const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) {
-      return p.price_annual_early_adopter * 12;
-    }
     return p.price_annual;
   };
 
   const getOriginalPrice = (planId: PlanId): number | null => {
     const p = pricing?.[planId];
     if (!p || planId === 'start') return null;
-    const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) return p.price_original;
     if (isAnnual) {
       const monthlyEquiv = p.price_annual / 12;
       if (p.price_original > monthlyEquiv) return p.price_original;
@@ -162,8 +139,6 @@ export function PricingSection() {
   const getAlternativePrice = (planId: PlanId): string | null => {
     const p = pricing?.[planId];
     if (!p || planId === 'start') return null;
-    const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) return null;
     if (!isAnnual && p.price_annual > 0) {
       return `ou ${formatCurrency(p.price_annual / 12)}/mês no anual`;
     }
