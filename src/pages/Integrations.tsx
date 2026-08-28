@@ -28,6 +28,8 @@ const COMPATIBLE_PORTALS = [
 ];
 
 const QR_EXPIRY_SECONDS = 45;
+const WHATSAPP_TERMS_VERSION = '1.0';
+
 
 /** Hook to listen for sync job progress via Realtime */
 function useSyncJobListener(effectiveBrokerId: string | null) {
