@@ -82,5 +82,13 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
+  const isAllowedWhilePending = PENDING_PAYMENT_ALLOWED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+
+  if (user && !isLimitsLoading && isPendingPayment && !isAllowedWhilePending) {
+    return <PendingPaymentScreen />;
+  }
+
   return <>{children}</>;
 };
