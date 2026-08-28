@@ -186,12 +186,6 @@ export const SubscriptionManagement = () => {
             <div>
               <p className="font-semibold text-lg">{planLabels[plan] || plan}</p>
               <p className="text-sm text-muted-foreground">
-              {subscription?.is_early_adopter && (
-                  <Badge variant="outline" className="mr-2 text-xs border-amber-500 text-amber-600 bg-amber-500/10">
-                    <ShieldCheck className="h-3 w-3 mr-1" />
-                    Preço Early Adopter Vitalício
-                  </Badge>
-                )}
                 {subscription?.status === 'active'
                   ? 'Ativa'
                   : subscription?.status === 'trialing'
