@@ -91,17 +91,7 @@ export const WhatsAppDisclaimerDialog = ({ open, onOpenChange, onAccept }: Whats
         </div>
 
 
-        <div className="flex items-start gap-3 pt-2">
-          <Checkbox
-            id="whatsapp-terms"
-            checked={accepted}
-            onCheckedChange={(v) => setAccepted(v === true)}
-            disabled={isSubmitting}
-          />
-          <label htmlFor="whatsapp-terms" className="text-sm leading-tight cursor-pointer select-none">
-            Estou ciente dos riscos e aceito os termos de uso do WhatsApp conforme descrito acima.
-          </label>
-        </div>
+
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
