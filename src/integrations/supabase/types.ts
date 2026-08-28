@@ -5814,20 +5814,29 @@ export type Database = {
         Row: {
           accepted_at: string
           broker_id: string
+          context: string | null
           id: string
           ip_address: string | null
+          terms_version: string | null
+          user_agent: string | null
         }
         Insert: {
           accepted_at?: string
           broker_id: string
+          context?: string | null
           id?: string
           ip_address?: string | null
+          terms_version?: string | null
+          user_agent?: string | null
         }
         Update: {
           accepted_at?: string
           broker_id?: string
+          context?: string | null
           id?: string
           ip_address?: string | null
+          terms_version?: string | null
+          user_agent?: string | null
         }
         Relationships: []
       }
