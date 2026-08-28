@@ -375,9 +375,6 @@ export function PricingSection() {
         {/* Guarantee */}
         <div className="text-center mt-14">
           <p className="text-sm text-muted-foreground">
-            ✨ Preço de Promoção de Lançamento é <strong>vitalício</strong> enquanto sua assinatura estiver ativa
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
             7 dias grátis em todos os planos. Cancele quando quiser.
           </p>
           <p className="text-xs text-muted-foreground mt-1">
