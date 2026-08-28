@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { useForceLightTheme } from '@/hooks/useForceLightTheme';
 import { trackStartTrial, trackSubscriptionPaid } from '@/components/TrackingProvider';
-import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
+
 import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { translateAuthError } from '@/lib/authErrors';
@@ -172,7 +172,6 @@ export default function Checkout() {
   const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
 
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
-  const { slots } = useEarlyAdopterCount();
 
   // ── Verificação de e-mail (checagem proativa) ──────────────────────────
   const [emailVerifiedLocally, setEmailVerifiedLocally] = useState(false);
