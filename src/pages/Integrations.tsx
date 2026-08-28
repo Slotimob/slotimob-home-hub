@@ -599,13 +599,22 @@ const Integrations = () => {
         open={showDisclaimer}
         onOpenChange={setShowDisclaimer}
         onAccept={async () => {
-          await supabase.from('whatsapp_terms_acceptances').insert({
-            broker_id: user!.id,
-          });
-          setHasAcceptedTerms(true);
+          const { error: acceptanceError } = await supabase
+            .from('whatsapp_terms_acceptances')
+            .insert({
+              broker_id: effectiveBrokerId || user!.id,
+              accepted_at: new Date().toISOString(),
+              user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+              context: 'integrations_connect',
+              terms_version: WHATSAPP_TERMS_VERSION,
+            });
+          if (acceptanceError) {
+            console.error('Falha ao registrar aceite dos termos do WhatsApp:', acceptanceError);
+          }
           await handleConnectWhatsApp();
         }}
       />
+
     </AppLayout>
   );
 };
