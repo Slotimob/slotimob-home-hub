@@ -215,60 +215,27 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
             <div className={`p-4 rounded-lg border-2 ${config.borderColor} bg-card space-y-2`}>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>Seu plano atual (Pro)</span>
-                <span className="font-medium line-through">R$ {proCurrentPrice}/mês</span>
+                <span className="font-medium">R$ {proCurrentPrice}/mês</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-3xl font-bold ${config.color}`}>+ R$ {upgradePrice}</span>
                 <span className="text-muted-foreground">/mês</span>
-                {hasEarlyAdopterSlots && (
-                  <Badge variant="secondary" className="ml-1">
-                    <Zap className="h-3 w-3 mr-1" />
-                    Early Adopter
-                  </Badge>
-                )}
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
                   Total: <strong className="text-foreground">R$ {displayPrice}/mês</strong> no Business
-                  {hasEarlyAdopterSlots ? ' — preço trancado para sempre' : ''}
                 </span>
               </div>
-              {hasEarlyAdopterSlots && earlyAdopterSlots.remaining > 0 && (
-                <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
-                  <Clock className="h-3.5 w-3.5" />
-                  Apenas <strong>{earlyAdopterSlots.remaining}</strong> vagas com desconto restantes
-                </div>
-              )}
               <p className="text-xs text-muted-foreground pt-1 border-t border-border">
                 Sua assinatura Pro atual será substituída automaticamente pelo Business. Sem cobrança dupla.
               </p>
             </div>
           ) : (
             <div className={`p-4 rounded-lg border-2 ${config.borderColor} bg-card`}>
-              <div className="flex items-baseline gap-2 mb-2">
+              <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold">R$ {displayPrice}</span>
                 <span className="text-muted-foreground">/mês</span>
-                {hasEarlyAdopterSlots && (
-                  <Badge variant="secondary" className="ml-2">
-                    <Zap className="h-3 w-3 mr-1" />
-                    Early Adopter
-                  </Badge>
-                )}
-              </div>
-              {hasEarlyAdopterSlots && earlyAdopterSlots.remaining > 0 && (
-                <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 mb-2">
-                  <Clock className="h-4 w-4" />
-                  <span>Apenas <strong>{earlyAdopterSlots.remaining}</strong> vagas restantes!</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="line-through">R$ {config.priceMonthly}/mês</span>
-                <span>→</span>
-                <span className="text-green-600 font-medium">
-                  Economize R$ {config.priceMonthly - displayPrice}/mês
-                  {hasEarlyAdopterSlots ? ' para sempre' : ''}
-                </span>
               </div>
             </div>
           )}
