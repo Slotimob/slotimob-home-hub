@@ -222,7 +222,7 @@ export function PricingSection() {
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-foreground">Grátis</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">para sempre · sem cartão</p>
+                <p className="text-xs text-muted-foreground mt-1">sem cartão</p>
               </> :
 
             <>

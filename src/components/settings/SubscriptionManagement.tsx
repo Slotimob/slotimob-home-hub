@@ -16,7 +16,6 @@ import {
   Building2,
   Zap,
   Receipt,
-  ShieldCheck,
   XCircle,
 } from 'lucide-react';
 import {
