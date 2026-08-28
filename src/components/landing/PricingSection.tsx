@@ -232,13 +232,7 @@ export function PricingSection() {
                   </span>
                   <span className="text-muted-foreground ml-1">/mês</span>
                 </div>
-                {isEarlyAdopter ?
-              <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
-                    {' · '}
-                    <span className="font-semibold text-accent">preço vitalício</span>
-                  </p> :
-              isAnnual ?
+                {isAnnual ?
               <p className="text-xs text-muted-foreground mt-1">
                     <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · cobrado anualmente'}
