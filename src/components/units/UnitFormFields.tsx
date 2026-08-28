@@ -242,7 +242,7 @@ export const UnitFormFields = ({
         </div>
 
         {/* Management Toggle */}
-        <div className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+        <div className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-card">
           <div className="space-y-0.5 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <Settings2 className="h-4 w-4 text-primary flex-shrink-0" />
@@ -285,7 +285,7 @@ export const UnitFormFields = ({
 
         {/* Subdivisions Toggle (standalone only) */}
         {isStandalone && (
-          <div className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+          <div className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-lg border bg-card">
             <div className="space-y-0.5 flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <Layers className="h-4 w-4 text-primary flex-shrink-0" />

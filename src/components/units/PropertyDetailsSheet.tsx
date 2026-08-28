@@ -438,7 +438,7 @@ export function PropertyDetailsSheet({
 
                     <Separator />
 
-                    <div className="text-center p-4 bg-background rounded-lg">
+                    <div className="text-center p-4 bg-card rounded-lg">
                       <p className="text-xs text-muted-foreground mb-1">Parcela estimada</p>
                       <p className="text-3xl font-bold text-primary">
                         {formatCurrency(financingSimulation.monthlyPayment)}

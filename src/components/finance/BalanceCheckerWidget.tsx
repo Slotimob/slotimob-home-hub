@@ -451,7 +451,7 @@ export function BalanceCheckerWidget({
             </div>
 
             {/* Manual Balance Input */}
-            <div className="p-4 rounded-lg border bg-background text-center">
+            <div className="p-4 rounded-lg border bg-card text-center">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Saldo Real do Banco</p>
               <CurrencyInput
                 value={manualBankBalance}

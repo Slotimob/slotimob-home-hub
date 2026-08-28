@@ -293,7 +293,7 @@ const Training = () => {
                 <TabsTrigger 
                   key={cat.id} 
                   value={cat.id}
-                  className="px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="px-4 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm"
                 >
                   {cat.label}
                 </TabsTrigger>

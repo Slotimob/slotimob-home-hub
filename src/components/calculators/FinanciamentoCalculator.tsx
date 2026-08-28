@@ -416,7 +416,7 @@ export const FinanciamentoCalculator = () => {
             <CardContent>
               <ScrollArea className="h-[400px] rounded-md border">
                 <Table>
-                  <TableHeader className="sticky top-0 bg-background">
+                  <TableHeader className="sticky top-0 bg-card">
                     <TableRow>
                       <TableHead className="w-16 text-center">Nº</TableHead>
                       <TableHead className="text-right">Amortização</TableHead>

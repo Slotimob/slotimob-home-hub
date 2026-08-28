@@ -845,7 +845,7 @@ const AlugueiDetalhe = () => {
                                   )
                                 )}
                                 {linkingTransactionFor === obligation.type && (
-                                  <div className="mt-2 p-2 border rounded-md bg-background">
+                                  <div className="mt-2 p-2 border rounded-md bg-card">
                                     <p className="text-xs font-medium mb-2">
                                       Selecione um lançamento:
                                     </p>

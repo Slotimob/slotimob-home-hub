@@ -527,7 +527,7 @@ export function TransactionsTableInfinite({
       <div className="rounded-md border overflow-hidden w-full overflow-x-auto">
         <div className="max-h-[calc(100vh-300px)] overflow-auto">
           <Table>
-            <TableHeader className="sticky top-0 bg-background z-10">
+            <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>
                 <TableHead className="w-8 px-2">
                   <Checkbox

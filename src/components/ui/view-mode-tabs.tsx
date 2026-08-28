@@ -30,7 +30,7 @@ export const ViewModeTabs = ({
         {showKanban && (
           <TabsTrigger 
             value="kanban" 
-            className="gap-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm"
             title="Visualização por Status"
             aria-label="Visualização por Status"
           >
@@ -40,7 +40,7 @@ export const ViewModeTabs = ({
         )}
         <TabsTrigger 
           value="grid" 
-          className="gap-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          className="gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm"
         >
           <LayoutGrid className="h-4 w-4" />
           <span className="hidden sm:inline">Grade</span>
@@ -48,7 +48,7 @@ export const ViewModeTabs = ({
         {showTable && (
           <TabsTrigger 
             value="table" 
-            className="gap-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm"
           >
             <List className="h-4 w-4" />
             <span className="hidden sm:inline">Lista</span>
