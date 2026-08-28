@@ -35,12 +35,14 @@ export type PlanId = 'free' | 'start' | 'essencial' | 'pro' | 'business' | 'ouro
 export interface SubscriptionLimits {
   plan: PlanId;
   isTrialActive: boolean;
+  isPendingPayment: boolean;
   features: PlanFeatures | null;
   isLoading: boolean;
   canUse: (feature: keyof PlanFeatures) => boolean;
   checkLimit: (resource: string, currentCount: number) => { allowed: boolean; limit: number; remaining: number };
   getUpgradeReason: (feature: keyof PlanFeatures) => string;
 }
+
 
 const defaultFeatures: PlanFeatures = {
   assets_limit: 5,
