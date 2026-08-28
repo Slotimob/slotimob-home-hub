@@ -26,7 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
-import { useForceLightTheme } from '@/hooks/useForceLightTheme';
+
 import { trackStartTrial, trackSubscriptionPaid } from '@/components/TrackingProvider';
 
 import { cn } from '@/lib/utils';
@@ -125,7 +125,7 @@ function GoogleIcon() {
 // ============================================================================
 
 export default function Checkout() {
-  useForceLightTheme();
+  
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
