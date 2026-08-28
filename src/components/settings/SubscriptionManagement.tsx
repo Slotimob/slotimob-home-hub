@@ -32,7 +32,7 @@ import {
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useAICredits } from '@/hooks/useAICredits';
-import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -61,7 +61,6 @@ export const SubscriptionManagement = () => {
   const { subscription, isLoading, refetch, openCustomerPortal } =
     useSubscriptionDetails();
   const { isTrialActive, trialDaysRemaining } = useTrialStatus();
-  const { slots } = useEarlyAdopterCount();
   const { credits: aiCredits, isLoading: isLoadingCredits } = useAICredits();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
