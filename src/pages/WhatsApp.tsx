@@ -26,14 +26,14 @@ import {
   useSendMessage,
   useConversationContact,
 } from '@/hooks/useWhatsApp';
+import type { WhatsAppConnectionClient } from '@/hooks/useWhatsApp';
 import type { Database } from '@/integrations/supabase/types';
 
 type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations']['Row'];
-type WhatsAppConnection = Database['public']['Tables']['whatsapp_connections']['Row'];
 
 function useWhatsAppAnyConnection() {
   const { effectiveBrokerId } = useWorkspace();
-  const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
+  const [connection, setConnection] = useState<WhatsAppConnectionClient | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
