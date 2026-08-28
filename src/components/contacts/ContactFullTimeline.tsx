@@ -348,7 +348,7 @@ export const ContactFullTimeline = ({ leadId, leadName, leadCreatedAt }: Contact
             <div className="space-y-6">
               {Object.entries(groupedEvents).map(([key, { date, events: dayEvents }]) => (
                 <div key={key}>
-                  <div className="sticky top-0 z-10 bg-background py-2">
+                  <div className="sticky top-0 z-10 bg-card py-2">
                     <div className="flex items-center gap-3">
                       <Badge variant="secondary" className="capitalize font-medium">
                         {formatGroupDate(date)}
@@ -369,7 +369,7 @@ export const ContactFullTimeline = ({ leadId, leadName, leadCreatedAt }: Contact
                         return (
                           <div key={event.id} className="relative flex gap-4">
                             {/* Timeline dot */}
-                            <div className={`absolute -left-6 p-1.5 rounded-full border-2 bg-background ${colorClass}`}>
+                            <div className={`absolute -left-6 p-1.5 rounded-full border-2 bg-card ${colorClass}`}>
                               <Icon className="h-3.5 w-3.5" />
                             </div>
 

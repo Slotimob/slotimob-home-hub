@@ -312,7 +312,7 @@ export const IncCalculator = () => {
               <h3 className="mb-3 text-sm font-semibold text-foreground">Projeção mês a mês</h3>
               <div className="max-h-96 overflow-auto rounded-lg border">
                 <Table>
-                  <TableHeader className="sticky top-0 bg-background">
+                  <TableHeader className="sticky top-0 bg-card">
                     <TableRow>
                       <TableHead className="w-16 text-center">Mês</TableHead>
                       <TableHead className="text-right">Parcela corrigida</TableHead>

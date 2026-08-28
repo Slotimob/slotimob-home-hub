@@ -1917,7 +1917,7 @@ export default function NovoContrato() {
       </Card>
 
       {/* Sticky footer */}
-      <div className="sticky bottom-0 -mx-4 lg:-mx-8 mt-4 bg-background border-t py-3 px-4 lg:px-8 flex justify-between gap-2">
+      <div className="sticky bottom-0 -mx-4 lg:-mx-8 mt-4 bg-card border-t py-3 px-4 lg:px-8 flex justify-between gap-2">
         <Button variant="outline" disabled={currentIndex === 0} onClick={handleBack}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           Voltar
