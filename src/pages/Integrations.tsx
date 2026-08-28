@@ -366,7 +366,7 @@ const Integrations = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => { setTimedOut(false); handleConnectWhatsApp(); }}
+                    onClick={() => { setTimedOut(false); setShowDisclaimer(true); }}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Tentar Novamente
