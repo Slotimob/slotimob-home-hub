@@ -296,9 +296,13 @@ serve(async (req) => {
           billing_provider: "asaas",
           asaas_customer_id: asaasCustomerId,
           plan_id: plan_id,
+          // Bloqueia o acesso até a Asaas confirmar o pagamento.
+          // O webhook (PAYMENT_CONFIRMED / PAYMENT_RECEIVED) libera com status "active".
+          status: "pending_payment",
           cancel_at_period_end: false,
         })
         .eq("user_id", userId);
+
 
       if (subUpdateError) {
         console.error("[checkout] falha ao salvar assinatura local:", subUpdateError);
