@@ -258,5 +258,5 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
 
   const isLoading = isWorkspaceLoading || isPlanLoading || isTrialLoading || isAddonLoading;
 
-  return { plan, isTrialActive: !!effectiveTrialing, features, isLoading, canUse, checkLimit, getUpgradeReason };
+  return { plan, isTrialActive: !!effectiveTrialing && !isPendingPayment, isPendingPayment, features, isLoading, canUse, checkLimit, getUpgradeReason };
 };
