@@ -355,8 +355,29 @@ serve(async (req) => {
         }
       }
 
-      // CREDIT_CARD ou fallback
-      const invoiceUrl = sub.invoiceUrl || `https://www.asaas.com/s/${sub.id}`;
+      // CREDIT_CARD ou fallback:
+      // a URL correta é a do PAGAMENTO (/i/{paymentId}), nunca montada com o id da assinatura.
+      let invoiceUrl: string | null = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const paymentsData = await asaasRequest(`/subscriptions/${sub.id}/payments`);
+          const firstPayment = paymentsData?.data?.[0];
+          if (firstPayment) {
+            invoiceUrl = firstPayment.invoiceUrl || firstPayment.bankSlipUrl || null;
+            if (invoiceUrl) break;
+          }
+        } catch (payErr) {
+          console.warn("[checkout] falha ao buscar pagamento da assinatura:", payErr instanceof Error ? payErr.message : payErr);
+        }
+        if (attempt < 4) await new Promise(r => setTimeout(r, 1500));
+      }
+      if (!invoiceUrl) invoiceUrl = sub.invoiceUrl ?? null;
+      if (!invoiceUrl) {
+        return new Response(JSON.stringify({
+          error: "A cobrança foi criada, mas o link de pagamento ainda não está disponível. Aguarde alguns segundos e verifique em Configurações › Assinatura.",
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       return new Response(JSON.stringify({ type: "redirect", url: invoiceUrl }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
