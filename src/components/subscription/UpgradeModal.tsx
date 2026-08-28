@@ -153,10 +153,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
   }
 
 
-  const earlyAdopterSlots = slots[resolvedTarget];
-  const hasEarlyAdopterSlots = earlyAdopterSlots && earlyAdopterSlots.remaining > 0;
-
-  // Preços corretos baseados no banco (subscription_plans)
+  // Preços baseados no banco (subscription_plans)
   const planConfig = {
     pro: {
       name: 'Pro',
@@ -164,9 +161,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
       color: 'text-blue-500',
       bgColor: 'bg-blue-500',
       borderColor: 'border-blue-500',
-      priceMonthly: 197,      // regular mensal
-      priceEA: 147,           // early adopter mensal
-      priceAnnualEA: 127,     // early adopter anual (equivalente mensal)
+      priceMonthly: 197,
     },
     business: {
       name: 'Business',
@@ -174,19 +169,16 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
       color: 'text-purple-500',
       bgColor: 'bg-purple-500',
       borderColor: 'border-purple-500',
-      priceMonthly: 297,      // regular mensal
-      priceEA: 247,           // early adopter mensal
-      priceAnnualEA: 227,     // early adopter anual (equivalente mensal)
+      priceMonthly: 297,
     },
   };
 
   const config = planConfig[resolvedTarget];
   const Icon = config.icon;
 
-  // Preço exibido (sempre EA enquanto houver vagas, conforme política de lançamento)
-  const displayPrice = hasEarlyAdopterSlots ? config.priceEA : config.priceMonthly;
-  const proCurrentPrice = hasEarlyAdopterSlots ? planConfig.pro.priceEA : planConfig.pro.priceMonthly;
-  const upgradePrice = displayPrice - proCurrentPrice; // sempre R$100
+  const displayPrice = config.priceMonthly;
+  const proCurrentPrice = planConfig.pro.priceMonthly;
+  const upgradePrice = displayPrice - proCurrentPrice;
 
   // Benefícios a mostrar
   const benefits = resolvedTarget === 'business'
