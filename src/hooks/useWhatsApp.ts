@@ -11,6 +11,10 @@ type WhatsAppConversation = Database['public']['Tables']['whatsapp_conversations
 type WhatsAppMessage = Database['public']['Tables']['whatsapp_messages']['Row'];
 type WhatsAppConnection = Database['public']['Tables']['whatsapp_connections']['Row'];
 
+/** Colunas de whatsapp_connections seguras para o cliente.
+ *  webhook_secret é segredo de servidor: fica fora do select e fora do tipo. */
+export type WhatsAppConnectionClient = Omit<WhatsAppConnection, 'webhook_secret'>;
+
 // Extended conversation with joined relations (contacts, deals)
 // Using Record<string, any> for relations to avoid Supabase generated type conflicts
 export type WhatsAppConversationWithRelations = WhatsAppConversation & {
@@ -26,7 +30,7 @@ export type ConversationWithConnection = WhatsAppConversation & {
 
 export function useWhatsAppConnection() {
   const { user } = useAuth();
-  const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
+  const [connection, setConnection] = useState<WhatsAppConnectionClient | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,7 +65,7 @@ export function useWhatsAppConnection() {
 export function useWhatsAppSettingsConnection() {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
-  const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
+  const [connection, setConnection] = useState<WhatsAppConnectionClient | null>(null);
   const [loading, setLoading] = useState(true);
   const [waitingForQr, setWaitingForQr] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
