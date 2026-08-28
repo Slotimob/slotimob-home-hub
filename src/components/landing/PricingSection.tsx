@@ -270,34 +270,6 @@ export function PricingSection() {
             </div>
           }
 
-          {/* Early Adopter */}
-          {!isStart && isEarlyAdopter &&
-          <div className="mb-5">
-              <div className={cn(
-              'rounded-lg p-3 border border-dashed',
-              isPro ? 'border-accent/50 bg-accent/5' : 'border-muted-foreground/30 bg-section'
-            )}>
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Zap className={cn('h-4 w-4', isPro ? 'text-accent' : 'text-muted-foreground')} />
-                  <span className={cn('text-xs font-semibold uppercase', isPro ? 'text-accent' : 'text-muted-foreground')}>
-                    Promoção de Lançamento
-                  </span>
-                </div>
-                {remaining !== null && remaining > 0 &&
-              <p className={cn(
-                'text-xs text-center font-medium',
-                remaining <= 10 ? 'text-destructive' : 'text-muted-foreground'
-              )}>
-                    {remaining <= 10 ?
-                `🔥 Últimas ${remaining} vagas!` :
-                `${remaining} vagas restantes`
-                }
-                  </p>
-              }
-              </div>
-            </div>
-          }
-
           {/* Features */}
           <ul className="space-y-2.5 flex-1">
             {plan.features.map((feature, i) =>
