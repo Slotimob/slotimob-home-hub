@@ -16,7 +16,6 @@ import {
   Building2,
   Zap,
   Receipt,
-  ShieldCheck,
   XCircle,
 } from 'lucide-react';
 import {
@@ -32,7 +31,7 @@ import {
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useAICredits } from '@/hooks/useAICredits';
-import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -61,7 +60,6 @@ export const SubscriptionManagement = () => {
   const { subscription, isLoading, refetch, openCustomerPortal } =
     useSubscriptionDetails();
   const { isTrialActive, trialDaysRemaining } = useTrialStatus();
-  const { slots } = useEarlyAdopterCount();
   const { credits: aiCredits, isLoading: isLoadingCredits } = useAICredits();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
@@ -143,11 +141,6 @@ export const SubscriptionManagement = () => {
                 <Clock className="h-4 w-4" />
                 <span>{trialDaysRemaining} {trialDaysRemaining === 1 ? 'dia restante' : 'dias restantes'}</span>
               </div>
-              {slots.pro && slots.pro.remaining > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  🎉 Ainda há <strong>{slots.pro.remaining}</strong> vagas Early Adopter com desconto!
-                </p>
-              )}
               <Button
                 className="mt-2 gap-2"
                 onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')}
@@ -169,11 +162,6 @@ export const SubscriptionManagement = () => {
               <p className="text-sm text-muted-foreground">
                 Faça upgrade para o plano PRO e tenha acesso a IA, WhatsApp e mais.
               </p>
-              {slots.pro && slots.pro.remaining > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  🎉 {slots.pro.remaining} vagas Early Adopter disponíveis!
-                </p>
-              )}
             </div>
             <Button onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')} className="gap-2">
               <Crown className="h-4 w-4" />
@@ -197,12 +185,6 @@ export const SubscriptionManagement = () => {
             <div>
               <p className="font-semibold text-lg">{planLabels[plan] || plan}</p>
               <p className="text-sm text-muted-foreground">
-              {subscription?.is_early_adopter && (
-                  <Badge variant="outline" className="mr-2 text-xs border-amber-500 text-amber-600 bg-amber-500/10">
-                    <ShieldCheck className="h-3 w-3 mr-1" />
-                    Preço Early Adopter Vitalício
-                  </Badge>
-                )}
                 {subscription?.status === 'active'
                   ? 'Ativa'
                   : subscription?.status === 'trialing'

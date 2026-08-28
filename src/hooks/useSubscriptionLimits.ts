@@ -34,7 +34,6 @@ export type PlanId = 'free' | 'start' | 'essencial' | 'pro' | 'business' | 'ouro
 
 export interface SubscriptionLimits {
   plan: PlanId;
-  isEarlyAdopter: boolean;
   isTrialActive: boolean;
   features: PlanFeatures | null;
   isLoading: boolean;
@@ -163,7 +162,6 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
   const planMap: Record<string, PlanId> = { 'ouro': 'pro', 'diamante': 'business' };
   const plan = (planMap[rawPlan] || rawPlan) as PlanId;
   
-  const isEarlyAdopter = data?.is_early_adopter || false;
   const isTrialActive = trialData?.is_trial_active || false;
   
   // During trial, free users get START (Trial) powers
@@ -232,5 +230,5 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
 
   const isLoading = isWorkspaceLoading || isPlanLoading || isTrialLoading || isAddonLoading;
 
-  return { plan, isEarlyAdopter, isTrialActive: !!effectiveTrialing, features, isLoading, canUse, checkLimit, getUpgradeReason };
+  return { plan, isTrialActive: !!effectiveTrialing, features, isLoading, canUse, checkLimit, getUpgradeReason };
 };

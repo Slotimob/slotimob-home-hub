@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
-import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,48 +110,25 @@ export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { slots } = useEarlyAdopterCount();
   const { data: pricing } = usePlanPricing();
-
-  const getEarlyAdopterAvailable = (planId: PlanId): boolean => {
-    if (planId === 'start') return false;
-    return true; // Sempre exibe preço de Promoção de Lançamento
-  };
-
-  const getRemainingSlots = (planId: PlanId): number | null => {
-    if (planId === 'start') return null;
-    const slotData = slots[planId as 'essencial' | 'pro' | 'business'];
-    return slotData ? slotData.remaining : null;
-  };
 
   const getDisplayPrice = (planId: PlanId): number => {
     const p = pricing?.[planId];
     if (!p) return 0;
     if (planId === 'start') return 0;
-    const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) {
-      // EA annual prices are already stored as monthly equivalents
-      return isAnnual ? p.price_annual_early_adopter : p.price_early_adopter;
-    }
-    // For regular prices, divide annual total by 12 to show monthly equivalent
+    // Divide annual total by 12 to show monthly equivalent
     return isAnnual ? p.price_annual / 12 : p.price_original;
   };
 
   const getAnnualTotal = (planId: PlanId): number | null => {
     const p = pricing?.[planId];
     if (!p || planId === 'start' || !isAnnual) return null;
-    const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) {
-      return p.price_annual_early_adopter * 12;
-    }
     return p.price_annual;
   };
 
   const getOriginalPrice = (planId: PlanId): number | null => {
     const p = pricing?.[planId];
     if (!p || planId === 'start') return null;
-    const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) return p.price_original;
     if (isAnnual) {
       const monthlyEquiv = p.price_annual / 12;
       if (p.price_original > monthlyEquiv) return p.price_original;
@@ -163,8 +139,6 @@ export function PricingSection() {
   const getAlternativePrice = (planId: PlanId): string | null => {
     const p = pricing?.[planId];
     if (!p || planId === 'start') return null;
-    const isEA = getEarlyAdopterAvailable(planId);
-    if (isEA) return null;
     if (!isAnnual && p.price_annual > 0) {
       return `ou ${formatCurrency(p.price_annual / 12)}/mês no anual`;
     }
@@ -198,11 +172,9 @@ export function PricingSection() {
     const isLoading = loadingPlan === plan.id;
     const isStart = plan.id === 'start';
     const isPro = plan.id === 'pro';
-    const isEarlyAdopter = getEarlyAdopterAvailable(plan.id);
     const displayPrice = getDisplayPrice(plan.id);
     const annualTotal = getAnnualTotal(plan.id);
     const altPrice = getAlternativePrice(plan.id);
-    const remaining = getRemainingSlots(plan.id);
 
     return (
       <Card
@@ -250,7 +222,7 @@ export function PricingSection() {
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-foreground">Grátis</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">para sempre · sem cartão</p>
+                <p className="text-xs text-muted-foreground mt-1">sem cartão</p>
               </> :
 
             <>
@@ -260,13 +232,7 @@ export function PricingSection() {
                   </span>
                   <span className="text-muted-foreground ml-1">/mês</span>
                 </div>
-                {isEarlyAdopter ?
-              <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
-                    {' · '}
-                    <span className="font-semibold text-accent">preço vitalício</span>
-                  </p> :
-              isAnnual ?
+                {isAnnual ?
               <p className="text-xs text-muted-foreground mt-1">
                     <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
                     {' · cobrado anualmente'}
@@ -301,34 +267,6 @@ export function PricingSection() {
               <p className="text-xs text-center text-muted-foreground">
                 Experimente o Plano PRO. Após o período, você decide.
               </p>
-            </div>
-          }
-
-          {/* Early Adopter */}
-          {!isStart && isEarlyAdopter &&
-          <div className="mb-5">
-              <div className={cn(
-              'rounded-lg p-3 border border-dashed',
-              isPro ? 'border-accent/50 bg-accent/5' : 'border-muted-foreground/30 bg-section'
-            )}>
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Zap className={cn('h-4 w-4', isPro ? 'text-accent' : 'text-muted-foreground')} />
-                  <span className={cn('text-xs font-semibold uppercase', isPro ? 'text-accent' : 'text-muted-foreground')}>
-                    Promoção de Lançamento
-                  </span>
-                </div>
-                {remaining !== null && remaining > 0 &&
-              <p className={cn(
-                'text-xs text-center font-medium',
-                remaining <= 10 ? 'text-destructive' : 'text-muted-foreground'
-              )}>
-                    {remaining <= 10 ?
-                `🔥 Últimas ${remaining} vagas!` :
-                `${remaining} vagas restantes`
-                }
-                  </p>
-              }
-              </div>
             </div>
           }
 
@@ -437,9 +375,6 @@ export function PricingSection() {
         {/* Guarantee */}
         <div className="text-center mt-14">
           <p className="text-sm text-muted-foreground">
-            ✨ Preço de Promoção de Lançamento é <strong>vitalício</strong> enquanto sua assinatura estiver ativa
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
             7 dias grátis em todos os planos. Cancele quando quiser.
           </p>
           <p className="text-xs text-muted-foreground mt-1">

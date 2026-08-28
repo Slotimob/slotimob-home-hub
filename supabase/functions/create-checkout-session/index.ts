@@ -133,7 +133,7 @@ serve(async (req) => {
 
     const { data: subscription } = await supabase
       .from("subscriptions")
-      .select("billing_provider, asaas_customer_id, status, price_locked, is_early_adopter, plan_id, current_period_end, asaas_subscription_id")
+      .select("billing_provider, asaas_customer_id, status, plan_id, current_period_end, asaas_subscription_id")
       .eq("user_id", userId)
       .single();
 
@@ -171,7 +171,7 @@ serve(async (req) => {
 
       const { data: plan } = await supabase
         .from("subscription_plans")
-        .select("id, price_original, price_early_adopter, price_annual, price_annual_early_adopter")
+        .select("id, price_original, price_annual")
         .eq("id", plan_id)
         .single();
 
@@ -182,10 +182,6 @@ serve(async (req) => {
         });
       }
 
-      // Early adopter: já tem lock, ou verificar vagas restantes
-      // Período de Promoção de Lançamento: sempre usa preço EA
-      const useEarlyAdopter = true;
-
       const isAnnual = billing_cycle === "annual";
       let value: number;
       let cycle: string;
@@ -193,23 +189,12 @@ serve(async (req) => {
 
       if (isAnnual) {
         cycle = "YEARLY";
-        if (useEarlyAdopter && plan.price_annual_early_adopter) {
-          // price_annual_early_adopter está salvo como valor mensal; total = × 12
-          value = Number(plan.price_annual_early_adopter) * 12;
-          extRef = `${userId}:${plan_id}:yearly:ea`;
-        } else {
-          value = Number(plan.price_annual); // já é o total anual
-          extRef = `${userId}:${plan_id}:yearly`;
-        }
+        value = Number(plan.price_annual); // total anual
+        extRef = `${userId}:${plan_id}:yearly`;
       } else {
         cycle = "MONTHLY";
-        if (useEarlyAdopter && plan.price_early_adopter) {
-          value = Number(plan.price_early_adopter);
-          extRef = `${userId}:${plan_id}:monthly:ea`;
-        } else {
-          value = Number(plan.price_original);
-          extRef = `${userId}:${plan_id}:monthly`;
-        }
+        value = Number(plan.price_original);
+        extRef = `${userId}:${plan_id}:monthly`;
       }
 
       const planName = plan_id.charAt(0).toUpperCase() + plan_id.slice(1);
@@ -304,7 +289,7 @@ serve(async (req) => {
         externalReference: extRef,
       });
 
-      await supabase
+      const { error: subUpdateError } = await supabase
         .from("subscriptions")
         .update({
           asaas_subscription_id: sub.id,
@@ -312,9 +297,12 @@ serve(async (req) => {
           asaas_customer_id: asaasCustomerId,
           plan_id: plan_id,
           cancel_at_period_end: false,
-          ...(useEarlyAdopter ? { price_locked: true, is_early_adopter: true } : {}),
         })
         .eq("user_id", userId);
+
+      if (subUpdateError) {
+        console.error("[checkout] falha ao salvar assinatura local:", subUpdateError);
+      }
 
       // PIX: buscar QR code inline
       if (asaasBillingType === "PIX") {

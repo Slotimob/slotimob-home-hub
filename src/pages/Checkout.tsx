@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { useForceLightTheme } from '@/hooks/useForceLightTheme';
 import { trackStartTrial, trackSubscriptionPaid } from '@/components/TrackingProvider';
-import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
+
 import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { translateAuthError } from '@/lib/authErrors';
@@ -172,7 +172,6 @@ export default function Checkout() {
   const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
 
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
-  const { slots } = useEarlyAdopterCount();
 
   // ── Verificação de e-mail (checagem proativa) ──────────────────────────
   const [emailVerifiedLocally, setEmailVerifiedLocally] = useState(false);
@@ -247,16 +246,9 @@ export default function Checkout() {
     []
   );
 
-  const isEarlyAdopterAvailable = (planId: PaidPlan): boolean => {
-    return true; // Sempre usa preço de Promoção de Lançamento
-  };
-
   const getDisplayPrice = (planId: PaidPlan): number => {
     const p = pricing?.[planId];
     if (!p) return 0;
-    if (isEarlyAdopterAvailable(planId)) {
-      return isAnnual ? p.price_annual_early_adopter || p.price_early_adopter : p.price_early_adopter;
-    }
     return isAnnual ? p.price_annual : p.price_original;
   };
 
@@ -637,7 +629,6 @@ export default function Checkout() {
                 const selected = plan.id === selectedPlan;
                 const isPaid = !plan.isFree;
                 const paidId = plan.id as PaidPlan;
-                const earlyAdopter = isPaid && isEarlyAdopterAvailable(paidId);
                 const price = isPaid ? getDisplayPrice(paidId) : 0;
 
                 return (
@@ -667,11 +658,6 @@ export default function Checkout() {
                         {plan.popular && (
                           <Badge className="text-[10px] px-1.5 py-0 bg-accent text-accent-foreground">
                             Popular
-                          </Badge>
-                        )}
-                        {earlyAdopter && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-accent/10 text-accent border-accent/20">
-                            Early
                           </Badge>
                         )}
                       </div>

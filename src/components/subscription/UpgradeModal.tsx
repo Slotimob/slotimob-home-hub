@@ -1,9 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Check, Rocket, Building2, Zap, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { Check, Rocket, Building2, Zap, ArrowRight, Loader2 } from 'lucide-react';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
-import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useAddonCheckout } from '@/hooks/useAddonCheckout';
 import { useNavigate } from 'react-router-dom';
@@ -54,7 +52,6 @@ const proBenefits = [
 export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, feature }: UpgradeModalProps) => {
   const { plan: currentPlan } = useSubscriptionLimits();
   const { isMember, isLoading: isWorkspaceLoading } = useWorkspace();
-  const { slots } = useEarlyAdopterCount();
   const navigate = useNavigate();
   const { buyAddon, loadingAddonId } = useAddonCheckout();
 
@@ -155,10 +152,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
   }
 
 
-  const earlyAdopterSlots = slots[resolvedTarget];
-  const hasEarlyAdopterSlots = earlyAdopterSlots && earlyAdopterSlots.remaining > 0;
-
-  // Preços corretos baseados no banco (subscription_plans)
+  // Preços baseados no banco (subscription_plans)
   const planConfig = {
     pro: {
       name: 'Pro',
@@ -166,9 +160,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
       color: 'text-blue-500',
       bgColor: 'bg-blue-500',
       borderColor: 'border-blue-500',
-      priceMonthly: 197,      // regular mensal
-      priceEA: 147,           // early adopter mensal
-      priceAnnualEA: 127,     // early adopter anual (equivalente mensal)
+      priceMonthly: 197,
     },
     business: {
       name: 'Business',
@@ -176,19 +168,16 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
       color: 'text-purple-500',
       bgColor: 'bg-purple-500',
       borderColor: 'border-purple-500',
-      priceMonthly: 297,      // regular mensal
-      priceEA: 247,           // early adopter mensal
-      priceAnnualEA: 227,     // early adopter anual (equivalente mensal)
+      priceMonthly: 297,
     },
   };
 
   const config = planConfig[resolvedTarget];
   const Icon = config.icon;
 
-  // Preço exibido (sempre EA enquanto houver vagas, conforme política de lançamento)
-  const displayPrice = hasEarlyAdopterSlots ? config.priceEA : config.priceMonthly;
-  const proCurrentPrice = hasEarlyAdopterSlots ? planConfig.pro.priceEA : planConfig.pro.priceMonthly;
-  const upgradePrice = displayPrice - proCurrentPrice; // sempre R$100
+  const displayPrice = config.priceMonthly;
+  const proCurrentPrice = planConfig.pro.priceMonthly;
+  const upgradePrice = displayPrice - proCurrentPrice;
 
   // Benefícios a mostrar
   const benefits = resolvedTarget === 'business'
@@ -225,60 +214,27 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
             <div className={`p-4 rounded-lg border-2 ${config.borderColor} bg-card space-y-2`}>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>Seu plano atual (Pro)</span>
-                <span className="font-medium line-through">R$ {proCurrentPrice}/mês</span>
+                <span className="font-medium">R$ {proCurrentPrice}/mês</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-3xl font-bold ${config.color}`}>+ R$ {upgradePrice}</span>
                 <span className="text-muted-foreground">/mês</span>
-                {hasEarlyAdopterSlots && (
-                  <Badge variant="secondary" className="ml-1">
-                    <Zap className="h-3 w-3 mr-1" />
-                    Early Adopter
-                  </Badge>
-                )}
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
                   Total: <strong className="text-foreground">R$ {displayPrice}/mês</strong> no Business
-                  {hasEarlyAdopterSlots ? ' — preço trancado para sempre' : ''}
                 </span>
               </div>
-              {hasEarlyAdopterSlots && earlyAdopterSlots.remaining > 0 && (
-                <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
-                  <Clock className="h-3.5 w-3.5" />
-                  Apenas <strong>{earlyAdopterSlots.remaining}</strong> vagas com desconto restantes
-                </div>
-              )}
               <p className="text-xs text-muted-foreground pt-1 border-t border-border">
                 Sua assinatura Pro atual será substituída automaticamente pelo Business. Sem cobrança dupla.
               </p>
             </div>
           ) : (
             <div className={`p-4 rounded-lg border-2 ${config.borderColor} bg-card`}>
-              <div className="flex items-baseline gap-2 mb-2">
+              <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold">R$ {displayPrice}</span>
                 <span className="text-muted-foreground">/mês</span>
-                {hasEarlyAdopterSlots && (
-                  <Badge variant="secondary" className="ml-2">
-                    <Zap className="h-3 w-3 mr-1" />
-                    Early Adopter
-                  </Badge>
-                )}
-              </div>
-              {hasEarlyAdopterSlots && earlyAdopterSlots.remaining > 0 && (
-                <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 mb-2">
-                  <Clock className="h-4 w-4" />
-                  <span>Apenas <strong>{earlyAdopterSlots.remaining}</strong> vagas restantes!</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="line-through">R$ {config.priceMonthly}/mês</span>
-                <span>→</span>
-                <span className="text-green-600 font-medium">
-                  Economize R$ {config.priceMonthly - displayPrice}/mês
-                  {hasEarlyAdopterSlots ? ' para sempre' : ''}
-                </span>
               </div>
             </div>
           )}
