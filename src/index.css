@@ -22,14 +22,14 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%;
     --secondary: 170 62% 49%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 246 25% 95%;
-    --muted-foreground: 246 20% 45%;
+    --muted: 246 16% 86%;
+    --muted-foreground: 246 25% 38%;
     --accent: 170 85% 45%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 246 20% 85%;
-    --input: 246 20% 85%;
+    --border: 246 20% 76%;
+    --input: 246 20% 76%;
     --ring: 170 62% 49%;
     --radius: 0.5rem;
     --sidebar-background: 0 0% 100%;
