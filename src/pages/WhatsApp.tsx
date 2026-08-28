@@ -68,7 +68,7 @@ function useWhatsAppAnyConnection() {
           if (payload.eventType === 'DELETE') {
             setConnection(null);
           } else {
-            setConnection(payload.new as WhatsAppConnection);
+            setConnection(payload.new as WhatsAppConnectionClient);
           }
         }
       )
