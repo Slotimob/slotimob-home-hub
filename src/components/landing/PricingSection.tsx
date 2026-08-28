@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
-import { useEarlyAdopterCount } from '@/hooks/useEarlyAdopterCount';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
