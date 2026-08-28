@@ -172,11 +172,9 @@ export function PricingSection() {
     const isLoading = loadingPlan === plan.id;
     const isStart = plan.id === 'start';
     const isPro = plan.id === 'pro';
-    const isEarlyAdopter = getEarlyAdopterAvailable(plan.id);
     const displayPrice = getDisplayPrice(plan.id);
     const annualTotal = getAnnualTotal(plan.id);
     const altPrice = getAlternativePrice(plan.id);
-    const remaining = getRemainingSlots(plan.id);
 
     return (
       <Card
