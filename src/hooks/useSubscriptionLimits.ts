@@ -122,22 +122,42 @@ export const useSubscriptionLimits = (): SubscriptionLimits => {
     refetchOnMount: true,
   });
 
-  // Fetch add-on counts from subscriptions (use effective broker for members)
+  // Fetch add-on counts + subscription status (use effective broker for members)
   const { data: addonData, isLoading: isAddonLoading } = useQuery({
     queryKey: ['subscription-addons', resolvedUserId],
     queryFn: async () => {
       if (!resolvedUserId) return null;
       const { data, error } = await supabase
         .from('subscriptions')
-        .select('extra_users_count, extra_unit_packs')
+        .select('extra_users_count, extra_unit_packs, status')
         .eq('user_id', resolvedUserId)
         .maybeSingle();
       if (error) return null;
       return data;
     },
     enabled: !!resolvedUserId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
+
+  const isPendingPayment = addonData?.status === 'pending_payment';
+
+  // Features do plano Start, usadas como teto enquanto o pagamento não é confirmado
+  const { data: startPlanFeatures } = useQuery({
+    queryKey: ['plan-features-start'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .select('features')
+        .eq('id', 'start')
+        .maybeSingle();
+      if (error || !data) return null;
+      return data.features as unknown as PlanFeatures;
+    },
+    enabled: isPendingPayment,
+    staleTime: 60 * 60 * 1000,
+  });
+
 
   // Fetch trial status for free users
   const { data: trialData, isLoading: isTrialLoading } = useQuery({
