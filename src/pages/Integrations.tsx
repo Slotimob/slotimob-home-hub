@@ -112,18 +112,8 @@ const Integrations = () => {
   const instancesLimit = features?.whatsapp_instances_limit ?? 0;
   const canConnect = instancesLimit > 0;
 
-  // Check if user already accepted WhatsApp terms
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('whatsapp_terms_acceptances')
-      .select('id')
-      .eq('broker_id', user.id)
-      .limit(1)
-      .then(({ data }) => {
-        setHasAcceptedTerms(data && data.length > 0);
-      });
-  }, [user]);
+
+
 
   // Derived states
   const isConnected = connection?.status === 'connected' || connection?.connection_status === 'open';
