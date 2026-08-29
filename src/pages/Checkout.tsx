@@ -168,6 +168,7 @@ export default function Checkout() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [fiscalDuplicateAccountError, setFiscalDuplicateAccountError] = useState(false);
+  const [cpfError, setCpfError] = useState<string | null>(null);
   const [billingType, setBillingType] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
   const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
 
@@ -303,8 +304,12 @@ export default function Checkout() {
     setCheckoutError(null);
     setFiscalDuplicateAccountError(false);
     setAuthError(null);
+    setCpfError(null);
 
     let currentUserId = user?.id;
+
+    // Valores normalizados (necessários já na pré-validação de signup)
+    const cleanCpfCnpj = cpfCnpj.replace(/\D/g, '');
 
     // 1. Sign up if not logged in
     if (!user) {
@@ -326,6 +331,22 @@ export default function Checkout() {
         return;
       }
       setIsCheckingOut(true);
+
+      // Pré-validação (rate limit, honeypot, documento duplicado) ANTES de criar a conta
+      const { data: validation } = await supabase.functions.invoke('validate-signup', {
+        body: { email, cpf: cleanCpfCnpj },
+      });
+      if (validation && validation.allowed === false) {
+        if (validation.reason === 'documento_duplicado') {
+          setCpfError(validation.message || 'Este CPF/CNPJ já está cadastrado.');
+        } else {
+          setAuthError(validation.message || 'Não foi possível validar o cadastro. Tente novamente.');
+        }
+        setIsCheckingOut(false);
+        resetCaptcha();
+        return;
+      }
+
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -357,7 +378,6 @@ export default function Checkout() {
     }
 
     // ── Validação e salvamento de dados fiscais ─────────────────────────────
-    const cleanCpfCnpj = cpfCnpj.replace(/\D/g, '');
     const cleanPhone = phone.replace(/\D/g, '');
     const cleanCep = cep.replace(/\D/g, '');
 
@@ -662,6 +682,11 @@ export default function Checkout() {
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground">{plan.tagline}</span>
+                      {plan.isFree && (
+                        <span className="block text-xs font-medium text-accent mt-0.5">
+                          Grátis, sem cartão de crédito · inclui 7 dias de PRO
+                        </span>
+                      )}
                     </div>
                     <span className="text-sm font-semibold text-foreground shrink-0">
                       {plan.isFree ? (
@@ -932,12 +957,26 @@ export default function Checkout() {
               </p>
 
               <div className="space-y-3">
-                <Input
-                  placeholder="CPF ou CNPJ *"
-                  value={cpfCnpj}
-                  onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
-                  inputMode="numeric"
-                />
+                <div>
+                  <Input
+                    placeholder="CPF ou CNPJ *"
+                    value={cpfCnpj}
+                    onChange={(e) => {
+                      setCpfCnpj(maskCpfCnpj(e.target.value));
+                      if (cpfError) setCpfError(null);
+                    }}
+                    inputMode="numeric"
+                    className={cpfError ? 'border-destructive' : undefined}
+                  />
+                  {cpfError && (
+                    <p className="text-xs text-destructive mt-1">
+                      {cpfError}{' '}
+                      <Link to="/auth" className="underline font-medium">
+                        Já tem conta? Entrar
+                      </Link>
+                    </p>
+                  )}
+                </div>
 
                 <Input
                   placeholder="Telefone / WhatsApp *"
@@ -1172,7 +1211,9 @@ export default function Checkout() {
                   {isCheckingOut ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {billingType === 'PIX'
+                      {selectedPlan === 'start'
+                        ? 'Criando sua conta...'
+                        : billingType === 'PIX'
                         ? 'Gerando PIX...'
                         : billingType === 'BOLETO'
                         ? 'Gerando boleto...'
@@ -1188,7 +1229,9 @@ export default function Checkout() {
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Lock className="h-3 w-3" />
                   <span>
-                    {billingType === 'CREDIT_CARD'
+                    {selectedPlan === 'start'
+                      ? 'Grátis · sem cartão de crédito · inclui 7 dias de PRO'
+                      : billingType === 'CREDIT_CARD'
                       ? 'Você será redirecionado para o ambiente seguro do Asaas'
                       : billingType === 'BOLETO'
                       ? 'O boleto será gerado e exibido aqui'
