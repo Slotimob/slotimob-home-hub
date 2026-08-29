@@ -479,9 +479,25 @@ export function ConfirmLeaseProjectionDialog({
     onOpenChange(false);
   };
 
+  /** Persiste a competência escolhida no JSONB do contrato (sem migration). */
+  const persistCompetencies = async () => {
+    if (!lease) return;
+    const patch: Record<string, unknown> = {};
+    if (lease.fire_insurance?.enabled && insuranceCompetency) {
+      patch.fire_insurance = { ...lease.fire_insurance, competency_month: insuranceCompetency };
+    }
+    if (lease.iptu_charge?.enabled && iptuCompetency) {
+      patch.iptu_charge = { ...lease.iptu_charge, competency_month: iptuCompetency };
+    }
+    if (Object.keys(patch).length === 0) return;
+    await supabase.from("leases").update(patch as any).eq("id", lease.id);
+  };
+
   const handleConfirm = async () => {
     if (!lease || confirmedInstallments.length === 0) return;
     try {
+      await persistCompetencies();
+
       const result = await generateProjections.mutateAsync({
         leaseId: lease.id,
         unitId: lease.unit_id,
@@ -490,6 +506,7 @@ export function ConfirmLeaseProjectionDialog({
         leaseStartDate: lease.start_date,
         installments: confirmedInstallments,
       });
+
 
       await invalidateLeaseQueries(queryClient);
 
