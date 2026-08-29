@@ -342,8 +342,22 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
             .eq("id", lease.id);
           if (dbError2) throw dbError2;
        }
- 
+
+       // Acréscimo: registra também na tabela unificada `documents`
+       if (isLeaseDocumentKey(currentUploadKey)) {
+         await registerLeaseDocument({
+           key: currentUploadKey,
+           brokerId: effectiveBrokerId,
+           filePath,
+           unitId: lease.unit_id,
+           fileSize: file.size,
+           mimeType: file.type,
+           reference: (lease as any)?.tenant_contact?.name || (lease as any)?.unit?.unit_number || null,
+         });
+       }
+
         await invalidateLeaseQueries(queryClient);
+        queryClient.invalidateQueries({ queryKey: ["documents-unified"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
