@@ -127,13 +127,14 @@ export function useLeaseFinancialProjection() {
 
       if (!installments || installments.length === 0) return { count: 0 };
 
-      // Idempotência por competência: recarrega o estado atual e descarta duplicatas.
+      // Idempotência por PARCELA (tipo:competência:vencimento): recarrega o estado
+      // atual e descarta duplicatas — mesma chave usada na camada de UI.
       const existing = await fetchExistingCompetencies(leaseId);
       const toInsert = installments.filter((i) => !existing.has(i.dedupKey ?? i.key));
 
       if (toInsert.length === 0) return { count: 0 };
 
-      const categoryIds = await resolveCategoryIds();
+      const findCategory = await resolveCategoryIds();
 
       /**
        * Data de emissão (regime de competência): dia do mês em que o contrato começou,
@@ -148,22 +149,26 @@ export function useLeaseFinancialProjection() {
         return format(calculateDueDate(competencyMonth, contractDay), "yyyy-MM-dd");
       };
 
-      const transactions: FinancialTransaction[] = toInsert.map((i) => ({
-        broker_id: effectiveBrokerId || user.id,
-        unit_id: unitId,
-        contact_id: tenantContactId,
-        type: "income",
-        description: i.description,
-        amount: i.amount,
-        transaction_date: resolveTransactionDate(i),
-        due_date: i.dueDate,
-        status: "pending",
-        obligation_type: i.obligationType,
-        competency_period: i.competencyPeriod,
-        reference: `lease:${leaseId}`,
-        property_id: propertyId || null,
-        category_id: categoryIds[i.obligationType] ?? null,
-      }));
+      const transactions: FinancialTransaction[] = toInsert.map((i) => {
+        const transactionType = i.transactionType ?? "income";
+        return {
+          broker_id: effectiveBrokerId || user.id,
+          unit_id: unitId,
+          contact_id: i.contactId || tenantContactId,
+          type: transactionType,
+          description: i.description,
+          amount: i.amount,
+          transaction_date: resolveTransactionDate(i),
+          due_date: i.dueDate,
+          status: "pending",
+          obligation_type: i.obligationType,
+          competency_period: i.competencyPeriod,
+          reference: `lease:${leaseId}`,
+          property_id: propertyId || null,
+          category_id: findCategory(i.obligationType, transactionType),
+        };
+      });
+
 
       const { error: insertError } = await supabase
         .from("financial_transactions")
