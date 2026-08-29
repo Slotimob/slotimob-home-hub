@@ -52,6 +52,16 @@ export function ReconciliationMatcherDialog({
   const [showMismatchDialog, setShowMismatchDialog] = useState(false);
   const [markAsPaid, setMarkAsPaid] = useState(true);
 
+  // Reset selection and options when the dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setSelectedEntry(null);
+      setMarkAsPaid(true);
+      setShowMismatchDialog(false);
+      setSearchTerm("");
+    }
+  }, [open]);
+
   // Fetch unreconciled bank statement entries
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["unreconciled-statement-entries", transaction.bank_account_id],
