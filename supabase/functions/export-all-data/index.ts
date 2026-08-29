@@ -102,7 +102,6 @@ Deno.serve(async (req) => {
       supabaseAdmin.from('bank_statement_imports').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('balance_audits').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('documents').select('*').eq('broker_id', brokerId),
-      supabaseAdmin.from('property_documents').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('visits').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('sales').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('pipeline_stages').select('*').eq('broker_id', brokerId),
