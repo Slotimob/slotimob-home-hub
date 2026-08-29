@@ -396,8 +396,54 @@ export function ReconciliationMatcherDialog({
           </ScrollArea>
 
           {/* Footer info */}
-          <div className="text-xs text-muted-foreground text-center pt-2 border-t flex-shrink-0">
-            Clique em um item do extrato para conciliar com o lançamento selecionado
+          <div className="space-y-3 pt-3 border-t flex-shrink-0">
+            {selectedEntry ? (
+              <>
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="mark-as-paid"
+                    checked={markAsPaid}
+                    onCheckedChange={(checked) => setMarkAsPaid(checked === true)}
+                  />
+                  <label htmlFor="mark-as-paid" className="text-sm leading-none cursor-pointer">
+                    Marcar lançamento como pago em{" "}
+                    <span className="font-medium">
+                      {format(parseISO(selectedEntry.entry_date), "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  <p>• Vincula este lançamento à entrada do extrato.</p>
+                  {markAsPaid && (
+                    <p>
+                      • Marca como pago em{" "}
+                      {format(parseISO(selectedEntry.entry_date), "dd/MM/yyyy", { locale: ptBR })}.
+                    </p>
+                  )}
+                  {!transaction.bank_account_id && selectedEntry.bank_account && (
+                    <p>• Vincula à conta bancária {selectedEntry.bank_account.name}.</p>
+                  )}
+                </div>
+
+                <Button
+                  className="w-full gap-2"
+                  onClick={handleConfirmReconcile}
+                  disabled={isReconciling}
+                >
+                  {isReconciling ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  Confirmar conciliação
+                </Button>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center">
+                Clique em um item do extrato para conciliar com o lançamento selecionado
+              </p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
