@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
     // Parse request body
     const body = await req.json();
     const { email, honeypot, formLoadTime } = body;
+    const rawDocument = body.cpf || body.document || '';
 
     // Honeypot check - if filled, it's a bot
     if (honeypot && honeypot.trim() !== '') {
@@ -97,6 +98,32 @@ Deno.serve(async (req) => {
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Duplicate document check — AFTER rate limiting, so this endpoint cannot
+    // be abused as a "does this CPF have an account?" oracle.
+    const cleanDocument = String(rawDocument).replace(/\D/g, '');
+    if (cleanDocument.length === 11 || cleanDocument.length === 14) {
+      const { data: existingProfile, error: docCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .or(`cpf.eq.${cleanDocument},cnpj.eq.${cleanDocument}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (docCheckError) {
+        logStep("Error checking duplicate document - failing open", { error: docCheckError.message });
+      } else if (existingProfile) {
+        logStep("Duplicate document detected", { clientIp });
+        return new Response(
+          JSON.stringify({
+            allowed: false,
+            reason: "documento_duplicado",
+            message: "Este CPF/CNPJ já está cadastrado. Faça login ou use outro documento."
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Note: We skip duplicate email check here - Supabase Auth will handle it
