@@ -31,6 +31,7 @@ const Pipeline = React.lazy(() => import("./pages/Pipeline"));
 const Units = React.lazy(() => import("./pages/Units"));
 const UnitDetalhe = React.lazy(() => import("./pages/UnitDetalhe"));
 const Documents = React.lazy(() => import("./pages/Documents"));
+const DocumentTemplateEditor = React.lazy(() => import("./pages/DocumentTemplateEditor"));
 const Simulator = React.lazy(() => import("./pages/Simulator"));
 const Schedule = React.lazy(() => import("./pages/Schedule"));
 const ActivityHistory = React.lazy(() => import("./pages/ActivityHistory"));
@@ -182,6 +183,7 @@ const App = () => (
               <Route path="/documents/templates" element={guarded(<Documents />)} />
               <Route path="/documents/custom" element={guarded(<Documents />)} />
               <Route path="/documents/history" element={guarded(<Documents />)} />
+              <Route path="/documents/modelo/:templateId" element={guarded(<DocumentTemplateEditor />)} />
               <Route path="/simulator" element={guarded(<Simulator />)} />
               {/* Rotas legadas do antigo Simulador -> novas calculadoras por slug */}
               <Route path="/simulator/financing" element={<Navigate to="/simulator/financiamento-imobiliario" replace />} />

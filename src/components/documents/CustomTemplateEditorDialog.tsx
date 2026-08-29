@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RichTextEditor, htmlToPlainText } from '@/components/ui/rich-text-editor';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { htmlToPlainText } from '@/lib/html-to-text';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -145,9 +146,8 @@ export const CustomTemplateEditorDialog = ({
         type: 'text' as const,
         section: 'Campos',
       })),
-      // fillTemplateContent espera texto puro: converte o HTML do editor,
-      // preservando quebras de linha e listas.
-      templateContent: htmlToPlainText(content),
+      // `fillTemplateContent` normaliza HTML na origem (ver pdfGenerator).
+      templateContent: content,
     };
 
     await generateDocumentPDF(docTemplate, {});
