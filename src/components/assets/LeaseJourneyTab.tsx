@@ -446,7 +446,10 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
           .eq("id", lease.id);
       }
 
+      await unregisterLeaseDocument(effectiveBrokerId, filePath);
+
       await invalidateLeaseQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["documents-unified"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
