@@ -682,6 +682,11 @@ export default function Checkout() {
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground">{plan.tagline}</span>
+                      {plan.isFree && (
+                        <span className="block text-xs font-medium text-accent mt-0.5">
+                          Grátis, sem cartão de crédito · inclui 7 dias de PRO
+                        </span>
+                      )}
                     </div>
                     <span className="text-sm font-semibold text-foreground shrink-0">
                       {plan.isFree ? (
@@ -1206,7 +1211,9 @@ export default function Checkout() {
                   {isCheckingOut ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {billingType === 'PIX'
+                      {selectedPlan === 'start'
+                        ? 'Criando sua conta...'
+                        : billingType === 'PIX'
                         ? 'Gerando PIX...'
                         : billingType === 'BOLETO'
                         ? 'Gerando boleto...'
@@ -1222,7 +1229,9 @@ export default function Checkout() {
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Lock className="h-3 w-3" />
                   <span>
-                    {billingType === 'CREDIT_CARD'
+                    {selectedPlan === 'start'
+                      ? 'Grátis · sem cartão de crédito · inclui 7 dias de PRO'
+                      : billingType === 'CREDIT_CARD'
                       ? 'Você será redirecionado para o ambiente seguro do Asaas'
                       : billingType === 'BOLETO'
                       ? 'O boleto será gerado e exibido aqui'
