@@ -331,6 +331,22 @@ export default function Checkout() {
         return;
       }
       setIsCheckingOut(true);
+
+      // Pré-validação (rate limit, honeypot, documento duplicado) ANTES de criar a conta
+      const { data: validation } = await supabase.functions.invoke('validate-signup', {
+        body: { email, cpf: cleanCpfCnpj },
+      });
+      if (validation && validation.allowed === false) {
+        if (validation.reason === 'documento_duplicado') {
+          setCpfError(validation.message || 'Este CPF/CNPJ já está cadastrado.');
+        } else {
+          setAuthError(validation.message || 'Não foi possível validar o cadastro. Tente novamente.');
+        }
+        setIsCheckingOut(false);
+        resetCaptcha();
+        return;
+      }
+
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
