@@ -501,15 +501,52 @@ export function ConfirmLeaseProjectionDialog({
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">Aluguel</p>
-              <InstallmentTable
-                installments={rentInstallments}
-                selected={selected}
-                onToggle={toggle}
-              />
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">Aluguel</p>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="launch-rent" className="text-xs text-muted-foreground">
+                    Lançar agora
+                  </Label>
+                  <Switch id="launch-rent" checked={launchRent} onCheckedChange={setLaunchRent} />
+                </div>
+              </div>
+              {launchRent && (
+                <InstallmentTable
+                  installments={rentInstallments}
+                  selected={selected}
+                  onToggle={toggle}
+                />
+              )}
             </div>
 
-            {insuranceInstallments.length > 0 && (
+            {(hasObligations || insuranceUnpriced || iptuUnpriced) && !obligationsRevealed && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Este reajuste lança apenas os aluguéis reajustados. IPTU e seguro não são
+                  alterados nem relançados.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setObligationsRevealed(true)}
+                >
+                  Incluir obrigações neste lançamento
+                </Button>
+              </div>
+            )}
+
+            {obligationsRevealed && insuranceUnpriced && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-destructive">
+                  Seguro Incêndio: valor da parcela não definido no contrato. Nada será lançado —
+                  informe o valor total e o número de parcelas no contrato.
+                </p>
+              </div>
+            )}
+
+            {obligationsRevealed && insuranceInstallments.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-2">
@@ -540,7 +577,17 @@ export function ConfirmLeaseProjectionDialog({
               </>
             )}
 
-            {iptuInstallments.length > 0 && (
+            {obligationsRevealed && iptuUnpriced && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-destructive">
+                  IPTU: valor da parcela não definido no contrato. Nada será lançado — informe o
+                  valor anual e o número de parcelas no contrato.
+                </p>
+              </div>
+            )}
+
+            {obligationsRevealed && iptuInstallments.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-2">
@@ -570,6 +617,7 @@ export function ConfirmLeaseProjectionDialog({
                 </div>
               </>
             )}
+
 
             <div className="rounded-lg border bg-muted/40 p-3 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
