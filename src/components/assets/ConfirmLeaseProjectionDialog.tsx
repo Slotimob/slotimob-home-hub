@@ -531,7 +531,12 @@ export function ConfirmLeaseProjectionDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setObligationsRevealed(true)}
+                  onClick={() => {
+                    setObligationsRevealed(true);
+                    setLaunchInsurance(!!lease.fire_insurance?.enabled);
+                    setLaunchIptu(!!lease.iptu_charge?.enabled);
+                  }}
+
                 >
                   Incluir obrigações neste lançamento
                 </Button>
