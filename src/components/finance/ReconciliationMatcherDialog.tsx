@@ -50,6 +50,7 @@ export function ReconciliationMatcherDialog({
   const [selectedEntry, setSelectedEntry] = useState<StatementEntry | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
   const [showMismatchDialog, setShowMismatchDialog] = useState(false);
+  const [markAsPaid, setMarkAsPaid] = useState(true);
 
   // Fetch unreconciled bank statement entries
   const { data: entries = [], isLoading } = useQuery({
