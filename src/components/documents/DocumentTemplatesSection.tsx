@@ -1,16 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search } from 'lucide-react';
 import { documentTemplates, CATEGORY_LABELS, getCategoryCounts, DocumentTemplate } from '@/utils/documentTemplates';
 import { DocumentTemplateCard } from './DocumentTemplateCard';
-import { DocumentEditorDialog } from './DocumentEditorDialog';
 
 export const DocumentTemplatesSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const navigate = useNavigate();
 
   const categoryCounts = getCategoryCounts();
 
@@ -21,9 +20,9 @@ export const DocumentTemplatesSection = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // Abre o editor em tela cheia (rota própria) em vez de popup.
   const handleEdit = (template: DocumentTemplate) => {
-    setSelectedTemplate(template);
-    setIsEditorOpen(true);
+    navigate(`/documents/modelo/${template.id}`);
   };
 
   return (
@@ -69,11 +68,6 @@ export const DocumentTemplatesSection = () => {
         </div>
       )}
 
-      <DocumentEditorDialog
-        open={isEditorOpen}
-        onOpenChange={setIsEditorOpen}
-        template={selectedTemplate}
-      />
     </div>
   );
 };
