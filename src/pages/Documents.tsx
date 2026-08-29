@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -61,7 +61,9 @@ interface Document {
   title: string;
   description: string | null;
   document_type: 'contract' | 'proposal' | 'client_doc' | 'property_doc' | 'other';
-  file_path: string;
+  file_path: string | null;
+  external_url: string | null;
+  source_type: string;
   file_size: number | null;
   version: number;
   created_at: string;
@@ -101,9 +103,7 @@ const Documents = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
-  const [loadingDocs, setLoadingDocs] = useState(true);
+  const queryClient = useQueryClient();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,7 +111,31 @@ const Documents = () => {
   const [deleteDoc, setDeleteDoc] = useState<Document | null>(null);
   const [missingFiles, setMissingFiles] = useState<Set<string>>(new Set());
 
-  // Docs from property_documents table
+  const DOCUMENTS_QUERY_KEY = ['documents-unified', user?.id];
+
+  const {
+    data: documents = [],
+    isLoading: loadingDocs,
+    refetch: loadDocuments,
+  } = useQuery({
+    queryKey: DOCUMENTS_QUERY_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*, units(unit_number, is_standalone, properties(name))')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data as unknown as Document[]) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const invalidateAllDocumentBlocks = () => {
+    queryClient.invalidateQueries({ queryKey: ['documents-unified'] });
+    queryClient.invalidateQueries({ queryKey: ['documents-property-docs'] });
+  };
+
+  // Docs from property_documents table (legado — aguardando migração da linha remanescente)
   const { data: propertyDocs = [] } = useQuery({
     queryKey: ['documents-property-docs', user?.id],
     queryFn: async () => {
@@ -124,48 +148,7 @@ const Documents = () => {
     enabled: !!user?.id,
   });
 
-  // Docs from lease journey (signed_contract_path + metadata.entry_inspection_path)
-  const { data: journeyDocs = [] } = useQuery({
-    queryKey: ['documents-journey', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('leases')
-        .select('id, signed_contract_path, metadata, start_date, tenant_contact:tenant_contact_id(name)')
-        .order('start_date', { ascending: false });
 
-      const docs: { id: string; title: string; path: string; tenant: string; date: string; bucket: string }[] = [];
-      (data || []).forEach((lease: any) => {
-        const tenantName = (lease.tenant_contact as any)?.name || 'Inquilino';
-        if (lease.signed_contract_path) {
-          docs.push({
-            id: `${lease.id}-signed`,
-            title: `Contrato Assinado — ${tenantName}`,
-            path: lease.signed_contract_path,
-            tenant: tenantName,
-            date: lease.start_date || '',
-            bucket: 'documents',
-          });
-        }
-        const meta = (lease.metadata as any) || {};
-        if (meta.entry_inspection_path) {
-          docs.push({
-            id: `${lease.id}-inspection`,
-            title: `Vistoria de Entrada — ${tenantName}`,
-            path: meta.entry_inspection_path,
-            tenant: tenantName,
-            date: meta.entry_inspection_date
-              ? new Date(meta.entry_inspection_date).toISOString().split('T')[0]
-              : (lease.start_date || ''),
-            bucket: 'documents',
-          });
-        }
-      });
-      return docs;
-    },
-    enabled: !!user?.id,
-  });
-  
-  
   // Sync tab with route
   const activeTab = getTabFromPath(location.pathname);
   
@@ -191,27 +174,31 @@ const Documents = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      loadDocuments();
-    }
-  }, [user]);
+  const matchesSearch = (title?: string | null) =>
+    !searchTerm || (title || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+  const filteredDocuments = useMemo(
+    () =>
+      documents.filter(
+        (doc) =>
+          (filterType === 'all' || doc.document_type === filterType) && matchesSearch(doc.title)
+      ),
+    [documents, filterType, searchTerm]
+  );
+
+  // Legado e jornada respeitam a mesma busca e o mesmo filtro
+  const filteredPropertyDocs = useMemo(
+    () =>
+      (propertyDocs as any[]).filter(
+        (doc) =>
+          (filterType === 'all' || filterType === 'property_doc') && matchesSearch(doc.title)
+      ),
+    [propertyDocs, filterType, searchTerm]
+  );
 
   useEffect(() => {
-    let filtered = documents;
-
-    if (filterType !== 'all') {
-      filtered = filtered.filter((doc) => doc.document_type === filterType);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter((doc) =>
-        doc.title.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredDocuments(filtered);
-  }, [searchTerm, filterType, documents]);
+    void checkMissingFiles(documents);
+  }, [documents]);
 
   const MISSING_FILE_MESSAGE =
     'Este arquivo não está mais disponível para download. Entre em contato com o suporte.';
@@ -252,30 +239,11 @@ const Documents = () => {
     setMissingFiles(missing);
   };
 
-  const loadDocuments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*, units(unit_number, is_standalone, properties(name))')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      const docs = (data as Document[]) || [];
-      setDocuments(docs);
-      setFilteredDocuments(docs);
-      void checkMissingFiles(docs);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar documentos',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoadingDocs(false);
-    }
-  };
-
   const handleDownload = async (doc: Document) => {
+    if (!doc.file_path && doc.external_url) {
+      window.open(doc.external_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (!doc.file_path) {
       setMissingFiles((prev) => new Set(prev).add(doc.id));
       toast({
@@ -318,7 +286,11 @@ const Documents = () => {
     }
   };
 
-  const handleDownloadFromBucket = async (bucket: string, path: string, title: string) => {
+  const handleDownloadFromBucket = async (bucket: string, path: string | null, title: string) => {
+    if (!path) {
+      toast({ title: 'Arquivo indisponível', description: MISSING_FILE_MESSAGE, variant: 'destructive' });
+      return;
+    }
     try {
       const { data, error } = await supabase.storage.from(bucket).download(path);
       if (error) throw error;
@@ -343,11 +315,16 @@ const Documents = () => {
     if (!deleteDoc) return;
 
     try {
-      const { error: storageError } = await supabase.storage
-        .from('documents')
-        .remove([deleteDoc.file_path]);
-
-      if (storageError) throw storageError;
+      // Documentos externos (source_type='external_link') não têm arquivo no bucket.
+      if (deleteDoc.file_path) {
+        const { error: storageError } = await supabase.storage
+          .from('documents')
+          .remove([deleteDoc.file_path]);
+        // Falha no storage não pode impedir a exclusão da linha (arquivo órfão é o mal menor)
+        if (storageError) {
+          console.error('[Documents] falha ao remover arquivo do storage', storageError);
+        }
+      }
 
       const { error: dbError } = await supabase
         .from('documents')
@@ -362,7 +339,7 @@ const Documents = () => {
       });
 
       setDeleteDoc(null);
-      loadDocuments();
+      invalidateAllDocumentBlocks();
     } catch (error: any) {
       toast({
         title: 'Erro ao excluir documento',
@@ -611,12 +588,12 @@ const Documents = () => {
             )}
 
             {/* Docs de Empreendimentos */}
-            {propertyDocs.length > 0 && (
+            {filteredPropertyDocs.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                   <h3 className="text-sm font-medium">Docs de Empreendimentos</h3>
-                  <Badge variant="secondary" className="text-xs">{propertyDocs.length}</Badge>
+                  <Badge variant="secondary" className="text-xs">{filteredPropertyDocs.length}</Badge>
                 </div>
                 <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
@@ -631,7 +608,7 @@ const Documents = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {propertyDocs.map((doc: any) => (
+                        {filteredPropertyDocs.map((doc: any) => (
                           <TableRow key={doc.id} className="hover:bg-muted/30 transition-colors">
                             <TableCell>
                               <span className="font-medium text-foreground line-clamp-1">{doc.title}</span>
@@ -685,66 +662,6 @@ const Documents = () => {
               </div>
             )}
 
-            {/* Jornada dos Contratos */}
-            {journeyDocs.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-sm font-medium">Jornada dos Contratos</h3>
-                  <Badge variant="secondary" className="text-xs">{journeyDocs.length}</Badge>
-                </div>
-                <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead className="min-w-[200px]">Documento</TableHead>
-                          <TableHead className="min-w-[160px]">Inquilino</TableHead>
-                          <TableHead className="w-[120px]">Tipo</TableHead>
-                          <TableHead className="w-[100px] text-center">Data</TableHead>
-                          <TableHead className="w-[80px] text-right">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {journeyDocs.map((doc) => (
-                          <TableRow key={doc.id} className="hover:bg-muted/30 transition-colors">
-                            <TableCell>
-                              <span className="font-medium text-foreground">{doc.title}</span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm text-muted-foreground">{doc.tenant}</span>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className="text-xs font-normal bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                                Jornada
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">
-                                {doc.date ? new Date(doc.date).toLocaleDateString('pt-BR') : '—'}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-end">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8"
-                                      onClick={() => handleDownloadFromBucket(doc.bucket, doc.path, doc.title)}>
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Baixar</TooltipContent>
-                                </Tooltip>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent value="modelos" className="mt-6">
@@ -763,13 +680,13 @@ const Documents = () => {
         <UploadDocumentDialog
           open={isUploadDialogOpen}
           onOpenChange={setIsUploadDialogOpen}
-          onSuccess={loadDocuments}
+          onSuccess={invalidateAllDocumentBlocks}
         />
 
         <CreateProposalDialog
           open={isProposalDialogOpen}
           onOpenChange={setIsProposalDialogOpen}
-          onSuccess={loadDocuments}
+          onSuccess={invalidateAllDocumentBlocks}
         />
 
         <AlertDialog open={!!deleteDoc} onOpenChange={(open) => !open && setDeleteDoc(null)}>
