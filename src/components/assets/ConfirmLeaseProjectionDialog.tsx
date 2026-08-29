@@ -69,9 +69,15 @@ interface ConfirmLeaseProjectionDialogProps {
   overrideRentAmount?: number;
   /** Sobrescreve o início da janela (ex.: novo ciclo pós-reajuste). */
   overrideStartDate?: string;
+  /**
+   * Modo pós-reajuste: por padrão lança APENAS os aluguéis reajustados.
+   * As obrigações (IPTU/seguro) ficam recolhidas atrás de uma ação secundária.
+   */
+  postAdjustment?: boolean;
   onConfirmed?: (count: number) => void;
   onSkipped?: () => void;
 }
+
 
 function InstallmentTable({
   installments,
@@ -130,6 +136,8 @@ export function ConfirmLeaseProjectionDialog({
   lease,
   overrideRentAmount,
   overrideStartDate,
+  postAdjustment = false,
+
   onConfirmed,
   onSkipped,
 }: ConfirmLeaseProjectionDialogProps) {
@@ -160,8 +168,10 @@ export function ConfirmLeaseProjectionDialog({
   const [rentAmount, setRentAmount] = useState(0);
   const [firstDueDate, setFirstDueDate] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [launchRent, setLaunchRent] = useState(true);
   const [launchInsurance, setLaunchInsurance] = useState(true);
   const [launchIptu, setLaunchIptu] = useState(true);
+  const [obligationsRevealed, setObligationsRevealed] = useState(true);
   const [launchFromMonth, setLaunchFromMonth] = useState("");
 
   // Reset ao abrir
@@ -171,11 +181,14 @@ export function ConfirmLeaseProjectionDialog({
     setRentAmount(rentAmountDefault);
     const base = startDate ? parseISO(startDate) : new Date();
     setFirstDueDate(format(calculateDueDate(base, lease.due_day || 10), "yyyy-MM-dd"));
-    setLaunchInsurance(!!lease.fire_insurance?.enabled);
-    setLaunchIptu(!!lease.iptu_charge?.enabled);
+    setLaunchRent(true);
+    // Pós-reajuste: só aluguel por padrão. Obrigações ficam atrás de uma ação secundária.
+    setLaunchInsurance(postAdjustment ? false : !!lease.fire_insurance?.enabled);
+    setLaunchIptu(postAdjustment ? false : !!lease.iptu_charge?.enabled);
+    setObligationsRevealed(!postAdjustment);
     setLaunchFromMonth("");
     setSelected(new Set());
-  }, [open, lease?.id, window?.months, rentAmountDefault, startDate]);
+  }, [open, lease?.id, window?.months, rentAmountDefault, startDate, postAdjustment]);
 
   const rentInstallments = useMemo(() => {
     if (!lease || !window || window.blocked) return [];
@@ -189,37 +202,86 @@ export function ConfirmLeaseProjectionDialog({
     });
   }, [lease, window, startDate, monthsToLaunch, rentAmount, firstDueDate, existingCompetencies]);
 
+  /**
+   * Valor da parcela de um encargo anual. Nunca cai no valor cheio:
+   * usa `installment_amount` e, se ausente, divide o total pelo nº de parcelas.
+   * Retorna null quando não dá para calcular — nesse caso nada é gerado e a UI avisa.
+   */
+  const resolveInstallmentAmount = (
+    installmentAmount: number | null | undefined,
+    total: number | null | undefined,
+    installments: number
+  ): number | null => {
+    if (installmentAmount && installmentAmount > 0) return installmentAmount;
+    if (total && total > 0 && installments > 0) {
+      return Math.round((total / installments) * 100) / 100;
+    }
+    return null;
+  };
+
+  const insuranceCount = Math.max(1, lease?.fire_insurance?.installments || 1);
+  const iptuCount = Math.max(1, lease?.iptu_charge?.installments || 1);
+
+  const insuranceAmount = useMemo(
+    () =>
+      lease?.fire_insurance?.enabled
+        ? resolveInstallmentAmount(
+            lease.fire_insurance.installment_amount,
+            lease.fire_insurance.total_amount,
+            insuranceCount
+          )
+        : null,
+    [lease, insuranceCount]
+  );
+
+  const iptuAmount = useMemo(
+    () =>
+      lease?.iptu_charge?.enabled
+        ? resolveInstallmentAmount(
+            lease.iptu_charge.installment_amount,
+            lease.iptu_charge.annual_amount,
+            iptuCount
+          )
+        : null,
+    [lease, iptuCount]
+  );
+
+  const insuranceUnpriced = !!lease?.fire_insurance?.enabled && insuranceAmount === null;
+  const iptuUnpriced = !!lease?.iptu_charge?.enabled && iptuAmount === null;
+  const hasObligations = !!lease?.fire_insurance?.enabled || !!lease?.iptu_charge?.enabled;
+
+
   const insuranceInstallments = useMemo(() => {
     const cfg = lease?.fire_insurance;
-    if (!lease || !cfg?.enabled) return [];
+    if (!lease || !cfg?.enabled || insuranceAmount === null) return [];
     return buildChargeInstallments({
       obligationType: "fire_insurance",
       label: "Seguro Incêndio",
-      installments: cfg.installments || 1,
-      installmentAmount: cfg.installment_amount || cfg.total_amount || 0,
+      installments: insuranceCount,
+      installmentAmount: insuranceAmount,
       firstDueDate: cfg.first_due_date,
       fallbackStartDate: startDate,
       fallbackDueDay: lease.due_day || 10,
       cycleStartDate: startDate,
       existingCompetencies,
     });
-  }, [lease, startDate, existingCompetencies]);
+  }, [lease, startDate, existingCompetencies, insuranceAmount, insuranceCount]);
 
   const iptuInstallments = useMemo(() => {
     const cfg = lease?.iptu_charge;
-    if (!lease || !cfg?.enabled) return [];
+    if (!lease || !cfg?.enabled || iptuAmount === null) return [];
     return buildChargeInstallments({
       obligationType: "iptu",
       label: "IPTU",
-      installments: cfg.installments || 1,
-      installmentAmount: cfg.installment_amount || cfg.annual_amount || 0,
+      installments: iptuCount,
+      installmentAmount: iptuAmount,
       firstDueDate: cfg.first_due_date,
       fallbackStartDate: startDate,
       fallbackDueDay: lease.due_day || 10,
       cycleStartDate: startDate,
       existingCompetencies,
     });
-  }, [lease, startDate, existingCompetencies]);
+  }, [lease, startDate, existingCompetencies, iptuAmount, iptuCount]);
 
   // Selecionar por padrão tudo que ainda não existe
   useEffect(() => {
@@ -242,7 +304,8 @@ export function ConfirmLeaseProjectionDialog({
     });
 
   const confirmedInstallments = useMemo(() => {
-    const list: PlannedInstallment[] = [...rentInstallments];
+    const list: PlannedInstallment[] = [];
+    if (launchRent) list.push(...rentInstallments);
     if (launchInsurance) list.push(...insuranceInstallments);
     if (launchIptu) list.push(...iptuInstallments);
     return list.filter((i) => !i.alreadyExists && selected.has(i.key));
@@ -250,10 +313,12 @@ export function ConfirmLeaseProjectionDialog({
     rentInstallments,
     insuranceInstallments,
     iptuInstallments,
+    launchRent,
     launchInsurance,
     launchIptu,
     selected,
   ]);
+
 
   const totalAmount = confirmedInstallments.reduce((sum, i) => sum + i.amount, 0);
 
@@ -438,15 +503,57 @@ export function ConfirmLeaseProjectionDialog({
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">Aluguel</p>
-              <InstallmentTable
-                installments={rentInstallments}
-                selected={selected}
-                onToggle={toggle}
-              />
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">Aluguel</p>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="launch-rent" className="text-xs text-muted-foreground">
+                    Lançar agora
+                  </Label>
+                  <Switch id="launch-rent" checked={launchRent} onCheckedChange={setLaunchRent} />
+                </div>
+              </div>
+              {launchRent && (
+                <InstallmentTable
+                  installments={rentInstallments}
+                  selected={selected}
+                  onToggle={toggle}
+                />
+              )}
             </div>
 
-            {insuranceInstallments.length > 0 && (
+            {(hasObligations || insuranceUnpriced || iptuUnpriced) && !obligationsRevealed && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Este reajuste lança apenas os aluguéis reajustados. IPTU e seguro não são
+                  alterados nem relançados.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setObligationsRevealed(true);
+                    setLaunchInsurance(!!lease.fire_insurance?.enabled);
+                    setLaunchIptu(!!lease.iptu_charge?.enabled);
+                  }}
+
+                >
+                  Incluir obrigações neste lançamento
+                </Button>
+              </div>
+            )}
+
+            {obligationsRevealed && insuranceUnpriced && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-destructive">
+                  Seguro Incêndio: valor da parcela não definido no contrato. Nada será lançado —
+                  informe o valor total e o número de parcelas no contrato.
+                </p>
+              </div>
+            )}
+
+            {obligationsRevealed && insuranceInstallments.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-2">
@@ -477,7 +584,17 @@ export function ConfirmLeaseProjectionDialog({
               </>
             )}
 
-            {iptuInstallments.length > 0 && (
+            {obligationsRevealed && iptuUnpriced && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-destructive">
+                  IPTU: valor da parcela não definido no contrato. Nada será lançado — informe o
+                  valor anual e o número de parcelas no contrato.
+                </p>
+              </div>
+            )}
+
+            {obligationsRevealed && iptuInstallments.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-2">
@@ -507,6 +624,7 @@ export function ConfirmLeaseProjectionDialog({
                 </div>
               </>
             )}
+
 
             <div className="rounded-lg border bg-muted/40 p-3 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">

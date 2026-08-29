@@ -197,7 +197,9 @@ export function AdjustmentCalculatorDialog({
 
       if (updateError) throw updateError;
 
-      // Step 3: CASCADE UPDATE - Update all pending future transactions for this lease
+      // Step 3: CASCADE UPDATE - apenas parcelas de ALUGUEL pendentes futuras.
+      // NUNCA tocar IPTU/seguro/outras obrigações: elas têm valor próprio e
+      // seriam sobrescritas com o valor do aluguel (corrupção silenciosa).
       const adjustmentEffectiveDate = format(new Date(), "yyyy-MM-dd");
 
       const { data: updatedTransactions, error: cascadeError } = await supabase
@@ -206,7 +208,9 @@ export function AdjustmentCalculatorDialog({
         .eq("reference", `lease:${lease.id}`)
         .eq("status", "pending")
         .gte("due_date", adjustmentEffectiveDate)
+        .or("obligation_type.eq.rent,obligation_type.is.null")
         .select("id");
+
 
       if (cascadeError) {
         console.error("Cascade update error:", cascadeError);
@@ -371,11 +375,15 @@ export function AdjustmentCalculatorDialog({
                 <div className="mt-3 pt-3 border-t border-border">
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5 justify-center">
                     <RefreshCw className="h-3 w-3" />
-                    Parcelas pendentes futuras serão atualizadas automaticamente
+                    Parcelas de <strong>aluguel</strong> pendentes futuras serão atualizadas
+                    automaticamente. IPTU, seguro e demais obrigações não são alterados.
                   </p>
                 </div>
               </Card>
             )}
+
+
+
 
             {/* Lançamento de aluguéis futuros */}
             <div className="space-y-2">
@@ -492,6 +500,8 @@ export function AdjustmentCalculatorDialog({
           if (!o) setProjectionLease(null);
         }}
         lease={projectionLease}
+        postAdjustment
+
       />
     </>
   );
