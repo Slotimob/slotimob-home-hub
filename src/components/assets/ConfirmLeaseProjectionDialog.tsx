@@ -32,6 +32,7 @@ import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import {
   buildChargeInstallments,
+  buildMonthlyChargeInstallments,
   buildRentInstallments,
   calculateDueDate,
   calculateProjectionWindow,
@@ -41,7 +42,27 @@ import {
   useExistingLeaseCompetencies,
   useLeaseFinancialProjection,
 } from "@/hooks/useLeaseFinancialProjection";
-import type { FireInsuranceConfig, IptuChargeConfig } from "@/hooks/useLeases";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import type {
+  FireInsuranceConfig,
+  IptuChargeConfig,
+  LeaseChargeResponsible,
+  ObligationChargeConfig,
+} from "@/hooks/useLeases";
+
+/** Rótulos dos encargos adicionais mensais (mesma taxonomia do contrato). */
+const ADDITIONAL_LABELS: Record<string, string> = {
+  condominium: "Condomínio",
+  energy: "Energia",
+  water: "Água",
+  gas: "Gás",
+  other: "Outros",
+};
+
+/** tenant => receita; owner/agency => despesa (repasse assumido). */
+const typeFromChargeTo = (chargeTo?: LeaseChargeResponsible | null): "income" | "expense" =>
+  chargeTo === "tenant" || !chargeTo ? "income" : "expense";
 
 export interface LeaseForProjection {
   id: string;
@@ -56,10 +77,12 @@ export interface LeaseForProjection {
   is_indefinite_term?: boolean | null;
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
+  additional_obligations?: ObligationChargeConfig[] | null;
   unit?: { unit_number?: string | null; address?: string | null } | null;
   tenant?: { name?: string | null } | null;
   tenant_contact?: { name?: string | null } | null;
 }
+
 
 interface ConfirmLeaseProjectionDialogProps {
   open: boolean;
