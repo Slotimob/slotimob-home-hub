@@ -145,7 +145,9 @@ export const CustomTemplateEditorDialog = ({
         type: 'text' as const,
         section: 'Campos',
       })),
-      templateContent: content,
+      // fillTemplateContent espera texto puro: converte o HTML do editor,
+      // preservando quebras de linha e listas.
+      templateContent: htmlToPlainText(content),
     };
 
     await generateDocumentPDF(docTemplate, {});
@@ -224,9 +226,10 @@ export const CustomTemplateEditorDialog = ({
     </div>
   );
 
-  // Preview Content
+  // Preview Content — o PDF é texto puro; a prévia converte o HTML do editor
+  // para refletir o que será impresso (quebras de linha e listas preservadas).
   const PreviewContent = () => (
-    <div 
+    <div
       className="bg-white dark:bg-card border rounded-lg shadow-sm mx-auto"
       style={{
         maxWidth: isMobile ? '100%' : '210mm',
@@ -234,11 +237,11 @@ export const CustomTemplateEditorDialog = ({
         padding: isMobile ? '16px' : '25mm 20mm',
       }}
     >
-      <pre 
+      <pre
         className="whitespace-pre-wrap font-mono leading-relaxed text-foreground"
         style={{ fontSize: isMobile ? '10px' : '12px' }}
       >
-        {content || 'O conteúdo do contrato aparecerá aqui...'}
+        {htmlToPlainText(content) || 'O conteúdo do contrato aparecerá aqui...'}
       </pre>
     </div>
   );
