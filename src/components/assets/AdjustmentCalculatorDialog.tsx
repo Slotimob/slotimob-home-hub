@@ -375,11 +375,10 @@ export function AdjustmentCalculatorDialog({
                 <div className="mt-3 pt-3 border-t border-border">
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5 justify-center">
                     <RefreshCw className="h-3 w-3" />
-                    Parcelas pendentes futuras serão atualizadas automaticamente
+                    Parcelas de <strong>aluguel</strong> pendentes futuras serão atualizadas
+                    automaticamente. IPTU, seguro e demais obrigações não são alterados.
                   </p>
-                </div>
-              </Card>
-            )}
+
 
             {/* Lançamento de aluguéis futuros */}
             <div className="space-y-2">
