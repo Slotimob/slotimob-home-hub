@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       bankStatementImportsResult,
       balanceAuditsResult,
       documentsResult,
-      propertyDocumentsResult,
+      
       visitsResult,
       salesResult,
       pipelineStagesResult,
@@ -102,7 +102,6 @@ Deno.serve(async (req) => {
       supabaseAdmin.from('bank_statement_imports').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('balance_audits').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('documents').select('*').eq('broker_id', brokerId),
-      supabaseAdmin.from('property_documents').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('visits').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('sales').select('*').eq('broker_id', brokerId),
       supabaseAdmin.from('pipeline_stages').select('*').eq('broker_id', brokerId),
@@ -145,7 +144,7 @@ Deno.serve(async (req) => {
         bank_statement_imports: bankStatementImportsResult.data || [],
         balance_audits: balanceAuditsResult.data || [],
         documents: documentsResult.data || [],
-        property_documents: propertyDocumentsResult.data || [],
+        
         visits: visitsResult.data || [],
         sales: salesResult.data || [],
         pipeline_stages: pipelineStagesResult.data || [],

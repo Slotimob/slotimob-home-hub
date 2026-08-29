@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, FileText, Search, Download, Trash2, Building2, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Plus, FileText, Search, Download, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { HeaderButton } from "@/components/ui/header-button";
 import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { useToast } from '@/hooks/use-toast';
@@ -132,21 +132,8 @@ const Documents = () => {
 
   const invalidateAllDocumentBlocks = () => {
     queryClient.invalidateQueries({ queryKey: ['documents-unified'] });
-    queryClient.invalidateQueries({ queryKey: ['documents-property-docs'] });
   };
 
-  // Docs from property_documents table (legado — aguardando migração da linha remanescente)
-  const { data: propertyDocs = [] } = useQuery({
-    queryKey: ['documents-property-docs', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('property_documents')
-        .select('id, title, file_path, external_url, source_type, created_at, properties(name)')
-        .order('created_at', { ascending: false });
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
 
 
   // Sync tab with route
@@ -186,15 +173,6 @@ const Documents = () => {
     [documents, filterType, searchTerm]
   );
 
-  // Legado e jornada respeitam a mesma busca e o mesmo filtro
-  const filteredPropertyDocs = useMemo(
-    () =>
-      (propertyDocs as any[]).filter(
-        (doc) =>
-          (filterType === 'all' || filterType === 'property_doc') && matchesSearch(doc.title)
-      ),
-    [propertyDocs, filterType, searchTerm]
-  );
 
   useEffect(() => {
     void checkMissingFiles(documents);
@@ -286,30 +264,6 @@ const Documents = () => {
     }
   };
 
-  const handleDownloadFromBucket = async (bucket: string, path: string | null, title: string) => {
-    if (!path) {
-      toast({ title: 'Arquivo indisponível', description: MISSING_FILE_MESSAGE, variant: 'destructive' });
-      return;
-    }
-    try {
-      const { data, error } = await supabase.storage.from(bucket).download(path);
-      if (error) throw error;
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = title;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error: any) {
-      if (isMissingFileError(error)) {
-        toast({ title: 'Arquivo indisponível', description: MISSING_FILE_MESSAGE, variant: 'destructive' });
-        return;
-      }
-      toast({ title: 'Erro ao baixar documento', description: error.message, variant: 'destructive' });
-    }
-  };
 
   const handleDelete = async () => {
     if (!deleteDoc) return;
@@ -583,81 +537,6 @@ const Documents = () => {
                       ))}
                     </TableBody>
                   </Table>
-                </div>
-              </div>
-            )}
-
-            {/* Docs de Empreendimentos */}
-            {filteredPropertyDocs.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-sm font-medium">Docs de Empreendimentos</h3>
-                  <Badge variant="secondary" className="text-xs">{filteredPropertyDocs.length}</Badge>
-                </div>
-                <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead className="min-w-[200px]">Documento</TableHead>
-                          <TableHead className="min-w-[160px]">Empreendimento</TableHead>
-                          <TableHead className="w-[120px]">Tipo</TableHead>
-                          <TableHead className="w-[100px] text-center">Data</TableHead>
-                          <TableHead className="w-[80px] text-right">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredPropertyDocs.map((doc: any) => (
-                          <TableRow key={doc.id} className="hover:bg-muted/30 transition-colors">
-                            <TableCell>
-                              <span className="font-medium text-foreground line-clamp-1">{doc.title}</span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm text-muted-foreground">
-                                {(doc.properties as any)?.name || '—'}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className="text-xs font-normal bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                                Doc. Imóvel
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">
-                                {new Date(doc.created_at).toLocaleDateString('pt-BR')}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-end">
-                                {doc.external_url ? (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8"
-                                        onClick={() => window.open(doc.external_url, '_blank')}>
-                                        <ExternalLink className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Abrir</TooltipContent>
-                                  </Tooltip>
-                                ) : doc.file_path ? (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8"
-                                        onClick={() => handleDownloadFromBucket('property-documents', doc.file_path, doc.title)}>
-                                        <Download className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Baixar</TooltipContent>
-                                  </Tooltip>
-                                ) : null}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
                 </div>
               </div>
             )}

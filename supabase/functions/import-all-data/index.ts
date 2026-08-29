@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
     // Level 3: Depend on level 2 tables
     await upsertTable('units', tables.units);
     await upsertTable('deals', tables.deals);
-    await upsertTable('property_documents', tables.property_documents);
+    
     await upsertTable('import_history', tables.import_history);
     await upsertTable('portal_listings', tables.portal_listings);
     await upsertTable('bank_statement_imports', tables.bank_statement_imports);
