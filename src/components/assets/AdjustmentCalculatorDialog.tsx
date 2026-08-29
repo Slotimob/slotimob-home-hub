@@ -500,6 +500,8 @@ export function AdjustmentCalculatorDialog({
           if (!o) setProjectionLease(null);
         }}
         lease={projectionLease}
+        postAdjustment
+
       />
     </>
   );
