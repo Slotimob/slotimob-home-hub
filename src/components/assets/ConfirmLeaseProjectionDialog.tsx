@@ -186,6 +186,31 @@ export function ConfirmLeaseProjectionDialog({
     [lease, startDate]
   );
 
+  /**
+   * `units.obligations_config` — fonte do `due_day` por obrigação.
+   * Sem isso, todo encargo herdaria o vencimento do aluguel.
+   */
+  const { data: obligationsConfig } = useQuery({
+    queryKey: ["unit-obligations-config", lease?.unit_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("units")
+        .select("obligations_config")
+        .eq("id", lease!.unit_id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.obligations_config as Record<string, any> | null) || {};
+    },
+    enabled: !!lease?.unit_id && open,
+  });
+
+  /** `due_day` configurado no imóvel para uma obrigação (null quando não houver). */
+  const unitDueDay = (key: string): number | null => {
+    const cfg = obligationsConfig?.[key];
+    const day = Number(cfg?.due_day);
+    return day > 0 ? day : null;
+  };
+
   // --- Estado editável ---
   const [monthsToLaunch, setMonthsToLaunch] = useState(0);
   const [rentAmount, setRentAmount] = useState(0);
@@ -196,6 +221,16 @@ export function ConfirmLeaseProjectionDialog({
   const [launchIptu, setLaunchIptu] = useState(true);
   const [obligationsRevealed, setObligationsRevealed] = useState(true);
   const [launchFromMonth, setLaunchFromMonth] = useState("");
+  /** Competência de referência (yyyy-MM) dos ciclos anuais. */
+  const [insuranceCompetency, setInsuranceCompetency] = useState("");
+  const [iptuCompetency, setIptuCompetency] = useState("");
+  /** Encargos adicionais mensais ligados/desligados. */
+  const [launchAdditional, setLaunchAdditional] = useState<Record<string, boolean>>({});
+
+  const additionalConfigs = useMemo(
+    () => (lease?.additional_obligations || []).filter((o) => o?.enabled),
+    [lease]
+  );
 
   // Reset ao abrir
   useEffect(() => {
@@ -211,7 +246,19 @@ export function ConfirmLeaseProjectionDialog({
     setObligationsRevealed(!postAdjustment);
     setLaunchFromMonth("");
     setSelected(new Set());
+    // Pré-preenchido com o comportamento legado: competência = início da janela.
+    const windowMonth = startDate ? startDate.slice(0, 7) : format(base, "yyyy-MM");
+    setInsuranceCompetency(lease.fire_insurance?.competency_month || windowMonth);
+    setIptuCompetency(lease.iptu_charge?.competency_month || windowMonth);
+    setLaunchAdditional(
+      Object.fromEntries(
+        (lease.additional_obligations || [])
+          .filter((o) => o?.enabled)
+          .map((o) => [o.type, !postAdjustment])
+      )
+    );
   }, [open, lease?.id, window?.months, rentAmountDefault, startDate, postAdjustment]);
+
 
   const rentInstallments = useMemo(() => {
     if (!lease || !window || window.blocked) return [];
