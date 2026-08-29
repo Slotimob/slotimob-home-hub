@@ -378,6 +378,11 @@ export function AdjustmentCalculatorDialog({
                     Parcelas de <strong>aluguel</strong> pendentes futuras serão atualizadas
                     automaticamente. IPTU, seguro e demais obrigações não são alterados.
                   </p>
+                </div>
+              </Card>
+            )}
+
+
 
 
             {/* Lançamento de aluguéis futuros */}
