@@ -136,6 +136,8 @@ export function ConfirmLeaseProjectionDialog({
   lease,
   overrideRentAmount,
   overrideStartDate,
+  postAdjustment = false,
+
   onConfirmed,
   onSkipped,
 }: ConfirmLeaseProjectionDialogProps) {
