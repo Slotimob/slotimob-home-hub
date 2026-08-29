@@ -701,6 +701,10 @@ export function ConfirmLeaseProjectionDialog({
                     setObligationsRevealed(true);
                     setLaunchInsurance(!!lease.fire_insurance?.enabled);
                     setLaunchIptu(!!lease.iptu_charge?.enabled);
+                    setLaunchAdditional(
+                      Object.fromEntries(additionalConfigs.map((o) => [o.type, true]))
+                    );
+
                   }}
 
                 >
