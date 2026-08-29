@@ -51,11 +51,24 @@ export const CustomTemplateEditorDialog = ({
   const [saving, setSaving] = useState(false);
   const [mobileTab, setMobileTab] = useState<'config' | 'preview'>('config');
 
+  // Modelos antigos guardam texto puro (textarea). Converte para HTML para não
+  // perder as quebras de linha ao abrir no editor rico.
+  const plainTextToHtml = (text: string): string => {
+    if (!text) return '';
+    if (/<(p|h[1-6]|ul|ol|li|br|strong|em)\b/i.test(text)) return text;
+    const escape = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return text
+      .split('\n')
+      .map((line) => `<p>${escape(line) || '<br>'}</p>`)
+      .join('');
+  };
+
   useEffect(() => {
     if (template) {
       setName(template.name);
       setDescription(template.description || '');
-      setContent(template.content);
+      setContent(plainTextToHtml(template.content));
     }
   }, [template]);
 
@@ -178,13 +191,14 @@ export const CustomTemplateEditorDialog = ({
             </TooltipContent>
           </Tooltip>
         </div>
-        <Textarea
-          id="content"
+        <RichTextEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
           placeholder="Digite o conteúdo do contrato..."
-          className="min-h-[250px] sm:min-h-[300px] font-mono text-sm resize-none"
         />
+        <p className="text-xs text-muted-foreground">
+          Placeholders como {'{{nome_variavel}}'} são substituídos na geração do documento.
+        </p>
       </div>
 
       {/* Variables Preview */}
