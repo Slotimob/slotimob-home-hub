@@ -6,7 +6,6 @@ import { format, getDate, parseISO } from "date-fns";
 import {
   calculateDueDate,
   type PlannedInstallment,
-  type PlannedObligation,
 } from "@/lib/lease-projection";
 
 export interface LeaseProjectionParams {
@@ -24,7 +23,7 @@ interface FinancialTransaction {
   broker_id: string;
   unit_id: string;
   contact_id: string;
-  type: "income";
+  type: "income" | "expense";
   description: string;
   amount: number;
   transaction_date: string;
@@ -37,58 +36,65 @@ interface FinancialTransaction {
   category_id?: string | null;
 }
 
-/** Categoria financeira por tipo de obrigação. Ausência => category_id null. */
-const CATEGORY_NAMES: Record<PlannedObligation, string[]> = {
-  rent: ["Aluguéis", "Receita de Aluguel", "Aluguel"],
-  fire_insurance: ["Seguro Incêndio", "Seguros"],
-  iptu: ["IPTU", "Impostos"],
+/**
+ * Categoria financeira por tipo de obrigação e por natureza do lançamento.
+ * `income` = cobrado do inquilino; `expense` = assumido pelo proprietário (repasse).
+ * Nomes conferidos em `public.financial_categories`. Ausência => category_id null.
+ */
+const CATEGORY_NAMES: Record<string, { income: string[]; expense: string[] }> = {
+  rent: { income: ["Aluguéis", "Receita de Aluguel", "Aluguel"], expense: ["Repasse a Proprietário"] },
+  fire_insurance: { income: ["Seguro Incêndio"], expense: ["Repasse de Seguro Incêndio"] },
+  iptu: { income: ["IPTU"], expense: ["Repasse de IPTU"] },
+  condominium: { income: ["Condomínio"], expense: ["Repasse de Condomínio"] },
+  energy: { income: ["Energia"], expense: ["Repasse de Energia"] },
+  water: { income: ["Água"], expense: ["Repasse de Água"] },
+  gas: { income: ["Gás"], expense: ["Repasse de Gás"] },
+  other: { income: [], expense: [] },
 };
 
-async function resolveCategoryIds(): Promise<Record<PlannedObligation, string | null>> {
-  const result: Record<PlannedObligation, string | null> = {
-    rent: null,
-    fire_insurance: null,
-    iptu: null,
-  };
+type CategoryLookup = (
+  obligation: string,
+  type: "income" | "expense"
+) => string | null;
 
-  const allNames = Object.values(CATEGORY_NAMES).flat();
+async function resolveCategoryIds(): Promise<CategoryLookup> {
+  const allNames = Object.values(CATEGORY_NAMES).flatMap((v) => [...v.income, ...v.expense]);
+
   const { data, error } = await supabase
     .from("financial_categories")
     .select("id, name, type")
     .in("name", allNames);
 
-  if (error || !data) return result;
+  const rows = error || !data ? [] : data;
 
-  for (const key of Object.keys(CATEGORY_NAMES) as PlannedObligation[]) {
-    for (const name of CATEGORY_NAMES[key]) {
-      const match = data.find((c: any) => c.name === name && c.type === "income");
-      if (match) {
-        result[key] = match.id;
-        break;
-      }
+  return (obligation, type) => {
+    const names = CATEGORY_NAMES[obligation]?.[type] ?? [];
+    for (const name of names) {
+      const match = rows.find((c: any) => c.name === name && c.type === type);
+      if (match) return match.id;
     }
-  }
-
-  return result;
+    return null;
+  };
 }
 
 /**
- * Competências já lançadas para um contrato, no formato `${obligation}:${yyyy-MM}`.
- * É a base da idempotência por competência: geramos apenas o que ainda não existe,
- * de modo que o ciclo seguinte a um reajuste possa ser lançado sem duplicar o anterior.
+ * Parcelas já lançadas para um contrato, na chave `${obligation}:${yyyy-MM}:${due_date}`.
+ * O vencimento faz parte da chave porque encargo anual (IPTU/seguro) tem N parcelas na
+ * MESMA competência — espelha o índice único do banco
+ * `(reference, obligation_type, competency_period, due_date)`.
  */
 export async function fetchExistingCompetencies(leaseId: string): Promise<Set<string>> {
   const { data, error } = await supabase
     .from("financial_transactions")
-    .select("competency_period, obligation_type")
+    .select("competency_period, obligation_type, due_date")
     .eq("reference", `lease:${leaseId}`);
 
   if (error || !data) return new Set();
 
   return new Set(
     data
-      .filter((t: any) => t.competency_period)
-      .map((t: any) => `${t.obligation_type || "rent"}:${t.competency_period}`)
+      .filter((t: any) => t.competency_period && t.due_date)
+      .map((t: any) => `${t.obligation_type || "rent"}:${t.competency_period}:${t.due_date}`)
   );
 }
 
@@ -100,6 +106,7 @@ export function useExistingLeaseCompetencies(leaseId: string | null, enabled = t
     staleTime: 0,
   });
 }
+
 
 /**
  * Insere as parcelas confirmadas pelo usuário. Nunca é chamado automaticamente:
@@ -119,13 +126,14 @@ export function useLeaseFinancialProjection() {
 
       if (!installments || installments.length === 0) return { count: 0 };
 
-      // Idempotência por competência: recarrega o estado atual e descarta duplicatas.
+      // Idempotência por PARCELA (tipo:competência:vencimento): recarrega o estado
+      // atual e descarta duplicatas — mesma chave usada na camada de UI.
       const existing = await fetchExistingCompetencies(leaseId);
       const toInsert = installments.filter((i) => !existing.has(i.dedupKey ?? i.key));
 
       if (toInsert.length === 0) return { count: 0 };
 
-      const categoryIds = await resolveCategoryIds();
+      const findCategory = await resolveCategoryIds();
 
       /**
        * Data de emissão (regime de competência): dia do mês em que o contrato começou,
@@ -140,22 +148,26 @@ export function useLeaseFinancialProjection() {
         return format(calculateDueDate(competencyMonth, contractDay), "yyyy-MM-dd");
       };
 
-      const transactions: FinancialTransaction[] = toInsert.map((i) => ({
-        broker_id: effectiveBrokerId || user.id,
-        unit_id: unitId,
-        contact_id: tenantContactId,
-        type: "income",
-        description: i.description,
-        amount: i.amount,
-        transaction_date: resolveTransactionDate(i),
-        due_date: i.dueDate,
-        status: "pending",
-        obligation_type: i.obligationType,
-        competency_period: i.competencyPeriod,
-        reference: `lease:${leaseId}`,
-        property_id: propertyId || null,
-        category_id: categoryIds[i.obligationType] ?? null,
-      }));
+      const transactions: FinancialTransaction[] = toInsert.map((i) => {
+        const transactionType = i.transactionType ?? "income";
+        return {
+          broker_id: effectiveBrokerId || user.id,
+          unit_id: unitId,
+          contact_id: i.contactId || tenantContactId,
+          type: transactionType,
+          description: i.description,
+          amount: i.amount,
+          transaction_date: resolveTransactionDate(i),
+          due_date: i.dueDate,
+          status: "pending",
+          obligation_type: i.obligationType,
+          competency_period: i.competencyPeriod,
+          reference: `lease:${leaseId}`,
+          property_id: propertyId || null,
+          category_id: findCategory(i.obligationType, transactionType),
+        };
+      });
+
 
       const { error: insertError } = await supabase
         .from("financial_transactions")

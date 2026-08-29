@@ -102,6 +102,11 @@ export interface FireInsuranceConfig extends LeaseChargeResponsibleLink {
   installment_amount: number;
   first_due_date: string | null;
   charge_to: LeaseChargeResponsible;
+  /**
+   * Competência de referência do ciclo (`yyyy-MM`). Todas as parcelas do ciclo
+   * anual pertencem a esta competência. Ausente => início da janela (legado).
+   */
+  competency_month?: string | null;
 }
 
 /** IPTU parcelado parametrizado no contrato (leases.iptu_charge) */
@@ -114,7 +119,10 @@ export interface IptuChargeConfig extends LeaseChargeResponsibleLink {
   charge_to: LeaseChargeResponsible;
   /** 'unit' quando o valor veio do cadastro do imóvel, 'manual' quando editado */
   source: "unit" | "manual";
+  /** Competência (exercício) de referência do ciclo (`yyyy-MM`). Ver FireInsuranceConfig. */
+  competency_month?: string | null;
 }
+
 
 /**
  * Tipos de encargo adicionais configuráveis no contrato.

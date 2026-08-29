@@ -32,6 +32,7 @@ import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import {
   buildChargeInstallments,
+  buildMonthlyChargeInstallments,
   buildRentInstallments,
   calculateDueDate,
   calculateProjectionWindow,
@@ -41,7 +42,27 @@ import {
   useExistingLeaseCompetencies,
   useLeaseFinancialProjection,
 } from "@/hooks/useLeaseFinancialProjection";
-import type { FireInsuranceConfig, IptuChargeConfig } from "@/hooks/useLeases";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import type {
+  FireInsuranceConfig,
+  IptuChargeConfig,
+  LeaseChargeResponsible,
+  ObligationChargeConfig,
+} from "@/hooks/useLeases";
+
+/** Rótulos dos encargos adicionais mensais (mesma taxonomia do contrato). */
+const ADDITIONAL_LABELS: Record<string, string> = {
+  condominium: "Condomínio",
+  energy: "Energia",
+  water: "Água",
+  gas: "Gás",
+  other: "Outros",
+};
+
+/** tenant => receita; owner/agency => despesa (repasse assumido). */
+const typeFromChargeTo = (chargeTo?: LeaseChargeResponsible | null): "income" | "expense" =>
+  chargeTo === "tenant" || !chargeTo ? "income" : "expense";
 
 export interface LeaseForProjection {
   id: string;
@@ -56,10 +77,12 @@ export interface LeaseForProjection {
   is_indefinite_term?: boolean | null;
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
+  additional_obligations?: ObligationChargeConfig[] | null;
   unit?: { unit_number?: string | null; address?: string | null } | null;
   tenant?: { name?: string | null } | null;
   tenant_contact?: { name?: string | null } | null;
 }
+
 
 interface ConfirmLeaseProjectionDialogProps {
   open: boolean;
@@ -163,6 +186,31 @@ export function ConfirmLeaseProjectionDialog({
     [lease, startDate]
   );
 
+  /**
+   * `units.obligations_config` — fonte do `due_day` por obrigação.
+   * Sem isso, todo encargo herdaria o vencimento do aluguel.
+   */
+  const { data: obligationsConfig } = useQuery({
+    queryKey: ["unit-obligations-config", lease?.unit_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("units")
+        .select("obligations_config")
+        .eq("id", lease!.unit_id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.obligations_config as Record<string, any> | null) || {};
+    },
+    enabled: !!lease?.unit_id && open,
+  });
+
+  /** `due_day` configurado no imóvel para uma obrigação (null quando não houver). */
+  const unitDueDay = (key: string): number | null => {
+    const cfg = obligationsConfig?.[key];
+    const day = Number(cfg?.due_day);
+    return day > 0 ? day : null;
+  };
+
   // --- Estado editável ---
   const [monthsToLaunch, setMonthsToLaunch] = useState(0);
   const [rentAmount, setRentAmount] = useState(0);
@@ -173,6 +221,16 @@ export function ConfirmLeaseProjectionDialog({
   const [launchIptu, setLaunchIptu] = useState(true);
   const [obligationsRevealed, setObligationsRevealed] = useState(true);
   const [launchFromMonth, setLaunchFromMonth] = useState("");
+  /** Competência de referência (yyyy-MM) dos ciclos anuais. */
+  const [insuranceCompetency, setInsuranceCompetency] = useState("");
+  const [iptuCompetency, setIptuCompetency] = useState("");
+  /** Encargos adicionais mensais ligados/desligados. */
+  const [launchAdditional, setLaunchAdditional] = useState<Record<string, boolean>>({});
+
+  const additionalConfigs = useMemo(
+    () => (lease?.additional_obligations || []).filter((o) => o?.enabled),
+    [lease]
+  );
 
   // Reset ao abrir
   useEffect(() => {
@@ -188,7 +246,19 @@ export function ConfirmLeaseProjectionDialog({
     setObligationsRevealed(!postAdjustment);
     setLaunchFromMonth("");
     setSelected(new Set());
+    // Pré-preenchido com o comportamento legado: competência = início da janela.
+    const windowMonth = startDate ? startDate.slice(0, 7) : format(base, "yyyy-MM");
+    setInsuranceCompetency(lease.fire_insurance?.competency_month || windowMonth);
+    setIptuCompetency(lease.iptu_charge?.competency_month || windowMonth);
+    setLaunchAdditional(
+      Object.fromEntries(
+        (lease.additional_obligations || [])
+          .filter((o) => o?.enabled)
+          .map((o) => [o.type, !postAdjustment])
+      )
+    );
   }, [open, lease?.id, window?.months, rentAmountDefault, startDate, postAdjustment]);
+
 
   const rentInstallments = useMemo(() => {
     if (!lease || !window || window.blocked) return [];
@@ -248,7 +318,11 @@ export function ConfirmLeaseProjectionDialog({
 
   const insuranceUnpriced = !!lease?.fire_insurance?.enabled && insuranceAmount === null;
   const iptuUnpriced = !!lease?.iptu_charge?.enabled && iptuAmount === null;
-  const hasObligations = !!lease?.fire_insurance?.enabled || !!lease?.iptu_charge?.enabled;
+  const hasObligations =
+    !!lease?.fire_insurance?.enabled ||
+    !!lease?.iptu_charge?.enabled ||
+    additionalConfigs.length > 0;
+
 
 
   const insuranceInstallments = useMemo(() => {
@@ -262,10 +336,21 @@ export function ConfirmLeaseProjectionDialog({
       firstDueDate: cfg.first_due_date,
       fallbackStartDate: startDate,
       fallbackDueDay: lease.due_day || 10,
-      cycleStartDate: startDate,
+      obligationDueDay: unitDueDay("insurance"),
+      cycleStartDate: insuranceCompetency ? `${insuranceCompetency}-01` : startDate,
+      transactionType: typeFromChargeTo(cfg.charge_to),
+      contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
       existingCompetencies,
     });
-  }, [lease, startDate, existingCompetencies, insuranceAmount, insuranceCount]);
+  }, [
+    lease,
+    startDate,
+    existingCompetencies,
+    insuranceAmount,
+    insuranceCount,
+    insuranceCompetency,
+    obligationsConfig,
+  ]);
 
   const iptuInstallments = useMemo(() => {
     const cfg = lease?.iptu_charge;
@@ -278,23 +363,80 @@ export function ConfirmLeaseProjectionDialog({
       firstDueDate: cfg.first_due_date,
       fallbackStartDate: startDate,
       fallbackDueDay: lease.due_day || 10,
-      cycleStartDate: startDate,
+      obligationDueDay: unitDueDay("iptu"),
+      cycleStartDate: iptuCompetency ? `${iptuCompetency}-01` : startDate,
+      transactionType: typeFromChargeTo(cfg.charge_to),
+      contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
       existingCompetencies,
     });
-  }, [lease, startDate, existingCompetencies, iptuAmount, iptuCount]);
+  }, [
+    lease,
+    startDate,
+    existingCompetencies,
+    iptuAmount,
+    iptuCount,
+    iptuCompetency,
+    obligationsConfig,
+  ]);
+
+  /**
+   * Encargos adicionais (condomínio, energia, água, gás, outros): MENSAIS,
+   * competência acompanhando o mês, igual ao aluguel.
+   */
+  const additionalGroups = useMemo(() => {
+    if (!lease || !window || window.blocked) return [];
+    return additionalConfigs
+      .map((cfg) => {
+        const label =
+          cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type;
+        const installments = buildMonthlyChargeInstallments({
+          obligationType: cfg.type,
+          label,
+          startDate,
+          months: Math.max(0, monthsToLaunch),
+          amount: cfg.installment_amount || 0,
+          firstDueDate: cfg.first_due_date,
+          obligationDueDay: unitDueDay(cfg.type),
+          fallbackDueDay: lease.due_day || 10,
+          transactionType: typeFromChargeTo(cfg.charge_to),
+          contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
+          existingCompetencies,
+        });
+        return { cfg, label, installments };
+      })
+      .filter((g) => g.installments.length > 0);
+  }, [
+    lease,
+    window,
+    additionalConfigs,
+    startDate,
+    monthsToLaunch,
+    existingCompetencies,
+    obligationsConfig,
+  ]);
+
+  const additionalInstallments = useMemo(
+    () => additionalGroups.flatMap((g) => g.installments),
+    [additionalGroups]
+  );
 
   // Selecionar por padrão tudo que ainda não existe
   useEffect(() => {
     if (!open) return;
     const next = new Set<string>();
-    for (const i of [...rentInstallments, ...insuranceInstallments, ...iptuInstallments]) {
+    for (const i of [
+      ...rentInstallments,
+      ...insuranceInstallments,
+      ...iptuInstallments,
+      ...additionalInstallments,
+    ]) {
       if (i.alreadyExists) continue;
       if (launchFromMonth && i.competencyPeriod < launchFromMonth) continue;
       next.add(i.key);
     }
     setSelected(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, rentInstallments.length, insuranceInstallments.length, iptuInstallments.length, loadingExisting, launchFromMonth]);
+  }, [open, rentInstallments.length, insuranceInstallments.length, iptuInstallments.length, additionalInstallments.length, loadingExisting, launchFromMonth]);
 
   const toggle = (key: string) =>
     setSelected((prev) => {
@@ -308,11 +450,16 @@ export function ConfirmLeaseProjectionDialog({
     if (launchRent) list.push(...rentInstallments);
     if (launchInsurance) list.push(...insuranceInstallments);
     if (launchIptu) list.push(...iptuInstallments);
+    for (const g of additionalGroups) {
+      if (launchAdditional[g.cfg.type]) list.push(...g.installments);
+    }
     return list.filter((i) => !i.alreadyExists && selected.has(i.key));
   }, [
     rentInstallments,
     insuranceInstallments,
     iptuInstallments,
+    additionalGroups,
+    launchAdditional,
     launchRent,
     launchInsurance,
     launchIptu,
@@ -327,16 +474,34 @@ export function ConfirmLeaseProjectionDialog({
     rentInstallments.length > 0 &&
     rentInstallments.every((i) => i.alreadyExists) &&
     insuranceInstallments.every((i) => i.alreadyExists) &&
-    iptuInstallments.every((i) => i.alreadyExists);
+    iptuInstallments.every((i) => i.alreadyExists) &&
+    additionalInstallments.every((i) => i.alreadyExists);
+
 
   const handleSkip = () => {
     onSkipped?.();
     onOpenChange(false);
   };
 
+  /** Persiste a competência escolhida no JSONB do contrato (sem migration). */
+  const persistCompetencies = async () => {
+    if (!lease) return;
+    const patch: Record<string, unknown> = {};
+    if (lease.fire_insurance?.enabled && insuranceCompetency) {
+      patch.fire_insurance = { ...lease.fire_insurance, competency_month: insuranceCompetency };
+    }
+    if (lease.iptu_charge?.enabled && iptuCompetency) {
+      patch.iptu_charge = { ...lease.iptu_charge, competency_month: iptuCompetency };
+    }
+    if (Object.keys(patch).length === 0) return;
+    await supabase.from("leases").update(patch as any).eq("id", lease.id);
+  };
+
   const handleConfirm = async () => {
     if (!lease || confirmedInstallments.length === 0) return;
     try {
+      await persistCompetencies();
+
       const result = await generateProjections.mutateAsync({
         leaseId: lease.id,
         unitId: lease.unit_id,
@@ -345,6 +510,7 @@ export function ConfirmLeaseProjectionDialog({
         leaseStartDate: lease.start_date,
         installments: confirmedInstallments,
       });
+
 
       await invalidateLeaseQueries(queryClient);
 
@@ -535,6 +701,10 @@ export function ConfirmLeaseProjectionDialog({
                     setObligationsRevealed(true);
                     setLaunchInsurance(!!lease.fire_insurance?.enabled);
                     setLaunchIptu(!!lease.iptu_charge?.enabled);
+                    setLaunchAdditional(
+                      Object.fromEntries(additionalConfigs.map((o) => [o.type, true]))
+                    );
+
                   }}
 
                 >
@@ -573,6 +743,18 @@ export function ConfirmLeaseProjectionDialog({
                       />
                     </div>
                   </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label htmlFor="insurance-competency" className="text-xs text-muted-foreground">
+                      Competência de referência
+                    </Label>
+                    <Input
+                      id="insurance-competency"
+                      type="month"
+                      className="h-9 w-[170px]"
+                      value={insuranceCompetency}
+                      onChange={(e) => setInsuranceCompetency(e.target.value)}
+                    />
+                  </div>
                   {launchInsurance && (
                     <InstallmentTable
                       installments={insuranceInstallments}
@@ -583,6 +765,7 @@ export function ConfirmLeaseProjectionDialog({
                 </div>
               </>
             )}
+
 
             {obligationsRevealed && iptuUnpriced && (
               <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
@@ -614,6 +797,18 @@ export function ConfirmLeaseProjectionDialog({
                       />
                     </div>
                   </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label htmlFor="iptu-competency" className="text-xs text-muted-foreground">
+                      Competência de referência (exercício)
+                    </Label>
+                    <Input
+                      id="iptu-competency"
+                      type="month"
+                      className="h-9 w-[170px]"
+                      value={iptuCompetency}
+                      onChange={(e) => setIptuCompetency(e.target.value)}
+                    />
+                  </div>
                   {launchIptu && (
                     <InstallmentTable
                       installments={iptuInstallments}
@@ -624,6 +819,50 @@ export function ConfirmLeaseProjectionDialog({
                 </div>
               </>
             )}
+
+            {obligationsRevealed &&
+              additionalGroups.map((g) => (
+                <div key={g.cfg.type}>
+                  <Separator className="mb-3" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                        {g.label}
+                        <Badge variant="secondary" className="text-[10px]">
+                          {typeFromChargeTo(g.cfg.charge_to) === "income"
+                            ? "Receita"
+                            : "Despesa"}
+                        </Badge>
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`launch-${g.cfg.type}`}
+                          className="text-xs text-muted-foreground"
+                        >
+                          Lançar agora
+                        </Label>
+                        <Switch
+                          id={`launch-${g.cfg.type}`}
+                          checked={!!launchAdditional[g.cfg.type]}
+                          onCheckedChange={(v) =>
+                            setLaunchAdditional((prev) => ({ ...prev, [g.cfg.type]: v }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    {launchAdditional[g.cfg.type] && (
+                      <InstallmentTable
+                        installments={g.installments}
+                        selected={selected}
+                        onToggle={toggle}
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+
+
 
 
             <div className="rounded-lg border bg-muted/40 p-3 flex items-center justify-between text-sm">
