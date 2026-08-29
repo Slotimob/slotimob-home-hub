@@ -12,6 +12,7 @@ export interface LeaseProjectionParams {
   leaseId: string;
   unitId: string;
   tenantContactId: string;
+  ownerContactId?: string | null;
   propertyId?: string | null;
   /** Data de início do contrato: define o DIA do mês usado na data de emissão. */
   leaseStartDate?: string | null;
@@ -22,7 +23,7 @@ export interface LeaseProjectionParams {
 interface FinancialTransaction {
   broker_id: string;
   unit_id: string;
-  contact_id: string;
+  contact_id: string | null;
   type: "income" | "expense";
   description: string;
   amount: number;
@@ -121,7 +122,7 @@ export function useLeaseFinancialProjection() {
     mutationFn: async (params: LeaseProjectionParams): Promise<{ count: number }> => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { leaseId, unitId, tenantContactId, propertyId, leaseStartDate, installments } =
+      const { leaseId, unitId, tenantContactId, ownerContactId, propertyId, leaseStartDate, installments } =
         params;
 
       if (!installments || installments.length === 0) return { count: 0 };
@@ -148,12 +149,26 @@ export function useLeaseFinancialProjection() {
         return format(calculateDueDate(competencyMonth, contractDay), "yyyy-MM-dd");
       };
 
+      /**
+       * Contato do lançamento por NATUREZA, não por posição no contrato:
+       *  - receita (cobrada do inquilino) => inquilino
+       *  - despesa (repasse assumido pelo proprietário) => proprietário
+       * O `contactId` da própria parcela (responsável do encargo) sempre manda.
+       * Sem proprietário conhecido a despesa fica SEM contato: `contact_id` é
+       * nullable, e null é melhor que atribuir a despesa à pessoa errada.
+       */
+      const resolveContactId = (i: PlannedInstallment): string | null => {
+        if (i.contactId) return i.contactId;
+        if ((i.transactionType ?? "income") === "expense") return ownerContactId ?? null;
+        return tenantContactId ?? null;
+      };
+
       const transactions: FinancialTransaction[] = toInsert.map((i) => {
         const transactionType = i.transactionType ?? "income";
         return {
           broker_id: effectiveBrokerId || user.id,
           unit_id: unitId,
-          contact_id: i.contactId || tenantContactId,
+          contact_id: resolveContactId(i),
           type: transactionType,
           description: i.description,
           amount: i.amount,
