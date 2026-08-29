@@ -68,6 +68,7 @@ export interface LeaseForProjection {
   id: string;
   unit_id: string;
   tenant_contact_id: string;
+  owner_contact_id?: string | null;
   property_id?: string | null;
   rent_amount: number;
   due_day: number;
@@ -506,6 +507,7 @@ export function ConfirmLeaseProjectionDialog({
         leaseId: lease.id,
         unitId: lease.unit_id,
         tenantContactId: lease.tenant_contact_id,
+        ownerContactId: lease.owner_contact_id ?? null,
         propertyId: lease.property_id,
         leaseStartDate: lease.start_date,
         installments: confirmedInstallments,
