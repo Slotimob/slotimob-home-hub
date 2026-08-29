@@ -41,6 +41,7 @@ import {
 import { PropertyInfoCard } from '@/components/properties/PropertyInfoCard';
 import { EditUnitDialog } from '@/components/units/EditUnitDialog';
 import { UnitDocuments } from '@/components/units/UnitDocuments';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { AssetActivityTimeline } from '@/components/assets/AssetActivityTimeline';
 
 import { UNIT_STATUS_STYLES } from '@/utils/uiConstants';
@@ -80,6 +81,7 @@ interface PropertyDetails {
 
 export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSuccess, defaultTab = 'details' }: UnitDetailsDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const { isOwner, hasPermission } = usePermissions();
   const queryClient = useQueryClient();
@@ -367,7 +369,7 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
 
             <TabsContent value="documents" className="mt-4">
               {user && (
-                <UnitDocuments unitId={unit.id} userId={user.id} />
+                <UnitDocuments unitId={unit.id} userId={effectiveBrokerId || user.id} />
               )}
             </TabsContent>
 

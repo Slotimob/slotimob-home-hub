@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Loader2, Download, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { registerLeaseDocument } from "@/lib/lease-documents";
 import { useUpdateLeaseSignature } from "@/hooks/useLeases";
 import { toast } from "sonner";
 
@@ -41,6 +43,7 @@ export function UploadSignedContractDialog({
   onSuccess,
 }: UploadSignedContractDialogProps) {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const updateSignature = useUpdateLeaseSignature();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,7 +95,7 @@ export function UploadSignedContractDialog({
     try {
       // Generate unique file path
       const timestamp = Date.now();
-      const filePath = `${user.id}/contracts/${lease.id}/${timestamp}_signed_contract.pdf`;
+      const filePath = `${effectiveBrokerId || user.id}/contracts/${lease.id}/${timestamp}_signed_contract.pdf`;
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -111,7 +114,19 @@ export function UploadSignedContractDialog({
         signedContractPath: filePath,
       });
 
+      // Acréscimo: registra também na tabela unificada `documents`
+      await registerLeaseDocument({
+        key: "signed_contract",
+        brokerId: effectiveBrokerId || user.id,
+        filePath,
+        unitId: lease.unit_id,
+        fileSize: selectedFile.size,
+        mimeType: selectedFile.type,
+        reference: lease.tenant_contact?.name || lease.unit?.unit_number || null,
+      });
+
       await invalidateLeaseQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["documents-unified"] });
 
       toast.success("Contrato assinado enviado!", {
         description: "O status foi atualizado para 'Assinado'.",

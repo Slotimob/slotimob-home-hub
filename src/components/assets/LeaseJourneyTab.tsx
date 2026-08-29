@@ -46,6 +46,7 @@ import {
  import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { isLeaseDocumentKey, registerLeaseDocument, unregisterLeaseDocument } from "@/lib/lease-documents";
  import { toast } from "sonner";
  import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -342,8 +343,22 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
             .eq("id", lease.id);
           if (dbError2) throw dbError2;
        }
- 
+
+       // Acréscimo: registra também na tabela unificada `documents`
+       if (isLeaseDocumentKey(currentUploadKey)) {
+         await registerLeaseDocument({
+           key: currentUploadKey,
+           brokerId: effectiveBrokerId,
+           filePath,
+           unitId: lease.unit_id,
+           fileSize: file.size,
+           mimeType: file.type,
+           reference: (lease as any)?.tenant_contact?.name || (lease as any)?.unit?.unit_number || null,
+         });
+       }
+
         await invalidateLeaseQueries(queryClient);
+        queryClient.invalidateQueries({ queryKey: ["documents-unified"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
         queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
@@ -431,7 +446,10 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
           .eq("id", lease.id);
       }
 
+      await unregisterLeaseDocument(effectiveBrokerId, filePath);
+
       await invalidateLeaseQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["documents-unified"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-contracts"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-payables"] });
       queryClient.invalidateQueries({ queryKey: ["action-center-receivables"] });
