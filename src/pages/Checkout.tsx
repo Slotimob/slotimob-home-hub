@@ -952,12 +952,26 @@ export default function Checkout() {
               </p>
 
               <div className="space-y-3">
-                <Input
-                  placeholder="CPF ou CNPJ *"
-                  value={cpfCnpj}
-                  onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value))}
-                  inputMode="numeric"
-                />
+                <div>
+                  <Input
+                    placeholder="CPF ou CNPJ *"
+                    value={cpfCnpj}
+                    onChange={(e) => {
+                      setCpfCnpj(maskCpfCnpj(e.target.value));
+                      if (cpfError) setCpfError(null);
+                    }}
+                    inputMode="numeric"
+                    className={cpfError ? 'border-destructive' : undefined}
+                  />
+                  {cpfError && (
+                    <p className="text-xs text-destructive mt-1">
+                      {cpfError}{' '}
+                      <Link to="/auth" className="underline font-medium">
+                        Já tem conta? Entrar
+                      </Link>
+                    </p>
+                  )}
+                </div>
 
                 <Input
                   placeholder="Telefone / WhatsApp *"
