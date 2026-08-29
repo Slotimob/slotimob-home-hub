@@ -1,3 +1,4 @@
+import { normalizeToPlainText } from '@/lib/html-to-text';
 import jsPDF from 'jspdf';
 import { DocumentTemplate, TemplateField } from './documentTemplates';
 import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
@@ -118,7 +119,9 @@ export const fillTemplateContent = (
   template: DocumentTemplate,
   filledFields: Record<string, string>
 ): string => {
-  let content = template.templateContent;
+  // O editor rico grava HTML em `contract_templates.content`. Normaliza na
+  // origem para que nenhum caminho de geração imprima tags no PDF.
+  let content = normalizeToPlainText(template.templateContent);
   
   // Primeiro, substitui as variáveis com valores preenchidos
   template.fields.forEach((field) => {
@@ -401,7 +404,7 @@ export const generateDocumentPDF = async (
   
   // Processa conteúdo
   const content = blank
-    ? processEmptyVariables(template.templateContent)
+    ? processEmptyVariables(normalizeToPlainText(template.templateContent))
     : fillTemplateContent(template, filledFields);
   
   const lines = content.trim().split('\n');
