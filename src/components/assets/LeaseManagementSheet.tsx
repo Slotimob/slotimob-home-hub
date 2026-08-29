@@ -391,6 +391,7 @@ export function LeaseManagementSheet({
                  property_id: lease.property_id,
                  fire_insurance: lease.fire_insurance ?? null,
                  iptu_charge: lease.iptu_charge ?? null,
+                 additional_obligations: (lease as any).additional_obligations ?? null,
                  unit: lease.unit,
                  tenant: lease.tenant,
                } : null}

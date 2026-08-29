@@ -102,6 +102,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
      property_id?: string | null;
      fire_insurance?: any;
      iptu_charge?: any;
+     additional_obligations?: any;
      unit?: { unit_number: string } | null;
      tenant?: { name: string } | null;
     initial_rent?: number;
@@ -904,6 +905,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                property_id: fullLeaseData.property_id ?? null,
                fire_insurance: fullLeaseData.fire_insurance ?? null,
                iptu_charge: fullLeaseData.iptu_charge ?? null,
+               additional_obligations: fullLeaseData.additional_obligations ?? null,
                tenant_contact: fullLeaseData.tenant,
                unit: fullLeaseData.unit,
              }}

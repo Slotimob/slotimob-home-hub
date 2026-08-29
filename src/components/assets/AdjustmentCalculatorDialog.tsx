@@ -54,6 +54,7 @@ interface LeaseForAdjustment {
   adjustment_periodicity_months?: number | null;
   fire_insurance?: any;
   iptu_charge?: any;
+  additional_obligations?: any;
   tenant_contact?: {
     name: string;
   } | null;
@@ -252,6 +253,7 @@ export function AdjustmentCalculatorDialog({
           is_indefinite_term: lease.is_indefinite_term ?? false,
           fire_insurance: lease.fire_insurance ?? null,
           iptu_charge: lease.iptu_charge ?? null,
+          additional_obligations: lease.additional_obligations ?? null,
           unit: lease.unit ? { unit_number: lease.unit.unit_number } : null,
           tenant: lease.tenant_contact ? { name: lease.tenant_contact.name } : null,
         });

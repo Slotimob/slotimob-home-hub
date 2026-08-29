@@ -508,6 +508,8 @@ export function CreateLeaseWizard({
           iptu_charge: (formData as any).iptu_charge?.enabled
             ? (formData as any).iptu_charge
             : null,
+          additional_obligations:
+            ((formData as any).additional_obligations || []).filter((o: any) => o?.enabled) ?? null,
         } as LeaseForProjection);
         setProjectionOpen(true);
       }
