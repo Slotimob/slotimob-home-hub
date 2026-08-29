@@ -182,12 +182,36 @@ export function calculateDueDate(baseDate: Date, dueDay: number): Date {
   return setDate(baseDate, actualDay);
 }
 
-export type PlannedObligation = "rent" | "fire_insurance" | "iptu";
+/**
+ * Tipos de obrigação que o motor sabe lançar.
+ * - `rent`: mensal, 1 parcela por competência
+ * - `fire_insurance` / `iptu`: ciclo anual parcelado (N parcelas na MESMA competência)
+ * - demais: encargos adicionais mensais (`leases.additional_obligations`)
+ * O `(string & {})` mantém o autocomplete e ainda aceita tipos customizados
+ * do corretor (`custom_<uuid>`), mesma convenção de `units.obligations_config`.
+ */
+export type PlannedObligation =
+  | "rent"
+  | "fire_insurance"
+  | "iptu"
+  | "condominium"
+  | "energy"
+  | "water"
+  | "gas"
+  | "other"
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | (string & {});
 
 export interface PlannedInstallment {
   /** Chave estável para checkbox/dedup na UI. */
   key: string;
-  /** Chave de idempotência por competência (`tipo:yyyy-MM`). Default: igual a `key`. */
+  /**
+   * Chave de idempotência da PARCELA: `tipo:competência:vencimento`.
+   * O vencimento entra na chave porque encargo anual tem N parcelas dentro da
+   * MESMA competência — sem ele, lançar 3 de 10 parcelas de IPTU bloquearia
+   * permanentemente as 7 restantes. Espelha o índice único do banco
+   * `(reference, obligation_type, competency_period, due_date)`.
+   */
   dedupKey?: string;
   obligationType: PlannedObligation;
   competencyPeriod: string;
@@ -195,9 +219,14 @@ export interface PlannedInstallment {
   dueDate: string;
   amount: number;
   description: string;
-  /** True quando já existe transação para essa competência+tipo. */
+  /** Receita (cobrado do inquilino) ou despesa (assumido pelo proprietário). */
+  transactionType?: "income" | "expense";
+  /** Sobrescreve o contato do lançamento (ex.: responsável do encargo). */
+  contactId?: string | null;
+  /** True quando já existe transação para essa competência+tipo+vencimento. */
   alreadyExists: boolean;
 }
+
 
 function monthLabel(date: Date): string {
   const label = format(date, "MMMM/yyyy", { locale: ptBR });
