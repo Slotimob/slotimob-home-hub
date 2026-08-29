@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TrendingUp, TrendingDown, Search, Check, Loader2, AlertTriangle, Sparkles } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
