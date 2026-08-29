@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor, htmlToPlainText } from '@/components/ui/rich-text-editor';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,11 +51,24 @@ export const CustomTemplateEditorDialog = ({
   const [saving, setSaving] = useState(false);
   const [mobileTab, setMobileTab] = useState<'config' | 'preview'>('config');
 
+  // Modelos antigos guardam texto puro (textarea). Converte para HTML para não
+  // perder as quebras de linha ao abrir no editor rico.
+  const plainTextToHtml = (text: string): string => {
+    if (!text) return '';
+    if (/<(p|h[1-6]|ul|ol|li|br|strong|em)\b/i.test(text)) return text;
+    const escape = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return text
+      .split('\n')
+      .map((line) => `<p>${escape(line) || '<br>'}</p>`)
+      .join('');
+  };
+
   useEffect(() => {
     if (template) {
       setName(template.name);
       setDescription(template.description || '');
-      setContent(template.content);
+      setContent(plainTextToHtml(template.content));
     }
   }, [template]);
 
@@ -132,7 +145,9 @@ export const CustomTemplateEditorDialog = ({
         type: 'text' as const,
         section: 'Campos',
       })),
-      templateContent: content,
+      // fillTemplateContent espera texto puro: converte o HTML do editor,
+      // preservando quebras de linha e listas.
+      templateContent: htmlToPlainText(content),
     };
 
     await generateDocumentPDF(docTemplate, {});
@@ -178,13 +193,14 @@ export const CustomTemplateEditorDialog = ({
             </TooltipContent>
           </Tooltip>
         </div>
-        <Textarea
-          id="content"
+        <RichTextEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
           placeholder="Digite o conteúdo do contrato..."
-          className="min-h-[250px] sm:min-h-[300px] font-mono text-sm resize-none"
         />
+        <p className="text-xs text-muted-foreground">
+          Placeholders como {'{{nome_variavel}}'} são substituídos na geração do documento.
+        </p>
       </div>
 
       {/* Variables Preview */}
@@ -210,9 +226,10 @@ export const CustomTemplateEditorDialog = ({
     </div>
   );
 
-  // Preview Content
+  // Preview Content — o PDF é texto puro; a prévia converte o HTML do editor
+  // para refletir o que será impresso (quebras de linha e listas preservadas).
   const PreviewContent = () => (
-    <div 
+    <div
       className="bg-white dark:bg-card border rounded-lg shadow-sm mx-auto"
       style={{
         maxWidth: isMobile ? '100%' : '210mm',
@@ -220,11 +237,11 @@ export const CustomTemplateEditorDialog = ({
         padding: isMobile ? '16px' : '25mm 20mm',
       }}
     >
-      <pre 
+      <pre
         className="whitespace-pre-wrap font-mono leading-relaxed text-foreground"
         style={{ fontSize: isMobile ? '10px' : '12px' }}
       >
-        {content || 'O conteúdo do contrato aparecerá aqui...'}
+        {htmlToPlainText(content) || 'O conteúdo do contrato aparecerá aqui...'}
       </pre>
     </div>
   );
