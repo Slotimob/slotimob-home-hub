@@ -128,7 +128,7 @@ export const SubscriptionManagement = () => {
     <div className="space-y-6">
       {/* Trial Banner */}
       {isTrialActive && (
-        <Card className="border-primary/30 bg-primary/5">
+        <Card className="border-primary/50">
           <CardContent className="flex items-start gap-4 py-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <Rocket className="h-5 w-5 text-primary" />

@@ -291,7 +291,7 @@ const AtivosEmGestao = () => {
                 icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
                 valueClass: "text-green-600",
                 ringClass: "ring-green-500",
-                bgClass: "bg-green-500/5",
+                bgClass: "",
               },
               {
                 key: "attention" as StatusFilter,
@@ -300,7 +300,7 @@ const AtivosEmGestao = () => {
                 icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
                 valueClass: "text-yellow-600",
                 ringClass: "ring-yellow-500",
-                bgClass: "bg-yellow-500/5",
+                bgClass: "",
               },
               {
                 key: "critical" as StatusFilter,
@@ -309,7 +309,7 @@ const AtivosEmGestao = () => {
                 icon: <XCircle className="h-5 w-5 text-red-500" />,
                 valueClass: "text-red-600",
                 ringClass: "ring-red-500",
-                bgClass: "bg-red-500/5",
+                bgClass: "",
               },
             ].map(({ key, label, value, icon, valueClass, ringClass, bgClass }) => (
               <Card
