@@ -99,6 +99,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
      is_indefinite_term?: boolean | null;
      due_day?: number | null;
      tenant_contact_id?: string | null;
+     owner_contact_id?: string | null;
      property_id?: string | null;
      fire_insurance?: any;
      iptu_charge?: any;
@@ -901,8 +902,9 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                end_date: fullLeaseData.end_date ?? null,
                is_indefinite_term: fullLeaseData.is_indefinite_term ?? null,
                due_day: fullLeaseData.due_day ?? null,
-               tenant_contact_id: fullLeaseData.tenant_contact_id ?? null,
-               property_id: fullLeaseData.property_id ?? null,
+                tenant_contact_id: fullLeaseData.tenant_contact_id ?? null,
+                owner_contact_id: fullLeaseData.owner_contact_id ?? null,
+                property_id: fullLeaseData.property_id ?? null,
                fire_insurance: fullLeaseData.fire_insurance ?? null,
                iptu_charge: fullLeaseData.iptu_charge ?? null,
                additional_obligations: fullLeaseData.additional_obligations ?? null,

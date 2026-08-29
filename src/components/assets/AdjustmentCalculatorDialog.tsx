@@ -50,6 +50,7 @@ interface LeaseForAdjustment {
   is_indefinite_term?: boolean | null;
   due_day?: number | null;
   tenant_contact_id?: string | null;
+  owner_contact_id?: string | null;
   property_id?: string | null;
   adjustment_periodicity_months?: number | null;
   fire_insurance?: any;
@@ -244,6 +245,7 @@ export function AdjustmentCalculatorDialog({
           id: lease.id,
           unit_id: lease.unit_id,
           tenant_contact_id: lease.tenant_contact_id!,
+          owner_contact_id: lease.owner_contact_id ?? null,
           property_id: lease.property_id ?? null,
           rent_amount: newValue,
           due_day: lease.due_day!,

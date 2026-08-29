@@ -519,6 +519,7 @@ export default function ContratoDetalhe() {
               is_indefinite_term: lease.is_indefinite_term ?? null,
               due_day: lease.due_day,
               tenant_contact_id: lease.tenant_contact_id,
+              owner_contact_id: lease.owner_contact_id ?? null,
               property_id: lease.property_id,
               fire_insurance: lease.fire_insurance ?? null,
               iptu_charge: lease.iptu_charge ?? null,
