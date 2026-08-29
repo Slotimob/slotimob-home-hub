@@ -260,25 +260,50 @@ export function buildRentInstallments({
 
   for (let i = 0; i < months; i++) {
     const competencyDate = addMonths(baseMonth, i);
-    const dueDate = firstDue
+    const due = firstDue
       ? calculateDueDate(addMonths(firstDue, i), getDate(firstDue))
       : calculateDueDate(competencyDate, dueDay);
     const competencyPeriod = format(competencyDate, "yyyy-MM");
+    const dueDate = format(due, "yyyy-MM-dd");
+    const dedupKey = `rent:${competencyPeriod}:${dueDate}`;
 
     result.push({
-      key: `rent:${competencyPeriod}`,
-      dedupKey: `rent:${competencyPeriod}`,
+      key: dedupKey,
+      dedupKey,
       obligationType: "rent",
       competencyPeriod,
       competencyLabel: monthLabel(competencyDate),
-      dueDate: format(dueDate, "yyyy-MM-dd"),
+      dueDate,
       amount,
       description: `Aluguel ${monthLabel(competencyDate)}`,
-      alreadyExists: existingCompetencies?.has(`rent:${competencyPeriod}`) ?? false,
+      transactionType: "income",
+      alreadyExists: existingCompetencies?.has(dedupKey) ?? false,
     });
   }
 
   return result;
+}
+
+/**
+ * Precedência do dia de vencimento de um encargo (do mais específico ao fallback):
+ *  1. `first_due_date` configurado no CONTRATO (data completa, manda em tudo)
+ *  2. `due_day` da obrigação em `units.obligations_config` (config do IMÓVEL)
+ *  3. `due_day` do ALUGUEL (fallback histórico)
+ * Não é óbvio: o contrato é mais específico que o imóvel, e o aluguel é o último recurso.
+ */
+function resolveChargeFirstDue(
+  firstDueDate: string | Date | null | undefined,
+  obligationDueDay: number | null | undefined,
+  fallbackStartDate: string | Date,
+  fallbackDueDay: number
+): Date {
+  const explicit = toDate(firstDueDate ?? null);
+  if (explicit) return explicit;
+
+  const base = toDate(fallbackStartDate) ?? new Date();
+  const day =
+    obligationDueDay && obligationDueDay > 0 ? obligationDueDay : fallbackDueDay;
+  return calculateDueDate(base, day);
 }
 
 export interface BuildChargeInstallmentsInput {
@@ -290,12 +315,17 @@ export interface BuildChargeInstallmentsInput {
   /** Fallback quando a config não tem primeiro vencimento. */
   fallbackStartDate: string | Date;
   fallbackDueDay: number;
+  /** `due_day` da obrigação em `units.obligations_config` (ver precedência acima). */
+  obligationDueDay?: number | null;
   /**
    * Competência FIXA de referência do ciclo anual (data de início do ciclo/janela).
    * IPTU/seguro são obrigações anuais: mesmo parceladas em N vezes, todas as parcelas
    * pertencem à MESMA competência. Default: `fallbackStartDate`.
    */
   cycleStartDate?: string | Date | null;
+  /** Receita (inquilino paga) ou despesa (proprietário assume). Default: income. */
+  transactionType?: "income" | "expense";
+  contactId?: string | null;
   existingCompetencies?: Set<string>;
 }
 
@@ -307,15 +337,21 @@ export function buildChargeInstallments({
   firstDueDate,
   fallbackStartDate,
   fallbackDueDay,
+  obligationDueDay,
   cycleStartDate,
+  transactionType = "income",
+  contactId,
   existingCompetencies,
 }: BuildChargeInstallmentsInput): PlannedInstallment[] {
   const count = Math.max(0, Math.floor(installments));
   if (count === 0 || !installmentAmount || installmentAmount <= 0) return [];
 
-  const first =
-    toDate(firstDueDate) ??
-    calculateDueDate(toDate(fallbackStartDate) ?? new Date(), fallbackDueDay);
+  const first = resolveChargeFirstDue(
+    firstDueDate,
+    obligationDueDay,
+    fallbackStartDate,
+    fallbackDueDay
+  );
   const dueDay = getDate(first);
 
   // Competência única do ciclo: início da janela/contrato (fallback: 1º vencimento).
@@ -323,29 +359,107 @@ export function buildChargeInstallments({
     toDate(cycleStartDate ?? null) ?? toDate(fallbackStartDate) ?? first;
   const competencyDate = startOfMonth(cycleBase);
   const competencyPeriod = format(competencyDate, "yyyy-MM");
-  const dedupKey = `${obligationType}:${competencyPeriod}`;
-  const alreadyExists = existingCompetencies?.has(dedupKey) ?? false;
 
   const result: PlannedInstallment[] = [];
 
   for (let i = 0; i < count; i++) {
-    const dueDate = calculateDueDate(addMonths(first, i), dueDay);
+    const dueDate = format(calculateDueDate(addMonths(first, i), dueDay), "yyyy-MM-dd");
+    // Dedup por PARCELA: dentro da mesma competência anual, o vencimento é o
+    // discriminador (não existe coluna de índice de parcela na tabela).
+    const dedupKey = `${obligationType}:${competencyPeriod}:${dueDate}`;
 
     result.push({
-      key: `${dedupKey}:${i + 1}`,
+      key: dedupKey,
       dedupKey,
       obligationType,
       competencyPeriod,
       competencyLabel: monthLabel(competencyDate),
-      dueDate: format(dueDate, "yyyy-MM-dd"),
+      dueDate,
       amount: installmentAmount,
       description:
         count > 1
           ? `${label} ${i + 1}/${count} — ${monthLabel(competencyDate)}`
           : `${label} — ${monthLabel(competencyDate)}`,
-      alreadyExists,
+      transactionType,
+      contactId,
+      alreadyExists: existingCompetencies?.has(dedupKey) ?? false,
     });
   }
 
   return result;
 }
+
+export interface BuildMonthlyChargeInstallmentsInput {
+  obligationType: Exclude<PlannedObligation, "rent">;
+  label: string;
+  /** Início da janela — define a primeira competência. */
+  startDate: string | Date;
+  months: number;
+  /** Valor MENSAL do encargo. */
+  amount: number;
+  /** `first_due_date` do contrato (mais específico). */
+  firstDueDate?: string | Date | null;
+  /** `due_day` da obrigação em `units.obligations_config`. */
+  obligationDueDay?: number | null;
+  /** `due_day` do aluguel (último fallback). */
+  fallbackDueDay: number;
+  transactionType?: "income" | "expense";
+  contactId?: string | null;
+  existingCompetencies?: Set<string>;
+}
+
+/**
+ * Encargos adicionais (condomínio, energia, água, gás, outros) são MENSAIS:
+ * a competência anda mês a mês, exatamente como o aluguel — diferente de
+ * IPTU/seguro, que são um ciclo anual parcelado numa competência única.
+ */
+export function buildMonthlyChargeInstallments({
+  obligationType,
+  label,
+  startDate,
+  months,
+  amount,
+  firstDueDate,
+  obligationDueDay,
+  fallbackDueDay,
+  transactionType = "income",
+  contactId,
+  existingCompetencies,
+}: BuildMonthlyChargeInstallmentsInput): PlannedInstallment[] {
+  const start = toDate(startDate);
+  if (!start || months <= 0 || !amount || amount <= 0) return [];
+
+  const first = resolveChargeFirstDue(
+    firstDueDate,
+    obligationDueDay,
+    start,
+    fallbackDueDay
+  );
+  const dueDay = getDate(first);
+  const baseMonth = startOfMonth(start);
+  const result: PlannedInstallment[] = [];
+
+  for (let i = 0; i < months; i++) {
+    const competencyDate = addMonths(baseMonth, i);
+    const competencyPeriod = format(competencyDate, "yyyy-MM");
+    const dueDate = format(calculateDueDate(addMonths(first, i), dueDay), "yyyy-MM-dd");
+    const dedupKey = `${obligationType}:${competencyPeriod}:${dueDate}`;
+
+    result.push({
+      key: dedupKey,
+      dedupKey,
+      obligationType,
+      competencyPeriod,
+      competencyLabel: monthLabel(competencyDate),
+      dueDate,
+      amount,
+      description: `${label} ${monthLabel(competencyDate)}`,
+      transactionType,
+      contactId,
+      alreadyExists: existingCompetencies?.has(dedupKey) ?? false,
+    });
+  }
+
+  return result;
+}
+
