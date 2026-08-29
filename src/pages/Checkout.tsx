@@ -168,6 +168,7 @@ export default function Checkout() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [fiscalDuplicateAccountError, setFiscalDuplicateAccountError] = useState(false);
+  const [cpfError, setCpfError] = useState<string | null>(null);
   const [billingType, setBillingType] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
   const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
 
@@ -303,8 +304,12 @@ export default function Checkout() {
     setCheckoutError(null);
     setFiscalDuplicateAccountError(false);
     setAuthError(null);
+    setCpfError(null);
 
     let currentUserId = user?.id;
+
+    // Valores normalizados (necessários já na pré-validação de signup)
+    const cleanCpfCnpj = cpfCnpj.replace(/\D/g, '');
 
     // 1. Sign up if not logged in
     if (!user) {
