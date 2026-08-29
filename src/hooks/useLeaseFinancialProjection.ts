@@ -6,7 +6,6 @@ import { format, getDate, parseISO } from "date-fns";
 import {
   calculateDueDate,
   type PlannedInstallment,
-  type PlannedObligation,
 } from "@/lib/lease-projection";
 
 export interface LeaseProjectionParams {
