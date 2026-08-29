@@ -362,7 +362,6 @@ export default function Checkout() {
     }
 
     // ── Validação e salvamento de dados fiscais ─────────────────────────────
-    const cleanCpfCnpj = cpfCnpj.replace(/\D/g, '');
     const cleanPhone = phone.replace(/\D/g, '');
     const cleanCep = cep.replace(/\D/g, '');
 
