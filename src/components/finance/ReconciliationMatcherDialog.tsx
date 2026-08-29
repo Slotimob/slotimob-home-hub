@@ -125,15 +125,19 @@ export function ReconciliationMatcherDialog({
 
   const handleSelectEntry = (entry: StatementEntry) => {
     setSelectedEntry(entry);
-    
+  };
+
+  const handleConfirmReconcile = () => {
+    if (!selectedEntry) return;
+
     // Check for value mismatch
     const transactionAmount = Math.abs(transaction.amount);
-    const entryAmount = Math.abs(entry.amount);
-    
+    const entryAmount = Math.abs(selectedEntry.amount);
+
     if (Math.abs(transactionAmount - entryAmount) >= 0.01) {
       setShowMismatchDialog(true);
     } else {
-      handleReconcile(entry);
+      handleReconcile(selectedEntry);
     }
   };
 
