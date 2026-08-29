@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       bankStatementImportsResult,
       balanceAuditsResult,
       documentsResult,
-      propertyDocumentsResult,
+      
       visitsResult,
       salesResult,
       pipelineStagesResult,
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
         bank_statement_imports: bankStatementImportsResult.data || [],
         balance_audits: balanceAuditsResult.data || [],
         documents: documentsResult.data || [],
-        property_documents: propertyDocumentsResult.data || [],
+        
         visits: visitsResult.data || [],
         sales: salesResult.data || [],
         pipeline_stages: pipelineStagesResult.data || [],

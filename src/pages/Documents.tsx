@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, FileText, Search, Download, Trash2, Building2, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Plus, FileText, Search, Download, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { HeaderButton } from "@/components/ui/header-button";
 import { PermissionGate } from "@/components/subscription/PermissionGate";
 import { useToast } from '@/hooks/use-toast';
