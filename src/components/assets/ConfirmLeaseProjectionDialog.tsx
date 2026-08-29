@@ -69,9 +69,15 @@ interface ConfirmLeaseProjectionDialogProps {
   overrideRentAmount?: number;
   /** Sobrescreve o início da janela (ex.: novo ciclo pós-reajuste). */
   overrideStartDate?: string;
+  /**
+   * Modo pós-reajuste: por padrão lança APENAS os aluguéis reajustados.
+   * As obrigações (IPTU/seguro) ficam recolhidas atrás de uma ação secundária.
+   */
+  postAdjustment?: boolean;
   onConfirmed?: (count: number) => void;
   onSkipped?: () => void;
 }
+
 
 function InstallmentTable({
   installments,
