@@ -910,7 +910,7 @@ const Settings = () => {
             title="Zona de Perigo"
             description="Ações irreversíveis"
             icon={AlertTriangle}
-            className="border border-destructive/50 rounded-lg overflow-hidden"
+            className="bg-card border border-destructive/50 rounded-lg overflow-hidden"
           >
             <DeleteAccountSection />
           </SettingsSection>
