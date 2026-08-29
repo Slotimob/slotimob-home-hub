@@ -853,6 +853,7 @@ export default function NovoContrato() {
           is_indefinite_term: formData.is_indefinite_term,
           fire_insurance: formData.fire_insurance?.enabled ? formData.fire_insurance : null,
           iptu_charge: formData.iptu_charge?.enabled ? formData.iptu_charge : null,
+          additional_obligations: (formData.additional_obligations || []).filter((o) => o.enabled),
           unit: selectedUnitInfo
             ? { unit_number: selectedUnitInfo.unit_number, address: selectedUnitInfo.address }
             : null,

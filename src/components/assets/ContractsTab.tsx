@@ -299,6 +299,9 @@ export function ContractsTab() {
           guarantee_type,
           guarantor_data,
           payment_info,
+          fire_insurance,
+          iptu_charge,
+          additional_obligations,
           tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
           unit:units!leases_unit_id_fkey(id, unit_number, address)
         `)

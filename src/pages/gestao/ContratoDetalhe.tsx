@@ -144,6 +144,7 @@ export default function ContratoDetalhe() {
            end_date, contract_status, status, tenant_contact_id, owner_contact_id,
            cib, is_dimob_deductible, notes, billing_automation, billing_logs,
            metadata, signature_status, signed_contract_path, termination_date,
+           fire_insurance, iptu_charge, additional_obligations,
            termination_reason, guarantee_type, guarantor_data, payment_info,
            tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
            unit:units!leases_unit_id_fkey(id, unit_number, address)`
@@ -521,6 +522,7 @@ export default function ContratoDetalhe() {
               property_id: lease.property_id,
               fire_insurance: lease.fire_insurance ?? null,
               iptu_charge: lease.iptu_charge ?? null,
+              additional_obligations: lease.additional_obligations ?? null,
               unit: unit,
               tenant: tenant,
             }}

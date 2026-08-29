@@ -77,7 +77,7 @@ export interface LeaseForProjection {
   is_indefinite_term?: boolean | null;
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
-  additional_obligations?: ObligationChargeConfig[] | null;
+  additional_obligations: ObligationChargeConfig[] | null;
   unit?: { unit_number?: string | null; address?: string | null } | null;
   tenant?: { name?: string | null } | null;
   tenant_contact?: { name?: string | null } | null;
