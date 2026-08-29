@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TrendingUp, TrendingDown, Search, Check, Loader2, AlertTriangle, Sparkles } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
@@ -49,6 +50,17 @@ export function ReconciliationMatcherDialog({
   const [selectedEntry, setSelectedEntry] = useState<StatementEntry | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
   const [showMismatchDialog, setShowMismatchDialog] = useState(false);
+  const [markAsPaid, setMarkAsPaid] = useState(true);
+
+  // Reset selection and options when the dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setSelectedEntry(null);
+      setMarkAsPaid(true);
+      setShowMismatchDialog(false);
+      setSearchTerm("");
+    }
+  }, [open]);
 
   // Fetch unreconciled bank statement entries
   const { data: entries = [], isLoading } = useQuery({
@@ -123,15 +135,19 @@ export function ReconciliationMatcherDialog({
 
   const handleSelectEntry = (entry: StatementEntry) => {
     setSelectedEntry(entry);
-    
+  };
+
+  const handleConfirmReconcile = () => {
+    if (!selectedEntry) return;
+
     // Check for value mismatch
     const transactionAmount = Math.abs(transaction.amount);
-    const entryAmount = Math.abs(entry.amount);
-    
+    const entryAmount = Math.abs(selectedEntry.amount);
+
     if (Math.abs(transactionAmount - entryAmount) >= 0.01) {
       setShowMismatchDialog(true);
     } else {
-      handleReconcile(entry);
+      handleReconcile(selectedEntry);
     }
   };
 
@@ -149,16 +165,26 @@ export function ReconciliationMatcherDialog({
 
       if (entryError) throw entryError;
 
+      // Build transaction update: only reconcile by default; optionally mark as paid
+      const txUpdate: Record<string, unknown> = {
+        is_reconciled: true,
+        reconciled_at: new Date().toISOString(),
+      };
+
+      if (markAsPaid) {
+        txUpdate.status = "paid";
+        txUpdate.paid_date = entry.entry_date;
+      }
+
+      // Only set bank_account_id if the transaction does not already have one
+      if (!transaction.bank_account_id) {
+        txUpdate.bank_account_id = entry.bank_account_id;
+      }
+
       // Update the transaction to mark as reconciled
       const { error: txError } = await supabase
         .from("financial_transactions")
-        .update({
-          is_reconciled: true,
-          reconciled_at: new Date().toISOString(),
-          status: "paid",
-          paid_date: new Date().toISOString().split("T")[0],
-          bank_account_id: entry.bank_account_id,
-        })
+        .update(txUpdate)
         .eq("id", transaction.id);
 
       if (txError) throw txError;
@@ -184,6 +210,7 @@ export function ReconciliationMatcherDialog({
       setIsReconciling(false);
       setSelectedEntry(null);
       setShowMismatchDialog(false);
+      setMarkAsPaid(true);
     }
   };
 
@@ -369,8 +396,54 @@ export function ReconciliationMatcherDialog({
           </ScrollArea>
 
           {/* Footer info */}
-          <div className="text-xs text-muted-foreground text-center pt-2 border-t flex-shrink-0">
-            Clique em um item do extrato para conciliar com o lançamento selecionado
+          <div className="space-y-3 pt-3 border-t flex-shrink-0">
+            {selectedEntry ? (
+              <>
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="mark-as-paid"
+                    checked={markAsPaid}
+                    onCheckedChange={(checked) => setMarkAsPaid(checked === true)}
+                  />
+                  <label htmlFor="mark-as-paid" className="text-sm leading-none cursor-pointer">
+                    Marcar lançamento como pago em{" "}
+                    <span className="font-medium">
+                      {format(parseISO(selectedEntry.entry_date), "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  <p>• Vincula este lançamento à entrada do extrato.</p>
+                  {markAsPaid && (
+                    <p>
+                      • Marca como pago em{" "}
+                      {format(parseISO(selectedEntry.entry_date), "dd/MM/yyyy", { locale: ptBR })}.
+                    </p>
+                  )}
+                  {!transaction.bank_account_id && selectedEntry.bank_account && (
+                    <p>• Vincula à conta bancária {selectedEntry.bank_account.name}.</p>
+                  )}
+                </div>
+
+                <Button
+                  className="w-full gap-2"
+                  onClick={handleConfirmReconcile}
+                  disabled={isReconciling}
+                >
+                  {isReconciling ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  Confirmar conciliação
+                </Button>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center">
+                Clique em um item do extrato para conciliar com o lançamento selecionado
+              </p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
