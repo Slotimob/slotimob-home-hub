@@ -197,7 +197,9 @@ export function AdjustmentCalculatorDialog({
 
       if (updateError) throw updateError;
 
-      // Step 3: CASCADE UPDATE - Update all pending future transactions for this lease
+      // Step 3: CASCADE UPDATE - apenas parcelas de ALUGUEL pendentes futuras.
+      // NUNCA tocar IPTU/seguro/outras obrigações: elas têm valor próprio e
+      // seriam sobrescritas com o valor do aluguel (corrupção silenciosa).
       const adjustmentEffectiveDate = format(new Date(), "yyyy-MM-dd");
 
       const { data: updatedTransactions, error: cascadeError } = await supabase
@@ -206,7 +208,9 @@ export function AdjustmentCalculatorDialog({
         .eq("reference", `lease:${lease.id}`)
         .eq("status", "pending")
         .gte("due_date", adjustmentEffectiveDate)
+        .or("obligation_type.eq.rent,obligation_type.is.null")
         .select("id");
+
 
       if (cascadeError) {
         console.error("Cascade update error:", cascadeError);
