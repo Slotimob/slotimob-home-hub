@@ -367,7 +367,7 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
 
             <TabsContent value="documents" className="mt-4">
               {user && (
-                <UnitDocuments unitId={unit.id} userId={user.id} />
+                <UnitDocuments unitId={unit.id} userId={effectiveBrokerId || user.id} />
               )}
             </TabsContent>
 
