@@ -151,16 +151,26 @@ export function ReconciliationMatcherDialog({
 
       if (entryError) throw entryError;
 
+      // Build transaction update: only reconcile by default; optionally mark as paid
+      const txUpdate: Record<string, unknown> = {
+        is_reconciled: true,
+        reconciled_at: new Date().toISOString(),
+      };
+
+      if (markAsPaid) {
+        txUpdate.status = "paid";
+        txUpdate.paid_date = entry.entry_date;
+      }
+
+      // Only set bank_account_id if the transaction does not already have one
+      if (!transaction.bank_account_id) {
+        txUpdate.bank_account_id = entry.bank_account_id;
+      }
+
       // Update the transaction to mark as reconciled
       const { error: txError } = await supabase
         .from("financial_transactions")
-        .update({
-          is_reconciled: true,
-          reconciled_at: new Date().toISOString(),
-          status: "paid",
-          paid_date: new Date().toISOString().split("T")[0],
-          bank_account_id: entry.bank_account_id,
-        })
+        .update(txUpdate)
         .eq("id", transaction.id);
 
       if (txError) throw txError;
@@ -186,6 +196,7 @@ export function ReconciliationMatcherDialog({
       setIsReconciling(false);
       setSelectedEntry(null);
       setShowMismatchDialog(false);
+      setMarkAsPaid(true);
     }
   };
 
