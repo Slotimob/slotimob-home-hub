@@ -81,6 +81,7 @@ interface PropertyDetails {
 
 export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSuccess, defaultTab = 'details' }: UnitDetailsDialogProps) => {
   const { user } = useAuth();
+  const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const { isOwner, hasPermission } = usePermissions();
   const queryClient = useQueryClient();
