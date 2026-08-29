@@ -248,6 +248,8 @@ export function ConfirmLeaseProjectionDialog({
 
   const insuranceUnpriced = !!lease?.fire_insurance?.enabled && insuranceAmount === null;
   const iptuUnpriced = !!lease?.iptu_charge?.enabled && iptuAmount === null;
+  const hasObligations = !!lease?.fire_insurance?.enabled || !!lease?.iptu_charge?.enabled;
+
 
   const insuranceInstallments = useMemo(() => {
     const cfg = lease?.fire_insurance;
