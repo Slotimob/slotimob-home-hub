@@ -58,7 +58,7 @@ const SettingsSection = ({
   icon: Icon,
   defaultOpen = false,
   children,
-  className = 'border rounded-lg overflow-hidden',
+  className = 'bg-card border border-border rounded-lg overflow-hidden',
 }: {
   title: string;
   description: string;

@@ -281,9 +281,9 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
   const getStatusBadge = () => {
     switch (overallStatus) {
       case 'ok':
-        return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-100">Apto para DIMOB</Badge>;
+        return <Badge className="bg-emerald-500/15 text-emerald-700 border border-emerald-500/50 hover:bg-emerald-500/15 dark:text-emerald-400">Apto para DIMOB</Badge>;
       case 'pending':
-        return <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-300">Pendências</Badge>;
+        return <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 border border-amber-500/50 dark:text-amber-400">Pendências</Badge>;
       case 'error':
         return <Badge variant="destructive">Erro</Badge>;
     }
@@ -304,7 +304,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
 
   return (
     <>
-      <Card className={overallStatus === 'ok' ? 'border-emerald-200 bg-emerald-50/50' : overallStatus === 'pending' ? 'border-amber-200 bg-amber-50/50' : ''}>
+      <Card className={overallStatus === 'ok' ? 'border-emerald-500/60' : overallStatus === 'pending' ? 'border-amber-500/60' : ''}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -319,7 +319,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
         </CardHeader>
         <CardContent className="space-y-3">
           {overallStatus === 'ok' && (
-            <Alert className="bg-emerald-100 border-emerald-300">
+            <Alert className="bg-emerald-500/10 border-emerald-500/50">
               <CheckCircle2 className="h-4 w-4 text-emerald-700" />
               <AlertDescription className="text-emerald-800">
                 Todos os dados obrigatórios estão preenchidos. Este imóvel está apto para a declaração DIMOB.
@@ -328,7 +328,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
           )}
 
           {pendingCount > 0 && (
-            <Alert className="bg-amber-100 border-amber-300">
+            <Alert className="bg-amber-500/15 border-amber-500/50">
               <AlertTriangle className="h-4 w-4 text-amber-700" />
               <AlertDescription className="text-amber-800">
                 {pendingCount} {pendingCount === 1 ? 'pendência encontrada' : 'pendências encontradas'}. 

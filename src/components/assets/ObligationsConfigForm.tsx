@@ -508,7 +508,7 @@ function ObligationResponsibilityCard({
   return (
     <div className={cn(
       "flex flex-col gap-4 p-4 rounded-lg border bg-card transition-colors",
-      config.active && "border-primary/30 bg-primary/5"
+      config.active && "border-primary/50 ring-1 ring-primary/20"
     )}>
       {/* Header Row */}
       <div className="flex items-center justify-between">
