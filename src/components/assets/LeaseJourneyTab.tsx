@@ -46,6 +46,7 @@ import {
  import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { isLeaseDocumentKey, registerLeaseDocument, unregisterLeaseDocument } from "@/lib/lease-documents";
  import { toast } from "sonner";
  import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
