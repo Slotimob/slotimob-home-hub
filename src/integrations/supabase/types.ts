@@ -4059,59 +4059,6 @@ export type Database = {
           },
         ]
       }
-      property_documents: {
-        Row: {
-          broker_id: string
-          created_at: string
-          external_provider: string | null
-          external_url: string | null
-          file_path: string | null
-          file_size: number | null
-          id: string
-          mime_type: string | null
-          property_id: string
-          source_type: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          broker_id: string
-          created_at?: string
-          external_provider?: string | null
-          external_url?: string | null
-          file_path?: string | null
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          property_id: string
-          source_type?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          broker_id?: string
-          created_at?: string
-          external_provider?: string | null
-          external_url?: string | null
-          file_path?: string | null
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          property_id?: string
-          source_type?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_documents_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       proposals: {
         Row: {
           broker_id: string
