@@ -735,6 +735,18 @@ export function ConfirmLeaseProjectionDialog({
                       />
                     </div>
                   </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label htmlFor="insurance-competency" className="text-xs text-muted-foreground">
+                      Competência de referência
+                    </Label>
+                    <Input
+                      id="insurance-competency"
+                      type="month"
+                      className="h-9 w-[170px]"
+                      value={insuranceCompetency}
+                      onChange={(e) => setInsuranceCompetency(e.target.value)}
+                    />
+                  </div>
                   {launchInsurance && (
                     <InstallmentTable
                       installments={insuranceInstallments}
@@ -745,6 +757,7 @@ export function ConfirmLeaseProjectionDialog({
                 </div>
               </>
             )}
+
 
             {obligationsRevealed && iptuUnpriced && (
               <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
