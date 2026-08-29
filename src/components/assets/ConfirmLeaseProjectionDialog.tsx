@@ -789,6 +789,18 @@ export function ConfirmLeaseProjectionDialog({
                       />
                     </div>
                   </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label htmlFor="iptu-competency" className="text-xs text-muted-foreground">
+                      Competência de referência (exercício)
+                    </Label>
+                    <Input
+                      id="iptu-competency"
+                      type="month"
+                      className="h-9 w-[170px]"
+                      value={iptuCompetency}
+                      onChange={(e) => setIptuCompetency(e.target.value)}
+                    />
+                  </div>
                   {launchIptu && (
                     <InstallmentTable
                       installments={iptuInstallments}
@@ -799,6 +811,50 @@ export function ConfirmLeaseProjectionDialog({
                 </div>
               </>
             )}
+
+            {obligationsRevealed &&
+              additionalGroups.map((g) => (
+                <div key={g.cfg.type}>
+                  <Separator className="mb-3" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                        {g.label}
+                        <Badge variant="secondary" className="text-[10px]">
+                          {typeFromChargeTo(g.cfg.charge_to) === "income"
+                            ? "Receita"
+                            : "Despesa"}
+                        </Badge>
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`launch-${g.cfg.type}`}
+                          className="text-xs text-muted-foreground"
+                        >
+                          Lançar agora
+                        </Label>
+                        <Switch
+                          id={`launch-${g.cfg.type}`}
+                          checked={!!launchAdditional[g.cfg.type]}
+                          onCheckedChange={(v) =>
+                            setLaunchAdditional((prev) => ({ ...prev, [g.cfg.type]: v }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    {launchAdditional[g.cfg.type] && (
+                      <InstallmentTable
+                        installments={g.installments}
+                        selected={selected}
+                        onToggle={toggle}
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+
+
 
 
             <div className="rounded-lg border bg-muted/40 p-3 flex items-center justify-between text-sm">
