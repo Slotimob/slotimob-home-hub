@@ -495,6 +495,7 @@ export function CreateLeaseWizard({
           id: leaseId,
           unit_id: (leaseData as any).unit_id,
           tenant_contact_id: (leaseData as any).tenant_contact_id,
+          owner_contact_id: ownerContactId ?? null,
           property_id: (leaseData as any).property_id ?? null,
           rent_amount: Number(formData.rent_amount) || 0,
           due_day: Number(formData.due_day) || 10,
