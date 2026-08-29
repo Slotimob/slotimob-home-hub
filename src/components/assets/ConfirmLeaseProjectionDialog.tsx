@@ -332,10 +332,21 @@ export function ConfirmLeaseProjectionDialog({
       firstDueDate: cfg.first_due_date,
       fallbackStartDate: startDate,
       fallbackDueDay: lease.due_day || 10,
-      cycleStartDate: startDate,
+      obligationDueDay: unitDueDay("insurance"),
+      cycleStartDate: insuranceCompetency ? `${insuranceCompetency}-01` : startDate,
+      transactionType: typeFromChargeTo(cfg.charge_to),
+      contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
       existingCompetencies,
     });
-  }, [lease, startDate, existingCompetencies, insuranceAmount, insuranceCount]);
+  }, [
+    lease,
+    startDate,
+    existingCompetencies,
+    insuranceAmount,
+    insuranceCount,
+    insuranceCompetency,
+    obligationsConfig,
+  ]);
 
   const iptuInstallments = useMemo(() => {
     const cfg = lease?.iptu_charge;
@@ -348,23 +359,80 @@ export function ConfirmLeaseProjectionDialog({
       firstDueDate: cfg.first_due_date,
       fallbackStartDate: startDate,
       fallbackDueDay: lease.due_day || 10,
-      cycleStartDate: startDate,
+      obligationDueDay: unitDueDay("iptu"),
+      cycleStartDate: iptuCompetency ? `${iptuCompetency}-01` : startDate,
+      transactionType: typeFromChargeTo(cfg.charge_to),
+      contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
       existingCompetencies,
     });
-  }, [lease, startDate, existingCompetencies, iptuAmount, iptuCount]);
+  }, [
+    lease,
+    startDate,
+    existingCompetencies,
+    iptuAmount,
+    iptuCount,
+    iptuCompetency,
+    obligationsConfig,
+  ]);
+
+  /**
+   * Encargos adicionais (condomínio, energia, água, gás, outros): MENSAIS,
+   * competência acompanhando o mês, igual ao aluguel.
+   */
+  const additionalGroups = useMemo(() => {
+    if (!lease || !window || window.blocked) return [];
+    return additionalConfigs
+      .map((cfg) => {
+        const label =
+          cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type;
+        const installments = buildMonthlyChargeInstallments({
+          obligationType: cfg.type,
+          label,
+          startDate,
+          months: Math.max(0, monthsToLaunch),
+          amount: cfg.installment_amount || 0,
+          firstDueDate: cfg.first_due_date,
+          obligationDueDay: unitDueDay(cfg.type),
+          fallbackDueDay: lease.due_day || 10,
+          transactionType: typeFromChargeTo(cfg.charge_to),
+          contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
+          existingCompetencies,
+        });
+        return { cfg, label, installments };
+      })
+      .filter((g) => g.installments.length > 0);
+  }, [
+    lease,
+    window,
+    additionalConfigs,
+    startDate,
+    monthsToLaunch,
+    existingCompetencies,
+    obligationsConfig,
+  ]);
+
+  const additionalInstallments = useMemo(
+    () => additionalGroups.flatMap((g) => g.installments),
+    [additionalGroups]
+  );
 
   // Selecionar por padrão tudo que ainda não existe
   useEffect(() => {
     if (!open) return;
     const next = new Set<string>();
-    for (const i of [...rentInstallments, ...insuranceInstallments, ...iptuInstallments]) {
+    for (const i of [
+      ...rentInstallments,
+      ...insuranceInstallments,
+      ...iptuInstallments,
+      ...additionalInstallments,
+    ]) {
       if (i.alreadyExists) continue;
       if (launchFromMonth && i.competencyPeriod < launchFromMonth) continue;
       next.add(i.key);
     }
     setSelected(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, rentInstallments.length, insuranceInstallments.length, iptuInstallments.length, loadingExisting, launchFromMonth]);
+  }, [open, rentInstallments.length, insuranceInstallments.length, iptuInstallments.length, additionalInstallments.length, loadingExisting, launchFromMonth]);
 
   const toggle = (key: string) =>
     setSelected((prev) => {
@@ -378,11 +446,16 @@ export function ConfirmLeaseProjectionDialog({
     if (launchRent) list.push(...rentInstallments);
     if (launchInsurance) list.push(...insuranceInstallments);
     if (launchIptu) list.push(...iptuInstallments);
+    for (const g of additionalGroups) {
+      if (launchAdditional[g.cfg.type]) list.push(...g.installments);
+    }
     return list.filter((i) => !i.alreadyExists && selected.has(i.key));
   }, [
     rentInstallments,
     insuranceInstallments,
     iptuInstallments,
+    additionalGroups,
+    launchAdditional,
     launchRent,
     launchInsurance,
     launchIptu,
@@ -397,7 +470,9 @@ export function ConfirmLeaseProjectionDialog({
     rentInstallments.length > 0 &&
     rentInstallments.every((i) => i.alreadyExists) &&
     insuranceInstallments.every((i) => i.alreadyExists) &&
-    iptuInstallments.every((i) => i.alreadyExists);
+    iptuInstallments.every((i) => i.alreadyExists) &&
+    additionalInstallments.every((i) => i.alreadyExists);
+
 
   const handleSkip = () => {
     onSkipped?.();
