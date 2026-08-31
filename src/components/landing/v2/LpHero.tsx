@@ -1,4 +1,4 @@
-import { Home, Star, Check, FileText, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
+import { Home, Check, FileText, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
 import CTAButton from '@/components/marketing/CTAButton';
 
 export function LpHero() {
@@ -26,7 +26,7 @@ export function LpHero() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium mb-6">
               <Home className="h-3.5 w-3.5" />
-              Controle total dos seus imóveis alugados
+              Controle total dos seus imóveis
             </div>
 
             {/* H1 */}
@@ -113,15 +113,6 @@ export function LpHero() {
               </div>
             </div>
 
-            {/* Credibility badge */}
-            <div
-              className="absolute -bottom-4 right-2 lg:-right-6 rotate-3 bg-card border border-border shadow-lg rounded-xl px-4 py-2 flex items-center gap-2"
-            >
-              <Star className="h-4 w-4 fill-accent text-accent" />
-              <span className="text-sm font-semibold text-foreground">
-                4.9/5 <span className="text-muted-foreground font-normal">— 500+ proprietários</span>
-              </span>
-            </div>
           </div>
         </div>
       </div>
