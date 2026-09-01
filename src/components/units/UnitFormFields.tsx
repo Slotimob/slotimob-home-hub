@@ -314,6 +314,21 @@ export const UnitFormFields = ({
             />
           </div>
         )}
+
+        {/* Aviso: frações precisam ser cadastradas para gerar contratos */}
+        {isStandalone &&
+          formData.has_subdivisions &&
+          intentIncludesRental(formData.intent_type) &&
+          (unitId ? (
+            <UnitSubdivisionSetupAlert
+              unitId={unitId}
+              hasSubdivisions
+              intentType={formData.intent_type}
+              onAction={onNavigateSubdivisions}
+            />
+          ) : (
+            <SubdivisionFormHint onAction={onNavigateSubdivisions} />
+          ))}
       </div>
 
       <Separator />
