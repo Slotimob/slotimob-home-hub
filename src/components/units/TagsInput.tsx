@@ -1,13 +1,8 @@
-import { useState, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 
 interface TagsInputProps {
   value: string[];
@@ -57,18 +52,27 @@ export function TagsInput({
   maxTags = 10,
 }: TagsInputProps) {
   const [inputValue, setInputValue] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim();
-    if (
-      trimmedTag &&
-      !value.includes(trimmedTag) &&
-      value.length < maxTags
-    ) {
+    if (trimmedTag && !value.includes(trimmedTag) && value.length < maxTags) {
       onChange([...value, trimmedTag]);
-      setInputValue('');
     }
+    setInputValue('');
   };
 
   const removeTag = (tagToRemove: string) => {
@@ -76,20 +80,25 @@ export function TagsInput({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag(inputValue);
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
     } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
       removeTag(value[value.length - 1]);
     }
   };
 
+  const search = inputValue.trim().toLowerCase();
   const availableSuggestions = suggestedTags.filter(
-    (tag) => !value.includes(tag) && tag.toLowerCase().includes(inputValue.toLowerCase())
+    (tag) => !value.includes(tag) && tag.toLowerCase().includes(search)
   );
 
+  const canCreate = search.length > 0 && !value.some((t) => t.toLowerCase() === search);
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" ref={wrapperRef}>
       {/* Display current tags */}
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -104,6 +113,7 @@ export function TagsInput({
                 type="button"
                 onClick={() => removeTag(tag)}
                 className="ml-1 hover:opacity-70 focus:outline-none"
+                aria-label={`Remover tag ${tag}`}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -112,61 +122,81 @@ export function TagsInput({
         </div>
       )}
 
-      {/* Input with suggestions */}
+      {/* Free-typing input with inline suggestions */}
       {value.length < maxTags && (
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
-            <div className="relative">
-              <Input
-                value={inputValue}
-                onChange={(e) => {
-                  setInputValue(e.target.value);
-                  if (!isOpen) setIsOpen(true);
-                }}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setIsOpen(true)}
-                placeholder={placeholder}
-                className="pr-8"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-                onClick={() => addTag(inputValue)}
-                disabled={!inputValue.trim()}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+        <div className="relative">
+          <Input
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => {
+              const raw = e.target.value;
+              // Typing a comma commits the tag
+              if (raw.includes(',')) {
+                raw.split(',').forEach((part) => addTag(part));
+                return;
+              }
+              setInputValue(raw);
+              setShowDropdown(true);
+            }}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setShowDropdown(true)}
+            placeholder={placeholder}
+            className="pr-8"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => addTag(inputValue)}
+            disabled={!inputValue.trim()}
+            aria-label="Adicionar tag"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+
+          {showDropdown && (availableSuggestions.length > 0 || canCreate) && (
+            <div className="absolute top-full left-0 mt-1 w-full bg-popover border rounded-md shadow-lg z-50 p-2 space-y-2">
+              {availableSuggestions.length > 0 && (
+                <>
+                  <p className="text-xs text-muted-foreground font-medium px-1">Sugestões</p>
+                  <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto">
+                    {availableSuggestions.slice(0, 8).map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className={`${getTagColor(tag)} cursor-pointer hover:opacity-80 transition-opacity`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          addTag(tag);
+                          inputRef.current?.focus();
+                        }}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </>
+              )}
+              {canCreate && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    addTag(inputValue);
+                    inputRef.current?.focus();
+                  }}
+                  className="w-full text-left px-1 py-1 text-xs text-primary hover:bg-accent/50 rounded flex items-center gap-1.5"
+                >
+                  <Plus className="h-3 w-3" />
+                  Criar "{inputValue.trim()}"
+                </button>
+              )}
             </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-[--radix-popover-trigger-width] p-2" align="start">
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground font-medium px-1">Sugestões</p>
-              <div className="flex flex-wrap gap-1">
-                {availableSuggestions.slice(0, 8).map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    className={`${getTagColor(tag)} cursor-pointer hover:opacity-80 transition-opacity`}
-                    onClick={() => {
-                      addTag(tag);
-                      setIsOpen(false);
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    {tag}
-                  </Badge>
-                ))}
-                {availableSuggestions.length === 0 && (
-                  <p className="text-xs text-muted-foreground px-1">
-                    {inputValue ? 'Pressione Enter para criar tag' : 'Nenhuma sugestão disponível'}
-                  </p>
-                )}
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+          )}
+        </div>
       )}
 
       {value.length >= maxTags && (

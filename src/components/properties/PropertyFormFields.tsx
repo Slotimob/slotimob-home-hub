@@ -33,6 +33,8 @@ import { AddressFields, AddressData } from '@/components/shared/AddressFields';
 import { PropertyAmenitiesSelect } from '@/components/properties/PropertyAmenitiesSelect';
 import { PropertyGalleryUpload } from '@/components/properties/PropertyGalleryUpload';
 import { ContactSelector } from '@/components/ContactSelector';
+import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { showError } from '@/utils/notifications';
@@ -273,6 +275,16 @@ export function PropertyInfoFields({
   propertyId,
   onRefreshProperty,
 }: InfoFieldsProps) {
+  const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
+  const [contactSelectorKey, setContactSelectorKey] = useState(0);
+
+  const handleContactCreated = (newContact?: { id?: string }) => {
+    setContactSelectorKey((prev) => prev + 1);
+    if (newContact?.id) {
+      setFormData({ ...formData, lead_id: newContact.id });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* ===== SECTION 1: OBJECTIVE & MANAGEMENT ===== */}
@@ -579,12 +591,22 @@ export function PropertyInfoFields({
         <div className="space-y-2">
           <Label>Contato Vinculado</Label>
           <ContactSelector
+            key={contactSelectorKey}
             value={formData.lead_id}
             onChange={(v) => setFormData({ ...formData, lead_id: v })}
             placeholder="Buscar contato..."
+            showCreateButton
+            onCreateClick={() => setIsCreateContactOpen(true)}
           />
         </div>
       </div>
+
+      <CreateContactDialog
+        open={isCreateContactOpen}
+        onOpenChange={setIsCreateContactOpen}
+        onSuccess={handleContactCreated}
+        defaultCategory="Proprietário"
+      />
     </div>
   );
 }
