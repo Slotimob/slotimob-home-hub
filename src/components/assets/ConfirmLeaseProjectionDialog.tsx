@@ -575,12 +575,20 @@ export function ConfirmLeaseProjectionDialog({
           </div>
         </div>
 
-        {window.blocked ? (
+        {window.blocked && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-destructive">{window.reasonLabel}</p>
+            <p className="text-sm text-destructive">
+              {`O reajuste previsto${
+                lease.next_adjustment_date
+                  ? ` para ${format(parseISO(lease.next_adjustment_date), "dd/MM/yyyy")}`
+                  : ""
+              } está vencido, então não é possível lançar aluguel até aplicá-lo. Os encargos abaixo têm ciclo próprio e podem ser lançados normalmente.`}
+            </p>
           </div>
-        ) : allAlreadyLaunched ? (
+        )}
+
+        {!window.blocked && allAlreadyLaunched ? (
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-sm">
@@ -590,6 +598,7 @@ export function ConfirmLeaseProjectionDialog({
           </div>
         ) : (
           <>
+            {!window.blocked && (
             <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
               <CalendarClock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <p className="text-sm">
@@ -690,6 +699,7 @@ export function ConfirmLeaseProjectionDialog({
                 />
               )}
             </div>
+            )}
 
             {(hasObligations || insuranceUnpriced || iptuUnpriced) && !obligationsRevealed && (
               <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
