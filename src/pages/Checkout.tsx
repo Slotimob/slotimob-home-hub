@@ -40,7 +40,7 @@ import EmailVerificationStep from '@/components/checkout/EmailVerificationStep';
 // Types & Meta
 // ============================================================================
 
-type PaidPlan = 'pro' | 'business';
+type PaidPlan = 'essencial' | 'pro' | 'business';
 type AnyPlan = 'start' | PaidPlan;
 
 type PaymentResult =
@@ -55,19 +55,29 @@ interface PlanMeta {
   icon: typeof Rocket;
   tagline: string;
   features: string[];
-  units: string;
-  users: string;
   popular: boolean;
 }
 
 const plansMeta: PlanMeta[] = [
   {
+    id: 'essencial',
+    name: 'Essencial',
+    icon: Building2,
+    tagline: 'Contrato e cobrança até 20 imóveis',
+    features: [
+      'Gestão de ativos e contratos',
+      'Financeiro completo (DRE, OFX)',
+      'Boleto e Pix para inquilino',
+      'WhatsApp integrado',
+      'Chat IA (50 créditos)',
+    ],
+    popular: false,
+  },
+  {
     id: 'pro',
     name: 'Pro',
     icon: Rocket,
     tagline: 'Gestão completa com IA',
-    units: '50 unidades',
-    users: '1 usuário',
     features: ['CRM Pipeline', 'Chat IA', 'Contratos ilimitados', 'Relatórios e DRE', 'WhatsApp integrado'],
     popular: true,
   },
@@ -76,8 +86,6 @@ const plansMeta: PlanMeta[] = [
     name: 'Business',
     icon: Building2,
     tagline: 'Escale com equipe',
-    units: '150 unidades',
-    users: '4 usuários',
     features: ['Tudo do Pro', 'Gestão de equipe', 'Distribuição automática de leads do WhatsApp'],
     popular: false,
   },
