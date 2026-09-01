@@ -9,6 +9,7 @@ import { LpFooter } from '@/components/landing/v2/LpFooter';
 import { SEOHead } from '@/components/SEOHead';
 import '@/components/landing/v2/lp.css';
 import { PricingSection } from '@/components/landing/PricingSection';
+import { usePlanPricing, type PlanPricing } from '@/hooks/usePlanPricing';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
