@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { normalizePropertyImageUrl } from '@/lib/imageUtils';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { compressImage, formatFileSize } from '@/utils/imageOptimizer';
 
 interface UnitImageUploadProps {
   unitId?: string;
@@ -18,7 +19,7 @@ interface UnitImageUploadProps {
   onRefresh?: () => Promise<void>;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MIN_RESOLUTION = 300; // Minimum width/height in pixels
 const ACCEPTED_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -101,7 +102,7 @@ export const UnitImageUpload = ({
       if (file.size > MAX_FILE_SIZE) {
         toast({
           title: 'Arquivo muito grande',
-          description: 'O tamanho máximo é 5MB.',
+          description: `A imagem tem ${formatFileSize(file.size)} e o limite é ${formatFileSize(MAX_FILE_SIZE)}. Reduza o arquivo e tente novamente.`,
           variant: 'destructive',
         });
         resolve(false);
@@ -151,9 +152,20 @@ export const UnitImageUpload = ({
     reader.readAsDataURL(file);
 
     setUploading(true);
+    setUploadStatus('Otimizando imagem...');
 
     try {
-      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      // Reuse the same optimization pipeline used by the galleries
+      const optimized = await compressImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.8,
+        format: 'image/jpeg',
+      });
+      const uploadFile = optimized.file;
+      setUploadStatus('Enviando...');
+
+      const fileExt = uploadFile.name.split('.').pop()?.toLowerCase();
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
       
@@ -164,7 +176,7 @@ export const UnitImageUpload = ({
 
       const { error: uploadError } = await supabase.storage
         .from('unit-media')
-        .upload(filePath, file, {
+        .upload(filePath, uploadFile, {
           upsert: true,
         });
 
@@ -319,7 +331,7 @@ export const UnitImageUpload = ({
                   Clique para adicionar uma imagem
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  JPG, PNG ou WebP • Máx. 5MB • Mín. 300x300px
+                  JPG, PNG ou WebP • Máx. 10MB • Mín. 300x300px
                 </p>
               </>
             )}
