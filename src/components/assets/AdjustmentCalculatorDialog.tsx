@@ -283,7 +283,7 @@ export function AdjustmentCalculatorDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="sm:max-w-xl"
+          className="sm:max-w-3xl"
           onInteractOutside={(e) => isSubmitting && e.preventDefault()}
         >
           <DialogHeader>
@@ -318,7 +318,7 @@ export function AdjustmentCalculatorDialog({
             )}
 
             {/* Current Info */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Card className="p-3">
                 <p className="text-[10px] text-muted-foreground uppercase">Valor Atual</p>
                 <p className="text-lg font-bold">{brl(currentValue)}</p>
@@ -384,8 +384,8 @@ export function AdjustmentCalculatorDialog({
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 justify-center">
-                    <RefreshCw className="h-3 w-3" />
+                  <p className="text-xs text-muted-foreground flex items-start gap-2 [text-wrap:pretty]">
+                    <RefreshCw className="h-3 w-3 shrink-0 mt-0.5" />
                     Parcelas de <strong>aluguel</strong> pendentes futuras serão atualizadas
                     automaticamente. IPTU, seguro e demais obrigações não são alterados.
                   </p>
@@ -432,7 +432,7 @@ export function AdjustmentCalculatorDialog({
                     <CalendarClock className="h-3.5 w-3.5 text-primary" />
                     O que será lançado
                   </p>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs [text-wrap:balance]">
                     <span className="text-muted-foreground">Imóvel</span>
                     <span className="font-medium text-right">{lease.unit?.unit_number || "—"}</span>
                     <span className="text-muted-foreground">Inquilino</span>
@@ -460,8 +460,8 @@ export function AdjustmentCalculatorDialog({
                   </div>
                   <p className="text-[11px] text-muted-foreground pt-1 border-t">
                     {projectionPreview.indefinite
-                      ? "Contrato por prazo indeterminado — lançamento contínuo conforme configuração."
-                      : "Você poderá revisar e selecionar as parcelas antes de confirmar o lançamento."}
+                      ? "Contrato por prazo indeterminado — na próxima tela você ajusta competência, vencimento, quantidade de parcelas e escolhe quais lançar."
+                      : "Na próxima tela você poderá ajustar competência, 1º vencimento, quantidade de parcelas e escolher quais lançar antes de confirmar."}
                   </p>
                 </Card>
               )}

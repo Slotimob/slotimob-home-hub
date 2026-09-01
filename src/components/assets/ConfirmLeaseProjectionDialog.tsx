@@ -32,7 +32,12 @@ import {
   calculateProjectionWindow,
   type PlannedInstallment,
 } from "@/lib/lease-projection";
-import { ProjectionBlock, type BlockConfig } from "./ProjectionBlock";
+import {
+  ProjectionBlock,
+  competencyPeriodOf,
+  issueDayOf,
+  type BlockConfig,
+} from "./ProjectionBlock";
 import {
   useExistingLeaseCompetencies,
   useLeaseFinancialProjection,
@@ -220,12 +225,14 @@ export function ConfirmLeaseProjectionDialog({
     const dueDay = lease.due_day || 10;
     // Emissão default = dia de início do contrato (mesma regra do motor legado).
     const issueDay = lease.start_date ? getDate(parseISO(lease.start_date)) : 1;
+    /** Competência completa: mês do parâmetro + dia de emissão, com clamp de mês curto. */
+    const withIssueDay = (yyyyMm: string) =>
+      format(calculateDueDate(parseISO(`${yyyyMm}-01`), issueDay), "yyyy-MM-dd");
 
     const next: Record<string, BlockConfig> = {
       rent: {
-        competency: windowMonth,
+        competency: withIssueDay(windowMonth),
         firstDueDate: format(calculateDueDate(base, dueDay), "yyyy-MM-dd"),
-        issueDay,
         months: Math.max(1, window.months),
         amount: rentAmountDefault,
       },
@@ -234,14 +241,13 @@ export function ConfirmLeaseProjectionDialog({
     if (lease.fire_insurance?.enabled) {
       const competency = lease.fire_insurance.competency_month || windowMonth;
       next.fire_insurance = {
-        competency,
+        competency: withIssueDay(competency),
         firstDueDate:
           lease.fire_insurance.first_due_date ||
           format(
             calculateDueDate(parseISO(`${competency}-01`), unitDueDay("insurance") ?? dueDay),
             "yyyy-MM-dd"
           ),
-        issueDay,
         months: insuranceCount,
         amount: insuranceAmountDefault ?? 0,
       };
@@ -250,14 +256,13 @@ export function ConfirmLeaseProjectionDialog({
     if (lease.iptu_charge?.enabled) {
       const competency = lease.iptu_charge.competency_month || windowMonth;
       next.iptu = {
-        competency,
+        competency: withIssueDay(competency),
         firstDueDate:
           lease.iptu_charge.first_due_date ||
           format(
             calculateDueDate(parseISO(`${competency}-01`), unitDueDay("iptu") ?? dueDay),
             "yyyy-MM-dd"
           ),
-        issueDay,
         months: iptuCount,
         amount: iptuAmountDefault ?? 0,
       };
@@ -265,11 +270,10 @@ export function ConfirmLeaseProjectionDialog({
 
     for (const cfg of additionalConfigs) {
       next[cfg.type] = {
-        competency: windowMonth,
+        competency: withIssueDay(windowMonth),
         firstDueDate:
           (cfg.first_due_date as string) ||
           format(calculateDueDate(base, unitDueDay(cfg.type) ?? dueDay), "yyyy-MM-dd"),
-        issueDay,
         months: Math.max(1, window.months),
         amount: cfg.installment_amount || 0,
       };
@@ -304,12 +308,12 @@ export function ConfirmLeaseProjectionDialog({
     const cfg = blocks.rent;
     if (!lease || !window || window.blocked || !cfg) return [];
     return buildRentInstallments({
-      startDate: `${cfg.competency}-01`,
+      startDate: `${competencyPeriodOf(cfg.competency)}-01`,
       months: Math.max(0, cfg.months),
       amount: cfg.amount,
       dueDay: lease.due_day || 10,
       firstDueDate: cfg.firstDueDate || null,
-      issueDay: cfg.issueDay,
+      issueDay: issueDayOf(cfg.competency),
       existingCompetencies,
     });
   }, [lease, window, blocks.rent, existingCompetencies]);
@@ -324,11 +328,11 @@ export function ConfirmLeaseProjectionDialog({
       installments: cfg.months,
       installmentAmount: cfg.amount,
       firstDueDate: cfg.firstDueDate || null,
-      fallbackStartDate: `${cfg.competency}-01`,
+      fallbackStartDate: `${competencyPeriodOf(cfg.competency)}-01`,
       fallbackDueDay: lease.due_day || 10,
       obligationDueDay: unitDueDay("insurance"),
-      cycleStartDate: `${cfg.competency}-01`,
-      issueDay: cfg.issueDay,
+      cycleStartDate: `${competencyPeriodOf(cfg.competency)}-01`,
+      issueDay: issueDayOf(cfg.competency),
       transactionType: typeFromChargeTo(lc.charge_to),
       contactId: lc.charge_to === "tenant" ? null : lc.responsible_contact_id,
       existingCompetencies,
@@ -345,11 +349,11 @@ export function ConfirmLeaseProjectionDialog({
       installments: cfg.months,
       installmentAmount: cfg.amount,
       firstDueDate: cfg.firstDueDate || null,
-      fallbackStartDate: `${cfg.competency}-01`,
+      fallbackStartDate: `${competencyPeriodOf(cfg.competency)}-01`,
       fallbackDueDay: lease.due_day || 10,
       obligationDueDay: unitDueDay("iptu"),
-      cycleStartDate: `${cfg.competency}-01`,
-      issueDay: cfg.issueDay,
+      cycleStartDate: `${competencyPeriodOf(cfg.competency)}-01`,
+      issueDay: issueDayOf(cfg.competency),
       transactionType: typeFromChargeTo(lc.charge_to),
       contactId: lc.charge_to === "tenant" ? null : lc.responsible_contact_id,
       existingCompetencies,
@@ -374,13 +378,13 @@ export function ConfirmLeaseProjectionDialog({
           installments: buildMonthlyChargeInstallments({
             obligationType: cfg.type,
             label,
-            startDate: `${state.competency}-01`,
+            startDate: `${competencyPeriodOf(state.competency)}-01`,
             months: Math.max(0, state.months),
             amount: state.amount,
             firstDueDate: state.firstDueDate || null,
             obligationDueDay: unitDueDay(cfg.type),
             fallbackDueDay: lease.due_day || 10,
-            issueDay: state.issueDay,
+            issueDay: issueDayOf(state.competency),
             transactionType: typeFromChargeTo(cfg.charge_to),
             contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
             existingCompetencies,
@@ -488,11 +492,11 @@ export function ConfirmLeaseProjectionDialog({
     if (lease.fire_insurance?.enabled && blocks.fire_insurance?.competency) {
       patch.fire_insurance = {
         ...lease.fire_insurance,
-        competency_month: blocks.fire_insurance.competency,
+        competency_month: competencyPeriodOf(blocks.fire_insurance.competency),
       };
     }
     if (lease.iptu_charge?.enabled && blocks.iptu?.competency) {
-      patch.iptu_charge = { ...lease.iptu_charge, competency_month: blocks.iptu.competency };
+      patch.iptu_charge = { ...lease.iptu_charge, competency_month: competencyPeriodOf(blocks.iptu.competency) };
     }
     if (Object.keys(patch).length === 0) return;
     await supabase.from("leases").update(patch as any).eq("id", lease.id);
@@ -671,7 +675,7 @@ export function ConfirmLeaseProjectionDialog({
             onToggle={toggle}
             onSelectAll={selectAll}
             onClearAll={clearAll}
-            competencyLabel="Competência de referência"
+            competencyLabel="Competência de referência (emissão)"
             warning={
               insuranceUnpriced ? (
                 <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 flex items-start gap-2">
@@ -701,7 +705,7 @@ export function ConfirmLeaseProjectionDialog({
             onToggle={toggle}
             onSelectAll={selectAll}
             onClearAll={clearAll}
-            competencyLabel="Competência de referência (exercício)"
+            competencyLabel="Competência de referência (exercício, emissão)"
             warning={
               iptuUnpriced ? (
                 <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 flex items-start gap-2">
