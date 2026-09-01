@@ -22,6 +22,74 @@ function extractQrBase64(data: any): string | null {
   return null;
 }
 
+// ─── OPT-OUT de avisos automáticos ───
+const OPTOUT_KEYWORDS = new Set(['pare', 'parar', 'sair', 'descadastrar', 'cancelar', 'stop']);
+
+function normalizeOptoutText(text: string): string {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim();
+}
+
+/**
+ * Se a mensagem recebida for uma palavra-chave de opt-out, marca `whatsapp_optout_at`
+ * no contato e responde UMA única vez. Nunca quebra o fluxo do webhook.
+ */
+async function handleOptOut(
+  supabaseAdmin: any,
+  connection: any,
+  contactId: string | null,
+  text: string,
+  toPhone: string,
+): Promise<void> {
+  try {
+    if (!contactId) return;
+    if (!OPTOUT_KEYWORDS.has(normalizeOptoutText(text))) return;
+
+    const { data: contact } = await supabaseAdmin
+      .from('contacts')
+      .select('id, whatsapp_optout_at')
+      .eq('id', contactId)
+      .eq('broker_id', connection.broker_id)
+      .maybeSingle();
+
+    if (!contact || contact.whatsapp_optout_at) return; // já optou por sair: não responde de novo
+
+    const { error: updateError } = await supabaseAdmin
+      .from('contacts')
+      .update({ whatsapp_optout_at: new Date().toISOString() })
+      .eq('id', contactId)
+      .eq('broker_id', connection.broker_id);
+
+    if (updateError) {
+      safeError('Opt-out: falha ao marcar contato', updateError);
+      return;
+    }
+
+    const evolutionApiUrl = (Deno.env.get('EVOLUTION_API_URL') ?? '').replace(/\/$/, '');
+    const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY') ?? '';
+    if (!evolutionApiUrl || !evolutionApiKey || !connection.instance_name) return;
+
+    await fetch(`${evolutionApiUrl}/message/sendText/${connection.instance_name}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: evolutionApiKey },
+      body: JSON.stringify({
+        number: toPhone,
+        text:
+          'Prontinho! Os avisos automáticos de cobrança por WhatsApp foram desativados para este número. ' +
+          'Você pode continuar falando com a gente por aqui normalmente. 🙂',
+      }),
+    });
+
+    safeLog('Opt-out registrado para contato %s', contactId);
+  } catch (err) {
+    safeError('Opt-out: erro não crítico', err);
+  }
+}
+
 Deno.serve(async (req) => {
 
   if (req.method === 'GET') {
