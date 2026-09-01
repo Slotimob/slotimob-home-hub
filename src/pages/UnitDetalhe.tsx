@@ -546,6 +546,8 @@ export default function UnitDetalhe() {
                 isStandalone={isStandalone}
                 onPropertiesChange={setProperties}
                 disabled={!canEdit}
+                unitId={unit?.id}
+                onNavigateSubdivisions={() => setActiveTab('subdivisions')}
               />
             </fieldset>
 
