@@ -167,10 +167,11 @@ export const UnitFormFields = ({
   const [propertySearchOpen, setPropertySearchOpen] = useState(false);
   const [propertySearch, setPropertySearch] = useState('');
   
-  // Contact creation dialog state
+  // Contact creation dialog state.
+  // `contactTarget` is mandatory: two selectors (owner/tenant) share the same dialog,
+  // so we must know which one opened it before writing the id back.
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
-  const [createContactCategory, setCreateContactCategory] = useState<ContactCategory>('Proprietário');
-  const [contactSelectorKey, setContactSelectorKey] = useState(0);
+  const [contactTarget, setContactTarget] = useState<'owner' | 'tenant' | null>(null);
 
   const handlePropertyCreated = (newProperty: { id: string; name: string }) => {
     const updatedProperties = [...properties, newProperty];
