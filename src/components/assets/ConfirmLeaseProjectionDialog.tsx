@@ -599,6 +599,7 @@ export function ConfirmLeaseProjectionDialog({
         ) : (
           <>
             {!window.blocked && (
+            <>
             <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
               <CalendarClock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <p className="text-sm">
@@ -699,6 +700,7 @@ export function ConfirmLeaseProjectionDialog({
                 />
               )}
             </div>
+            </>
             )}
 
             {(hasObligations || insuranceUnpriced || iptuUnpriced) && !obligationsRevealed && (
