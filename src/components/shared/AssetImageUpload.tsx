@@ -8,6 +8,7 @@ import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/notifications';
 import { normalizePropertyImageUrl } from '@/lib/imageUtils';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { compressImage, formatFileSize } from '@/utils/imageOptimizer';
 
 interface AssetImageUploadProps {
   /** Current image URL */
@@ -28,7 +29,7 @@ interface AssetImageUploadProps {
   onRefresh?: () => Promise<void>;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MIN_RESOLUTION = 300;
 const ACCEPTED_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -58,6 +59,7 @@ export function AssetImageUpload({
 }: AssetImageUploadProps) {
   const { effectiveBrokerId } = useWorkspace();
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,7 +117,10 @@ export function AssetImageUpload({
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        showError('Arquivo muito grande', 'O tamanho máximo é 5MB.');
+        showError(
+          'Arquivo muito grande',
+          `A imagem tem ${formatFileSize(file.size)} e o limite é ${formatFileSize(MAX_FILE_SIZE)}. Reduza o arquivo e tente novamente.`
+        );
         resolve(false);
         return;
       }
@@ -154,9 +159,20 @@ export function AssetImageUpload({
     reader.readAsDataURL(file);
 
     setUploading(true);
+    setUploadStatus('Otimizando imagem...');
 
     try {
-      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      // Reuse the same optimization pipeline used by the galleries
+      const optimized = await compressImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.8,
+        format: 'image/jpeg',
+      });
+      const uploadFile = optimized.file;
+      setUploadStatus('Enviando...');
+
+      const fileExt = uploadFile.name.split('.').pop()?.toLowerCase();
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
 
@@ -166,7 +182,7 @@ export function AssetImageUpload({
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, uploadFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -189,6 +205,7 @@ export function AssetImageUpload({
       setPreview(currentImageUrl ? `${currentImageUrl}?t=${Date.now()}` : null);
     } finally {
       setUploading(false);
+      setUploadStatus(null);
       e.target.value = '';
     }
   };
@@ -284,7 +301,7 @@ export function AssetImageUpload({
               <>
                 <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  {uploading ? 'Enviando...' : 'Removendo...'}
+                  {uploading ? uploadStatus ?? 'Enviando...' : 'Removendo...'}
                 </p>
               </>
             ) : (
@@ -294,7 +311,7 @@ export function AssetImageUpload({
                   Clique para adicionar uma imagem
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  JPG, PNG ou WebP • Máx. 5MB • Mín. 300x300px
+                  JPG, PNG ou WebP • Máx. 10MB • Mín. 300x300px
                 </p>
               </>
             )}
