@@ -340,6 +340,14 @@ Deno.serve(async (req) => {
         }
         const instanceName = wantWhats ? connectionCache.get(brokerId) ?? null : null;
 
+        // Guarda anti-bloqueio do WhatsApp (cache por broker)
+        if (wantWhats && !guardCache.has(brokerId)) {
+          guardCache.set(brokerId, await loadSendGuard(supabase, brokerId));
+          const { data: sentToday } = await supabase.rpc("whatsapp_sent_today", { p_broker_id: brokerId });
+          sentTodayCache.set(brokerId, Number(sentToday ?? 0));
+        }
+        const guard = wantWhats ? guardCache.get(brokerId)! : null;
+
         for (const tx of transactions ?? []) {
           if (budget <= 0) break;
           try {
@@ -347,19 +355,23 @@ Deno.serve(async (req) => {
             const dueOffsets = enabledOffsets.filter((o) => shiftDate(tx.due_date as string, o) === today);
             if (dueOffsets.length === 0) continue;
 
-            let tenant: { name: string; email: string | null; phone: string | null } | null = null;
+            let tenant:
+              | { id: string; name: string; email: string | null; phone: string | null; optoutAt: string | null }
+              | null = null;
             if (tx.contact_id) {
               const { data: contact } = await supabase
                 .from("contacts")
-                .select("name, email, phone, whatsapp")
+                .select("id, name, email, phone, whatsapp, whatsapp_optout_at")
                 .eq("id", tx.contact_id)
                 .eq("broker_id", brokerId)
                 .maybeSingle();
               if (contact) {
                 tenant = {
+                  id: contact.id as string,
                   name: (contact.name as string) || "Cliente",
                   email: (contact.email as string) ?? null,
                   phone: ((contact.whatsapp as string) || (contact.phone as string)) ?? null,
+                  optoutAt: (contact.whatsapp_optout_at as string) ?? null,
                 };
               }
             }
