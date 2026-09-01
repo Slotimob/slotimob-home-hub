@@ -20,17 +20,28 @@ import type { PlannedInstallment } from "@/lib/lease-projection";
 
 /** Estado editável de um bloco de projeção (aluguel ou encargo). */
 export interface BlockConfig {
-  /** Competência inicial no formato `yyyy-MM`. */
+  /**
+   * Competência inicial no formato `yyyy-MM-dd`.
+   * O mês define a competência; o dia define a emissão (data contábil).
+   */
   competency: string;
   /** 1º vencimento no formato `yyyy-MM-dd`. */
   firstDueDate: string;
-  /** Dia de emissão (data contábil) 1–31. */
-  issueDay: number;
   /** Nº de parcelas. */
   months: number;
   /** Valor de cada parcela. */
   amount: number;
 }
+
+/** Período de competência (`yyyy-MM`) derivado da data completa. */
+export const competencyPeriodOf = (competency: string) => (competency || "").slice(0, 7);
+
+/** Dia de emissão (1–31) derivado da data de competência. */
+export const issueDayOf = (competency: string) => {
+  const day = Number((competency || "").slice(8, 10));
+  return Number.isFinite(day) && day >= 1 && day <= 31 ? day : 1;
+};
+
 
 export interface ProjectionBlockProps {
   blockKey: string;
@@ -77,7 +88,7 @@ export function ProjectionBlock({
   onSelectAll,
   onClearAll,
   warning,
-  competencyLabel = "Competência inicial",
+  competencyLabel = "Competência inicial (emissão)",
   hideMonths = false,
 }: ProjectionBlockProps) {
   const selectableKeys = installments.filter((i) => !i.alreadyExists).map((i) => i.key);
@@ -114,21 +125,41 @@ export function ProjectionBlock({
 
       {warning}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
-          <Label htmlFor={`competency-${blockKey}`} className="text-xs">
+          <Label
+            htmlFor={`competency-${blockKey}`}
+            className="text-xs h-4 flex items-center gap-1"
+          >
             {competencyLabel}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="O que é a competência (emissão)"
+                    className="text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[260px]">
+                  Data contábil do lançamento. O mês define a competência e o dia define a
+                  emissão no DRE.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </Label>
           <Input
             id={`competency-${blockKey}`}
-            type="month"
+            type="date"
             className="h-9"
             value={config.competency}
             onChange={(e) => onConfigChange({ competency: e.target.value })}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={`firstdue-${blockKey}`} className="text-xs">
+          <Label htmlFor={`firstdue-${blockKey}`} className="text-xs h-4 flex items-center">
             1º vencimento
           </Label>
           <Input
@@ -139,44 +170,9 @@ export function ProjectionBlock({
             onChange={(e) => onConfigChange({ firstDueDate: e.target.value })}
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`issueday-${blockKey}`} className="text-xs flex items-center gap-1">
-            Dia de emissão
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="O que é o dia de emissão"
-                    className="text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[260px]">
-                  Data contábil do lançamento. Define em qual mês a receita ou despesa entra
-                  no DRE.
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </Label>
-          <Input
-            id={`issueday-${blockKey}`}
-            type="number"
-            min={1}
-            max={31}
-            className="h-9 tabular-nums"
-            value={config.issueDay}
-            onChange={(e) =>
-              onConfigChange({
-                issueDay: Math.min(Math.max(Number(e.target.value) || 1, 1), 31),
-              })
-            }
-          />
-        </div>
         {!hideMonths && (
           <div className="space-y-1.5">
-            <Label htmlFor={`months-${blockKey}`} className="text-xs">
+            <Label htmlFor={`months-${blockKey}`} className="text-xs h-4 flex items-center">
               Nº de parcelas
             </Label>
             <Input
@@ -192,7 +188,7 @@ export function ProjectionBlock({
           </div>
         )}
         <div className="space-y-1.5">
-          <Label htmlFor={`amount-${blockKey}`} className="text-xs">
+          <Label htmlFor={`amount-${blockKey}`} className="text-xs h-4 flex items-center">
             Valor da parcela
           </Label>
           <CurrencyInput
