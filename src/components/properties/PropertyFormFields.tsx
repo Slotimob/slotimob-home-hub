@@ -275,6 +275,16 @@ export function PropertyInfoFields({
   propertyId,
   onRefreshProperty,
 }: InfoFieldsProps) {
+  const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
+  const [contactSelectorKey, setContactSelectorKey] = useState(0);
+
+  const handleContactCreated = (newContact?: { id?: string }) => {
+    setContactSelectorKey((prev) => prev + 1);
+    if (newContact?.id) {
+      setFormData({ ...formData, lead_id: newContact.id });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* ===== SECTION 1: OBJECTIVE & MANAGEMENT ===== */}
