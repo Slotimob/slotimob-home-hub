@@ -145,3 +145,9 @@ verify_jwt = false
 
 
 
+
+[functions.billing-reminders]
+verify_jwt = false
+
+[functions.asaas-notifications]
+verify_jwt = false
