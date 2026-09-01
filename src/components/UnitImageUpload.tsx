@@ -34,6 +34,7 @@ export const UnitImageUpload = ({
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -214,6 +215,7 @@ export const UnitImageUpload = ({
       setPreview(currentImageUrl ? `${currentImageUrl}?t=${Date.now()}` : null);
     } finally {
       setUploading(false);
+      setUploadStatus(null);
       e.target.value = '';
     }
   };
@@ -321,7 +323,7 @@ export const UnitImageUpload = ({
               <>
                 <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  {uploading ? 'Enviando...' : 'Removendo...'}
+                  {uploading ? uploadStatus ?? 'Enviando...' : 'Removendo...'}
                 </p>
               </>
             ) : (
