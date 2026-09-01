@@ -33,6 +33,8 @@ import { AddressFields, AddressData } from '@/components/shared/AddressFields';
 import { PropertyAmenitiesSelect } from '@/components/properties/PropertyAmenitiesSelect';
 import { PropertyGalleryUpload } from '@/components/properties/PropertyGalleryUpload';
 import { ContactSelector } from '@/components/ContactSelector';
+import { CreateContactDialog } from '@/components/contacts/CreateContactDialog';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { showError } from '@/utils/notifications';
