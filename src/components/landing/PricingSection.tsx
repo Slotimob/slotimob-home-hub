@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Check, Briefcase, Rocket, Building2, Zap, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, Briefcase, Rocket, Building2, Layers, Zap, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,8 +23,6 @@ interface PlanDef {
   cta: string;
   popular: boolean;
   bestValue: boolean;
-  units: string;
-  users: string;
 }
 
 const plans: PlanDef[] = [
@@ -32,21 +30,40 @@ const plans: PlanDef[] = [
   id: 'start',
   name: 'Start',
   icon: Briefcase,
-  description: 'Comece grátis e teste o PRO por 7 dias',
-  units: 'Até 5 unidades',
-  users: '1 usuário',
+  description: 'Comece grátis e teste o Pro por 7 dias',
   features: [
-  'Gestão de Contatos Simples',
-  'Financeiro: Entradas e Saídas',
+  'Gestão de contatos simples',
+  'Financeiro: entradas e saídas',
   'Contatos ilimitados'],
 
   notIncluded: [
-  'Automações de WhatsApp',
-  'Inteligência Artificial',
-  'Documentos e Relatórios',
-  'Gestão de Ativos'],
+  'WhatsApp integrado',
+  'Chat IA',
+  'Financeiro completo (DRE, OFX)',
+  'Gestão de equipe'],
 
   cta: 'Começar Grátis',
+  popular: false,
+  bestValue: false
+},
+{
+  id: 'essencial',
+  name: 'Essencial',
+  icon: Layers,
+  description: 'Contrato, cobrança e financeiro para quem administra até 20 imóveis.',
+  features: [
+  'Gestão de ativos e contratos',
+  'Financeiro completo (DRE, OFX, conciliação)',
+  'Boleto e Pix para o inquilino',
+  'WhatsApp integrado (1 instância)',
+  'Chat IA (50 créditos/mês)',
+  'CRM completo',
+  'Contatos ilimitados'],
+
+  notIncluded: [
+  'Gestão de equipe'],
+
+  cta: 'Assinar Essencial',
   popular: false,
   bestValue: false
 },
@@ -55,20 +72,14 @@ const plans: PlanDef[] = [
   name: 'Pro',
   icon: Rocket,
   description: 'Gestão completa para crescer com controle',
-  units: '50 unidades',
-  users: '1 usuário',
   features: [
-  'CRM Completo (Pipeline e Contatos)',
+  'Tudo do Essencial',
   'Chat IA (250 créditos/mês)',
-  'Contratos ilimitados',
+  'Gestão de equipe com permissões',
   'Relatórios e DRE completos',
-  'Gestão de ativos e reajustes',
   'Pipeline personalizável',
   'Todas as integrações',
   'Suporte prioritário'],
-
-  notIncluded: [
-  'Gestão de Equipe'],
 
   cta: 'Escolha Recomendada',
   popular: true,
@@ -79,15 +90,13 @@ const plans: PlanDef[] = [
   name: 'Business',
   icon: Building2,
   description: 'Escale sua imobiliária com equipe e auditoria',
-  units: 'Até 150 unidades',
-  users: '4 usuários (1 Master + 3)',
   features: [
   'Tudo do Pro',
   'Chat IA (750 créditos/mês)',
-  'Gestão de equipe com permissões',
+  'WhatsApp com 3 instâncias',
   'Distribuição automática de leads do WhatsApp',
-  'Automações Exclusivas',
-  'Integrações Avançadas',
+  'Automações exclusivas',
+  'Integrações avançadas',
   'Expansão sob demanda'],
 
   cta: 'Contratar Business',
@@ -96,8 +105,8 @@ const plans: PlanDef[] = [
 }];
 
 
-/* Mobile order: PRO first, then Start, Business */
-const mobilePlanOrder: PlanId[] = ['pro', 'start', 'business'];
+/* Mobile order: PRO first */
+const mobilePlanOrder: PlanId[] = ['pro', 'essencial', 'start', 'business'];
 
 const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
 
@@ -175,6 +184,13 @@ export function PricingSection() {
     const displayPrice = getDisplayPrice(plan.id);
     const annualTotal = getAnnualTotal(plan.id);
     const altPrice = getAlternativePrice(plan.id);
+    const dbPlan = pricing?.[plan.id];
+    const unitsLabel = dbPlan ? `Até ${dbPlan.assets_limit} imóveis` : '—';
+    const usersCount = dbPlan?.users_limit ?? 1;
+    const usersLabel =
+      usersCount <= 1 ?
+      '1 usuário' :
+      `${usersCount} usuários (você + ${usersCount - 1} convidado${usersCount - 1 > 1 ? 's' : ''})`;
 
     return (
       <Card
@@ -234,7 +250,7 @@ export function PricingSection() {
                 </div>
                 {isAnnual ?
               <p className="text-xs text-muted-foreground mt-1">
-                    <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês</span>
+                    <span className="line-through">{formatCurrency(pricing?.[plan.id]?.price_original || 0)}/mês no plano mensal</span>
                     {' · cobrado anualmente'}
                   </p> :
 
@@ -252,9 +268,9 @@ export function PricingSection() {
           </div>
 
           {/* Limits */}
-          <div className="flex gap-2 justify-center mb-4">
-            <Badge variant="outline" className="text-xs">{plan.units}</Badge>
-            <Badge variant="outline" className="text-xs">{plan.users}</Badge>
+          <div className="flex gap-2 justify-center mb-4 flex-wrap">
+            <Badge variant="outline" className="text-xs">{unitsLabel}</Badge>
+            <Badge variant="outline" className="text-xs">{usersLabel}</Badge>
           </div>
 
           {/* Start trial highlight */}
@@ -262,7 +278,7 @@ export function PricingSection() {
           <div className="mb-5 rounded-lg p-3 border border-dashed border-muted-foreground/30 bg-section">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Zap className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase">7 dias de PRO</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase">7 dias de Pro</span>
               </div>
               <p className="text-xs text-center text-muted-foreground">
                 Experimente o Plano PRO. Após o período, você decide.
@@ -322,7 +338,7 @@ export function PricingSection() {
             Planos para cada momento
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8" style={{ textWrap: 'balance' }}>
-            Comece pequeno e escale conforme seu negócio cresce. Todos com 7 dias grátis.
+            Comece grátis no Start, com 7 dias de Pro para testar.
           </p>
 
           <div className="flex items-center justify-center gap-3">
@@ -335,14 +351,14 @@ export function PricingSection() {
             </Label>
              {isAnnual &&
             <Badge variant="secondary" className="text-accent bg-accent/10 border-accent/20">
-                Economize até 27%
+                Economize até 20% no anual
               </Badge>
             }
           </div>
         </div>
 
         {/* Desktop: 4 columns */}
-        <div className="hidden lg:grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto items-stretch">
+        <div className="hidden lg:grid gap-5 lg:grid-cols-4 max-w-7xl mx-auto items-stretch">
           {plans.map(renderCard)}
         </div>
 
@@ -375,7 +391,7 @@ export function PricingSection() {
         {/* Guarantee */}
         <div className="text-center mt-14">
           <p className="text-sm text-muted-foreground">
-            7 dias grátis em todos os planos. Cancele quando quiser.
+            Comece grátis no Start, com 7 dias de Pro para testar. Cancele quando quiser.
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             Emissão de boletos e PIX de aluguel via subconta Asaas, instituição autorizada pelo Banco Central.

@@ -12,9 +12,9 @@ interface Row {
 const rows: Row[] = [
   { aspect: 'Emissão de boletos', manual: 'Gerar um a um todo mês', slotimob: '100% automático' },
   { aspect: 'Cobrança de atrasos', manual: 'WhatsApp pessoal', slotimob: 'Régua automática' },
-  { aspect: 'Reajuste de contrato', manual: 'Lembrar + calcular na mão', slotimob: 'IGPM/IPCA automático' },
+  { aspect: 'Reajuste de contrato', manual: 'Lembrar + calcular na mão', slotimob: 'Calculadora de reajuste com histórico' },
   { aspect: 'Multa e juros', manual: 'Deixa passar', slotimob: 'Cobra automaticamente' },
-  { aspect: 'Contrato', manual: 'Papel + cartório', slotimob: 'Digital, assinatura online' },
+  { aspect: 'Contrato', manual: 'Papel + cartório', slotimob: 'Contrato digital gerado em PDF' },
   { aspect: 'Tempo gasto por mês', manual: '4+ horas', slotimob: 'Menos de 15 minutos' },
   { aspect: 'Relatório IR', manual: 'Montar na mão', slotimob: 'Gerado automaticamente' },
 ];
@@ -151,7 +151,7 @@ export function LpComparison() {
               { feature: 'CRM com pipeline e kanban',              others: 'Não incluído',                      sloti: 'Incluído no plano' },
               { feature: 'WhatsApp integrado ao sistema',          others: 'Não tem',                           sloti: 'Nativo no PRO e Business' },
               { feature: 'Gestão financeira (DRE, OFX, DIMOB)',   others: 'Cobrado como módulo extra',          sloti: 'Incluído sem custo adicional' },
-              { feature: 'Assistente de IA',                      others: 'Não tem',                           sloti: '250 créditos/mês no PRO' },
+              { feature: 'Assistente de IA',                      others: 'Não tem',                           sloti: '250 créditos/mês no PRO, 50 no Essencial' },
               { feature: 'Emissão de boleto/Pix para inquilino',  others: 'Depende de integração externa',      sloti: 'Nativo via Asaas' },
               { feature: 'Trial sem cartão de crédito',           others: 'Exige cartão ou contato comercial',  sloti: '7 dias PRO grátis, sem cartão' },
               { feature: 'Checkout online self-service',          others: 'Via WhatsApp ou contato',            sloti: 'Checkout 100% online' },
@@ -178,7 +178,7 @@ export function LpComparison() {
               { feature: 'CRM com pipeline e kanban',             others: 'Não incluído',                      sloti: 'Incluído no plano' },
               { feature: 'WhatsApp integrado',                    others: 'Não tem',                           sloti: 'Nativo no PRO e Business' },
               { feature: 'Gestão financeira completa',            others: 'Cobrado como módulo extra',          sloti: 'Incluído sem custo adicional' },
-              { feature: 'Assistente de IA',                      others: 'Não tem',                           sloti: '250 créditos/mês no PRO' },
+              { feature: 'Assistente de IA',                      others: 'Não tem',                           sloti: '250 créditos/mês no PRO, 50 no Essencial' },
               { feature: 'Boleto/Pix para inquilino',             others: 'Integração externa',                sloti: 'Nativo via Asaas' },
               { feature: 'Trial sem cartão',                      others: 'Exige cartão',                      sloti: '7 dias PRO grátis' },
             ].map((r) => (

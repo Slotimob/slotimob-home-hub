@@ -9,6 +9,7 @@ import { LpFooter } from '@/components/landing/v2/LpFooter';
 import { SEOHead } from '@/components/SEOHead';
 import '@/components/landing/v2/lp.css';
 import { PricingSection } from '@/components/landing/PricingSection';
+import { usePlanPricing, type PlanPricing } from '@/hooks/usePlanPricing';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
@@ -39,130 +40,208 @@ function DiferencialSection() {
 
 /* ─── TABELA COMPARATIVA ─── */
 type Cell = boolean | string;
-interface Row { feature: string; start: Cell; pro: Cell; business: Cell }
+interface Row { feature: string; values: Record<PlanKey, Cell> }
 interface Category { name: string; rows: Row[] }
 
-const categories: Category[] = [
-  {
-    name: 'Imóveis e Usuários',
-    rows: [
-      { feature: 'Imóveis', start: '5', pro: '50', business: '150' },
-      { feature: 'Usuários', start: '1', pro: '1', business: '4' },
-    ],
-  },
-  {
-    name: 'Cobranças',
-    rows: [
-      { feature: 'Boleto e Pix automático para inquilino', start: false, pro: true, business: true },
-      { feature: 'Régua de cobrança automática', start: false, pro: true, business: true },
-      { feature: 'Multa e juros automáticos', start: false, pro: true, business: true },
-      { feature: 'Reajuste IGPM/IPCA automático', start: false, pro: true, business: true },
-    ],
-  },
-  {
-    name: 'Financeiro',
-    rows: [
-      { feature: 'Dashboard DRE', start: true, pro: true, business: true },
-      { feature: 'Relatório IR', start: false, pro: true, business: true },
-      { feature: 'Conciliação bancária (OFX)', start: false, pro: true, business: true },
-      { feature: 'Exportação DIMOB', start: false, pro: true, business: true },
-    ],
-  },
-  {
-    name: 'Contratos',
-    rows: [
-      { feature: 'Contratos digitais', start: true, pro: true, business: true },
-      { feature: 'Assinatura eletrônica (em breve *)', start: false, pro: true, business: true },
-      { feature: 'Reajuste automático IGPM', start: false, pro: true, business: true },
-    ],
-  },
-  {
-    name: 'Comunicação',
-    rows: [
-      { feature: 'WhatsApp integrado', start: false, pro: '1 instância', business: 'Múltiplas **' },
-    ],
-  },
-  {
-    name: 'IA',
-    rows: [
-      { feature: 'Chat IA', start: false, pro: '250 créditos', business: '750 créditos' },
-    ],
-  },
-];
+type PlanKey = 'start' | 'essencial' | 'pro' | 'business';
+const PLAN_ORDER: PlanKey[] = ['start', 'essencial', 'pro', 'business'];
+
+const brl = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 function renderCell(v: Cell) {
-  if (v === true) return <CheckCircle2 className="h-5 w-5 mx-auto" style={{ color: 'var(--lp-accent)' }} />;
-  if (v === false) return <X className="h-5 w-5 text-muted-foreground/40 mx-auto" />;
-  return <span className="text-sm text-foreground">{v}</span>;
+  if (v === true) return <CheckCircle2 className="h-5 w-5 mx-auto text-accent" aria-label="Incluído" />;
+  if (v === false) return <X className="h-5 w-5 mx-auto text-muted-foreground/50" aria-label="Não incluído" />;
+  return <span className="text-base text-foreground">{v || '—'}</span>;
+}
+
+function buildCategories(pricing: Record<string, PlanPricing> | undefined): Category[] {
+  const p = (id: PlanKey) => pricing?.[id];
+  const price = (id: PlanKey): Cell => {
+    const plan = p(id);
+    if (!plan) return '—';
+    if (!plan.price_original) return 'Grátis';
+    return `${brl(plan.price_original)}/mês`;
+  };
+  const annual = (id: PlanKey): Cell => {
+    const plan = p(id);
+    if (!plan || !plan.price_annual) return '—';
+    return `${brl(plan.price_annual)}/ano (${brl(plan.price_annual / 12)}/mês)`;
+  };
+  const assets = (id: PlanKey): Cell => (p(id) ? `${p(id)!.assets_limit} imóveis` : '—');
+  const users = (id: PlanKey): Cell => {
+    const n = p(id)?.users_limit;
+    if (!n) return '—';
+    return n === 1 ? '1 usuário' : `${n} usuários`;
+  };
+  const credits = (id: PlanKey): Cell => {
+    const n = p(id)?.ai_credits;
+    if (!n) return false;
+    return `${n} créditos/mês`;
+  };
+  const wpp = (id: PlanKey): Cell => {
+    const n = p(id)?.whatsapp_instances_limit;
+    if (!n) return false;
+    return n === 1 ? '1 instância' : `${n} instâncias`;
+  };
+  const team = (id: PlanKey): Cell => p(id)?.team_management === true;
+  const feat = (id: PlanKey, key: string): Cell => p(id)?.features?.[key] === true;
+
+  const row = (feature: string, fn: (id: PlanKey) => Cell): Row => ({
+    feature,
+    values: PLAN_ORDER.reduce((acc, id) => { acc[id] = fn(id); return acc; }, {} as Record<PlanKey, Cell>),
+  });
+
+  return [
+    {
+      name: 'Preço',
+      rows: [row('Preço mensal', price), row('Preço anual', annual)],
+    },
+    {
+      name: 'Limites',
+      rows: [
+        row('Imóveis', assets),
+        row('Usuários', users),
+        row('Créditos de IA', credits),
+        row('Instâncias de WhatsApp', wpp),
+      ],
+    },
+    {
+      name: 'Operação',
+      rows: [
+        row('CRM e pipeline', (id) => (feat(id, 'crm_full') ? 'Completo' : feat(id, 'crm_basic') ? 'Básico' : false)),
+        row('Contratos e documentos', (id) => feat(id, 'documents_my_docs')),
+        row('Gestão de ativos', (id) => feat(id, 'asset_management')),
+      ],
+    },
+    {
+      name: 'Financeiro',
+      rows: [
+        row('Financeiro simples (entradas e saídas)', (id) => feat(id, 'finance_simple')),
+        row('Financeiro completo (DRE, OFX, conciliação)', (id) => feat(id, 'finance_full')),
+        row('Exportação DIMOB', (id) => feat(id, 'finance_full')),
+        row('Boleto e Pix para inquilino', (id) => feat(id, 'finance_full')),
+        row('Relatórios', (id) => (feat(id, 'reports_monthly') ? 'Completos' : feat(id, 'reports_overview') ? 'Básicos' : false)),
+      ],
+    },
+    {
+      name: 'Equipe e integrações',
+      rows: [
+        row('Gestão de equipe', team),
+        row('Integrações e portais', (id) => {
+          const list = p(id)?.features?.integrations;
+          const n = Array.isArray(list) ? list.length : 0;
+          return n > 0 ? 'Todas as integrações' : false;
+        }),
+        row('Suporte', (id) =>
+          id === 'start' ? 'Central de ajuda' : id === 'essencial' ? 'Suporte por e-mail' : 'Suporte prioritário'),
+      ],
+    },
+  ];
 }
 
 function ComparisonTable() {
   const [open, setOpen] = useState(true);
+  const { data: pricing } = usePlanPricing();
+  const categories = buildCategories(pricing);
+  const planName = (id: PlanKey) =>
+    ({ start: 'Start', essencial: 'Essencial', pro: 'Pro', business: 'Business' })[id];
+
   return (
-    <section className="py-12 md:py-16" style={{ background: 'var(--lp-ink)', borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
+    <section className="py-12 md:py-16 bg-card border-b border-border">
       <div className="max-w-[1280px] mx-auto px-5 md:px-10">
-        <p className="lp-eyebrow mb-3" style={{ color: 'var(--lp-accent)' }}>comparativo de recursos</p>
-        <h2 className="lp-display text-[28px] md:text-[40px] mb-8" style={{ color: '#fff' }}>
+        <p className="lp-eyebrow mb-3 text-accent">comparativo de recursos</p>
+        <h2 className="lp-display text-[28px] md:text-[40px] mb-8 text-foreground">
           O que está incluso em cada plano
         </h2>
         <Collapsible open={open} onOpenChange={setOpen}>
           <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="gap-2 mb-6"
-              style={{ background: '#fff', borderColor: '#d1d5db', color: '#111827' }}
-            >
+            <Button variant="outline" className="gap-2 mb-6">
               {open ? 'Ocultar comparação' : 'Ver comparação completa'}
               <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} />
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="overflow-x-auto rounded-xl" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
-              <table className="w-full text-sm min-w-[640px]">
-                <thead>
-                  <tr style={{ background: '#f8fafc' }}>
-                    <th className="text-left p-4 font-semibold" style={{ color: '#0f172a' }}>Recurso</th>
-                    <th className="p-4 font-semibold text-center" style={{ color: '#0f172a' }}>Start</th>
-                    <th className="p-4 font-semibold text-center" style={{ color: '#0f172a', background: 'rgba(20,217,180,0.10)' }}>Pro</th>
-                    <th className="p-4 font-semibold text-center" style={{ color: '#0f172a' }}>Business</th>
+            {/* Desktop: tabela */}
+            <div className="hidden md:block overflow-x-auto rounded-xl border border-border bg-card max-h-[80vh]">
+              <table className="w-full min-w-[860px] text-base">
+                <thead className="sticky top-0 z-20">
+                  <tr className="bg-muted">
+                    <th className="text-left p-4 text-lg font-semibold text-foreground">Recurso</th>
+                    {PLAN_ORDER.map((id) => (
+                      <th
+                        key={id}
+                        className={cn(
+                          'p-4 text-lg font-semibold text-center text-foreground',
+                          id === 'pro' && 'bg-accent/15'
+                        )}>
+                        {planName(id)}
+                        {id === 'pro' && (
+                          <span className="block text-xs font-medium uppercase tracking-wide text-accent">
+                            Recomendado
+                          </span>
+                        )}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {categories.map((cat) => (
                     <Fragment key={cat.name}>
                       <tr>
-                        <td
-                          colSpan={4}
-                          className="font-semibold text-sm px-4 py-2"
-                          style={{ background: '#f1f5f9', color: '#374151', borderTop: '1px solid #e2e8f0' }}
-                        >
+                        <td colSpan={5} className="px-4 py-2 text-base font-semibold text-muted-foreground bg-muted/60 border-t border-border">
                           {cat.name}
                         </td>
                       </tr>
-                      {cat.rows.map((row, idx) => (
-                        <tr
-                          key={`${cat.name}-${row.feature}`}
-                          style={{ background: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}
-                        >
-                          <td className="p-4" style={{ color: '#374151' }}>{row.feature}</td>
-                          <td className="p-4 text-center">{renderCell(row.start)}</td>
-                          <td className="p-4 text-center" style={{ background: idx % 2 === 1 ? 'rgba(20,217,180,0.07)' : 'rgba(20,217,180,0.04)' }}>
-                            {renderCell(row.pro)}
-                          </td>
-                          <td className="p-4 text-center">{renderCell(row.business)}</td>
+                      {cat.rows.map((r, idx) => (
+                        <tr key={`${cat.name}-${r.feature}`} className={cn(idx % 2 === 1 && 'bg-muted/30')}>
+                          <td className="p-4 text-base text-foreground">{r.feature}</td>
+                          {PLAN_ORDER.map((id) => (
+                            <td
+                              key={id}
+                              className={cn('p-4 text-center', id === 'pro' && 'bg-accent/[0.07]')}>
+                              {renderCell(r.values[id])}
+                            </td>
+                          ))}
                         </tr>
                       ))}
                     </Fragment>
                   ))}
                 </tbody>
               </table>
-              <p className="px-4 py-3 text-xs" style={{ color: '#6b7280', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                * Assinatura eletrônica com validade jurídica está em desenvolvimento e será disponibilizada em breve.
-              </p>
-              <p className="px-4 py-3 text-xs" style={{ color: '#6b7280', background: '#f8fafc' }}>
-                ** No Business não há conexão de mais de um número de WhatsApp. O usuário principal (ou um usuário com essa permissão) direciona quais conversas cada membro da equipe pode visualizar.
-              </p>
             </div>
+
+            {/* Mobile: um card por plano */}
+            <div className="md:hidden space-y-4">
+              {PLAN_ORDER.map((id) => (
+                <div
+                  key={id}
+                  className={cn(
+                    'rounded-xl border bg-card p-4',
+                    id === 'pro' ? 'border-accent shadow-md' : 'border-border'
+                  )}>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-lg font-semibold text-foreground">{planName(id)}</p>
+                    {id === 'pro' && (
+                      <span className="text-xs font-semibold uppercase text-accent">Recomendado</span>
+                    )}
+                  </div>
+                  <ul className="space-y-2">
+                    {categories.flatMap((cat) => cat.rows).map((r) => (
+                      <li key={r.feature} className="flex items-start justify-between gap-3 text-base border-b border-border/60 pb-2 last:border-0">
+                        <span className="text-muted-foreground">{r.feature}</span>
+                        <span className="shrink-0 text-right">{renderCell(r.values[id])}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-3 text-sm text-muted-foreground">
+              Assinatura eletrônica com validade jurídica não está inclusa: os contratos são gerados em PDF.
+              No Business, a equipe compartilha as conversas de WhatsApp conforme as permissões definidas pelo usuário principal.
+            </p>
           </CollapsibleContent>
         </Collapsible>
       </div>

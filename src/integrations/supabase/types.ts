@@ -6009,6 +6009,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      reset_monthly_ai_credits: { Args: never; Returns: number }
       sync_unit_tenant_from_lease: {
         Args: {
           p_lease_id: string
