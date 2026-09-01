@@ -131,6 +131,25 @@ function offsetCopy(offset: number): { title: string; intro: string; subject: st
   };
 }
 
+/** Hash determinístico simples (djb2) para escolher variantes de texto sem aleatoriedade real. */
+function stableHash(seed: string): number {
+  let h = 5381;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) + h + seed.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+const GREETINGS = [
+  (name: string) => `Olá, ${name}! 👋`,
+  (name: string) => `Oi, ${name}, tudo bem? 😊`,
+  (name: string) => `${name}, bom te encontrar por aqui!`,
+];
+
+const CLOSINGS = [
+  "Se o pagamento já foi feito, é só desconsiderar esta mensagem.\n\nQualquer dúvida, estamos à disposição! 😊",
+  "Caso já tenha pago, pode ignorar este aviso.\n\nEstamos por aqui se precisar de algo. 🙂",
+  "Se já estiver quitado, desconsidere.\n\nQualquer coisa, é só chamar por aqui!",
+];
+
 function whatsappMessage(
   offset: number,
   tenantName: string,
@@ -138,6 +157,7 @@ function whatsappMessage(
   amount: number,
   dueDate: string,
   paymentUrl: string | null,
+  variantSeed: string,
 ): string {
   const head =
     offset < 0
@@ -146,8 +166,12 @@ function whatsappMessage(
         ? "Passando para lembrar que o vencimento é hoje."
         : `Identificamos que esta cobrança está em aberto há ${offset} dia(s).`;
 
+  const h = stableHash(variantSeed);
+  const greeting = GREETINGS[h % GREETINGS.length](tenantName);
+  const closing = CLOSINGS[Math.floor(h / 7) % CLOSINGS.length];
+
   const lines = [
-    `Olá, ${tenantName}! 👋`,
+    greeting,
     "",
     head,
     "",
@@ -156,8 +180,57 @@ function whatsappMessage(
     `📅 Vencimento: *${formatDateBR(dueDate)}*`,
   ];
   if (paymentUrl) lines.push("", `🔗 Pagamento: ${paymentUrl}`);
-  lines.push("", "Se o pagamento já foi feito, desconsidere esta mensagem.", "", "Qualquer dúvida, estamos à disposição! 😊");
+  lines.push("", closing);
   return lines.join("\n");
+}
+
+interface SendGuard {
+  daily_cap: number;
+  send_window_start: number;
+  send_window_end: number;
+  require_prior_contact: boolean;
+  consecutive_failures: number;
+  paused_until: string | null;
+  pause_reason: string | null;
+}
+
+const GUARD_DEFAULTS: SendGuard = {
+  daily_cap: 40,
+  send_window_start: 9,
+  send_window_end: 18,
+  require_prior_contact: true,
+  consecutive_failures: 0,
+  paused_until: null,
+  pause_reason: null,
+};
+
+/** Hora (0-23) e dia da semana (0=dom) em America/Sao_Paulo. */
+function nowInSaoPaulo(): { hour: number; weekday: number } {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    hour12: false,
+    weekday: "short",
+  }).formatToParts(new Date());
+  const hour = Number(fmt.find((p) => p.type === "hour")?.value ?? "0");
+  const wdName = fmt.find((p) => p.type === "weekday")?.value ?? "Mon";
+  const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { hour, weekday: map[wdName] ?? 1 };
+}
+
+async function loadSendGuard(supabase: any, brokerId: string): Promise<SendGuard> {
+  const { data } = await supabase
+    .from("whatsapp_send_guard")
+    .select("daily_cap, send_window_start, send_window_end, require_prior_contact, consecutive_failures, paused_until, pause_reason")
+    .eq("broker_id", brokerId)
+    .maybeSingle();
+
+  if (data) return { ...GUARD_DEFAULTS, ...(data as SendGuard) };
+
+  await supabase
+    .from("whatsapp_send_guard")
+    .upsert({ broker_id: brokerId, ...GUARD_DEFAULTS }, { onConflict: "broker_id" });
+  return { ...GUARD_DEFAULTS };
 }
 
 Deno.serve(async (req) => {
