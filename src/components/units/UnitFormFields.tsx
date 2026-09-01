@@ -140,7 +140,7 @@ export const getInitialFormData = (): UnitFormData => ({
 
 interface UnitFormFieldsProps {
   formData: UnitFormData;
-  setFormData: (data: UnitFormData) => void;
+  setFormData: (data: UnitFormData | ((prev: UnitFormData) => UnitFormData)) => void;
   properties?: Property[];
   showImageUpload?: boolean;
   showPropertySelector?: boolean;
