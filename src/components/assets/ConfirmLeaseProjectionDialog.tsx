@@ -1,31 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   AlertTriangle,
   CalendarClock,
   CheckCircle2,
+  Home,
   Loader2,
   Receipt,
   ShieldCheck,
   Landmark,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, getDate, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
@@ -38,12 +32,12 @@ import {
   calculateProjectionWindow,
   type PlannedInstallment,
 } from "@/lib/lease-projection";
+import { ProjectionBlock, type BlockConfig } from "./ProjectionBlock";
 import {
   useExistingLeaseCompetencies,
   useLeaseFinancialProjection,
 } from "@/hooks/useLeaseFinancialProjection";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import type {
   FireInsuranceConfig,
   IptuChargeConfig,
@@ -84,7 +78,6 @@ export interface LeaseForProjection {
   tenant_contact?: { name?: string | null } | null;
 }
 
-
 interface ConfirmLeaseProjectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -102,57 +95,23 @@ interface ConfirmLeaseProjectionDialogProps {
   onSkipped?: () => void;
 }
 
-
-function InstallmentTable({
-  installments,
-  selected,
-  onToggle,
-}: {
-  installments: PlannedInstallment[];
-  selected: Set<string>;
-  onToggle: (key: string) => void;
-}) {
-  return (
-    <div className="rounded-md border max-h-52 overflow-y-auto">
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-muted/80 backdrop-blur">
-          <tr className="text-left text-xs text-muted-foreground">
-            <th className="w-9 p-2" />
-            <th className="p-2 font-medium">Competência</th>
-            <th className="p-2 font-medium">Vencimento</th>
-            <th className="p-2 font-medium text-right">Valor</th>
-          </tr>
-        </thead>
-        <tbody>
-          {installments.map((i) => (
-            <tr key={i.key} className="border-t">
-              <td className="p-2">
-                <Checkbox
-                  checked={selected.has(i.key)}
-                  disabled={i.alreadyExists}
-                  onCheckedChange={() => onToggle(i.key)}
-                  aria-label={`Lançar ${i.description}`}
-                />
-              </td>
-              <td className="p-2">
-                {i.competencyLabel}
-                {i.alreadyExists && (
-                  <Badge variant="secondary" className="ml-2 text-[10px]">
-                    Já lançado
-                  </Badge>
-                )}
-              </td>
-              <td className="p-2">
-                {format(parseISO(i.dueDate), "dd/MM/yyyy", { locale: ptBR })}
-              </td>
-              <td className="p-2 text-right tabular-nums">{formatCurrency(i.amount)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+/**
+ * Valor da parcela de um encargo anual. Nunca cai no valor cheio:
+ * usa `installment_amount` e, se ausente, divide o total pelo nº de parcelas.
+ * Retorna null quando não dá para calcular — nesse caso a UI avisa e o usuário
+ * pode digitar o valor direto no bloco.
+ */
+const resolveInstallmentAmount = (
+  installmentAmount: number | null | undefined,
+  total: number | null | undefined,
+  installments: number
+): number | null => {
+  if (installmentAmount && installmentAmount > 0) return installmentAmount;
+  if (total && total > 0 && installments > 0) {
+    return Math.round((total / installments) * 100) / 100;
+  }
+  return null;
+};
 
 export function ConfirmLeaseProjectionDialog({
   open,
@@ -161,7 +120,6 @@ export function ConfirmLeaseProjectionDialog({
   overrideRentAmount,
   overrideStartDate,
   postAdjustment = false,
-
   onConfirmed,
   onSkipped,
 }: ConfirmLeaseProjectionDialogProps) {
@@ -212,89 +170,21 @@ export function ConfirmLeaseProjectionDialog({
     return day > 0 ? day : null;
   };
 
-  // --- Estado editável ---
-  const [monthsToLaunch, setMonthsToLaunch] = useState(0);
-  const [rentAmount, setRentAmount] = useState(0);
-  const [firstDueDate, setFirstDueDate] = useState("");
+  // --- Estado editável, um BlockConfig por bloco ---
+  const [blocks, setBlocks] = useState<Record<string, BlockConfig>>({});
+  const [enabled, setEnabled] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [launchRent, setLaunchRent] = useState(true);
-  const [launchInsurance, setLaunchInsurance] = useState(true);
-  const [launchIptu, setLaunchIptu] = useState(true);
   const [obligationsRevealed, setObligationsRevealed] = useState(true);
-  const [launchFromMonth, setLaunchFromMonth] = useState("");
-  /** Competência de referência (yyyy-MM) dos ciclos anuais. */
-  const [insuranceCompetency, setInsuranceCompetency] = useState("");
-  const [iptuCompetency, setIptuCompetency] = useState("");
-  /** Encargos adicionais mensais ligados/desligados. */
-  const [launchAdditional, setLaunchAdditional] = useState<Record<string, boolean>>({});
 
   const additionalConfigs = useMemo(
     () => (lease?.additional_obligations || []).filter((o) => o?.enabled),
     [lease]
   );
 
-  // Reset ao abrir
-  useEffect(() => {
-    if (!open || !lease || !window) return;
-    setMonthsToLaunch(window.months);
-    setRentAmount(rentAmountDefault);
-    const base = startDate ? parseISO(startDate) : new Date();
-    setFirstDueDate(format(calculateDueDate(base, lease.due_day || 10), "yyyy-MM-dd"));
-    // Janela do aluguel bloqueada (reajuste vencido): aluguel nunca entra no lote,
-    // mas os ciclos anuais (seguro/IPTU) têm âncora própria e seguem disponíveis.
-    setLaunchRent(!window.blocked);
-    setLaunchInsurance(window.blocked ? !!lease.fire_insurance?.enabled : postAdjustment ? false : !!lease.fire_insurance?.enabled);
-    setLaunchIptu(window.blocked ? !!lease.iptu_charge?.enabled : postAdjustment ? false : !!lease.iptu_charge?.enabled);
-    setObligationsRevealed(window.blocked || !postAdjustment);
-    setLaunchFromMonth("");
-    setSelected(new Set());
-    // Pré-preenchido com o comportamento legado: competência = início da janela.
-    const windowMonth = startDate ? startDate.slice(0, 7) : format(base, "yyyy-MM");
-    setInsuranceCompetency(lease.fire_insurance?.competency_month || windowMonth);
-    setIptuCompetency(lease.iptu_charge?.competency_month || windowMonth);
-    setLaunchAdditional(
-      Object.fromEntries(
-        (lease.additional_obligations || [])
-          .filter((o) => o?.enabled)
-          .map((o) => [o.type, !postAdjustment])
-      )
-    );
-  }, [open, lease?.id, window?.months, window?.blocked, rentAmountDefault, startDate, postAdjustment]);
-
-
-  const rentInstallments = useMemo(() => {
-    if (!lease || !window || window.blocked) return [];
-    return buildRentInstallments({
-      startDate,
-      months: Math.max(0, monthsToLaunch),
-      amount: rentAmount,
-      dueDay: lease.due_day || 10,
-      firstDueDate: firstDueDate || null,
-      existingCompetencies,
-    });
-  }, [lease, window, startDate, monthsToLaunch, rentAmount, firstDueDate, existingCompetencies]);
-
-  /**
-   * Valor da parcela de um encargo anual. Nunca cai no valor cheio:
-   * usa `installment_amount` e, se ausente, divide o total pelo nº de parcelas.
-   * Retorna null quando não dá para calcular — nesse caso nada é gerado e a UI avisa.
-   */
-  const resolveInstallmentAmount = (
-    installmentAmount: number | null | undefined,
-    total: number | null | undefined,
-    installments: number
-  ): number | null => {
-    if (installmentAmount && installmentAmount > 0) return installmentAmount;
-    if (total && total > 0 && installments > 0) {
-      return Math.round((total / installments) * 100) / 100;
-    }
-    return null;
-  };
-
   const insuranceCount = Math.max(1, lease?.fire_insurance?.installments || 1);
   const iptuCount = Math.max(1, lease?.iptu_charge?.installments || 1);
 
-  const insuranceAmount = useMemo(
+  const insuranceAmountDefault = useMemo(
     () =>
       lease?.fire_insurance?.enabled
         ? resolveInstallmentAmount(
@@ -306,7 +196,7 @@ export function ConfirmLeaseProjectionDialog({
     [lease, insuranceCount]
   );
 
-  const iptuAmount = useMemo(
+  const iptuAmountDefault = useMemo(
     () =>
       lease?.iptu_charge?.enabled
         ? resolveInstallmentAmount(
@@ -318,104 +208,187 @@ export function ConfirmLeaseProjectionDialog({
     [lease, iptuCount]
   );
 
-  const insuranceUnpriced = !!lease?.fire_insurance?.enabled && insuranceAmount === null;
-  const iptuUnpriced = !!lease?.iptu_charge?.enabled && iptuAmount === null;
-  const hasObligations =
-    !!lease?.fire_insurance?.enabled ||
-    !!lease?.iptu_charge?.enabled ||
-    additionalConfigs.length > 0;
+  /**
+   * Reset ao abrir: cada bloco nasce com exatamente o que o motor calculava
+   * antes, para quem não mexer em nada ter o mesmo resultado de sempre.
+   */
+  useEffect(() => {
+    if (!open || !lease || !window) return;
 
+    const windowMonth = startDate ? startDate.slice(0, 7) : format(new Date(), "yyyy-MM");
+    const base = startDate ? parseISO(startDate) : new Date();
+    const dueDay = lease.due_day || 10;
+    // Emissão default = dia de início do contrato (mesma regra do motor legado).
+    const issueDay = lease.start_date ? getDate(parseISO(lease.start_date)) : 1;
 
+    const next: Record<string, BlockConfig> = {
+      rent: {
+        competency: windowMonth,
+        firstDueDate: format(calculateDueDate(base, dueDay), "yyyy-MM-dd"),
+        issueDay,
+        months: Math.max(1, window.months),
+        amount: rentAmountDefault,
+      },
+    };
+
+    if (lease.fire_insurance?.enabled) {
+      const competency = lease.fire_insurance.competency_month || windowMonth;
+      next.fire_insurance = {
+        competency,
+        firstDueDate:
+          lease.fire_insurance.first_due_date ||
+          format(
+            calculateDueDate(parseISO(`${competency}-01`), unitDueDay("insurance") ?? dueDay),
+            "yyyy-MM-dd"
+          ),
+        issueDay,
+        months: insuranceCount,
+        amount: insuranceAmountDefault ?? 0,
+      };
+    }
+
+    if (lease.iptu_charge?.enabled) {
+      const competency = lease.iptu_charge.competency_month || windowMonth;
+      next.iptu = {
+        competency,
+        firstDueDate:
+          lease.iptu_charge.first_due_date ||
+          format(
+            calculateDueDate(parseISO(`${competency}-01`), unitDueDay("iptu") ?? dueDay),
+            "yyyy-MM-dd"
+          ),
+        issueDay,
+        months: iptuCount,
+        amount: iptuAmountDefault ?? 0,
+      };
+    }
+
+    for (const cfg of additionalConfigs) {
+      next[cfg.type] = {
+        competency: windowMonth,
+        firstDueDate:
+          (cfg.first_due_date as string) ||
+          format(calculateDueDate(base, unitDueDay(cfg.type) ?? dueDay), "yyyy-MM-dd"),
+        issueDay,
+        months: Math.max(1, window.months),
+        amount: cfg.installment_amount || 0,
+      };
+    }
+
+    setBlocks(next);
+    setSelected(new Set());
+    setObligationsRevealed(window.blocked || !postAdjustment);
+    setEnabled({
+      // Janela bloqueada (reajuste vencido): aluguel nunca entra no lote.
+      rent: !window.blocked,
+      fire_insurance: window.blocked
+        ? !!lease.fire_insurance?.enabled
+        : postAdjustment
+          ? false
+          : !!lease.fire_insurance?.enabled,
+      iptu: window.blocked
+        ? !!lease.iptu_charge?.enabled
+        : postAdjustment
+          ? false
+          : !!lease.iptu_charge?.enabled,
+      ...Object.fromEntries(additionalConfigs.map((o) => [o.type, !postAdjustment])),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, lease?.id, window?.months, window?.blocked, rentAmountDefault, startDate, postAdjustment]);
+
+  const patchBlock = (key: string, patch: Partial<BlockConfig>) =>
+    setBlocks((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+
+  // --- Geração das parcelas a partir do estado dos blocos ---
+  const rentInstallments = useMemo(() => {
+    const cfg = blocks.rent;
+    if (!lease || !window || window.blocked || !cfg) return [];
+    return buildRentInstallments({
+      startDate: `${cfg.competency}-01`,
+      months: Math.max(0, cfg.months),
+      amount: cfg.amount,
+      dueDay: lease.due_day || 10,
+      firstDueDate: cfg.firstDueDate || null,
+      issueDay: cfg.issueDay,
+      existingCompetencies,
+    });
+  }, [lease, window, blocks.rent, existingCompetencies]);
 
   const insuranceInstallments = useMemo(() => {
-    const cfg = lease?.fire_insurance;
-    if (!lease || !cfg?.enabled || insuranceAmount === null) return [];
+    const cfg = blocks.fire_insurance;
+    const lc = lease?.fire_insurance;
+    if (!lease || !lc?.enabled || !cfg || cfg.amount <= 0) return [];
     return buildChargeInstallments({
       obligationType: "fire_insurance",
       label: "Seguro Incêndio",
-      installments: insuranceCount,
-      installmentAmount: insuranceAmount,
-      firstDueDate: cfg.first_due_date,
-      fallbackStartDate: startDate,
+      installments: cfg.months,
+      installmentAmount: cfg.amount,
+      firstDueDate: cfg.firstDueDate || null,
+      fallbackStartDate: `${cfg.competency}-01`,
       fallbackDueDay: lease.due_day || 10,
       obligationDueDay: unitDueDay("insurance"),
-      cycleStartDate: insuranceCompetency ? `${insuranceCompetency}-01` : startDate,
-      transactionType: typeFromChargeTo(cfg.charge_to),
-      contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
+      cycleStartDate: `${cfg.competency}-01`,
+      issueDay: cfg.issueDay,
+      transactionType: typeFromChargeTo(lc.charge_to),
+      contactId: lc.charge_to === "tenant" ? null : lc.responsible_contact_id,
       existingCompetencies,
     });
-  }, [
-    lease,
-    startDate,
-    existingCompetencies,
-    insuranceAmount,
-    insuranceCount,
-    insuranceCompetency,
-    obligationsConfig,
-  ]);
+  }, [lease, blocks.fire_insurance, existingCompetencies, obligationsConfig]);
 
   const iptuInstallments = useMemo(() => {
-    const cfg = lease?.iptu_charge;
-    if (!lease || !cfg?.enabled || iptuAmount === null) return [];
+    const cfg = blocks.iptu;
+    const lc = lease?.iptu_charge;
+    if (!lease || !lc?.enabled || !cfg || cfg.amount <= 0) return [];
     return buildChargeInstallments({
       obligationType: "iptu",
       label: "IPTU",
-      installments: iptuCount,
-      installmentAmount: iptuAmount,
-      firstDueDate: cfg.first_due_date,
-      fallbackStartDate: startDate,
+      installments: cfg.months,
+      installmentAmount: cfg.amount,
+      firstDueDate: cfg.firstDueDate || null,
+      fallbackStartDate: `${cfg.competency}-01`,
       fallbackDueDay: lease.due_day || 10,
       obligationDueDay: unitDueDay("iptu"),
-      cycleStartDate: iptuCompetency ? `${iptuCompetency}-01` : startDate,
-      transactionType: typeFromChargeTo(cfg.charge_to),
-      contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
+      cycleStartDate: `${cfg.competency}-01`,
+      issueDay: cfg.issueDay,
+      transactionType: typeFromChargeTo(lc.charge_to),
+      contactId: lc.charge_to === "tenant" ? null : lc.responsible_contact_id,
       existingCompetencies,
     });
-  }, [
-    lease,
-    startDate,
-    existingCompetencies,
-    iptuAmount,
-    iptuCount,
-    iptuCompetency,
-    obligationsConfig,
-  ]);
+  }, [lease, blocks.iptu, existingCompetencies, obligationsConfig]);
 
   /**
    * Encargos adicionais (condomínio, energia, água, gás, outros): MENSAIS,
-   * competência acompanhando o mês, igual ao aluguel.
+   * competência acompanhando o mês, igual ao aluguel — por isso somem quando a
+   * janela do aluguel está bloqueada.
    */
   const additionalGroups = useMemo(() => {
     if (!lease || !window || window.blocked) return [];
     return additionalConfigs
       .map((cfg) => {
-        const label =
-          cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type;
-        const installments = buildMonthlyChargeInstallments({
-          obligationType: cfg.type,
+        const state = blocks[cfg.type];
+        const label = cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type;
+        if (!state) return { cfg, label, installments: [] as PlannedInstallment[] };
+        return {
+          cfg,
           label,
-          startDate,
-          months: Math.max(0, monthsToLaunch),
-          amount: cfg.installment_amount || 0,
-          firstDueDate: cfg.first_due_date,
-          obligationDueDay: unitDueDay(cfg.type),
-          fallbackDueDay: lease.due_day || 10,
-          transactionType: typeFromChargeTo(cfg.charge_to),
-          contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
-          existingCompetencies,
-        });
-        return { cfg, label, installments };
+          installments: buildMonthlyChargeInstallments({
+            obligationType: cfg.type,
+            label,
+            startDate: `${state.competency}-01`,
+            months: Math.max(0, state.months),
+            amount: state.amount,
+            firstDueDate: state.firstDueDate || null,
+            obligationDueDay: unitDueDay(cfg.type),
+            fallbackDueDay: lease.due_day || 10,
+            issueDay: state.issueDay,
+            transactionType: typeFromChargeTo(cfg.charge_to),
+            contactId: cfg.charge_to === "tenant" ? null : cfg.responsible_contact_id,
+            existingCompetencies,
+          }),
+        };
       })
       .filter((g) => g.installments.length > 0);
-  }, [
-    lease,
-    window,
-    additionalConfigs,
-    startDate,
-    monthsToLaunch,
-    existingCompetencies,
-    obligationsConfig,
-  ]);
+  }, [lease, window, additionalConfigs, blocks, existingCompetencies, obligationsConfig]);
 
   const additionalInstallments = useMemo(
     () => additionalGroups.flatMap((g) => g.installments),
@@ -432,13 +405,17 @@ export function ConfirmLeaseProjectionDialog({
       ...iptuInstallments,
       ...additionalInstallments,
     ]) {
-      if (i.alreadyExists) continue;
-      if (launchFromMonth && i.competencyPeriod < launchFromMonth) continue;
-      next.add(i.key);
+      if (!i.alreadyExists) next.add(i.key);
     }
     setSelected(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, rentInstallments.length, insuranceInstallments.length, iptuInstallments.length, additionalInstallments.length, loadingExisting, launchFromMonth]);
+  }, [
+    open,
+    loadingExisting,
+    rentInstallments,
+    insuranceInstallments,
+    iptuInstallments,
+    additionalInstallments,
+  ]);
 
   const toggle = (key: string) =>
     setSelected((prev) => {
@@ -447,30 +424,49 @@ export function ConfirmLeaseProjectionDialog({
       return next;
     });
 
+  const selectAll = (keys: string[]) =>
+    setSelected((prev) => new Set([...prev, ...keys]));
+
+  const clearAll = (keys: string[]) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      keys.forEach((k) => next.delete(k));
+      return next;
+    });
+
   const confirmedInstallments = useMemo(() => {
     const list: PlannedInstallment[] = [];
-    if (launchRent && !window?.blocked) list.push(...rentInstallments);
-    if (launchInsurance) list.push(...insuranceInstallments);
-    if (launchIptu) list.push(...iptuInstallments);
+    if (enabled.rent && !window?.blocked) list.push(...rentInstallments);
+    if (enabled.fire_insurance) list.push(...insuranceInstallments);
+    if (enabled.iptu) list.push(...iptuInstallments);
     for (const g of additionalGroups) {
-      if (launchAdditional[g.cfg.type]) list.push(...g.installments);
+      if (enabled[g.cfg.type]) list.push(...g.installments);
     }
     return list.filter((i) => !i.alreadyExists && selected.has(i.key));
   }, [
+    enabled,
+    window,
     rentInstallments,
     insuranceInstallments,
     iptuInstallments,
     additionalGroups,
-    launchAdditional,
-    launchRent,
-    launchInsurance,
-    launchIptu,
     selected,
-    window,
   ]);
 
+  const totalIncome = confirmedInstallments
+    .filter((i) => (i.transactionType ?? "income") === "income")
+    .reduce((s, i) => s + i.amount, 0);
+  const totalExpense = confirmedInstallments
+    .filter((i) => i.transactionType === "expense")
+    .reduce((s, i) => s + i.amount, 0);
 
-  const totalAmount = confirmedInstallments.reduce((sum, i) => sum + i.amount, 0);
+  const insuranceUnpriced =
+    !!lease?.fire_insurance?.enabled && (blocks.fire_insurance?.amount ?? 0) <= 0;
+  const iptuUnpriced = !!lease?.iptu_charge?.enabled && (blocks.iptu?.amount ?? 0) <= 0;
+  const hasObligations =
+    !!lease?.fire_insurance?.enabled ||
+    !!lease?.iptu_charge?.enabled ||
+    additionalConfigs.length > 0;
 
   const allAlreadyLaunched =
     !loadingExisting &&
@@ -479,7 +475,6 @@ export function ConfirmLeaseProjectionDialog({
     insuranceInstallments.every((i) => i.alreadyExists) &&
     iptuInstallments.every((i) => i.alreadyExists) &&
     additionalInstallments.every((i) => i.alreadyExists);
-
 
   const handleSkip = () => {
     onSkipped?.();
@@ -490,11 +485,14 @@ export function ConfirmLeaseProjectionDialog({
   const persistCompetencies = async () => {
     if (!lease) return;
     const patch: Record<string, unknown> = {};
-    if (lease.fire_insurance?.enabled && insuranceCompetency) {
-      patch.fire_insurance = { ...lease.fire_insurance, competency_month: insuranceCompetency };
+    if (lease.fire_insurance?.enabled && blocks.fire_insurance?.competency) {
+      patch.fire_insurance = {
+        ...lease.fire_insurance,
+        competency_month: blocks.fire_insurance.competency,
+      };
     }
-    if (lease.iptu_charge?.enabled && iptuCompetency) {
-      patch.iptu_charge = { ...lease.iptu_charge, competency_month: iptuCompetency };
+    if (lease.iptu_charge?.enabled && blocks.iptu?.competency) {
+      patch.iptu_charge = { ...lease.iptu_charge, competency_month: blocks.iptu.competency };
     }
     if (Object.keys(patch).length === 0) return;
     await supabase.from("leases").update(patch as any).eq("id", lease.id);
@@ -514,7 +512,6 @@ export function ConfirmLeaseProjectionDialog({
         leaseStartDate: lease.start_date,
         installments: confirmedInstallments,
       });
-
 
       await invalidateLeaseQueries(queryClient);
 
@@ -550,7 +547,7 @@ export function ConfirmLeaseProjectionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
         onInteractOutside={(e) => isGenerating && e.preventDefault()}
       >
         <DialogHeader>
@@ -559,17 +556,17 @@ export function ConfirmLeaseProjectionDialog({
             Gerar lançamentos do contrato
           </DialogTitle>
           <DialogDescription>
-            Nada é lançado no financeiro até você confirmar.
+            Confira e ajuste cada parcela: o que aparece aqui é exatamente o que será lançado.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Resumo */}
-        <div className="rounded-lg border bg-muted/40 p-3 space-y-1 text-sm">
+        {/* Resumo do contrato */}
+        <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1 text-sm">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             <span className="font-medium">{unitLabel}</span>
             <span className="text-muted-foreground">{tenantName}</span>
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs tabular-nums">
             <span>Aluguel {formatCurrency(rentAmountDefault)}</span>
             <span>Vencimento dia {lease.due_day}</span>
           </div>
@@ -588,7 +585,7 @@ export function ConfirmLeaseProjectionDialog({
           </div>
         )}
 
-        {!window.blocked && allAlreadyLaunched ? (
+        {!window.blocked && allAlreadyLaunched && (
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-sm">
@@ -596,17 +593,16 @@ export function ConfirmLeaseProjectionDialog({
               a duplicar.
             </p>
           </div>
-        ) : (
+        )}
+
+        {!window.blocked && (
           <>
-            {!window.blocked && (
-            <>
             <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
               <CalendarClock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <p className="text-sm">
                 {firstRent && lastRent ? (
                   <>
-                    Serão lançadas <strong>{rentInstallments.length} parcelas</strong>, de{" "}
-                    {firstRent.competencyLabel} a {lastRent.competencyLabel} —{" "}
+                    Aluguel de {firstRent.competencyLabel} a {lastRent.competencyLabel} —{" "}
                     {window.reasonLabel}
                   </>
                 ) : (
@@ -615,311 +611,174 @@ export function ConfirmLeaseProjectionDialog({
               </p>
             </div>
 
-            {/* Campos editáveis */}
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="months">Nº de parcelas</Label>
-                <Input
-                  id="months"
-                  type="number"
-                  min={1}
-                  max={window.months}
-                  value={monthsToLaunch}
-                  onChange={(e) =>
-                    setMonthsToLaunch(
-                      Math.min(Math.max(Number(e.target.value) || 1, 1), window.months)
-                    )
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="rent">Valor da parcela</Label>
-                <CurrencyInput
-                  id="rent"
-                  value={rentAmount ? String(rentAmount) : ""}
-                  onChange={(v) => setRentAmount(parseFloat(v) || 0)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="firstDue">1º vencimento</Label>
-                <Input
-                  id="firstDue"
-                  type="date"
-                  value={firstDueDate}
-                  onChange={(e) => setFirstDueDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Contrato retroativo? Escolha a partir de qual competência lançar — as
-                competências anteriores são desmarcadas automaticamente (você ainda pode
-                marcar linha a linha depois).
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <Label htmlFor="launch-from" className="text-xs font-medium">
-                  Lançar a partir de
-                </Label>
-                <Input
-                  id="launch-from"
-                  type="month"
-                  className="h-9 w-[170px]"
-                  value={launchFromMonth}
-                  onChange={(e) => setLaunchFromMonth(e.target.value)}
-                />
-                {launchFromMonth && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-9"
-                    onClick={() => setLaunchFromMonth("")}
-                  >
-                    Limpar
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Aluguel</p>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="launch-rent" className="text-xs text-muted-foreground">
-                    Lançar agora
-                  </Label>
-                  <Switch id="launch-rent" checked={launchRent} onCheckedChange={setLaunchRent} />
-                </div>
-              </div>
-              {launchRent && (
-                <InstallmentTable
-                  installments={rentInstallments}
-                  selected={selected}
-                  onToggle={toggle}
-                />
-              )}
-            </div>
-            </>
+            {blocks.rent && (
+              <ProjectionBlock
+                blockKey="rent"
+                title="Aluguel"
+                icon={<Home className="h-4 w-4" />}
+                transactionType="income"
+                installments={rentInstallments}
+                config={blocks.rent}
+                onConfigChange={(patch) => patchBlock("rent", patch)}
+                enabled={!!enabled.rent}
+                onEnabledChange={(v) => setEnabled((p) => ({ ...p, rent: v }))}
+                selected={selected}
+                onToggle={toggle}
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+              />
             )}
-
-            {(hasObligations || insuranceUnpriced || iptuUnpriced) && !obligationsRevealed && (
-              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Este reajuste lança apenas os aluguéis reajustados. IPTU e seguro não são
-                  alterados nem relançados.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setObligationsRevealed(true);
-                    setLaunchInsurance(!!lease.fire_insurance?.enabled);
-                    setLaunchIptu(!!lease.iptu_charge?.enabled);
-                    setLaunchAdditional(
-                      Object.fromEntries(additionalConfigs.map((o) => [o.type, true]))
-                    );
-
-                  }}
-
-                >
-                  Incluir obrigações neste lançamento
-                </Button>
-              </div>
-            )}
-
-            {obligationsRevealed && insuranceUnpriced && (
-              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-destructive">
-                  Seguro Incêndio: valor da parcela não definido no contrato. Nada será lançado —
-                  informe o valor total e o número de parcelas no contrato.
-                </p>
-              </div>
-            )}
-
-            {obligationsRevealed && insuranceInstallments.length > 0 && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                      Seguro Incêndio
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="launch-insurance" className="text-xs text-muted-foreground">
-                        Lançar agora
-                      </Label>
-                      <Switch
-                        id="launch-insurance"
-                        checked={launchInsurance}
-                        onCheckedChange={setLaunchInsurance}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Label htmlFor="insurance-competency" className="text-xs text-muted-foreground">
-                      Competência de referência
-                    </Label>
-                    <Input
-                      id="insurance-competency"
-                      type="month"
-                      className="h-9 w-[170px]"
-                      value={insuranceCompetency}
-                      onChange={(e) => setInsuranceCompetency(e.target.value)}
-                    />
-                  </div>
-                  {launchInsurance && (
-                    <InstallmentTable
-                      installments={insuranceInstallments}
-                      selected={selected}
-                      onToggle={toggle}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-
-
-            {obligationsRevealed && iptuUnpriced && (
-              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-destructive">
-                  IPTU: valor da parcela não definido no contrato. Nada será lançado — informe o
-                  valor anual e o número de parcelas no contrato.
-                </p>
-              </div>
-            )}
-
-            {obligationsRevealed && iptuInstallments.length > 0 && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium flex items-center gap-2">
-                      <Landmark className="h-4 w-4 text-muted-foreground" />
-                      IPTU
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="launch-iptu" className="text-xs text-muted-foreground">
-                        Lançar agora
-                      </Label>
-                      <Switch
-                        id="launch-iptu"
-                        checked={launchIptu}
-                        onCheckedChange={setLaunchIptu}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Label htmlFor="iptu-competency" className="text-xs text-muted-foreground">
-                      Competência de referência (exercício)
-                    </Label>
-                    <Input
-                      id="iptu-competency"
-                      type="month"
-                      className="h-9 w-[170px]"
-                      value={iptuCompetency}
-                      onChange={(e) => setIptuCompetency(e.target.value)}
-                    />
-                  </div>
-                  {launchIptu && (
-                    <InstallmentTable
-                      installments={iptuInstallments}
-                      selected={selected}
-                      onToggle={toggle}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-
-            {obligationsRevealed &&
-              additionalGroups.map((g) => (
-                <div key={g.cfg.type}>
-                  <Separator className="mb-3" />
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium flex items-center gap-2">
-                        <Receipt className="h-4 w-4 text-muted-foreground" />
-                        {g.label}
-                        <Badge variant="secondary" className="text-[10px]">
-                          {typeFromChargeTo(g.cfg.charge_to) === "income"
-                            ? "Receita"
-                            : "Despesa"}
-                        </Badge>
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor={`launch-${g.cfg.type}`}
-                          className="text-xs text-muted-foreground"
-                        >
-                          Lançar agora
-                        </Label>
-                        <Switch
-                          id={`launch-${g.cfg.type}`}
-                          checked={!!launchAdditional[g.cfg.type]}
-                          onCheckedChange={(v) =>
-                            setLaunchAdditional((prev) => ({ ...prev, [g.cfg.type]: v }))
-                          }
-                        />
-                      </div>
-                    </div>
-                    {launchAdditional[g.cfg.type] && (
-                      <InstallmentTable
-                        installments={g.installments}
-                        selected={selected}
-                        onToggle={toggle}
-                      />
-                    )}
-                  </div>
-                </div>
-              ))}
-
-
-
-
-            {window.blocked &&
-              additionalConfigs.map((cfg) => (
-                <div
-                  key={cfg.type}
-                  className="rounded-lg border bg-muted/30 p-3 flex items-start gap-2"
-                >
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type}
-                    </span>{" "}
-                    acompanha a competência do aluguel e só volta a ser lançado depois que o
-                    reajuste for aplicado.
-                  </p>
-                </div>
-              ))}
-
-            <div className="rounded-lg border bg-muted/40 p-3 flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {confirmedInstallments.length} lançamento
-                {confirmedInstallments.length === 1 ? "" : "s"}
-              </span>
-              <span className="font-semibold tabular-nums">{formatCurrency(totalAmount)}</span>
-            </div>
           </>
         )}
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={handleSkip} disabled={isGenerating}>
-            Não lançar agora
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={isGenerating || confirmedInstallments.length === 0}
-          >
-            {isGenerating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Confirmar lançamentos
-          </Button>
-        </DialogFooter>
+        {(hasObligations || insuranceUnpriced || iptuUnpriced) && !obligationsRevealed && (
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Este reajuste lança apenas os aluguéis reajustados. IPTU e seguro não são
+              alterados nem relançados.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setObligationsRevealed(true);
+                setEnabled((p) => ({
+                  ...p,
+                  fire_insurance: !!lease.fire_insurance?.enabled,
+                  iptu: !!lease.iptu_charge?.enabled,
+                  ...Object.fromEntries(additionalConfigs.map((o) => [o.type, true])),
+                }));
+              }}
+            >
+              Incluir obrigações neste lançamento
+            </Button>
+          </div>
+        )}
+
+        {obligationsRevealed && blocks.fire_insurance && (
+          <ProjectionBlock
+            blockKey="fire_insurance"
+            title="Seguro Incêndio"
+            icon={<ShieldCheck className="h-4 w-4" />}
+            transactionType={typeFromChargeTo(lease.fire_insurance?.charge_to)}
+            installments={insuranceInstallments}
+            config={blocks.fire_insurance}
+            onConfigChange={(patch) => patchBlock("fire_insurance", patch)}
+            enabled={!!enabled.fire_insurance}
+            onEnabledChange={(v) => setEnabled((p) => ({ ...p, fire_insurance: v }))}
+            selected={selected}
+            onToggle={toggle}
+            onSelectAll={selectAll}
+            onClearAll={clearAll}
+            competencyLabel="Competência de referência"
+            warning={
+              insuranceUnpriced ? (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-destructive">
+                    Valor da parcela não definido no contrato. Informe o valor abaixo para
+                    liberar o lançamento.
+                  </p>
+                </div>
+              ) : null
+            }
+          />
+        )}
+
+        {obligationsRevealed && blocks.iptu && (
+          <ProjectionBlock
+            blockKey="iptu"
+            title="IPTU"
+            icon={<Landmark className="h-4 w-4" />}
+            transactionType={typeFromChargeTo(lease.iptu_charge?.charge_to)}
+            installments={iptuInstallments}
+            config={blocks.iptu}
+            onConfigChange={(patch) => patchBlock("iptu", patch)}
+            enabled={!!enabled.iptu}
+            onEnabledChange={(v) => setEnabled((p) => ({ ...p, iptu: v }))}
+            selected={selected}
+            onToggle={toggle}
+            onSelectAll={selectAll}
+            onClearAll={clearAll}
+            competencyLabel="Competência de referência (exercício)"
+            warning={
+              iptuUnpriced ? (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-destructive">
+                    Valor da parcela não definido no contrato. Informe o valor abaixo para
+                    liberar o lançamento.
+                  </p>
+                </div>
+              ) : null
+            }
+          />
+        )}
+
+        {obligationsRevealed && !window.blocked &&
+          additionalGroups.map((g) => (
+            <ProjectionBlock
+              key={g.cfg.type}
+              blockKey={g.cfg.type}
+              title={g.label}
+              icon={<Receipt className="h-4 w-4" />}
+              transactionType={typeFromChargeTo(g.cfg.charge_to)}
+              installments={g.installments}
+              config={blocks[g.cfg.type]}
+              onConfigChange={(patch) => patchBlock(g.cfg.type, patch)}
+              enabled={!!enabled[g.cfg.type]}
+              onEnabledChange={(v) => setEnabled((p) => ({ ...p, [g.cfg.type]: v }))}
+              selected={selected}
+              onToggle={toggle}
+              onSelectAll={selectAll}
+              onClearAll={clearAll}
+            />
+          ))}
+
+        {window.blocked &&
+          additionalConfigs.map((cfg) => (
+            <div
+              key={cfg.type}
+              className="rounded-lg border border-border bg-muted/30 p-3 flex items-start gap-2"
+            >
+              <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type}
+                </span>{" "}
+                acompanha a competência do aluguel e só volta a ser lançado depois que o
+                reajuste for aplicado.
+              </p>
+            </div>
+          ))}
+
+        {/* Barra fixa: total consolidado + ações */}
+        <div className="sticky bottom-0 -mx-6 -mb-6 mt-2 border-t border-border bg-card px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm tabular-nums">
+            <span className="font-medium">
+              {confirmedInstallments.length} lançamento
+              {confirmedInstallments.length === 1 ? "" : "s"}
+            </span>
+            <span className="text-muted-foreground">
+              {" "}
+              · {formatCurrency(totalIncome)} em receitas ·{" "}
+              {formatCurrency(totalExpense)} em despesas
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleSkip} disabled={isGenerating}>
+              Não lançar agora
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={isGenerating || confirmedInstallments.length === 0}
+            >
+              {isGenerating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirmar lançamentos
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
