@@ -181,20 +181,22 @@ export const UnitFormFields = ({
     setFormData({ ...formData, property_id: newProperty.id });
   };
 
-  const handleCreateContactClick = (category: ContactCategory) => {
-    setCreateContactCategory(category);
+  const handleCreateContactClick = (target: 'owner' | 'tenant') => {
+    setContactTarget(target);
     setIsCreateContactDialogOpen(true);
   };
 
   const handleContactCreated = (newContact?: { id: string }) => {
-    // Force ContactSelector to reload contacts
-    setContactSelectorKey(prev => prev + 1);
-    if (!newContact) return;
-    if (createContactCategory === 'Proprietário') {
-      setFormData({ ...formData, owner_contact_id: newContact.id });
-    } else if (createContactCategory === 'Inquilino') {
-      setFormData({ ...formData, tenant_contact_id: newContact.id, is_occupied: true });
+    const target = contactTarget;
+    if (newContact?.id) {
+      if (target === 'tenant') {
+        setFormData((prev) => ({ ...prev, tenant_contact_id: newContact.id, is_occupied: true }));
+      } else if (target === 'owner') {
+        setFormData((prev) => ({ ...prev, owner_contact_id: newContact.id }));
+      }
     }
+    setIsCreateContactDialogOpen(false);
+    setContactTarget(null);
   };
 
   // Determine which financial fields to show based on intent
