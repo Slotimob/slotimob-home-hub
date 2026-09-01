@@ -1274,6 +1274,66 @@ export type Database = {
           },
         ]
       }
+      billing_reminder_logs: {
+        Row: {
+          broker_id: string
+          channel: string
+          created_at: string
+          error_message: string | null
+          id: string
+          lease_id: string | null
+          metadata: Json | null
+          provider_id: string | null
+          recipient: string | null
+          schedule_offset: number
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          broker_id: string
+          channel: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lease_id?: string | null
+          metadata?: Json | null
+          provider_id?: string | null
+          recipient?: string | null
+          schedule_offset: number
+          status: string
+          transaction_id?: string | null
+        }
+        Update: {
+          broker_id?: string
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lease_id?: string | null
+          metadata?: Json | null
+          provider_id?: string | null
+          recipient?: string | null
+          schedule_offset?: number
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_reminder_logs_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_reminder_logs_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_categories: {
         Row: {
           color: string | null
