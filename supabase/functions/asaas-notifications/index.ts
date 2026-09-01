@@ -137,10 +137,10 @@ Deno.serve(async (req) => {
     const whatsappOn = channels.whatsapp === true;
 
     // Mapeamento régua Slotimob → notificações padrão da Asaas.
-    const plan: { flag: string; event: string; matchOffset: number; targetOffset: number }[] = [
-      { flag: "reminder_5_days", event: "PAYMENT_DUEDATE_WARNING", matchOffset: 10, targetOffset: 5 },
-      { flag: "reminder_due_day", event: "PAYMENT_DUEDATE_WARNING", matchOffset: 0, targetOffset: 0 },
-      { flag: "reminder_7_days_late", event: "PAYMENT_OVERDUE", matchOffset: 7, targetOffset: 7 },
+    const plan: { flag: string; event: string; matchOffset: number; targetOffset: number; logOffset: number }[] = [
+      { flag: "reminder_5_days", event: "PAYMENT_DUEDATE_WARNING", matchOffset: 10, targetOffset: 5, logOffset: -5 },
+      { flag: "reminder_due_day", event: "PAYMENT_DUEDATE_WARNING", matchOffset: 0, targetOffset: 0, logOffset: 0 },
+      { flag: "reminder_7_days_late", event: "PAYMENT_OVERDUE", matchOffset: 7, targetOffset: 7, logOffset: 7 },
     ];
 
     const unsupported: string[] = [];
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
           broker_id: brokerId,
           lease_id: leaseId,
           channel: "asaas",
-          schedule_offset: step.targetOffset === 0 && step.event === "PAYMENT_OVERDUE" ? 0 : step.flag === "reminder_5_days" ? -5 : step.targetOffset,
+          schedule_offset: step.logOffset,
           status: "sent",
           recipient: customerId,
           provider_id: target.id,
