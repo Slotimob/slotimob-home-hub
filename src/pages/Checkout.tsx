@@ -766,9 +766,9 @@ export default function Checkout() {
                   >
                     Anual
                   </button>
-                  {isAnnual && (
+                  {isAnnual && annualDiscountPct > 0 && (
                     <Badge variant="secondary" className="text-xs bg-accent/10 text-accent border-accent/20">
-                      -34%
+                      -{annualDiscountPct}%
                     </Badge>
                   )}
                 </div>
