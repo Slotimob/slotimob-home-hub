@@ -258,19 +258,31 @@ export default function Checkout() {
     []
   );
 
-  const getDisplayPrice = (planId: PaidPlan): number => {
+  /** Preço mensal (ou equivalente mensal quando anual) — nunca o total anual. */
+  const getMonthlyPrice = (planId: PaidPlan): number => {
     const p = pricing?.[planId];
     if (!p) return 0;
-    return isAnnual ? p.price_annual : p.price_original;
+    return isAnnual ? (p.price_annual || 0) / 12 : p.price_original;
   };
+
+  /** Total cobrado à vista no ciclo anual. */
+  const getAnnualTotal = (planId: PaidPlan): number => pricing?.[planId]?.price_annual ?? 0;
+
+  const annualDiscountPct = useMemo(() => {
+    if (selectedPlan === 'start') return 0;
+    const p = pricing?.[selectedPlan];
+    if (!p || !p.price_original || !p.price_annual) return 0;
+    return Math.round((1 - p.price_annual / 12 / p.price_original) * 100);
+  }, [pricing, selectedPlan]);
 
   const availableAddons = useMemo(() => {
     if (selectedPlan === 'start') return [];
-    if (selectedPlan === 'pro') return ADDONS.filter((a) => a.id === 'extra-units-50');
-    return ADDONS;
-  }, [selectedPlan]);
+    const teamManagement = pricing?.[selectedPlan]?.team_management === true;
+    return ADDONS.filter((a) => (a.id === 'extra-user' ? teamManagement : true));
+  }, [selectedPlan, pricing]);
 
-  const planPrice = selectedPlan === 'start' ? 0 : getDisplayPrice(selectedPlan as PaidPlan);
+  const planPrice = selectedPlan === 'start' ? 0 : getMonthlyPrice(selectedPlan as PaidPlan);
+  const planAnnualTotal = selectedPlan === 'start' ? 0 : getAnnualTotal(selectedPlan as PaidPlan);
   const addonsTotal = Object.entries(addonQuantities).reduce((sum, [id, qty]) => {
     if (qty <= 0) return sum;
     const a = ADDONS.find((x) => x.id === id);
