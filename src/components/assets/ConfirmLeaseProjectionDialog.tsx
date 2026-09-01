@@ -240,11 +240,12 @@ export function ConfirmLeaseProjectionDialog({
     setRentAmount(rentAmountDefault);
     const base = startDate ? parseISO(startDate) : new Date();
     setFirstDueDate(format(calculateDueDate(base, lease.due_day || 10), "yyyy-MM-dd"));
-    setLaunchRent(true);
-    // Pós-reajuste: só aluguel por padrão. Obrigações ficam atrás de uma ação secundária.
-    setLaunchInsurance(postAdjustment ? false : !!lease.fire_insurance?.enabled);
-    setLaunchIptu(postAdjustment ? false : !!lease.iptu_charge?.enabled);
-    setObligationsRevealed(!postAdjustment);
+    // Janela do aluguel bloqueada (reajuste vencido): aluguel nunca entra no lote,
+    // mas os ciclos anuais (seguro/IPTU) têm âncora própria e seguem disponíveis.
+    setLaunchRent(!window.blocked);
+    setLaunchInsurance(window.blocked ? !!lease.fire_insurance?.enabled : postAdjustment ? false : !!lease.fire_insurance?.enabled);
+    setLaunchIptu(window.blocked ? !!lease.iptu_charge?.enabled : postAdjustment ? false : !!lease.iptu_charge?.enabled);
+    setObligationsRevealed(window.blocked || !postAdjustment);
     setLaunchFromMonth("");
     setSelected(new Set());
     // Pré-preenchido com o comportamento legado: competência = início da janela.
