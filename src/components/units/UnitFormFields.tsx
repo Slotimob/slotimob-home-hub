@@ -44,6 +44,11 @@ import {
 } from '@/components/ui/tooltip';
 import type { Database } from '@/integrations/supabase/types';
 import { ALL_UNIT_STATUSES, getStatusLabel, PROPERTY_TYPE_LABELS, ALL_PROPERTY_TYPES } from '@/utils/uiConstants';
+import {
+  SubdivisionFormHint,
+  UnitSubdivisionSetupAlert,
+  intentIncludesRental,
+} from '@/components/units/SubdivisionSetupAlert';
 
 type UnitStatus = Database['public']['Enums']['unit_status'];
 type IntentType = 'sale' | 'rental' | 'both';
@@ -150,6 +155,10 @@ interface UnitFormFieldsProps {
   onPropertiesChange?: (properties: Property[]) => void;
   /** When true, all inputs are disabled (read-only mode) */
   disabled?: boolean;
+  /** Id da unidade já salva (habilita a contagem real de frações no aviso). */
+  unitId?: string;
+  /** Ação direta para o cadastro de frações (ex.: abrir a aba Frações). */
+  onNavigateSubdivisions?: () => void;
 }
 
 export const UnitFormFields = ({
@@ -162,6 +171,8 @@ export const UnitFormFields = ({
   isStandalone = false,
   onPropertiesChange,
   disabled = false,
+  unitId,
+  onNavigateSubdivisions,
 }: UnitFormFieldsProps) => {
   const [isCreatePropertyDialogOpen, setIsCreatePropertyDialogOpen] = useState(false);
   const [propertySearchOpen, setPropertySearchOpen] = useState(false);
@@ -308,6 +319,21 @@ export const UnitFormFields = ({
             />
           </div>
         )}
+
+        {/* Aviso: frações precisam ser cadastradas para gerar contratos */}
+        {isStandalone &&
+          formData.has_subdivisions &&
+          intentIncludesRental(formData.intent_type) &&
+          (unitId ? (
+            <UnitSubdivisionSetupAlert
+              unitId={unitId}
+              hasSubdivisions
+              intentType={formData.intent_type}
+              onAction={onNavigateSubdivisions}
+            />
+          ) : (
+            <SubdivisionFormHint onAction={onNavigateSubdivisions} />
+          ))}
       </div>
 
       <Separator />

@@ -45,6 +45,7 @@ import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
 import { UnitContractTab } from '@/components/units/UnitContractTab';
 import { UnitSubdivisionsPanel } from '@/components/units/UnitSubdivisionsPanel';
+import { UnitSubdivisionSetupAlert } from '@/components/units/SubdivisionSetupAlert';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -310,7 +311,9 @@ export default function UnitDetalhe() {
         iptu_number: formData.iptu_number || null,
         cib: formData.cib || null,
         owner_contact_id: formData.owner_contact_id || null,
-        tenant_contact_id: formData.tenant_contact_id || null,
+        // Imóvel fracionado não tem inquilino no nível da unidade:
+        // cada fração guarda o seu (e é ela que gera o contrato).
+        tenant_contact_id: formData.has_subdivisions ? null : (formData.tenant_contact_id || null),
         cover_image_url: formData.cover_image_url || null,
         is_managed: formData.is_managed,
         description: formData.description || null,
@@ -471,6 +474,18 @@ export default function UnitDetalhe() {
         </Alert>
       )}
 
+      {showSubdivisionsTab && unit?.id && (
+        <div className="mb-4">
+          <UnitSubdivisionSetupAlert
+            unitId={unit.id}
+            hasSubdivisions={unit.has_subdivisions}
+            intentType={unit.intent_type}
+            onAction={() => setActiveTab('subdivisions')}
+            actionLabel="Ir para Frações"
+          />
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={cn('grid w-full', tabsCount === 8 ? 'grid-cols-8' : 'grid-cols-7')}>
           <TabsTrigger value="info" className="text-xs sm:text-sm">
@@ -531,6 +546,8 @@ export default function UnitDetalhe() {
                 isStandalone={isStandalone}
                 onPropertiesChange={setProperties}
                 disabled={!canEdit}
+                unitId={unit?.id}
+                onNavigateSubdivisions={() => setActiveTab('subdivisions')}
               />
             </fieldset>
 

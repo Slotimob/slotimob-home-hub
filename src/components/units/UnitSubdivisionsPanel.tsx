@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { LEASE_STATUS_LABELS } from '@/lib/lease-status';
 import { supabase } from '@/integrations/supabase/client';
+import { SubdivisionSetupAlert } from '@/components/units/SubdivisionSetupAlert';
 import { Plus, Pencil, Trash2, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -231,6 +232,14 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
           </Button>
         )}
       </div>
+
+      <SubdivisionSetupAlert
+        total={subdivisions.length}
+        missing={subdivisions.filter((s) => !s.tenant_contact_id).length}
+        onAction={openCreate}
+        actionLabel="Nova Fração"
+      />
+
 
       {subdivisions.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-center">
