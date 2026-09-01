@@ -12,6 +12,8 @@ const corsHeaders = {
 const JSON_H = { ...corsHeaders, "Content-Type": "application/json" };
 
 const MAX_REMINDERS = 500;
+// Teto de envios de WhatsApp por execução. O espaçamento real vem da cadência do cron (a cada 15 min).
+const MAX_WHATSAPP_PER_RUN = 3;
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
 const LOGO_URL = `${SITE_URL}/sloti-logo.png`;
 
@@ -129,6 +131,25 @@ function offsetCopy(offset: number): { title: string; intro: string; subject: st
   };
 }
 
+/** Hash determinístico simples (djb2) para escolher variantes de texto sem aleatoriedade real. */
+function stableHash(seed: string): number {
+  let h = 5381;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) + h + seed.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+const GREETINGS = [
+  (name: string) => `Olá, ${name}! 👋`,
+  (name: string) => `Oi, ${name}, tudo bem? 😊`,
+  (name: string) => `${name}, bom te encontrar por aqui!`,
+];
+
+const CLOSINGS = [
+  "Se o pagamento já foi feito, é só desconsiderar esta mensagem.\n\nQualquer dúvida, estamos à disposição! 😊",
+  "Caso já tenha pago, pode ignorar este aviso.\n\nEstamos por aqui se precisar de algo. 🙂",
+  "Se já estiver quitado, desconsidere.\n\nQualquer coisa, é só chamar por aqui!",
+];
+
 function whatsappMessage(
   offset: number,
   tenantName: string,
@@ -136,6 +157,7 @@ function whatsappMessage(
   amount: number,
   dueDate: string,
   paymentUrl: string | null,
+  variantSeed: string,
 ): string {
   const head =
     offset < 0
@@ -144,8 +166,12 @@ function whatsappMessage(
         ? "Passando para lembrar que o vencimento é hoje."
         : `Identificamos que esta cobrança está em aberto há ${offset} dia(s).`;
 
+  const h = stableHash(variantSeed);
+  const greeting = GREETINGS[h % GREETINGS.length](tenantName);
+  const closing = CLOSINGS[Math.floor(h / 7) % CLOSINGS.length];
+
   const lines = [
-    `Olá, ${tenantName}! 👋`,
+    greeting,
     "",
     head,
     "",
@@ -154,8 +180,57 @@ function whatsappMessage(
     `📅 Vencimento: *${formatDateBR(dueDate)}*`,
   ];
   if (paymentUrl) lines.push("", `🔗 Pagamento: ${paymentUrl}`);
-  lines.push("", "Se o pagamento já foi feito, desconsidere esta mensagem.", "", "Qualquer dúvida, estamos à disposição! 😊");
+  lines.push("", closing);
   return lines.join("\n");
+}
+
+interface SendGuard {
+  daily_cap: number;
+  send_window_start: number;
+  send_window_end: number;
+  require_prior_contact: boolean;
+  consecutive_failures: number;
+  paused_until: string | null;
+  pause_reason: string | null;
+}
+
+const GUARD_DEFAULTS: SendGuard = {
+  daily_cap: 40,
+  send_window_start: 9,
+  send_window_end: 18,
+  require_prior_contact: true,
+  consecutive_failures: 0,
+  paused_until: null,
+  pause_reason: null,
+};
+
+/** Hora (0-23) e dia da semana (0=dom) em America/Sao_Paulo. */
+function nowInSaoPaulo(): { hour: number; weekday: number } {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    hour12: false,
+    weekday: "short",
+  }).formatToParts(new Date());
+  const hour = Number(fmt.find((p) => p.type === "hour")?.value ?? "0");
+  const wdName = fmt.find((p) => p.type === "weekday")?.value ?? "Mon";
+  const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { hour, weekday: map[wdName] ?? 1 };
+}
+
+async function loadSendGuard(supabase: any, brokerId: string): Promise<SendGuard> {
+  const { data } = await supabase
+    .from("whatsapp_send_guard")
+    .select("daily_cap, send_window_start, send_window_end, require_prior_contact, consecutive_failures, paused_until, pause_reason")
+    .eq("broker_id", brokerId)
+    .maybeSingle();
+
+  if (data) return { ...GUARD_DEFAULTS, ...(data as SendGuard) };
+
+  await supabase
+    .from("whatsapp_send_guard")
+    .upsert({ broker_id: brokerId, ...GUARD_DEFAULTS }, { onConflict: "broker_id" });
+  return { ...GUARD_DEFAULTS };
 }
 
 Deno.serve(async (req) => {
@@ -203,8 +278,13 @@ Deno.serve(async (req) => {
 
     const brokerCache = new Map<string, { name: string; email: string | null }>();
     const connectionCache = new Map<string, string | null>();
+    const guardCache = new Map<string, SendGuard>();
+    const sentTodayCache = new Map<string, number>();
     const logs: Record<string, unknown>[] = [];
     let budget = MAX_REMINDERS;
+    let whatsBudget = MAX_WHATSAPP_PER_RUN;
+    let whatsSentThisRun = 0;
+    const { hour: spHour, weekday: spWeekday } = nowInSaoPaulo();
 
     for (const lease of leases ?? []) {
       if (budget <= 0) break;
@@ -260,6 +340,14 @@ Deno.serve(async (req) => {
         }
         const instanceName = wantWhats ? connectionCache.get(brokerId) ?? null : null;
 
+        // Guarda anti-bloqueio do WhatsApp (cache por broker)
+        if (wantWhats && !guardCache.has(brokerId)) {
+          guardCache.set(brokerId, await loadSendGuard(supabase, brokerId));
+          const { data: sentToday } = await supabase.rpc("whatsapp_sent_today", { p_broker_id: brokerId });
+          sentTodayCache.set(brokerId, Number(sentToday ?? 0));
+        }
+        const guard = wantWhats ? guardCache.get(brokerId)! : null;
+
         for (const tx of transactions ?? []) {
           if (budget <= 0) break;
           try {
@@ -267,19 +355,23 @@ Deno.serve(async (req) => {
             const dueOffsets = enabledOffsets.filter((o) => shiftDate(tx.due_date as string, o) === today);
             if (dueOffsets.length === 0) continue;
 
-            let tenant: { name: string; email: string | null; phone: string | null } | null = null;
+            let tenant:
+              | { id: string; name: string; email: string | null; phone: string | null; optoutAt: string | null }
+              | null = null;
             if (tx.contact_id) {
               const { data: contact } = await supabase
                 .from("contacts")
-                .select("name, email, phone, whatsapp")
+                .select("id, name, email, phone, whatsapp, whatsapp_optout_at")
                 .eq("id", tx.contact_id)
                 .eq("broker_id", brokerId)
                 .maybeSingle();
               if (contact) {
                 tenant = {
+                  id: contact.id as string,
                   name: (contact.name as string) || "Cliente",
                   email: (contact.email as string) ?? null,
                   phone: ((contact.whatsapp as string) || (contact.phone as string)) ?? null,
+                  optoutAt: (contact.whatsapp_optout_at as string) ?? null,
                 };
               }
             }
@@ -317,17 +409,9 @@ Deno.serve(async (req) => {
                   .limit(1)
                   .maybeSingle();
 
+                // Já enviado: pula em SILÊNCIO (sem log). A linha `sent` original já prova o envio.
                 if (existing) {
                   skipped++;
-                  logs.push({
-                    broker_id: brokerId,
-                    lease_id: lease.id,
-                    transaction_id: tx.id,
-                    channel,
-                    schedule_offset: offset,
-                    status: "skipped",
-                    error_message: "Aviso já enviado para este vencimento e canal.",
-                  });
                   continue;
                 }
 
@@ -413,9 +497,11 @@ Deno.serve(async (req) => {
                   continue;
                 }
 
-                // WhatsApp
+                // ─── WhatsApp: blindagem anti-bloqueio ───
                 const phone = tenant?.phone;
-                if (!instanceName || !evolutionApiUrl || !evolutionApiKey || !phone) {
+                const g = guard ?? GUARD_DEFAULTS;
+
+                const skipWhats = (reason: string) => {
                   skipped++;
                   logs.push({
                     broker_id: brokerId,
@@ -425,14 +511,83 @@ Deno.serve(async (req) => {
                     schedule_offset: offset,
                     status: "skipped",
                     recipient: phone ?? null,
-                    error_message: !instanceName
+                    error_message: reason,
+                  });
+                };
+
+                // 1. Pausado pelo disjuntor
+                if (g.paused_until && new Date(g.paused_until).getTime() > Date.now()) {
+                  skipWhats(g.pause_reason || "Envio por WhatsApp pausado automaticamente.");
+                  continue;
+                }
+
+                // 2. Fora da janela de envio / fim de semana
+                if (spWeekday === 0 || spWeekday === 6) {
+                  skipWhats("Fora da janela de envio: fins de semana não recebem avisos por WhatsApp.");
+                  continue;
+                }
+                if (spHour < g.send_window_start || spHour >= g.send_window_end) {
+                  skipWhats(
+                    `Fora da janela de envio (${g.send_window_start}h–${g.send_window_end}h, horário de Brasília).`,
+                  );
+                  continue;
+                }
+
+                // 3. Teto diário do corretor
+                const sentToday = sentTodayCache.get(brokerId) ?? 0;
+                if (sentToday + whatsSentThisRun >= g.daily_cap) {
+                  skipWhats(`Teto diário de ${g.daily_cap} avisos por WhatsApp atingido.`);
+                  continue;
+                }
+
+                // 4. Conexão / configuração / telefone
+                if (!instanceName || !evolutionApiUrl || !evolutionApiKey || !phone) {
+                  skipWhats(
+                    !instanceName
                       ? "Nenhuma conexão de WhatsApp ativa para este corretor."
                       : !evolutionApiUrl || !evolutionApiKey
                         ? "Integração de WhatsApp não configurada no servidor."
                         : "Inquilino sem telefone cadastrado.",
-                  });
+                  );
                   continue;
                 }
+
+                // 5. Opt-out do contato
+                if (tenant?.optoutAt) {
+                  skipWhats("Contato pediu para não receber avisos automáticos por WhatsApp (opt-out).");
+                  continue;
+                }
+
+                // 6. Sem contato prévio
+                if (g.require_prior_contact) {
+                  let hasPrior = false;
+                  if (tenant?.id) {
+                    const { data: prior } = await supabase.rpc("whatsapp_has_prior_contact", {
+                      p_broker_id: brokerId,
+                      p_contact_id: tenant.id,
+                    });
+                    hasPrior = prior === true;
+                  }
+                  if (!hasPrior) {
+                    skipWhats(
+                      "Sem conversa iniciada pelo contato. Para proteger o número, só enviamos a quem já falou com você.",
+                    );
+                    continue;
+                  }
+                }
+
+                // 7. Teto por execução — apenas adia (o cron roda a cada 15 min), sem poluir o log
+                if (whatsBudget <= 0) {
+                  skipped++;
+                  continue;
+                }
+
+                // Jitter curto entre envios da mesma execução (2–8s)
+                if (whatsSentThisRun > 0) {
+                  await new Promise((r) => setTimeout(r, 2000 + Math.random() * 6000));
+                }
+
+                whatsBudget--;
 
                 try {
                   const sanitized = sanitizePhoneNumber(phone);
@@ -443,6 +598,7 @@ Deno.serve(async (req) => {
                     Number(tx.amount),
                     tx.due_date as string,
                     paymentUrl,
+                    `${tx.id}:${offset}`,
                   );
                   const evoRes = await fetch(`${evolutionApiUrl}/message/sendText/${instanceName}`, {
                     method: "POST",
@@ -455,6 +611,17 @@ Deno.serve(async (req) => {
                   }
 
                   sent++;
+                  whatsSentThisRun++;
+
+                  // Disjuntor: envio ok → zera falhas consecutivas
+                  if (g.consecutive_failures > 0) {
+                    g.consecutive_failures = 0;
+                    await supabase
+                      .from("whatsapp_send_guard")
+                      .update({ consecutive_failures: 0, paused_until: null, pause_reason: null })
+                      .eq("broker_id", brokerId);
+                  }
+
                   logs.push({
                     broker_id: brokerId,
                     lease_id: lease.id,
@@ -468,6 +635,22 @@ Deno.serve(async (req) => {
                 } catch (err) {
                   failed++;
                   console.error("[billing-reminders] falha no WhatsApp:", String(err));
+
+                  // Disjuntor: incrementa e pausa 24h na 3ª falha seguida
+                  g.consecutive_failures = (g.consecutive_failures ?? 0) + 1;
+                  const breakerUpdate: Record<string, unknown> = {
+                    consecutive_failures: g.consecutive_failures,
+                  };
+                  if (g.consecutive_failures >= 3) {
+                    const until = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                    g.paused_until = until;
+                    g.pause_reason =
+                      "Pausado automaticamente após 3 falhas seguidas de envio. Verifique a conexão do WhatsApp.";
+                    breakerUpdate.paused_until = until;
+                    breakerUpdate.pause_reason = g.pause_reason;
+                  }
+                  await supabase.from("whatsapp_send_guard").update(breakerUpdate).eq("broker_id", brokerId);
+
                   logs.push({
                     broker_id: brokerId,
                     lease_id: lease.id,
