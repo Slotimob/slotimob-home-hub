@@ -591,12 +591,22 @@ export function PropertyInfoFields({
         <div className="space-y-2">
           <Label>Contato Vinculado</Label>
           <ContactSelector
+            key={contactSelectorKey}
             value={formData.lead_id}
             onChange={(v) => setFormData({ ...formData, lead_id: v })}
             placeholder="Buscar contato..."
+            showCreateButton
+            onCreateClick={() => setIsCreateContactOpen(true)}
           />
         </div>
       </div>
+
+      <CreateContactDialog
+        open={isCreateContactOpen}
+        onOpenChange={setIsCreateContactOpen}
+        onSuccess={handleContactCreated}
+        defaultCategory="Proprietário"
+      />
     </div>
   );
 }
