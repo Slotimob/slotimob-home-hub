@@ -232,6 +232,14 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
         )}
       </div>
 
+      <SubdivisionSetupAlert
+        total={subdivisions.length}
+        missing={subdivisions.filter((s) => !s.tenant_contact_id).length}
+        onAction={openCreate}
+        actionLabel="Nova Fração"
+      />
+
+
       {subdivisions.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-center">
           <Layers className="h-8 w-8 text-muted-foreground" />
