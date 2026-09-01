@@ -91,7 +91,8 @@ const plansMeta: PlanMeta[] = [
   },
 ];
 
-const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
+const formatPrice = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 
 interface PlanCardData {
   id: AnyPlan;
