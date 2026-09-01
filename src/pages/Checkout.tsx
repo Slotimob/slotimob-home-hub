@@ -215,14 +215,17 @@ export default function Checkout() {
     if (selectedPlan === 'start') {
       setAddonQuantities({});
       setIsAnnual(false);
-    } else if (selectedPlan === 'pro') {
+      return;
+    }
+    if (pricing?.[selectedPlan]?.team_management !== true) {
       setAddonQuantities((prev) => {
+        if (!prev['extra-user']) return prev;
         const copy = { ...prev };
         delete copy['extra-user'];
         return copy;
       });
     }
-  }, [selectedPlan]);
+  }, [selectedPlan, pricing]);
 
   useEffect(() => {
     if (cepData) {
