@@ -37,7 +37,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { PercentInput } from "@/components/ui/currency-input";
 import { calculateRentAdjustment } from "@/lib/rentAdjustment";
-import { calculateProjectionWindow, calculateDueDate } from "@/lib/lease-projection";
+import { calculateProjectionWindow, calculateDueDate, resolveFirstAdjustedCompetency } from "@/lib/lease-projection";
 
 interface LeaseForAdjustment {
   id: string;
