@@ -45,6 +45,7 @@ import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
 import { UnitContractTab } from '@/components/units/UnitContractTab';
 import { UnitSubdivisionsPanel } from '@/components/units/UnitSubdivisionsPanel';
+import { UnitSubdivisionSetupAlert } from '@/components/units/SubdivisionSetupAlert';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
