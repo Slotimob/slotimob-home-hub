@@ -825,14 +825,13 @@ export const UnitFormFields = ({
         <div className="space-y-2">
           <Label>Responsável pelo Ativo (Proprietário)</Label>
           <ContactSelector
-            key={`owner-${contactSelectorKey}`}
             value={formData.owner_contact_id || null}
             onChange={(v) => setFormData({ ...formData, owner_contact_id: v || '' })}
             placeholder="Buscar proprietário..."
             filterCategories={['Proprietário']}
             autoAddCategory="Proprietário"
             showCreateButton
-            onCreateClick={() => handleCreateContactClick('Proprietário')}
+            onCreateClick={() => handleCreateContactClick('owner')}
           />
         </div>
 
@@ -850,14 +849,13 @@ export const UnitFormFields = ({
             <div className="space-y-2">
               <Label>Ocupante (Inquilino)</Label>
               <ContactSelector
-                key={`tenant-${contactSelectorKey}`}
                 value={formData.tenant_contact_id}
                 onChange={(v) => setFormData({ ...formData, tenant_contact_id: v })}
                 placeholder="Buscar inquilino..."
                 filterCategories={['Inquilino']}
                 autoAddCategory="Inquilino"
                 showCreateButton
-                onCreateClick={() => handleCreateContactClick('Inquilino')}
+                onCreateClick={() => handleCreateContactClick('tenant')}
               />
             </div>
           )
@@ -879,7 +877,7 @@ export const UnitFormFields = ({
         open={isCreateContactDialogOpen}
         onOpenChange={setIsCreateContactDialogOpen}
         onSuccess={handleContactCreated}
-        defaultCategory={createContactCategory}
+        defaultCategory={contactTarget === 'tenant' ? 'Inquilino' : 'Proprietário'}
       />
     </div>
   );
