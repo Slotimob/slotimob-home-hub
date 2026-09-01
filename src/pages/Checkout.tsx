@@ -1277,7 +1277,7 @@ export default function Checkout() {
                   <Lock className="h-3 w-3" />
                   <span>
                     {selectedPlan === 'start'
-                      ? 'Grátis · sem cartão de crédito · inclui 7 dias de PRO'
+                      ? 'Grátis · sem cartão · 7 dias de Pro para testar, depois vira Start (5 imóveis)'
                       : billingType === 'CREDIT_CARD'
                       ? 'Você será redirecionado para o ambiente seguro do Asaas'
                       : billingType === 'BOLETO'
