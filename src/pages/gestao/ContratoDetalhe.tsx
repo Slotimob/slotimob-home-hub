@@ -843,107 +843,18 @@ export default function ContratoDetalhe() {
             </CardContent>
           </Card>
 
-          {/* Card 2: Régua de Cobrança */}
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm font-medium">Régua de Cobrança</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Ao ativar uma etapa, ela também passa a ser acompanhada em Afazeres conforme a data de vencimento do contrato.
-              </p>
-            </CardHeader>
-            <CardContent className="py-2 px-4">
-              {(() => {
-                const channels: string[] = [];
-                if (automationForm.email_enabled && automationForm.email_destination) channels.push("e-mail");
-                if (automationForm.whatsapp_enabled && (tenant?.whatsapp || tenant?.phone)) channels.push("WhatsApp");
-                const automationReady = channels.length > 0;
+          {/* Card 2: Régua de Cobrança (modo + passos + Asaas) */}
+          <BillingRulerCard
+            leaseId={lease.id}
+            brokerId={lease.broker_id ?? effectiveBrokerId}
+            billingAutomation={(lease.billing_automation as Record<string, any>) || null}
+            canEdit={canEdit}
+            hasWhatsappConnected={hasWhatsappConnected}
+          />
 
-                const renderHint = (icon?: React.ReactNode) =>
-                  automationReady ? (
-                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      {icon}
-                      Enviará via {channels.join(" e ")}
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-amber-600 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      Configure a automação acima para envio automático
-                    </p>
-                  );
+          {/* Histórico de avisos do motor */}
+          <BillingReminderLogsCard leaseId={lease.id} />
 
-                const items = [
-                  {
-                    key: "reminder_5_days",
-                    color: billingStatus.reminder5 ? "bg-green-500" : "bg-muted",
-                    title: "5 dias antes",
-                    subtitle: "Lembrete de vencimento próximo",
-                  },
-                  {
-                    key: "reminder_due_day",
-                    color: billingStatus.dueDay ? "bg-yellow-500" : "bg-muted",
-                    title: "Dia do vencimento",
-                    subtitle: "Cobrança no dia D",
-                  },
-                  {
-                    key: "reminder_3_days_late",
-                    color: billingStatus.overdue ? "bg-red-500" : "bg-muted",
-                    title: "3 dias após",
-                    subtitle: "Aviso de inadimplência",
-                  },
-                ];
-
-                return (
-                  <div className="space-y-4">
-                    {items.map((item) => (
-                      <div key={item.key} className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2 min-w-0">
-                          <div className={cn("h-2.5 w-2.5 rounded-full mt-1.5 flex-shrink-0", item.color)} />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium">{item.title}</p>
-                            <p className="text-xs text-muted-foreground">{item.subtitle}</p>
-                            {renderHint()}
-                          </div>
-                        </div>
-                        <Switch
-                          checked={!!(lease as any).billing_automation?.[item.key]}
-                          onCheckedChange={(v) => handleAutomationToggle(item.key as keyof BillingAutomation, v)}
-                        />
-                      </div>
-                    ))}
-
-                    {/* 4th item - Legal notification */}
-                    <div className="flex items-start justify-between gap-3 pt-3 border-t">
-                      <div className="flex items-start gap-2 min-w-0">
-                        <div className={cn(
-                          "h-2.5 w-2.5 rounded-full mt-1.5 flex-shrink-0",
-                          (lease as any).billing_automation?.legal_notification_7_days ? "bg-purple-600" : "bg-muted"
-                        )} />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium">7 dias após</p>
-                            {(lease as any).billing_automation?.legal_notification_7_days && (
-                              <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-700 bg-purple-500/10 gap-1">
-                                <Scale className="h-2.5 w-2.5" />
-                                Jurídico
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">Notificação formal de inadimplência</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            Marca a intenção de notificação formal — registro interno
-                          </p>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={!!(lease as any).billing_automation?.legal_notification_7_days}
-                        onCheckedChange={(v) => handleAutomationToggle("legal_notification_7_days", v)}
-                      />
-                    </div>
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
 
           {/* Card 3: Histórico de Envios */}
           <Card>
