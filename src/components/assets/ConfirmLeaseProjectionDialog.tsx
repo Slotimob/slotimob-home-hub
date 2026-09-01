@@ -240,11 +240,12 @@ export function ConfirmLeaseProjectionDialog({
     setRentAmount(rentAmountDefault);
     const base = startDate ? parseISO(startDate) : new Date();
     setFirstDueDate(format(calculateDueDate(base, lease.due_day || 10), "yyyy-MM-dd"));
-    setLaunchRent(true);
-    // Pós-reajuste: só aluguel por padrão. Obrigações ficam atrás de uma ação secundária.
-    setLaunchInsurance(postAdjustment ? false : !!lease.fire_insurance?.enabled);
-    setLaunchIptu(postAdjustment ? false : !!lease.iptu_charge?.enabled);
-    setObligationsRevealed(!postAdjustment);
+    // Janela do aluguel bloqueada (reajuste vencido): aluguel nunca entra no lote,
+    // mas os ciclos anuais (seguro/IPTU) têm âncora própria e seguem disponíveis.
+    setLaunchRent(!window.blocked);
+    setLaunchInsurance(window.blocked ? !!lease.fire_insurance?.enabled : postAdjustment ? false : !!lease.fire_insurance?.enabled);
+    setLaunchIptu(window.blocked ? !!lease.iptu_charge?.enabled : postAdjustment ? false : !!lease.iptu_charge?.enabled);
+    setObligationsRevealed(window.blocked || !postAdjustment);
     setLaunchFromMonth("");
     setSelected(new Set());
     // Pré-preenchido com o comportamento legado: competência = início da janela.
@@ -258,7 +259,7 @@ export function ConfirmLeaseProjectionDialog({
           .map((o) => [o.type, !postAdjustment])
       )
     );
-  }, [open, lease?.id, window?.months, rentAmountDefault, startDate, postAdjustment]);
+  }, [open, lease?.id, window?.months, window?.blocked, rentAmountDefault, startDate, postAdjustment]);
 
 
   const rentInstallments = useMemo(() => {
@@ -448,7 +449,7 @@ export function ConfirmLeaseProjectionDialog({
 
   const confirmedInstallments = useMemo(() => {
     const list: PlannedInstallment[] = [];
-    if (launchRent) list.push(...rentInstallments);
+    if (launchRent && !window?.blocked) list.push(...rentInstallments);
     if (launchInsurance) list.push(...insuranceInstallments);
     if (launchIptu) list.push(...iptuInstallments);
     for (const g of additionalGroups) {
@@ -465,6 +466,7 @@ export function ConfirmLeaseProjectionDialog({
     launchInsurance,
     launchIptu,
     selected,
+    window,
   ]);
 
 
@@ -573,12 +575,20 @@ export function ConfirmLeaseProjectionDialog({
           </div>
         </div>
 
-        {window.blocked ? (
+        {window.blocked && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-destructive">{window.reasonLabel}</p>
+            <p className="text-sm text-destructive">
+              {`O reajuste previsto${
+                lease.next_adjustment_date
+                  ? ` para ${format(parseISO(lease.next_adjustment_date), "dd/MM/yyyy")}`
+                  : ""
+              } está vencido, então não é possível lançar aluguel até aplicá-lo. Os encargos abaixo têm ciclo próprio e podem ser lançados normalmente.`}
+            </p>
           </div>
-        ) : allAlreadyLaunched ? (
+        )}
+
+        {!window.blocked && allAlreadyLaunched ? (
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
             <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-sm">
@@ -588,6 +598,8 @@ export function ConfirmLeaseProjectionDialog({
           </div>
         ) : (
           <>
+            {!window.blocked && (
+            <>
             <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
               <CalendarClock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <p className="text-sm">
@@ -688,6 +700,8 @@ export function ConfirmLeaseProjectionDialog({
                 />
               )}
             </div>
+            </>
+            )}
 
             {(hasObligations || insuranceUnpriced || iptuUnpriced) && !obligationsRevealed && (
               <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
@@ -866,6 +880,23 @@ export function ConfirmLeaseProjectionDialog({
 
 
 
+
+            {window.blocked &&
+              additionalConfigs.map((cfg) => (
+                <div
+                  key={cfg.type}
+                  className="rounded-lg border bg-muted/30 p-3 flex items-start gap-2"
+                >
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type}
+                    </span>{" "}
+                    acompanha a competência do aluguel e só volta a ser lançado depois que o
+                    reajuste for aplicado.
+                  </p>
+                </div>
+              ))}
 
             <div className="rounded-lg border bg-muted/40 p-3 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">

@@ -37,7 +37,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { PercentInput } from "@/components/ui/currency-input";
 import { calculateRentAdjustment } from "@/lib/rentAdjustment";
-import { calculateProjectionWindow, calculateDueDate } from "@/lib/lease-projection";
+import { calculateProjectionWindow, calculateDueDate, resolveFirstAdjustedCompetency } from "@/lib/lease-projection";
 
 interface LeaseForAdjustment {
   id: string;
@@ -144,8 +144,10 @@ export function AdjustmentCalculatorDialog({
       addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
       "yyyy-MM-dd"
     );
+    // A janela começa na primeira competência cujo vencimento já vale o reajuste.
+    const firstCompetency = resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day);
     const window = calculateProjectionWindow({
-      startDate: currentAdjustmentDate,
+      startDate: firstCompetency,
       endDate: lease.end_date,
       nextAdjustmentDate,
       isIndefiniteTerm: lease.is_indefinite_term,
@@ -156,6 +158,7 @@ export function AdjustmentCalculatorDialog({
     const installments = window.blocked ? 0 : window.months;
     return { firstDue, endDate, indefinite, installments, reasonLabel: window.reasonLabel };
   }, [lease, canProject]);
+
 
   if (!lease) return null;
 
@@ -249,7 +252,11 @@ export function AdjustmentCalculatorDialog({
           property_id: lease.property_id ?? null,
           rent_amount: newValue,
           due_day: lease.due_day!,
-          start_date: currentAdjustmentDate,
+          // Mesma âncora do preview: primeira competência já reajustada.
+          start_date: format(
+            resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day!),
+            "yyyy-MM-dd"
+          ),
           end_date: lease.end_date ?? null,
           next_adjustment_date: nextAdjustmentDate,
           is_indefinite_term: lease.is_indefinite_term ?? false,

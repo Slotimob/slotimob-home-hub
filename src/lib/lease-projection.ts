@@ -183,6 +183,30 @@ export function calculateDueDate(baseDate: Date, dueDay: number): Date {
 }
 
 /**
+ * Primeira competência que já vale o valor reajustado.
+ *
+ * Regra: o reajuste passa a valer na data de aniversário. A primeira parcela
+ * reajustada é a primeira cujo VENCIMENTO cai nessa data ou depois. Se o
+ * vencimento do próprio mês do reajuste já passou, a primeira é a do mês seguinte.
+ *
+ * Ex.: reajuste 31/08, vencimento dia 10 => agosto vence 10/08, antes do reajuste,
+ * então a primeira reajustada é SETEMBRO.
+ * Ex.: reajuste 01/05, vencimento dia 10 => maio vence 10/05, depois do reajuste,
+ * então a primeira reajustada é MAIO.
+ */
+export function resolveFirstAdjustedCompetency(
+  adjustmentDate: string | Date,
+  dueDay: number
+): Date {
+  const adjustment = toDate(adjustmentDate) ?? startOfDay(new Date());
+  const month = startOfMonth(adjustment);
+  const dueInMonth = calculateDueDate(month, dueDay);
+  return isBefore(dueInMonth, adjustment) ? startOfMonth(addMonths(month, 1)) : month;
+}
+
+
+
+/**
  * Tipos de obrigação que o motor sabe lançar.
  * - `rent`: mensal, 1 parcela por competência
  * - `fire_insurance` / `iptu`: ciclo anual parcelado (N parcelas na MESMA competência)
