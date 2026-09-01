@@ -288,12 +288,16 @@ Deno.serve(async (req) => {
             let paymentUrl: string | null = null;
             const { data: payment } = await supabase
               .from("asaas_payments")
-              .select("invoice_url")
-              .eq("transaction_id", tx.id)
+              .select("invoice_url, bank_slip_url")
+              .eq("financial_transaction_id", tx.id)
+              .eq("broker_id", brokerId)
               .order("created_at", { ascending: false })
               .limit(1)
               .maybeSingle();
-            paymentUrl = safeUrl((payment as any)?.invoice_url);
+            paymentUrl =
+              safeUrl((payment as any)?.invoice_url) ??
+              safeUrl((payment as any)?.bank_slip_url);
+
 
             for (const offset of dueOffsets) {
               const targets: ("email" | "whatsapp")[] = [];
