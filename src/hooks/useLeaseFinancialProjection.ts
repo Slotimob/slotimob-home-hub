@@ -172,7 +172,10 @@ export function useLeaseFinancialProjection() {
           type: transactionType,
           description: i.description,
           amount: i.amount,
-          transaction_date: resolveTransactionDate(i),
+          // O que a tela mostrou é o que vai para o banco: a emissão vem pronta
+          // da UI. `resolveTransactionDate` só serve de fallback para chamadas
+          // antigas que ainda não preenchem `issueDate`.
+          transaction_date: i.issueDate ?? resolveTransactionDate(i),
           due_date: i.dueDate,
           status: "pending",
           obligation_type: i.obligationType,

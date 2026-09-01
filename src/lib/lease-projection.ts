@@ -241,6 +241,11 @@ export interface PlannedInstallment {
   competencyPeriod: string;
   competencyLabel: string;
   dueDate: string;
+  /**
+   * Data de emissão (competência contábil) do lançamento. Calculada na UI e
+   * usada como está: o hook NÃO pode recalcular, senão o preview mente.
+   */
+  issueDate: string;
   amount: number;
   description: string;
   /** Receita (cobrado do inquilino) ou despesa (assumido pelo proprietário). */
@@ -264,6 +269,8 @@ export interface BuildRentInstallmentsInput {
   dueDay: number;
   /** Sobrescreve o vencimento da primeira parcela. */
   firstDueDate?: string | null;
+  /** Dia de emissão (data contábil). Default: dia da própria competência. */
+  issueDay?: number | null;
   existingCompetencies?: Set<string>;
 }
 
@@ -273,6 +280,7 @@ export function buildRentInstallments({
   amount,
   dueDay,
   firstDueDate,
+  issueDay,
   existingCompetencies,
 }: BuildRentInstallmentsInput): PlannedInstallment[] {
   const start = toDate(startDate);
@@ -289,6 +297,10 @@ export function buildRentInstallments({
       : calculateDueDate(competencyDate, dueDay);
     const competencyPeriod = format(competencyDate, "yyyy-MM");
     const dueDate = format(due, "yyyy-MM-dd");
+    const issueDate = format(
+      calculateDueDate(competencyDate, issueDay && issueDay > 0 ? issueDay : getDate(competencyDate)),
+      "yyyy-MM-dd"
+    );
     const dedupKey = `rent:${competencyPeriod}:${dueDate}`;
 
     result.push({
@@ -298,6 +310,7 @@ export function buildRentInstallments({
       competencyPeriod,
       competencyLabel: monthLabel(competencyDate),
       dueDate,
+      issueDate,
       amount,
       description: `Aluguel ${monthLabel(competencyDate)}`,
       transactionType: "income",
@@ -350,6 +363,8 @@ export interface BuildChargeInstallmentsInput {
   /** Receita (inquilino paga) ou despesa (proprietário assume). Default: income. */
   transactionType?: "income" | "expense";
   contactId?: string | null;
+  /** Dia de emissão (data contábil). Default: dia da própria competência. */
+  issueDay?: number | null;
   existingCompetencies?: Set<string>;
 }
 
@@ -365,6 +380,7 @@ export function buildChargeInstallments({
   cycleStartDate,
   transactionType = "income",
   contactId,
+  issueDay,
   existingCompetencies,
 }: BuildChargeInstallmentsInput): PlannedInstallment[] {
   const count = Math.max(0, Math.floor(installments));
@@ -383,6 +399,10 @@ export function buildChargeInstallments({
     toDate(cycleStartDate ?? null) ?? toDate(fallbackStartDate) ?? first;
   const competencyDate = startOfMonth(cycleBase);
   const competencyPeriod = format(competencyDate, "yyyy-MM");
+  const issueDate = format(
+    calculateDueDate(competencyDate, issueDay && issueDay > 0 ? issueDay : getDate(competencyDate)),
+    "yyyy-MM-dd"
+  );
 
   const result: PlannedInstallment[] = [];
 
@@ -399,6 +419,7 @@ export function buildChargeInstallments({
       competencyPeriod,
       competencyLabel: monthLabel(competencyDate),
       dueDate,
+      issueDate,
       amount: installmentAmount,
       description:
         count > 1
@@ -429,6 +450,8 @@ export interface BuildMonthlyChargeInstallmentsInput {
   fallbackDueDay: number;
   transactionType?: "income" | "expense";
   contactId?: string | null;
+  /** Dia de emissão (data contábil). Default: dia da própria competência. */
+  issueDay?: number | null;
   existingCompetencies?: Set<string>;
 }
 
@@ -448,6 +471,7 @@ export function buildMonthlyChargeInstallments({
   fallbackDueDay,
   transactionType = "income",
   contactId,
+  issueDay,
   existingCompetencies,
 }: BuildMonthlyChargeInstallmentsInput): PlannedInstallment[] {
   const start = toDate(startDate);
@@ -467,6 +491,10 @@ export function buildMonthlyChargeInstallments({
     const competencyDate = addMonths(baseMonth, i);
     const competencyPeriod = format(competencyDate, "yyyy-MM");
     const dueDate = format(calculateDueDate(addMonths(first, i), dueDay), "yyyy-MM-dd");
+    const issueDate = format(
+      calculateDueDate(competencyDate, issueDay && issueDay > 0 ? issueDay : getDate(competencyDate)),
+      "yyyy-MM-dd"
+    );
     const dedupKey = `${obligationType}:${competencyPeriod}:${dueDate}`;
 
     result.push({
@@ -476,6 +504,7 @@ export function buildMonthlyChargeInstallments({
       competencyPeriod,
       competencyLabel: monthLabel(competencyDate),
       dueDate,
+      issueDate,
       amount,
       description: `${label} ${monthLabel(competencyDate)}`,
       transactionType,
