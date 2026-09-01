@@ -409,17 +409,9 @@ Deno.serve(async (req) => {
                   .limit(1)
                   .maybeSingle();
 
+                // Já enviado: pula em SILÊNCIO (sem log). A linha `sent` original já prova o envio.
                 if (existing) {
                   skipped++;
-                  logs.push({
-                    broker_id: brokerId,
-                    lease_id: lease.id,
-                    transaction_id: tx.id,
-                    channel,
-                    schedule_offset: offset,
-                    status: "skipped",
-                    error_message: "Aviso já enviado para este vencimento e canal.",
-                  });
                   continue;
                 }
 
