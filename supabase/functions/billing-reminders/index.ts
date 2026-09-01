@@ -12,7 +12,7 @@ const corsHeaders = {
 const JSON_H = { ...corsHeaders, "Content-Type": "application/json" };
 
 const MAX_REMINDERS = 500;
-/** Teto de envios de WhatsApp por execução. O espaçamento real vem da cadência do cron (*/15). */
+// Teto de envios de WhatsApp por execução. O espaçamento real vem da cadência do cron (a cada 15 min).
 const MAX_WHATSAPP_PER_RUN = 3;
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
 const LOGO_URL = `${SITE_URL}/sloti-logo.png`;
