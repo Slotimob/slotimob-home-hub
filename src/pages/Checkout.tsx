@@ -143,7 +143,7 @@ export default function Checkout() {
   const initialAnnual = searchParams.get('cycle') === 'annual';
 
   const [selectedPlan, setSelectedPlan] = useState<AnyPlan>(
-    ['start', 'pro', 'business'].includes(initialPlan) ? initialPlan : 'pro'
+    ['start', 'essencial', 'pro', 'business'].includes(initialPlan) ? initialPlan : 'pro'
   );
   const [isAnnual, setIsAnnual] = useState<boolean>(initialAnnual);
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
