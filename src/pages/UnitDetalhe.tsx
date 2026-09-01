@@ -471,6 +471,18 @@ export default function UnitDetalhe() {
         </Alert>
       )}
 
+      {showSubdivisionsTab && unit?.id && (
+        <div className="mb-4">
+          <UnitSubdivisionSetupAlert
+            unitId={unit.id}
+            hasSubdivisions={unit.has_subdivisions}
+            intentType={unit.intent_type}
+            onAction={() => setActiveTab('subdivisions')}
+            actionLabel="Ir para Frações"
+          />
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={cn('grid w-full', tabsCount === 8 ? 'grid-cols-8' : 'grid-cols-7')}>
           <TabsTrigger value="info" className="text-xs sm:text-sm">
