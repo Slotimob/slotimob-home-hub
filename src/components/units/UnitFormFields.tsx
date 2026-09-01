@@ -44,6 +44,11 @@ import {
 } from '@/components/ui/tooltip';
 import type { Database } from '@/integrations/supabase/types';
 import { ALL_UNIT_STATUSES, getStatusLabel, PROPERTY_TYPE_LABELS, ALL_PROPERTY_TYPES } from '@/utils/uiConstants';
+import {
+  SubdivisionFormHint,
+  UnitSubdivisionSetupAlert,
+  intentIncludesRental,
+} from '@/components/units/SubdivisionSetupAlert';
 
 type UnitStatus = Database['public']['Enums']['unit_status'];
 type IntentType = 'sale' | 'rental' | 'both';
