@@ -144,8 +144,10 @@ export function AdjustmentCalculatorDialog({
       addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
       "yyyy-MM-dd"
     );
+    // A janela começa na primeira competência cujo vencimento já vale o reajuste.
+    const firstCompetency = resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day);
     const window = calculateProjectionWindow({
-      startDate: currentAdjustmentDate,
+      startDate: firstCompetency,
       endDate: lease.end_date,
       nextAdjustmentDate,
       isIndefiniteTerm: lease.is_indefinite_term,
@@ -156,6 +158,7 @@ export function AdjustmentCalculatorDialog({
     const installments = window.blocked ? 0 : window.months;
     return { firstDue, endDate, indefinite, installments, reasonLabel: window.reasonLabel };
   }, [lease, canProject]);
+
 
   if (!lease) return null;
 
