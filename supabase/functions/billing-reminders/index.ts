@@ -497,9 +497,11 @@ Deno.serve(async (req) => {
                   continue;
                 }
 
-                // WhatsApp
+                // ─── WhatsApp: blindagem anti-bloqueio ───
                 const phone = tenant?.phone;
-                if (!instanceName || !evolutionApiUrl || !evolutionApiKey || !phone) {
+                const g = guard ?? GUARD_DEFAULTS;
+
+                const skipWhats = (reason: string) => {
                   skipped++;
                   logs.push({
                     broker_id: brokerId,
@@ -509,14 +511,83 @@ Deno.serve(async (req) => {
                     schedule_offset: offset,
                     status: "skipped",
                     recipient: phone ?? null,
-                    error_message: !instanceName
+                    error_message: reason,
+                  });
+                };
+
+                // 1. Pausado pelo disjuntor
+                if (g.paused_until && new Date(g.paused_until).getTime() > Date.now()) {
+                  skipWhats(g.pause_reason || "Envio por WhatsApp pausado automaticamente.");
+                  continue;
+                }
+
+                // 2. Fora da janela de envio / fim de semana
+                if (spWeekday === 0 || spWeekday === 6) {
+                  skipWhats("Fora da janela de envio: fins de semana não recebem avisos por WhatsApp.");
+                  continue;
+                }
+                if (spHour < g.send_window_start || spHour >= g.send_window_end) {
+                  skipWhats(
+                    `Fora da janela de envio (${g.send_window_start}h–${g.send_window_end}h, horário de Brasília).`,
+                  );
+                  continue;
+                }
+
+                // 3. Teto diário do corretor
+                const sentToday = sentTodayCache.get(brokerId) ?? 0;
+                if (sentToday + whatsSentThisRun >= g.daily_cap) {
+                  skipWhats(`Teto diário de ${g.daily_cap} avisos por WhatsApp atingido.`);
+                  continue;
+                }
+
+                // 4. Conexão / configuração / telefone
+                if (!instanceName || !evolutionApiUrl || !evolutionApiKey || !phone) {
+                  skipWhats(
+                    !instanceName
                       ? "Nenhuma conexão de WhatsApp ativa para este corretor."
                       : !evolutionApiUrl || !evolutionApiKey
                         ? "Integração de WhatsApp não configurada no servidor."
                         : "Inquilino sem telefone cadastrado.",
-                  });
+                  );
                   continue;
                 }
+
+                // 5. Opt-out do contato
+                if (tenant?.optoutAt) {
+                  skipWhats("Contato pediu para não receber avisos automáticos por WhatsApp (opt-out).");
+                  continue;
+                }
+
+                // 6. Sem contato prévio
+                if (g.require_prior_contact) {
+                  let hasPrior = false;
+                  if (tenant?.id) {
+                    const { data: prior } = await supabase.rpc("whatsapp_has_prior_contact", {
+                      p_broker_id: brokerId,
+                      p_contact_id: tenant.id,
+                    });
+                    hasPrior = prior === true;
+                  }
+                  if (!hasPrior) {
+                    skipWhats(
+                      "Sem conversa iniciada pelo contato. Para proteger o número, só enviamos a quem já falou com você.",
+                    );
+                    continue;
+                  }
+                }
+
+                // 7. Teto por execução — apenas adia (o cron roda a cada 15 min), sem poluir o log
+                if (whatsBudget <= 0) {
+                  skipped++;
+                  continue;
+                }
+
+                // Jitter curto entre envios da mesma execução (2–8s)
+                if (whatsSentThisRun > 0) {
+                  await new Promise((r) => setTimeout(r, 2000 + Math.random() * 6000));
+                }
+
+                whatsBudget--;
 
                 try {
                   const sanitized = sanitizePhoneNumber(phone);
@@ -527,6 +598,7 @@ Deno.serve(async (req) => {
                     Number(tx.amount),
                     tx.due_date as string,
                     paymentUrl,
+                    `${tx.id}:${offset}`,
                   );
                   const evoRes = await fetch(`${evolutionApiUrl}/message/sendText/${instanceName}`, {
                     method: "POST",
@@ -539,6 +611,17 @@ Deno.serve(async (req) => {
                   }
 
                   sent++;
+                  whatsSentThisRun++;
+
+                  // Disjuntor: envio ok → zera falhas consecutivas
+                  if (g.consecutive_failures > 0) {
+                    g.consecutive_failures = 0;
+                    await supabase
+                      .from("whatsapp_send_guard")
+                      .update({ consecutive_failures: 0, paused_until: null, pause_reason: null })
+                      .eq("broker_id", brokerId);
+                  }
+
                   logs.push({
                     broker_id: brokerId,
                     lease_id: lease.id,
@@ -552,6 +635,22 @@ Deno.serve(async (req) => {
                 } catch (err) {
                   failed++;
                   console.error("[billing-reminders] falha no WhatsApp:", String(err));
+
+                  // Disjuntor: incrementa e pausa 24h na 3ª falha seguida
+                  g.consecutive_failures = (g.consecutive_failures ?? 0) + 1;
+                  const breakerUpdate: Record<string, unknown> = {
+                    consecutive_failures: g.consecutive_failures,
+                  };
+                  if (g.consecutive_failures >= 3) {
+                    const until = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                    g.paused_until = until;
+                    g.pause_reason =
+                      "Pausado automaticamente após 3 falhas seguidas de envio. Verifique a conexão do WhatsApp.";
+                    breakerUpdate.paused_until = until;
+                    breakerUpdate.pause_reason = g.pause_reason;
+                  }
+                  await supabase.from("whatsapp_send_guard").update(breakerUpdate).eq("broker_id", brokerId);
+
                   logs.push({
                     broker_id: brokerId,
                     lease_id: lease.id,
