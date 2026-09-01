@@ -156,6 +156,8 @@ interface LeaseWithDetails {
     unit_number: string;
     address: string | null;
   } | null;
+  unit_subdivision_id?: string | null;
+  subdivision?: { id: string; label: string } | null;
 }
 
 interface LeaseWithAdjustment extends LeaseWithDetails {
@@ -303,7 +305,9 @@ export function ContractsTab() {
           iptu_charge,
           additional_obligations,
           tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
-          unit:units!leases_unit_id_fkey(id, unit_number, address)
+          unit:units!leases_unit_id_fkey(id, unit_number, address),
+          unit_subdivision_id,
+          subdivision:unit_subdivisions(id, label)
         `)
         .eq("broker_id", effectiveBrokerId || user.id)
         .order("created_at", { ascending: false });
@@ -346,7 +350,8 @@ export function ContractsTab() {
         const matchesSearch =
           lease.unit?.unit_number?.toLowerCase().includes(search) ||
           lease.tenant_contact?.name?.toLowerCase().includes(search) ||
-          lease.unit?.address?.toLowerCase().includes(search);
+          lease.unit?.address?.toLowerCase().includes(search) ||
+          lease.subdivision?.label?.toLowerCase().includes(search);
         if (!matchesSearch) return false;
       }
 
@@ -431,7 +436,10 @@ export function ContractsTab() {
   // Handle unit selection for new contract
   const handleUnitSelected = (unit: { id: string; unit_number: string; owner_contact_id: string | null }) => {
     // Check if there's already an active lease for this unit
-    const existingLease = leases?.find((l) => l.unit_id === unit.id && l.status === "active");
+    // Imóvel fracionado tem um contrato por fração: não bloqueia por unit_id.
+    const existingLease = leases?.find(
+      (l) => l.unit_id === unit.id && l.status === "active" && !l.unit_subdivision_id
+    );
     
     if (existingLease) {
       toast.warning("Imóvel já possui contrato ativo", {
@@ -847,6 +855,11 @@ export function ContractsTab() {
                                 <p className="font-medium truncate">
                                   {lease.unit?.unit_number || "—"}
                                 </p>
+                                {lease.subdivision?.label && (
+                                  <p className="text-xs font-medium text-primary truncate">
+                                    Fração: {lease.subdivision.label}
+                                  </p>
+                                )}
                                 {(() => {
                                   const unitData = unitsWithProperty?.find(u => u.id === lease.unit_id);
                                   const isStandalone = !unitData || unitData.is_standalone || !unitData.property_id;
