@@ -106,7 +106,9 @@ export function useCreateUnit(standalone: boolean) {
             has_no_registration: formData.has_no_registration,
             iptu_number: formData.iptu_number || null,
             owner_contact_id: formData.owner_contact_id || null,
-            tenant_contact_id: formData.tenant_contact_id || null,
+            // Imóvel fracionado não tem inquilino no nível da unidade:
+            // cada fração guarda o seu (e é ela que gera o contrato).
+            tenant_contact_id: formData.has_subdivisions ? null : (formData.tenant_contact_id || null),
             cover_image_url: formData.cover_image_url || null,
             is_standalone: standalone,
             is_managed: formData.is_managed,
