@@ -727,6 +727,13 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     }
   }
 
+  // Opt-out de avisos automáticos (não bloqueia o fluxo normal do webhook)
+  if (direction === 'incoming' && messageType === 'text') {
+    await handleOptOut(supabaseAdmin, connection, contactId, content, cleanPhone);
+  }
+
+
+
   // Find or create conversation — MUST exist before message insert
   const messageTimestamp = msgData.messageTimestamp
     ? new Date(parseInt(msgData.messageTimestamp) * 1000).toISOString()
