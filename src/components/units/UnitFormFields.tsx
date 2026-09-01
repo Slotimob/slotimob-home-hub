@@ -150,6 +150,10 @@ interface UnitFormFieldsProps {
   onPropertiesChange?: (properties: Property[]) => void;
   /** When true, all inputs are disabled (read-only mode) */
   disabled?: boolean;
+  /** Id da unidade já salva (habilita a contagem real de frações no aviso). */
+  unitId?: string;
+  /** Ação direta para o cadastro de frações (ex.: abrir a aba Frações). */
+  onNavigateSubdivisions?: () => void;
 }
 
 export const UnitFormFields = ({
@@ -162,6 +166,8 @@ export const UnitFormFields = ({
   isStandalone = false,
   onPropertiesChange,
   disabled = false,
+  unitId,
+  onNavigateSubdivisions,
 }: UnitFormFieldsProps) => {
   const [isCreatePropertyDialogOpen, setIsCreatePropertyDialogOpen] = useState(false);
   const [propertySearchOpen, setPropertySearchOpen] = useState(false);
