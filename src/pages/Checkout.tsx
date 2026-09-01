@@ -40,7 +40,7 @@ import EmailVerificationStep from '@/components/checkout/EmailVerificationStep';
 // Types & Meta
 // ============================================================================
 
-type PaidPlan = 'pro' | 'business';
+type PaidPlan = 'essencial' | 'pro' | 'business';
 type AnyPlan = 'start' | PaidPlan;
 
 type PaymentResult =
@@ -55,19 +55,29 @@ interface PlanMeta {
   icon: typeof Rocket;
   tagline: string;
   features: string[];
-  units: string;
-  users: string;
   popular: boolean;
 }
 
 const plansMeta: PlanMeta[] = [
   {
+    id: 'essencial',
+    name: 'Essencial',
+    icon: Building2,
+    tagline: 'Contrato e cobrança até 20 imóveis',
+    features: [
+      'Gestão de ativos e contratos',
+      'Financeiro completo (DRE, OFX)',
+      'Boleto e Pix para inquilino',
+      'WhatsApp integrado',
+      'Chat IA (50 créditos)',
+    ],
+    popular: false,
+  },
+  {
     id: 'pro',
     name: 'Pro',
     icon: Rocket,
     tagline: 'Gestão completa com IA',
-    units: '50 unidades',
-    users: '1 usuário',
     features: ['CRM Pipeline', 'Chat IA', 'Contratos ilimitados', 'Relatórios e DRE', 'WhatsApp integrado'],
     popular: true,
   },
@@ -76,14 +86,13 @@ const plansMeta: PlanMeta[] = [
     name: 'Business',
     icon: Building2,
     tagline: 'Escale com equipe',
-    units: '150 unidades',
-    users: '4 usuários',
     features: ['Tudo do Pro', 'Gestão de equipe', 'Distribuição automática de leads do WhatsApp'],
     popular: false,
   },
 ];
 
-const formatPrice = (value: number) => value.toFixed(2).replace('.', ',');
+const formatPrice = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 
 interface PlanCardData {
   id: AnyPlan;
@@ -135,7 +144,7 @@ export default function Checkout() {
   const initialAnnual = searchParams.get('cycle') === 'annual';
 
   const [selectedPlan, setSelectedPlan] = useState<AnyPlan>(
-    ['start', 'pro', 'business'].includes(initialPlan) ? initialPlan : 'pro'
+    ['start', 'essencial', 'pro', 'business'].includes(initialPlan) ? initialPlan : 'pro'
   );
   const [isAnnual, setIsAnnual] = useState<boolean>(initialAnnual);
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
@@ -207,14 +216,17 @@ export default function Checkout() {
     if (selectedPlan === 'start') {
       setAddonQuantities({});
       setIsAnnual(false);
-    } else if (selectedPlan === 'pro') {
+      return;
+    }
+    if (pricing?.[selectedPlan]?.team_management !== true) {
       setAddonQuantities((prev) => {
+        if (!prev['extra-user']) return prev;
         const copy = { ...prev };
         delete copy['extra-user'];
         return copy;
       });
     }
-  }, [selectedPlan]);
+  }, [selectedPlan, pricing]);
 
   useEffect(() => {
     if (cepData) {
@@ -247,19 +259,31 @@ export default function Checkout() {
     []
   );
 
-  const getDisplayPrice = (planId: PaidPlan): number => {
+  /** Preço mensal (ou equivalente mensal quando anual) — nunca o total anual. */
+  const getMonthlyPrice = (planId: PaidPlan): number => {
     const p = pricing?.[planId];
     if (!p) return 0;
-    return isAnnual ? p.price_annual : p.price_original;
+    return isAnnual ? (p.price_annual || 0) / 12 : p.price_original;
   };
+
+  /** Total cobrado à vista no ciclo anual. */
+  const getAnnualTotal = (planId: PaidPlan): number => pricing?.[planId]?.price_annual ?? 0;
+
+  const annualDiscountPct = useMemo(() => {
+    if (selectedPlan === 'start') return 0;
+    const p = pricing?.[selectedPlan];
+    if (!p || !p.price_original || !p.price_annual) return 0;
+    return Math.round((1 - p.price_annual / 12 / p.price_original) * 100);
+  }, [pricing, selectedPlan]);
 
   const availableAddons = useMemo(() => {
     if (selectedPlan === 'start') return [];
-    if (selectedPlan === 'pro') return ADDONS.filter((a) => a.id === 'extra-units-50');
-    return ADDONS;
-  }, [selectedPlan]);
+    const teamManagement = pricing?.[selectedPlan]?.team_management === true;
+    return ADDONS.filter((a) => (a.id === 'extra-user' ? teamManagement : true));
+  }, [selectedPlan, pricing]);
 
-  const planPrice = selectedPlan === 'start' ? 0 : getDisplayPrice(selectedPlan as PaidPlan);
+  const planPrice = selectedPlan === 'start' ? 0 : getMonthlyPrice(selectedPlan as PaidPlan);
+  const planAnnualTotal = selectedPlan === 'start' ? 0 : getAnnualTotal(selectedPlan as PaidPlan);
   const addonsTotal = Object.entries(addonQuantities).reduce((sum, [id, qty]) => {
     if (qty <= 0) return sum;
     const a = ADDONS.find((x) => x.id === id);
@@ -649,7 +673,9 @@ export default function Checkout() {
                 const selected = plan.id === selectedPlan;
                 const isPaid = !plan.isFree;
                 const paidId = plan.id as PaidPlan;
-                const price = isPaid ? getDisplayPrice(paidId) : 0;
+                const price = isPaid ? getMonthlyPrice(paidId) : 0;
+                const annualTotal = isPaid ? getAnnualTotal(paidId) : 0;
+                const limits = pricing?.[plan.id];
 
                 return (
                   <button
@@ -682,19 +708,32 @@ export default function Checkout() {
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground">{plan.tagline}</span>
+                      {limits && (
+                        <span className="block text-xs text-muted-foreground">
+                          {limits.assets_limit} imóveis ·{' '}
+                          {limits.users_limit} {limits.users_limit === 1 ? 'usuário' : 'usuários'}
+                        </span>
+                      )}
                       {plan.isFree && (
                         <span className="block text-xs font-medium text-accent mt-0.5">
-                          Grátis, sem cartão de crédito · inclui 7 dias de PRO
+                          Comece grátis com 7 dias de Pro para testar · depois vira Start (5 imóveis), sem cartão
                         </span>
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-foreground shrink-0">
+                    <span className="text-sm font-semibold text-foreground shrink-0 text-right">
                       {plan.isFree ? (
                         'Grátis'
                       ) : pricingLoading ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
-                        `R$ ${formatPrice(price)}`
+                        <>
+                          <span className="block">R$ {formatPrice(price)}/mês</span>
+                          {isAnnual && annualTotal > 0 && (
+                            <span className="block text-[10px] font-normal text-muted-foreground">
+                              Cobrado R$ {formatPrice(annualTotal)} à vista por ano
+                            </span>
+                          )}
+                        </>
                       )}
                     </span>
                   </button>
@@ -728,9 +767,9 @@ export default function Checkout() {
                   >
                     Anual
                   </button>
-                  {isAnnual && (
+                  {isAnnual && annualDiscountPct > 0 && (
                     <Badge variant="secondary" className="text-xs bg-accent/10 text-accent border-accent/20">
-                      -34%
+                      -{annualDiscountPct}%
                     </Badge>
                   )}
                 </div>
@@ -800,9 +839,14 @@ export default function Checkout() {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Plano {planNameSelected}</span>
                 <span>
-                  {selectedPlan === 'start' ? 'Grátis' : `R$ ${formatPrice(planPrice)}`}
+                  {selectedPlan === 'start' ? 'Grátis' : `R$ ${formatPrice(planPrice)}/mês`}
                 </span>
               </div>
+              {isAnnual && selectedPlan !== 'start' && planAnnualTotal > 0 && (
+                <p className="text-xs text-muted-foreground text-right">
+                  Cobrado R$ {formatPrice(planAnnualTotal)} à vista por ano
+                </p>
+              )}
               {Object.entries(addonQuantities).map(([id, qty]) => {
                 if (qty <= 0) return null;
                 const addon = ADDONS.find((a) => a.id === id);
@@ -825,15 +869,19 @@ export default function Checkout() {
               {isAnnual && selectedPlan !== 'start' && (
                 <p className="text-xs text-muted-foreground text-right">
                   {addonsTotal > 0
-                    ? `Plano: R$ ${formatPrice(planPrice * 12)}/ano · Add-ons: R$ ${formatPrice(addonsTotal)}/mês`
-                    : `Cobrado R$ ${formatPrice(planPrice * 12)}/ano`}
+                    ? `cobrado R$ ${formatPrice(planAnnualTotal)} por ano + add-ons R$ ${formatPrice(addonsTotal)}/mês`
+                    : `cobrado R$ ${formatPrice(planAnnualTotal)} por ano`}
                 </p>
               )}
             </div>
 
             <div className="flex items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-medium text-foreground">
               <Lock className="h-5 w-5 text-accent" />
-              <span>7 dias grátis · sem cartão · cancele quando quiser</span>
+              <span>
+                {selectedPlan === 'start'
+                  ? '7 dias grátis de Pro · sem cartão · cancele quando quiser'
+                  : 'Cancele quando quiser · sem fidelidade'}
+              </span>
             </div>
           </div>
 
@@ -1220,7 +1268,7 @@ export default function Checkout() {
                         : 'Preparando...'}
                     </>
                   ) : selectedPlan === 'start' ? (
-                    'Começar grátis →'
+                    'Começar grátis com 7 dias de Pro →'
                   ) : (
                     'Assinar agora →'
                   )}
@@ -1230,7 +1278,7 @@ export default function Checkout() {
                   <Lock className="h-3 w-3" />
                   <span>
                     {selectedPlan === 'start'
-                      ? 'Grátis · sem cartão de crédito · inclui 7 dias de PRO'
+                      ? 'Grátis · sem cartão · 7 dias de Pro para testar, depois vira Start (5 imóveis)'
                       : billingType === 'CREDIT_CARD'
                       ? 'Você será redirecionado para o ambiente seguro do Asaas'
                       : billingType === 'BOLETO'
