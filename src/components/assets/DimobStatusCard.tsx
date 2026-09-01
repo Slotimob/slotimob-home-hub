@@ -161,7 +161,10 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
         `)
         .eq('unit_id', unitId)
         .eq('status', 'active')
-        .single();
+        // Imóvel fracionado pode ter mais de um contrato ativo (um por fração).
+        .order('start_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (activeLease) {
         // Check tenant document

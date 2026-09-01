@@ -331,6 +331,9 @@ export function useLeaseByUnitId(unitId: string | null) {
           unit:units(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name))
         `)
         .eq("unit_id", unitId)
+        // Contrato da unidade inteira: frações têm contrato próprio
+        // (ver useLeasesByUnitId para listar todos).
+        .is("unit_subdivision_id", null)
         .in("status", ["active", "pending"])
         .order("created_at", { ascending: false })
         .limit(1)
