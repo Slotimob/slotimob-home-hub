@@ -56,6 +56,8 @@ interface LeaseWithDetails {
     unit_number: string;
     address: string | null;
   } | null;
+  unit_subdivision_id?: string | null;
+  subdivision?: { id: string; label: string } | null;
 }
 
 
@@ -148,6 +150,11 @@ export function ContractCard({
               <p className="font-medium truncate">
                 {lease.unit?.unit_number || "—"}
               </p>
+              {lease.subdivision?.label && (
+                <p className="text-xs font-medium text-primary truncate">
+                  Fração: {lease.subdivision.label}
+                </p>
+              )}
               {lease.unit?.address && (
                 <p className="text-xs text-muted-foreground truncate">
                   {lease.unit.address}

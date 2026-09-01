@@ -287,7 +287,8 @@ export function useLeases() {
           *,
           tenant:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp, document_number, address, city, state, neighborhood, postal_code),
           owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone, document_number, address, city, state, neighborhood, postal_code),
-          unit:units(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name))
+          unit:units(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name)),
+          subdivision:unit_subdivisions(id, label, area)
         `)
         .order("created_at", { ascending: false });
 
