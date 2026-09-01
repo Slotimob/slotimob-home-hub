@@ -881,6 +881,23 @@ export function ConfirmLeaseProjectionDialog({
 
 
 
+            {window.blocked &&
+              additionalConfigs.map((cfg) => (
+                <div
+                  key={cfg.type}
+                  className="rounded-lg border bg-muted/30 p-3 flex items-start gap-2"
+                >
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type}
+                    </span>{" "}
+                    acompanha a competência do aluguel e só volta a ser lançado depois que o
+                    reajuste for aplicado.
+                  </p>
+                </div>
+              ))}
+
             <div className="rounded-lg border bg-muted/40 p-3 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
                 {confirmedInstallments.length} lançamento
