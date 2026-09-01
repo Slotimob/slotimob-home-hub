@@ -672,7 +672,9 @@ export default function Checkout() {
                 const selected = plan.id === selectedPlan;
                 const isPaid = !plan.isFree;
                 const paidId = plan.id as PaidPlan;
-                const price = isPaid ? getDisplayPrice(paidId) : 0;
+                const price = isPaid ? getMonthlyPrice(paidId) : 0;
+                const annualTotal = isPaid ? getAnnualTotal(paidId) : 0;
+                const limits = pricing?.[plan.id];
 
                 return (
                   <button
@@ -705,19 +707,32 @@ export default function Checkout() {
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground">{plan.tagline}</span>
+                      {limits && (
+                        <span className="block text-xs text-muted-foreground">
+                          {limits.assets_limit} imóveis ·{' '}
+                          {limits.users_limit} {limits.users_limit === 1 ? 'usuário' : 'usuários'}
+                        </span>
+                      )}
                       {plan.isFree && (
                         <span className="block text-xs font-medium text-accent mt-0.5">
-                          Grátis, sem cartão de crédito · inclui 7 dias de PRO
+                          Comece grátis com 7 dias de Pro para testar · depois vira Start (5 imóveis), sem cartão
                         </span>
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-foreground shrink-0">
+                    <span className="text-sm font-semibold text-foreground shrink-0 text-right">
                       {plan.isFree ? (
                         'Grátis'
                       ) : pricingLoading ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
-                        `R$ ${formatPrice(price)}`
+                        <>
+                          <span className="block">R$ {formatPrice(price)}/mês</span>
+                          {isAnnual && annualTotal > 0 && (
+                            <span className="block text-[10px] font-normal text-muted-foreground">
+                              Cobrado R$ {formatPrice(annualTotal)} à vista por ano
+                            </span>
+                          )}
+                        </>
                       )}
                     </span>
                   </button>
