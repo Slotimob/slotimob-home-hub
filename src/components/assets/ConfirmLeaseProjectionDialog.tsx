@@ -259,7 +259,7 @@ export function ConfirmLeaseProjectionDialog({
           .map((o) => [o.type, !postAdjustment])
       )
     );
-  }, [open, lease?.id, window?.months, rentAmountDefault, startDate, postAdjustment]);
+  }, [open, lease?.id, window?.months, window?.blocked, rentAmountDefault, startDate, postAdjustment]);
 
 
   const rentInstallments = useMemo(() => {
@@ -449,7 +449,7 @@ export function ConfirmLeaseProjectionDialog({
 
   const confirmedInstallments = useMemo(() => {
     const list: PlannedInstallment[] = [];
-    if (launchRent) list.push(...rentInstallments);
+    if (launchRent && !window?.blocked) list.push(...rentInstallments);
     if (launchInsurance) list.push(...insuranceInstallments);
     if (launchIptu) list.push(...iptuInstallments);
     for (const g of additionalGroups) {
@@ -466,6 +466,7 @@ export function ConfirmLeaseProjectionDialog({
     launchInsurance,
     launchIptu,
     selected,
+    window,
   ]);
 
 
