@@ -252,7 +252,11 @@ export function AdjustmentCalculatorDialog({
           property_id: lease.property_id ?? null,
           rent_amount: newValue,
           due_day: lease.due_day!,
-          start_date: currentAdjustmentDate,
+          // Mesma âncora do preview: primeira competência já reajustada.
+          start_date: format(
+            resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day!),
+            "yyyy-MM-dd"
+          ),
           end_date: lease.end_date ?? null,
           next_adjustment_date: nextAdjustmentDate,
           is_indefinite_term: lease.is_indefinite_term ?? false,
