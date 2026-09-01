@@ -278,8 +278,13 @@ Deno.serve(async (req) => {
 
     const brokerCache = new Map<string, { name: string; email: string | null }>();
     const connectionCache = new Map<string, string | null>();
+    const guardCache = new Map<string, SendGuard>();
+    const sentTodayCache = new Map<string, number>();
     const logs: Record<string, unknown>[] = [];
     let budget = MAX_REMINDERS;
+    let whatsBudget = MAX_WHATSAPP_PER_RUN;
+    let whatsSentThisRun = 0;
+    const { hour: spHour, weekday: spWeekday } = nowInSaoPaulo();
 
     for (const lease of leases ?? []) {
       if (budget <= 0) break;
