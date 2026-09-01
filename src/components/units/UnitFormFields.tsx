@@ -140,7 +140,7 @@ export const getInitialFormData = (): UnitFormData => ({
 
 interface UnitFormFieldsProps {
   formData: UnitFormData;
-  setFormData: (data: UnitFormData) => void;
+  setFormData: (data: UnitFormData | ((prev: UnitFormData) => UnitFormData)) => void;
   properties?: Property[];
   showImageUpload?: boolean;
   showPropertySelector?: boolean;
@@ -167,10 +167,11 @@ export const UnitFormFields = ({
   const [propertySearchOpen, setPropertySearchOpen] = useState(false);
   const [propertySearch, setPropertySearch] = useState('');
   
-  // Contact creation dialog state
+  // Contact creation dialog state.
+  // `contactTarget` is mandatory: two selectors (owner/tenant) share the same dialog,
+  // so we must know which one opened it before writing the id back.
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
-  const [createContactCategory, setCreateContactCategory] = useState<ContactCategory>('Proprietário');
-  const [contactSelectorKey, setContactSelectorKey] = useState(0);
+  const [contactTarget, setContactTarget] = useState<'owner' | 'tenant' | null>(null);
 
   const handlePropertyCreated = (newProperty: { id: string; name: string }) => {
     const updatedProperties = [...properties, newProperty];
@@ -180,20 +181,22 @@ export const UnitFormFields = ({
     setFormData({ ...formData, property_id: newProperty.id });
   };
 
-  const handleCreateContactClick = (category: ContactCategory) => {
-    setCreateContactCategory(category);
+  const handleCreateContactClick = (target: 'owner' | 'tenant') => {
+    setContactTarget(target);
     setIsCreateContactDialogOpen(true);
   };
 
   const handleContactCreated = (newContact?: { id: string }) => {
-    // Force ContactSelector to reload contacts
-    setContactSelectorKey(prev => prev + 1);
-    if (!newContact) return;
-    if (createContactCategory === 'Proprietário') {
-      setFormData({ ...formData, owner_contact_id: newContact.id });
-    } else if (createContactCategory === 'Inquilino') {
-      setFormData({ ...formData, tenant_contact_id: newContact.id, is_occupied: true });
+    const target = contactTarget;
+    if (newContact?.id) {
+      if (target === 'tenant') {
+        setFormData((prev) => ({ ...prev, tenant_contact_id: newContact.id, is_occupied: true }));
+      } else if (target === 'owner') {
+        setFormData((prev) => ({ ...prev, owner_contact_id: newContact.id }));
+      }
     }
+    setIsCreateContactDialogOpen(false);
+    setContactTarget(null);
   };
 
   // Determine which financial fields to show based on intent
@@ -822,14 +825,13 @@ export const UnitFormFields = ({
         <div className="space-y-2">
           <Label>Responsável pelo Ativo (Proprietário)</Label>
           <ContactSelector
-            key={`owner-${contactSelectorKey}`}
             value={formData.owner_contact_id || null}
             onChange={(v) => setFormData({ ...formData, owner_contact_id: v || '' })}
             placeholder="Buscar proprietário..."
             filterCategories={['Proprietário']}
             autoAddCategory="Proprietário"
             showCreateButton
-            onCreateClick={() => handleCreateContactClick('Proprietário')}
+            onCreateClick={() => handleCreateContactClick('owner')}
           />
         </div>
 
@@ -847,14 +849,13 @@ export const UnitFormFields = ({
             <div className="space-y-2">
               <Label>Ocupante (Inquilino)</Label>
               <ContactSelector
-                key={`tenant-${contactSelectorKey}`}
                 value={formData.tenant_contact_id}
                 onChange={(v) => setFormData({ ...formData, tenant_contact_id: v })}
                 placeholder="Buscar inquilino..."
                 filterCategories={['Inquilino']}
                 autoAddCategory="Inquilino"
                 showCreateButton
-                onCreateClick={() => handleCreateContactClick('Inquilino')}
+                onCreateClick={() => handleCreateContactClick('tenant')}
               />
             </div>
           )
@@ -876,7 +877,7 @@ export const UnitFormFields = ({
         open={isCreateContactDialogOpen}
         onOpenChange={setIsCreateContactDialogOpen}
         onSuccess={handleContactCreated}
-        defaultCategory={createContactCategory}
+        defaultCategory={contactTarget === 'tenant' ? 'Inquilino' : 'Proprietário'}
       />
     </div>
   );
