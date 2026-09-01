@@ -1267,7 +1267,7 @@ export default function Checkout() {
                         : 'Preparando...'}
                     </>
                   ) : selectedPlan === 'start' ? (
-                    'Começar grátis →'
+                    'Começar grátis com 7 dias de Pro →'
                   ) : (
                     'Assinar agora →'
                   )}
