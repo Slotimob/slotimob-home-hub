@@ -838,9 +838,14 @@ export default function Checkout() {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Plano {planNameSelected}</span>
                 <span>
-                  {selectedPlan === 'start' ? 'Grátis' : `R$ ${formatPrice(planPrice)}`}
+                  {selectedPlan === 'start' ? 'Grátis' : `R$ ${formatPrice(planPrice)}/mês`}
                 </span>
               </div>
+              {isAnnual && selectedPlan !== 'start' && planAnnualTotal > 0 && (
+                <p className="text-xs text-muted-foreground text-right">
+                  Cobrado R$ {formatPrice(planAnnualTotal)} à vista por ano
+                </p>
+              )}
               {Object.entries(addonQuantities).map(([id, qty]) => {
                 if (qty <= 0) return null;
                 const addon = ADDONS.find((a) => a.id === id);
@@ -863,15 +868,19 @@ export default function Checkout() {
               {isAnnual && selectedPlan !== 'start' && (
                 <p className="text-xs text-muted-foreground text-right">
                   {addonsTotal > 0
-                    ? `Plano: R$ ${formatPrice(planPrice * 12)}/ano · Add-ons: R$ ${formatPrice(addonsTotal)}/mês`
-                    : `Cobrado R$ ${formatPrice(planPrice * 12)}/ano`}
+                    ? `cobrado R$ ${formatPrice(planAnnualTotal)} por ano + add-ons R$ ${formatPrice(addonsTotal)}/mês`
+                    : `cobrado R$ ${formatPrice(planAnnualTotal)} por ano`}
                 </p>
               )}
             </div>
 
             <div className="flex items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-medium text-foreground">
               <Lock className="h-5 w-5 text-accent" />
-              <span>7 dias grátis · sem cartão · cancele quando quiser</span>
+              <span>
+                {selectedPlan === 'start'
+                  ? '7 dias grátis de Pro · sem cartão · cancele quando quiser'
+                  : 'Cancele quando quiser · sem fidelidade'}
+              </span>
             </div>
           </div>
 
