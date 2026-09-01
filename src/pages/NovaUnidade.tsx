@@ -92,7 +92,7 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
 
     if (formData.has_subdivisions && created.intent_type !== 'sale') {
       // Sem frações cadastradas não existe contrato: leva direto para o cadastro delas.
-      navigate('/units/detalhe?id=' + created.id);
+      navigate((standalone ? '/real-estate' : '/units') + '?id=' + created.id);
     } else if (created.intent_type !== 'sale' && created.tenant_contact_id) {
       navigate('/gestao/contratos/novo?unitId=' + created.id);
     } else {
