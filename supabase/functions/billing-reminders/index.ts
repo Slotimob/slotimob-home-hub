@@ -1,6 +1,8 @@
-// Motor da régua de cobrança (modo próprio). Chamado por cron (x-cron-secret).
+// Motor da régua de cobrança (somente e-mail). Chamado por cron (x-cron-secret).
 // IMPORTANTE: esta função NÃO chama a edge function `send-email` — o Resend é
 // usado diretamente aqui, porque `send-email` só permite enviar ao próprio usuário.
+// Não há envio automático por WhatsApp (Evolution API não é oficial): o WhatsApp
+// é apenas atalho manual na interface.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
@@ -12,8 +14,6 @@ const corsHeaders = {
 const JSON_H = { ...corsHeaders, "Content-Type": "application/json" };
 
 const MAX_REMINDERS = 500;
-// Teto de envios de WhatsApp por execução. O espaçamento real vem da cadência do cron (a cada 15 min).
-const MAX_WHATSAPP_PER_RUN = 3;
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://app.slotimob.com.br";
 const LOGO_URL = `${SITE_URL}/sloti-logo.png`;
 
@@ -25,13 +25,6 @@ const BRAND = {
   mutedBg: "#f4f4f9",
   radius: "8px",
 };
-
-const FLAG_OFFSETS: { flag: string; offset: number }[] = [
-  { flag: "reminder_5_days", offset: -5 },
-  { flag: "reminder_due_day", offset: 0 },
-  { flag: "reminder_3_days_late", offset: 3 },
-  { flag: "reminder_7_days_late", offset: 7 },
-];
 
 function escapeHtml(input: unknown): string {
   return String(input ?? "")
@@ -48,14 +41,6 @@ function safeUrl(url: string | undefined | null): string | null {
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function sanitizePhoneNumber(phone: string): string {
-  let cleaned = String(phone).replace(/\D/g, "");
-  if (cleaned.startsWith("0")) cleaned = cleaned.substring(1);
-  if (cleaned.startsWith("55") && cleaned.length >= 12) return cleaned;
-  if (cleaned.length <= 11) cleaned = "55" + cleaned;
-  return cleaned;
-}
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value) || 0);
@@ -131,106 +116,16 @@ function offsetCopy(offset: number): { title: string; intro: string; subject: st
   };
 }
 
-/** Hash determinístico simples (djb2) para escolher variantes de texto sem aleatoriedade real. */
-function stableHash(seed: string): number {
-  let h = 5381;
-  for (let i = 0; i < seed.length; i++) h = ((h << 5) + h + seed.charCodeAt(i)) >>> 0;
-  return h;
-}
-
-const GREETINGS = [
-  (name: string) => `Olá, ${name}! 👋`,
-  (name: string) => `Oi, ${name}, tudo bem? 😊`,
-  (name: string) => `${name}, bom te encontrar por aqui!`,
-];
-
-const CLOSINGS = [
-  "Se o pagamento já foi feito, é só desconsiderar esta mensagem.\n\nQualquer dúvida, estamos à disposição! 😊",
-  "Caso já tenha pago, pode ignorar este aviso.\n\nEstamos por aqui se precisar de algo. 🙂",
-  "Se já estiver quitado, desconsidere.\n\nQualquer coisa, é só chamar por aqui!",
-];
-
-function whatsappMessage(
-  offset: number,
-  tenantName: string,
-  description: string,
-  amount: number,
-  dueDate: string,
-  paymentUrl: string | null,
-  variantSeed: string,
-): string {
-  const head =
-    offset < 0
-      ? `Passando para lembrar que o vencimento é em ${Math.abs(offset)} dia(s).`
-      : offset === 0
-        ? "Passando para lembrar que o vencimento é hoje."
-        : `Identificamos que esta cobrança está em aberto há ${offset} dia(s).`;
-
-  const h = stableHash(variantSeed);
-  const greeting = GREETINGS[h % GREETINGS.length](tenantName);
-  const closing = CLOSINGS[Math.floor(h / 7) % CLOSINGS.length];
-
-  const lines = [
-    greeting,
-    "",
-    head,
-    "",
-    `📋 *${description}*`,
-    `💰 Valor: *${formatCurrency(amount)}*`,
-    `📅 Vencimento: *${formatDateBR(dueDate)}*`,
-  ];
-  if (paymentUrl) lines.push("", `🔗 Pagamento: ${paymentUrl}`);
-  lines.push("", closing);
-  return lines.join("\n");
-}
-
-interface SendGuard {
-  daily_cap: number;
-  send_window_start: number;
-  send_window_end: number;
-  require_prior_contact: boolean;
-  consecutive_failures: number;
-  paused_until: string | null;
-  pause_reason: string | null;
-}
-
-const GUARD_DEFAULTS: SendGuard = {
-  daily_cap: 40,
-  send_window_start: 9,
-  send_window_end: 18,
-  require_prior_contact: true,
-  consecutive_failures: 0,
-  paused_until: null,
-  pause_reason: null,
-};
-
-/** Hora (0-23) e dia da semana (0=dom) em America/Sao_Paulo. */
-function nowInSaoPaulo(): { hour: number; weekday: number } {
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Sao_Paulo",
-    hour: "2-digit",
-    hour12: false,
-    weekday: "short",
-  }).formatToParts(new Date());
-  const hour = Number(fmt.find((p) => p.type === "hour")?.value ?? "0");
-  const wdName = fmt.find((p) => p.type === "weekday")?.value ?? "Mon";
-  const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-  return { hour, weekday: map[wdName] ?? 1 };
-}
-
-async function loadSendGuard(supabase: any, brokerId: string): Promise<SendGuard> {
-  const { data } = await supabase
-    .from("whatsapp_send_guard")
-    .select("daily_cap, send_window_start, send_window_end, require_prior_contact, consecutive_failures, paused_until, pause_reason")
-    .eq("broker_id", brokerId)
-    .maybeSingle();
-
-  if (data) return { ...GUARD_DEFAULTS, ...(data as SendGuard) };
-
-  await supabase
-    .from("whatsapp_send_guard")
-    .upsert({ broker_id: brokerId, ...GUARD_DEFAULTS }, { onConflict: "broker_id" });
-  return { ...GUARD_DEFAULTS };
+/** Offsets habilitados no formato novo: steps: { "-3": true, "0": true, ... } → [-3, 0, ...] */
+function enabledOffsetsFromSteps(steps: unknown): number[] {
+  if (!steps || typeof steps !== "object") return [];
+  const out: number[] = [];
+  for (const [key, value] of Object.entries(steps as Record<string, unknown>)) {
+    if (value !== true) continue;
+    const offset = Number(key);
+    if (Number.isFinite(offset)) out.push(offset);
+  }
+  return out;
 }
 
 Deno.serve(async (req) => {
@@ -260,8 +155,6 @@ Deno.serve(async (req) => {
   try {
     const resendKey = Deno.env.get("RESEND_API_KEY");
     const resend = resendKey ? new Resend(resendKey) : null;
-    const evolutionApiUrl = (Deno.env.get("EVOLUTION_API_URL") ?? "").replace(/\/$/, "");
-    const evolutionApiKey = Deno.env.get("EVOLUTION_API_KEY") ?? "";
 
     const today = todayInSaoPaulo();
 
@@ -269,7 +162,7 @@ Deno.serve(async (req) => {
       .from("leases")
       .select("id, broker_id, billing_automation, status, tenant_contact_id")
       .eq("status", "active")
-      .filter("billing_automation->>mode", "eq", "own");
+      .filter("billing_automation->>enabled", "eq", "true");
 
     if (leasesError) {
       console.error("[billing-reminders] erro ao buscar contratos:", leasesError.message);
@@ -277,26 +170,21 @@ Deno.serve(async (req) => {
     }
 
     const brokerCache = new Map<string, { name: string; email: string | null }>();
-    const connectionCache = new Map<string, string | null>();
-    const guardCache = new Map<string, SendGuard>();
-    const sentTodayCache = new Map<string, number>();
     const logs: Record<string, unknown>[] = [];
     let budget = MAX_REMINDERS;
-    let whatsBudget = MAX_WHATSAPP_PER_RUN;
-    let whatsSentThisRun = 0;
-    const { hour: spHour, weekday: spWeekday } = nowInSaoPaulo();
 
     for (const lease of leases ?? []) {
       if (budget <= 0) break;
       try {
         const automation = (lease.billing_automation ?? {}) as Record<string, any>;
-        const channels = (automation.channels ?? {}) as Record<string, boolean>;
-        const wantEmail = channels.email === true;
-        const wantWhats = channels.whatsapp === true;
-        if (!wantEmail && !wantWhats) continue;
-
-        const enabledOffsets = FLAG_OFFSETS.filter((f) => automation[f.flag] === true).map((f) => f.offset);
+        const enabledOffsets = enabledOffsetsFromSteps(automation.steps);
         if (enabledOffsets.length === 0) continue;
+
+        // Destinatário alternativo configurado na régua; nulo = e-mail do inquilino
+        const overrideTo =
+          typeof automation.email_to === "string" && EMAIL_RE.test(automation.email_to)
+            ? (automation.email_to as string)
+            : null;
 
         const brokerId = lease.broker_id as string;
 
@@ -327,27 +215,6 @@ Deno.serve(async (req) => {
         }
         const broker = brokerCache.get(brokerId)!;
 
-        // Conexão WhatsApp (cache por broker)
-        if (wantWhats && !connectionCache.has(brokerId)) {
-          const { data: conn } = await supabase
-            .from("whatsapp_connections")
-            .select("instance_name")
-            .eq("broker_id", brokerId)
-            .eq("status", "connected")
-            .limit(1)
-            .maybeSingle();
-          connectionCache.set(brokerId, (conn?.instance_name as string) ?? null);
-        }
-        const instanceName = wantWhats ? connectionCache.get(brokerId) ?? null : null;
-
-        // Guarda anti-bloqueio do WhatsApp (cache por broker)
-        if (wantWhats && !guardCache.has(brokerId)) {
-          guardCache.set(brokerId, await loadSendGuard(supabase, brokerId));
-          const { data: sentToday } = await supabase.rpc("whatsapp_sent_today", { p_broker_id: brokerId });
-          sentTodayCache.set(brokerId, Number(sentToday ?? 0));
-        }
-        const guard = wantWhats ? guardCache.get(brokerId)! : null;
-
         for (const tx of transactions ?? []) {
           if (budget <= 0) break;
           try {
@@ -355,26 +222,21 @@ Deno.serve(async (req) => {
             const dueOffsets = enabledOffsets.filter((o) => shiftDate(tx.due_date as string, o) === today);
             if (dueOffsets.length === 0) continue;
 
-            let tenant:
-              | { id: string; name: string; email: string | null; phone: string | null; optoutAt: string | null }
-              | null = null;
-            if (tx.contact_id) {
+            let tenantName = "Cliente";
+            let tenantEmail: string | null = null;
+            if (!overrideTo && tx.contact_id) {
               const { data: contact } = await supabase
                 .from("contacts")
-                .select("id, name, email, phone, whatsapp, whatsapp_optout_at")
+                .select("name, email")
                 .eq("id", tx.contact_id)
                 .eq("broker_id", brokerId)
                 .maybeSingle();
               if (contact) {
-                tenant = {
-                  id: contact.id as string,
-                  name: (contact.name as string) || "Cliente",
-                  email: (contact.email as string) ?? null,
-                  phone: ((contact.whatsapp as string) || (contact.phone as string)) ?? null,
-                  optoutAt: (contact.whatsapp_optout_at as string) ?? null,
-                };
+                tenantName = (contact.name as string) || "Cliente";
+                tenantEmail = (contact.email as string) ?? null;
               }
             }
+            const to = overrideTo ?? tenantEmail;
 
             // Link de pagamento, quando houver cobrança Asaas
             let paymentUrl: string | null = null;
@@ -390,56 +252,48 @@ Deno.serve(async (req) => {
               safeUrl((payment as any)?.invoice_url) ??
               safeUrl((payment as any)?.bank_slip_url);
 
-
             for (const offset of dueOffsets) {
-              const targets: ("email" | "whatsapp")[] = [];
-              if (wantEmail) targets.push("email");
-              if (wantWhats) targets.push("whatsapp");
+              if (budget <= 0) break;
 
-              for (const channel of targets) {
-                if (budget <= 0) break;
+              const { data: existing } = await supabase
+                .from("billing_reminder_logs")
+                .select("id")
+                .eq("transaction_id", tx.id)
+                .eq("channel", "email")
+                .eq("schedule_offset", offset)
+                .eq("status", "sent")
+                .limit(1)
+                .maybeSingle();
 
-                const { data: existing } = await supabase
-                  .from("billing_reminder_logs")
-                  .select("id")
-                  .eq("transaction_id", tx.id)
-                  .eq("channel", channel)
-                  .eq("schedule_offset", offset)
-                  .eq("status", "sent")
-                  .limit(1)
-                  .maybeSingle();
+              // Já enviado: pula em SILÊNCIO (sem log). A linha `sent` original já prova o envio.
+              if (existing) {
+                skipped++;
+                continue;
+              }
 
-                // Já enviado: pula em SILÊNCIO (sem log). A linha `sent` original já prova o envio.
-                if (existing) {
-                  skipped++;
-                  continue;
-                }
+              budget--;
+              processed++;
 
-                budget--;
-                processed++;
+              if (!resend || !to || !EMAIL_RE.test(to)) {
+                skipped++;
+                logs.push({
+                  broker_id: brokerId,
+                  lease_id: lease.id,
+                  transaction_id: tx.id,
+                  channel: "email",
+                  schedule_offset: offset,
+                  status: "skipped",
+                  recipient: to ?? null,
+                  error_message: !resend ? "RESEND_API_KEY não configurada." : "Inquilino sem e-mail válido.",
+                });
+                continue;
+              }
 
-                if (channel === "email") {
-                  const to = tenant?.email;
-                  if (!resend || !to || !EMAIL_RE.test(to)) {
-                    skipped++;
-                    logs.push({
-                      broker_id: brokerId,
-                      lease_id: lease.id,
-                      transaction_id: tx.id,
-                      channel,
-                      schedule_offset: offset,
-                      status: "skipped",
-                      recipient: to ?? null,
-                      error_message: !resend ? "RESEND_API_KEY não configurada." : "Inquilino sem e-mail válido.",
-                    });
-                    continue;
-                  }
-
-                  const copy = offsetCopy(offset);
-                  const html = emailLayout(
-                    copy.title,
-                    `
-      <h1 style="color:${BRAND.primary};font-size:24px;margin:0 0 16px;">Olá, ${escapeHtml(tenant?.name ?? "Cliente")}!</h1>
+              const copy = offsetCopy(offset);
+              const html = emailLayout(
+                copy.title,
+                `
+      <h1 style="color:${BRAND.primary};font-size:24px;margin:0 0 16px;">Olá, ${escapeHtml(tenantName)}!</h1>
       <p>${copy.intro}</p>
       <table role="presentation" width="100%" style="margin:20px 0;border:1px solid #e5e7eb;border-radius:${BRAND.radius};overflow:hidden;">
         <tr style="background:${BRAND.mutedBg};"><td style="padding:12px 16px;font-weight:600;color:${BRAND.primary};width:140px;">Descrição</td><td style="padding:12px 16px;">${escapeHtml(tx.description)}</td></tr>
@@ -454,214 +308,45 @@ Deno.serve(async (req) => {
       <p style="color:${BRAND.mutedFg};font-size:14px;">Se o pagamento já foi realizado, desconsidere este aviso.</p>
       <p style="color:${BRAND.mutedFg};font-size:14px;">Atenciosamente, ${escapeHtml(broker.name)}.</p>
     `,
-                  );
+              );
 
-                  try {
-                    const result = await resend.emails.send({
-                      from: `${broker.name.replace(/[<>"]/g, "")} via Slotimob <cobranca@slotimob.com.br>`,
-                      to: [to],
-                      reply_to: broker.email && EMAIL_RE.test(broker.email) ? broker.email : undefined,
-                      subject: copy.subject,
-                      html,
-                    } as any);
+              try {
+                const result = await resend.emails.send({
+                  from: `${broker.name.replace(/[<>"]/g, "")} via Slotimob <cobranca@slotimob.com.br>`,
+                  to: [to],
+                  reply_to: broker.email && EMAIL_RE.test(broker.email) ? broker.email : undefined,
+                  subject: copy.subject,
+                  html,
+                } as any);
 
-                    if ((result as any)?.error) {
-                      throw new Error(String((result as any).error?.message ?? "Falha no envio do e-mail"));
-                    }
-
-                    sent++;
-                    logs.push({
-                      broker_id: brokerId,
-                      lease_id: lease.id,
-                      transaction_id: tx.id,
-                      channel,
-                      schedule_offset: offset,
-                      status: "sent",
-                      recipient: to,
-                      provider_id: (result as any)?.data?.id ?? null,
-                    });
-                  } catch (err) {
-                    failed++;
-                    console.error("[billing-reminders] falha no e-mail:", String(err));
-                    logs.push({
-                      broker_id: brokerId,
-                      lease_id: lease.id,
-                      transaction_id: tx.id,
-                      channel,
-                      schedule_offset: offset,
-                      status: "failed",
-                      recipient: to,
-                      error_message: String(err).slice(0, 500),
-                    });
-                  }
-                  continue;
+                if ((result as any)?.error) {
+                  throw new Error(String((result as any).error?.message ?? "Falha no envio do e-mail"));
                 }
 
-                // ─── WhatsApp: blindagem anti-bloqueio ───
-                const phone = tenant?.phone;
-                const g = guard ?? GUARD_DEFAULTS;
-
-                const skipWhats = (reason: string) => {
-                  skipped++;
-                  logs.push({
-                    broker_id: brokerId,
-                    lease_id: lease.id,
-                    transaction_id: tx.id,
-                    channel,
-                    schedule_offset: offset,
-                    status: "skipped",
-                    recipient: phone ?? null,
-                    error_message: reason,
-                  });
-                };
-
-                // 1. Pausado pelo disjuntor
-                if (g.paused_until && new Date(g.paused_until).getTime() > Date.now()) {
-                  skipWhats(g.pause_reason || "Envio por WhatsApp pausado automaticamente.");
-                  continue;
-                }
-
-                // 2. Fora da janela de envio / fim de semana
-                if (spWeekday === 0 || spWeekday === 6) {
-                  skipWhats("Fora da janela de envio: fins de semana não recebem avisos por WhatsApp.");
-                  continue;
-                }
-                if (spHour < g.send_window_start || spHour >= g.send_window_end) {
-                  skipWhats(
-                    `Fora da janela de envio (${g.send_window_start}h–${g.send_window_end}h, horário de Brasília).`,
-                  );
-                  continue;
-                }
-
-                // 3. Teto diário do corretor
-                const sentToday = sentTodayCache.get(brokerId) ?? 0;
-                if (sentToday + whatsSentThisRun >= g.daily_cap) {
-                  skipWhats(`Teto diário de ${g.daily_cap} avisos por WhatsApp atingido.`);
-                  continue;
-                }
-
-                // 4. Conexão / configuração / telefone
-                if (!instanceName || !evolutionApiUrl || !evolutionApiKey || !phone) {
-                  skipWhats(
-                    !instanceName
-                      ? "Nenhuma conexão de WhatsApp ativa para este corretor."
-                      : !evolutionApiUrl || !evolutionApiKey
-                        ? "Integração de WhatsApp não configurada no servidor."
-                        : "Inquilino sem telefone cadastrado.",
-                  );
-                  continue;
-                }
-
-                // 5. Opt-out do contato
-                if (tenant?.optoutAt) {
-                  skipWhats("Contato pediu para não receber avisos automáticos por WhatsApp (opt-out).");
-                  continue;
-                }
-
-                // 6. Sem contato prévio
-                if (g.require_prior_contact) {
-                  let hasPrior = false;
-                  if (tenant?.id) {
-                    const { data: prior } = await supabase.rpc("whatsapp_has_prior_contact", {
-                      p_broker_id: brokerId,
-                      p_contact_id: tenant.id,
-                    });
-                    hasPrior = prior === true;
-                  }
-                  if (!hasPrior) {
-                    skipWhats(
-                      "Sem conversa iniciada pelo contato. Para proteger o número, só enviamos a quem já falou com você.",
-                    );
-                    continue;
-                  }
-                }
-
-                // 7. Teto por execução — apenas adia (o cron roda a cada 15 min), sem poluir o log
-                if (whatsBudget <= 0) {
-                  skipped++;
-                  continue;
-                }
-
-                // Jitter curto entre envios da mesma execução (2–8s)
-                if (whatsSentThisRun > 0) {
-                  await new Promise((r) => setTimeout(r, 2000 + Math.random() * 6000));
-                }
-
-                whatsBudget--;
-
-                try {
-                  const sanitized = sanitizePhoneNumber(phone);
-                  const text = whatsappMessage(
-                    offset,
-                    tenant?.name ?? "Cliente",
-                    String(tx.description),
-                    Number(tx.amount),
-                    tx.due_date as string,
-                    paymentUrl,
-                    `${tx.id}:${offset}`,
-                  );
-                  const evoRes = await fetch(`${evolutionApiUrl}/message/sendText/${instanceName}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", apikey: evolutionApiKey },
-                    body: JSON.stringify({ number: sanitized, text }),
-                  });
-                  const evoData = await evoRes.json().catch(() => ({}));
-                  if (!evoRes.ok) {
-                    throw new Error(String((evoData as any)?.message ?? `Evolution retornou ${evoRes.status}`));
-                  }
-
-                  sent++;
-                  whatsSentThisRun++;
-
-                  // Disjuntor: envio ok → zera falhas consecutivas
-                  if (g.consecutive_failures > 0) {
-                    g.consecutive_failures = 0;
-                    await supabase
-                      .from("whatsapp_send_guard")
-                      .update({ consecutive_failures: 0, paused_until: null, pause_reason: null })
-                      .eq("broker_id", brokerId);
-                  }
-
-                  logs.push({
-                    broker_id: brokerId,
-                    lease_id: lease.id,
-                    transaction_id: tx.id,
-                    channel,
-                    schedule_offset: offset,
-                    status: "sent",
-                    recipient: sanitized,
-                    provider_id: (evoData as any)?.key?.id ?? null,
-                  });
-                } catch (err) {
-                  failed++;
-                  console.error("[billing-reminders] falha no WhatsApp:", String(err));
-
-                  // Disjuntor: incrementa e pausa 24h na 3ª falha seguida
-                  g.consecutive_failures = (g.consecutive_failures ?? 0) + 1;
-                  const breakerUpdate: Record<string, unknown> = {
-                    consecutive_failures: g.consecutive_failures,
-                  };
-                  if (g.consecutive_failures >= 3) {
-                    const until = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-                    g.paused_until = until;
-                    g.pause_reason =
-                      "Pausado automaticamente após 3 falhas seguidas de envio. Verifique a conexão do WhatsApp.";
-                    breakerUpdate.paused_until = until;
-                    breakerUpdate.pause_reason = g.pause_reason;
-                  }
-                  await supabase.from("whatsapp_send_guard").update(breakerUpdate).eq("broker_id", brokerId);
-
-                  logs.push({
-                    broker_id: brokerId,
-                    lease_id: lease.id,
-                    transaction_id: tx.id,
-                    channel,
-                    schedule_offset: offset,
-                    status: "failed",
-                    recipient: phone,
-                    error_message: String(err).slice(0, 500),
-                  });
-                }
+                sent++;
+                logs.push({
+                  broker_id: brokerId,
+                  lease_id: lease.id,
+                  transaction_id: tx.id,
+                  channel: "email",
+                  schedule_offset: offset,
+                  status: "sent",
+                  recipient: to,
+                  provider_id: (result as any)?.data?.id ?? null,
+                });
+              } catch (err) {
+                failed++;
+                console.error("[billing-reminders] falha no e-mail:", String(err));
+                logs.push({
+                  broker_id: brokerId,
+                  lease_id: lease.id,
+                  transaction_id: tx.id,
+                  channel: "email",
+                  schedule_offset: offset,
+                  status: "failed",
+                  recipient: to,
+                  error_message: String(err).slice(0, 500),
+                });
               }
             }
           } catch (txErr) {

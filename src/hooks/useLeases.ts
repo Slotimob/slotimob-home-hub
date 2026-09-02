@@ -53,22 +53,11 @@ export interface PaymentInfo {
 }
 
 export interface BillingAutomation {
-  reminder_5_days: boolean;
-  reminder_due_day: boolean;
-  reminder_3_days_late: boolean;
-  send_method: "whatsapp" | "email" | "both";
-  // canais de automação (opcionais para retrocompatibilidade)
-  email_enabled?: boolean;
-  email_destination?: string;
-  whatsapp_enabled?: boolean;
-  billing_contact?: {
-    name: string;
-    email: string;
-    whatsapp: string; // stored as digits only with +55 prefix: ex "+5511999999999"
-  };
-  // sem whatsapp_destination: número vem de lease.tenant?.whatsapp || lease.tenant?.phone
-  // outros campos existentes no JSONB
-  legal_notification_7_days?: boolean;
+  enabled: boolean;
+  /** null = usar o e-mail do inquilino */
+  email_to: string | null;
+  /** offsets em dias relativos ao vencimento */
+  steps: Record<'-3' | '0' | '1' | '3', boolean>;
 }
 
 /**
@@ -300,10 +289,9 @@ export function useLeases() {
         next_adjustment_date: lease.next_adjustment_date ?? null,
         adjustment_index: lease.adjustment_index ?? null,
         billing_automation: (lease.billing_automation as unknown as BillingAutomation) || {
-          reminder_5_days: true,
-          reminder_due_day: true,
-          reminder_3_days_late: true,
-          send_method: "whatsapp",
+          enabled: false,
+          email_to: null,
+          steps: { "-3": true, "0": true, "1": false, "3": true },
         },
         billing_logs: (lease.billing_logs as unknown as BillingLog[]) || [],
         guarantor_data: lease.guarantor_data as unknown as GuarantorData | null,
@@ -349,10 +337,9 @@ export function useLeaseByUnitId(unitId: string | null) {
         next_adjustment_date: data.next_adjustment_date ?? null,
         adjustment_index: data.adjustment_index ?? null,
         billing_automation: (data.billing_automation as unknown as BillingAutomation) || {
-          reminder_5_days: true,
-          reminder_due_day: true,
-          reminder_3_days_late: true,
-          send_method: "whatsapp",
+          enabled: false,
+          email_to: null,
+          steps: { "-3": true, "0": true, "1": false, "3": true },
         },
         billing_logs: (data.billing_logs as unknown as BillingLog[]) || [],
         guarantor_data: data.guarantor_data as unknown as GuarantorData | null,
@@ -391,10 +378,9 @@ export function useLeasesByUnitId(unitId: string | null) {
         next_adjustment_date: lease.next_adjustment_date ?? null,
         adjustment_index: lease.adjustment_index ?? null,
         billing_automation: (lease.billing_automation as unknown as BillingAutomation) || {
-          reminder_5_days: true,
-          reminder_due_day: true,
-          reminder_3_days_late: true,
-          send_method: "whatsapp",
+          enabled: false,
+          email_to: null,
+          steps: { "-3": true, "0": true, "1": false, "3": true },
         },
         billing_logs: (lease.billing_logs as unknown as BillingLog[]) || [],
         guarantor_data: lease.guarantor_data as unknown as GuarantorData | null,
