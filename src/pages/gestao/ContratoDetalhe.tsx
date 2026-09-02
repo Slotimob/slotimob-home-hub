@@ -67,7 +67,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { LeaseJourneyTab } from "@/components/assets/LeaseJourneyTab";
 import { LeaseBoletos } from "@/components/assets/LeaseBoletos";
-import { AsaasSubscriptionCard } from "@/components/assets/AsaasSubscriptionCard";
 import { DimobStatusCard } from "@/components/assets/DimobStatusCard";
 import { TenantStatementDialog } from "@/components/assets/TenantStatementDialog";
 import { OwnerReportDialog } from "@/components/assets/OwnerReportDialog";
@@ -85,7 +84,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useUpdateLease, generateBillingMessage, type BillingLog, type BillingAutomation } from "@/hooks/useLeases";
+import { useUpdateLease } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { syncUnitStatusForLease } from "@/lib/unit-status-sync";
@@ -122,21 +121,6 @@ export default function ContratoDetalhe() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [showBillingLogForm, setShowBillingLogForm] = useState(false);
-  const [billingLogForm, setBillingLogForm] = useState({
-    sent_by: "",
-    method: "whatsapp" as "whatsapp" | "email" | "phone" | "in_person" | "other",
-    notes: "",
-    sent_to: "",
-  });
-  const [logsLimit, setLogsLimit] = useState(20);
-
-  const [automationForm, setAutomationForm] = useState({
-    email_enabled: false,
-    email_destination: "",
-    whatsapp_enabled: false,
-  });
-  const [savingAutomation, setSavingAutomation] = useState(false);
   const [projectionOpen, setProjectionOpen] = useState(false);
 
   const { data: lease, isLoading, refetch } = useQuery({
@@ -238,62 +222,6 @@ export default function ContratoDetalhe() {
     return m.charAt(0).toUpperCase() + m.slice(1);
   }, []);
 
-  const handleAutomationToggle = async (key: keyof BillingAutomation, value: boolean) => {
-    if (!lease) return;
-    try {
-      const currentAutomation = { ...(lease.billing_automation || {}) };
-      await updateLease.mutateAsync({
-        id: lease.id,
-        data: {
-          billing_automation: { ...currentAutomation, [key]: value } as BillingAutomation,
-        },
-      });
-      toast({ title: "Configuração atualizada!" });
-    } catch {
-      toast({ title: "Erro ao atualizar", variant: "destructive" });
-    }
-  };
-
-  // Calcular fora do useEffect para ser usado como dependência estável
-  const billingAutomationKey = JSON.stringify(lease?.billing_automation);
-
-  // Hydrate automation form when lease loads
-  useEffect(() => {
-    const auto: any = (lease as any)?.billing_automation;
-    if (auto) {
-      setAutomationForm({
-        email_enabled: !!auto.email_enabled,
-        email_destination: auto.email_destination ?? auto.billing_contact?.email ?? lease?.tenant_contact?.email ?? "",
-        whatsapp_enabled: !!auto.whatsapp_enabled,
-      });
-    }
-  }, [billingAutomationKey, lease?.tenant_contact?.email]);
-
-  const handleSaveAutomation = async () => {
-    if (!lease) return;
-    setSavingAutomation(true);
-    try {
-      const currentAutomation = { ...(lease.billing_automation || {}) };
-      await updateLease.mutateAsync({
-        id: lease.id,
-        data: {
-          billing_automation: {
-            ...currentAutomation,
-            email_enabled: automationForm.email_enabled,
-            email_destination: automationForm.email_destination,
-            whatsapp_enabled: automationForm.whatsapp_enabled,
-          } as BillingAutomation,
-        },
-      });
-      toast({ title: "Configurações salvas com sucesso" });
-    } catch {
-      toast({ title: "Erro ao salvar configurações", variant: "destructive" });
-    } finally {
-      setSavingAutomation(false);
-    }
-  };
-
-
   // Guarda: contrato ainda não configurado não tem tela de detalhe — vai para o wizard
   useEffect(() => {
     if (lease && isLeasePendingSetup(lease.status)) {
@@ -382,9 +310,6 @@ export default function ContratoDetalhe() {
   const signatureConfig = getSignatureStatus(lease.signature_status);
   const adjustmentConfig = getAdjustmentStatusConfig(lease.next_adjustment_date);
   const tenant = lease.tenant_contact;
-  const billingContactConfig = (lease as any)?.billing_automation?.billing_contact;
-  const tenantWhatsApp = billingContactConfig?.whatsapp || tenant?.whatsapp || tenant?.phone || null;
-  const billingContactName = billingContactConfig?.name || tenant?.name || "";
   const unit = lease.unit;
   const isSigned = lease.signature_status === "signed";
 
