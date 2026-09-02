@@ -204,6 +204,15 @@ export const DEFAULT_FINANCIAL_CATEGORIES: FinancialCategory[] = [
     tooltip: "Valor do condomínio recebido do inquilino e repassado ao proprietário"
   },
   { 
+    name: "Repasse de Taxa de Lixo", 
+    type: "expense", 
+    group: "Encargos de Locação", 
+    dre_type: "variable_cost", 
+    color: CATEGORY_COLORS.expense,
+    priority: 6,
+    tooltip: "Valor da taxa de lixo recebido do inquilino e repassado ao proprietário"
+  },
+  { 
     name: "Repasse de Energia", 
     type: "expense", 
     group: "Encargos de Locação", 
