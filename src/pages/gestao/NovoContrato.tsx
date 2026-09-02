@@ -711,10 +711,9 @@ export default function NovoContrato() {
               },
             }
           : {
-              reminder_5_days: true,
-              reminder_due_day: true,
-              reminder_3_days_late: true,
-              send_method: "whatsapp" as const,
+              enabled: false,
+              email_to: null,
+              steps: { "-3": true, "0": true, "1": false, "3": true },
               billing_contact: {
                 name: billingContact.name,
                 email: billingContact.email,
