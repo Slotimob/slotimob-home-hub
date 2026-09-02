@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import {
   Dialog,
@@ -34,7 +34,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
+import {
+  LeaseProjectionEditor,
+  type LeaseForProjection,
+  type LeaseProjectionEditorHandle,
+} from "@/components/assets/LeaseProjectionEditor";
 import { PercentInput } from "@/components/ui/currency-input";
 import { calculateRentAdjustment } from "@/lib/rentAdjustment";
 import { calculateProjectionWindow, calculateDueDate, resolveFirstAdjustedCompetency } from "@/lib/lease-projection";
@@ -105,8 +109,14 @@ export function AdjustmentCalculatorDialog({
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [launchFuture, setLaunchFuture] = useState(true);
-  const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
-  const [projectionOpen, setProjectionOpen] = useState(false);
+  const [selectedCount, setSelectedCount] = useState(0);
+  /** Editor de projeção embutido: o lançamento sai do botão desta tela. */
+  const editorRef = useRef<LeaseProjectionEditorHandle>(null);
+  /**
+   * O reajuste já foi gravado nesta sessão do dialog. Se só o lançamento falhar,
+   * a nova tentativa NÃO pode reaplicar o reajuste (duplicaria histórico/cascade).
+   */
+  const adjustmentAppliedRef = useRef(false);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -115,6 +125,8 @@ export function AdjustmentCalculatorDialog({
       setNotes("");
       setIsSubmitting(false);
       setLaunchFuture(true);
+      setSelectedCount(0);
+      adjustmentAppliedRef.current = false;
     }
   }, [open, lease?.id]);
 
@@ -136,7 +148,7 @@ export function AdjustmentCalculatorDialog({
 
   const canProject = missingFields.length === 0;
 
-  // Preview usa a mesma janela que a geração real em ConfirmLeaseProjectionDialog.
+  // Preview usa a mesma janela que a geração real do LeaseProjectionEditor.
   const projectionPreview = useMemo(() => {
     if (!lease || !canProject || !lease.due_day) return null;
     const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
@@ -159,6 +171,40 @@ export function AdjustmentCalculatorDialog({
     return { firstDue, endDate, indefinite, installments, reasonLabel: window.reasonLabel };
   }, [lease, canProject]);
 
+  /**
+   * Contrato "projetado" que alimenta o editor embutido: mesmo objeto que antes
+   * era passado ao segundo dialog, agora montado enquanto o usuário digita.
+   */
+  const projectionLeaseData = useMemo<LeaseForProjection | null>(() => {
+    if (!lease || !canProject || !lease.due_day) return null;
+    const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+    return {
+      id: lease.id,
+      unit_id: lease.unit_id,
+      tenant_contact_id: lease.tenant_contact_id!,
+      owner_contact_id: lease.owner_contact_id ?? null,
+      property_id: lease.property_id ?? null,
+      rent_amount: newValue,
+      due_day: lease.due_day,
+      // Mesma âncora do preview: primeira competência já reajustada.
+      start_date: format(
+        resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day),
+        "yyyy-MM-dd"
+      ),
+      end_date: lease.end_date ?? null,
+      next_adjustment_date: format(
+        addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+        "yyyy-MM-dd"
+      ),
+      is_indefinite_term: lease.is_indefinite_term ?? false,
+      fire_insurance: lease.fire_insurance ?? null,
+      iptu_charge: lease.iptu_charge ?? null,
+      additional_obligations: lease.additional_obligations ?? null,
+      unit: lease.unit ? { unit_number: lease.unit.unit_number } : null,
+      tenant: lease.tenant_contact ? { name: lease.tenant_contact.name } : null,
+    };
+  }, [lease, canProject, newValue]);
+
 
   if (!lease) return null;
 
@@ -168,106 +214,100 @@ export function AdjustmentCalculatorDialog({
     setIsSubmitting(true);
 
     try {
-      // Calculate next adjustment date (current + periodicity)
-      const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
-      const nextAdjustmentDate = format(
-        addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
-        "yyyy-MM-dd"
-      );
+      // Etapa 1: aplicar o reajuste. Só roda uma vez por sessão do dialog — numa
+      // nova tentativa após falha de lançamento, pula direto para a etapa 2.
+      if (!adjustmentAppliedRef.current) {
+        // Calculate next adjustment date (current + periodicity)
+        const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+        const nextAdjustmentDate = format(
+          addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+          "yyyy-MM-dd"
+        );
 
-      // Step 1: Insert adjustment history
-      const { error: historyError } = await supabase
-        .from("lease_adjustments")
-        .insert({
-          broker_id: effectiveBrokerId || user.id,
-          lease_id: lease.id,
-          adjustment_date: format(new Date(), "yyyy-MM-dd"),
-          previous_value: currentValue,
-          new_value: newValue,
-          index_used: lease.adjustment_index || "IGPM",
-          index_percentage: percentage,
-          notes: notes || null,
-        });
+        // Step 1: Insert adjustment history
+        const { error: historyError } = await supabase
+          .from("lease_adjustments")
+          .insert({
+            broker_id: effectiveBrokerId || user.id,
+            lease_id: lease.id,
+            adjustment_date: format(new Date(), "yyyy-MM-dd"),
+            previous_value: currentValue,
+            new_value: newValue,
+            index_used: lease.adjustment_index || "IGPM",
+            index_percentage: percentage,
+            notes: notes || null,
+          });
 
-      if (historyError) throw historyError;
+        if (historyError) throw historyError;
 
-      // Step 2: Update lease with new rent and next adjustment date
-      const { error: updateError } = await supabase
-        .from("leases")
-        .update({
-          rent_amount: newValue,
-          next_adjustment_date: nextAdjustmentDate,
-        })
-        .eq("id", lease.id);
+        // Step 2: Update lease with new rent and next adjustment date
+        const { error: updateError } = await supabase
+          .from("leases")
+          .update({
+            rent_amount: newValue,
+            next_adjustment_date: nextAdjustmentDate,
+          })
+          .eq("id", lease.id);
 
-      if (updateError) throw updateError;
+        if (updateError) throw updateError;
 
-      // Step 3: CASCADE UPDATE - apenas parcelas de ALUGUEL pendentes futuras.
-      // NUNCA tocar IPTU/seguro/outras obrigações: elas têm valor próprio e
-      // seriam sobrescritas com o valor do aluguel (corrupção silenciosa).
-      const adjustmentEffectiveDate = format(new Date(), "yyyy-MM-dd");
+        // Step 3: CASCADE UPDATE - apenas parcelas de ALUGUEL pendentes futuras.
+        // NUNCA tocar IPTU/seguro/outras obrigações: elas têm valor próprio e
+        // seriam sobrescritas com o valor do aluguel (corrupção silenciosa).
+        const adjustmentEffectiveDate = format(new Date(), "yyyy-MM-dd");
 
-      const { data: updatedTransactions, error: cascadeError } = await supabase
-        .from("financial_transactions")
-        .update({ amount: newValue })
-        .eq("reference", `lease:${lease.id}`)
-        .eq("status", "pending")
-        .gte("due_date", adjustmentEffectiveDate)
-        .or("obligation_type.eq.rent,obligation_type.is.null")
-        .select("id");
+        const { data: updatedTransactions, error: cascadeError } = await supabase
+          .from("financial_transactions")
+          .update({ amount: newValue })
+          .eq("reference", `lease:${lease.id}`)
+          .eq("status", "pending")
+          .gte("due_date", adjustmentEffectiveDate)
+          .or("obligation_type.eq.rent,obligation_type.is.null")
+          .select("id");
 
+        if (cascadeError) {
+          console.error("Cascade update error:", cascadeError);
+          toast({
+            title: "Reajuste aplicado com ressalva",
+            description:
+              "O contrato foi atualizado, mas houve erro ao atualizar parcelas futuras.",
+            variant: "destructive",
+          });
+        } else {
+          const updatedCount = updatedTransactions?.length || 0;
 
-      if (cascadeError) {
-        console.error("Cascade update error:", cascadeError);
-        toast({
-          title: "Reajuste aplicado com ressalva",
-          description: "O contrato foi atualizado, mas houve erro ao atualizar parcelas futuras.",
-          variant: "destructive",
-        });
-      } else {
-        const updatedCount = updatedTransactions?.length || 0;
+          toast({
+            title: "Reajuste aplicado com sucesso!",
+            description: `Novo valor: ${brl(newValue)}${updatedCount > 0 ? ` • ${updatedCount} parcelas atualizadas` : ""}`,
+          });
+        }
 
-        toast({
-          title: "Reajuste aplicado com sucesso!",
-          description: `Novo valor: ${brl(newValue)}${updatedCount > 0 ? ` • ${updatedCount} parcelas atualizadas` : ""}`,
-        });
+        adjustmentAppliedRef.current = true;
+
+        await invalidateLeaseQueries(queryClient);
+        queryClient.invalidateQueries({ queryKey: ["lease-adjustments"] });
+        queryClient.invalidateQueries({ queryKey: ["finance-overview"] });
       }
 
-      await invalidateLeaseQueries(queryClient);
-      queryClient.invalidateQueries({ queryKey: ["lease-adjustments"] });
-      queryClient.invalidateQueries({ queryKey: ["finance-overview"] });
+      // Etapa 2 (opcional): lançar as parcelas editadas inline, já reajustadas.
+      // Se falhar, o reajuste da etapa 1 permanece — o dialog NÃO fecha e o
+      // usuário pode tentar de novo sem reaplicar nada.
+      if (launchFuture && canProject && selectedCount > 0) {
+        try {
+          await editorRef.current?.submit();
+        } catch (launchError: any) {
+          toast({
+            title: "Reajuste aplicado, mas o lançamento falhou",
+            description: `${launchError?.message || "Erro desconhecido"} — o novo valor já está salvo. Você pode tentar lançar as parcelas novamente.`,
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       onSuccess?.();
       onOpenChange(false);
-
-      // Step 4 (opcional): lançamento das parcelas já com o valor reajustado.
-      // Só acontece se o usuário optou por isso e os dados existem — a ausência
-      // de dados já é comunicada inline, antes da confirmação.
-      if (launchFuture && canProject) {
-        setProjectionLease({
-          id: lease.id,
-          unit_id: lease.unit_id,
-          tenant_contact_id: lease.tenant_contact_id!,
-          owner_contact_id: lease.owner_contact_id ?? null,
-          property_id: lease.property_id ?? null,
-          rent_amount: newValue,
-          due_day: lease.due_day!,
-          // Mesma âncora do preview: primeira competência já reajustada.
-          start_date: format(
-            resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day!),
-            "yyyy-MM-dd"
-          ),
-          end_date: lease.end_date ?? null,
-          next_adjustment_date: nextAdjustmentDate,
-          is_indefinite_term: lease.is_indefinite_term ?? false,
-          fire_insurance: lease.fire_insurance ?? null,
-          iptu_charge: lease.iptu_charge ?? null,
-          additional_obligations: lease.additional_obligations ?? null,
-          unit: lease.unit ? { unit_number: lease.unit.unit_number } : null,
-          tenant: lease.tenant_contact ? { name: lease.tenant_contact.name } : null,
-        });
-        setProjectionOpen(true);
-      }
     } catch (error: any) {
       toast({
         title: "Erro ao aplicar reajuste",
@@ -280,8 +320,7 @@ export function AdjustmentCalculatorDialog({
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           className="sm:max-w-3xl"
           onInteractOutside={(e) => isSubmitting && e.preventDefault()}
@@ -426,44 +465,42 @@ export function AdjustmentCalculatorDialog({
                 </p>
               )}
 
-              {canProject && launchFuture && projectionPreview && (
-                <Card className="p-3 space-y-1.5 bg-muted/40">
-                  <p className="text-xs font-semibold flex items-center gap-1.5">
-                    <CalendarClock className="h-3.5 w-3.5 text-primary" />
-                    O que será lançado
-                  </p>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs [text-wrap:balance]">
-                    <span className="text-muted-foreground">Imóvel</span>
-                    <span className="font-medium text-right">{lease.unit?.unit_number || "—"}</span>
-                    <span className="text-muted-foreground">Inquilino</span>
-                    <span className="font-medium text-right">{lease.tenant_contact?.name || "—"}</span>
-                    <span className="text-muted-foreground">Novo valor do aluguel</span>
-                    <span className="font-medium text-right">
-                      {percentage > 0 ? brl(newValue) : "—"}
-                    </span>
-                    <span className="text-muted-foreground">Início da cobrança</span>
-                    <span className="font-medium text-right">
-                      {format(projectionPreview.firstDue, "dd/MM/yyyy", { locale: ptBR })}
-                    </span>
-                    <span className="text-muted-foreground">Data final</span>
-                    <span className="font-medium text-right">
-                      {projectionPreview.indefinite
-                        ? "Prazo indeterminado"
-                        : format(projectionPreview.endDate!, "dd/MM/yyyy", { locale: ptBR })}
-                    </span>
-                    <span className="text-muted-foreground">Parcelas estimadas</span>
-                    <span className="font-medium text-right">
-                      {projectionPreview.indefinite
-                        ? "conforme configuração de lançamento automático do contrato"
-                        : `${projectionPreview.installments} parcela(s) mensais`}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground pt-1 border-t">
-                    {projectionPreview.indefinite
-                      ? "Contrato por prazo indeterminado — na próxima tela você ajusta competência, vencimento, quantidade de parcelas e escolhe quais lançar."
-                      : "Na próxima tela você poderá ajustar competência, 1º vencimento, quantidade de parcelas e escolher quais lançar antes de confirmar."}
-                  </p>
-                </Card>
+              {canProject && launchFuture && projectionPreview && percentage > 0 && projectionLeaseData && (
+                <div className="space-y-3 pt-1">
+                  {/* Resumo curto: o detalhe editável fica no editor abaixo */}
+                  <Card className="p-3 bg-muted/40">
+                    <p className="text-xs font-semibold flex items-center gap-1.5 mb-1.5">
+                      <CalendarClock className="h-3.5 w-3.5 text-primary" />
+                      O que será lançado
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <span className="text-muted-foreground">Imóvel</span>
+                      <span className="font-medium text-right">
+                        {lease.unit?.unit_number || "—"}
+                      </span>
+                      <span className="text-muted-foreground">Inquilino</span>
+                      <span className="font-medium text-right">
+                        {lease.tenant_contact?.name || "—"}
+                      </span>
+                      <span className="text-muted-foreground">Novo valor do aluguel</span>
+                      <span className="font-medium text-right">{brl(newValue)}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground pt-2 mt-2 border-t [text-wrap:pretty]">
+                      Ajuste abaixo competência, 1º vencimento, quantidade de parcelas e valor —
+                      e marque exatamente o que deve ser lançado.
+                    </p>
+                  </Card>
+
+                  <LeaseProjectionEditor
+                    ref={editorRef}
+                    lease={projectionLeaseData}
+                    overrideRentAmount={newValue}
+                    overrideStartDate={projectionLeaseData.start_date}
+                    postAdjustment
+                    showSummary={false}
+                    onSelectionChange={(n) => setSelectedCount(n)}
+                  />
+                </div>
               )}
             </div>
 
@@ -498,22 +535,12 @@ export function AdjustmentCalculatorDialog({
               ) : (
                 <Check className="h-4 w-4 mr-2" />
               )}
-              Confirmar Reajuste
+              {launchFuture && canProject && selectedCount > 0
+                ? `Confirmar reajuste e lançar ${selectedCount} parcela${selectedCount === 1 ? "" : "s"}`
+                : "Confirmar Reajuste"}
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
-
-      <ConfirmLeaseProjectionDialog
-        open={projectionOpen}
-        onOpenChange={(o) => {
-          setProjectionOpen(o);
-          if (!o) setProjectionLease(null);
-        }}
-        lease={projectionLease}
-        postAdjustment
-
-      />
-    </>
+    </Dialog>
   );
 }
