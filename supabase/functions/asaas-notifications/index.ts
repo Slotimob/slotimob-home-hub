@@ -132,27 +132,27 @@ Deno.serve(async (req) => {
     }
     if (!automation) return resp({ error: "Envie 'automation' ou 'leaseId' para sincronizar a régua." });
 
-    const channels = (automation.channels ?? {}) as Record<string, boolean>;
-    const emailOn = channels.email === true;
-    const whatsappOn = channels.whatsapp === true;
+    // A régua Slotimob é exclusivamente por e-mail.
+    const rulerEnabled = automation.enabled === true;
+    const steps = (automation.steps ?? {}) as Record<string, boolean>;
 
-    // Mapeamento régua Slotimob → notificações padrão da Asaas.
+    // Mapeamento régua Slotimob (offsets -3/0/1/3) → notificações padrão da Asaas.
     const plan: { flag: string; event: string; matchOffset: number; targetOffset: number; logOffset: number }[] = [
-      { flag: "reminder_5_days", event: "PAYMENT_DUEDATE_WARNING", matchOffset: 10, targetOffset: 5, logOffset: -5 },
-      { flag: "reminder_due_day", event: "PAYMENT_DUEDATE_WARNING", matchOffset: 0, targetOffset: 0, logOffset: 0 },
-      { flag: "reminder_7_days_late", event: "PAYMENT_OVERDUE", matchOffset: 7, targetOffset: 7, logOffset: 7 },
+      { flag: "-3", event: "PAYMENT_DUEDATE_WARNING", matchOffset: 10, targetOffset: 3, logOffset: -3 },
+      { flag: "0", event: "PAYMENT_DUEDATE_WARNING", matchOffset: 0, targetOffset: 0, logOffset: 0 },
     ];
 
     const unsupported: string[] = [];
     // A Asaas só possui PAYMENT_OVERDUE com offset 0 e 7 e não permite criar notificações.
-    if (automation.reminder_3_days_late === true) unsupported.push("reminder_3_days_late");
+    if (steps["1"] === true) unsupported.push("1");
+    if (steps["3"] === true) unsupported.push("3");
 
     const updated: Record<string, unknown>[] = [];
     const errors: Record<string, unknown>[] = [];
     const logs: Record<string, unknown>[] = [];
 
     for (const step of plan) {
-      const enabled = automation[step.flag] === true;
+      const enabled = rulerEnabled && steps[step.flag] === true;
       const target =
         notifications.find((n) => n.event === step.event && n.scheduleOffset === step.targetOffset) ??
         notifications.find((n) => n.event === step.event && n.scheduleOffset === step.matchOffset);
@@ -165,8 +165,8 @@ Deno.serve(async (req) => {
       const payload = {
         enabled,
         scheduleOffset: step.targetOffset,
-        emailEnabledForCustomer: enabled && emailOn,
-        whatsappEnabledForCustomer: enabled && whatsappOn,
+        emailEnabledForCustomer: enabled,
+        whatsappEnabledForCustomer: false,
       };
 
       try {

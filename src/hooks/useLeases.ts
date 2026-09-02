@@ -419,10 +419,9 @@ export function useCreateLease() {
           cib: data.cib || null,
           is_dimob_deductible: data.is_dimob_deductible ?? true,
           billing_automation: (data.billing_automation || {
-            reminder_5_days: true,
-            reminder_due_day: true,
-            reminder_3_days_late: true,
-            send_method: "whatsapp",
+            enabled: false,
+            email_to: null,
+            steps: { "-3": true, "0": true, "1": false, "3": true },
           }) as unknown as Json,
           notes: data.notes || null,
           adjustment_index: data.adjustment_index || "IGPM",
