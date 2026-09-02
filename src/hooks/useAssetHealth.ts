@@ -88,6 +88,7 @@ const OBLIGATION_LABELS: Record<ObligationType, string> = {
   energy: "Energia",
   water: "Água",
   gas: "Gás",
+  garbage_fee: "Taxa de Lixo",
   insurance: "Seguro",
   other: "Outros",
 };
@@ -99,6 +100,7 @@ const OBLIGATION_CATEGORIES: Record<ObligationType, string[]> = {
   energy: ["energia", "luz", "eletricidade", "conta de luz"],
   water: ["água", "agua", "conta de água", "saneamento"],
   gas: ["gás", "gas", "conta de gás"],
+  garbage_fee: ["taxa de lixo", "lixo", "coleta de lixo"],
   insurance: ["seguro", "seguro incêndio", "seguro residencial"],
   other: ["outros", "outras despesas"],
 };

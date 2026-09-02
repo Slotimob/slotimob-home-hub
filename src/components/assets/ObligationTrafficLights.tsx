@@ -66,6 +66,7 @@ const OBLIGATION_ICONS: Record<ObligationType, LucideIcon> = {
   energy: Zap,
   water: Droplets,
   gas: Flame,
+  garbage_fee: Trash2,
   insurance: Shield,
   other: MoreHorizontal,
 };
