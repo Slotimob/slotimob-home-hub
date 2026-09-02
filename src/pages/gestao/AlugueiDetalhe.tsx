@@ -16,6 +16,7 @@ import {
   Zap,
   Droplets,
   Flame,
+  Trash2,
   Shield,
   MoreHorizontal,
   Pencil,
