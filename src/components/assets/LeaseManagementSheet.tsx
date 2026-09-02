@@ -660,21 +660,21 @@ export function LeaseManagementSheet({
                   </CardHeader>
                   <CardContent className="py-2 px-4">
                     <div className="space-y-3">
-                      {/* 5 days before */}
+                      {/* 3 days before */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className={cn(
                             "h-2.5 w-2.5 rounded-full",
-                            billingStatus.reminder5 ? "bg-green-500" : "bg-muted"
+                            billingStatus.reminder ? "bg-green-500" : "bg-muted"
                           )} />
-                          <span className="text-sm">5 dias antes - Lembrete</span>
+                          <span className="text-sm">3 dias antes - Lembrete</span>
                         </div>
                         <Switch
-                          checked={lease.billing_automation.reminder_5_days}
-                          onCheckedChange={(v) => handleAutomationToggle("reminder_5_days", v)}
+                          checked={lease.billing_automation?.steps?.["-3"] ?? true}
+                          onCheckedChange={(v) => handleAutomationToggle("-3", v)}
                         />
                       </div>
-                      
+
                       {/* Due day */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -685,11 +685,26 @@ export function LeaseManagementSheet({
                           <span className="text-sm">Dia do vencimento - Cobrança</span>
                         </div>
                         <Switch
-                          checked={lease.billing_automation.reminder_due_day}
-                          onCheckedChange={(v) => handleAutomationToggle("reminder_due_day", v)}
+                          checked={lease.billing_automation?.steps?.["0"] ?? true}
+                          onCheckedChange={(v) => handleAutomationToggle("0", v)}
                         />
                       </div>
-                      
+
+                      {/* 1 day late */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "h-2.5 w-2.5 rounded-full",
+                            billingStatus.overdue ? "bg-red-500" : "bg-muted"
+                          )} />
+                          <span className="text-sm">1 dia após - Aviso de atraso</span>
+                        </div>
+                        <Switch
+                          checked={lease.billing_automation?.steps?.["1"] ?? false}
+                          onCheckedChange={(v) => handleAutomationToggle("1", v)}
+                        />
+                      </div>
+
                       {/* 3 days late */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -700,8 +715,8 @@ export function LeaseManagementSheet({
                           <span className="text-sm">3 dias após - Inadimplência</span>
                         </div>
                         <Switch
-                          checked={lease.billing_automation.reminder_3_days_late}
-                          onCheckedChange={(v) => handleAutomationToggle("reminder_3_days_late", v)}
+                          checked={lease.billing_automation?.steps?.["3"] ?? true}
+                          onCheckedChange={(v) => handleAutomationToggle("3", v)}
                         />
                       </div>
                     </div>
