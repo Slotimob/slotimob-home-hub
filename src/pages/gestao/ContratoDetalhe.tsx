@@ -17,12 +17,9 @@ import {
   Loader2,
   User,
   Mail,
-  MessageSquare,
   ExternalLink,
   Calendar,
   Plus,
-  Phone,
-  Users,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -32,7 +29,6 @@ import {
   Route as RouteIcon,
   Scale,
   Zap,
-  Save,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -42,10 +38,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +59,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { LeaseJourneyTab } from "@/components/assets/LeaseJourneyTab";
 import { LeaseBoletos } from "@/components/assets/LeaseBoletos";
-import { AsaasSubscriptionCard } from "@/components/assets/AsaasSubscriptionCard";
 import { DimobStatusCard } from "@/components/assets/DimobStatusCard";
 import { TenantStatementDialog } from "@/components/assets/TenantStatementDialog";
 import { OwnerReportDialog } from "@/components/assets/OwnerReportDialog";
@@ -75,17 +66,21 @@ import { ConfigureObligationsDialog } from "@/components/assets/ConfigureObligat
 import { ContractGeneratorDialog } from "@/components/assets/ContractGeneratorDialog";
 import { TerminateContractDialog } from "@/components/assets/TerminateContractDialog";
 import { EditStartDateDialog } from "@/components/assets/EditStartDateDialog";
-import { BillingRulerCard, BillingReminderLogsCard } from "@/components/assets/BillingRulerCard";
+import {
+  BillingEmailRemindersCard,
+  BillingWhatsappManualCard,
+  BillingReminderLogsCard,
+} from "@/components/assets/BillingRulerCard";
 
 
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useUpdateLease, generateBillingMessage, type BillingLog, type BillingAutomation } from "@/hooks/useLeases";
+import { useUpdateLease } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { syncUnitStatusForLease } from "@/lib/unit-status-sync";
-import { cn, formatPhoneForWhatsApp } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { toast as sonnerToast } from "sonner";
 import {
   getLeaseStatusConfig,
@@ -118,21 +113,6 @@ export default function ContratoDetalhe() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [showBillingLogForm, setShowBillingLogForm] = useState(false);
-  const [billingLogForm, setBillingLogForm] = useState({
-    sent_by: "",
-    method: "whatsapp" as "whatsapp" | "email" | "phone" | "in_person" | "other",
-    notes: "",
-    sent_to: "",
-  });
-  const [logsLimit, setLogsLimit] = useState(20);
-
-  const [automationForm, setAutomationForm] = useState({
-    email_enabled: false,
-    email_destination: "",
-    whatsapp_enabled: false,
-  });
-  const [savingAutomation, setSavingAutomation] = useState(false);
   const [projectionOpen, setProjectionOpen] = useState(false);
 
   const { data: lease, isLoading, refetch } = useQuery({
@@ -234,62 +214,6 @@ export default function ContratoDetalhe() {
     return m.charAt(0).toUpperCase() + m.slice(1);
   }, []);
 
-  const handleAutomationToggle = async (key: keyof BillingAutomation, value: boolean) => {
-    if (!lease) return;
-    try {
-      const currentAutomation = { ...(lease.billing_automation || {}) };
-      await updateLease.mutateAsync({
-        id: lease.id,
-        data: {
-          billing_automation: { ...currentAutomation, [key]: value } as BillingAutomation,
-        },
-      });
-      toast({ title: "Configuração atualizada!" });
-    } catch {
-      toast({ title: "Erro ao atualizar", variant: "destructive" });
-    }
-  };
-
-  // Calcular fora do useEffect para ser usado como dependência estável
-  const billingAutomationKey = JSON.stringify(lease?.billing_automation);
-
-  // Hydrate automation form when lease loads
-  useEffect(() => {
-    const auto: any = (lease as any)?.billing_automation;
-    if (auto) {
-      setAutomationForm({
-        email_enabled: !!auto.email_enabled,
-        email_destination: auto.email_destination ?? auto.billing_contact?.email ?? lease?.tenant_contact?.email ?? "",
-        whatsapp_enabled: !!auto.whatsapp_enabled,
-      });
-    }
-  }, [billingAutomationKey, lease?.tenant_contact?.email]);
-
-  const handleSaveAutomation = async () => {
-    if (!lease) return;
-    setSavingAutomation(true);
-    try {
-      const currentAutomation = { ...(lease.billing_automation || {}) };
-      await updateLease.mutateAsync({
-        id: lease.id,
-        data: {
-          billing_automation: {
-            ...currentAutomation,
-            email_enabled: automationForm.email_enabled,
-            email_destination: automationForm.email_destination,
-            whatsapp_enabled: automationForm.whatsapp_enabled,
-          } as BillingAutomation,
-        },
-      });
-      toast({ title: "Configurações salvas com sucesso" });
-    } catch {
-      toast({ title: "Erro ao salvar configurações", variant: "destructive" });
-    } finally {
-      setSavingAutomation(false);
-    }
-  };
-
-
   // Guarda: contrato ainda não configurado não tem tela de detalhe — vai para o wizard
   useEffect(() => {
     if (lease && isLeasePendingSetup(lease.status)) {
@@ -378,9 +302,6 @@ export default function ContratoDetalhe() {
   const signatureConfig = getSignatureStatus(lease.signature_status);
   const adjustmentConfig = getAdjustmentStatusConfig(lease.next_adjustment_date);
   const tenant = lease.tenant_contact;
-  const billingContactConfig = (lease as any)?.billing_automation?.billing_contact;
-  const tenantWhatsApp = billingContactConfig?.whatsapp || tenant?.whatsapp || tenant?.phone || null;
-  const billingContactName = billingContactConfig?.name || tenant?.name || "";
   const unit = lease.unit;
   const isSigned = lease.signature_status === "signed";
 
@@ -635,428 +556,22 @@ export default function ContratoDetalhe() {
 
         {/* Billing */}
         <TabsContent value="billing" className="space-y-4 mt-4">
-          {/* Bloco novo: Cobrança automática Asaas (subscription) */}
-          <AsaasSubscriptionCard
-            leaseId={lease.id}
-            rentAmount={Number(lease.rent_amount) || 0}
-            dueDay={lease.due_day ?? null}
-            billingAutomation={(lease.billing_automation as Record<string, any>) || null}
-          />
-          {/* Contract-level billing config — read-only when user lacks management_contracts:edit.
-              Uses <fieldset disabled> to natively disable every descendant Switch/Input/Button. */}
-          <fieldset disabled={!canEdit} className="contents">
-
-          {/* Card 1: Automação de Cobrança (Lembretes por e-mail/WhatsApp) */}
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Mail className="h-4 w-4 text-blue-500" />
-                Lembretes por e-mail e WhatsApp
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Independente da cobrança automática do Asaas, envie lembretes personalizados nos canais configurados.
-              </p>
-            </CardHeader>
-            <CardContent className="py-2 px-4 space-y-4">
-              {billingContactConfig && (
-                <div className="p-2.5 rounded-md bg-muted/40 border mb-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium truncate">{billingContactConfig.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {billingContactConfig.email || "sem email"} · {billingContactConfig.whatsapp || "sem WhatsApp"}
-                    </p>
-                  </div>
-                  {canEdit && (
-                    <Button variant="ghost" size="sm" className="text-xs h-7 px-2 shrink-0" asChild>
-                      <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
-                        Editar
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              )}
-              {/* Email panel */}
-              <div className="rounded-lg border p-3 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    <div className="h-8 w-8 rounded-md bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                      <Mail className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium">E-mail</p>
-                        {automationForm.email_enabled && automationForm.email_destination && (
-                          <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-700 bg-green-500/10">
-                            Configurado
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">Enviado em seu nome pela plataforma</p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={automationForm.email_enabled}
-                    onCheckedChange={(v) => setAutomationForm((p) => ({ ...p, email_enabled: v }))}
-                  />
-                </div>
-                {automationForm.email_enabled && (
-                  <div className="space-y-3">
-                    <div className="rounded-md bg-muted/50 border border-border px-3 py-2 flex items-start gap-2">
-                      <Mail className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-foreground">
-                          {brokerProfile?.full_name || user?.email || "Seu nome"}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          Enviado pela plataforma Slotimob em seu nome.{" "}
-                          <button
-                            type="button"
-                            className="text-primary hover:underline"
-                            onClick={() => navigate("/settings")}
-                          >
-                            Atualizar perfil
-                          </button>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Para (e-mail destino)</Label>
-                      <Input
-                        type="email"
-                        placeholder={tenant?.email || "email@exemplo.com"}
-                        value={automationForm.email_destination}
-                        onChange={(e) =>
-                          setAutomationForm((p) => ({ ...p, email_destination: e.target.value }))
-                        }
-                        className="h-8 text-sm"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Padrão: e-mail do inquilino{tenant?.email ? ` (${tenant.email})` : " (não cadastrado)"}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* WhatsApp panel */}
-              <div className="rounded-lg border p-3 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    <div className="h-8 w-8 rounded-md bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                      <MessageSquare className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium">WhatsApp</p>
-                        {automationForm.whatsapp_enabled && (
-                          <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-700 bg-green-500/10">
-                            Configurado
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {hasWhatsappConnected ? "Integração Evolution API conectada" : "Requer integração WhatsApp"}
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={automationForm.whatsapp_enabled}
-                    onCheckedChange={(v) => setAutomationForm((p) => ({ ...p, whatsapp_enabled: v }))}
-                    disabled={!hasWhatsappConnected}
-                  />
-                </div>
-                {!hasWhatsappConnected && (
-                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 space-y-1.5">
-                    <p className="text-xs font-medium text-amber-700 flex items-center gap-1.5">
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      WhatsApp não conectado
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Conecte seu número via Evolution API para habilitar o envio automático de cobranças.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs border-amber-500/40 text-amber-700 hover:bg-amber-500/10 gap-1.5 mt-1"
-                      onClick={() => navigate("/whatsapp")}
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      Conectar WhatsApp
-                    </Button>
-                  </div>
-                )}
-                {/* Destino WhatsApp: read-only, número do inquilino */}
-                {automationForm.whatsapp_enabled && hasWhatsappConnected && (
-                  <div className="mt-2 p-3 rounded-md bg-muted/50 border text-sm">
-                    <p className="text-xs text-muted-foreground mb-1.5">Será enviado para o inquilino:</p>
-                    {tenantWhatsApp ? (
-                      <div className="flex items-center justify-between gap-2">
-                        <div>
-                          <p className="font-medium">{billingContactName}</p>
-                          <p className="text-xs text-muted-foreground">{tenantWhatsApp}</p>
-                        </div>
-                        {canEdit && (
-                          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
-                            <a href="/crm/contatos">Editar contato</a>
-                          </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-start gap-2 text-amber-700">
-                        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
-                        <div>
-                          <p className="font-medium text-sm">Inquilino sem número cadastrado</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Adicione um WhatsApp ou telefone no{" "}
-                            <a href="/crm/contatos" className="underline">contato do inquilino</a>{" "}
-                            para ativar este canal.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2">
-                {canEdit && (
-                  <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                    <a href={`/gestao/contratos/novo?edit=${lease?.id}&step=billing`}>
-                      <Pencil className="h-3.5 w-3.5" />
-                      Editar contato de cobrança
-                    </a>
-                  </Button>
-                )}
-                <Button size="sm" onClick={handleSaveAutomation} disabled={savingAutomation}>
-                  {savingAutomation ? (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-1.5" />
-                  )}
-                  Salvar configuração
-                </Button>
-              </div>
-              <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-muted/40 rounded-md px-3 py-2 mt-1">
-                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                <span>
-                  Os envios automáticos são processados nos horários da régua de cobrança configurada abaixo. Para funcionar, é necessário ativar pelo menos um canal e configurar o destinatário.
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Card 2: Régua de Cobrança (modo + passos + Asaas) */}
-          <BillingRulerCard
+          <BillingEmailRemindersCard
             leaseId={lease.id}
             brokerId={lease.broker_id ?? effectiveBrokerId}
             billingAutomation={(lease.billing_automation as Record<string, any>) || null}
+            tenantEmail={lease.tenant_contact?.email ?? null}
             canEdit={canEdit}
+          />
+
+          <BillingWhatsappManualCard
+            leaseId={lease.id}
+            brokerId={lease.broker_id ?? effectiveBrokerId}
+            tenantContactId={lease.tenant_contact_id ?? null}
             hasWhatsappConnected={hasWhatsappConnected}
           />
 
-          {/* Histórico de avisos do motor */}
           <BillingReminderLogsCard leaseId={lease.id} />
-
-
-          {/* Card 3: Histórico de Envios */}
-          <Card>
-            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium">Histórico de Envios</CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs gap-1"
-                onClick={() => setShowBillingLogForm(!showBillingLogForm)}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Registrar
-              </Button>
-            </CardHeader>
-            <CardContent className="py-2 px-4">
-              {showBillingLogForm && (
-                <div className="mb-4 p-3 border rounded-lg bg-muted/30 space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Quem entrou em contato</Label>
-                    <Input
-                      placeholder="Nome do responsável"
-                      value={billingLogForm.sent_by}
-                      onChange={(e) => setBillingLogForm({ ...billingLogForm, sent_by: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Canal de contato</Label>
-                    <Select
-                      value={billingLogForm.method}
-                      onValueChange={(v) =>
-                        setBillingLogForm({ ...billingLogForm, method: v as typeof billingLogForm.method })
-                      }
-                    >
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="whatsapp">
-                          <div className="flex items-center gap-2"><MessageSquare className="h-3.5 w-3.5 text-green-600" /> WhatsApp</div>
-                        </SelectItem>
-                        <SelectItem value="phone">
-                          <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-blue-600" /> Ligação</div>
-                        </SelectItem>
-                        <SelectItem value="email">
-                          <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-violet-600" /> E-mail</div>
-                        </SelectItem>
-                        <SelectItem value="in_person">
-                          <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5 text-amber-600" /> Presencial</div>
-                        </SelectItem>
-                        <SelectItem value="other">
-                          <div className="flex items-center gap-2"><MessageSquare className="h-3.5 w-3.5" /> Outro</div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Para (destinatário — opcional)</Label>
-                    <Input
-                      placeholder="E-mail ou número usado"
-                      value={billingLogForm.sent_to}
-                      onChange={(e) => setBillingLogForm({ ...billingLogForm, sent_to: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Observações (opcional)</Label>
-                    <Input
-                      placeholder="Ex: Inquilino prometeu pagar até sexta"
-                      value={billingLogForm.notes}
-                      onChange={(e) => setBillingLogForm({ ...billingLogForm, notes: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="flex-1 h-8"
-                      onClick={async () => {
-                        if (!billingLogForm.sent_by.trim()) {
-                          toast({ title: "Informe quem fez o contato", variant: "destructive" });
-                          return;
-                        }
-                        try {
-                          const newLog: BillingLog = {
-                            type: "manual",
-                            sent_at: new Date().toISOString(),
-                            method: billingLogForm.method,
-                            success: true,
-                            sent_by: billingLogForm.sent_by.trim(),
-                            sent_to: billingLogForm.sent_to.trim() || undefined,
-                            notes: billingLogForm.notes.trim() || undefined,
-                          };
-                          const updatedLogs = [...((lease.billing_logs as BillingLog[]) || []), newLog];
-                          await updateLease.mutateAsync({
-                            id: lease.id,
-                            data: { billing_logs: updatedLogs } as any,
-                          });
-                          toast({ title: "Contato registrado!" });
-                          setShowBillingLogForm(false);
-                          setBillingLogForm({ sent_by: "", method: "whatsapp", notes: "", sent_to: "" });
-                          refetch();
-                        } catch {
-                          toast({ title: "Erro ao registrar", variant: "destructive" });
-                        }
-                      }}
-                    >
-                      Salvar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8"
-                      onClick={() => {
-                        setShowBillingLogForm(false);
-                        setBillingLogForm({ sent_by: "", method: "whatsapp", notes: "", sent_to: "" });
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {(() => {
-                const allLogs = ((lease.billing_logs as BillingLog[]) || []).slice().reverse();
-                if (allLogs.length === 0) {
-                  return !showBillingLogForm ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum envio registrado ainda</p>
-                  ) : null;
-                }
-                const visible = allLogs.slice(0, logsLimit);
-                const hasMore = allLogs.length > visible.length;
-                return (
-                  <>
-                    <div className="space-y-2">
-                      {visible.map((log, index) => (
-                        <div
-                          key={index}
-                          className="flex items-start justify-between text-sm py-2 border-b border-border/50 last:border-0 gap-3"
-                        >
-                          <div className="flex items-start gap-2 min-w-0">
-                            <div className="mt-0.5">
-                              {log.method === "whatsapp" && <MessageSquare className="h-3.5 w-3.5 text-green-600" />}
-                              {log.method === "phone" && <Phone className="h-3.5 w-3.5 text-blue-600" />}
-                              {log.method === "email" && <Mail className="h-3.5 w-3.5 text-violet-600" />}
-                              {log.method === "in_person" && <Users className="h-3.5 w-3.5 text-amber-600" />}
-                              {log.method === "other" && <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />}
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-medium capitalize">
-                                {log.type === "manual" ? "Contato manual" : log.type.replace(/_/g, " ")}
-                              </span>
-                              {log.sent_by && (
-                                <span className="text-[10px] text-muted-foreground">por {log.sent_by}</span>
-                              )}
-                              {log.sent_to && (
-                                <span className="text-[10px] text-muted-foreground truncate">
-                                  Para: {log.sent_to}
-                                </span>
-                              )}
-                              {log.notes && (
-                                <span className="text-[10px] text-muted-foreground italic truncate max-w-[220px]">
-                                  {log.notes}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-muted-foreground text-xs whitespace-nowrap">
-                              {format(new Date(log.sent_at), "dd/MM HH:mm")}
-                            </span>
-                            {log.success ? (
-                              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                            ) : (
-                              <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {hasMore && (
-                      <div className="flex justify-center mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs"
-                          onClick={() => setLogsLimit((prev) => prev + 20)}
-                        >
-                          Ver mais ({allLogs.length - visible.length} restantes)
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </CardContent>
-          </Card>
-          </fieldset>
         </TabsContent>
 
         {/* Boletos */}
@@ -1064,7 +579,10 @@ export default function ContratoDetalhe() {
           <LeaseBoletos
             leaseId={lease.id}
             brokerId={effectiveBrokerId || user!.id}
-            onGoToBillingTab={() => setActiveTab("billing")}
+            rentAmount={Number(lease.rent_amount) || 0}
+            dueDay={lease.due_day ?? null}
+            billingAutomation={(lease.billing_automation as Record<string, any>) || null}
+            canEdit={canEdit}
           />
         </TabsContent>
 

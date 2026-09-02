@@ -1,125 +1,126 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   AlertCircle,
-  Ban,
-  CheckCircle2,
   ExternalLink,
   Info,
   Loader2,
   Mail,
   MessageSquare,
-  RefreshCw,
   Save,
-  Send,
-  Zap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ContactSelector } from "@/components/ContactSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateLease, type BillingAutomation } from "@/hooks/useLeases";
 import { cn } from "@/lib/utils";
 
-export type BillingMode = "off" | "own" | "asaas";
+export const BILLING_SENDER_EMAIL = "cobranca@slotimob.com.br";
 
-const STEPS: { flag: string; offset: number; title: string; subtitle: string }[] = [
-  { flag: "reminder_5_days", offset: -5, title: "5 dias antes", subtitle: "Lembrete de vencimento próximo" },
-  { flag: "reminder_due_day", offset: 0, title: "No vencimento", subtitle: "Cobrança no dia D" },
-  { flag: "reminder_3_days_late", offset: 3, title: "3 dias depois", subtitle: "Aviso de atraso" },
-  { flag: "reminder_7_days_late", offset: 7, title: "7 dias depois", subtitle: "Último aviso antes da cobrança formal" },
+type StepKey = "-3" | "0" | "1" | "3";
+
+const STEPS: { key: StepKey; title: string; subtitle: string }[] = [
+  { key: "-3", title: "3 dias antes do vencimento", subtitle: "Lembrete preventivo" },
+  { key: "0", title: "No dia do vencimento", subtitle: "Cobrança no dia D" },
+  { key: "1", title: "1 dia depois", subtitle: "Primeiro aviso de atraso" },
+  { key: "3", title: "3 dias depois", subtitle: "Último aviso automático" },
 ];
 
 export function offsetLabel(offset: number): string {
   switch (offset) {
-    case -5:
-      return "5 dias antes";
+    case -3:
+      return "3 dias antes";
     case 0:
       return "No vencimento";
+    case 1:
+      return "1 dia depois";
     case 3:
       return "3 dias depois";
-    case 7:
-      return "7 dias depois";
     default:
       return offset < 0 ? `${Math.abs(offset)} dias antes` : `${offset} dias depois`;
   }
 }
 
-interface BillingRulerCardProps {
+function brl(v: number | string | null | undefined) {
+  return Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatDate(d: string | null | undefined) {
+  if (!d) return "—";
+  return format(new Date(`${d}T12:00:00`), "dd/MM/yyyy", { locale: ptBR });
+}
+
+/* ------------------------------------------------------------------ */
+/* Bloco 1 — Avisos automáticos por e-mail                             */
+/* ------------------------------------------------------------------ */
+
+interface BillingEmailRemindersCardProps {
   leaseId: string;
   brokerId: string | null | undefined;
   billingAutomation: Record<string, any> | null;
+  tenantEmail: string | null | undefined;
   canEdit: boolean;
-  hasWhatsappConnected: boolean;
 }
 
-export function BillingRulerCard({
+export function BillingEmailRemindersCard({
   leaseId,
   brokerId,
   billingAutomation,
+  tenantEmail,
   canEdit,
-  hasWhatsappConnected,
-}: BillingRulerCardProps) {
-  const navigate = useNavigate();
+}: BillingEmailRemindersCardProps) {
   const { toast } = useToast();
   const updateLease = useUpdateLease();
 
   const auto = billingAutomation ?? {};
-  const [mode, setMode] = useState<BillingMode>(
-    auto.mode === "own" || auto.mode === "asaas" ? auto.mode : "off",
+  const [enabled, setEnabled] = useState<boolean>(!!auto.enabled);
+  const [emailTo, setEmailTo] = useState<string>(auto.email_to ?? "");
+  const [steps, setSteps] = useState<Record<StepKey, boolean>>(() =>
+    STEPS.reduce(
+      (acc, s) => ({ ...acc, [s.key]: !!auto.steps?.[s.key] }),
+      {} as Record<StepKey, boolean>,
+    ),
   );
-  const [flags, setFlags] = useState<Record<string, boolean>>(() =>
-    STEPS.reduce((acc, s) => ({ ...acc, [s.flag]: !!auto[s.flag] }), {} as Record<string, boolean>),
-  );
-  const [channels, setChannels] = useState<{ email: boolean; whatsapp: boolean }>({
-    email: auto.channels?.email ?? !!auto.email_enabled,
-    whatsapp: auto.channels?.whatsapp ?? !!auto.whatsapp_enabled,
-  });
   const [saving, setSaving] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<any>(null);
 
-  // Subconta Asaas ativa?
-  const { data: asaasAccount, isLoading: loadingAsaas } = useQuery({
-    queryKey: ["asaas-account", brokerId],
+  const autoKey = JSON.stringify(billingAutomation ?? {});
+  useEffect(() => {
+    const a = billingAutomation ?? {};
+    setEnabled(!!a.enabled);
+    setEmailTo(a.email_to ?? "");
+    setSteps(
+      STEPS.reduce(
+        (acc, s) => ({ ...acc, [s.key]: !!a.steps?.[s.key] }),
+        {} as Record<StepKey, boolean>,
+      ),
+    );
+  }, [autoKey]);
+
+  const { data: brokerProfile } = useQuery({
+    queryKey: ["billing-sender-profile", brokerId],
     enabled: !!brokerId,
     queryFn: async () => {
       const { data } = await supabase
-        .from("asaas_accounts")
-        .select("id, status")
-        .eq("broker_id", brokerId as string)
-        .limit(1)
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", brokerId as string)
         .maybeSingle();
       return data;
     },
   });
 
-  const asaasAvailable = !!asaasAccount && asaasAccount.status !== "inactive";
-
-  // Configuração real de notificações na Asaas
-  const {
-    data: asaasConfig,
-    isLoading: loadingConfig,
-    refetch: refetchConfig,
-  } = useQuery({
-    queryKey: ["asaas-notifications", leaseId],
-    enabled: mode === "asaas" && asaasAvailable,
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("asaas-notifications", {
-        body: { action: "get", lease_id: leaseId },
-      });
-      if (error) throw error;
-      return data as any;
-    },
-  });
+  const noRecipient = !emailTo.trim() && !tenantEmail;
 
   const handleSave = async () => {
     setSaving(true);
@@ -128,300 +129,256 @@ export function BillingRulerCard({
         id: leaseId,
         data: {
           billing_automation: {
-            ...(billingAutomation ?? {}),
-            mode,
-            channels,
-            // flags legadas preservadas / sincronizadas
-            reminder_5_days: !!flags.reminder_5_days,
-            reminder_due_day: !!flags.reminder_due_day,
-            reminder_3_days_late: !!flags.reminder_3_days_late,
-            reminder_7_days_late: !!flags.reminder_7_days_late,
-            email_enabled: channels.email,
-            whatsapp_enabled: channels.whatsapp,
-          } as unknown as BillingAutomation,
+            enabled,
+            email_to: emailTo.trim() || null,
+            steps,
+          } as BillingAutomation,
         },
       });
-      toast({ title: "Régua de cobrança salva" });
+      toast({ title: "Avisos por e-mail salvos" });
     } catch {
-      toast({ title: "Erro ao salvar a régua", variant: "destructive" });
+      toast({ title: "Erro ao salvar os avisos", variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSync = async () => {
-    setSyncing(true);
-    setSyncResult(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("asaas-notifications", {
-        body: {
-          action: "sync",
-          lease_id: leaseId,
-          steps: flags,
-          channels,
-        },
-      });
-      if (error) throw error;
-      setSyncResult(data);
-      toast({ title: "Notificações sincronizadas com a Asaas" });
-      refetchConfig();
-    } catch (e: any) {
-      toast({ title: "Erro ao sincronizar", description: e?.message, variant: "destructive" });
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  const modeOptions: {
-    value: BillingMode;
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-    disabled?: boolean;
-    disabledReason?: string;
-  }[] = [
-    {
-      value: "off",
-      title: "Desligada",
-      description: "Nenhum aviso automático é enviado ao inquilino.",
-      icon: <Ban className="h-4 w-4" />,
-    },
-    {
-      value: "own",
-      title: "Slotimob envia",
-      description: "E-mail enviado pela Slotimob em seu nome e WhatsApp pela sua própria conexão.",
-      icon: <Send className="h-4 w-4" />,
-    },
-    {
-      value: "asaas",
-      title: "Asaas envia",
-      description: "A régua fica a cargo da sua subconta Asaas, junto com a cobrança.",
-      icon: <Zap className="h-4 w-4" />,
-      disabled: !asaasAvailable,
-      disabledReason: loadingAsaas
-        ? "Verificando subconta..."
-        : "Nenhuma subconta Asaas ativa nesta conta.",
-    },
-  ];
-
   return (
     <Card>
       <CardHeader className="py-3 px-4">
-        <CardTitle className="text-sm font-medium">Régua de cobrança</CardTitle>
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Mail className="h-4 w-4 text-primary" />
+          Avisos automáticos por e-mail
+        </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Define quem envia os avisos de cobrança ao inquilino e em quais momentos.
+          A Slotimob envia os avisos de cobrança ao inquilino nos momentos escolhidos.
         </p>
       </CardHeader>
-      <CardContent className="py-2 px-4 space-y-5">
-        {/* Modo */}
-        <div className="grid gap-2 sm:grid-cols-3">
-          {modeOptions.map((opt) => {
-            const selected = mode === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                disabled={!canEdit || opt.disabled}
-                onClick={() => setMode(opt.value)}
-                className={cn(
-                  "text-left rounded-lg border p-3 transition-colors",
-                  selected ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "hover:bg-muted/50",
-                  (opt.disabled || !canEdit) && "opacity-60 cursor-not-allowed",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <span className={cn(selected ? "text-primary" : "text-muted-foreground")}>{opt.icon}</span>
-                  <span className="text-sm font-medium">{opt.title}</span>
-                  {selected && <CheckCircle2 className="h-3.5 w-3.5 text-primary ml-auto" />}
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1.5">{opt.description}</p>
-                {opt.disabled && (
-                  <p className="text-[11px] text-amber-600 mt-1.5">{opt.disabledReason}</p>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {!asaasAvailable && !loadingAsaas && (
-          <Button
-            variant="link"
-            size="sm"
-            className="h-auto p-0 text-xs gap-1"
-            onClick={() => navigate("/settings")}
-          >
-            <ExternalLink className="h-3 w-3" />
-            Configurar subconta Asaas
-          </Button>
-        )}
-
-        {mode === "off" ? (
-          <div className="rounded-md border bg-muted/40 px-3 py-2.5 flex items-start gap-2">
-            <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+      <CardContent className="py-2 px-4 space-y-4">
+        <div className="flex items-center justify-between rounded-lg border p-3 gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Ativar avisos por e-mail</p>
             <p className="text-xs text-muted-foreground">
-              A régua está desligada. Nenhum aviso será enviado ao inquilino até que você escolha quem envia.
+              Quando desligado, nenhum aviso é enviado para este contrato.
             </p>
           </div>
-        ) : (
-          <>
-            {/* Canais */}
-            <div className="space-y-2">
-              <Label className="text-xs">Canais</Label>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm">E-mail</span>
-                  </div>
-                  <Switch
-                    disabled={!canEdit}
-                    checked={channels.email}
-                    onCheckedChange={(v) => setChannels((p) => ({ ...p, email: v }))}
-                  />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm">WhatsApp</span>
-                  </div>
-                  <Switch
-                    disabled={!canEdit}
-                    checked={channels.whatsapp}
-                    onCheckedChange={(v) => setChannels((p) => ({ ...p, whatsapp: v }))}
-                  />
-                </div>
-              </div>
-              {mode === "own" && channels.whatsapp && !hasWhatsappConnected && (
-                <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 flex items-start gap-2">
-                  <AlertCircle className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
-                  <p className="text-[11px] text-muted-foreground">
-                    Nenhuma conexão de WhatsApp ativa. Os avisos por WhatsApp serão pulados até você conectar um
-                    número.
-                  </p>
-                </div>
-              )}
-            </div>
+          <Switch disabled={!canEdit} checked={enabled} onCheckedChange={setEnabled} />
+        </div>
 
-            {/* Passos */}
-            <div className="space-y-3">
-              <Label className="text-xs">Momentos</Label>
-              {STEPS.map((step) => {
-                const unsupported = mode === "asaas" && step.flag === "reminder_3_days_late";
-                return (
-                  <div key={step.flag} className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium">{step.title}</p>
-                        {unsupported && (
-                          <Badge variant="outline" className="text-[10px]">
-                            Não suportado pela Asaas
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{step.subtitle}</p>
-                      {unsupported && (
-                        <p className="text-[11px] text-amber-600 mt-0.5">
-                          A Asaas só possui notificações fixas de atraso em 0 e 7 dias e não permite criar novas
-                          pela API. Use o modo "Slotimob envia" se este passo for necessário.
-                        </p>
-                      )}
-                    </div>
-                    <Switch
-                      disabled={!canEdit || unsupported}
-                      checked={!unsupported && !!flags[step.flag]}
-                      onCheckedChange={(v) => setFlags((p) => ({ ...p, [step.flag]: v }))}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+        <div className="space-y-1.5">
+          <Label className="text-xs">E-mail de destino</Label>
+          <Input
+            type="email"
+            disabled={!canEdit}
+            placeholder={tenantEmail || "Inquilino sem e-mail cadastrado"}
+            value={emailTo}
+            onChange={(e) => setEmailTo(e.target.value)}
+            className="h-9 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Em branco = e-mail do inquilino
+            {tenantEmail ? ` (${tenantEmail})` : ""}.
+          </p>
+          {noRecipient && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              O inquilino não tem e-mail cadastrado e o campo está vazio: nenhum aviso será enviado.
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Momentos de envio</Label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {STEPS.map((s) => (
+              <div key={s.key} className="flex items-center justify-between rounded-lg border p-3 gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm">{s.title}</p>
+                  <p className="text-[11px] text-muted-foreground">{s.subtitle}</p>
+                </div>
+                <Switch
+                  disabled={!canEdit || !enabled}
+                  checked={!!steps[s.key]}
+                  onCheckedChange={(v) => setSteps((p) => ({ ...p, [s.key]: v }))}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2.5 flex items-start gap-2">
+          <Info className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            Os avisos saem de um e-mail da Slotimob (
+            <span className="font-medium text-foreground">{BILLING_SENDER_EMAIL}</span>), assinados com o nome{" "}
+            <span className="font-medium text-foreground">
+              {brokerProfile?.full_name || "—"}
+            </span>
+            . As respostas do inquilino chegam no seu e-mail cadastrado (
+            <span className="font-medium text-foreground">{brokerProfile?.email || "—"}</span>).
+          </p>
+        </div>
 
         {canEdit && (
           <div className="flex justify-end">
             <Button size="sm" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />}
-              Salvar régua
-            </Button>
-          </div>
-        )}
-
-        {/* Painel Asaas */}
-        {mode === "asaas" && asaasAvailable && (
-          <div className="rounded-lg border p-3 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium">O que a Asaas vai enviar</p>
-              {canEdit && (
-                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleSync} disabled={syncing}>
-                  {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                  Sincronizar com a Asaas
-                </Button>
+              {saving ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-1.5" />
               )}
-            </div>
-
-            {loadingConfig ? (
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Loader2 className="h-3 w-3 animate-spin" /> Carregando configuração...
-              </p>
-            ) : Array.isArray(asaasConfig?.notifications) && asaasConfig.notifications.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="text-muted-foreground">
-                    <tr className="border-b">
-                      <th className="text-left font-medium py-1.5 pr-3">Evento</th>
-                      <th className="text-left font-medium py-1.5 pr-3">Dias</th>
-                      <th className="text-left font-medium py-1.5">Canais</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {asaasConfig.notifications.map((n: any, i: number) => (
-                      <tr key={n.id ?? i} className="border-b last:border-0">
-                        <td className="py-1.5 pr-3">{n.event}</td>
-                        <td className="py-1.5 pr-3">
-                          {typeof n.scheduleOffset === "number" ? offsetLabel(n.scheduleOffset) : "—"}
-                        </td>
-                        <td className="py-1.5">
-                          {[n.emailEnabledForCustomer && "E-mail", n.whatsappEnabledForCustomer && "WhatsApp"]
-                            .filter(Boolean)
-                            .join(" · ") || "Nenhum"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">Nenhuma configuração retornada pela Asaas.</p>
-            )}
-
-            {syncResult && (
-              <div className="rounded-md bg-muted/40 border px-3 py-2 space-y-1">
-                <p className="text-[11px] text-muted-foreground">
-                  Notificações atualizadas: {syncResult.updated ?? 0}
-                </p>
-                {Array.isArray(syncResult.unsupported) && syncResult.unsupported.length > 0 && (
-                  <p className="text-[11px] text-amber-600">
-                    Não suportado pela Asaas: {syncResult.unsupported.join(", ")}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="rounded-md bg-muted/40 border px-3 py-2 flex items-start gap-2">
-              <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-              <p className="text-[11px] text-muted-foreground">
-                A Asaas não avisa por webhook quando dispara uma notificação — não existe comprovante de entrega. O
-                que dá para acompanhar é o ciclo da cobrança (criada, vencida, paga) e quando o inquilino abriu o
-                boleto ou o checkout.
-              </p>
-            </div>
+              Salvar avisos
+            </Button>
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Bloco 2 — Cobrança por WhatsApp (manual)                            */
+/* ------------------------------------------------------------------ */
+
+interface BillingWhatsappManualCardProps {
+  leaseId: string;
+  brokerId: string | null | undefined;
+  tenantContactId: string | null | undefined;
+  hasWhatsappConnected: boolean;
+}
+
+export function BillingWhatsappManualCard({
+  leaseId,
+  brokerId,
+  tenantContactId,
+  hasWhatsappConnected,
+}: BillingWhatsappManualCardProps) {
+  const navigate = useNavigate();
+  const [contactId, setContactId] = useState<string>(tenantContactId ?? "");
+
+  useEffect(() => {
+    if (tenantContactId) setContactId(tenantContactId);
+  }, [tenantContactId]);
+
+  // Parcela pendente mais próxima do vencimento
+  const { data: nextCharge } = useQuery({
+    queryKey: ["lease-next-pending-charge", leaseId, brokerId],
+    enabled: !!leaseId && !!brokerId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("financial_transactions")
+        .select("id, description, amount, due_date, status")
+        .eq("broker_id", brokerId as string)
+        .like("reference", `lease:${leaseId}%`)
+        .in("status", ["pending", "overdue"])
+        .order("due_date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: contact } = useQuery({
+    queryKey: ["billing-whatsapp-contact", contactId],
+    enabled: !!contactId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, name, phone, whatsapp")
+        .eq("id", contactId)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const phone = contact?.whatsapp || contact?.phone || "";
+
+  const message = useMemo(() => {
+    if (!nextCharge) return "";
+    const nome = contact?.name ? `${contact.name}, ` : "";
+    return `Olá ${nome}tudo bem? Passando para lembrar da cobrança "${nextCharge.description || "Aluguel"}" no valor de ${brl(nextCharge.amount)}, com vencimento em ${formatDate(nextCharge.due_date)}.`;
+  }, [nextCharge, contact?.name]);
+
+  const disabledReason = !hasWhatsappConnected
+    ? "Conecte um número de WhatsApp para usar este atalho."
+    : !contactId
+      ? "Selecione um contato."
+      : !phone
+        ? "O contato selecionado não tem telefone ou WhatsApp cadastrado."
+        : !nextCharge
+          ? "Não há parcela pendente neste contrato."
+          : null;
+
+  const handleOpen = () => {
+    if (disabledReason) return;
+    navigate(`/whatsapp?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="py-3 px-4">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-primary" />
+          Cobrança por WhatsApp
+          <Badge variant="outline" className="text-[10px]">Manual</Badge>
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Não existe régua automática por WhatsApp: enquanto não houver API oficial, o envio é manual para proteger o
+          número do corretor.
+        </p>
+      </CardHeader>
+      <CardContent className="py-2 px-4 space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Contato</Label>
+          <ContactSelector value={contactId} onChange={(v) => setContactId(v || "")} />
+        </div>
+
+        {!hasWhatsappConnected ? (
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 space-y-1.5">
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5" />
+              WhatsApp não conectado
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Conecte seu número na página de integrações para abrir a conversa direto daqui.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5 mt-1"
+              onClick={() => navigate("/whatsapp")}
+            >
+              <ExternalLink className="h-3 w-3" />
+              Conectar WhatsApp
+            </Button>
+          </div>
+        ) : nextCharge ? (
+          <div className="rounded-md border bg-muted/40 px-3 py-2 space-y-0.5">
+            <p className="text-[11px] text-muted-foreground">Mensagem pré-preenchida</p>
+            <p className="text-xs text-foreground">{message}</p>
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-[11px] text-muted-foreground">
+            A mensagem abre no chat pronta para revisão. Quem aperta enviar é você.
+          </p>
+          <Button size="sm" disabled={!!disabledReason} onClick={handleOpen} className="gap-1.5">
+            <MessageSquare className="h-3.5 w-3.5" />
+            Abrir cobrança no WhatsApp
+          </Button>
+        </div>
+        {disabledReason && hasWhatsappConnected && (
+          <p className="text-[11px] text-muted-foreground">{disabledReason}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Bloco 3 — Histórico de envios                                       */
+/* ------------------------------------------------------------------ */
 
 interface BillingReminderLogsCardProps {
   leaseId: string;
@@ -439,7 +396,7 @@ export function BillingReminderLogsCard({ leaseId }: BillingReminderLogsCardProp
     queryFn: async () => {
       const { data, error } = await supabase
         .from("billing_reminder_logs")
-        .select("id, created_at, channel, schedule_offset, recipient, status, error_message")
+        .select("id, created_at, channel, schedule_offset, recipient, status, error_message, transaction_id")
         .eq("lease_id", leaseId)
         .order("created_at", { ascending: false })
         .limit(100);
@@ -450,10 +407,31 @@ export function BillingReminderLogsCard({ leaseId }: BillingReminderLogsCardProp
 
   const rows = useMemo(() => data ?? [], [data]);
 
+  const transactionIds = useMemo(
+    () => Array.from(new Set(rows.map((r: any) => r.transaction_id).filter(Boolean))) as string[],
+    [rows],
+  );
+
+  const { data: dueDates } = useQuery({
+    queryKey: ["billing-reminder-log-due-dates", leaseId, transactionIds.join(",")],
+    enabled: transactionIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("financial_transactions")
+        .select("id, due_date")
+        .in("id", transactionIds);
+      const map: Record<string, string | null> = {};
+      (data ?? []).forEach((t: any) => {
+        map[t.id] = t.due_date;
+      });
+      return map;
+    },
+  });
+
   return (
     <Card>
       <CardHeader className="py-3 px-4">
-        <CardTitle className="text-sm font-medium">Histórico de avisos</CardTitle>
+        <CardTitle className="text-sm font-medium">Histórico de envios</CardTitle>
         <p className="text-xs text-muted-foreground">
           Cada tentativa do motor de cobrança deste contrato, com o resultado real.
         </p>
@@ -473,6 +451,7 @@ export function BillingReminderLogsCard({ leaseId }: BillingReminderLogsCardProp
               <thead className="text-muted-foreground">
                 <tr className="border-b">
                   <th className="text-left font-medium py-2 pr-3">Data/hora</th>
+                  <th className="text-left font-medium py-2 pr-3">Vencimento</th>
                   <th className="text-left font-medium py-2 pr-3">Canal</th>
                   <th className="text-left font-medium py-2 pr-3">Momento</th>
                   <th className="text-left font-medium py-2 pr-3">Destinatário</th>
@@ -485,12 +464,16 @@ export function BillingReminderLogsCard({ leaseId }: BillingReminderLogsCardProp
                     label: log.status,
                     className: "border-border text-muted-foreground bg-muted/40",
                   };
+                  const due = log.transaction_id ? dueDates?.[log.transaction_id] : null;
                   return (
                     <tr key={log.id} className="border-b last:border-0 align-top">
                       <td className="py-2 pr-3 whitespace-nowrap">
                         {format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                       </td>
-                      <td className="py-2 pr-3">{log.channel === "whatsapp" ? "WhatsApp" : log.channel === "email" ? "E-mail" : log.channel}</td>
+                      <td className="py-2 pr-3 whitespace-nowrap">{formatDate(due)}</td>
+                      <td className="py-2 pr-3 text-muted-foreground">
+                        {log.channel === "email" ? "E-mail" : log.channel}
+                      </td>
                       <td className="py-2 pr-3 whitespace-nowrap">{offsetLabel(log.schedule_offset)}</td>
                       <td className="py-2 pr-3 max-w-[180px] truncate">{log.recipient || "—"}</td>
                       <td className="py-2">

@@ -55,7 +55,6 @@ import {
   CalendarClock,
   TrendingUp,
   FileText,
-  Zap,
   Plus,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -64,6 +63,9 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/AsaasFinancialSeal";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AsaasSubscriptionCard } from "@/components/assets/AsaasSubscriptionCard";
+import { AsaasNotificationsPanel } from "@/components/assets/AsaasNotificationsPanel";
 
 const STATUS_MAP: Record<
   string,
@@ -98,7 +100,10 @@ const STATUS_MAP: Record<
 interface Props {
   leaseId: string;
   brokerId: string;
-  onGoToBillingTab?: () => void;
+  rentAmount: number;
+  dueDay: number | null;
+  billingAutomation: Record<string, any> | null;
+  canEdit?: boolean;
 }
 
 function brl(v: number | string | null | undefined) {
@@ -115,7 +120,7 @@ function billingLabel(t: string | null | undefined) {
   return "Fatura";
 }
 
-export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
+export function LeaseBoletos({ leaseId, brokerId, rentAmount, dueDay, billingAutomation, canEdit = true }: Props) {
   const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dueDateDialog, setDueDateDialog] = useState<{ id: string; current: string } | null>(
@@ -264,32 +269,50 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
               size="sm"
               onClick={() => setEmitirOpen(true)}
               disabled={!hasPermission("management_boletos", "create")}
               className="gap-1.5"
             >
               <Plus className="h-3.5 w-3.5" />
-              Cobrança avulsa
+              Nova cobrança avulsa
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSync}
-              disabled={syncing}
-              className="gap-1.5"
-            >
-              {syncing ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3.5 w-3.5" />
-              )}
-              Sincronizar com Asaas
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleSync}
+                    disabled={syncing}
+                    aria-label="Sincronizar com Asaas"
+                  >
+                    {syncing ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Sincronizar com Asaas</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </CardContent>
       </Card>
+
+      {/* Boletos automáticos */}
+      <AsaasSubscriptionCard
+        leaseId={leaseId}
+        rentAmount={rentAmount}
+        dueDay={dueDay}
+        billingAutomation={billingAutomation}
+      />
+
+      <AsaasNotificationsPanel leaseId={leaseId} canEdit={canEdit} />
 
       {/* Body */}
       {isLoading ? (
@@ -301,28 +324,19 @@ export function LeaseBoletos({ leaseId, brokerId, onGoToBillingTab }: Props) {
           <CardContent className="py-10 text-center space-y-3">
             <Receipt className="h-10 w-10 mx-auto text-muted-foreground opacity-40" />
             <p className="text-sm font-medium">Nenhuma cobrança ainda</p>
-            <p className="text-xs text-muted-foreground">
-              Ative a cobrança automática para emissões mensais ou crie uma cobrança avulsa.
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              O <strong>boleto automático</strong> é recorrente: uma vez ligado no bloco acima, a Asaas gera a cobrança
+              todo mês. A <strong>cobrança avulsa</strong> é emitida uma única vez, para um valor pontual.
             </p>
-            <div className="flex justify-center gap-2 pt-2">
+            <div className="flex justify-center pt-2">
               <Button
-                variant="default"
-                size="sm"
-                onClick={() => onGoToBillingTab?.()}
-                className="gap-1.5"
-              >
-                <Zap className="h-3.5 w-3.5" />
-                Ativar cobrança automática
-              </Button>
-              <Button
-                variant="outline"
                 size="sm"
                 onClick={() => setEmitirOpen(true)}
                 disabled={!hasPermission("management_boletos", "create")}
                 className="gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Emitir cobrança avulsa
+                Nova cobrança avulsa
               </Button>
             </div>
           </CardContent>
