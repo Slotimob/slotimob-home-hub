@@ -727,10 +727,6 @@ async function processIncomingMessage(supabaseAdmin: any, connection: any, msgDa
     }
   }
 
-  // Opt-out de avisos automáticos (não bloqueia o fluxo normal do webhook)
-  if (direction === 'incoming' && messageType === 'text') {
-    await handleOptOut(supabaseAdmin, connection, contactId, content, cleanPhone);
-  }
 
 
 

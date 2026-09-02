@@ -53,22 +53,11 @@ export interface PaymentInfo {
 }
 
 export interface BillingAutomation {
-  reminder_5_days: boolean;
-  reminder_due_day: boolean;
-  reminder_3_days_late: boolean;
-  send_method: "whatsapp" | "email" | "both";
-  // canais de automação (opcionais para retrocompatibilidade)
-  email_enabled?: boolean;
-  email_destination?: string;
-  whatsapp_enabled?: boolean;
-  billing_contact?: {
-    name: string;
-    email: string;
-    whatsapp: string; // stored as digits only with +55 prefix: ex "+5511999999999"
-  };
-  // sem whatsapp_destination: número vem de lease.tenant?.whatsapp || lease.tenant?.phone
-  // outros campos existentes no JSONB
-  legal_notification_7_days?: boolean;
+  enabled: boolean;
+  /** null = usar o e-mail do inquilino */
+  email_to: string | null;
+  /** offsets em dias relativos ao vencimento */
+  steps: Record<'-3' | '0' | '1' | '3', boolean>;
 }
 
 /**
