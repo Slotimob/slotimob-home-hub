@@ -167,6 +167,7 @@ export default function NovoContrato() {
     name: "",
     email: "",
     whatsapp: "", // display format: "(11) 99999-9999"
+    contact_id: "" as string,
   });
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
@@ -399,8 +400,10 @@ export default function NovoContrato() {
       const bc = editLease.billing_automation.billing_contact;
       setBillingContact({
         name: bc.name || "",
-        email: bc.email || "",
+        // `email_to` é a fonte de verdade dos avisos automáticos.
+        email: editLease.billing_automation.email_to || bc.email || "",
         whatsapp: formatWhatsAppDisplay(bc.whatsapp || ""),
+        contact_id: bc.contact_id || "",
       });
     }
   }, [editLease]);
@@ -487,7 +490,9 @@ export default function NovoContrato() {
     setBillingContact((prev) => ({
       name: prev.name || selectedTenant.name || "",
       email: prev.email || selectedTenant.email || "",
-      whatsapp: prev.whatsapp || formatWhatsAppDisplay(selectedTenant.whatsapp || selectedTenant.phone || ""),
+      whatsapp:
+        prev.whatsapp || formatWhatsAppDisplay(selectedTenant.whatsapp || selectedTenant.phone || ""),
+      contact_id: prev.contact_id || selectedTenant.id,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTenant?.id]);
@@ -701,25 +706,29 @@ export default function NovoContrato() {
         fire_insurance: formData.fire_insurance.enabled ? formData.fire_insurance : null,
         iptu_charge: formData.iptu_charge.enabled ? formData.iptu_charge : null,
         additional_obligations: (formData.additional_obligations || []).filter((o) => o.enabled),
-        billing_automation: (isEditMode && editLease
-          ? {
-              ...(editLease.billing_automation || {}),
-              billing_contact: {
-                name: billingContact.name,
-                email: billingContact.email,
-                whatsapp: billingWhatsAppStored(),
-              },
-            }
-          : {
-              enabled: false,
-              email_to: null,
-              steps: { "-3": true, "0": true, "1": false, "3": true },
-              billing_contact: {
-                name: billingContact.name,
-                email: billingContact.email,
-                whatsapp: billingWhatsAppStored(),
-              },
-            }) as any,
+        billing_automation: (() => {
+          // Fonte única de verdade: `email_to` alimenta os avisos automáticos e
+          // `billing_contact.contact_id` pré-seleciona o bloco manual de WhatsApp.
+          const contact = {
+            name: billingContact.name,
+            email: billingContact.email,
+            whatsapp: billingWhatsAppStored(),
+            contact_id: billingContact.contact_id || null,
+          };
+          const emailTo = billingContact.email.trim() || null;
+          return isEditMode && editLease
+            ? {
+                ...(editLease.billing_automation || {}),
+                email_to: emailTo,
+                billing_contact: contact,
+              }
+            : {
+                enabled: false,
+                email_to: emailTo,
+                steps: { "-3": true, "0": true, "1": false, "3": true },
+                billing_contact: contact,
+              };
+        })() as any,
       };
 
       let resultId = editLeaseId || "";
