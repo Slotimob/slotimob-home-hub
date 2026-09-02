@@ -41,6 +41,9 @@ interface ChatAreaProps {
   onReassign?: (conversationId: string, newUserId: string) => void;
   conversationId?: string | null;
   onOpenBuyCredits?: () => void;
+  /** Texto vindo de deep link: preenche o campo sem enviar. */
+  initialText?: string;
+  onInitialTextConsumed?: () => void;
 }
 
 function formatTime(dateStr: string): string {
@@ -180,6 +183,8 @@ export function ChatArea({
   onReassign,
   conversationId,
   onOpenBuyCredits,
+  initialText,
+  onInitialTextConsumed,
 }: ChatAreaProps) {
   const [messageText, setMessageText] = useState('');
   
@@ -194,6 +199,19 @@ export function ChatArea({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Deep link: deixa o texto pronto no campo, com o cursor no fim. Não envia.
+  useEffect(() => {
+    if (!initialText) return;
+    setMessageText(initialText);
+    const el = textareaRef.current;
+    if (el) {
+      el.focus();
+      const len = initialText.length;
+      requestAnimationFrame(() => el.setSelectionRange(len, len));
+    }
+    onInitialTextConsumed?.();
+  }, [initialText]);
 
   const handleSend = () => {
     if (!messageText.trim() || sending || !isConnected) return;

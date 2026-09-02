@@ -458,6 +458,8 @@ export default function WhatsApp() {
                 isOwner={canManage}
                 onReassign={handleReassign}
                 conversationId={selectedConversation?.id || null}
+                initialText={deepLinkText}
+                onInitialTextConsumed={() => setDeepLinkText('')}
               />
             </div>
 
