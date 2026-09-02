@@ -747,6 +747,11 @@ export function ConfirmLeaseProjectionDialog({
               onToggle={toggle}
               onSelectAll={selectAll}
               onClearAll={clearAll}
+              notice={
+                isUncategorizedObligation(g.cfg.type)
+                  ? UNCATEGORIZED_OBLIGATION_NOTICE
+                  : undefined
+              }
             />
           ))}
 
