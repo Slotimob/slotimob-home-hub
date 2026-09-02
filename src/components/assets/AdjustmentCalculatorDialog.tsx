@@ -396,6 +396,13 @@ export function AdjustmentCalculatorDialog({
                 autoFocus
               />
 
+              {percentage <= 0 && (
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                  <Info className="h-3 w-3" />
+                  Informe o percentual para calcular o novo valor.
+                </p>
+              )}
+
               {indexKey !== "Fixo" && (
                 <a
                   href={indexSource.url}
@@ -463,6 +470,16 @@ export function AdjustmentCalculatorDialog({
                     aplicado normalmente.
                   </span>
                 </p>
+              )}
+
+              {canProject && launchFuture && percentage <= 0 && (
+                <div className="rounded-lg border bg-muted/30 p-3 flex items-start gap-2">
+                  <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Digite o percentual do reajuste acima para ver as parcelas e ajustar
+                    competência, vencimento e quantidade antes de lançar.
+                  </p>
+                </div>
               )}
 
               {canProject && launchFuture && projectionPreview && percentage > 0 && projectionLeaseData && (
