@@ -138,13 +138,13 @@ export function LeaseManagementSheet({
 
   // Calculate billing reminder statuses
   const getBillingStatus = () => {
-    if (!lease || !nextDueDate) return { reminder5: false, dueDay: false, overdue: false };
-    
+    if (!lease || !nextDueDate) return { reminder: false, dueDay: false, overdue: false };
+
     const today = new Date();
-    const reminder5Date = addDays(nextDueDate, -5);
-    
+    const reminderDate = addDays(nextDueDate, -3);
+
     return {
-      reminder5: isBefore(reminder5Date, today) || isToday(reminder5Date),
+      reminder: isBefore(reminderDate, today) || isToday(reminderDate),
       dueDay: isToday(nextDueDate),
       overdue: isBefore(nextDueDate, today),
     };
@@ -152,8 +152,8 @@ export function LeaseManagementSheet({
 
   const billingStatus = getBillingStatus();
 
-  // Handle automation toggle
-  const handleAutomationToggle = async (key: keyof typeof lease.billing_automation, value: boolean) => {
+  // Handle automation step toggle (formato novo: steps por offset em dias)
+  const handleAutomationToggle = async (step: "-3" | "0" | "1" | "3", value: boolean) => {
     if (!lease) return;
 
     try {
@@ -161,8 +161,12 @@ export function LeaseManagementSheet({
         id: lease.id,
         data: {
           billing_automation: {
-            ...lease.billing_automation,
-            [key]: value,
+            ...(lease.billing_automation ?? { enabled: true, email_to: null }),
+            enabled: true,
+            steps: {
+              ...(lease.billing_automation?.steps ?? { "-3": true, "0": true, "1": false, "3": true }),
+              [step]: value,
+            },
           },
         },
       });
