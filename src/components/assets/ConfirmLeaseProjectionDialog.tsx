@@ -131,6 +131,18 @@ export function ConfirmLeaseProjectionDialog({
   const { generateProjections, isGenerating } = useLeaseFinancialProjection();
   const { data: existingCompetencies, isLoading: loadingExisting } =
     useExistingLeaseCompetencies(lease?.id ?? null, open);
+  const { data: customObligationTypes } = useCustomObligationTypes();
+
+  /** `uuid do tipo customizado -> nome`, usado só como fallback do rótulo. */
+  const customTypeNames = useMemo(
+    () =>
+      (customObligationTypes || []).reduce<Record<string, string>>((acc, t) => {
+        acc[t.id] = t.name;
+        return acc;
+      }, {}),
+    [customObligationTypes]
+  );
+
 
   const rentAmountDefault = overrideRentAmount ?? lease?.rent_amount ?? 0;
   const startDate = overrideStartDate || lease?.start_date || "";
