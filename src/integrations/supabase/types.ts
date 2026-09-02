@@ -1633,7 +1633,6 @@ export type Database = {
           state: string | null
           updated_at: string
           whatsapp: string | null
-          whatsapp_optout_at: string | null
         }
         Insert: {
           address?: string | null
@@ -1659,7 +1658,6 @@ export type Database = {
           state?: string | null
           updated_at?: string
           whatsapp?: string | null
-          whatsapp_optout_at?: string | null
         }
         Update: {
           address?: string | null
@@ -1685,7 +1683,6 @@ export type Database = {
           state?: string | null
           updated_at?: string
           whatsapp?: string | null
-          whatsapp_optout_at?: string | null
         }
         Relationships: [
           {
@@ -5736,42 +5733,6 @@ export type Database = {
           },
         ]
       }
-      whatsapp_send_guard: {
-        Row: {
-          broker_id: string
-          consecutive_failures: number
-          daily_cap: number
-          pause_reason: string | null
-          paused_until: string | null
-          require_prior_contact: boolean
-          send_window_end: number
-          send_window_start: number
-          updated_at: string
-        }
-        Insert: {
-          broker_id: string
-          consecutive_failures?: number
-          daily_cap?: number
-          pause_reason?: string | null
-          paused_until?: string | null
-          require_prior_contact?: boolean
-          send_window_end?: number
-          send_window_start?: number
-          updated_at?: string
-        }
-        Update: {
-          broker_id?: string
-          consecutive_failures?: number
-          daily_cap?: number
-          pause_reason?: string | null
-          paused_until?: string | null
-          require_prior_contact?: boolean
-          send_window_end?: number
-          send_window_start?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       whatsapp_sync_jobs: {
         Row: {
           broker_id: string
@@ -6163,11 +6124,6 @@ export type Database = {
       }
       verify_cron_secret: { Args: { p_secret: string }; Returns: boolean }
       verify_current_password: { Args: { password: string }; Returns: boolean }
-      whatsapp_has_prior_contact: {
-        Args: { p_broker_id: string; p_contact_id: string }
-        Returns: boolean
-      }
-      whatsapp_sent_today: { Args: { p_broker_id: string }; Returns: number }
     }
     Enums: {
       app_role:
