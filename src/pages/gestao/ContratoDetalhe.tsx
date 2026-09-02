@@ -17,12 +17,9 @@ import {
   Loader2,
   User,
   Mail,
-  MessageSquare,
   ExternalLink,
   Calendar,
   Plus,
-  Phone,
-  Users,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -32,7 +29,6 @@ import {
   Route as RouteIcon,
   Scale,
   Zap,
-  Save,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -42,10 +38,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,7 +82,7 @@ import { useUpdateLease } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { syncUnitStatusForLease } from "@/lib/unit-status-sync";
-import { cn, formatPhoneForWhatsApp } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { toast as sonnerToast } from "sonner";
 import {
   getLeaseStatusConfig,
