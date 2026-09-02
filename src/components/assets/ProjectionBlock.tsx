@@ -128,6 +128,13 @@ export function ProjectionBlock({
 
       {warning}
 
+      {notice && (
+        <p className="text-xs text-muted-foreground flex items-start gap-1.5 [text-wrap:pretty]">
+          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>{notice}</span>
+        </p>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
           <Label
