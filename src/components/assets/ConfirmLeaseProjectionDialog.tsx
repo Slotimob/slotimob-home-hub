@@ -43,6 +43,12 @@ import {
   useLeaseFinancialProjection,
 } from "@/hooks/useLeaseFinancialProjection";
 import { supabase } from "@/integrations/supabase/client";
+import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
+import {
+  isUncategorizedObligation,
+  resolveObligationLabel,
+  UNCATEGORIZED_OBLIGATION_NOTICE,
+} from "@/lib/obligation-labels";
 import type {
   FireInsuranceConfig,
   IptuChargeConfig,
@@ -50,14 +56,6 @@ import type {
   ObligationChargeConfig,
 } from "@/hooks/useLeases";
 
-/** Rótulos dos encargos adicionais mensais (mesma taxonomia do contrato). */
-const ADDITIONAL_LABELS: Record<string, string> = {
-  condominium: "Condomínio",
-  energy: "Energia",
-  water: "Água",
-  gas: "Gás",
-  other: "Outros",
-};
 
 /** tenant => receita; owner/agency => despesa (repasse assumido). */
 const typeFromChargeTo = (chargeTo?: LeaseChargeResponsible | null): "income" | "expense" =>
@@ -370,7 +368,7 @@ export function ConfirmLeaseProjectionDialog({
     return additionalConfigs
       .map((cfg) => {
         const state = blocks[cfg.type];
-        const label = cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type;
+        const label = resolveObligationLabel(cfg.type, cfg.label, customTypeNames);
         if (!state) return { cfg, label, installments: [] as PlannedInstallment[] };
         return {
           cfg,
@@ -749,7 +747,7 @@ export function ConfirmLeaseProjectionDialog({
               <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  {cfg.label?.trim() || ADDITIONAL_LABELS[cfg.type] || cfg.type}
+                  {resolveObligationLabel(cfg.type, cfg.label, customTypeNames)}
                 </span>{" "}
                 acompanha a competência do aluguel e só volta a ser lançado depois que o
                 reajuste for aplicado.
