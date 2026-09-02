@@ -244,6 +244,12 @@ interface BillingWhatsappManualCardProps {
   leaseId: string;
   brokerId: string | null | undefined;
   tenantContactId: string | null | undefined;
+  /**
+   * Contato definido no passo "Cobrança" do contrato
+   * (`billing_automation.billing_contact.contact_id`). Tem precedência sobre o
+   * inquilino: é a escolha explícita do usuário, feita uma única vez.
+   */
+  billingContactId?: string | null;
   hasWhatsappConnected: boolean;
 }
 
@@ -251,14 +257,17 @@ export function BillingWhatsappManualCard({
   leaseId,
   brokerId,
   tenantContactId,
+  billingContactId,
   hasWhatsappConnected,
 }: BillingWhatsappManualCardProps) {
   const navigate = useNavigate();
-  const [contactId, setContactId] = useState<string>(tenantContactId ?? "");
+  const initialContactId = billingContactId || tenantContactId || "";
+  const [contactId, setContactId] = useState<string>(initialContactId);
 
   useEffect(() => {
-    if (tenantContactId) setContactId(tenantContactId);
-  }, [tenantContactId]);
+    if (initialContactId) setContactId(initialContactId);
+  }, [initialContactId]);
+
 
   // Parcela pendente mais próxima do vencimento
   const { data: nextCharge } = useQuery({
