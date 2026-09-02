@@ -251,7 +251,7 @@ export function AsaasSubscriptionCard({
         <CardHeader className="py-3 px-4">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Zap className="h-4 w-4 text-amber-500" />
-            Cobrança automática
+            Boletos automáticos
           </CardTitle>
           <p className="text-xs text-muted-foreground">
             O Asaas emite a cobrança todo mês sozinho, envia por e-mail ao inquilino,
@@ -378,7 +378,7 @@ export function AsaasSubscriptionCard({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Zap className="h-4 w-4 text-amber-500" />
-              Cobrança automática
+              Boletos automáticos
             </CardTitle>
             <Badge
               variant="outline"
