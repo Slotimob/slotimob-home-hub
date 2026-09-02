@@ -26,6 +26,7 @@ export const SYSTEM_OBLIGATION_TYPES: {
   { type: "energy", label: "Energia", icon: "Zap", defaultDueDay: 20 },
   { type: "water", label: "Água", icon: "Droplets", defaultDueDay: 20 },
   { type: "gas", label: "Gás", icon: "Flame", defaultDueDay: 20 },
+  { type: "garbage_fee", label: "Taxa de Lixo", icon: "Trash2", defaultDueDay: 10 },
   { type: "insurance", label: "Seguro", icon: "Shield", defaultDueDay: 1 },
 ];
 

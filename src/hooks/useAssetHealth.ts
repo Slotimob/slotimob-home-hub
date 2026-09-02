@@ -11,6 +11,7 @@ export type ObligationType =
   | "energy" 
   | "water" 
   | "gas" 
+  | "garbage_fee"
   | "insurance" 
   | "other";
 

@@ -50,6 +50,7 @@ const CATEGORY_NAMES: Record<string, { income: string[]; expense: string[] }> = 
   energy: { income: ["Energia"], expense: ["Repasse de Energia"] },
   water: { income: ["Água"], expense: ["Repasse de Água"] },
   gas: { income: ["Gás"], expense: ["Repasse de Gás"] },
+  garbage_fee: { income: ["Taxa de Lixo"], expense: ["Repasse de Taxa de Lixo"] },
   other: { income: [], expense: [] },
 };
 
