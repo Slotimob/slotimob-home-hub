@@ -112,6 +112,7 @@ export const ADDITIONAL_OBLIGATIONS: {
   { type: "energy", label: "Energia", obligationKey: "energy" },
   { type: "water", label: "Água", obligationKey: "water" },
   { type: "gas", label: "Gás", obligationKey: "gas" },
+  { type: "garbage_fee", label: "Taxa de Lixo", obligationKey: "garbage_fee" },
   { type: "other", label: "Outros", obligationKey: "other" },
 ];
 
