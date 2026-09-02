@@ -71,23 +71,25 @@ const getBillingStage = (
   lease: Lease
 ): { stage: BillingFollowup["stage"]; stageLabel: string; dueDate: Date } | null => {
   const automation = lease.billing_automation;
+  const steps = automation?.steps ?? {};
+  if (!automation?.enabled) return null;
   const dueDate = getNextDueDate(lease.due_day);
   const today = startOfDay(new Date());
-  const reminderDate = addDays(dueDate, -5);
+  const reminderDate = addDays(dueDate, -3);
   const overdueDate = addDays(dueDate, 3);
 
-  if (automation?.reminder_3_days_late && today.getTime() >= overdueDate.getTime()) {
+  if (steps["3"] && today.getTime() >= overdueDate.getTime()) {
     return { stage: "overdue", stageLabel: "3 dias após", dueDate };
   }
-  if (automation?.reminder_due_day && today.getTime() >= dueDate.getTime()) {
+  if (steps["0"] && today.getTime() >= dueDate.getTime()) {
     return { stage: "due", stageLabel: "Dia do vencimento", dueDate };
   }
   if (
-    automation?.reminder_5_days &&
+    steps["-3"] &&
     today.getTime() >= reminderDate.getTime() &&
     today.getTime() < dueDate.getTime()
   ) {
-    return { stage: "reminder", stageLabel: "5 dias antes", dueDate };
+    return { stage: "reminder", stageLabel: "3 dias antes", dueDate };
   }
   return null;
 };
