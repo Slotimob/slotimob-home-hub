@@ -20,6 +20,11 @@ import { Badge } from "@/components/ui/badge";
 import { ContactSelector } from "@/components/ContactSelector";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
+import {
+  isUncategorizedObligation,
+  resolveObligationLabel,
+  UNCATEGORIZED_OBLIGATION_NOTICE,
+} from "@/lib/obligation-labels";
 import type {
   AdditionalObligationType,
   FireInsuranceConfig,
@@ -272,6 +277,12 @@ export function LeaseFinancialStep({
   const suggestedRef = useRef<string>("");
   const { data: customObligationTypes = [] } = useCustomObligationTypes();
 
+  /** `uuid do tipo customizado -> nome`, usado só como fallback do rótulo. */
+  const customTypeNames = customObligationTypes.reduce<Record<string, string>>((acc, t) => {
+    acc[t.id] = t.name;
+    return acc;
+  }, {});
+
 
   const suggestNextAdjustment = (): string => {
     const start = parseLocalDate(value.start_date);
@@ -452,10 +463,7 @@ export function LeaseFinancialStep({
       .filter((o) => o.enabled)
       .map((o) => ({
         key: o.type,
-        label:
-          (o.type === "other" && o.label) ||
-          ADDITIONAL_OBLIGATIONS.find((m) => m.type === o.type)?.label ||
-          o.type,
+        label: resolveObligationLabel(o.type, o.label, customTypeNames),
         amount: o.installment_amount || 0,
         charge_to: o.charge_to,
       })),
@@ -886,7 +894,7 @@ export function LeaseFinancialStep({
                         }
                       />
                     </div>
-                    {meta.type === "other" && (
+                    {isUncategorizedObligation(meta.type) && (
                       <div className="space-y-2 sm:col-span-2">
                         <Label>Descrição</Label>
                         <Input
@@ -894,8 +902,15 @@ export function LeaseFinancialStep({
                           onChange={(e) =>
                             updateAdditional(meta.type, { label: e.target.value || null })
                           }
-                          placeholder="Ex.: taxa de lixo, jardinagem..."
+                          placeholder="Ex.: jardinagem, portaria, limpeza..."
                         />
+                        <p className="text-xs text-muted-foreground flex items-start gap-1.5 [text-wrap:pretty]">
+                          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                          <span>
+                            Este nome é usado nas parcelas geradas.{" "}
+                            {UNCATEGORIZED_OBLIGATION_NOTICE}
+                          </span>
+                        </p>
                       </div>
                     )}
                     <ResponsibleField
