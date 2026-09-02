@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 
+import { ContactSelector } from "@/components/ContactSelector";
 import { AppLayout } from "@/components/AppLayout";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
@@ -167,6 +168,7 @@ export default function NovoContrato() {
     name: "",
     email: "",
     whatsapp: "", // display format: "(11) 99999-9999"
+    contact_id: "" as string,
   });
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
@@ -399,8 +401,10 @@ export default function NovoContrato() {
       const bc = editLease.billing_automation.billing_contact;
       setBillingContact({
         name: bc.name || "",
-        email: bc.email || "",
+        // `email_to` é a fonte de verdade dos avisos automáticos.
+        email: editLease.billing_automation.email_to || bc.email || "",
         whatsapp: formatWhatsAppDisplay(bc.whatsapp || ""),
+        contact_id: bc.contact_id || "",
       });
     }
   }, [editLease]);
@@ -481,13 +485,39 @@ export default function NovoContrato() {
 
   const selectedTenant = tenants?.find((t) => t.id === formData.tenant_contact_id);
 
+  /**
+   * Telefone do contato de cobrança escolhido: o WhatsApp deixa de ser digitado
+   * à mão e passa a vir do próprio contato, o mesmo objeto usado na aba Cobrança.
+   */
+  const { data: billingWhatsAppContact } = useQuery({
+    queryKey: ["billing-contact-phone", billingContact.contact_id],
+    enabled: !!billingContact.contact_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, name, phone, whatsapp")
+        .eq("id", billingContact.contact_id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (!billingWhatsAppContact) return;
+    const raw = billingWhatsAppContact.whatsapp || billingWhatsAppContact.phone || "";
+    setBillingContact((p) => ({ ...p, whatsapp: formatWhatsAppDisplay(raw) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [billingWhatsAppContact?.id, billingWhatsAppContact?.whatsapp, billingWhatsAppContact?.phone]);
+
   // Auto-populate billing contact when tenant changes (only if fields are still empty)
   useEffect(() => {
     if (!selectedTenant) return;
     setBillingContact((prev) => ({
       name: prev.name || selectedTenant.name || "",
       email: prev.email || selectedTenant.email || "",
-      whatsapp: prev.whatsapp || formatWhatsAppDisplay(selectedTenant.whatsapp || selectedTenant.phone || ""),
+      whatsapp:
+        prev.whatsapp || formatWhatsAppDisplay(selectedTenant.whatsapp || selectedTenant.phone || ""),
+      contact_id: prev.contact_id || selectedTenant.id,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTenant?.id]);
@@ -701,25 +731,29 @@ export default function NovoContrato() {
         fire_insurance: formData.fire_insurance.enabled ? formData.fire_insurance : null,
         iptu_charge: formData.iptu_charge.enabled ? formData.iptu_charge : null,
         additional_obligations: (formData.additional_obligations || []).filter((o) => o.enabled),
-        billing_automation: (isEditMode && editLease
-          ? {
-              ...(editLease.billing_automation || {}),
-              billing_contact: {
-                name: billingContact.name,
-                email: billingContact.email,
-                whatsapp: billingWhatsAppStored(),
-              },
-            }
-          : {
-              enabled: false,
-              email_to: null,
-              steps: { "-3": true, "0": true, "1": false, "3": true },
-              billing_contact: {
-                name: billingContact.name,
-                email: billingContact.email,
-                whatsapp: billingWhatsAppStored(),
-              },
-            }) as any,
+        billing_automation: (() => {
+          // Fonte única de verdade: `email_to` alimenta os avisos automáticos e
+          // `billing_contact.contact_id` pré-seleciona o bloco manual de WhatsApp.
+          const contact = {
+            name: billingContact.name,
+            email: billingContact.email,
+            whatsapp: billingWhatsAppStored(),
+            contact_id: billingContact.contact_id || null,
+          };
+          const emailTo = billingContact.email.trim() || null;
+          return isEditMode && editLease
+            ? {
+                ...(editLease.billing_automation || {}),
+                email_to: emailTo,
+                billing_contact: contact,
+              }
+            : {
+                enabled: false,
+                email_to: emailTo,
+                steps: { "-3": true, "0": true, "1": false, "3": true },
+                billing_contact: contact,
+              };
+        })() as any,
       };
 
       let resultId = editLeaseId || "";
@@ -1761,10 +1795,12 @@ export default function NovoContrato() {
           {step === "billing" && (
             <div className="space-y-5">
               <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <p className="text-sm font-medium text-primary mb-1">Contato para Cobrança</p>
-                <p className="text-xs text-muted-foreground">
-                  Informe os dados de contato para envio automático de avisos de vencimento e cobranças.
-                  A automação será ativada após a criação do contrato, na aba <strong>Cobrança</strong>.
+                <p className="text-sm font-medium text-primary mb-1">Contato para cobrança</p>
+                <p className="text-xs text-muted-foreground [text-wrap:pretty]">
+                  Defina para onde vão os avisos deste contrato. O <strong>e-mail</strong> é usado
+                  pelos avisos automáticos, que você liga depois na aba <strong>Cobrança</strong>.
+                  O <strong>WhatsApp</strong> é sempre manual: o sistema monta a mensagem e você
+                  envia.
                 </p>
               </div>
 
@@ -1788,37 +1824,23 @@ export default function NovoContrato() {
                   onChange={(e) => setBillingContact((p) => ({ ...p, email: e.target.value }))}
                   placeholder="email@exemplo.com"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label>WhatsApp para Cobrança</Label>
-                <div className="flex gap-2">
-                  <div className="flex items-center px-3 border rounded-md bg-muted text-sm text-muted-foreground select-none whitespace-nowrap">
-                    🇧🇷 +55
-                  </div>
-                  <Input
-                    value={billingContact.whatsapp}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
-                      let formatted: string = digits;
-                      if (digits.length > 2) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-                      if (digits.length > 7) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-                      setBillingContact((p) => ({ ...p, whatsapp: formatted }));
-                    }}
-                    placeholder="(11) 99999-9999"
-                    className="flex-1"
-                    inputMode="numeric"
-                  />
-                </div>
                 <p className="text-xs text-muted-foreground">
-                  DDD + número com 9 dígitos. O código +55 (Brasil) é adicionado automaticamente.
+                  Já entra preenchido na aba Cobrança como destinatário dos avisos automáticos.
                 </p>
               </div>
 
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                <strong>Importante:</strong> a automação de cobranças só será ativada após a criação do contrato,
-                na aba <strong>Cobrança</strong> do detalhe do contrato. Aqui você apenas pré-configura o contato.
+              <div className="space-y-2">
+                <Label>Contato de WhatsApp</Label>
+                <ContactSelector
+                  value={billingContact.contact_id || null}
+                  onChange={(id) => setBillingContact((p) => ({ ...p, contact_id: id || "" }))}
+                  placeholder="Selecione o contato para mensagens de cobrança"
+                />
+                <p className="text-xs text-muted-foreground">
+                  É o contato pré-selecionado no envio manual de WhatsApp, na aba Cobrança.
+                </p>
               </div>
+
             </div>
           )}
 

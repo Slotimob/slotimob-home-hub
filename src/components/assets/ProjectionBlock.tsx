@@ -59,6 +59,8 @@ export interface ProjectionBlockProps {
   onClearAll: (keys: string[]) => void;
   /** Aviso inline (ex.: valor da parcela não definido no contrato). */
   warning?: ReactNode;
+  /** Nota discreta (ex.: encargo de texto livre lançado sem categoria). */
+  notice?: string;
   /** Rótulo do campo de competência (IPTU usa "exercício"). */
   competencyLabel?: string;
   /** Esconde o campo de nº de parcelas quando o bloco é de parcela única. */
@@ -88,6 +90,7 @@ export function ProjectionBlock({
   onSelectAll,
   onClearAll,
   warning,
+  notice,
   competencyLabel = "Competência inicial (emissão)",
   hideMonths = false,
 }: ProjectionBlockProps) {
@@ -124,6 +127,13 @@ export function ProjectionBlock({
       </header>
 
       {warning}
+
+      {notice && (
+        <p className="text-xs text-muted-foreground flex items-start gap-1.5 [text-wrap:pretty]">
+          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>{notice}</span>
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">

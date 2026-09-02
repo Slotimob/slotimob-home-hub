@@ -118,7 +118,7 @@ export function buildObligationsConfigFromLease(
 }
 
 /** Tipos fixos aceitos em `leases.additional_obligations` */
-const FIXED_ADDITIONAL_TYPES = ["condominium", "energy", "water", "gas", "other"];
+const FIXED_ADDITIONAL_TYPES = ["condominium", "energy", "water", "gas", "garbage_fee", "other"];
 
 const isAdditionalKey = (key: string) =>
   FIXED_ADDITIONAL_TYPES.includes(key) || key.startsWith("custom_");

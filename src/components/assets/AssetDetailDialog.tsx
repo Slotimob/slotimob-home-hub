@@ -37,6 +37,7 @@ import {
   Zap,
   Droplets,
   Flame,
+  Trash2,
   Shield,
   MoreHorizontal,
   ExternalLink,
@@ -99,6 +100,7 @@ const OBLIGATION_LABELS: Record<ObligationType, string> = {
   energy: "Energia",
   water: "Água",
   gas: "Gás",
+  garbage_fee: "Taxa de Lixo",
   insurance: "Seguro",
   other: "Outros",
 };
@@ -110,6 +112,7 @@ const OBLIGATION_ICONS: Record<ObligationType, LucideIcon> = {
   energy: Zap,
   water: Droplets,
   gas: Flame,
+  garbage_fee: Trash2,
   insurance: Shield,
   other: MoreHorizontal,
 };

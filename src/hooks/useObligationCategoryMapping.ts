@@ -10,6 +10,7 @@ const OBLIGATION_CATEGORY_KEYWORDS: Record<ObligationType, string[]> = {
   energy: ["energia", "luz", "eletricidade", "conta de luz", "cemig", "enel"],
   water: ["água", "agua", "conta de água", "saneamento", "copasa", "sabesp"],
   gas: ["gás", "gas", "conta de gás"],
+  garbage_fee: ["taxa de lixo", "lixo", "coleta de lixo"],
   insurance: ["seguro", "seguro incêndio", "seguro residencial"],
   other: ["outros", "outras despesas"],
 };
@@ -22,6 +23,7 @@ const OBLIGATION_TRANSACTION_TYPE: Record<ObligationType, "income" | "expense"> 
   energy: "expense",
   water: "expense",
   gas: "expense",
+  garbage_fee: "expense",
   insurance: "expense",
   other: "expense",
 };
