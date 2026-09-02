@@ -472,6 +472,16 @@ export function AdjustmentCalculatorDialog({
                 </p>
               )}
 
+              {canProject && launchFuture && percentage <= 0 && (
+                <div className="rounded-lg border bg-muted/30 p-3 flex items-start gap-2">
+                  <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Digite o percentual do reajuste acima para ver as parcelas e ajustar
+                    competência, vencimento e quantidade antes de lançar.
+                  </p>
+                </div>
+              )}
+
               {canProject && launchFuture && projectionPreview && percentage > 0 && projectionLeaseData && (
                 <div className="space-y-3 pt-1">
                   {/* Resumo curto: o detalhe editável fica no editor abaixo */}
