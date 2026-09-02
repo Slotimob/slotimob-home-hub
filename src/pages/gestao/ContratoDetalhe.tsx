@@ -568,6 +568,9 @@ export default function ContratoDetalhe() {
             leaseId={lease.id}
             brokerId={lease.broker_id ?? effectiveBrokerId}
             tenantContactId={lease.tenant_contact_id ?? null}
+            billingContactId={
+              (lease.billing_automation as Record<string, any>)?.billing_contact?.contact_id ?? null
+            }
             hasWhatsappConnected={hasWhatsappConnected}
           />
 
