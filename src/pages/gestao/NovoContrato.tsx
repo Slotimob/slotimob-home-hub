@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 
+import { ContactSelector } from "@/components/ContactSelector";
 import { AppLayout } from "@/components/AppLayout";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
@@ -483,6 +484,30 @@ export default function NovoContrato() {
   });
 
   const selectedTenant = tenants?.find((t) => t.id === formData.tenant_contact_id);
+
+  /**
+   * Telefone do contato de cobrança escolhido: o WhatsApp deixa de ser digitado
+   * à mão e passa a vir do próprio contato, o mesmo objeto usado na aba Cobrança.
+   */
+  const { data: billingWhatsAppContact } = useQuery({
+    queryKey: ["billing-contact-phone", billingContact.contact_id],
+    enabled: !!billingContact.contact_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, name, phone, whatsapp")
+        .eq("id", billingContact.contact_id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (!billingWhatsAppContact) return;
+    const raw = billingWhatsAppContact.whatsapp || billingWhatsAppContact.phone || "";
+    setBillingContact((p) => ({ ...p, whatsapp: formatWhatsAppDisplay(raw) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [billingWhatsAppContact?.id, billingWhatsAppContact?.whatsapp, billingWhatsAppContact?.phone]);
 
   // Auto-populate billing contact when tenant changes (only if fields are still empty)
   useEffect(() => {
