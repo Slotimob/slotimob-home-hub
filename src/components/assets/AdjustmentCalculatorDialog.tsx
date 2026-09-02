@@ -396,6 +396,13 @@ export function AdjustmentCalculatorDialog({
                 autoFocus
               />
 
+              {percentage <= 0 && (
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                  <Info className="h-3 w-3" />
+                  Informe o percentual para calcular o novo valor.
+                </p>
+              )}
+
               {indexKey !== "Fixo" && (
                 <a
                   href={indexSource.url}
