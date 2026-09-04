@@ -38,7 +38,7 @@ export function useTransactionDateRange(unitId?: string): DateRangeResult {
       const dates = transactions
         .map(t => t.transaction_date)
         .filter(Boolean)
-        .map(d => new Date(d))
+        .map(d => parseDateOnly(d))
         .sort((a, b) => a.getTime() - b.getTime());
 
       if (dates.length === 0) {
