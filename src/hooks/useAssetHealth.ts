@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import type { Json } from "@/integrations/supabase/types";
-import { toDateOnly } from "@/lib/date-only";
+import { toDateOnly, todayDateOnly } from "@/lib/date-only";
 
 export type ObligationType = 
   | "rent" 
@@ -159,8 +159,7 @@ function calculateObligationStatus(
       
       // Use transaction's due_date if available for precise comparison
       if (transaction.due_date) {
-        const dueDate = new Date(transaction.due_date);
-        return today > dueDate ? "overdue" : "pending";
+        return transaction.due_date < todayDateOnly() ? "overdue" : "pending";
       }
       
       // Fallback to config due_day

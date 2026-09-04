@@ -58,6 +58,7 @@ import type { LeaseConversionContext } from "@/hooks/useLeaseConversionContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GuarantorSelector } from "./GuarantorSelector";
+import { parseDateOnly } from "@/lib/date-only";
 
 // Pre-fill data that can be passed from CRM conversion
 export interface LeasePreFillData {
@@ -260,7 +261,7 @@ export function CreateLeaseWizard({
   const nextAdjustmentDate = useMemo(() => {
     if (!formData.start_date) return null;
     try {
-      const startDate = new Date(formData.start_date);
+      const startDate = parseDateOnly(formData.start_date)!;
       return format(addYears(startDate, 1), "yyyy-MM-dd");
     } catch {
       return null;

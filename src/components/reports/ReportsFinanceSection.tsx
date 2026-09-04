@@ -17,7 +17,8 @@ import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiForm
 import { buildCashflowExport } from '@/lib/cashflow-export-data';
 import { generateCashflowPdf, generateCashflowDocx, generateCashflowExcel, generateCashflowCsv } from '@/utils/cashflowExportGenerators';
 import { useToast } from '@/hooks/use-toast';
-import { toDateOnly, todayDateOnly } from "@/lib/date-only";
+import { differenceInDays, startOfDay } from "date-fns";
+import { parseDateOnly, toDateOnly, todayDateOnly } from "@/lib/date-only";
 
 interface ReportsFinanceSectionProps {
   dateRange: { from: Date; to: Date };
@@ -184,7 +185,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
     const { data: overdue } = await query;
     let totalOriginal = 0, totalPenalty = 0, totalInterest = 0, totalUpdated = 0;
     const tableData = (overdue || []).map(t => {
-      const daysOverdue = Math.floor((Date.now() - new Date(t.due_date!).getTime()) / (1000 * 60 * 60 * 24));
+      const daysOverdue = (parseDateOnly(t.due_date!) ? differenceInDays(startOfDay(new Date()), startOfDay(parseDateOnly(t.due_date!)!)) : 0);
       const { penalty, interest, total } = calculatePenaltyAndInterest(t.amount, daysOverdue);
       totalOriginal += t.amount; totalPenalty += penalty; totalInterest += interest; totalUpdated += total;
       return [formatDate(t.due_date!), t.contact?.name || '-', t.unit?.unit_number || '-', formatCurrency(t.amount), daysOverdue.toString(), formatCurrency(penalty + interest), formatCurrency(total)];
@@ -223,7 +224,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
       generateReportCsv({
         columns: ['Vencimento', 'Descrição', 'Unidade', 'Contato', 'Valor Original', 'Dias Atraso', 'Multa', 'Juros', 'Valor Atualizado'],
         data: (overdue || []).map(t => {
-          const daysOverdue = Math.floor((Date.now() - new Date(t.due_date!).getTime()) / (1000 * 60 * 60 * 24));
+          const daysOverdue = (parseDateOnly(t.due_date!) ? differenceInDays(startOfDay(new Date()), startOfDay(parseDateOnly(t.due_date!)!)) : 0);
           const { penalty, interest, total } = calculatePenaltyAndInterest(t.amount, daysOverdue);
           return [cleanDateValue(t.due_date), t.description, t.unit?.unit_number || '', t.contact?.name || '', cleanNumericValue(t.amount), daysOverdue, cleanNumericValue(penalty), cleanNumericValue(interest), cleanNumericValue(total)];
         }),

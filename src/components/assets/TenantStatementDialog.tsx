@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { formatDateOnly } from "@/lib/date-only";
+import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -67,7 +67,8 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
       const dueDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), lease.due_day);
       const transaction = transactions.find((t) => {
         if (!t.due_date) return false;
-        const tDate = new Date(t.due_date);
+        const tDate = parseDateOnly(t.due_date);
+        if (!tDate) return false;
         return tDate.getMonth() === monthDate.getMonth() && tDate.getFullYear() === monthDate.getFullYear();
       });
       const isPaid = transaction?.status === "paid";

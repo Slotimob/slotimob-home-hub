@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { formatDateOnly, toDateOnly } from "@/lib/date-only";
+import { formatDateOnly, parseDateOnly, toDateOnly } from "@/lib/date-only";
 import { format, startOfDay, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -129,7 +129,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
 
   const getStatusBadge = (status: string, dueDate: string) => {
     const today = startOfDay(new Date());
-    const due = startOfDay(new Date(dueDate));
+    const due = startOfDay(parseDateOnly(dueDate) ?? new Date(dueDate));
     const isOverdue = isBefore(due, today) && status !== 'paid';
 
     if (status === 'paid') {

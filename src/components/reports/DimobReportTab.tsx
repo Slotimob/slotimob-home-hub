@@ -11,6 +11,7 @@ import { Download, CheckCircle2, AlertTriangle, Building2, FileSpreadsheet, Info
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateOnly } from "@/lib/date-only";
 
 interface DimobRecord {
   unitId: string;
@@ -129,10 +130,10 @@ export const DimobReportTab = () => {
         }
 
         // Calculate months active in the selected year
-        const leaseStart = new Date(lease.start_date);
-        const leaseEnd = lease.end_date ? new Date(lease.end_date) : new Date(endDate);
-        const yearStart = new Date(startDate);
-        const yearEnd = new Date(endDate);
+        const leaseStart = parseDateOnly(lease.start_date) ?? parseDateOnly(startDate)!;
+        const leaseEnd = (lease.end_date ? parseDateOnly(lease.end_date) : null) ?? parseDateOnly(endDate)!;
+        const yearStart = parseDateOnly(startDate)!;
+        const yearEnd = parseDateOnly(endDate)!;
         
         const activeStart = leaseStart > yearStart ? leaseStart : yearStart;
         const activeEnd = leaseEnd < yearEnd ? leaseEnd : yearEnd;

@@ -55,6 +55,7 @@ import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
 import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
 import { supabase } from "@/integrations/supabase/client";
+import { parseDateOnly } from "@/lib/date-only";
 import {
   ConfirmLeaseProjectionDialog,
   type LeaseForProjection,
@@ -454,7 +455,7 @@ export default function NovoContrato() {
   const nextAdjustmentDate = useMemo(() => {
     if (!formData.start_date) return null;
     try {
-      return format(addYears(new Date(formData.start_date), 1), "yyyy-MM-dd");
+      return format(addYears(parseDateOnly(formData.start_date)!, 1), "yyyy-MM-dd");
     } catch {
       return null;
     }

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { addDays, isBefore, startOfDay, subHours } from "date-fns";
-import { toDateOnly } from "@/lib/date-only";
+import { parseDateOnly, toDateOnly } from "@/lib/date-only";
 
 export interface PendingReceivable {
   id: string;
@@ -129,7 +129,7 @@ export function useActionCenterPending(): ActionCenterData {
       if (error) throw error;
 
       return (data || []).map((item) => {
-        const dueDate = new Date(item.due_date!);
+        const dueDate = startOfDay(parseDateOnly(item.due_date!) ?? new Date());
         const isOverdue = isBefore(dueDate, today);
         return {
           id: item.id,
@@ -170,7 +170,7 @@ export function useActionCenterPending(): ActionCenterData {
       if (error) throw error;
 
       return (data || []).map((item) => {
-        const dueDate = new Date(item.due_date!);
+        const dueDate = startOfDay(parseDateOnly(item.due_date!) ?? new Date());
         const isOverdue = isBefore(dueDate, today);
         return {
           id: item.id,
@@ -229,13 +229,13 @@ export function useActionCenterPending(): ActionCenterData {
           ) {
             issueType = "pending_signature";
           } else if (lease.next_adjustment_date) {
-            const adjustmentDate = new Date(lease.next_adjustment_date);
+            const adjustmentDate = startOfDay(parseDateOnly(lease.next_adjustment_date) ?? new Date());
             if (isBefore(adjustmentDate, today)) issueType = "adjustment_overdue";
             else if (isBefore(adjustmentDate, adjustmentLimit)) issueType = "adjustment_due";
           }
 
           if (!issueType && lease.end_date) {
-            const endDate = new Date(lease.end_date);
+            const endDate = startOfDay(parseDateOnly(lease.end_date) ?? new Date());
             if (isBefore(endDate, today)) issueType = "expired";
             else if (isBefore(endDate, expiringLimit)) issueType = "expiring";
           }
