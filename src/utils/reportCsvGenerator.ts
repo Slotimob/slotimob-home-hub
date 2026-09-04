@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import { format } from 'date-fns';
+import { formatDateOnly } from "@/lib/date-only";
 
 interface CsvOptions {
   columns: string[];
@@ -42,5 +43,6 @@ export const cleanNumericValue = (value: number | null | undefined): string => {
 
 export const cleanDateValue = (date: string | Date | null | undefined): string => {
   if (!date) return '';
-  return format(new Date(date), 'yyyy-MM-dd');
+  if (typeof date === 'string') return formatDateOnly(date, 'yyyy-MM-dd', '');
+  return format(date, 'yyyy-MM-dd');
 };

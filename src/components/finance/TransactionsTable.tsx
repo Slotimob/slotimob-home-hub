@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -288,7 +289,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
                     )}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(transaction.transaction_date), "dd/MM/yyyy", { locale: ptBR })}
+                    {formatDateOnly(transaction.transaction_date, "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell>
                     <span

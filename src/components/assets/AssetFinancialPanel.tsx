@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { formatDateOnly } from "@/lib/date-only";
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -405,7 +406,7 @@ function MarketValueBlock({
   const chartData = allEntries
     .filter((h) => h.effective_date >= twelveMonthsAgo)
     .map((h) => ({
-      date: format(new Date(h.effective_date), 'MMM/yy', { locale: ptBR }),
+      date: formatDateOnly(h.effective_date, 'MMM/yy'),
       value: h.value,
     }));
   const sortedEntries = [...allEntries].sort((a, b) =>
@@ -774,7 +775,7 @@ function ImprovementsBlock({
                 {items.map((imp) => (
                   <tr key={imp.id} className="border-b last:border-0">
                     <td className="py-2 pr-3 whitespace-nowrap">
-                      {format(new Date(imp.completed_at), 'dd/MM/yy')}
+                      {formatDateOnly(imp.completed_at, 'dd/MM/yy')}
                     </td>
                     <td className="py-2 pr-3">
                       <Badge variant="secondary" className="text-xs font-normal">

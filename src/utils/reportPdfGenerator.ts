@@ -2,6 +2,7 @@ import type jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { pdfSafeText, pdfSafeRow, pdfSafeLabel } from '@/utils/pdfSafeText';
+import { formatDateOnly } from "@/lib/date-only";
 
 interface PdfOptions {
   title: string;
@@ -232,7 +233,8 @@ export const formatPercentage = (value: number): string => {
 
 export const formatDate = (date: string | Date): string => {
   if (!date) return '-';
-  return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR });
+  if (typeof date === 'string') return formatDateOnly(date, 'dd/MM/yyyy');
+  return format(date, 'dd/MM/yyyy', { locale: ptBR });
 };
 
 // Helper to calculate penalty and interest (2% + 0.033% per day - approximately 1% per month)

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDateOnly } from "@/lib/date-only";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, TrendingDown, Home, Building2 } from "lucide-react";
@@ -105,7 +106,7 @@ export function FinanceRecentTransactions({ unitId }: FinanceRecentTransactionsP
                     <p className="font-medium text-xs sm:text-sm line-clamp-2">{transaction.description}</p>
                     <div className="flex items-center gap-1 flex-wrap mt-0.5">
                       <span className="text-[10px] sm:text-xs text-muted-foreground">
-                        {format(new Date(transaction.transaction_date), "dd MMM", { locale: ptBR })}
+                        {formatDateOnly(transaction.transaction_date, "dd MMM")}
                       </span>
                       {transaction.category && (
                         <>

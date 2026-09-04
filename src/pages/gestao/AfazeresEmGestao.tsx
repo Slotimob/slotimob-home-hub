@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -267,7 +268,7 @@ const AfazeresEmGestao = () => {
 
   const collectReceivable = (item: PendingReceivable) => {
     const phone = item.contact_phone ? formatPhoneForWhatsApp(item.contact_phone) : "";
-    const message = `Olá${item.contact_name ? ` ${item.contact_name.split(" ")[0]}` : ""}! Passando para lembrar sobre *${item.description}* no valor de *${brl(item.amount)}*, com vencimento em ${format(new Date(item.due_date), "dd/MM/yyyy")}.`;
+    const message = `Olá${item.contact_name ? ` ${item.contact_name.split(" ")[0]}` : ""}! Passando para lembrar sobre *${item.description}* no valor de *${brl(item.amount)}*, com vencimento em ${formatDateOnly(item.due_date, "dd/MM/yyyy")}.`;
     navigate(`/whatsapp?${phone ? `phone=${phone}&` : ""}text=${encodeURIComponent(message)}`);
   };
 
@@ -419,7 +420,7 @@ const AfazeresEmGestao = () => {
                         badge={
                           r.is_overdue
                             ? `${r.days_overdue}d atraso`
-                            : format(new Date(r.due_date), "dd/MM")
+                            : formatDateOnly(r.due_date, "dd/MM")
                         }
                         danger={r.is_overdue}
                         right={
@@ -461,7 +462,7 @@ const AfazeresEmGestao = () => {
                         badge={
                           p.is_overdue
                             ? `${p.days_overdue}d atraso`
-                            : format(new Date(p.due_date), "dd/MM")
+                            : formatDateOnly(p.due_date, "dd/MM")
                         }
                         danger={p.is_overdue}
                         right={

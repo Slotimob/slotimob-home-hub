@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { format, addDays, isBefore, isToday, addMonths, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -452,7 +453,7 @@ export function LeaseManagementSheet({
                     <div>
                       <p className="text-muted-foreground text-xs">Início do Contrato</p>
                       <p className="font-semibold text-sm">
-                        {format(new Date(lease.start_date), "dd/MM/yyyy")}
+                        {formatDateOnly(lease.start_date, "dd/MM/yyyy")}
                       </p>
                     </div>
                     <Button

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -200,7 +201,7 @@ export function ReconciliationPendingList({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{entry.description}</p>
         <p className="text-xs text-muted-foreground">
-          {format(new Date(entry.entry_date), "dd/MM/yyyy", { locale: ptBR })}
+          {formatDateOnly(entry.entry_date, "dd/MM/yyyy")}
         </p>
       </div>
       <span
@@ -254,9 +255,7 @@ export function ReconciliationPendingList({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{transaction.description}</p>
         <p className="text-xs text-muted-foreground">
-          {format(new Date(transaction.transaction_date), "dd/MM/yyyy", {
-            locale: ptBR,
-          })}
+          {formatDateOnly(transaction.transaction_date, "dd/MM/yyyy")}
         </p>
       </div>
       <span

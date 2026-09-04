@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatDateOnly } from '@/lib/date-only';
 
 // ── Shared constants ──────────────────────────────────────
 
@@ -309,12 +310,7 @@ function formatBRL(val: number): string {
 }
 
 function formatDateBR(val: string | null | undefined): string {
-  if (!val) return '—';
-  try {
-    return format(new Date(val), 'dd/MM/yyyy', { locale: ptBR });
-  } catch {
-    return String(val);
-  }
+  return formatDateOnly(val, 'dd/MM/yyyy', '—');
 }
 
 export function translateValue(val: any): string {
