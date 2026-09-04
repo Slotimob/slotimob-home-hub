@@ -8,8 +8,7 @@ import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader
 import { useTransactionsWithImprovement } from "@/hooks/useAssetFinancials";
 import { MarkAsImprovementDialog } from "./MarkAsImprovementDialog";
 
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDateOnly } from "@/lib/date-only";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
