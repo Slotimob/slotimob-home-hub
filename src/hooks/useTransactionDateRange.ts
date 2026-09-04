@@ -40,6 +40,7 @@ export function useTransactionDateRange(unitId?: string): DateRangeResult {
         .map(t => t.transaction_date)
         .filter(Boolean)
         .map(d => parseDateOnly(d))
+        .filter((d): d is Date => !!d)
         .sort((a, b) => a.getTime() - b.getTime());
 
       if (dates.length === 0) {
