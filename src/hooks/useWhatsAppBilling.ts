@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -55,7 +56,7 @@ export function useWhatsAppBilling(navigateFn?: (path: string) => void) {
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "data não informada";
-    return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+    return formatDateOnly(dateString, "dd/MM/yyyy");
   };
 
   const composeBillingMessage = (data: BillingMessageData): string => {

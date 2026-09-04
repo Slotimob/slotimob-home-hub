@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -485,7 +486,7 @@ export default function ContratoDetalhe() {
                 <div className="flex items-center justify-between col-span-2 pb-2">
                   <div>
                     <p className="text-muted-foreground text-xs">Início do Contrato</p>
-                    <p className="font-semibold text-sm">{format(new Date(lease.start_date), "dd/MM/yyyy")}</p>
+                    <p className="font-semibold text-sm">{formatDateOnly(lease.start_date, "dd/MM/yyyy")}</p>
                   </div>
                   {canEdit && (
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowEditStartDateDialog(true)}>

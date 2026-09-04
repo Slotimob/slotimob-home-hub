@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { formatDateOnly } from "@/lib/date-only";
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Link2, Search, Check, AlertCircle, Loader2 } from 'lucide-react';
@@ -190,7 +191,7 @@ export function LinkImprovementTransactionDialog({
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[10px] text-muted-foreground">
-                              {format(new Date(tx.transaction_date), 'dd/MM/yyyy')}
+                              {formatDateOnly(tx.transaction_date, 'dd/MM/yyyy')}
                             </span>
                             <Badge variant="outline" className="text-[10px] h-4">
                               {statusLabel(tx.status)}

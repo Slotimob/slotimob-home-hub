@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -211,8 +212,8 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
                     <div>
                       <p className="font-medium text-sm">{payment.month}</p>
                       <p className="text-xs text-muted-foreground">
-                        Venc: {format(new Date(payment.dueDate), "dd/MM/yyyy")}
-                        {payment.paidDate && ` • Pago: ${format(new Date(payment.paidDate), "dd/MM/yyyy")}`}
+                        Venc: {formatDateOnly(payment.dueDate, "dd/MM/yyyy")}
+                        {payment.paidDate && ` • Pago: ${formatDateOnly(payment.paidDate, "dd/MM/yyyy")}`}
                       </p>
                     </div>
                   </div>

@@ -15,6 +15,7 @@
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import { formatDateOnly } from "@/lib/date-only";
 import {
   getAdjustmentStatus,
   getAdjustmentStatusConfig,
@@ -180,7 +181,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          id: "entry-inspection",
          title: "Vistoria de Entrada",
          description: metadata.entry_inspection_path
-           ? `Realizada em ${metadata.entry_inspection_date ? format(new Date(metadata.entry_inspection_date), "dd/MM/yyyy", { locale: ptBR }) : "data não informada"}`
+           ? `Realizada em ${metadata.entry_inspection_date ? formatDateOnly(metadata.entry_inspection_date, "dd/MM/yyyy") : "data não informada"}`
            : "Faça upload do laudo de vistoria de entrada",
          icon: ClipboardCheck,
          status: metadata.entry_inspection_path ? "completed" : "pending",
@@ -214,7 +215,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
        (() => {
          const pendingReview = metadata.obligations_pending_review === true;
          const inheritedAt = metadata.obligations_inherited_at
-           ? format(new Date(metadata.obligations_inherited_at), "dd/MM/yyyy", { locale: ptBR })
+           ? formatDateOnly(metadata.obligations_inherited_at, "dd/MM/yyyy")
            : null;
          return {
            id: "obligations",
@@ -257,7 +258,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          id: "exit-inspection",
          title: "Vistoria de Saída",
          description: metadata.exit_inspection_path
-           ? `Realizada em ${metadata.exit_inspection_date ? format(new Date(metadata.exit_inspection_date), "dd/MM/yyyy", { locale: ptBR }) : "data não informada"}`
+           ? `Realizada em ${metadata.exit_inspection_date ? formatDateOnly(metadata.exit_inspection_date, "dd/MM/yyyy") : "data não informada"}`
            : "Faça upload do laudo de vistoria de saída",
          icon: DoorOpen,
          status: metadata.exit_inspection_path ? "completed" : "pending",
@@ -270,7 +271,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
         id: "closing-documents",
         title: "Documentos de Encerramento",
         description: metadata.closing_documents_path
-          ? `Arquivado em ${metadata.closing_documents_date ? format(new Date(metadata.closing_documents_date), "dd/MM/yyyy", { locale: ptBR }) : "data não informada"}`
+          ? `Arquivado em ${metadata.closing_documents_date ? formatDateOnly(metadata.closing_documents_date, "dd/MM/yyyy") : "data não informada"}`
           : "Faça upload do termo de rescisão ou distrato",
         icon: FileCheck,
         status: metadata.closing_documents_path ? "completed" : "pending",
@@ -283,7 +284,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
         id: "key-return",
         title: "Recebimento de Chaves",
         description: metadata.key_return_path
-          ? `Registrado em ${metadata.key_return_date ? format(new Date(metadata.key_return_date), "dd/MM/yyyy", { locale: ptBR }) : "data não informada"}`
+          ? `Registrado em ${metadata.key_return_date ? formatDateOnly(metadata.key_return_date, "dd/MM/yyyy") : "data não informada"}`
           : "Faça upload do termo de entrega de chaves",
         icon: Key,
         status: metadata.key_return_path ? "completed" : "pending",

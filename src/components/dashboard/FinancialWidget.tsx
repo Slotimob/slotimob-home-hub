@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { formatDateOnly } from "@/lib/date-only";
 import { format, startOfDay, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -273,7 +274,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                         </div>
                         <div className="flex items-center justify-between mt-0.5">
                           <span className="text-[10px] text-muted-foreground">
-                            {format(new Date(item.due_date), 'dd/MM', { locale: ptBR })}
+                            {formatDateOnly(item.due_date, 'dd/MM')}
                           </span>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -319,7 +320,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                         </div>
                         <div className="flex items-center justify-between mt-0.5">
                           <span className="text-[10px] text-muted-foreground">
-                            {format(new Date(item.due_date), 'dd/MM', { locale: ptBR })}
+                            {formatDateOnly(item.due_date, 'dd/MM')}
                           </span>
                           <Tooltip>
                             <TooltipTrigger asChild>

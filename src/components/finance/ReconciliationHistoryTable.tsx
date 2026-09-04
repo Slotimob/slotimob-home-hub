@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -196,7 +197,7 @@ export function ReconciliationHistoryTable({
                   {/* Date & Audited */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[10px] text-muted-foreground">
-                      {format(new Date(entry.entry_date), "dd/MM/yyyy", { locale: ptBR })}
+                      {formatDateOnly(entry.entry_date, "dd/MM/yyyy")}
                     </span>
                     {isDateAudited(entry.entry_date) && (
                       <Badge variant="outline" className="text-[9px] h-4 px-1 bg-primary/10 text-primary border-primary/30 gap-0.5">
@@ -311,7 +312,7 @@ export function ReconciliationHistoryTable({
                   <TableRow key={entry.id}>
                     <TableCell className="whitespace-nowrap text-xs">
                       <div className="flex flex-col gap-0.5">
-                        <span>{format(new Date(entry.entry_date), "dd/MM/yy", { locale: ptBR })}</span>
+                        <span>{formatDateOnly(entry.entry_date, "dd/MM/yy")}</span>
                         {isDateAudited(entry.entry_date) && (
                           <Badge variant="outline" className="text-[8px] h-3.5 px-1 w-fit bg-primary/10 text-primary border-primary/30 gap-0.5">
                             <ShieldCheck className="h-2 w-2" />

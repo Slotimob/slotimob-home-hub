@@ -1,4 +1,5 @@
 import type jsPDF from 'jspdf';
+import { formatDateOnly } from "@/lib/date-only";
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Lease } from '@/hooks/useLeases';
@@ -10,10 +11,7 @@ export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
-export const formatDateBR = (value: string): string => {
-  if (!value) return '';
-  return new Date(value).toLocaleDateString('pt-BR');
-};
+export const formatDateBR = (value: string): string => formatDateOnly(value, "dd/MM/yyyy", "");
 
 export interface PaymentHistoryItem {
   month: string;

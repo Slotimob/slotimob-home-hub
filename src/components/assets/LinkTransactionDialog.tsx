@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateOnly } from "@/lib/date-only";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -182,7 +183,7 @@ export function LinkTransactionDialog({
                           <div className="flex items-center gap-2 mt-0.5">
                             {tx.due_date && (
                               <span className="text-[10px] text-muted-foreground">
-                                Venc: {format(new Date(tx.due_date), "dd/MM/yyyy")}
+                                Venc: {formatDateOnly(tx.due_date, "dd/MM/yyyy")}
                               </span>
                             )}
                             <Badge variant="outline" className="text-[10px] h-4">

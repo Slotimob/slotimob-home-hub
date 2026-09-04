@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { formatDateOnly } from "@/lib/date-only";
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Hammer, Loader2 } from 'lucide-react';
@@ -127,7 +128,7 @@ export function MarkAsImprovementDialog({ open, onOpenChange, transaction }: Pro
               <span className="text-muted-foreground">Data</span>
               <span className="font-medium">
                 {transaction.transaction_date
-                  ? format(new Date(transaction.transaction_date), 'dd/MM/yyyy')
+                  ? formatDateOnly(transaction.transaction_date, 'dd/MM/yyyy')
                   : '—'}
               </span>
             </div>
