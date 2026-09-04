@@ -255,9 +255,7 @@ export function ReconciliationPendingList({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{transaction.description}</p>
         <p className="text-xs text-muted-foreground">
-          {format(new Date(transaction.transaction_date), "dd/MM/yyyy", {
-            locale: ptBR,
-          })}
+          {formatDateOnly(transaction.transaction_date, "dd/MM/yyyy")}
         </p>
       </div>
       <span
