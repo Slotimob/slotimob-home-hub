@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { differenceInDays, format, parseISO, startOfMonth, subMonths } from 'date-fns';
+import { differenceInDays, format, parseISO, startOfDay, startOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table';
 import { ArrowLeft, Building2, CheckCircle2, ExternalLink } from 'lucide-react';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
+import { parseDateOnly } from "@/lib/date-only";
 
 function fmtCurrency(v: number): string {
   return v.toLocaleString('pt-BR', {
@@ -133,10 +134,10 @@ export default function AlugueisEmAberto() {
                   </TableHeader>
                   <TableBody>
                     {items.map((item, i) => {
-                      const daysOverdue = differenceInDays(
-                        new Date(),
-                        new Date(item.oldest_due_date),
-                      );
+                      const oldestDue = parseDateOnly(item.oldest_due_date);
+                      const daysOverdue = oldestDue
+                        ? differenceInDays(startOfDay(new Date()), startOfDay(oldestDue))
+                        : 0;
                       const route = assetRoute(item);
                       return (
                         <TableRow

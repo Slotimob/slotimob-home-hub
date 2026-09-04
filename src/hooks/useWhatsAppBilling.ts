@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatDateOnly } from "@/lib/date-only";
+import { formatDateOnly, todayDateOnly } from "@/lib/date-only";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -263,10 +263,7 @@ Equipe de Administração`;
     if (transaction.status === "overdue") return true;
     
     if (transaction.status === "pending" && transaction.due_date) {
-      const dueDate = new Date(transaction.due_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return dueDate < today;
+      return transaction.due_date < todayDateOnly();
     }
     
     return false;

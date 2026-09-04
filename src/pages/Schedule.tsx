@@ -35,7 +35,7 @@ import { useNegotiationScheduleItems } from "@/hooks/useNegotiationScheduleItems
 import { useScheduleEventCounts } from "@/hooks/useScheduleEventCounts";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { toDateOnly } from "@/lib/date-only";
+import { parseDateOnly, toDateOnly } from "@/lib/date-only";
 
 export default function Schedule() {
   const { user } = useAuth();
@@ -194,7 +194,7 @@ export default function Schedule() {
 
       tasks?.forEach((t: any) => {
         if (t.due_date) {
-          const dt = new Date(t.due_date);
+          const dt = parseDateOnly(t.due_date) ?? new Date();
           dt.setHours(9, 0, 0, 0);
           items.push({ id: t.id, scheduled_at: dt.toISOString(), type: 'task' });
         }

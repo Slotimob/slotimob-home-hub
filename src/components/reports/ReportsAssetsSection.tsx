@@ -29,7 +29,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import type { PaymentHistoryItem } from '@/utils/tenantStatementPdf';
-import { toDateOnly } from "@/lib/date-only";
+import { parseDateOnly, toDateOnly } from "@/lib/date-only";
 
 interface ReportsAssetsSectionProps {
   dateRange: { from: Date; to: Date };
@@ -191,7 +191,8 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
         const dueDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), selectedLease.due_day);
         const transaction = (transactions || []).find(t => {
           if (!t.due_date) return false;
-          const td = new Date(t.due_date);
+          const td = parseDateOnly(t.due_date);
+          if (!td) return false;
           return td.getMonth() === monthDate.getMonth() && td.getFullYear() === monthDate.getFullYear();
         });
         const isPaid = transaction?.status === 'paid';

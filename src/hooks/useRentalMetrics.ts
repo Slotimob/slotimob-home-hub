@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardScope, type RentalScope } from '@/hooks/useDashboardScope';
-import { differenceInDays } from 'date-fns';
-import { toDateOnly } from "@/lib/date-only";
+import { differenceInDays, startOfDay } from 'date-fns';
+import { parseDateOnly, toDateOnly, todayDateOnly } from "@/lib/date-only";
 
 export interface RentalMetricsOutput {
   received: { amount: number; count: number };
@@ -80,7 +80,7 @@ export function useRentalMetrics(params: {
         if (t.status === 'paid') {
           received.amount += amt;
           received.count++;
-        } else if (t.status === 'overdue' || (t.status === 'pending' && t.due_date && new Date(t.due_date) < today)) {
+        } else if (t.status === 'overdue' || (t.status === 'pending' && t.due_date && t.due_date < todayDateOnly())) {
           overdueItems.push(t);
         } else if (t.status === 'pending') {
           receivable.amount += amt;
@@ -100,7 +100,8 @@ export function useRentalMetrics(params: {
       for (const t of overdueItems) {
         const amt = Number(t.amount) || 0;
         overdueTotal += amt;
-        const days = differenceInDays(today, new Date(t.due_date!));
+        const dueParsed = parseDateOnly(t.due_date);
+        const days = dueParsed ? differenceInDays(startOfDay(today), startOfDay(dueParsed)) : 0;
         if (days <= 15) { buckets.bucket_0_15.amount += amt; buckets.bucket_0_15.count++; }
         else if (days <= 30) { buckets.bucket_16_30.amount += amt; buckets.bucket_16_30.count++; }
         else if (days <= 60) { buckets.bucket_31_60.amount += amt; buckets.bucket_31_60.count++; }
@@ -167,7 +168,7 @@ export function useRentalMetrics(params: {
           oldest_due_date: v.oldest_due_date,
           transactions_count: v.count,
         }))
-        .sort((a, b) => new Date(a.oldest_due_date).getTime() - new Date(b.oldest_due_date).getTime());
+        .sort((a, b) => String(a.oldest_due_date).localeCompare(String(b.oldest_due_date)));
 
       return {
         received,
