@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { addMonths, endOfMonth, startOfMonth, parseISO } from "date-fns";
+import { parseDateOnly } from "@/lib/date-only";
 
 interface DateRangeResult {
   minDate: Date | null;
@@ -38,7 +39,8 @@ export function useTransactionDateRange(unitId?: string): DateRangeResult {
       const dates = transactions
         .map(t => t.transaction_date)
         .filter(Boolean)
-        .map(d => new Date(d))
+        .map(d => parseDateOnly(d))
+        .filter((d): d is Date => !!d)
         .sort((a, b) => a.getTime() - b.getTime());
 
       if (dates.length === 0) {
