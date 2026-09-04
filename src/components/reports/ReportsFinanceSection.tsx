@@ -17,6 +17,7 @@ import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiForm
 import { buildCashflowExport } from '@/lib/cashflow-export-data';
 import { generateCashflowPdf, generateCashflowDocx, generateCashflowExcel, generateCashflowCsv } from '@/utils/cashflowExportGenerators';
 import { useToast } from '@/hooks/use-toast';
+import { differenceInDays, startOfDay } from "date-fns";
 import { parseDateOnly, toDateOnly, todayDateOnly } from "@/lib/date-only";
 
 interface ReportsFinanceSectionProps {
