@@ -4,6 +4,7 @@
 import type { AssetReportData } from '@/lib/asset-report-data';
 import { ASSET_EXPENSE_CATEGORIES } from '@/lib/asset-expense-categories';
 import ExcelJS from 'exceljs';
+import { formatDateOnly } from "@/lib/date-only";
 
 function getCategoryLabel(cat: string | null): string {
   if (!cat) return 'Outros';
@@ -118,7 +119,7 @@ export async function generateAssetReportExcel(report: AssetReportData) {
     for (const m of a.period?.maintenance_items || []) {
       wsMaint.addRow([
         a.name,
-        new Date(m.date).toLocaleDateString('pt-BR'),
+        formatDateOnly(m.date),
         m.type_label,
         m.title,
         m.description ?? '',

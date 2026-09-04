@@ -27,6 +27,7 @@ import { DealActivities } from './DealActivities';
 import { DealTasks } from './DealTasks';
 import { DealStageHistory } from './DealStageHistory';
 import type { Deal } from '@/pages/Pipeline';
+import { toDateOnly } from "@/lib/date-only";
 
 interface LinkedContact {
   id: string;
@@ -182,7 +183,7 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
           notes: editedDeal.notes,
           priority: editedDeal.priority,
           probability: getProbabilityValue(editedDeal.probability),
-          expected_close_date: editedDeal.expected_close_date?.toISOString().split('T')[0] ?? null,
+          expected_close_date: editedDeal.expected_close_date ? toDateOnly(editedDeal.expected_close_date) : null,
           temperature: editedDeal.temperature,
           contact_id: editedDeal.contact_id,
           unit_id: editedDeal.unit_id,

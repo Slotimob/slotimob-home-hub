@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { SendDocumentDialog } from '@/components/documents/SendDocumentDialog';
 import { AIImproveDocumentDialog } from '@/components/documents/AIImproveDocumentDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { todayDateOnly } from "@/lib/date-only";
 
 export default function DocumentTemplateEditor() {
   const { templateId } = useParams<{ templateId: string }>();
@@ -57,7 +58,7 @@ export default function DocumentTemplateEditor() {
     template.fields.forEach((field) => {
       if (field.defaultValue) defaults[field.id] = field.defaultValue;
       if (field.type === 'date' && !field.defaultValue) {
-        defaults[field.id] = new Date().toISOString().split('T')[0];
+        defaults[field.id] = todayDateOnly();
       }
     });
     setFilledFields(defaults);

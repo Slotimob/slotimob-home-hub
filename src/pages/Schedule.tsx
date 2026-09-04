@@ -35,6 +35,7 @@ import { useNegotiationScheduleItems } from "@/hooks/useNegotiationScheduleItems
 import { useScheduleEventCounts } from "@/hooks/useScheduleEventCounts";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { toDateOnly } from "@/lib/date-only";
 
 export default function Schedule() {
   const { user } = useAuth();
@@ -188,8 +189,8 @@ export default function Schedule() {
         .select('id, due_date')
         .eq('broker_id', effectiveBrokerId)
         .not('due_date', 'is', null)
-        .gte('due_date', monthStart.toISOString().split('T')[0])
-        .lte('due_date', monthEnd.toISOString().split('T')[0]);
+        .gte('due_date', toDateOnly(monthStart))
+        .lte('due_date', toDateOnly(monthEnd));
 
       tasks?.forEach((t: any) => {
         if (t.due_date) {

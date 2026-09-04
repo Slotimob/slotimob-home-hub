@@ -29,6 +29,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import type { PaymentHistoryItem } from '@/utils/tenantStatementPdf';
+import { toDateOnly } from "@/lib/date-only";
 
 interface ReportsAssetsSectionProps {
   dateRange: { from: Date; to: Date };
@@ -301,8 +302,8 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
     const { data, error } = await query;
     if (error) throw error;
 
-    const fromStr = dateRange.from.toISOString().split('T')[0];
-    const toStr = dateRange.to.toISOString().split('T')[0];
+    const fromStr = toDateOnly(dateRange.from);
+    const toStr = toDateOnly(dateRange.to);
     const records = (data || []).filter((r: any) => {
       if (!r.moved_out_at) return true; // registros em aberto sempre entram
       const movedIn = (r.moved_in_at || '').split('T')[0];
@@ -380,7 +381,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
     if (!user) throw new Error('Usuário não autenticado');
     let query = supabase.from('leases').select(`*, unit:units(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
       .eq('broker_id', user.id).eq('status', 'active')
-      .gte('next_adjustment_date', dateRange.from.toISOString().split('T')[0]).lte('next_adjustment_date', dateRange.to.toISOString().split('T')[0]);
+      .gte('next_adjustment_date', toDateOnly(dateRange.from)).lte('next_adjustment_date', toDateOnly(dateRange.to));
     if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
     const { data: leases } = await query;
     const columns = ['Data Reajuste', 'Unidade', 'Inquilino', 'Índice', 'Valor Atual', 'Valor Projetado'];
@@ -406,7 +407,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
       if (!user) throw new Error('Usuário não autenticado');
       let query = supabase.from('leases').select(`*, unit:units(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
         .eq('broker_id', user.id).eq('status', 'active')
-        .gte('next_adjustment_date', dateRange.from.toISOString().split('T')[0]).lte('next_adjustment_date', dateRange.to.toISOString().split('T')[0]);
+        .gte('next_adjustment_date', toDateOnly(dateRange.from)).lte('next_adjustment_date', toDateOnly(dateRange.to));
       if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
       const { data: leases } = await query;
       generateReportCsv({

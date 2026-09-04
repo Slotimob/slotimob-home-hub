@@ -8,7 +8,7 @@ import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader
 import { useTransactionsWithImprovement } from "@/hooks/useAssetFinancials";
 import { MarkAsImprovementDialog } from "./MarkAsImprovementDialog";
 
-import { formatDateOnly } from "@/lib/date-only";
+import { formatDateOnly, todayDateOnly } from "@/lib/date-only";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -257,7 +257,7 @@ export function TransactionsTableInfinite({
         .from("financial_transactions")
         .update({
           status: "paid",
-          paid_date: new Date().toISOString().split("T")[0],
+          paid_date: todayDateOnly(),
         })
         .eq("id", id);
 

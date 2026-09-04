@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload, FileText, AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Papa from "papaparse";
+import { todayDateOnly } from "@/lib/date-only";
 
 interface ImportStatementDialogProps {
   open: boolean;
@@ -57,7 +58,7 @@ export function ImportStatementDialog({
   const { data: existingImports = [] } = useQuery({
     queryKey: ["statement-imports-today", selectedBankAccountId],
     queryFn: async () => {
-      const today = new Date().toISOString().split("T")[0];
+      const today = todayDateOnly();
       const { data, error } = await supabase
         .from("bank_statement_imports")
         .select("file_name, entries_count, created_at")

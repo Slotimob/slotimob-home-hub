@@ -26,6 +26,7 @@ import { ObligationSelector } from "@/components/finance/ObligationSelector";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ASSET_EXPENSE_CATEGORY_LIST } from "@/lib/asset-expense-categories";
+import { todayDateOnly } from "@/lib/date-only";
 
 export interface TransactionPrefill {
   description?: string;
@@ -79,7 +80,7 @@ export function CreateTransactionDialog({
     amount: editTransaction?.amount?.toString() || prefill?.amount?.toString() || "",
     categoryId: editTransaction?.category_id || prefill?.categoryId || "",
     bankAccountId: editTransaction?.bank_account_id || prefill?.bankAccountId || "",
-    transactionDate: editTransaction?.transaction_date || new Date().toISOString().split("T")[0],
+    transactionDate: editTransaction?.transaction_date || todayDateOnly(),
     dueDate: editTransaction?.due_date || prefill?.dueDate || "",
     status: editTransaction?.status || prefill?.status || "pending",
     paymentMethod: editTransaction?.payment_method || "",
@@ -100,7 +101,7 @@ export function CreateTransactionDialog({
   // Transfer-specific state
   const [transferData, setTransferData] = useState({
     amount: "",
-    transactionDate: new Date().toISOString().split("T")[0],
+    transactionDate: todayDateOnly(),
     sourceAccountId: "",
     destinationAccountId: "",
     notes: "",
@@ -275,7 +276,7 @@ export function CreateTransactionDialog({
         status: formData.status,
         payment_method: formData.paymentMethod || null,
         notes: formData.notes || null,
-        paid_date: formData.status === "paid" ? new Date().toISOString().split("T")[0] : null,
+        paid_date: formData.status === "paid" ? todayDateOnly() : null,
         unit_id: formData.unitId || null,
         property_id: resolvedPropertyId,
         contact_id: formData.contactId || null,
@@ -347,7 +348,7 @@ export function CreateTransactionDialog({
       amount: "",
       categoryId: "",
       bankAccountId: "",
-      transactionDate: new Date().toISOString().split("T")[0],
+      transactionDate: todayDateOnly(),
       dueDate: "",
       status: "pending",
       paymentMethod: "",
@@ -358,7 +359,7 @@ export function CreateTransactionDialog({
     });
     setTransferData({
       amount: "",
-      transactionDate: new Date().toISOString().split("T")[0],
+      transactionDate: todayDateOnly(),
       sourceAccountId: "",
       destinationAccountId: "",
       notes: "",

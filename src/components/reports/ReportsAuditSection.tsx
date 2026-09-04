@@ -8,6 +8,7 @@ import { translateType, translateLeaseStatus } from '@/utils/reportTranslations'
 import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiFormat';
 import { useToast } from '@/hooks/use-toast';
 import { addDays } from 'date-fns';
+import { toDateOnly } from "@/lib/date-only";
 
 interface ReportsAuditSectionProps {
   dateRange: { from: Date; to: Date };
@@ -23,7 +24,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
     let query = supabase.from('financial_transactions').select(`*, bank_account:bank_accounts(name), unit:units(unit_number), category:financial_categories(name)`)
-      .gte('transaction_date', dateRange.from.toISOString().split('T')[0]).lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
+      .gte('transaction_date', toDateOnly(dateRange.from)).lte('transaction_date', toDateOnly(dateRange.to));
     if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
     const { data: transactions } = await query;
     const orphans = (transactions || []).filter(t => !t.bank_account_id || !t.unit_id || !t.category_id);
@@ -62,7 +63,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
       let query = supabase.from('financial_transactions').select(`*, bank_account:bank_accounts(name), unit:units(unit_number), category:financial_categories(name)`)
-        .gte('transaction_date', dateRange.from.toISOString().split('T')[0]).lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
+        .gte('transaction_date', toDateOnly(dateRange.from)).lte('transaction_date', toDateOnly(dateRange.to));
       if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
       const { data: transactions } = await query;
       const orphans = (transactions || []).filter(t => !t.bank_account_id || !t.unit_id || !t.category_id);
@@ -97,7 +98,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
     if (!user) throw new Error('Usuário não autenticado');
     let query = supabase.from('financial_transactions').select(`*, bank_account:bank_accounts(name)`)
       .eq('status', 'paid').eq('is_reconciled', false)
-      .gte('paid_date', dateRange.from.toISOString().split('T')[0]).lte('paid_date', dateRange.to.toISOString().split('T')[0]);
+      .gte('paid_date', toDateOnly(dateRange.from)).lte('paid_date', toDateOnly(dateRange.to));
     if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
     const { data: transactions } = await query;
     let totalValue = 0;
@@ -131,7 +132,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       if (!user) throw new Error('Usuário não autenticado');
       let query = supabase.from('financial_transactions').select(`*, bank_account:bank_accounts(name)`)
         .eq('status', 'paid').eq('is_reconciled', false)
-        .gte('paid_date', dateRange.from.toISOString().split('T')[0]).lte('paid_date', dateRange.to.toISOString().split('T')[0]);
+        .gte('paid_date', toDateOnly(dateRange.from)).lte('paid_date', toDateOnly(dateRange.to));
       if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
       const { data: transactions } = await query;
       generateReportCsv({
@@ -164,7 +165,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
     const { data: transactions } = await supabase.from('financial_transactions').select(`*, bank_account:bank_accounts(name)`)
-      .not('group_id', 'is', null).gte('transaction_date', dateRange.from.toISOString().split('T')[0]).lte('transaction_date', dateRange.to.toISOString().split('T')[0])
+      .not('group_id', 'is', null).gte('transaction_date', toDateOnly(dateRange.from)).lte('transaction_date', toDateOnly(dateRange.to))
       .order('transaction_date', { ascending: false });
     const groupedTransfers: Record<string, typeof transactions> = {};
     (transactions || []).forEach(t => {
@@ -203,7 +204,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
       const { data: transactions } = await supabase.from('financial_transactions').select(`*, bank_account:bank_accounts(name)`)
-        .not('group_id', 'is', null).gte('transaction_date', dateRange.from.toISOString().split('T')[0]).lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
+        .not('group_id', 'is', null).gte('transaction_date', toDateOnly(dateRange.from)).lte('transaction_date', toDateOnly(dateRange.to));
       const groupedTransfers: Record<string, typeof transactions> = {};
       (transactions || []).forEach(t => { if (t.group_id) { if (!groupedTransfers[t.group_id]) groupedTransfers[t.group_id] = []; groupedTransfers[t.group_id].push(t); } });
       const csvData: (string | number)[][] = [];
@@ -244,7 +245,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
     const today = new Date();
     const futureDate = addDays(today, 60);
     const { data: futureTransactions } = await supabase.from('financial_transactions').select('unit_id').eq('type', 'income')
-      .gte('due_date', today.toISOString().split('T')[0]).lte('due_date', futureDate.toISOString().split('T')[0]);
+      .gte('due_date', toDateOnly(today)).lte('due_date', toDateOnly(futureDate));
     const unitsWithProjections = new Set((futureTransactions || []).map(t => t.unit_id));
     const missingProjections = (leases || []).filter(l => l.unit_id && !unitsWithProjections.has(l.unit_id));
     const unitIds = (leases || []).map(l => l.unit_id).filter(Boolean);
@@ -288,7 +289,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
       const today = new Date(); const futureDate = addDays(today, 60);
       const { data: futureTransactions } = await supabase.from('financial_transactions').select('unit_id')
         .eq('broker_id', user.id).eq('type', 'income')
-        .gte('due_date', today.toISOString().split('T')[0]).lte('due_date', futureDate.toISOString().split('T')[0]);
+        .gte('due_date', toDateOnly(today)).lte('due_date', toDateOnly(futureDate));
       const unitsWithProjections = new Set((futureTransactions || []).map(t => t.unit_id));
       const missingProjections = (leases || []).filter(l => l.unit_id && !unitsWithProjections.has(l.unit_id));
       generateReportCsv({

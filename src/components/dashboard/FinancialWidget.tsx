@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { formatDateOnly } from "@/lib/date-only";
+import { formatDateOnly, toDateOnly } from "@/lib/date-only";
 import { format, startOfDay, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -69,8 +69,8 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
     try {
       setIsLoading(true);
       
-      const fromDate = dateRange.from.toISOString().split('T')[0];
-      const toDate = dateRange.to.toISOString().split('T')[0];
+      const fromDate = toDateOnly(dateRange.from);
+      const toDate = toDateOnly(dateRange.to);
 
       // Get paid transactions within the date range for totals
       // Using due_date for Cash Flow perspective (when money is expected to move)

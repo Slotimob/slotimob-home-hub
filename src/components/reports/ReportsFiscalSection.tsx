@@ -8,6 +8,7 @@ import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/re
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { toDateOnly } from "@/lib/date-only";
 
 interface ReportsFiscalSectionProps {
   dateRange: { from: Date; to: Date };
@@ -77,8 +78,8 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
           tenant:contacts!leases_tenant_contact_id_fkey(name, document_number),
           owner:contacts!leases_owner_contact_id_fkey(name, document_number)
         `)
-        .gte('start_date', dateRange.from.toISOString().split('T')[0])
-        .or(`end_date.is.null,end_date.gte.${dateRange.from.toISOString().split('T')[0]}`);
+        .gte('start_date', toDateOnly(dateRange.from))
+        .or(`end_date.is.null,end_date.gte.${toDateOnly(dateRange.from)}`);
 
       if (selectedUnitId) {
         leasesQuery = leasesQuery.eq('unit_id', selectedUnitId);
@@ -92,8 +93,8 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
         .eq('type', 'income')
         .eq('obligation_type', 'rent')
         .eq('status', 'paid')
-        .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
-        .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
+        .gte('transaction_date', toDateOnly(dateRange.from))
+        .lte('transaction_date', toDateOnly(dateRange.to));
 
       if (selectedUnitId) {
         paymentsQuery = paymentsQuery.eq('unit_id', selectedUnitId);
@@ -172,8 +173,8 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
         .eq('type', 'income')
         .eq('obligation_type', 'rent')
         .eq('status', 'paid')
-        .gte('transaction_date', dateRange.from.toISOString().split('T')[0])
-        .lte('transaction_date', dateRange.to.toISOString().split('T')[0]);
+        .gte('transaction_date', toDateOnly(dateRange.from))
+        .lte('transaction_date', toDateOnly(dateRange.to));
 
       if (selectedUnitId) {
         paymentsQuery = paymentsQuery.eq('unit_id', selectedUnitId);

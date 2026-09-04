@@ -69,6 +69,7 @@ import { RAReportConfigDialog } from '@/components/reports/RAReportConfigDialog'
 import { generateAssetReportPdf } from '@/utils/assetReportPdfGenerator';
 import type { AssetReportData } from '@/lib/asset-report-data';
 import { useToast } from '@/hooks/use-toast';
+import { toDateOnly } from "@/lib/date-only";
 
 import {
   TABLE_LABELS,
@@ -415,7 +416,7 @@ export const AssetActivityTimeline = ({
     setEditingNoteId(note.id);
     setEditNoteTitle(note.title || '');
     const base = note.scheduled_at || note.created_at;
-    setEditNoteDate(base ? new Date(base).toISOString().split('T')[0] : '');
+    setEditNoteDate(base ? toDateOnly(new Date(base)) : '');
   };
 
   const cancelEditNote = () => {

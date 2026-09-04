@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { formatDateOnly } from "@/lib/date-only";
+import { formatDateOnly, todayDateOnly } from "@/lib/date-only";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -277,7 +277,7 @@ const AfazeresEmGestao = () => {
     try {
       const { error } = await supabase
         .from("financial_transactions")
-        .update({ status: "paid", paid_date: new Date().toISOString().split("T")[0] })
+        .update({ status: "paid", paid_date: todayDateOnly() })
         .eq("id", item.id);
       if (error) throw error;
       toast.success("Despesa marcada como paga");

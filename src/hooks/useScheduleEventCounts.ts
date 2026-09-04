@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths } from 'date-fns';
+import { toDateOnly } from "@/lib/date-only";
 
 interface EventCountMap {
   [dateKey: string]: number;
@@ -23,7 +24,7 @@ export function useScheduleEventCounts({
     
     // Helper to add count for a date
     const addToCount = (date: Date) => {
-      const key = date.toISOString().split('T')[0];
+      const key = toDateOnly(date);
       counts[key] = (counts[key] || 0) + 1;
     };
 
@@ -52,7 +53,7 @@ export function useScheduleEventCounts({
   }, [visits, activities, negotiationItems]);
 
   const getEventCount = (date: Date): number => {
-    const key = date.toISOString().split('T')[0];
+    const key = toDateOnly(date);
     return eventCounts[key] || 0;
   };
 

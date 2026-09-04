@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { todayDateOnly } from "@/lib/date-only";
 
 export interface BankAccountWithBalance {
   id: string;
@@ -159,7 +160,7 @@ export function useProgressiveBalance() {
       // If reconciling, also mark as paid if pending
       if (reconcile) {
         updates.status = 'paid';
-        updates.paid_date = new Date().toISOString().split('T')[0];
+        updates.paid_date = todayDateOnly();
       }
 
       const { error } = await supabase

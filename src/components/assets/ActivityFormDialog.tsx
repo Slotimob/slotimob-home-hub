@@ -31,6 +31,7 @@ import {
 import { Loader2, Search, X, Paperclip, Building2, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
+import { todayDateOnly } from "@/lib/date-only";
 
 export { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
 
@@ -87,7 +88,7 @@ export function ActivityFormDialog({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [contactId, setContactId] = useState<string | null>(null);
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(() => todayDateOnly());
   const [time, setTime] = useState('09:00');
   const [files, setFiles] = useState<File[]>([]);
   const [estimatedCost, setEstimatedCost] = useState('');
@@ -113,7 +114,7 @@ export function ActivityFormDialog({
       setDate(
         scheduled && !isNaN(scheduled.getTime())
           ? format(scheduled, 'yyyy-MM-dd')
-          : new Date().toISOString().split('T')[0],
+          : todayDateOnly(),
       );
       setTime(scheduled && !isNaN(scheduled.getTime()) ? format(scheduled, 'HH:mm') : '09:00');
       setEstimatedCost(
@@ -126,7 +127,7 @@ export function ActivityFormDialog({
     setTitle('');
     setDescription('');
     setContactId(null);
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(todayDateOnly());
     setTime('09:00');
     setEstimatedCost('');
   }, [open, defaultAsset, editingActivity]);

@@ -4,6 +4,7 @@
  */
 import type { AssetReportData } from '@/lib/asset-report-data';
 import { ASSET_EXPENSE_CATEGORIES } from '@/lib/asset-expense-categories';
+import { formatDateOnly } from "@/lib/date-only";
 
 function getCategoryLabel(cat: string | null): string {
   if (!cat) return 'Outros';
@@ -72,7 +73,7 @@ export function generateAssetReportCsv(report: AssetReportData) {
   // Manutenções e Atividades
   const maintenanceRows = report.assets.flatMap(a => (a.period?.maintenance_items || []).map(m => [
     a.name,
-    new Date(m.date).toLocaleDateString('pt-BR'),
+    formatDateOnly(m.date),
     m.type_label,
     m.title,
     m.description ?? '',

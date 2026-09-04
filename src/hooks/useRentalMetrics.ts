@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardScope, type RentalScope } from '@/hooks/useDashboardScope';
 import { differenceInDays } from 'date-fns';
+import { toDateOnly } from "@/lib/date-only";
 
 export interface RentalMetricsOutput {
   received: { amount: number; count: number };
@@ -29,7 +30,7 @@ export interface RentalMetricsOutput {
 }
 
 function fmt(d: Date) {
-  return d.toISOString().split('T')[0];
+  return toDateOnly(d);
 }
 
 export function useRentalMetrics(params: {

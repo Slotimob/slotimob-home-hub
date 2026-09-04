@@ -11,6 +11,7 @@ import { Download, Mail, FileText, TrendingUp, Users, Wallet, Calendar, Target, 
 import { format, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { createWorkbook, addAoaSheet, addJsonSheet, downloadWorkbook } from '@/utils/excelUtils';
+import { toDateOnly } from "@/lib/date-only";
 
 interface WeeklyData {
   period: string;
@@ -69,8 +70,8 @@ export const WeeklySummaryReport = () => {
       const { data: sales } = await supabase
         .from('sales')
         .select('sale_value, commission_value')
-        .gte('sale_date', lastWeekStart.toISOString().split('T')[0])
-        .lte('sale_date', lastWeekEnd.toISOString().split('T')[0]);
+        .gte('sale_date', toDateOnly(lastWeekStart))
+        .lte('sale_date', toDateOnly(lastWeekEnd));
 
       const totalSales = (sales || []).reduce((sum, s) => sum + Number(s.sale_value || 0), 0);
       const totalCommissions = (sales || []).reduce((sum, s) => sum + Number(s.commission_value || 0), 0);

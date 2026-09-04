@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SendDocumentDialog } from './SendDocumentDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { todayDateOnly } from "@/lib/date-only";
 import {
   Tooltip,
   TooltipContent,
@@ -83,7 +84,7 @@ export const DocumentEditorDialog = ({
             defaults[field.id] = field.defaultValue;
           }
           if (field.type === 'date' && !field.defaultValue) {
-            defaults[field.id] = new Date().toISOString().split('T')[0];
+            defaults[field.id] = todayDateOnly();
           }
         });
         setFilledFields(defaults);
