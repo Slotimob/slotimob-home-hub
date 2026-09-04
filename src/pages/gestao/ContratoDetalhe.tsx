@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { formatDateOnly } from "@/lib/date-only";
+import { formatDateOnly, toDateOnly } from "@/lib/date-only";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -171,7 +171,7 @@ export default function ContratoDetalhe() {
         .select("id, amount, due_date, payment_date, status, description, type")
         .eq("broker_id", effectiveBrokerId || user!.id)
         .like("reference", `lease:${lease.id}%`)
-        .gte("due_date", threeMonthsAgo.toISOString().split("T")[0])
+        .gte("due_date", toDateOnly(threeMonthsAgo))
         .order("due_date", { ascending: false })
         .limit(6);
       return data || [];

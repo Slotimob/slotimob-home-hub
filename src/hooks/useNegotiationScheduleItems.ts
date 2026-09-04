@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
+import { toDateOnly } from "@/lib/date-only";
 
 export interface NegotiationScheduleItem {
   id: string;
@@ -103,8 +104,8 @@ export function useNegotiationScheduleItems({ selectedDate, viewMode }: UseNegot
         `)
         .eq('broker_id', effectiveBrokerId)
         .not('due_date', 'is', null)
-        .gte('due_date', startDate.toISOString().split('T')[0])
-        .lte('due_date', endDate.toISOString().split('T')[0])
+        .gte('due_date', toDateOnly(startDate))
+        .lte('due_date', toDateOnly(endDate))
         .order('due_date', { ascending: true });
 
       if (!tasksError && tasks) {

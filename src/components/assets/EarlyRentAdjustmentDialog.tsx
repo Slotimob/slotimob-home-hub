@@ -20,6 +20,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
  import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { todayDateOnly } from "@/lib/date-only";
  
  const formatCurrency = (value: number) =>
    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -94,7 +95,7 @@ import { useQueryClient } from "@tanstack/react-query";
         .insert({
          broker_id: effectiveBrokerId || user.id,
           lease_id: lease.id,
-          adjustment_date: new Date().toISOString().split("T")[0],
+          adjustment_date: todayDateOnly(),
           previous_value: lease.rent_amount,
           new_value: amount,
           index_used: "Manual",

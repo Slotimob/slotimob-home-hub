@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatDateOnly } from "@/lib/date-only";
+import { formatDateOnly, todayDateOnly } from "@/lib/date-only";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
         .from("financial_transactions")
         .update({ 
           status: "paid", 
-          paid_date: new Date().toISOString().split("T")[0] 
+          paid_date: todayDateOnly() 
         })
         .eq("id", id);
 

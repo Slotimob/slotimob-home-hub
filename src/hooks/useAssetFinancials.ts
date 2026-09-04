@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { todayDateOnly } from "@/lib/date-only";
 
 export type AssetType = 'property' | 'unit';
 
@@ -426,7 +427,7 @@ export function useRecordMarketValue(assetType: AssetType, assetId: string | und
       if (historyError) throw historyError;
 
       // Only update the current market_value if effective_date is today
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayDateOnly();
       if (payload.effective_date === today) {
         const { error: updateError } = await supabase
           .from(tableName(assetType))

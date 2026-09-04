@@ -11,6 +11,7 @@ import { Download, Mail, FileText, TrendingUp, TrendingDown, Users, Wallet, Cale
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { createWorkbook, addAoaSheet, addJsonSheet, downloadWorkbook } from '@/utils/excelUtils';
+import { toDateOnly } from "@/lib/date-only";
 
 interface MonthlyData {
   period: string;
@@ -79,8 +80,8 @@ export const MonthlySummaryReport = () => {
   const loadMonthData = async (monthStart: Date, monthEnd: Date): Promise<MonthlyData> => {
     const startStr = monthStart.toISOString();
     const endStr = monthEnd.toISOString();
-    const startDateStr = monthStart.toISOString().split('T')[0];
-    const endDateStr = monthEnd.toISOString().split('T')[0];
+    const startDateStr = toDateOnly(monthStart);
+    const endDateStr = toDateOnly(monthEnd);
 
     // Sales
     const { data: sales } = await supabase

@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { todayDateOnly } from "@/lib/date-only";
 
 interface TransactionsBulkEditDialogProps {
   open: boolean;
@@ -186,7 +187,7 @@ export function TransactionsBulkEditDialog({
       if (updateStatus) {
         updateData.status = status;
         if (status === "paid") {
-          updateData.paid_date = new Date().toISOString().split("T")[0];
+          updateData.paid_date = todayDateOnly();
         }
       }
       if (updateBankAccount) updateData.bank_account_id = bankAccountId;

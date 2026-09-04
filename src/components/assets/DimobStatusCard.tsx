@@ -7,6 +7,7 @@ import { CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { DimobQuickResolveDialog, ResolveType } from './DimobQuickResolveDialog';
+import { formatDateOnly } from "@/lib/date-only";
 
 interface DimobValidation {
   id: string;
@@ -209,7 +210,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
           label: 'Período da Locação',
           status: activeLease.start_date ? 'ok' : 'pending',
           message: activeLease.start_date
-            ? `Início: ${new Date(activeLease.start_date).toLocaleDateString('pt-BR')}${activeLease.end_date ? ` • Fim: ${new Date(activeLease.end_date).toLocaleDateString('pt-BR')}` : ''}`
+            ? `Início: ${formatDateOnly(activeLease.start_date)}${activeLease.end_date ? ` • Fim: ${formatDateOnly(activeLease.end_date)}` : ''}`
             : 'Data de início do contrato não definida',
           resolveType: 'lease',
         });

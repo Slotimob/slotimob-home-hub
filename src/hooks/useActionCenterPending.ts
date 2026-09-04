@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { addDays, isBefore, startOfDay, subHours } from "date-fns";
+import { toDateOnly } from "@/lib/date-only";
 
 export interface PendingReceivable {
   id: string;
@@ -105,7 +106,7 @@ export function useActionCenterPending(): ActionCenterData {
 
   const today = startOfDay(new Date());
   const upcomingLimit = addDays(today, 3);
-  const iso = (d: Date) => d.toISOString().split("T")[0];
+  const iso = (d: Date) => toDateOnly(d);
 
   const { data: receivables = [], isLoading: loadingReceivables } = useQuery({
     queryKey: ["action-center-receivables", brokerId],

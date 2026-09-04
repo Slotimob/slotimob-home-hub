@@ -17,6 +17,7 @@ import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiForm
 import { buildCashflowExport } from '@/lib/cashflow-export-data';
 import { generateCashflowPdf, generateCashflowDocx, generateCashflowExcel, generateCashflowCsv } from '@/utils/cashflowExportGenerators';
 import { useToast } from '@/hooks/use-toast';
+import { toDateOnly, todayDateOnly } from "@/lib/date-only";
 
 interface ReportsFinanceSectionProps {
   dateRange: { from: Date; to: Date };
@@ -41,8 +42,8 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
         unit:units(unit_number, property:properties(name))
       `)
       .eq('broker_id', user.id)
-      .gte('due_date', dateRange.from.toISOString().split('T')[0])
-      .lte('due_date', dateRange.to.toISOString().split('T')[0])
+      .gte('due_date', toDateOnly(dateRange.from))
+      .lte('due_date', toDateOnly(dateRange.to))
       .order('due_date', { ascending: true });
 
     if (type) query = query.eq('type', type);
@@ -178,7 +179,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
     let query = supabase.from('financial_transactions').select(`*, unit:units(unit_number), contact:contacts(name)`)
-      .eq('broker_id', user.id).eq('type', 'income').eq('status', 'pending').lt('due_date', new Date().toISOString().split('T')[0]).order('due_date', { ascending: true });
+      .eq('broker_id', user.id).eq('type', 'income').eq('status', 'pending').lt('due_date', todayDateOnly()).order('due_date', { ascending: true });
     if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
     const { data: overdue } = await query;
     let totalOriginal = 0, totalPenalty = 0, totalInterest = 0, totalUpdated = 0;
@@ -216,7 +217,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
       let query = supabase.from('financial_transactions').select(`*, unit:units(unit_number), contact:contacts(name)`)
-        .eq('broker_id', user.id).eq('type', 'income').eq('status', 'pending').lt('due_date', new Date().toISOString().split('T')[0]);
+        .eq('broker_id', user.id).eq('type', 'income').eq('status', 'pending').lt('due_date', todayDateOnly());
       if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
       const { data: overdue } = await query;
       generateReportCsv({
@@ -254,7 +255,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
     if (!user) throw new Error('Usuário não autenticado');
     const { data: accounts } = await supabase.from('bank_accounts').select('*').eq('broker_id', user.id);
     const { data: initialTransactions } = await supabase.from('financial_transactions').select('amount, type, bank_account_id')
-      .eq('broker_id', user.id).eq('status', 'paid').lt('paid_date', dateRange.from.toISOString().split('T')[0]);
+      .eq('broker_id', user.id).eq('status', 'paid').lt('paid_date', toDateOnly(dateRange.from));
     const initialBalances: Record<string, number> = {};
     (accounts || []).forEach(a => { initialBalances[a.id] = a.initial_balance || 0; });
     (initialTransactions || []).forEach(t => {
@@ -266,7 +267,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
     const totalInitialBalance = Object.values(initialBalances).reduce((sum, b) => sum + b, 0);
     const { data: dailyTransactions } = await supabase.from('financial_transactions').select('amount, type, paid_date, bank_account_id')
       .eq('broker_id', user.id).eq('status', 'paid')
-      .gte('paid_date', dateRange.from.toISOString().split('T')[0]).lte('paid_date', dateRange.to.toISOString().split('T')[0])
+      .gte('paid_date', toDateOnly(dateRange.from)).lte('paid_date', toDateOnly(dateRange.to))
       .order('paid_date', { ascending: true });
     const byDate: Record<string, { credits: number; debits: number }> = {};
     (dailyTransactions || []).forEach(t => {
@@ -338,7 +339,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
     const { data: entries } = await supabase.from('bank_statement_entries').select(`*, bank_account:bank_accounts(name)`)
-      .eq('broker_id', user.id).gte('entry_date', dateRange.from.toISOString().split('T')[0]).lte('entry_date', dateRange.to.toISOString().split('T')[0]);
+      .eq('broker_id', user.id).gte('entry_date', toDateOnly(dateRange.from)).lte('entry_date', toDateOnly(dateRange.to));
     const reconciled = (entries || []).filter(e => e.is_reconciled).length;
     const pending = (entries || []).filter(e => !e.is_reconciled).length;
     const tableData = (entries || []).map(e => [formatDate(e.entry_date), e.bank_account?.name || '-', e.description, formatCurrency(e.amount), e.is_reconciled ? 'Conciliado' : 'Pendente']);
@@ -364,7 +365,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
       const { data: entries } = await supabase.from('bank_statement_entries').select(`*, bank_account:bank_accounts(name)`)
-        .eq('broker_id', user.id).gte('entry_date', dateRange.from.toISOString().split('T')[0]).lte('entry_date', dateRange.to.toISOString().split('T')[0]);
+        .eq('broker_id', user.id).gte('entry_date', toDateOnly(dateRange.from)).lte('entry_date', toDateOnly(dateRange.to));
       generateReportCsv({
         columns: ['Data', 'Conta', 'Descrição', 'Valor', 'Tipo', 'Conciliado'],
         data: (entries || []).map(e => [cleanDateValue(e.entry_date), e.bank_account?.name || '', e.description, cleanNumericValue(e.amount), e.is_credit ? 'Crédito' : 'Débito', e.is_reconciled ? 'Sim' : 'Não']),

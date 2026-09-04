@@ -4,6 +4,7 @@
  */
 import type { AssetReportData } from '@/lib/asset-report-data';
 import { ASSET_EXPENSE_CATEGORIES } from '@/lib/asset-expense-categories';
+import { formatDateOnly } from "@/lib/date-only";
 
 function fmtCurrency(v: number | null | undefined): string {
   if (v == null) return '—';
@@ -133,7 +134,7 @@ export async function generateAssetReportDocx(report: AssetReportData) {
         });
         const maintRows = asset.period.maintenance_items.map(m => new TableRow({
           children: [
-            new Date(m.date).toLocaleDateString('pt-BR'),
+            formatDateOnly(m.date),
             m.type_label,
             m.title,
             m.responsible ?? '—',

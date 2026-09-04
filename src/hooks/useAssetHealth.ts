@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import type { Json } from "@/integrations/supabase/types";
+import { toDateOnly } from "@/lib/date-only";
 
 export type ObligationType = 
   | "rent" 
@@ -109,8 +110,8 @@ function getMonthRange(date: Date): { start: string; end: string } {
   const year = date.getFullYear();
   const month = date.getMonth();
   
-  const start = new Date(year, month, 1).toISOString().split("T")[0];
-  const end = new Date(year, month + 1, 0).toISOString().split("T")[0];
+  const start = toDateOnly(new Date(year, month, 1));
+  const end = toDateOnly(new Date(year, month + 1, 0));
   
   return { start, end };
 }

@@ -1,4 +1,5 @@
  import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { todayDateOnly } from "@/lib/date-only";
  import { supabase } from "@/integrations/supabase/client";
  import { useAuth } from "./useAuth";
  import { useWorkspace } from "./useWorkspace";
@@ -70,7 +71,7 @@
        if (updateError) throw updateError;
  
        // Step 3: Update future pending transactions to previous value
-       const today = new Date().toISOString().split("T")[0];
+       const today = todayDateOnly();
        const { data: updatedTx, error: txError } = await supabase
          .from("financial_transactions")
           .update({ amount: previousValue })
@@ -158,7 +159,7 @@ export function useUpdateLeaseAdjustment() {
         if (leaseError) throw leaseError;
 
         const newDate = values.adjustment_date || previousAdjustmentDate;
-        const today = new Date().toISOString().split("T")[0];
+        const today = todayDateOnly();
         // Nunca mexemos no passado: a cascata começa em hoje ou na vigência, o que for maior.
         const cascadeFrom = newDate > today ? newDate : today;
 
