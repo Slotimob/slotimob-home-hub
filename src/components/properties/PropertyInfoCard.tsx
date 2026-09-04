@@ -25,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { generatePropertyPDF, buildPDFDataFromStandalone, type AgentInfo } from '@/utils/propertyPdfGenerator';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { formatDateOnly } from "@/lib/date-only";
 
 interface PropertyData {
   id: string;
@@ -271,7 +272,7 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
               <p className="text-xs text-muted-foreground">Entrega</p>
               <p className="font-medium flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {new Date(property.delivery_date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                {formatDateOnly(property.delivery_date, "MMM 'de' yyyy")}
               </p>
             </div>
           )}
