@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, CheckCircle2, Repeat, Calendar, Circle, Loader2, Hammer } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { formatDateOnly } from "@/lib/date-only";
 import { WhatsAppBillingButton } from "./WhatsAppBillingButton";
 import { ASSET_EXPENSE_CATEGORIES, type AssetExpenseCategory } from "@/lib/asset-expense-categories";
 
@@ -47,11 +46,6 @@ export function TransactionCard({
       style: "currency",
       currency: "BRL",
     }).format(value);
-  };
-
-  const formatDateCompact = (dateString: string | null | undefined) => {
-    if (!dateString) return "-";
-    return format(new Date(dateString), "dd/MM/yy", { locale: ptBR });
   };
 
   const getStatusBadge = () => {
@@ -134,11 +128,11 @@ export function TransactionCard({
             <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5">
               <span className="flex items-center gap-0.5">
                 <Calendar className="h-2.5 w-2.5" />
-                {formatDateCompact(transaction.transaction_date)}
+                {formatDateOnly(transaction.transaction_date, "dd/MM/yy")}
               </span>
               {transaction.due_date && (
                 <span className="text-amber-600 dark:text-amber-400">
-                  Venc: {formatDateCompact(transaction.due_date)}
+                  Venc: {formatDateOnly(transaction.due_date, "dd/MM/yy")}
                 </span>
               )}
             </div>

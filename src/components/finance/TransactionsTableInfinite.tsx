@@ -8,8 +8,7 @@ import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader
 import { useTransactionsWithImprovement } from "@/hooks/useAssetFinancials";
 import { MarkAsImprovementDialog } from "./MarkAsImprovementDialog";
 
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDateOnly } from "@/lib/date-only";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -195,10 +194,6 @@ export function TransactionsTableInfinite({
     }).format(value);
   };
 
-  const formatDateCompact = (dateString: string | null | undefined) => {
-    if (!dateString) return "-";
-    return format(new Date(dateString), "dd/MM/yy", { locale: ptBR });
-  };
 
   const getStatusBadge = (transaction: any) => {
     if (transaction.is_reconciled) {
@@ -691,10 +686,10 @@ export function TransactionsTableInfinite({
                       )}
                     </TableCell>
                     <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
-                      {formatDateCompact(transaction.transaction_date)}
+                      {formatDateOnly(transaction.transaction_date, "dd/MM/yy")}
                     </TableCell>
                     <TableCell className="px-2 py-1.5 text-xs text-muted-foreground hidden xl:table-cell">
-                      {formatDateCompact(transaction.due_date)}
+                      {formatDateOnly(transaction.due_date, "dd/MM/yy")}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">
                       <span
