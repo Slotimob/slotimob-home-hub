@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays, isBefore, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { parseDateOnly } from "@/lib/date-only";
 
 interface FinanceUpcomingPaymentsProps {
   unitId?: string;
@@ -58,7 +59,7 @@ export function FinanceUpcomingPayments({ unitId, dateFrom, dateTo }: FinanceUpc
   };
 
   const getDueDateStatus = (dueDateStr: string) => {
-    const dueDate = new Date(dueDateStr);
+    const dueDate = parseDateOnly(dueDateStr) ?? new Date(dueDateStr);
     if (isBefore(dueDate, today) && !isToday(dueDate)) {
       return { label: "Vencido", variant: "destructive" as const, icon: AlertTriangle };
     }

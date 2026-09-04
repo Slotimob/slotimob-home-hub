@@ -26,7 +26,7 @@ import { ObligationSelector } from "@/components/finance/ObligationSelector";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ASSET_EXPENSE_CATEGORY_LIST } from "@/lib/asset-expense-categories";
-import { todayDateOnly } from "@/lib/date-only";
+import { parseDateOnly, todayDateOnly } from "@/lib/date-only";
 
 export interface TransactionPrefill {
   description?: string;
@@ -298,9 +298,9 @@ export function CreateTransactionDialog({
         const transactions = [];
 
         for (let i = 0; i < count; i++) {
-          const transactionDate = addMonths(new Date(formData.transactionDate), i);
+          const transactionDate = addMonths(parseDateOnly(formData.transactionDate) ?? new Date(), i);
           const dueDate = formData.dueDate 
-            ? addMonths(new Date(formData.dueDate), i) 
+            ? addMonths(parseDateOnly(formData.dueDate) ?? new Date(), i) 
             : null;
 
           transactions.push({

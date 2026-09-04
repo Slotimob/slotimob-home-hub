@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from './useWorkspace';
+import { parseDateOnly } from "@/lib/date-only";
 
 export type AccessReviewStatus = 'pending' | 'overdue';
 
@@ -49,7 +50,7 @@ const startOfDay = (value: Date): Date =>
 
 /** Dias inteiros entre hoje e a data limite (negativo quando vencido). */
 const diffInDays = (dueDate: string): number => {
-  const due = new Date(dueDate);
+  const due = parseDateOnly(dueDate) ?? new Date(dueDate);
   if (Number.isNaN(due.getTime())) return 0;
   const msPerDay = 24 * 60 * 60 * 1000;
   return Math.round((startOfDay(due).getTime() - startOfDay(new Date()).getTime()) / msPerDay);
