@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -19,6 +21,7 @@ export function useEmailVerification({ onVerified }: UseEmailVerificationOptions
   const [cooldown, setCooldown] = useState(0);
 
   const autoSentRef = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -43,6 +46,7 @@ export function useEmailVerification({ onVerified }: UseEmailVerificationOptions
         return false;
       }
       if (data?.already_verified) {
+        await queryClient.invalidateQueries({ queryKey: ['email-verified'] });
         onVerified?.();
         return true;
       }
@@ -55,7 +59,7 @@ export function useEmailVerification({ onVerified }: UseEmailVerificationOptions
     } finally {
       setIsSending(false);
     }
-  }, [onVerified]);
+  }, [onVerified, queryClient]);
 
   /** Dispara o primeiro envio uma única vez (seguro em StrictMode). */
   const sendCodeOnce = useCallback(() => {
@@ -82,6 +86,7 @@ export function useEmailVerification({ onVerified }: UseEmailVerificationOptions
           return false;
         }
         if (data?.success) {
+          await queryClient.invalidateQueries({ queryKey: ['email-verified'] });
           onVerified?.();
           return true;
         }
@@ -94,7 +99,7 @@ export function useEmailVerification({ onVerified }: UseEmailVerificationOptions
         setIsVerifying(false);
       }
     },
-    [onVerified]
+    [onVerified, queryClient]
   );
 
   return {
@@ -106,5 +111,35 @@ export function useEmailVerification({ onVerified }: UseEmailVerificationOptions
     sendCode,
     sendCodeOnce,
     verifyCode,
+  };
+}
+
+/**
+ * Status de verificação de e-mail lido de `profiles.email_verified_at`.
+ * Em erro, `isVerified` fica `false` (o usuário pode pedir código; a edge
+ * function responde `already_verified` se já estiver verificado).
+ */
+export function useEmailVerifiedStatus() {
+  const { user } = useAuth();
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['email-verified', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('email_verified_at')
+        .eq('id', user!.id)
+        .maybeSingle();
+      if (error) return null;
+      return data?.email_verified_at ?? null;
+    },
+  });
+
+  return {
+    isVerified: !!data,
+    verifiedAt: (data as string | null) ?? null,
+    isLoading,
+    refetch,
   };
 }

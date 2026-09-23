@@ -9,9 +9,16 @@ import { useEmailVerification } from '@/hooks/useEmailVerification';
 interface EmailVerificationStepProps {
   email: string;
   onVerified: () => void;
+  subtitle?: string;
+  secondaryAction?: React.ReactNode;
 }
 
-export default function EmailVerificationStep({ email, onVerified }: EmailVerificationStepProps) {
+export default function EmailVerificationStep({
+  email,
+  onVerified,
+  subtitle = 'Passo obrigatório antes do pagamento',
+  secondaryAction,
+}: EmailVerificationStepProps) {
   const [code, setCode] = useState('');
 
   const {
@@ -58,7 +65,7 @@ export default function EmailVerificationStep({ email, onVerified }: EmailVerifi
         <div className="min-w-0">
           <h3 className="font-semibold text-foreground">Confirme seu e-mail</h3>
           <p className="text-xs text-muted-foreground">
-            Passo obrigatório antes do pagamento
+            {subtitle}
           </p>
         </div>
       </div>
@@ -66,12 +73,14 @@ export default function EmailVerificationStep({ email, onVerified }: EmailVerifi
       <div className="rounded-lg border border-border bg-section px-4 py-3">
         <p className="text-xs text-muted-foreground">Enviamos um código de 6 dígitos para</p>
         <p className="text-sm font-semibold text-foreground break-all">{email}</p>
-        <Link
-          to="/settings"
-          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-        >
-          não é seu e-mail?
-        </Link>
+        {secondaryAction ?? (
+          <Link
+            to="/settings"
+            className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+          >
+            não é seu e-mail?
+          </Link>
+        )}
       </div>
 
       <div className="space-y-2">

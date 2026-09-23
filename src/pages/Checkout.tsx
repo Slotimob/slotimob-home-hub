@@ -187,23 +187,12 @@ export default function Checkout() {
   const [emailVerifiedLocally, setEmailVerifiedLocally] = useState(false);
   const [forceEmailVerification, setForceEmailVerification] = useState(false);
 
-  const { data: emailVerifiedAt, isLoading: verificationLoading } = useQuery({
-    queryKey: ['checkout-email-verified', user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('email_verified_at')
-        .eq('id', user!.id)
-        .maybeSingle();
-      return data?.email_verified_at ?? null;
-    },
-  });
+  const { isVerified: emailVerified, isLoading: verificationLoading } = useEmailVerifiedStatus();
 
   const needsEmailVerification =
     !!user &&
     !emailVerifiedLocally &&
-    (forceEmailVerification || (!verificationLoading && !emailVerifiedAt));
+    (forceEmailVerification || (!verificationLoading && !emailVerified));
 
   // URL sync
   useEffect(() => {
