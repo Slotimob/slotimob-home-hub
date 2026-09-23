@@ -211,6 +211,15 @@ serve(async (req) => {
         extRef = `${userId}:${plan_id}:monthly`;
       }
 
+      value = Math.round(value * 100) / 100;
+      if (!(value > 0)) {
+        console.error("[create-checkout-session] valor inválido para o plano", plan_id, value);
+        return new Response(JSON.stringify({ error: "Preço do plano indisponível. Tente novamente." }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const planName = plan_id.charAt(0).toUpperCase() + plan_id.slice(1);
       const asaasBillingType = billing_type || "BOLETO";
       console.log("[checkout] billing_type recebido:", billing_type, "→ usando:", asaasBillingType);
