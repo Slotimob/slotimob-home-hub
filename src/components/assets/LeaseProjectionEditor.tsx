@@ -26,8 +26,11 @@ import {
   buildRentInstallments,
   calculateDueDate,
   calculateProjectionWindow,
+  resolveFirstAdjustedDueDate,
+  resolveRentDueOffset,
   type PlannedInstallment,
 } from "@/lib/lease-projection";
+import { formatDateOnly } from "@/lib/date-only";
 import {
   ProjectionBlock,
   competencyPeriodOf,
@@ -197,6 +200,31 @@ export const LeaseProjectionEditor = forwardRef<
     return day > 0 ? day : null;
   };
 
+  /**
+   * Série de aluguel JÁ LANÇADA do contrato, derivada das chaves
+   * `tipo:yyyy-MM:yyyy-MM-dd` (aluguel com obligation_type nulo vira "rent"):
+   * - competências com aluguel (dedup por competência, qualquer vencimento);
+   * - a parcela de competência mais recente, para descobrir o regime
+   *   (vencido = vence no mês seguinte, antecipado = no próprio mês).
+   */
+  const { existingRentCompetencies, rentDueOffset } = useMemo(() => {
+    const periods = new Set<string>();
+    let lastRent: { competencyPeriod: string; dueDate: string } | null = null;
+    for (const key of existingCompetencies ?? []) {
+      const [type, period, due] = key.split(":");
+      if (type !== "rent" || !period) continue;
+      periods.add(period);
+      if (due && (!lastRent || period > lastRent.competencyPeriod ||
+          (period === lastRent.competencyPeriod && due > lastRent.dueDate))) {
+        lastRent = { competencyPeriod: period, dueDate: due };
+      }
+    }
+    return {
+      existingRentCompetencies: periods,
+      rentDueOffset: resolveRentDueOffset(lastRent),
+    };
+  }, [existingCompetencies]);
+
   // --- Estado editável, um BlockConfig por bloco ---
   const [blocks, setBlocks] = useState<Record<string, BlockConfig>>({});
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
@@ -241,10 +269,23 @@ export const LeaseProjectionEditor = forwardRef<
    */
   useEffect(() => {
     if (!lease || !window) return;
+    // Pós-reajuste o 1º vencimento depende do regime (vencido/antecipado) lido
+    // da série já lançada — esperar o fim do carregamento para não nascer com
+    // o offset padrão e trocar logo depois.
+    if (postAdjustment && loadingExisting) return;
 
     const windowMonth = startDate ? startDate.slice(0, 7) : format(new Date(), "yyyy-MM");
     const base = startDate ? parseISO(startDate) : new Date();
     const dueDay = lease.due_day || 10;
+    // Pós-reajuste: o valor novo vale da competência do mês de aniversário e o
+    // 1º boleto vence no mês seguinte (aluguel vencido) ou no próprio mês
+    // (antecipado), conforme a série já lançada do contrato.
+    const rentFirstDueDefault = postAdjustment
+      ? format(
+          resolveFirstAdjustedDueDate(parseISO(`${windowMonth}-01`), dueDay, rentDueOffset),
+          "yyyy-MM-dd"
+        )
+      : format(calculateDueDate(base, dueDay), "yyyy-MM-dd");
     // Emissão default = dia de início do contrato (mesma regra do motor legado).
     const issueDay = lease.start_date ? getDate(parseISO(lease.start_date)) : 1;
     /** Competência completa: mês do parâmetro + dia de emissão, com clamp de mês curto. */
@@ -254,7 +295,7 @@ export const LeaseProjectionEditor = forwardRef<
     const next: Record<string, BlockConfig> = {
       rent: {
         competency: withIssueDay(windowMonth),
-        firstDueDate: format(calculateDueDate(base, dueDay), "yyyy-MM-dd"),
+        firstDueDate: rentFirstDueDefault,
         months: Math.max(1, window.months),
         amount: rentAmountDefault,
       },
@@ -320,7 +361,7 @@ export const LeaseProjectionEditor = forwardRef<
       ...Object.fromEntries(additionalConfigs.map((o) => [o.type, !postAdjustment])),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lease?.id, window?.months, window?.blocked, rentAmountDefault, startDate, postAdjustment]);
+  }, [lease?.id, window?.months, window?.blocked, rentAmountDefault, startDate, postAdjustment, rentDueOffset, loadingExisting]);
 
   const patchBlock = (key: string, patch: Partial<BlockConfig>) =>
     setBlocks((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
@@ -337,8 +378,9 @@ export const LeaseProjectionEditor = forwardRef<
       firstDueDate: cfg.firstDueDate || null,
       issueDay: issueDayOf(cfg.competency),
       existingCompetencies,
+      existingRentCompetencies,
     });
-  }, [lease, window, blocks.rent, existingCompetencies]);
+  }, [lease, window, blocks.rent, existingCompetencies, existingRentCompetencies]);
 
   const insuranceInstallments = useMemo(() => {
     const cfg = blocks.fire_insurance;
@@ -611,16 +653,28 @@ export const LeaseProjectionEditor = forwardRef<
         <>
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
             <CalendarClock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-            <p className="text-sm">
-              {firstRent && lastRent ? (
-                <>
-                  Aluguel de {firstRent.competencyLabel} a {lastRent.competencyLabel} —{" "}
-                  {window.reasonLabel}
-                </>
-              ) : (
-                window.reasonLabel
+            <div className="text-sm space-y-1">
+              <p>
+                {firstRent && lastRent ? (
+                  <>
+                    Aluguel de {firstRent.competencyLabel} a {lastRent.competencyLabel} —{" "}
+                    {window.reasonLabel}
+                  </>
+                ) : (
+                  window.reasonLabel
+                )}
+              </p>
+              {postAdjustment && firstRent && (
+                <p className="text-muted-foreground">
+                  Valor novo a partir da competência {firstRent.competencyLabel}; 1º boleto com
+                  valor novo vence em {formatDateOnly(firstRent.dueDate)} (
+                  {rentDueOffset === 0
+                    ? "aluguel pago no próprio mês"
+                    : "aluguel pago no mês seguinte"}
+                  ).
+                </p>
               )}
-            </p>
+            </div>
           </div>
 
           {blocks.rent && (

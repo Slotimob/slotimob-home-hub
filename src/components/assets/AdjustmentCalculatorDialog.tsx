@@ -41,7 +41,7 @@ import {
 } from "@/components/assets/LeaseProjectionEditor";
 import { PercentInput } from "@/components/ui/currency-input";
 import { calculateRentAdjustment } from "@/lib/rentAdjustment";
-import { calculateProjectionWindow, calculateDueDate, resolveFirstAdjustedCompetency } from "@/lib/lease-projection";
+import { calculateProjectionWindow, calculateDueDate, resolveAnniversaryCompetency } from "@/lib/lease-projection";
 
 interface LeaseForAdjustment {
   id: string;
@@ -92,6 +92,15 @@ const INDEX_SOURCES: Record<string, { url: string; label: string }> = {
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/**
+ * Âncora do reajuste: a próxima data de reajuste ou, quando o contrato nunca
+ * foi reajustado, o aniversário (start_date + periodicidade). Usar a data de
+ * início crua marcaria o reajuste no mês 0, antes dos 12 meses completos.
+ */
+const adjustmentAnchor = (l: LeaseForAdjustment) =>
+  l.next_adjustment_date ||
+  format(addMonths(parseISO(l.start_date), l.adjustment_periodicity_months || 12), "yyyy-MM-dd");
 
 export function AdjustmentCalculatorDialog({
   open,
@@ -151,13 +160,13 @@ export function AdjustmentCalculatorDialog({
   // Preview usa a mesma janela que a geração real do LeaseProjectionEditor.
   const projectionPreview = useMemo(() => {
     if (!lease || !canProject || !lease.due_day) return null;
-    const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+    const anchor = adjustmentAnchor(lease);
     const nextAdjustmentDate = format(
-      addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+      addMonths(parseISO(anchor), lease.adjustment_periodicity_months || 12),
       "yyyy-MM-dd"
     );
-    // A janela começa na primeira competência cujo vencimento já vale o reajuste.
-    const firstCompetency = resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day);
+    // A janela começa na competência do mês de aniversário do contrato.
+    const firstCompetency = resolveAnniversaryCompetency(anchor);
     const window = calculateProjectionWindow({
       startDate: firstCompetency,
       endDate: lease.end_date,
@@ -177,7 +186,7 @@ export function AdjustmentCalculatorDialog({
    */
   const projectionLeaseData = useMemo<LeaseForProjection | null>(() => {
     if (!lease || !canProject || !lease.due_day) return null;
-    const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+    const anchor = adjustmentAnchor(lease);
     return {
       id: lease.id,
       unit_id: lease.unit_id,
@@ -186,14 +195,11 @@ export function AdjustmentCalculatorDialog({
       property_id: lease.property_id ?? null,
       rent_amount: newValue,
       due_day: lease.due_day,
-      // Mesma âncora do preview: primeira competência já reajustada.
-      start_date: format(
-        resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day),
-        "yyyy-MM-dd"
-      ),
+      // Mesma âncora do preview: competência do mês de aniversário.
+      start_date: format(resolveAnniversaryCompetency(anchor), "yyyy-MM-dd"),
       end_date: lease.end_date ?? null,
       next_adjustment_date: format(
-        addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+        addMonths(parseISO(anchor), lease.adjustment_periodicity_months || 12),
         "yyyy-MM-dd"
       ),
       is_indefinite_term: lease.is_indefinite_term ?? false,
@@ -217,10 +223,10 @@ export function AdjustmentCalculatorDialog({
       // Etapa 1: aplicar o reajuste. Só roda uma vez por sessão do dialog — numa
       // nova tentativa após falha de lançamento, pula direto para a etapa 2.
       if (!adjustmentAppliedRef.current) {
-        // Calculate next adjustment date (current + periodicity)
-        const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+        // Calculate next adjustment date (anchor + periodicity)
+        const anchor = adjustmentAnchor(lease);
         const nextAdjustmentDate = format(
-          addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+          addMonths(parseISO(anchor), lease.adjustment_periodicity_months || 12),
           "yyyy-MM-dd"
         );
 
@@ -251,17 +257,19 @@ export function AdjustmentCalculatorDialog({
 
         if (updateError) throw updateError;
 
-        // Step 3: CASCADE UPDATE - apenas parcelas de ALUGUEL pendentes futuras.
+        // Step 3: CASCADE UPDATE - apenas parcelas de ALUGUEL pendentes a partir
+        // da competência do reajuste (mês de aniversário). Filtrar pela data de
+        // hoje faria o resultado depender do dia do clique.
         // NUNCA tocar IPTU/seguro/outras obrigações: elas têm valor próprio e
         // seriam sobrescritas com o valor do aluguel (corrupção silenciosa).
-        const adjustmentEffectiveDate = format(new Date(), "yyyy-MM-dd");
+        const firstAdjustedPeriod = format(resolveAnniversaryCompetency(anchor), "yyyy-MM");
 
         const { data: updatedTransactions, error: cascadeError } = await supabase
           .from("financial_transactions")
           .update({ amount: newValue })
           .eq("reference", `lease:${lease.id}`)
           .eq("status", "pending")
-          .gte("due_date", adjustmentEffectiveDate)
+          .gte("competency_period", firstAdjustedPeriod)
           .or("obligation_type.eq.rent,obligation_type.is.null")
           .select("id");
 
