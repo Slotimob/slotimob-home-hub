@@ -94,6 +94,7 @@ import {
   getLeaseStatusConfig,
   getAdjustmentStatus,
   getAdjustmentStatusConfig,
+  countLeasesByStatus,
   isLeasePendingSetup,
   type AdjustmentStatus,
 } from "@/lib/lease-status";
