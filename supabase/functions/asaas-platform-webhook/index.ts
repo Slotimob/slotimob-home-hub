@@ -28,20 +28,20 @@ function parseExternalRef(ref: string | null | undefined) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
     const token = req.headers.get("asaas-access-token");
     const expectedToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
     if (!expectedToken || token !== expectedToken) {
-      console.error("Webhook token inválido");
+      console.error("[asaas-platform-webhook] Webhook token inválido");
       return new Response("Unauthorized", { status: 401 });
     }
 
     const payload = await req.json();
     const { event, payment, subscription } = payload;
-    console.log(`Asaas webhook: ${event}`, JSON.stringify({ externalRef: payment?.externalReference || subscription?.externalReference }));
+    console.log(`[asaas-platform-webhook] Asaas webhook: ${event}`, JSON.stringify({ externalRef: payment?.externalReference || subscription?.externalReference }));
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -55,7 +55,7 @@ serve(async (req) => {
         const parsed = parseExternalRef(extRef);
 
         if (!parsed) {
-          console.log("PAYMENT_CONFIRMED sem externalReference reconhecível, ignorando.");
+          console.log("[asaas-platform-webhook] PAYMENT_CONFIRMED sem externalReference reconhecível, ignorando.");
           break;
         }
 
@@ -78,7 +78,7 @@ serve(async (req) => {
                   updated_at: new Date().toISOString(),
                 })
                 .eq("id", sub.id);
-              console.log(`IA credits +${creditsToAdd} para user ${userId}`);
+              console.log(`[asaas-platform-webhook] IA credits +${creditsToAdd} para user ${userId}`);
             }
           }
           break;
@@ -90,7 +90,7 @@ serve(async (req) => {
             .from("asaas_addon_subscriptions")
             .update({ status: "active", updated_at: new Date().toISOString() })
             .eq("asaas_subscription_id", payment.subscription);
-          console.log(`Add-on ativado: ${payment.subscription}`);
+          console.log(`[asaas-platform-webhook] Add-on ativado: ${payment.subscription}`);
           break;
         }
 
@@ -100,24 +100,30 @@ serve(async (req) => {
             .from("subscriptions")
             .select("id, user_id")
             .eq("asaas_subscription_id", payment.subscription)
-            .single();
+            .maybeSingle();
 
-          if (sub) {
-            const now = new Date();
-            const periodEnd = isYearly ? addMonths(now, 12) : addMonths(now, 1);
-
-            await supabase.from("subscriptions").update({
-              status: "active",
-              plan_id: type,
-              current_period_start: now.toISOString(),
-              current_period_end: periodEnd.toISOString(),
-              trial_ends_at: null,
-              billing_provider: "asaas",
-              updated_at: now.toISOString(),
-            }).eq("id", sub.id);
-
-            console.log(`Plano ativado para user ${sub.user_id}: plan_id=${type} (${isYearly ? "+12 meses" : "+1 mês"})`);
+          if (!sub) {
+            console.log(`[asaas-platform-webhook] pagamento de assinatura órfã, nenhuma linha local: ${payment.subscription}`);
+            break;
           }
+
+          const now = new Date();
+          const periodEnd = isYearly ? addMonths(now, 12) : addMonths(now, 1);
+
+          await supabase.from("subscriptions").update({
+            status: "active",
+            plan_id: type,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            trial_ends_at: null,
+            billing_provider: "asaas",
+            billing_cycle: isYearly ? "annual" : "monthly",
+            cancel_at_period_end: false,
+            canceled_at: null,
+            updated_at: now.toISOString(),
+          }).eq("id", sub.id);
+
+          console.log(`[asaas-platform-webhook] Plano ativado para user ${sub.user_id}: plan_id=${type} (${isYearly ? "+12 meses" : "+1 mês"})`);
         }
         break;
       }
