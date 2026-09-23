@@ -77,7 +77,9 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   }, [isAuthReady, user, navigate]);
 
 
-  if (!isAuthReady || !profileChecked) {
+  const isLoadingGate = !isAuthReady || !profileChecked || (!!user && provider === 'email' && isEmailVerificationLoading);
+
+  if (isLoadingGate) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
         <SlotiLogo size="lg" className="mb-2" />
@@ -87,6 +89,10 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
         </p>
       </div>
     );
+  }
+
+  if (needsEmailVerification) {
+    return <EmailVerificationScreen />;
   }
 
   const isAllowedWhilePending = PENDING_PAYMENT_ALLOWED_PREFIXES.some(
