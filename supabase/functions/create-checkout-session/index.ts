@@ -33,9 +33,23 @@ function nextDueDateStr(daysAhead = 1): string {
   return d.toISOString().split("T")[0];
 }
 
+async function deleteAsaasSubscription(id: string): Promise<boolean> {
+  const res = await fetch(`${ASAAS_API_URL}/subscriptions/${id}`, {
+    method: "DELETE",
+    headers: { "access_token": Deno.env.get("ASAAS_API_KEY")!, "Content-Type": "application/json" },
+  });
+  if (res.ok || res.status === 404) {
+    console.log(`[create-checkout-session] assinatura Asaas ${id} removida (status ${res.status})`);
+    return true;
+  }
+  const errData = await res.json().catch(() => ({}));
+  console.warn(`[create-checkout-session] falha ao remover assinatura ${id}:`, errData?.errors?.[0]?.description ?? res.status);
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
@@ -197,6 +211,15 @@ serve(async (req) => {
         extRef = `${userId}:${plan_id}:monthly`;
       }
 
+      value = Math.round(value * 100) / 100;
+      if (!(value > 0)) {
+        console.error("[create-checkout-session] valor inválido para o plano", plan_id, value);
+        return new Response(JSON.stringify({ error: "Preço do plano indisponível. Tente novamente." }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const planName = plan_id.charAt(0).toUpperCase() + plan_id.slice(1);
       const asaasBillingType = billing_type || "BOLETO";
       console.log("[checkout] billing_type recebido:", billing_type, "→ usando:", asaasBillingType);
@@ -209,75 +232,110 @@ serve(async (req) => {
           }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
       }
-      // ── Upgrade de plano: cancelar subscription Asaas anterior se existir ──────
-      // Garante que o usuário não pague duplo ao fazer upgrade (Pro → Business)
-      const planHierarchy: Record<string, number> = { start: 0, free: 0, essencial: 1, pro: 2, business: 3 };
-      const currentPlanRank = planHierarchy[subscription?.plan_id ?? 'start'] ?? 0;
-      const newPlanRank = planHierarchy[plan_id] ?? 0;
-      const isUpgrade = newPlanRank > currentPlanRank && !!subscription?.asaas_subscription_id;
+      // ── Troca de plano (qualquer direção): cancelar subscription Asaas anterior ──
+      const isPlanChange = !!subscription?.asaas_subscription_id && subscription?.plan_id !== plan_id;
 
-      if (isUpgrade) {
-        console.log(`[checkout] Upgrade detectado: ${subscription?.plan_id} → ${plan_id}. Cancelando sub anterior: ${subscription?.asaas_subscription_id}`);
-        const cancelRes = await fetch(`${ASAAS_API_URL}/subscriptions/${subscription!.asaas_subscription_id}`, {
-          method: "DELETE",
-          headers: { "access_token": Deno.env.get("ASAAS_API_KEY")!, "Content-Type": "application/json" },
-        });
-        if (cancelRes.ok || cancelRes.status === 404) {
-          console.log("[checkout] Subscription anterior cancelada com sucesso.");
-        } else {
-          const errData = await cancelRes.json().catch(() => ({}));
-          console.warn("[checkout] Aviso: não foi possível cancelar subscription anterior:", errData?.errors?.[0]?.description);
-          // Não bloquear o upgrade por causa disso — continuar criando a nova subscription
-        }
+      if (isPlanChange) {
+        console.log(`[create-checkout-session] Troca de plano: ${subscription?.plan_id} → ${plan_id}. Cancelando sub anterior: ${subscription?.asaas_subscription_id}`);
+        await deleteAsaasSubscription(subscription!.asaas_subscription_id as string);
       }
 
-      // ── Guarda de duplicidade: mesmo plano, sem upgrade, assinatura já existente ──
-      if (subscription?.asaas_subscription_id && subscription?.plan_id === plan_id && !isUpgrade) {
+      // ── Guarda de duplicidade: mesmo plano, assinatura já existente ──
+      if (subscription?.asaas_subscription_id && !isPlanChange) {
+        let existing: any = null;
         try {
-          const existingPayments = await asaasRequest(`/subscriptions/${subscription.asaas_subscription_id}/payments`);
-          const firstExisting = existingPayments?.data?.[0] ?? null;
-          if (firstExisting) {
-            console.log(`[checkout] pedido duplicado, reaproveitando subscription ${subscription.asaas_subscription_id}`);
-            if (asaasBillingType === "PIX") {
-              const pixData = await asaasRequest(`/payments/${firstExisting.id}/pixQrCode`);
-              return new Response(JSON.stringify({
-                type: "pix",
-                reused: true,
-                pix: {
-                  encodedImage: pixData.encodedImage,
-                  payload: pixData.payload,
-                  expirationDate: pixData.expirationDate,
-                },
-              }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-            }
-            if (asaasBillingType === "BOLETO") {
-              return new Response(JSON.stringify({
-                type: "boleto",
-                reused: true,
-                boleto: {
-                  bankSlipUrl: firstExisting.bankSlipUrl,
-                  barCode: firstExisting.barCode ?? null,
-                  dueDate: firstExisting.dueDate,
-                },
-              }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-            }
-            const reusedUrl = firstExisting.invoiceUrl || `https://www.asaas.com/i/${firstExisting.id}`;
-            return new Response(JSON.stringify({ type: "redirect", reused: true, url: reusedUrl }), {
+          existing = await asaasRequest(`/subscriptions/${subscription.asaas_subscription_id}`);
+        } catch (exErr) {
+          console.warn("[create-checkout-session] assinatura anterior não encontrada na Asaas:", exErr instanceof Error ? exErr.message : exErr);
+          existing = null;
+        }
+
+        const sameTerms = !!existing && !existing.deleted && existing.status === "ACTIVE"
+          && existing.cycle === cycle && Math.abs(Number(existing.value) - value) < 0.005;
+
+        if (subscription.status === "active") {
+          if (sameTerms) {
+            return new Response(JSON.stringify({ error: "Você já tem este plano ativo." }), {
+              status: 200,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
-          console.warn("[checkout] assinatura existente sem pagamentos, seguindo criação normal");
-        } catch (dupErr) {
-          console.warn("[checkout] falha ao reaproveitar assinatura existente:", dupErr instanceof Error ? dupErr.message : dupErr);
+          console.log("[create-checkout-session] troca de ciclo solicitada com assinatura ativa — bloqueada");
+          return new Response(JSON.stringify({
+            error: "Para trocar entre mensal e anual, cancele a assinatura atual em Configurações › Assinatura e assine novamente no novo ciclo."
+          }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        if (sameTerms) {
+          try {
+            const existingPayments = await asaasRequest(`/subscriptions/${subscription.asaas_subscription_id}/payments`);
+            const firstExisting = (existingPayments?.data ?? []).find(
+              (p: any) => p?.status === "PENDING" || p?.status === "OVERDUE"
+            ) ?? null;
+            if (firstExisting) {
+              console.log(`[create-checkout-session] reaproveitando subscription ${subscription.asaas_subscription_id} (pagamento ${firstExisting.id})`);
+              if (asaasBillingType === "PIX") {
+                const pixData = await asaasRequest(`/payments/${firstExisting.id}/pixQrCode`);
+                return new Response(JSON.stringify({
+                  type: "pix",
+                  reused: true,
+                  pix: {
+                    encodedImage: pixData.encodedImage,
+                    payload: pixData.payload,
+                    expirationDate: pixData.expirationDate,
+                  },
+                }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+              }
+              if (asaasBillingType === "BOLETO") {
+                return new Response(JSON.stringify({
+                  type: "boleto",
+                  reused: true,
+                  boleto: {
+                    bankSlipUrl: firstExisting.bankSlipUrl,
+                    barCode: firstExisting.barCode ?? null,
+                    dueDate: firstExisting.dueDate,
+                  },
+                }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+              }
+              const reusedUrl = firstExisting.invoiceUrl || `https://www.asaas.com/i/${firstExisting.id}`;
+              return new Response(JSON.stringify({ type: "redirect", reused: true, url: reusedUrl }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              });
+            }
+            console.warn("[create-checkout-session] assinatura existente sem pagamento pendente, seguindo criação normal");
+          } catch (dupErr) {
+            console.warn("[create-checkout-session] falha ao reaproveitar assinatura existente:", dupErr instanceof Error ? dupErr.message : dupErr);
+          }
+        } else if (existing) {
+          console.log(`[create-checkout-session] termos mudaram (ciclo/valor) — removendo assinatura ${subscription.asaas_subscription_id}`);
+          await deleteAsaasSubscription(subscription.asaas_subscription_id as string);
         }
       }
 
-
-      // Se houver data de renovação do plano atual, usar como nextDueDate do novo (sem cobrança dupla)
-      const upgradeDueDate = isUpgrade && subscription?.current_period_end
-        ? new Date(subscription.current_period_end).toISOString().split("T")[0]
+      // Se houver data de renovação do plano atual ainda no futuro, usar como nextDueDate do novo
+      const periodEnd = subscription?.current_period_end ? new Date(subscription.current_period_end) : null;
+      const useCurrentPeriodEnd = isPlanChange
+        && subscription?.status === "active"
+        && !!periodEnd && !isNaN(periodEnd.getTime()) && periodEnd.getTime() > Date.now();
+      const upgradeDueDate = useCurrentPeriodEnd
+        ? periodEnd!.toISOString().split("T")[0]
         : nextDueDateStr(1);
-      // ── fim do bloco de upgrade ──────────────────────────────────────────────────
+
+      // ── Limpeza de assinaturas órfãs de plano deste cliente na Asaas ──
+      try {
+        const activeSubs = await asaasRequest(`/subscriptions?customer=${asaasCustomerId}&status=ACTIVE&limit=100`);
+        const orphans = (activeSubs?.data ?? []).filter((s: any) => {
+          const ref: string = s?.externalReference ?? "";
+          return ref.startsWith(`${userId}:`) && !ref.includes(":addon:");
+        });
+        let removed = 0;
+        for (const orphan of orphans) {
+          if (await deleteAsaasSubscription(orphan.id)) removed++;
+        }
+        console.log(`[create-checkout-session] limpeza de órfãs: ${removed}/${orphans.length} removidas`);
+      } catch (cleanErr) {
+        console.warn("[create-checkout-session] falha na limpeza de assinaturas órfãs:", cleanErr instanceof Error ? cleanErr.message : cleanErr);
+      }
 
       const sub = await asaasRequest("/subscriptions", "POST", {
         customer: asaasCustomerId,
@@ -296,6 +354,7 @@ serve(async (req) => {
           billing_provider: "asaas",
           asaas_customer_id: asaasCustomerId,
           plan_id: plan_id,
+          billing_cycle: isAnnual ? "annual" : "monthly",
           // Bloqueia o acesso até a Asaas confirmar o pagamento.
           // O webhook (PAYMENT_CONFIRMED / PAYMENT_RECEIVED) libera com status "active".
           status: "pending_payment",
