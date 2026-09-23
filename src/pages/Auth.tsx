@@ -1190,11 +1190,11 @@ const Auth = () => {
                             <Input id="reset-email" type="email" placeholder="seu@email.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
                           </div>
                           <p className="text-xs text-muted-foreground">Você receberá um link para redefinir sua senha.</p>
-                          <TurnstileWidget ref={resetTurnstileRef} onVerify={setResetCaptchaToken} onExpire={() => setResetCaptchaToken(null)} />
+                          <TurnstileWidget key="captcha-forgot" ref={resetTurnstileRef} onVerify={setResetCaptchaToken} onExpire={() => setResetCaptchaToken(null)} />
                           <Button type="submit" className="w-full" disabled={resetLoading || !resetCaptchaToken}>
                             {resetLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</> : 'Enviar link de recuperação'}
                           </Button>
-                          <Button type="button" variant="ghost" className="w-full" onClick={() => setShowForgotPassword(false)}>Voltar ao login</Button>
+                          <Button type="button" variant="ghost" className="w-full" onClick={() => { setResetCaptchaToken(null); setLoginCaptchaToken(null); setShowForgotPassword(false); }}>Voltar ao login</Button>
                         </form>
                       ) : (
                         <form onSubmit={handleLogin} className="space-y-4">
@@ -1205,7 +1205,7 @@ const Auth = () => {
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <Label htmlFor="login-password">Senha</Label>
-                              <Button type="button" variant="link" className="h-auto p-0 text-xs text-muted-foreground hover:text-primary" onClick={() => setShowForgotPassword(true)}>
+                              <Button type="button" variant="link" className="h-auto p-0 text-xs text-muted-foreground hover:text-primary" onClick={() => { setLoginCaptchaToken(null); setResetCaptchaToken(null); setShowForgotPassword(true); }}>
                                 Esqueceu a senha?
                               </Button>
                             </div>
@@ -1220,7 +1220,7 @@ const Auth = () => {
                               </button>
                             </div>
                           </div>
-                          <TurnstileWidget ref={loginTurnstileRef} onVerify={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken(null)} />
+                          <TurnstileWidget key="captcha-login" ref={loginTurnstileRef} onVerify={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken(null)} />
                           <Button type="submit" className="w-full h-11" disabled={loading || googleLoading || !loginCaptchaToken}>
                             {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
                           </Button>
