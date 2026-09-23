@@ -33,9 +33,23 @@ function nextDueDateStr(daysAhead = 1): string {
   return d.toISOString().split("T")[0];
 }
 
+async function deleteAsaasSubscription(id: string): Promise<boolean> {
+  const res = await fetch(`${ASAAS_API_URL}/subscriptions/${id}`, {
+    method: "DELETE",
+    headers: { "access_token": Deno.env.get("ASAAS_API_KEY")!, "Content-Type": "application/json" },
+  });
+  if (res.ok || res.status === 404) {
+    console.log(`[create-checkout-session] assinatura Asaas ${id} removida (status ${res.status})`);
+    return true;
+  }
+  const errData = await res.json().catch(() => ({}));
+  console.warn(`[create-checkout-session] falha ao remover assinatura ${id}:`, errData?.errors?.[0]?.description ?? res.status);
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
