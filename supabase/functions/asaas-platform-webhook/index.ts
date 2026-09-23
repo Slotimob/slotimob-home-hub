@@ -159,21 +159,83 @@ serve(async (req) => {
             .from("asaas_addon_subscriptions")
             .update({ status: "canceled", updated_at: new Date().toISOString() })
             .eq("asaas_subscription_id", subscription.id);
-          console.log(`Add-on cancelado: ${subscription.id}`);
+          console.log(`[asaas-platform-webhook] Add-on cancelado: ${subscription.id}`);
           break;
         }
 
-        // Plano cancelado → downgrade para start
+        // Plano removido na Asaas
+        const { data: planRow } = await supabase
+          .from("subscriptions")
+          .select("id, user_id, cancel_at_period_end, current_period_end")
+          .eq("asaas_subscription_id", subscription.id)
+          .maybeSingle();
+
+        if (!planRow) {
+          console.log(`[asaas-platform-webhook] assinatura órfã removida, nenhuma linha local: ${subscription.id}`);
+          break;
+        }
+
+        const periodEnd = planRow.current_period_end ? new Date(planRow.current_period_end) : null;
+        if (planRow.cancel_at_period_end === true && periodEnd && periodEnd > new Date()) {
+          console.log(`[asaas-platform-webhook] cancelamento agendado, acesso mantido até ${planRow.current_period_end}`);
+          break;
+        }
+
         await supabase.from("subscriptions").update({
-          status: "canceled",
           plan_id: "start",
-          cancel_at_period_end: false,
+          status: "active",
           asaas_subscription_id: null,
+          cancel_at_period_end: false,
+          billing_cycle: null,
+          current_period_start: null,
+          current_period_end: null,
           trial_ends_at: null,
           updated_at: new Date().toISOString(),
-        }).eq("asaas_subscription_id", subscription.id);
+        }).eq("id", planRow.id);
 
-        console.log(`Assinatura cancelada → downgrade para start: ${subscription.id}`);
+        console.log(`[asaas-platform-webhook] Assinatura removida → downgrade para start ativo: ${subscription.id}`);
+        break;
+      }
+
+      case "PAYMENT_DELETED": {
+        console.log(`[asaas-platform-webhook] cobrança removida: payment=${payment?.id} subscription=${payment?.subscription}`);
+        break;
+      }
+
+      case "PAYMENT_REFUNDED": {
+        if (!payment?.subscription) break;
+        const { data: planRow } = await supabase
+          .from("subscriptions")
+          .select("id, user_id")
+          .eq("asaas_subscription_id", payment.subscription)
+          .maybeSingle();
+
+        if (!planRow) {
+          console.log(`[asaas-platform-webhook] estorno de assinatura órfã, nenhuma linha local: ${payment.subscription}`);
+          break;
+        }
+
+        await supabase.from("subscriptions").update({
+          plan_id: "start",
+          status: "active",
+          asaas_subscription_id: null,
+          cancel_at_period_end: false,
+          billing_cycle: null,
+          current_period_start: null,
+          current_period_end: null,
+          trial_ends_at: null,
+          updated_at: new Date().toISOString(),
+        }).eq("id", planRow.id);
+
+        await supabase.from("audit_logs").insert({
+          broker_id: planRow.user_id,
+          action: "subscription_refunded_downgrade",
+          table_name: "subscriptions",
+          record_id: planRow.id,
+          metadata: { payment_id: payment.id, value: payment.value },
+        });
+
+        console.log(`[asaas-platform-webhook] Estorno → downgrade para start ativo: ${payment.subscription}`);
         break;
       }
 
