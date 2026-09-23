@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/hooks/useAuth';
+import { useEmailVerifiedStatus } from '@/hooks/useEmailVerification';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { PendingPaymentScreen } from '@/components/subscription/PendingPaymentScreen';
+import { EmailVerificationScreen } from '@/components/auth/EmailVerificationScreen';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -19,7 +21,12 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { isPendingPayment, isLoading: isLimitsLoading } = useSubscriptionLimits();
+  const { isVerified, isLoading: isEmailVerificationLoading } = useEmailVerifiedStatus();
   const [profileChecked, setProfileChecked] = useState(false);
+
+  const provider = user?.app_metadata?.provider ?? 'email';
+  const needsEmailVerification =
+    !!user && provider === 'email' && !isEmailVerificationLoading && !isVerified;
 
 
   useEffect(() => {
