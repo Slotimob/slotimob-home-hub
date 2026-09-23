@@ -361,7 +361,7 @@ export const LeaseProjectionEditor = forwardRef<
       ...Object.fromEntries(additionalConfigs.map((o) => [o.type, !postAdjustment])),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lease?.id, window?.months, window?.blocked, rentAmountDefault, startDate, postAdjustment]);
+  }, [lease?.id, window?.months, window?.blocked, rentAmountDefault, startDate, postAdjustment, rentDueOffset, loadingExisting]);
 
   const patchBlock = (key: string, patch: Partial<BlockConfig>) =>
     setBlocks((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
@@ -378,8 +378,9 @@ export const LeaseProjectionEditor = forwardRef<
       firstDueDate: cfg.firstDueDate || null,
       issueDay: issueDayOf(cfg.competency),
       existingCompetencies,
+      existingRentCompetencies,
     });
-  }, [lease, window, blocks.rent, existingCompetencies]);
+  }, [lease, window, blocks.rent, existingCompetencies, existingRentCompetencies]);
 
   const insuranceInstallments = useMemo(() => {
     const cfg = blocks.fire_insurance;
