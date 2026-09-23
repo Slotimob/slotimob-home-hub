@@ -653,16 +653,28 @@ export const LeaseProjectionEditor = forwardRef<
         <>
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-start gap-2">
             <CalendarClock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-            <p className="text-sm">
-              {firstRent && lastRent ? (
-                <>
-                  Aluguel de {firstRent.competencyLabel} a {lastRent.competencyLabel} —{" "}
-                  {window.reasonLabel}
-                </>
-              ) : (
-                window.reasonLabel
+            <div className="text-sm space-y-1">
+              <p>
+                {firstRent && lastRent ? (
+                  <>
+                    Aluguel de {firstRent.competencyLabel} a {lastRent.competencyLabel} —{" "}
+                    {window.reasonLabel}
+                  </>
+                ) : (
+                  window.reasonLabel
+                )}
+              </p>
+              {postAdjustment && firstRent && (
+                <p className="text-muted-foreground">
+                  Valor novo a partir da competência {firstRent.competencyLabel}; 1º boleto com
+                  valor novo vence em {formatDateOnly(firstRent.dueDate)} (
+                  {rentDueOffset === 0
+                    ? "aluguel pago no próprio mês"
+                    : "aluguel pago no mês seguinte"}
+                  ).
+                </p>
               )}
-            </p>
+            </div>
           </div>
 
           {blocks.rent && (
