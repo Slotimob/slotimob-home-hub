@@ -14,8 +14,10 @@ export interface SubscriptionDetails {
   asaas_customer_id: string | null;
   asaas_subscription_id: string | null;
   billing_provider: string | null;
+  billing_cycle: 'monthly' | 'annual' | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+  canceled_at: string | null;
   trial_ends_at: string | null;
   trial_extension_count: number;
   last_modified_by_admin: string | null;
@@ -34,7 +36,7 @@ export const useSubscriptionDetails = () => {
 
       const { data, error } = await supabase
         .from('subscriptions')
-        .select('plan_id, status, is_early_adopter, extra_users_count, extra_unit_packs, stripe_customer_id, stripe_subscription_id, asaas_customer_id, asaas_subscription_id, billing_provider, current_period_end, cancel_at_period_end, trial_ends_at, trial_extension_count, last_modified_by_admin')
+        .select('plan_id, status, is_early_adopter, extra_users_count, extra_unit_packs, stripe_customer_id, stripe_subscription_id, asaas_customer_id, asaas_subscription_id, billing_provider, billing_cycle, current_period_end, cancel_at_period_end, canceled_at, trial_ends_at, trial_extension_count, last_modified_by_admin')
         .eq('user_id', resolvedUserId)
         .maybeSingle();
 
