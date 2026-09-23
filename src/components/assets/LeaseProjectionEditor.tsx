@@ -26,8 +26,11 @@ import {
   buildRentInstallments,
   calculateDueDate,
   calculateProjectionWindow,
+  resolveFirstAdjustedDueDate,
+  resolveRentDueOffset,
   type PlannedInstallment,
 } from "@/lib/lease-projection";
+import { formatDateOnly } from "@/lib/date-only";
 import {
   ProjectionBlock,
   competencyPeriodOf,
@@ -196,6 +199,31 @@ export const LeaseProjectionEditor = forwardRef<
     const day = Number(cfg?.due_day);
     return day > 0 ? day : null;
   };
+
+  /**
+   * Série de aluguel JÁ LANÇADA do contrato, derivada das chaves
+   * `tipo:yyyy-MM:yyyy-MM-dd` (aluguel com obligation_type nulo vira "rent"):
+   * - competências com aluguel (dedup por competência, qualquer vencimento);
+   * - a parcela de competência mais recente, para descobrir o regime
+   *   (vencido = vence no mês seguinte, antecipado = no próprio mês).
+   */
+  const { existingRentCompetencies, rentDueOffset } = useMemo(() => {
+    const periods = new Set<string>();
+    let lastRent: { competencyPeriod: string; dueDate: string } | null = null;
+    for (const key of existingCompetencies ?? []) {
+      const [type, period, due] = key.split(":");
+      if (type !== "rent" || !period) continue;
+      periods.add(period);
+      if (due && (!lastRent || period > lastRent.competencyPeriod ||
+          (period === lastRent.competencyPeriod && due > lastRent.dueDate))) {
+        lastRent = { competencyPeriod: period, dueDate: due };
+      }
+    }
+    return {
+      existingRentCompetencies: periods,
+      rentDueOffset: resolveRentDueOffset(lastRent),
+    };
+  }, [existingCompetencies]);
 
   // --- Estado editável, um BlockConfig por bloco ---
   const [blocks, setBlocks] = useState<Record<string, BlockConfig>>({});
