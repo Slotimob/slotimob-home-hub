@@ -186,8 +186,8 @@ const Dashboard = () => {
                   (preferences.widgets.leases && canSeeLeaseContracts) ||
                   preferences.widgets.portfolio) && (
                   <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
-                    {((preferences.widgets.assets && preferences.widgets.leases && canSeeLeaseContracts) ||
-                      preferences.widgets.portfolio) && (
+                    {(preferences.widgets.assets ||
+                      (preferences.widgets.leases && canSeeLeaseContracts)) && (
                       <div className="flex flex-col gap-4 lg:gap-6">
                         {preferences.widgets.assets && <AssetsWidget />}
                         {preferences.widgets.leases && canSeeLeaseContracts && (
