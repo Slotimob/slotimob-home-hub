@@ -41,10 +41,11 @@ const softwareApplicationSchema = {
     "name": "SLOTI"
   },
   "offers": {
-    "@type": "Offer",
-    "price": "997",
+    "@type": "AggregateOffer",
     "priceCurrency": "BRL",
-    "priceValidUntil": "2027-12-31",
+    "lowPrice": "0",
+    "highPrice": "297",
+    "offerCount": 4,
     "availability": "https://schema.org/InStock"
   },
   "featureList": [

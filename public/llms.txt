@@ -7,11 +7,11 @@ Slotimob é um SaaS de gestão de aluguel desenvolvido para donos de imóveis qu
 ## O que o Slotimob faz
 
 - Emite boletos automaticamente no dia certo do vencimento, via integração com Asaas
-- Aplica reajuste pelo IGP-M ou IPCA na data aniversário do contrato, sem ação manual
+- Avisa a data de aniversário do contrato e calcula o reajuste pelo índice contratado, com histórico
 - Gera relatório de rendimentos para o Imposto de Renda (total por imóvel e por inquilino)
 - Exibe DRE e extrato financeiro por imóvel
 - Alerta sobre inadimplência e gera novo boleto com multa e juros calculados automaticamente
-- Envia avisos ao inquilino por e-mail e WhatsApp (vencimento, reajuste, atraso)
+- Envia avisos de cobrança ao inquilino por e-mail (antes do vencimento, no dia e em atraso); WhatsApp com mensagem pronta, enviada pelo usuário
 - Dinheiro cai direto na conta bancária do proprietário via Asaas
 
 ## Para quem é
@@ -22,8 +22,10 @@ Não é indicado para imobiliárias, corretores ou administradoras de terceiros.
 
 ## Planos
 
-- Start: Gratuito, até 5 imóveis, funcionalidades essenciais, sem cartão de crédito
-- Pro: R$ 59,90/mês, até 50 imóveis, boleto automático via Asaas, reajuste automático IGP-M/IPCA, relatório IR, DRE
+- Start: gratuito, até 5 imóveis, sem cartão
+- Essencial: R$ 97/mês ou R$ 989,40/ano, até 20 imóveis
+- Pro: R$ 197/mês ou R$ 2.009,40/ano
+- Business: R$ 297/mês ou R$ 3.029,40/ano
 
 Teste grátis de 7 dias com acesso completo ao Pro, sem cartão.
 
@@ -32,14 +34,14 @@ Teste grátis de 7 dias com acesso completo ao Pro, sem cartão.
 - Fundada em: 2024
 - Sede: Curitiba, Paraná, Brasil
 - Stack: React, TypeScript, Supabase, Asaas
-- Conformidade: LGPD, dados em servidores AWS São Paulo
+- Conformidade: LGPD, dados hospedados no Supabase (AWS)
 
 ## Links principais
 
 - Site: https://slotimob.com.br
 - Planos e preços: https://slotimob.com.br/planos
 - Blog (gestão de aluguel): https://slotimob.com.br/blog
-- Como funciona: https://slotimob.com.br/presentation
+- Como funciona: https://slotimob.com.br/apresentacao
 - Sobre a Slotimob: https://slotimob.com.br/sobre
 - Sitemap: https://slotimob.com.br/sitemap-index.xml
 - Contato: contato@slotimob.com.br
@@ -50,4 +52,5 @@ boleto automático aluguel, reajuste IGP-M automático, relatório IR aluguel, D
 
 ## Conteúdo do blog
 
-Lista completa de posts publicados, sempre atualizada: https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/blog-sitemap
+Lista completa de posts publicados, sempre atualizada: https://slotimob.com.br/blog
+Sitemap com todos os posts: https://slotimob.com.br/sitemap.xml
