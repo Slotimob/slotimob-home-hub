@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export interface DashboardWidgetPreferences {
   assets: boolean;
+  leases: boolean;
   portfolio: boolean;
   financial: boolean;
   pipeline: boolean;
@@ -82,6 +83,7 @@ const DEFAULT_PIPELINE_STAGE_CONFIGS: PipelineStageConfig[] = DEFAULT_PIPELINE_S
 
 const DEFAULT_WIDGET_PREFS: DashboardWidgetPreferences = {
   assets: true,
+  leases: true,
   portfolio: true,
   financial: true,
   pipeline: true,
