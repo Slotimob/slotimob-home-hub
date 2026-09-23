@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
+import { parseDateOnly } from "@/lib/date-only";
 
 interface CategoryTotal {
   categoryId: string;
@@ -13,7 +14,10 @@ interface DRESection {
   items: CategoryTotal[];
 }
 
+export type DRERegime = "gerencial" | "contabil";
+
 export interface DREData {
+  regime: DRERegime;
   period: { start: Date; end: Date };
   grossRevenue: DRESection;
   taxDeductions: DRESection;
@@ -29,11 +33,16 @@ export interface DREData {
   netResult: number;
 }
 
-export function useDREReport(selectedYears: string[], selectedMonths: string[], unitIds?: string[]) {
+export function useDREReport(
+  selectedYears: string[],
+  selectedMonths: string[],
+  unitIds?: string[],
+  regime: DRERegime = "contabil"
+) {
   const effectiveYears = selectedYears.length > 0 ? selectedYears : [String(new Date().getFullYear())];
 
   return useQuery({
-    queryKey: ["dre-report", [...effectiveYears].sort().join(","), [...selectedMonths].sort().join(","), unitIds?.join(",") || "all"],
+    queryKey: ["dre-report", regime, [...effectiveYears].sort().join(","), [...selectedMonths].sort().join(","), unitIds?.join(",") || "all"],
     queryFn: async (): Promise<DREData> => {
       let query = supabase
         .from("financial_transactions")
@@ -72,7 +81,16 @@ export function useDREReport(selectedYears: string[], selectedMonths: string[], 
         }
       }
 
-      if (periods.length === 1) {
+      if (regime === "gerencial") {
+        // Regime gerencial: pelo vencimento (due_date); sem vencimento, cai na emissão.
+        const orFilter = periods
+          .map(
+            (p) =>
+              `and(due_date.gte.${p.start},due_date.lte.${p.end}),and(due_date.is.null,transaction_date.gte.${p.start},transaction_date.lte.${p.end})`
+          )
+          .join(",");
+        query = query.or(orFilter);
+      } else if (periods.length === 1) {
         query = query
           .gte("transaction_date", periods[0].start)
           .lte("transaction_date", periods[0].end);
@@ -88,8 +106,8 @@ export function useDREReport(selectedYears: string[], selectedMonths: string[], 
         query = query.in("unit_id", unitIds);
       }
 
-      const overallStart = new Date(periods.reduce((a, p) => (p.start < a ? p.start : a), periods[0].start));
-      const overallEnd = new Date(periods.reduce((a, p) => (p.end > a ? p.end : a), periods[0].end));
+      const overallStart = parseDateOnly(periods.reduce((a, p) => (p.start < a ? p.start : a), periods[0].start));
+      const overallEnd = parseDateOnly(periods.reduce((a, p) => (p.end > a ? p.end : a), periods[0].end));
       const start = overallStart;
       const end = overallEnd;
 
@@ -159,6 +177,7 @@ export function useDREReport(selectedYears: string[], selectedMonths: string[], 
       const netResult = operatingProfit + financialRevenue - profitDistribution;
 
       return {
+        regime,
         period: { start, end },
         grossRevenue: sections.gross_revenue,
         taxDeductions: sections.tax_deduction,
