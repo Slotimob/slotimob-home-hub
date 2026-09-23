@@ -27,18 +27,20 @@ interface DashboardCustomizeSheetProps {
 // Ordem espelha a ordem de exibição dos blocos no Dashboard
 const WIDGET_LABELS: Record<keyof DashboardWidgetPreferences, { label: string; description: string }> = {
   assets: { label: '1. Contagem de Ativos', description: 'Unidades e imóveis avulsos por status' },
-  portfolio: { label: '2. Patrimônio', description: 'Valor de mercado, yield e vacância (card único)' },
-  alugueis: { label: '3. Aluguéis', description: 'Aluguéis recebidos, a receber e em atraso' },
-  delinquency: { label: '3. Inadimplência', description: 'Aging de cobranças em atraso' },
-  afazeres: { label: '4. Afazeres (resumo)', description: 'Resumo de pendências de gestão' },
-  financial: { label: '5. Financeiro', description: 'Receitas, despesas e fluxo de caixa do período' },
-  appointments: { label: '6. Compromissos', description: 'Próximos compromissos da agenda' },
-  pipeline: { label: '6. Pipeline (CRM)', description: 'Métricas de funil de vendas' },
+  leases: { label: '2. Contratos de Locação', description: 'Contratos por status e reajustes próximo ou vencido' },
+  portfolio: { label: '3. Patrimônio', description: 'Valor de mercado, yield e vacância (card único)' },
+  alugueis: { label: '4. Aluguéis', description: 'Aluguéis recebidos, a receber e em atraso' },
+  delinquency: { label: '4. Inadimplência', description: 'Aging de cobranças em atraso' },
+  afazeres: { label: '5. Afazeres (resumo)', description: 'Resumo de pendências de gestão' },
+  financial: { label: '6. Financeiro', description: 'Receitas, despesas e fluxo de caixa do período' },
+  appointments: { label: '7. Compromissos', description: 'Próximos compromissos da agenda' },
+  pipeline: { label: '7. Pipeline (CRM)', description: 'Métricas de funil de vendas' },
 };
 
 // Ordem de renderização dos toggles na lista
 const WIDGET_ORDER: Array<keyof DashboardWidgetPreferences> = [
   'assets',
+  'leases',
   'portfolio',
   'alugueis',
   'delinquency',
