@@ -33,7 +33,6 @@ import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
 import { translateAuthError } from '@/lib/authErrors';
 import { validatePassword, PASSWORD_REQUIREMENTS_MESSAGE } from '@/lib/passwordSchema';
-import { useQuery } from '@tanstack/react-query';
 import EmailVerificationStep from '@/components/checkout/EmailVerificationStep';
 import { useEmailVerifiedStatus } from '@/hooks/useEmailVerification';
 
