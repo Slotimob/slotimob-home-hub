@@ -250,10 +250,12 @@ serve(async (req) => {
           existing = null;
         }
 
-        const sameTerms = !!existing && !existing.deleted && existing.status === "ACTIVE"
+        const existingActive = !!existing && !existing.deleted && existing.status === "ACTIVE";
+
+        const sameTerms = !!existing && existingActive
           && existing.cycle === cycle && Math.abs(Number(existing.value) - value) < 0.005;
 
-        if (subscription.status === "active") {
+        if (subscription.status === "active" && existingActive) {
           if (sameTerms) {
             return new Response(JSON.stringify({ error: "Você já tem este plano ativo." }), {
               status: 200,
@@ -314,8 +316,7 @@ serve(async (req) => {
 
       // Se houver data de renovação do plano atual ainda no futuro, usar como nextDueDate do novo
       const periodEnd = subscription?.current_period_end ? new Date(subscription.current_period_end) : null;
-      const useCurrentPeriodEnd = isPlanChange
-        && subscription?.status === "active"
+      const useCurrentPeriodEnd = subscription?.status === "active"
         && !!periodEnd && !isNaN(periodEnd.getTime()) && periodEnd.getTime() > Date.now();
       const upgradeDueDate = useCurrentPeriodEnd
         ? periodEnd!.toISOString().split("T")[0]
@@ -355,10 +356,13 @@ serve(async (req) => {
           asaas_customer_id: asaasCustomerId,
           plan_id: plan_id,
           billing_cycle: isAnnual ? "annual" : "monthly",
-          // Bloqueia o acesso até a Asaas confirmar o pagamento.
-          // O webhook (PAYMENT_CONFIRMED / PAYMENT_RECEIVED) libera com status "active".
-          status: "pending_payment",
+          // Com período pago ainda vigente, mantém acesso imediato ("active");
+          // sem período, bloqueia até a Asaas confirmar o pagamento ("pending_payment").
+          status: useCurrentPeriodEnd ? "active" : "pending_payment",
           cancel_at_period_end: false,
+          canceled_at: null,
+          cancel_reason: null,
+          cancel_feedback: null,
         })
         .eq("user_id", userId);
 
