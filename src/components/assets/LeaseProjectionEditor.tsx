@@ -269,10 +269,23 @@ export const LeaseProjectionEditor = forwardRef<
    */
   useEffect(() => {
     if (!lease || !window) return;
+    // Pós-reajuste o 1º vencimento depende do regime (vencido/antecipado) lido
+    // da série já lançada — esperar o fim do carregamento para não nascer com
+    // o offset padrão e trocar logo depois.
+    if (postAdjustment && loadingExisting) return;
 
     const windowMonth = startDate ? startDate.slice(0, 7) : format(new Date(), "yyyy-MM");
     const base = startDate ? parseISO(startDate) : new Date();
     const dueDay = lease.due_day || 10;
+    // Pós-reajuste: o valor novo vale da competência do mês de aniversário e o
+    // 1º boleto vence no mês seguinte (aluguel vencido) ou no próprio mês
+    // (antecipado), conforme a série já lançada do contrato.
+    const rentFirstDueDefault = postAdjustment
+      ? format(
+          resolveFirstAdjustedDueDate(parseISO(`${windowMonth}-01`), dueDay, rentDueOffset),
+          "yyyy-MM-dd"
+        )
+      : format(calculateDueDate(base, dueDay), "yyyy-MM-dd");
     // Emissão default = dia de início do contrato (mesma regra do motor legado).
     const issueDay = lease.start_date ? getDate(parseISO(lease.start_date)) : 1;
     /** Competência completa: mês do parâmetro + dia de emissão, com clamp de mês curto. */
