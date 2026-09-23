@@ -4613,8 +4613,12 @@ export type Database = {
           ai_credits_used: number
           asaas_customer_id: string | null
           asaas_subscription_id: string | null
+          billing_cycle: string | null
           billing_provider: string | null
           cancel_at_period_end: boolean | null
+          cancel_feedback: string | null
+          cancel_reason: string | null
+          canceled_at: string | null
           created_at: string | null
           current_period_end: string | null
           current_period_start: string | null
@@ -4640,8 +4644,12 @@ export type Database = {
           ai_credits_used?: number
           asaas_customer_id?: string | null
           asaas_subscription_id?: string | null
+          billing_cycle?: string | null
           billing_provider?: string | null
           cancel_at_period_end?: boolean | null
+          cancel_feedback?: string | null
+          cancel_reason?: string | null
+          canceled_at?: string | null
           created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
@@ -4667,8 +4675,12 @@ export type Database = {
           ai_credits_used?: number
           asaas_customer_id?: string | null
           asaas_subscription_id?: string | null
+          billing_cycle?: string | null
           billing_provider?: string | null
           cancel_at_period_end?: boolean | null
+          cancel_feedback?: string | null
+          cancel_reason?: string | null
+          canceled_at?: string | null
           created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
