@@ -5,75 +5,58 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, '..', 'public', 'sitemap.xml');
 const BLOG_SITEMAP_URL = 'https://nelmmrqdiycmdhhslxfz.supabase.co/functions/v1/blog-sitemap';
-const TODAY = new Date().toISOString().split('T')[0];
 
 const STATIC_URLS = `
   <url>
     <loc>https://slotimob.com.br/</loc>
-    <lastmod>2026-06-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://slotimob.com.br/planos</loc>
-    <lastmod>2026-06-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://slotimob.com.br/apresentacao</loc>
-    <lastmod>2026-06-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://slotimob.com.br/blog</loc>
-    <lastmod>2026-06-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://slotimob.com.br/sobre</loc>
-    <lastmod>2026-06-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
-    <loc>https://slotimob.com.br/contato</loc>
-    <lastmod>2026-06-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
     <loc>https://slotimob.com.br/legal?tab=terms</loc>
-    <lastmod>2026-07-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://slotimob.com.br/legal?tab=privacy</loc>
-    <lastmod>2026-07-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://slotimob.com.br/legal?tab=refund</loc>
-    <lastmod>2026-07-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://slotimob.com.br/calculadoras</loc>
-    <lastmod>${TODAY}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`;
@@ -96,7 +79,6 @@ const CALCULATOR_URLS = CALCULATOR_SLUGS.map(
   (slug) => `
   <url>
     <loc>https://slotimob.com.br/calculadoras/${slug}</loc>
-    <lastmod>${TODAY}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>`,
