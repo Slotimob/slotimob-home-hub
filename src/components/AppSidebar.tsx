@@ -19,6 +19,8 @@ import {
   Lock,
   ClipboardList,
   ShieldCheck,
+  LogOut,
+
   
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -47,6 +49,7 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useCockpitAccess } from '@/hooks/useCockpitAccess';
@@ -87,6 +90,7 @@ export function AppSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const collapsed = state === 'collapsed' && !isMobile;
   const { isAgent } = useUserRole();
   const { plan, isTrialActive, canUse, features, isLoading: isSubscriptionLoading } = useSubscriptionLimits();
@@ -576,6 +580,19 @@ export function AppSidebar() {
                 <Settings className="h-4 w-4 shrink-0" />
                 <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>Configurações</span>
               </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Sair"
+              className="flex items-center gap-3 text-muted-foreground hover:text-destructive"
+              onClick={() => {
+                if (isMobile) setOpenMobile(false);
+                signOut();
+              }}
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span className={`transition-all duration-300 ease-out ${collapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>Sair</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
