@@ -36,6 +36,8 @@ import { HelpTooltip } from '@/components/help/HelpTooltip';
 const Dashboard = () => {
   const { user, loading } = useAuth();
   const { isOwner, hasPermission } = usePermissions();
+  const { canUse } = useSubscriptionLimits();
+  const canSeeLeaseContracts = canUse('asset_management') && (isOwner || hasPermission('management_contracts', 'view'));
   const navigate = useNavigate();
   const { needsReaccept, markAccepted, currentVersion } = useTermsAcceptance(user?.id);
   const { 
@@ -178,12 +180,20 @@ const Dashboard = () => {
                 <TrialBanner />
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    BLOCO 1+2: CONTAGEM DE ATIVOS | PATRIMÔNIO/YIELD/VACÂNCIA
+                    BLOCO 1+2: CONTAGEM DE ATIVOS | CONTRATOS | PATRIMÔNIO/YIELD/VACÂNCIA
                     ═══════════════════════════════════════════════════════════════ */}
-                {(preferences.widgets.assets || preferences.widgets.portfolio) && (
-                  <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                    {preferences.widgets.assets && (
-                      <AssetsWidget />
+                {(preferences.widgets.assets ||
+                  (preferences.widgets.leases && canSeeLeaseContracts) ||
+                  preferences.widgets.portfolio) && (
+                  <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
+                    {((preferences.widgets.assets && preferences.widgets.leases && canSeeLeaseContracts) ||
+                      preferences.widgets.portfolio) && (
+                      <div className="flex flex-col gap-4 lg:gap-6">
+                        {preferences.widgets.assets && <AssetsWidget />}
+                        {preferences.widgets.leases && canSeeLeaseContracts && (
+                          <LeaseContractsWidget />
+                        )}
+                      </div>
                     )}
                     {preferences.widgets.portfolio && (
                       <PortfolioWidget refreshKey={refreshKey} />

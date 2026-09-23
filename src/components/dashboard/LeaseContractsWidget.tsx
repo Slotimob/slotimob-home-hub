@@ -68,7 +68,7 @@ export function LeaseContractsWidget() {
     <TooltipProvider delayDuration={300}>
       <Card className="h-full">
         <CardHeader className="pb-2 px-3 lg:px-6 pt-3 lg:pt-6">
-          <CardTitle className="text-sm lg:text-base font-semibold flex items-center gap-1.5">
+          <CardTitle className="text-sm lg:text-base font-semibold flex items-center gap-1.5 justify-between">
             <span className="flex items-center gap-1.5">
               Contratos de Locação <HelpTooltip featureKey="management.contracts_count" />
             </span>
