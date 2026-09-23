@@ -21,7 +21,7 @@ import { toast as sonnerToast } from 'sonner';
 import { trackLeadSignup, trackStartTrial } from '@/components/TrackingProvider';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus, ArrowLeft, BarChart3, MessageSquare, Wallet, Building2, Loader2, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, ArrowLeft, CalendarClock, Receipt, Wallet, Building2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SITE_URL = window.location.origin;
@@ -198,10 +198,10 @@ const formatCNPJ = (value: string) => {
 // ─── Constants ───
 
 const BENEFITS = [
-  { icon: MessageSquare, label: 'CRM Conversacional com WhatsApp' },
-  { icon: BarChart3, label: 'Funil de Vendas Inteligente' },
-  { icon: Wallet, label: 'Gestão Financeira Completa' },
   { icon: Building2, label: 'Controle de Ativos e Contratos' },
+  { icon: Wallet, label: 'Gestão Financeira Completa' },
+  { icon: CalendarClock, label: 'Nunca mais esqueça de reajustar o aluguel' },
+  { icon: Receipt, label: 'Boletos gerados automaticamente todo mês' },
 ];
 
 const GoogleIcon = () => (
