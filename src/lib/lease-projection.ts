@@ -204,6 +204,37 @@ export function resolveFirstAdjustedCompetency(
   return isBefore(dueInMonth, adjustment) ? startOfMonth(addMonths(month, 1)) : month;
 }
 
+/** Competência a partir da qual vale o valor reajustado: o mês do aniversário (12 meses completos). */
+export function resolveAnniversaryCompetency(adjustmentDate: string | Date): Date {
+  return startOfMonth(toDate(adjustmentDate) ?? startOfDay(new Date()));
+}
+
+/**
+ * Meses entre a competência e o vencimento na série de aluguel já lançada do contrato.
+ * 1 = aluguel vencido (padrão legal); 0 = antecipado. Sem série, ou valor fora de 0..2, retorna 1.
+ * `competencyPeriod` no formato "yyyy-MM"; `dueDate` coluna date "yyyy-MM-dd".
+ */
+export function resolveRentDueOffset(
+  lastRent?: { competencyPeriod?: string | null; dueDate?: string | null } | null
+): number {
+  if (!lastRent?.competencyPeriod || !lastRent.dueDate) return 1;
+  const competency = toDate(`${lastRent.competencyPeriod}-01`);
+  const due = toDate(lastRent.dueDate);
+  if (!competency || !due) return 1;
+  const offset = differenceInCalendarMonths(due, competency);
+  return offset >= 0 && offset <= 2 ? offset : 1;
+}
+
+/** 1º vencimento do valor reajustado = dia de vencimento no mês (competência + offset). */
+export function resolveFirstAdjustedDueDate(
+  competency: Date,
+  dueDay: number,
+  offsetMonths: number
+): Date {
+  return calculateDueDate(addMonths(startOfMonth(competency), offsetMonths), dueDay);
+}
+
+
 
 
 /**
@@ -272,6 +303,13 @@ export interface BuildRentInstallmentsInput {
   /** Dia de emissão (data contábil). Default: dia da própria competência. */
   issueDay?: number | null;
   existingCompetencies?: Set<string>;
+  /**
+   * Conjunto de "yyyy-MM" que já têm aluguel lançado no contrato, com QUALQUER
+   * vencimento. Aluguel é 1 parcela por competência: sem isso, a mesma
+   * competência com vencimento diferente não apareceria como "Já lançado"
+   * e seria cobrada em dobro.
+   */
+  existingRentCompetencies?: Set<string>;
 }
 
 export function buildRentInstallments({
@@ -282,6 +320,7 @@ export function buildRentInstallments({
   firstDueDate,
   issueDay,
   existingCompetencies,
+  existingRentCompetencies,
 }: BuildRentInstallmentsInput): PlannedInstallment[] {
   const start = toDate(startDate);
   if (!start || months <= 0) return [];
@@ -314,7 +353,7 @@ export function buildRentInstallments({
       amount,
       description: `Aluguel ${monthLabel(competencyDate)}`,
       transactionType: "income",
-      alreadyExists: existingCompetencies?.has(dedupKey) ?? false,
+      alreadyExists: existingCompetencies?.has(dedupKey) || existingRentCompetencies?.has(competencyPeriod) || false,
     });
   }
 
