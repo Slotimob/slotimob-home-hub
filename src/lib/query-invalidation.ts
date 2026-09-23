@@ -11,6 +11,7 @@ export const LEASE_QUERY_KEYS: string[] = [
   "lease",
   "lease-by-unit",
   "leases-contracts",
+  "lease-status-counts",
   "asset-health",
   "financial-transactions",
   "transactions",

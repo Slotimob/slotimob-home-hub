@@ -3,6 +3,7 @@ export type { DateRange } from './DashboardDateFilter';
 export { PipelineStageSelector } from './PipelineStageSelector';
 export { DashboardCustomizeSheet } from './DashboardCustomizeSheet';
 export { AssetsWidget } from './AssetsWidget';
+export { LeaseContractsWidget } from './LeaseContractsWidget';
 export { FinancialWidget } from './FinancialWidget';
 export { PipelineWidget } from './PipelineWidget';
 export { PortfolioWidget } from './PortfolioWidget';
