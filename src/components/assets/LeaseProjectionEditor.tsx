@@ -295,7 +295,7 @@ export const LeaseProjectionEditor = forwardRef<
     const next: Record<string, BlockConfig> = {
       rent: {
         competency: withIssueDay(windowMonth),
-        firstDueDate: format(calculateDueDate(base, dueDay), "yyyy-MM-dd"),
+        firstDueDate: rentFirstDueDefault,
         months: Math.max(1, window.months),
         amount: rentAmountDefault,
       },
