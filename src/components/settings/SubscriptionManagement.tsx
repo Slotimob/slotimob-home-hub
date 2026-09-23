@@ -161,22 +161,23 @@ export const SubscriptionManagement = () => {
             <div>
               <p className="font-semibold text-lg">{planLabels[plan] || plan}</p>
               <p className="text-sm text-muted-foreground">
-                {subscription?.status === 'active'
-                  ? 'Ativa'
+                {subscription?.cancel_at_period_end
+                  ? `Cancelada · acesso até ${subscription.current_period_end ? format(new Date(subscription.current_period_end), 'dd/MM/yyyy') : 'o fim do período pago'}`
+                  : subscription?.status === 'active'
+                  ? `Ativa${subscription?.billing_cycle === 'annual' ? ' · cobrança anual' : subscription?.billing_cycle === 'monthly' ? ' · cobrança mensal' : ''}`
                   : subscription?.status === 'trialing'
-                  ? 'Trial'
-                  : subscription?.status || 'Sem assinatura ativa'}
+                  ? 'Teste grátis'
+                  : subscription?.status === 'pending_payment'
+                  ? 'Aguardando pagamento'
+                  : subscription?.status === 'past_due'
+                  ? 'Pagamento em atraso'
+                  : 'Sem assinatura ativa'}
               </p>
-              {subscription?.current_period_end && (
+              {subscription?.current_period_end && !subscription?.cancel_at_period_end && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Renova em:{' '}
-                  {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
+                  Próxima cobrança em:{' '}
+                  {format(new Date(subscription.current_period_end), 'dd/MM/yyyy')}
                 </p>
-              )}
-              {subscription?.cancel_at_period_end && (
-                <Badge variant="destructive" className="mt-1 text-xs">
-                  Cancelamento agendado
-                </Badge>
               )}
               {plan === 'free' && !isTrialActive && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -188,6 +189,31 @@ export const SubscriptionManagement = () => {
               {planLabels[plan] || plan}
             </Badge>
           </div>
+
+          {subscription?.cancel_at_period_end && (
+            <Alert>
+              <AlertTitle>Sua assinatura foi cancelada.</AlertTitle>
+              <AlertDescription className="space-y-3">
+                <span className="block">
+                  Você mantém o {planLabels[plan] || plan} até{' '}
+                  {subscription.current_period_end
+                    ? format(new Date(subscription.current_period_end), 'dd/MM/yyyy')
+                    : 'o fim do período pago'}
+                  , e nenhuma nova cobrança será feita.
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    navigate(
+                      `/checkout?plan=${plan}&cycle=${subscription?.billing_cycle === 'monthly' ? 'monthly' : 'annual'}&mode=immediate`
+                    )
+                  }
+                >
+                  Reativar assinatura
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Separator />
           <div className="flex flex-col sm:flex-row gap-2">
@@ -206,14 +232,17 @@ export const SubscriptionManagement = () => {
                 Portal do Cliente (Stripe)
               </Button>
             )}
-            {hasAsaas && isPaid && !subscription?.cancel_at_period_end && (
+            {subscription?.billing_provider === 'asaas'
+              && !subscription?.cancel_at_period_end
+              && (!!subscription?.asaas_subscription_id
+                || ['pending_payment', 'past_due'].includes(subscription?.status ?? '')) && (
               <Button
                 variant="outline"
                 className="flex-1 gap-2 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
                 onClick={() => setShowCancelDialog(true)}
               >
                 <XCircle className="h-4 w-4" />
-                Cancelar Assinatura
+                Cancelar assinatura
               </Button>
             )}
             {!isPaid && !isTrialActive && (
