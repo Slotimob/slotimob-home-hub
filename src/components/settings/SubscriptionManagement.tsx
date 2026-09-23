@@ -1,10 +1,9 @@
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   CreditCard,
   ExternalLink,
@@ -18,16 +17,6 @@ import {
   Receipt,
   XCircle,
 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { describeTrialEnd } from '@/lib/trial';
@@ -40,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { Rocket, Clock, Crown } from 'lucide-react';
 import { BuyAICreditsDialog } from './BuyAICreditsDialog';
 import { useAddonCheckout } from '@/hooks/useAddonCheckout';
+import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 
 const planLabels: Record<string, string> = {
   start: 'Start',
