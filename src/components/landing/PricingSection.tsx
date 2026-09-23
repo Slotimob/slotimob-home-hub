@@ -154,6 +154,17 @@ export function PricingSection() {
     return null;
   };
 
+  const annualDiscountPct = (() => {
+    if (!pricing) return null;
+    const paid = Object.values(pricing).filter(
+      (p) => p && p.price_original > 0 && p.price_annual > 0
+    );
+    if (paid.length === 0) return null;
+    return Math.max(
+      ...paid.map((p) => Math.round((1 - p.price_annual / (p.price_original * 12)) * 100))
+    );
+  })();
+
   const handleCheckout = async (planId: PlanId) => {
     if (planId === 'start') {
       navigate('/checkout?plan=pro&trial=true');
