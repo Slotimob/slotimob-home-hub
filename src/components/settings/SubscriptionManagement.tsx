@@ -127,7 +127,9 @@ export const SubscriptionManagement = () => {
   return (
     <div className="space-y-6">
       {/* Trial Banner */}
-      {isTrialActive && (
+      {isTrialActive && (() => {
+        const info = describeTrialEnd(trialEndsAt);
+        return (
         <Card className="border-primary/50">
           <CardContent className="flex items-start gap-4 py-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -135,23 +137,27 @@ export const SubscriptionManagement = () => {
             </div>
             <div className="flex-1 space-y-2">
               <p className="font-semibold text-foreground">
-                Você está aproveitando 7 dias de Plano PRO Grátis
+                Teste grátis do Pro {info ? info.headline : `${trialDaysRemaining} ${trialDaysRemaining === 1 ? 'dia restante' : 'dias restantes'}`}
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span>{trialDaysRemaining} {trialDaysRemaining === 1 ? 'dia restante' : 'dias restantes'}</span>
+                <span>{info ? info.countdown : `${trialDaysRemaining} ${trialDaysRemaining === 1 ? 'dia restante' : 'dias restantes'}`}</span>
               </div>
+              <p className="text-sm text-muted-foreground">
+                Depois, sua conta continua no plano Start (gratuito).
+              </p>
               <Button
                 className="mt-2 gap-2"
                 onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')}
               >
                 <Crown className="h-4 w-4" />
-                Efetivar Assinatura PRO
+                Assinar o Pro
               </Button>
             </div>
           </CardContent>
         </Card>
-      )}
+        );
+      })()}
 
       {/* Upgrade CTA for Start plan (non-trial) */}
       {plan === 'start' && !isTrialActive && (
