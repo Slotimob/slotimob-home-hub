@@ -1,10 +1,13 @@
-import { 
-  Menu, 
+import {
+  Menu,
   HelpCircle,
   ChevronRight,
   Lock,
+  LogOut,
   LucideIcon,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useState, useMemo } from 'react';
@@ -55,6 +58,7 @@ export function BottomNavigation() {
   const { isMember } = useWorkspace();
   const { isOwner: isPermOwner, hasPermission } = usePermissions();
   const { isAgent } = useUserRole();
+  const { signOut } = useAuth();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<'essencial' | 'pro' | 'business'>('pro');
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
@@ -304,7 +308,22 @@ export function BottomNavigation() {
                   );
                 })}
               </div>
-              
+
+              {/* Sign out */}
+              <div className="px-4 pb-6 pt-2 animate-fade-in" style={{ animationDelay: '350ms' }}>
+                <Button
+                  variant="ghost"
+                  className="w-full min-h-[44px] text-destructive hover:text-destructive"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    signOut();
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair da conta
+                </Button>
+              </div>
+
               {/* Help button */}
               <div className="absolute bottom-6 right-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
                 <Popover>
