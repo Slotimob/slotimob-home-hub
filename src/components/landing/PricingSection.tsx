@@ -362,7 +362,9 @@ export function PricingSection() {
             </Label>
              {isAnnual &&
             <Badge variant="secondary" className="text-accent bg-accent/10 border-accent/20">
-                Economize até 20% no anual
+                {annualDiscountPct !== null
+                  ? `Economize ${annualDiscountPct}% no anual`
+                  : 'Economize no anual'}
               </Badge>
             }
           </div>
