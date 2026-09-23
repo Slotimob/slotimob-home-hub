@@ -240,17 +240,17 @@ serve(async (req) => {
       }
 
       case "SUBSCRIPTION_UPDATED": {
-        console.log(`Assinatura atualizada: ${subscription?.id}`);
+        console.log(`[asaas-platform-webhook] Assinatura atualizada: ${subscription?.id}`);
         break;
       }
 
       case "ACCOUNT_STATUS_GENERAL_APPROVAL_APPROVED": {
-        console.log("Subconta aprovada:", payload);
+        console.log("[asaas-platform-webhook] Subconta aprovada:", payload);
         break;
       }
 
       default:
-        console.log(`Evento não tratado: ${event}`);
+        console.log(`[asaas-platform-webhook] Evento não tratado: ${event}`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -259,7 +259,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Erro no webhook Asaas:", error);
+    console.error("[asaas-platform-webhook] Erro no webhook Asaas:", error);
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
