@@ -41,7 +41,7 @@ import {
 } from "@/components/assets/LeaseProjectionEditor";
 import { PercentInput } from "@/components/ui/currency-input";
 import { calculateRentAdjustment } from "@/lib/rentAdjustment";
-import { calculateProjectionWindow, calculateDueDate, resolveFirstAdjustedCompetency } from "@/lib/lease-projection";
+import { calculateProjectionWindow, calculateDueDate, resolveAnniversaryCompetency } from "@/lib/lease-projection";
 
 interface LeaseForAdjustment {
   id: string;
@@ -92,6 +92,15 @@ const INDEX_SOURCES: Record<string, { url: string; label: string }> = {
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/**
+ * Âncora do reajuste: a próxima data de reajuste ou, quando o contrato nunca
+ * foi reajustado, o aniversário (start_date + periodicidade). Usar a data de
+ * início crua marcaria o reajuste no mês 0, antes dos 12 meses completos.
+ */
+const adjustmentAnchor = (l: LeaseForAdjustment) =>
+  l.next_adjustment_date ||
+  format(addMonths(parseISO(l.start_date), l.adjustment_periodicity_months || 12), "yyyy-MM-dd");
 
 export function AdjustmentCalculatorDialog({
   open,
