@@ -223,10 +223,10 @@ export function AdjustmentCalculatorDialog({
       // Etapa 1: aplicar o reajuste. Só roda uma vez por sessão do dialog — numa
       // nova tentativa após falha de lançamento, pula direto para a etapa 2.
       if (!adjustmentAppliedRef.current) {
-        // Calculate next adjustment date (current + periodicity)
-        const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+        // Calculate next adjustment date (anchor + periodicity)
+        const anchor = adjustmentAnchor(lease);
         const nextAdjustmentDate = format(
-          addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+          addMonths(parseISO(anchor), lease.adjustment_periodicity_months || 12),
           "yyyy-MM-dd"
         );
 
@@ -257,17 +257,19 @@ export function AdjustmentCalculatorDialog({
 
         if (updateError) throw updateError;
 
-        // Step 3: CASCADE UPDATE - apenas parcelas de ALUGUEL pendentes futuras.
+        // Step 3: CASCADE UPDATE - apenas parcelas de ALUGUEL pendentes a partir
+        // da competência do reajuste (mês de aniversário). Filtrar pela data de
+        // hoje faria o resultado depender do dia do clique.
         // NUNCA tocar IPTU/seguro/outras obrigações: elas têm valor próprio e
         // seriam sobrescritas com o valor do aluguel (corrupção silenciosa).
-        const adjustmentEffectiveDate = format(new Date(), "yyyy-MM-dd");
+        const firstAdjustedPeriod = format(resolveAnniversaryCompetency(anchor), "yyyy-MM");
 
         const { data: updatedTransactions, error: cascadeError } = await supabase
           .from("financial_transactions")
           .update({ amount: newValue })
           .eq("reference", `lease:${lease.id}`)
           .eq("status", "pending")
-          .gte("due_date", adjustmentEffectiveDate)
+          .gte("competency_period", firstAdjustedPeriod)
           .or("obligation_type.eq.rent,obligation_type.is.null")
           .select("id");
 
