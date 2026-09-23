@@ -250,10 +250,12 @@ serve(async (req) => {
           existing = null;
         }
 
-        const sameTerms = !!existing && !existing.deleted && existing.status === "ACTIVE"
+        const existingActive = !!existing && !existing.deleted && existing.status === "ACTIVE";
+
+        const sameTerms = !!existing && existingActive
           && existing.cycle === cycle && Math.abs(Number(existing.value) - value) < 0.005;
 
-        if (subscription.status === "active") {
+        if (subscription.status === "active" && existingActive) {
           if (sameTerms) {
             return new Response(JSON.stringify({ error: "Você já tem este plano ativo." }), {
               status: 200,
