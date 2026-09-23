@@ -39,7 +39,7 @@ function emailHtml(code: string): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;border:1px solid #e5e7eb;border-radius:12px;">
 <tr><td style="padding:32px 28px;color:#333;font-size:16px;line-height:1.7;">
 <h1 style="color:#170075;font-size:22px;margin:0 0 16px;">Confirme seu e-mail</h1>
-<p style="margin:0 0 12px;">Use o código abaixo para confirmar seu e-mail e continuar com sua assinatura Slotimob:</p>
+<p style="margin:0 0 12px;">Use o código abaixo para confirmar seu e-mail na Slotimob:</p>
 <div style="margin:24px 0;text-align:center;">
 <span style="display:inline-block;background:#f4f4f9;color:#170075;font-size:34px;font-weight:700;letter-spacing:10px;padding:16px 24px;border-radius:8px;">${code}</span>
 </div>
@@ -123,6 +123,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return json({ error: "Não foi possível enviar o código. Tente novamente." });
     }
 
+    // Registra o envio para rate limit (antes do provedor, para cobrir também falhas de envio)
+    await supabase.from("rate_limits").insert({
+      identifier: user.id,
+      endpoint: "email_verification_send",
+      request_count: 1,
+      window_start: new Date().toISOString(),
+    });
+
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (!resendKey) {
       console.error("[send-email-verification] RESEND_API_KEY ausente");
@@ -148,14 +156,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       console.error(`[send-email-verification] Resend falhou [${res.status}]: ${details.slice(0, 300)}`);
       return json({ error: "Não foi possível enviar o código. Tente novamente." });
     }
-
-    // Registra o envio para rate limit
-    await supabase.from("rate_limits").insert({
-      identifier: user.id,
-      endpoint: "email_verification_send",
-      request_count: 1,
-      window_start: new Date().toISOString(),
-    });
 
     console.log("[send-email-verification] código enviado com sucesso");
     return json({ success: true });
