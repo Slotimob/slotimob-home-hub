@@ -49,6 +49,7 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useCockpitAccess } from '@/hooks/useCockpitAccess';
@@ -89,6 +90,7 @@ export function AppSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const collapsed = state === 'collapsed' && !isMobile;
   const { isAgent } = useUserRole();
   const { plan, isTrialActive, canUse, features, isLoading: isSubscriptionLoading } = useSubscriptionLimits();
