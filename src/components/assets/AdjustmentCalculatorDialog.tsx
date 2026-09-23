@@ -160,13 +160,13 @@ export function AdjustmentCalculatorDialog({
   // Preview usa a mesma janela que a geração real do LeaseProjectionEditor.
   const projectionPreview = useMemo(() => {
     if (!lease || !canProject || !lease.due_day) return null;
-    const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+    const anchor = adjustmentAnchor(lease);
     const nextAdjustmentDate = format(
-      addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+      addMonths(parseISO(anchor), lease.adjustment_periodicity_months || 12),
       "yyyy-MM-dd"
     );
-    // A janela começa na primeira competência cujo vencimento já vale o reajuste.
-    const firstCompetency = resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day);
+    // A janela começa na competência do mês de aniversário do contrato.
+    const firstCompetency = resolveAnniversaryCompetency(anchor);
     const window = calculateProjectionWindow({
       startDate: firstCompetency,
       endDate: lease.end_date,
@@ -186,7 +186,7 @@ export function AdjustmentCalculatorDialog({
    */
   const projectionLeaseData = useMemo<LeaseForProjection | null>(() => {
     if (!lease || !canProject || !lease.due_day) return null;
-    const currentAdjustmentDate = lease.next_adjustment_date || lease.start_date;
+    const anchor = adjustmentAnchor(lease);
     return {
       id: lease.id,
       unit_id: lease.unit_id,
@@ -195,14 +195,11 @@ export function AdjustmentCalculatorDialog({
       property_id: lease.property_id ?? null,
       rent_amount: newValue,
       due_day: lease.due_day,
-      // Mesma âncora do preview: primeira competência já reajustada.
-      start_date: format(
-        resolveFirstAdjustedCompetency(currentAdjustmentDate, lease.due_day),
-        "yyyy-MM-dd"
-      ),
+      // Mesma âncora do preview: competência do mês de aniversário.
+      start_date: format(resolveAnniversaryCompetency(anchor), "yyyy-MM-dd"),
       end_date: lease.end_date ?? null,
       next_adjustment_date: format(
-        addMonths(parseISO(currentAdjustmentDate), lease.adjustment_periodicity_months || 12),
+        addMonths(parseISO(anchor), lease.adjustment_periodicity_months || 12),
         "yyyy-MM-dd"
       ),
       is_indefinite_term: lease.is_indefinite_term ?? false,
