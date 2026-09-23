@@ -316,8 +316,7 @@ serve(async (req) => {
 
       // Se houver data de renovação do plano atual ainda no futuro, usar como nextDueDate do novo
       const periodEnd = subscription?.current_period_end ? new Date(subscription.current_period_end) : null;
-      const useCurrentPeriodEnd = isPlanChange
-        && subscription?.status === "active"
+      const useCurrentPeriodEnd = subscription?.status === "active"
         && !!periodEnd && !isNaN(periodEnd.getTime()) && periodEnd.getTime() > Date.now();
       const upgradeDueDate = useCurrentPeriodEnd
         ? periodEnd!.toISOString().split("T")[0]
