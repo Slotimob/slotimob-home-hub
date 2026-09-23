@@ -4,7 +4,7 @@ import { startOfMonth } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { AppLayout } from '@/components/AppLayout';
 
 import { TermsReacceptDialog } from '@/components/TermsReacceptDialog';
@@ -32,7 +32,7 @@ import { AccessReviewBanner } from '@/components/security/AccessReviewBanner';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 
 const Dashboard = () => {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const { isOwner, hasPermission } = usePermissions();
   const navigate = useNavigate();
   const { needsReaccept, markAccepted, currentVersion } = useTermsAcceptance(user?.id);
