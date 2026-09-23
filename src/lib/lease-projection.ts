@@ -303,6 +303,13 @@ export interface BuildRentInstallmentsInput {
   /** Dia de emissão (data contábil). Default: dia da própria competência. */
   issueDay?: number | null;
   existingCompetencies?: Set<string>;
+  /**
+   * Conjunto de "yyyy-MM" que já têm aluguel lançado no contrato, com QUALQUER
+   * vencimento. Aluguel é 1 parcela por competência: sem isso, a mesma
+   * competência com vencimento diferente não apareceria como "Já lançado"
+   * e seria cobrada em dobro.
+   */
+  existingRentCompetencies?: Set<string>;
 }
 
 export function buildRentInstallments({
@@ -313,6 +320,7 @@ export function buildRentInstallments({
   firstDueDate,
   issueDay,
   existingCompetencies,
+  existingRentCompetencies,
 }: BuildRentInstallmentsInput): PlannedInstallment[] {
   const start = toDate(startDate);
   if (!start || months <= 0) return [];
