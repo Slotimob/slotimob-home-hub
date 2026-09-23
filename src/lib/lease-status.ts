@@ -27,6 +27,20 @@ export function isLeasePendingSetup(status: string | null | undefined): boolean 
   return status === "pending";
 }
 
+export type LeaseStatusCounts = { total: number } & Record<keyof typeof LEASE_STATUS_LABELS, number>;
+
+/** Fonte ÚNICA da contagem de contratos por status (mesma regra dos chips de /gestao/contratos). */
+export function countLeasesByStatus(
+  leases: Array<{ status: string | null }> | null | undefined
+): LeaseStatusCounts {
+  const list = leases ?? [];
+  const counts = { total: list.length } as LeaseStatusCounts;
+  for (const status of Object.keys(LEASE_STATUS_LABELS)) {
+    counts[status as keyof LeaseStatusCounts] = list.filter((l) => l.status === status).length;
+  }
+  return counts;
+}
+
 /* ------------------------------------------------------------------ */
 /* (b) Status de assinatura — coluna signature_status                 */
 /* ------------------------------------------------------------------ */

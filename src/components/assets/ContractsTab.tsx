@@ -94,6 +94,7 @@ import {
   getLeaseStatusConfig,
   getAdjustmentStatus,
   getAdjustmentStatusConfig,
+  countLeasesByStatus,
   isLeasePendingSetup,
   type AdjustmentStatus,
 } from "@/lib/lease-status";
@@ -376,19 +377,7 @@ export function ContractsTab() {
   }, [leasesWithStatus, searchTerm, statusFilter, adjustmentFilter]);
 
   // Stats
-  const stats = useMemo(() => {
-    const statusCounts = Object.fromEntries(
-      Object.keys(LEASE_STATUS_LABELS).map((status) => [
-        status,
-        leases?.filter((l) => l.status === status).length || 0,
-      ])
-    );
-
-    return {
-      total: leases?.length || 0,
-      ...statusCounts,
-    };
-  }, [leases]);
+  const stats = useMemo(() => countLeasesByStatus(leases), [leases]);
 
   const handleOpenAdjustment = (lease: LeaseWithDetails, isUrgent: boolean = false) => {
     setSelectedLease(lease);
