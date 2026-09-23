@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   CreditCard,
   ExternalLink,
@@ -18,16 +19,6 @@ import {
   Receipt,
   XCircle,
 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { describeTrialEnd } from '@/lib/trial';
@@ -40,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { Rocket, Clock, Crown } from 'lucide-react';
 import { BuyAICreditsDialog } from './BuyAICreditsDialog';
 import { useAddonCheckout } from '@/hooks/useAddonCheckout';
+import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 
 const planLabels: Record<string, string> = {
   start: 'Start',
@@ -67,7 +59,6 @@ export const SubscriptionManagement = () => {
   const [addonUserQty, setAddonUserQty] = useState(1);
   const [addonUnitQty, setAddonUnitQty] = useState(1);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
   const navigate = useNavigate();
   const { buyAddon, loadingAddonId } = useAddonCheckout();
 
@@ -95,27 +86,6 @@ export const SubscriptionManagement = () => {
       toast.error('Erro ao abrir portal de faturamento.');
     } finally {
       setLoadingAction(null);
-    }
-  };
-
-
-
-
-  const handleCancelSubscription = async () => {
-    setIsCancelling(true);
-    try {
-      const { data } = await supabase.functions.invoke('cancel-subscription');
-      if (data?.error) {
-        toast.error(data.error);
-        return;
-      }
-      toast.success('Assinatura cancelada. Acesso ativo até o fim do período atual.');
-      setShowCancelDialog(false);
-      await refetch();
-    } catch {
-      toast.error('Erro ao cancelar assinatura. Tente novamente.');
-    } finally {
-      setIsCancelling(false);
     }
   };
 
@@ -192,22 +162,23 @@ export const SubscriptionManagement = () => {
             <div>
               <p className="font-semibold text-lg">{planLabels[plan] || plan}</p>
               <p className="text-sm text-muted-foreground">
-                {subscription?.status === 'active'
-                  ? 'Ativa'
+                {subscription?.cancel_at_period_end
+                  ? `Cancelada · acesso até ${subscription.current_period_end ? format(new Date(subscription.current_period_end), 'dd/MM/yyyy') : 'o fim do período pago'}`
+                  : subscription?.status === 'active'
+                  ? `Ativa${subscription?.billing_cycle === 'annual' ? ' · cobrança anual' : subscription?.billing_cycle === 'monthly' ? ' · cobrança mensal' : ''}`
                   : subscription?.status === 'trialing'
-                  ? 'Trial'
-                  : subscription?.status || 'Sem assinatura ativa'}
+                  ? 'Teste grátis'
+                  : subscription?.status === 'pending_payment'
+                  ? 'Aguardando pagamento'
+                  : subscription?.status === 'past_due'
+                  ? 'Pagamento em atraso'
+                  : 'Sem assinatura ativa'}
               </p>
-              {subscription?.current_period_end && (
+              {subscription?.current_period_end && !subscription?.cancel_at_period_end && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Renova em:{' '}
-                  {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
+                  Próxima cobrança em:{' '}
+                  {format(new Date(subscription.current_period_end), 'dd/MM/yyyy')}
                 </p>
-              )}
-              {subscription?.cancel_at_period_end && (
-                <Badge variant="destructive" className="mt-1 text-xs">
-                  Cancelamento agendado
-                </Badge>
               )}
               {plan === 'free' && !isTrialActive && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -219,6 +190,31 @@ export const SubscriptionManagement = () => {
               {planLabels[plan] || plan}
             </Badge>
           </div>
+
+          {subscription?.cancel_at_period_end && (
+            <Alert>
+              <AlertTitle>Sua assinatura foi cancelada.</AlertTitle>
+              <AlertDescription className="space-y-3">
+                <span className="block">
+                  Você mantém o {planLabels[plan] || plan} até{' '}
+                  {subscription.current_period_end
+                    ? format(new Date(subscription.current_period_end), 'dd/MM/yyyy')
+                    : 'o fim do período pago'}
+                  , e nenhuma nova cobrança será feita.
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    navigate(
+                      `/checkout?plan=${plan}&cycle=${subscription?.billing_cycle === 'monthly' ? 'monthly' : 'annual'}&mode=immediate`
+                    )
+                  }
+                >
+                  Reativar assinatura
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Separator />
           <div className="flex flex-col sm:flex-row gap-2">
@@ -237,14 +233,17 @@ export const SubscriptionManagement = () => {
                 Portal do Cliente (Stripe)
               </Button>
             )}
-            {hasAsaas && isPaid && !subscription?.cancel_at_period_end && (
+            {subscription?.billing_provider === 'asaas'
+              && !subscription?.cancel_at_period_end
+              && (!!subscription?.asaas_subscription_id
+                || ['pending_payment', 'past_due'].includes(subscription?.status ?? '')) && (
               <Button
                 variant="outline"
                 className="flex-1 gap-2 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
                 onClick={() => setShowCancelDialog(true)}
               >
                 <XCircle className="h-4 w-4" />
-                Cancelar Assinatura
+                Cancelar assinatura
               </Button>
             )}
             {!isPaid && !isTrialActive && (
@@ -439,7 +438,7 @@ export const SubscriptionManagement = () => {
           <CardContent>
             <Button
               className="w-full gap-2"
-              onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')}
+              onClick={() => navigate(`/checkout?plan=${plan}&cycle=annual&mode=immediate`)}
             >
               <Crown className="h-4 w-4" />
               Efetivar Assinatura
@@ -448,53 +447,14 @@ export const SubscriptionManagement = () => {
         </Card>
       )}
 
-      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-destructive" />
-              Cancelar Assinatura
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <span className="block">
-                Tem certeza que deseja cancelar sua assinatura?
-              </span>
-              {subscription?.current_period_end && (
-                <span className="block">
-                  Você continuará com acesso completo até{' '}
-                  <strong className="text-foreground">
-                    {new Date(subscription.current_period_end).toLocaleDateString('pt-BR', {
-                      day: '2-digit', month: 'long', year: 'numeric',
-                    })}
-                  </strong>.
-                </span>
-              )}
-              <span className="block text-destructive/80">
-                Após essa data, sua conta será rebaixada automaticamente para o plano Start (gratuito).
-              </span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCancelling}>
-              Manter minha Assinatura
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={(e) => {
-                e.preventDefault();
-                handleCancelSubscription();
-              }}
-              disabled={isCancelling}
-            >
-              {isCancelling ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Cancelando...</>
-              ) : (
-                'Confirmar Cancelamento'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CancelSubscriptionDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        planLabel={planLabels[plan] || plan}
+        accessUntil={subscription?.current_period_end ?? null}
+        isPendingPayment={subscription?.status === 'pending_payment' || subscription?.status === 'past_due'}
+        onCanceled={() => refetch()}
+      />
 
       <BuyAICreditsDialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog} />
     </div>
