@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,7 +58,6 @@ export const SubscriptionManagement = () => {
   const [addonUserQty, setAddonUserQty] = useState(1);
   const [addonUnitQty, setAddonUnitQty] = useState(1);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
   const navigate = useNavigate();
   const { buyAddon, loadingAddonId } = useAddonCheckout();
 
@@ -85,27 +85,6 @@ export const SubscriptionManagement = () => {
       toast.error('Erro ao abrir portal de faturamento.');
     } finally {
       setLoadingAction(null);
-    }
-  };
-
-
-
-
-  const handleCancelSubscription = async () => {
-    setIsCancelling(true);
-    try {
-      const { data } = await supabase.functions.invoke('cancel-subscription');
-      if (data?.error) {
-        toast.error(data.error);
-        return;
-      }
-      toast.success('Assinatura cancelada. Acesso ativo até o fim do período atual.');
-      setShowCancelDialog(false);
-      await refetch();
-    } catch {
-      toast.error('Erro ao cancelar assinatura. Tente novamente.');
-    } finally {
-      setIsCancelling(false);
     }
   };
 
