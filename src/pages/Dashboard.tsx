@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { startOfMonth } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { Button } from '@/components/ui/button';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { AppLayout } from '@/components/AppLayout';
@@ -17,6 +18,7 @@ import {
   DashboardDateFilter,
   DashboardCustomizeSheet,
   AssetsWidget,
+  LeaseContractsWidget,
   FinancialWidget,
   PipelineWidget,
   PortfolioWidget,
