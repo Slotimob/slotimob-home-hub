@@ -356,8 +356,8 @@ serve(async (req) => {
           asaas_customer_id: asaasCustomerId,
           plan_id: plan_id,
           billing_cycle: isAnnual ? "annual" : "monthly",
-          // Quem ainda tem período pago não é travado: o webhook libera
-          // (PAYMENT_CONFIRMED / PAYMENT_RECEIVED) com status "active".
+          // Com período pago ainda vigente, mantém acesso imediato ("active");
+          // sem período, bloqueia até a Asaas confirmar o pagamento ("pending_payment").
           status: useCurrentPeriodEnd ? "active" : "pending_payment",
           cancel_at_period_end: false,
           canceled_at: null,
