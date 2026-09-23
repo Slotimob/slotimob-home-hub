@@ -341,7 +341,7 @@ function PricingFaq() {
   const faqs = [
     { q: 'Posso mudar de plano depois?', a: 'Sim. Você pode fazer upgrade ou downgrade a qualquer momento. No upgrade, a diferença de valor é cobrada proporcionalmente.' },
     { q: 'Quais formas de pagamento são aceitas?', a: 'Cartão de crédito, boleto bancário e PIX — todos processados pela Asaas, parceiro financeiro homologado pelo Banco Central.' },
-    { q: 'O plano anual tem desconto?', a: 'Sim. No anual você economiza o equivalente a 2 meses comparado ao mensal. O valor é cobrado à vista anualmente.' },
+    { q: 'O plano anual tem desconto?', a: 'No plano anual você tem 15% de desconto sobre o valor de 12 mensalidades, pago de uma vez.' },
     { q: 'Os add-ons são cobrados junto com a assinatura?', a: 'Sim. Os add-ons são cobrados mensalmente e cancelados individualmente a qualquer momento, sem afetar o plano principal.' },
     { q: 'Como funciona o período de 7 dias grátis?', a: 'Ao assinar qualquer plano pago, você tem 7 dias com acesso ao Pro sem cobrança. Após o período, a cobrança normal do plano escolhido se inicia.' },
   ];
@@ -371,7 +371,7 @@ export default function Plans() {
     <div data-lp="v2" className="min-h-screen bg-background">
       <SEOHead
         title="Planos e preços — Slotimob para proprietários de imóveis"
-        description="Start grátis para até 5 imóveis. Pro a partir de R$ 59,90/mês com boleto automático, reajuste IGPM/IPCA, DRE e relatório IR. Teste 7 dias sem cartão."
+        description="Planos a partir de R$ 97/mês, ou R$ 82,45/mês no anual. Teste o Pro grátis por 7 dias, sem cartão."
         path="/planos"
         structuredData={[
           {
