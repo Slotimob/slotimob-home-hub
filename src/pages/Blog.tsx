@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 9;
 import { useQuery } from '@tanstack/react-query';
@@ -43,10 +44,17 @@ export default function Blog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const geoFilter = searchParams.get('geo') || '';
   const [activeCat, setActiveCat] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const rawPage = Number(searchParams.get('page'));
+  const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
+  // Ao trocar de categoria ou região, volta para a página 1 (remove ?page da URL).
   useEffect(() => {
-    setPage(1);
+    if (searchParams.get('page')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('page');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCat, geoFilter]);
 
   const { data: totalCount } = useQuery({
@@ -119,15 +127,27 @@ export default function Blog() {
 
   const clearGeo = () => {
     searchParams.delete('geo');
+    searchParams.delete('page');
     setSearchParams(searchParams);
   };
+
+  // href real da paginação (preserva geo; página 1 fica limpa em /blog).
+  const pageHref = (n: number) => {
+    const params = new URLSearchParams(searchParams);
+    if (n <= 1) params.delete('page');
+    else params.set('page', String(n));
+    const qs = params.toString();
+    return qs ? `/blog?${qs}` : '/blog';
+  };
+
+  const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
     <>
       <SEOHead
         title="Blog — Gestão de aluguel para proprietários de imóveis"
         description="Dicas e guias práticos para quem gere imóveis sem depender de imobiliária. Boletos, contratos, reajustes e gestão financeira."
-        path="/blog"
+        path={page <= 1 ? '/blog' : `/blog?page=${page}`}
         structuredData={[
           {
             '@context': 'https://schema.org',
@@ -343,30 +363,58 @@ export default function Blog() {
                 )}
 
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-4 mt-10">
-                    <Button
-                      variant="outline"
-                      disabled={page === 1}
-                      onClick={() => {
-                        setPage((p) => Math.max(1, p - 1));
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                    >
-                      ← Anterior
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
+                  <div className="flex flex-wrap justify-center items-center gap-2 mt-10">
+                    {page > 1 ? (
+                      <Button variant="outline" asChild>
+                        <Link to={pageHref(page - 1)} onClick={scrollTop}>
+                          ← Anterior
+                        </Link>
+                      </Button>
+                    ) : (
+                      <span
+                        aria-disabled="true"
+                        className={cn(buttonVariants({ variant: 'outline' }), 'pointer-events-none opacity-50 select-none')}
+                      >
+                        ← Anterior
+                      </span>
+                    )}
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) =>
+                      n === page ? (
+                        <span
+                          key={n}
+                          aria-current="page"
+                          className={cn(buttonVariants({ variant: 'outline' }), 'pointer-events-none bg-accent/10 select-none')}
+                        >
+                          {n}
+                        </span>
+                      ) : (
+                        <Button key={n} variant="outline" size="icon" asChild>
+                          <Link to={pageHref(n)} onClick={scrollTop} aria-label={`Ir para a página ${n}`}>
+                            {n}
+                          </Link>
+                        </Button>
+                      ),
+                    )}
+
+                    <span className="text-sm text-muted-foreground mx-2">
                       Página {page} de {totalPages}
                     </span>
-                    <Button
-                      variant="outline"
-                      disabled={page >= totalPages}
-                      onClick={() => {
-                        setPage((p) => Math.min(totalPages, p + 1));
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                    >
-                      Próxima →
-                    </Button>
+
+                    {page < totalPages ? (
+                      <Button variant="outline" asChild>
+                        <Link to={pageHref(page + 1)} onClick={scrollTop}>
+                          Próxima →
+                        </Link>
+                      </Button>
+                    ) : (
+                      <span
+                        aria-disabled="true"
+                        className={cn(buttonVariants({ variant: 'outline' }), 'pointer-events-none opacity-50 select-none')}
+                      >
+                        Próxima →
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
