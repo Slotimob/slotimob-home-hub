@@ -63,17 +63,24 @@ function injectJsonLdOnce() {
     offers: [
       {
         '@type': 'Offer',
-        name: 'Start',
-        price: '0',
+        name: 'Slotimob Essencial',
+        price: '97.00',
         priceCurrency: 'BRL',
-        description: 'Gratuito para até 5 imóveis',
+        url: 'https://slotimob.com.br/planos',
       },
       {
         '@type': 'Offer',
-        name: 'Pro',
-        price: '59.90',
+        name: 'Slotimob Pro',
+        price: '197.00',
         priceCurrency: 'BRL',
-        description: 'Até 50 imóveis com boleto automático, reajuste e relatório IR',
+        url: 'https://slotimob.com.br/planos',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Slotimob Business',
+        price: '297.00',
+        priceCurrency: 'BRL',
+        url: 'https://slotimob.com.br/planos',
       },
     ],
     aggregateRating: {
