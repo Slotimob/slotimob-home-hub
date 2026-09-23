@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { HelpTooltip } from '@/components/help/HelpTooltip';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, Download, FileText, FileDown } from "lucide-react";
-import { useDREReport } from "@/hooks/useDREReport";
+import { useDREReport, DRERegime } from "@/hooks/useDREReport";
 import { cn } from "@/lib/utils";
 import { exportDREtoPDF, exportDREtoCSV } from "@/utils/dreExport";
 import {
@@ -86,9 +87,18 @@ const MONTH_NAMES_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set"
 
 export default function FinanceDRE() {
   const currentYear = new Date().getFullYear();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [selectedYears, setSelectedYears] = useState<string[]>([String(currentYear)]);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+
+  const regime: DRERegime = searchParams.get("regime") === "gerencial" ? "gerencial" : "contabil";
+
+  const handleRegimeChange = (next: DRERegime) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("regime", next);
+    setSearchParams(params, { replace: true });
+  };
 
   const years = useMemo(
     () => [currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map(String),
@@ -124,7 +134,8 @@ export default function FinanceDRE() {
   const { data: dre, isLoading } = useDREReport(
     selectedYears,
     selectedMonths,
-    selectedUnitIds.length > 0 ? selectedUnitIds : undefined
+    selectedUnitIds.length > 0 ? selectedUnitIds : undefined,
+    regime
   );
 
   const periodLabel = useMemo(() => {
@@ -197,6 +208,30 @@ export default function FinanceDRE() {
               />
             </div>
 
+            {/* Regime */}
+            <div className="flex flex-wrap gap-1.5 justify-center items-center">
+              <Button
+                type="button"
+                size="sm"
+                variant={regime === "gerencial" ? "default" : "outline"}
+                className="h-8 px-3 text-xs"
+                onClick={() => handleRegimeChange("gerencial")}
+              >
+                DRE Gerencial
+              </Button>
+              <HelpTooltip featureKey="finance.dre_managerial" />
+              <Button
+                type="button"
+                size="sm"
+                variant={regime === "contabil" ? "default" : "outline"}
+                className="h-8 px-3 text-xs"
+                onClick={() => handleRegimeChange("contabil")}
+              >
+                DRE Contábil
+              </Button>
+              <HelpTooltip featureKey="finance.dre_accounting" />
+            </div>
+
             {/* Year multi-select */}
             <div className="flex flex-wrap gap-1.5 justify-center">
               {years.map(year => (
@@ -264,6 +299,7 @@ export default function FinanceDRE() {
             <CardDescription className="text-center">
               Período: {periodLabel}
               {unitDisplayName && ` | Unidade: ${unitDisplayName}`}
+              {` · Regime: ${dre?.regime === "gerencial" ? "Gerencial (por vencimento)" : "Contábil (por data de emissão)"}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="py-6 space-y-4">
