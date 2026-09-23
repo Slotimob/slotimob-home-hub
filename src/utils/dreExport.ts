@@ -53,6 +53,8 @@ interface DRELineConfig {
 
 export async function exportDREtoPDF(dre: DREData, periodLabel: string, unitName?: string): Promise<void> {
   const { default: jsPDF } = await import('jspdf');
+  const regimeSuffix = dre.regime === 'gerencial' ? 'Gerencial' : 'Contábil';
+  const regimeLabel = dre.regime === 'gerencial' ? 'Gerencial (por vencimento)' : 'Contábil (por data de emissão)';
   const fullPeriodLabel = unitName ? `${periodLabel} - ${pdfSafeLabel(unitName)}` : periodLabel;
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -73,6 +75,7 @@ export async function exportDREtoPDF(dre: DREData, periodLabel: string, unitName
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(`Período: ${fullPeriodLabel}`, 32, 22);
+  doc.text(`Regime: ${regimeLabel}`, 32, 27);
   
   // Reset for content
   doc.setTextColor(0, 0, 0);
@@ -174,17 +177,20 @@ export async function exportDREtoPDF(dre: DREData, periodLabel: string, unitName
   }
   
   // Save the PDF
-  const fileName = `DRE - ${fullPeriodLabel.replace(/\//g, '-')}.pdf`;
+  const fileName = `DRE - ${fullPeriodLabel.replace(/\//g, '-')} - ${regimeSuffix}.pdf`;
   doc.save(fileName);
 }
 
 export function exportDREtoCSV(dre: DREData, periodLabel: string, unitName?: string): void {
+  const regimeSuffix = dre.regime === 'gerencial' ? 'Gerencial' : 'Contábil';
+  const regimeLabel = dre.regime === 'gerencial' ? 'Gerencial (por vencimento)' : 'Contábil (por data de emissão)';
   const fullPeriodLabel = unitName ? `${periodLabel} - ${unitName}` : periodLabel;
   const lines: string[] = [];
   
   // Header
   lines.push('DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO');
   lines.push(`Período:;${fullPeriodLabel}`);
+  lines.push(`Regime:;${regimeLabel}`);
   lines.push('');
   lines.push('Tipo;Descrição;Valor');
   
@@ -222,7 +228,7 @@ export function exportDREtoCSV(dre: DREData, periodLabel: string, unitName?: str
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `DRE - ${fullPeriodLabel.replace(/\//g, '-')}.csv`;
+  link.download = `DRE - ${fullPeriodLabel.replace(/\//g, '-')} - ${regimeSuffix}.csv`;
   link.click();
   URL.revokeObjectURL(link.href);
 }
