@@ -31,6 +31,7 @@ export const HELP_FEATURES = {
 
   // Gestão
   'management.contracts': 'Gestão de contratos',
+  'management.contracts_count': 'Contagem de Contratos de Locação',
   'management.tasks': 'Afazeres',
 
   // WhatsApp
@@ -54,6 +55,7 @@ export const HELP_DEFAULT_DESCRIPTIONS: Partial<Record<FeatureKey, string>> = {
   'assets.units': 'Unidades são imóveis pertencentes a um empreendimento, como apartamentos e salas comerciais.',
   'assets.standalone': 'Imóveis avulsos são propriedades independentes não vinculadas a nenhum empreendimento, como terrenos, casas e galpões.',
   'management.contracts': 'Contratos de locação ativos, histórico de reajustes e gestão de obrigações dos imóveis sob administração.',
+  'management.contracts_count': 'Quantos contratos de locação você tem e em que situação cada um está. Os status são os mesmos da página Contratos.',
   'management.tasks': 'Lista de pendências e tarefas relacionadas à gestão de imóveis, contratos e propostas.',
   'assets.portfolio_count': 'Inventário completo dos ativos cadastrados: empreendimentos (edifícios, condomínios, loteamentos), unidades vinculadas a empreendimentos e imóveis avulsos. Total = Unidades + Avulsos.',
   'crm.pipeline': 'Funil de negócios com todos os deals em andamento, organizados por estágio de negociação.',
