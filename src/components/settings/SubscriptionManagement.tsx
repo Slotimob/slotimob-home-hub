@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useSubscriptionDetails } from '@/hooks/useSubscriptionDetails';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
+import { describeTrialEnd } from '@/lib/trial';
 import { useAICredits } from '@/hooks/useAICredits';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -59,7 +60,7 @@ const planColors: Record<string, string> = {
 export const SubscriptionManagement = () => {
   const { subscription, isLoading, refetch, openCustomerPortal } =
     useSubscriptionDetails();
-  const { isTrialActive, trialDaysRemaining } = useTrialStatus();
+  const { isTrialActive, trialDaysRemaining, trialEndsAt } = useTrialStatus();
   const { credits: aiCredits, isLoading: isLoadingCredits } = useAICredits();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
