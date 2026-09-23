@@ -438,7 +438,7 @@ export const SubscriptionManagement = () => {
           <CardContent>
             <Button
               className="w-full gap-2"
-              onClick={() => navigate('/checkout?plan=pro&cycle=annual&mode=immediate')}
+              onClick={() => navigate(`/checkout?plan=${plan}&cycle=annual&mode=immediate`)}
             >
               <Crown className="h-4 w-4" />
               Efetivar Assinatura
