@@ -14,6 +14,7 @@ import { LpComparison } from '@/components/landing/v2/LpComparison';
 import { LpTestimonials } from '@/components/landing/v2/LpTestimonials';
 import { LpPricing } from '@/components/landing/v2/LpPricing';
 import { LpFaq } from '@/components/landing/v2/LpFaq';
+import { LpBlogHighlights } from '@/components/landing/LpBlogHighlights';
 import { LpFinalCta } from '@/components/landing/v2/LpFinalCta';
 import { LpFooter } from '@/components/landing/v2/LpFooter';
 import '@/components/landing/v2/lp.css';
@@ -309,6 +310,7 @@ export default function LandingPage() {
         <LpStats />
         <LpModules />
         <LpPricing />
+        <LpBlogHighlights />
         <LpFaq />
         <LpFinalCta />
       </main>
