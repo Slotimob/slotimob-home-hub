@@ -11,7 +11,8 @@ import { ReconciliationPendingListGrouped } from "./ReconciliationPendingListGro
 import { ReconciliationHistoryTable } from "./ReconciliationHistoryTable";
 import { ReconciliationMismatchDialog } from "./ReconciliationMismatchDialog";
 import { BalanceAuditPanel } from "./balance-checker";
-import { format } from "date-fns";
+import { format, parseISO, differenceInDays } from "date-fns";
+import { useReconciliation, reconcileEntry, invalidateReconciliationQueries } from "@/hooks/useReconciliation";
 
 interface ReconciliationPanelProps {
   bankAccountId: string;
@@ -24,6 +25,7 @@ interface ReconciliationPanelProps {
 export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBalance = 0, dateFrom, dateTo }: ReconciliationPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { reconcile } = useReconciliation();
   const { isOwner, hasPermission } = usePermissions();
   const hasReconcilePermission = isOwner || hasPermission('finance_reconciliation', 'edit') || hasPermission('finance_reconciliation', 'create');
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
@@ -62,9 +64,9 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
       const { data, error } = await supabase
         .from("financial_transactions")
         .select("*")
-        .eq("bank_account_id", bankAccountId)
+        .or(`bank_account_id.eq.${bankAccountId},bank_account_id.is.null`)
         .eq("is_reconciled", false)
-        .eq("status", "paid")
+        .in("status", ["pending", "paid"])
         .order("transaction_date", { ascending: false });
       if (error) throw error;
       return data;
@@ -143,38 +145,24 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
 
   const executeReconciliation = async () => {
     if (!selectedEntry || !selectedTransaction) return;
+    const entry = getSelectedEntry();
+    const transaction = getSelectedTransaction();
+    if (!entry || !transaction) return;
 
     setIsReconciling(true);
     try {
-      await supabase
-        .from("bank_statement_entries")
-        .update({
-          is_reconciled: true,
-          transaction_id: selectedTransaction,
-        })
-        .eq("id", selectedEntry);
-
-      await supabase
-        .from("financial_transactions")
-        .update({
-          is_reconciled: true,
-          reconciled_at: new Date().toISOString(),
-        })
-        .eq("id", selectedTransaction);
-
-      toast({ title: "Conciliação realizada com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: ["bank-statement-entries"] });
-      queryClient.invalidateQueries({ queryKey: ["unreconciled-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["reconciled-entries"] });
-      queryClient.invalidateQueries({ queryKey: ["reconciliation-totals"] });
+      await reconcile.mutateAsync({
+        entryId: entry.id,
+        transactionId: transaction.id,
+        // Pendente vira pago na data do extrato (mesmo comportamento do matcher)
+        markAsPaid: transaction.status === "pending",
+        entryDate: entry.entry_date,
+        bankAccountId: entry.bank_account_id,
+      });
       setSelectedEntry(null);
       setSelectedTransaction(null);
-    } catch (error: any) {
-      toast({
-        title: "Erro ao conciliar",
-        description: error.message,
-        variant: "destructive",
-      });
+    } catch {
+      // toast de erro vem do hook
     } finally {
       setIsReconciling(false);
     }
@@ -183,40 +171,45 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
   const handleAutoReconcile = async () => {
     setIsReconciling(true);
     let matched = 0;
+    let failed = 0;
+    const usedTransactionIds = new Set<string>();
 
     try {
       for (const entry of entries) {
+        const entryDate = parseISO(entry.entry_date);
         const match = transactions.find((t) => {
-          const entryAmount = entry.is_credit ? Number(entry.amount) : -Number(entry.amount);
-          const transactionAmount = t.type === "income" ? Number(t.amount) : -Number(t.amount);
-          return Math.abs(entryAmount - transactionAmount) < 0.01;
+          if (usedTransactionIds.has(t.id)) return false;
+          const typeMatch = entry.is_credit ? t.type === "income" : t.type === "expense";
+          if (!typeMatch) return false;
+          if (Math.abs(Math.abs(Number(entry.amount)) - Math.abs(Number(t.amount))) >= 0.01) return false;
+          const refDate = t.due_date ?? t.transaction_date;
+          if (!refDate) return false;
+          return Math.abs(differenceInDays(entryDate, parseISO(refDate))) <= 3;
         });
 
-        if (match) {
-          try {
-            await supabase
-              .from("bank_statement_entries")
-              .update({ is_reconciled: true, transaction_id: match.id })
-              .eq("id", entry.id);
-
-            await supabase
-              .from("financial_transactions")
-              .update({ is_reconciled: true, reconciled_at: new Date().toISOString() })
-              .eq("id", match.id);
-
-            matched++;
-          } catch (error) {
-            console.error("Error reconciling:", error);
-          }
+        if (!match) continue;
+        usedTransactionIds.add(match.id);
+        try {
+          await reconcileEntry({
+            entryId: entry.id,
+            transactionId: match.id,
+            markAsPaid: match.status === "pending",
+            entryDate: entry.entry_date,
+            bankAccountId: entry.bank_account_id,
+          });
+          matched++;
+        } catch (error) {
+          failed++;
+          console.error("[ReconciliationPanel] auto-reconcile falhou:", error);
         }
       }
 
-      if (matched > 0) {
-        toast({ title: `${matched} lançamento(s) conciliado(s) automaticamente!` });
-        queryClient.invalidateQueries({ queryKey: ["bank-statement-entries"] });
-        queryClient.invalidateQueries({ queryKey: ["unreconciled-transactions"] });
-        queryClient.invalidateQueries({ queryKey: ["reconciled-entries"] });
-        queryClient.invalidateQueries({ queryKey: ["reconciliation-totals"] });
+      if (matched > 0 || failed > 0) {
+        invalidateReconciliationQueries(queryClient);
+        toast({
+          title: `${matched} conciliado(s), ${failed} com erro`,
+          variant: failed > 0 && matched === 0 ? "destructive" : undefined,
+        });
       } else {
         toast({
           title: "Nenhuma correspondência encontrada",
