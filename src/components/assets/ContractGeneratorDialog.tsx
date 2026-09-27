@@ -118,7 +118,18 @@ import {
          subdivision = sub ?? null;
        }
 
-       if (!lease?.tenant_contact_id) return { lease, tenant: null, subdivision };
+       // Todos os imóveis do contrato (contratos com vários imóveis)
+       let leaseUnits: any[] = [];
+       if (lease?.id) {
+         const { data: lu } = await supabase
+           .from("lease_units")
+           .select("unit_id, is_primary, unit:units(address, neighborhood, city, state, postal_code, registration_number, cib), subdivision:unit_subdivisions(label)")
+           .eq("lease_id", lease.id)
+           .order("is_primary", { ascending: false });
+         leaseUnits = (lu as any[]) || [];
+       }
+
+       if (!lease?.tenant_contact_id) return { lease, tenant: null, subdivision, leaseUnits };
        
        const { data: tenant } = await supabase
          .from("contacts")
@@ -126,7 +137,7 @@ import {
          .eq("id", lease.tenant_contact_id)
          .single();
        
-       return { lease, tenant, subdivision };
+       return { lease, tenant, subdivision, leaseUnits };
      },
      enabled: open,
    });
@@ -328,6 +339,19 @@ import {
         fracaoLabel: activeLease?.subdivision?.label || undefined,
         fracaoArea: activeLease?.subdivision?.area ?? undefined,
       },
+      imoveis: (activeLease?.leaseUnits?.length ?? 0) > 1
+        ? activeLease!.leaseUnits.map((lu: any) => ({
+            endereco: lu.unit?.address || '_______________',
+            bairro: lu.unit?.neighborhood || '',
+            cidade: lu.unit?.city || '_______________',
+            estado: lu.unit?.state || '__',
+            cep: lu.unit?.postal_code || '',
+            matricula: lu.unit?.registration_number || '',
+            cib: lu.unit?.cib || '',
+            fracaoLabel: lu.subdivision?.label || undefined,
+            principal: !!lu.is_primary,
+          }))
+        : undefined,
       contrato: {
         valorAluguel: lease.rent_amount || 0,
         diaVencimento: lease.due_day || 10,
