@@ -521,7 +521,6 @@ export const EditUnitDialog = ({
               <AssetActivityTimeline
                 assetType="unit"
                 assetId={unit.id}
-                brokerId={user.id}
               />
             )}
           </TabsContent>

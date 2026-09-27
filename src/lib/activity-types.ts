@@ -9,6 +9,8 @@ export const ACTIVITY_TYPES = [
   { value: 'reforma', label: 'Reforma' },
   { value: 'manutencao', label: 'Manutenção' },
   { value: 'vistoria', label: 'Vistoria' },
+  { value: 'reuniao', label: 'Reunião' },
+  { value: 'ocorrencia', label: 'Ocorrência' },
   { value: 'nota', label: 'Nota' },
   { value: 'outro', label: 'Outro' },
 ] as const;

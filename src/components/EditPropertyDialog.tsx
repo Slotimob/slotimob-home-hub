@@ -330,7 +330,6 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
                 <AssetActivityTimeline
                   assetType="property"
                   assetId={property.id}
-                  brokerId={user.id}
                 />
               )}
             </TabsContent>

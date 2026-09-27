@@ -378,7 +378,6 @@ export const UnitDetailsDialog = ({ unit, propertyName, open, onOpenChange, onSu
                 <AssetActivityTimeline
                   assetType="unit"
                   assetId={unit.id}
-                  brokerId={user.id}
                 />
               )}
             </TabsContent>

@@ -602,7 +602,7 @@ export default function UnitDetalhe() {
 
         {/* Atividades */}
         <TabsContent value="activities" className="mt-4">
-          {user && <AssetActivityTimeline assetType="unit" assetId={unit.id} brokerId={user.id} />}
+          {user && <AssetActivityTimeline assetType="unit" assetId={unit.id} />}
         </TabsContent>
 
         {/* Inquilinos */}

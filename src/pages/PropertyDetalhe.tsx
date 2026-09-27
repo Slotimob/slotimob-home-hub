@@ -528,7 +528,6 @@ export default function PropertyDetalhe() {
                 <AssetActivityTimeline
                   assetType="property"
                   assetId={currentProperty.id}
-                  brokerId={user.id}
                 />
               )}
             </TabsContent>
