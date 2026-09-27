@@ -14,8 +14,13 @@ import { ptBR } from 'date-fns/locale';
 import { parseDateOnly } from "@/lib/date-only";
 
 interface DimobRecord {
+  /** Chave única da linha (contrato + imóvel). */
+  rowKey: string;
   unitId: string;
   unitName: string;
+  unitAddress: string | null;
+  /** Contrato com vários imóveis: "X% do contrato (N imóveis)". */
+  shareLabel?: string | null;
   cib: string | null;
   ownerName: string;
   ownerDocument: string | null;
@@ -117,15 +122,38 @@ export const DimobReportTab = () => {
         txByLease.get(id)!.push(t);
       });
 
+      // Contratos com vários imóveis: uma linha DIMOB por imóvel, com valor rateado
+      const luByLease = new Map<string, { unit_id: string; is_primary: boolean; share_percent: number | null }[]>();
+      for (let i = 0; i < leaseIds.length; i += 100) {
+        const { data: lus } = await supabase
+          .from('lease_units')
+          .select('lease_id, unit_id, is_primary, share_percent')
+          .in('lease_id', leaseIds.slice(i, i + 100));
+        (lus || []).forEach((r: any) => {
+          if (!luByLease.has(r.lease_id)) luByLease.set(r.lease_id, []);
+          luByLease.get(r.lease_id)!.push(r);
+        });
+      }
+
       const dimobRecords: DimobRecord[] = [];
 
       for (const lease of leases || []) {
-        // Fetch unit data
-        const { data: unit } = await supabase
+        const lus = luByLease.get(lease.id) || [];
+        const isMulti = lus.length > 1;
+        const shares = isMulti
+          ? [...lus]
+              .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+              .map((lu) => ({
+                unit_id: lu.unit_id,
+                factor: lu.share_percent != null ? Number(lu.share_percent) / 100 : 1 / lus.length,
+              }))
+          : [{ unit_id: lease.unit_id, factor: 1 }];
+        const unitIdsForLease = shares.map((x) => x.unit_id);
+        const { data: unitRows } = await supabase
           .from('units')
           .select('id, unit_number, cib, address, property_id')
-          .eq('id', lease.unit_id)
-          .single();
+          .in('id', unitIdsForLease);
+        const unitById = new Map((unitRows || []).map((u) => [u.id, u]));
 
         // Fetch owner contact
         let ownerName = 'Não informado';
@@ -195,27 +223,49 @@ export const DimobReportTab = () => {
         const annualCommission = adminFee * monthsActive;
 
 
-        // Check for missing fields
-        const missingFields: string[] = [];
-        if (!unit?.cib) missingFields.push('CIB');
-        if (!ownerDocument) missingFields.push('CPF/CNPJ Proprietário');
-        if (!tenantDocument) missingFields.push('CPF/CNPJ Inquilino');
+        // Rateio: arredonda por imóvel e ajusta a diferença no último, para a soma bater
+        const split = (total: number) => {
+          let acc = 0;
+          return shares.map((x, idx) => {
+            if (idx === shares.length - 1) return Math.round((total - acc) * 100) / 100;
+            const v = Math.round(total * x.factor * 100) / 100;
+            acc += v;
+            return v;
+          });
+        };
+        const grossParts = split(grossAnnualRent);
+        const commParts = split(annualCommission);
+        const taxParts = split(taxWithheld);
+        const dedParts = split(deductions);
 
-        dimobRecords.push({
-          unitId: lease.unit_id,
-          unitName: unit?.unit_number || `Unidade ${lease.unit_id.slice(0, 8)}`,
-          cib: unit?.cib || null,
-          ownerName,
-          ownerDocument,
-          tenantName,
-          tenantDocument,
-          grossAnnualRent,
-          annualCommission,
-          taxWithheld,
-          deductions,
-          isEstimated,
-          isComplete: missingFields.length === 0,
-          missingFields
+        shares.forEach((x, idx) => {
+          const unit = unitById.get(x.unit_id);
+          const missingFields: string[] = [];
+          if (!unit?.cib) missingFields.push('CIB');
+          if (!ownerDocument) missingFields.push('CPF/CNPJ Proprietário');
+          if (!tenantDocument) missingFields.push('CPF/CNPJ Inquilino');
+
+          dimobRecords.push({
+            rowKey: `${lease.id}:${x.unit_id}`,
+            unitId: x.unit_id,
+            unitName: unit?.unit_number || `Unidade ${x.unit_id.slice(0, 8)}`,
+            unitAddress: unit?.address || null,
+            shareLabel: isMulti
+              ? `${(Math.round(x.factor * 10000) / 100).toLocaleString('pt-BR')}% do contrato (${shares.length} imóveis)`
+              : null,
+            cib: unit?.cib || null,
+            ownerName,
+            ownerDocument,
+            tenantName,
+            tenantDocument,
+            grossAnnualRent: grossParts[idx],
+            annualCommission: commParts[idx],
+            taxWithheld: taxParts[idx],
+            deductions: dedParts[idx],
+            isEstimated,
+            isComplete: missingFields.length === 0,
+            missingFields
+          });
         });
       }
 
@@ -457,8 +507,16 @@ export const DimobReportTab = () => {
                 </TableHeader>
                 <TableBody>
                   {records.map((record) => (
-                    <TableRow key={record.unitId}>
-                      <TableCell className="font-medium">{record.unitName}</TableCell>
+                    <TableRow key={record.rowKey}>
+                      <TableCell className="font-medium">
+                        {record.unitName}
+                        {record.unitAddress && (
+                          <p className="text-xs font-normal text-muted-foreground">{record.unitAddress}</p>
+                        )}
+                        {record.shareLabel && (
+                          <p className="text-[11px] font-normal text-primary">{record.shareLabel}</p>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {record.cib || (
                           <span className="text-muted-foreground text-xs">-</span>
