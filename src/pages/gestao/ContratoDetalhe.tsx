@@ -129,6 +129,7 @@ export default function ContratoDetalhe() {
            metadata, signature_status, signed_contract_path, termination_date,
            fire_insurance, iptu_charge, additional_obligations,
            termination_reason, guarantee_type, guarantor_data, payment_info,
+           is_indefinite_term, adjustment_periodicity_months, unit_subdivision_id,
            tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
            unit:units!leases_unit_id_fkey(id, unit_number, address)`
         )
@@ -166,14 +167,15 @@ export default function ContratoDetalhe() {
       if (!lease) return [];
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("financial_transactions")
-        .select("id, amount, due_date, payment_date, status, description, type")
+        .select("id, amount, due_date, paid_date, status, description, type")
         .eq("broker_id", effectiveBrokerId || user!.id)
         .like("reference", `lease:${lease.id}%`)
         .gte("due_date", toDateOnly(threeMonthsAgo))
         .order("due_date", { ascending: false })
         .limit(6);
+      if (error) throw error;
       return data || [];
     },
     enabled: !!user && !!lease,
@@ -669,7 +671,7 @@ export default function ContratoDetalhe() {
                 <div className="divide-y">
                   {recentTransactions.map((t: any) => {
                     const due = t.due_date ? new Date(t.due_date + "T00:00:00") : null;
-                    const paid = t.payment_date ? new Date(t.payment_date + "T00:00:00") : null;
+                    const paid = t.paid_date ? new Date(t.paid_date + "T00:00:00") : null;
                     const today = new Date();
                     const isPaid = t.status === "paid" || !!paid;
                     const isOverdue = !isPaid && due && due < today;
