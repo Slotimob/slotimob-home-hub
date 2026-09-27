@@ -594,7 +594,7 @@ export function AssetDetailDialog({
         } : null,
       };
     }).filter(o => o.config !== null);
-  }, [unitConfig, monthTransactions, competencyPeriod]);
+  }, [unitConfig, monthTransactions, competencyPeriod, activeLease]);
 
   const handleCreateTransaction = (obligationType: ObligationType) => {
     if (!asset) return;
