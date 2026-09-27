@@ -3,6 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Banknote, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { HelpTooltip } from '@/components/help/HelpTooltip';
+import { SettlementBreakdownPopover } from '@/components/finance/SettlementBreakdownPopover';
 import { useRentalMetrics } from '@/hooks/useRentalMetrics';
 import { useDashboardScope } from '@/hooks/useDashboardScope';
 import type { DateRange } from './DashboardDateFilter';
@@ -22,7 +23,7 @@ export function AluguelReceberWidget({ dateRange: _dateRange, refreshKey }: Alug
   const { period, setPeriod, dateRange: localDateRange } = useWidgetPeriod('this_month');
   const { data, isLoading } = useRentalMetrics({ from: localDateRange.from, to: localDateRange.to, refreshKey });
 
-  const received = data?.received ?? { amount: 0, count: 0 };
+  const received = data?.received ?? { amount: 0, count: 0, breakdown: null };
   const receivable = data?.receivable ?? { amount: 0, count: 0 };
   const overdue = data?.overdue ?? { amount: 0, count: 0 };
   const total = received.amount + receivable.amount + overdue.amount;
@@ -71,6 +72,13 @@ export function AluguelReceberWidget({ dateRange: _dateRange, refreshKey }: Alug
                 <div className="text-right">
                   <p className="text-sm font-semibold text-emerald-600">{fmtCurrency(received.amount)}</p>
                   <p className="text-[10px] text-muted-foreground">{received.count} cobrança{received.count !== 1 ? 's' : ''}</p>
+                  {received.breakdown && Math.abs(received.breakdown.rent - received.amount) > 0.005 && (
+                    <SettlementBreakdownPopover breakdown={received.breakdown} paid>
+                      <button type="button" className="text-[10px] text-muted-foreground underline-offset-2 hover:underline">
+                        bruto {fmtCurrency(received.breakdown.rent)} · ver detalhe
+                      </button>
+                    </SettlementBreakdownPopover>
+                  )}
                 </div>
               </div>
 

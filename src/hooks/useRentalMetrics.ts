@@ -3,11 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardScope, type RentalScope } from '@/hooks/useDashboardScope';
 import { differenceInDays, startOfDay } from 'date-fns';
-import { fetchSettlementGroups, settlementNet } from "@/lib/settlement-group";
+import { fetchSettlementGroups, settlementBreakdown, type SettlementBreakdown } from "@/lib/settlement-group";
 import { parseDateOnly, toDateOnly, todayDateOnly } from "@/lib/date-only";
 
 export interface RentalMetricsOutput {
-  received: { amount: number; count: number };
+  received: { amount: number; count: number; breakdown: SettlementBreakdown };
   receivable: { amount: number; count: number };
   overdue: {
     amount: number;
@@ -58,7 +58,7 @@ export function useRentalMetrics(params: {
       // 2. Fetch rental income transactions in period
       const { data: txns = [] } = await supabase
         .from('financial_transactions')
-        .select('id, description, amount, due_date, status, property_id, unit_id, contact_id, asset_expense_category, settlement_group_id')
+        .select('id, description, amount, due_date, status, property_id, unit_id, contact_id, asset_expense_category, settlement_group_id, obligation_type')
         .in('broker_id', brokerIds)
         .eq('type', 'income')
         .gte('due_date', fmt(from))
@@ -70,21 +70,29 @@ export function useRentalMetrics(params: {
         (!t.asset_expense_category && t.description?.toLowerCase().includes('aluguel'))
       );
 
-      // Baixa conjunta: aluguel em aberto com grupo vale o LÍQUIDO (aluguel − abatimentos − IRRF)
-      const openGroupIds = rentalRaw
-        .filter((t: any) => t.settlement_group_id && t.status !== 'paid')
+      // Baixa conjunta: o grupo é UM recebimento, representado pela âncora
+      // (receita de aluguel). As demais linhas só entram no líquido da âncora.
+      const isAnchor = (t: any) =>
+        !t.obligation_type || t.obligation_type === 'rent' || t.obligation_type === 'rent_balance';
+      const anchorsOnly = rentalRaw.filter((t: any) => !t.settlement_group_id || isAnchor(t));
+      const groupIds = anchorsOnly
+        .filter((t: any) => t.settlement_group_id)
         .map((t: any) => t.settlement_group_id as string);
-      const groups = openGroupIds.length ? await fetchSettlementGroups(openGroupIds) : {};
-      const rentalTxns = rentalRaw.map((t: any) => {
-        const lines = t.settlement_group_id && t.status !== 'paid' ? groups[t.settlement_group_id] : null;
-        if (!lines || lines.length < 2) return t;
-        const net = settlementNet(lines);
-        return net > 0 ? { ...t, amount: net } : t;
+      const groups = groupIds.length ? await fetchSettlementGroups(groupIds) : {};
+      const breakdownOf = (t: any): SettlementBreakdown => {
+        const lines = t.settlement_group_id ? groups[t.settlement_group_id] : null;
+        if (lines && lines.length >= 2) return settlementBreakdown(lines);
+        const v = Number(t.amount) || 0;
+        return { rent: v, additions: 0, deductions: 0, irrf: 0, discounts: 0, otherExpenses: 0, net: v };
+      };
+      const rentalTxns = anchorsOnly.map((t: any) => {
+        const b = breakdownOf(t);
+        return { ...t, amount: b.net > 0 ? b.net : t.amount, _breakdown: b };
       });
 
       // 3. Aggregate
       const today = new Date();
-      const received = { amount: 0, count: 0 };
+      const received = { amount: 0, count: 0, breakdown: emptyBreakdown() };
       const receivable = { amount: 0, count: 0 };
       const overdueItems: typeof rentalTxns = [];
 
@@ -93,6 +101,9 @@ export function useRentalMetrics(params: {
         if (t.status === 'paid') {
           received.amount += amt;
           received.count++;
+          const b = t._breakdown as SettlementBreakdown;
+          const rb = received.breakdown as any;
+          for (const k of Object.keys(rb)) rb[k] += Number((b as any)[k]) || 0;
         } else if (t.status === 'overdue' || (t.status === 'pending' && t.due_date && t.due_date < todayDateOnly())) {
           overdueItems.push(t);
         } else if (t.status === 'pending') {
@@ -221,9 +232,13 @@ export function useRentalMetrics(params: {
   });
 }
 
+function emptyBreakdown(): SettlementBreakdown {
+  return { rent: 0, additions: 0, deductions: 0, irrf: 0, discounts: 0, otherExpenses: 0, net: 0 };
+}
+
 function emptyMetrics(): RentalMetricsOutput {
   return {
-    received: { amount: 0, count: 0 },
+    received: { amount: 0, count: 0, breakdown: emptyBreakdown() },
     receivable: { amount: 0, count: 0 },
     overdue: {
       amount: 0, count: 0,
