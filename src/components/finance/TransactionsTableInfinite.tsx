@@ -137,6 +137,7 @@ export function TransactionsTableInfinite({
         contact_id: transaction.contact_id,
         unit_id: transaction.unit_id,
         status: transaction.status,
+        settlement_group_id: transaction.settlement_group_id ?? null,
       },
       () => {
         onTransactionUpdated();

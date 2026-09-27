@@ -91,6 +91,8 @@ import {
   isLeasePendingSetup,
 } from "@/lib/lease-status";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import { freeGraceCompetencies } from "@/lib/lease-obligations-inheritance";
+import { todayInSaoPauloDateOnly } from "@/lib/date-only";
 
 export default function ContratoDetalhe() {
   const [searchParams] = useSearchParams();
@@ -307,6 +309,29 @@ export default function ContratoDetalhe() {
   const signatureConfig = getSignatureStatus(lease.signature_status);
   const adjustmentConfig = getAdjustmentStatusConfig(lease.next_adjustment_date);
   const tenant = lease.tenant_contact;
+
+  // Cobrança pelo LÍQUIDO do mês típico (carência/abatimentos/IRRF)
+  const boletoDefaults = (() => {
+    const typical = computeLeaseMonthFromConfig(lease as any);
+    const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const breakdown =
+      typical.deductions > 0 || typical.irrf > 0
+        ? `Aluguel ${fmt(typical.gross)} − abatimentos ${fmt(typical.deductions)} − IRRF ${fmt(typical.irrf)} = líquido ${fmt(typical.net)}`
+        : null;
+    const graceMonths = freeGraceCompetencies((lease as any).rent_grace, lease.start_date);
+    let firstDue: string | null = null;
+    const lastGrace = graceMonths[graceMonths.length - 1];
+    if (lastGrace) {
+      const [y, m] = lastGrace.split("-").map(Number);
+      const ny = m === 12 ? y + 1 : y;
+      const nm = m === 12 ? 1 : m + 1;
+      const lastDay = new Date(ny, nm, 0).getDate();
+      const day = Math.min(lease.due_day || 10, lastDay);
+      const candidate = `${ny}-${String(nm).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      if (candidate >= todayInSaoPauloDateOnly()) firstDue = candidate;
+    }
+    return { amount: typical.net > 0 ? typical.net : Number(lease.rent_amount) || 0, breakdown, firstDue };
+  })();
   const unit = lease.unit;
   const isSigned = lease.signature_status === "signed";
 
@@ -593,7 +618,9 @@ export default function ContratoDetalhe() {
           <LeaseBoletos
             leaseId={lease.id}
             brokerId={effectiveBrokerId || user!.id}
-            rentAmount={Number(lease.rent_amount) || 0}
+            rentAmount={boletoDefaults.amount}
+            amountBreakdown={boletoDefaults.breakdown}
+            suggestedFirstDue={boletoDefaults.firstDue}
             dueDay={lease.due_day ?? null}
             billingAutomation={(lease.billing_automation as Record<string, any>) || null}
             canEdit={canEdit}

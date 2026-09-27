@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchSettlementNet, describeSettlementNet } from "../_shared/settlement.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -28,7 +29,7 @@ Deno.serve(async (req) => {
     if (authErr || !user) return resp({ error: "Token inválido" });
 
     const body = await req.json();
-    const { lease_id, billing_type, due_date, description, amount_override, broker_id: brokerIdOverride } = body;
+    const { lease_id, billing_type, due_date, description, amount_override, broker_id: brokerIdOverride, transaction_id } = body;
 
     if (!lease_id || !billing_type || !due_date) {
       return resp({ error: "lease_id, billing_type e due_date são obrigatórios." });
@@ -230,11 +231,34 @@ Deno.serve(async (req) => {
 
     if (!asaasCustomerId) return resp({ error: "Não foi possível identificar o cliente no Asaas." });
 
-    const value = overrideValue ?? Number(lease.rent_amount);
+    // Baixa conjunta: se a cobrança corresponde a um aluguel com grupo, cobra o líquido
+    let settlement: Awaited<ReturnType<typeof fetchSettlementNet>> = null;
+    {
+      let txQuery = supabase
+        .from("financial_transactions")
+        .select("id, settlement_group_id")
+        .eq("broker_id", effectiveBrokerId)
+        .eq("type", "income")
+        .not("settlement_group_id", "is", null)
+        .or(`lease_id.eq.${lease_id},reference.eq.lease:${lease_id}`)
+        .limit(1);
+      txQuery = typeof transaction_id === "string" && /^[0-9a-f-]{36}$/i.test(transaction_id)
+        ? txQuery.eq("id", transaction_id)
+        : txQuery.eq("competency_period", String(due_date).slice(0, 7)).eq("status", "pending");
+      const { data: groupTx, error: groupTxErr } = await txQuery.maybeSingle();
+      if (groupTxErr) console.warn("[create-asaas-charge] busca do grupo:", groupTxErr.message);
+      if (groupTx?.settlement_group_id) {
+        settlement = await fetchSettlementNet(supabase, groupTx.settlement_group_id, effectiveBrokerId);
+        if (settlement && !(settlement.net > 0)) settlement = null;
+      }
+    }
+
+    const value = overrideValue ?? settlement?.net ?? Number(lease.rent_amount);
     const unitName = unitLabel;
     const dueDateObj = new Date(due_date + "T12:00:00");
     const monthYear = dueDateObj.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-    const chargeDesc = description || `Aluguel${unitName ? " — " + unitName : ""} (${monthYear})`;
+    const baseDesc = description || `Aluguel${unitName ? " — " + unitName : ""} (${monthYear})`;
+    const chargeDesc = settlement && overrideValue === null ? `${baseDesc} — ${describeSettlementNet(settlement)}` : baseDesc;
 
     const paymentRes = await fetch(`${ASAAS}/payments`, {
       method: "POST",

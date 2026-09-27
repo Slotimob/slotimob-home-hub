@@ -68,6 +68,10 @@ interface AsaasSubscriptionSnapshot {
 interface Props {
   leaseId: string;
   rentAmount: number;
+  /** Composição do valor líquido (baixa conjunta), exibida abaixo do campo. */
+  amountBreakdown?: string | null;
+  /** 1º vencimento sugerido (após o fim da carência). */
+  suggestedFirstDue?: string | null;
   dueDay: number | null;
   billingAutomation: Record<string, any> | null;
   onChanged?: () => void;
@@ -86,6 +90,8 @@ function billingLabel(t?: string) {
 export function AsaasSubscriptionCard({
   leaseId,
   rentAmount,
+  amountBreakdown,
+  suggestedFirstDue,
   dueDay,
   billingAutomation,
   onChanged,
@@ -105,6 +111,7 @@ export function AsaasSubscriptionCard({
   // Activation form
   const [billingType, setBillingType] = useState<BillingType>("UNDEFINED");
   const [value, setValue] = useState<string>(String(rentAmount ?? ""));
+  const [firstDue, setFirstDue] = useState<string>(suggestedFirstDue ?? "");
   const [fine, setFine] = useState<string>("10");
   const [interest, setInterest] = useState<string>("1");
   const [activating, setActivating] = useState(false);
@@ -168,6 +175,7 @@ export function AsaasSubscriptionCard({
         action: "create",
         billing_type: billingType,
         value: numValue,
+        ...(firstDue ? { next_due_date: firstDue } : {}),
         fine: parseFloat(fine.replace(",", ".")) || 0,
         interest: parseFloat(interest.replace(",", ".")) || 0,
       });
@@ -312,7 +320,24 @@ export function AsaasSubscriptionCard({
                 onChange={setValue}
                 className="h-9 text-sm"
               />
+              <p className="text-[10px] text-muted-foreground">
+                {amountBreakdown ?? "Valor do aluguel do contrato."}
+              </p>
             </div>
+            {suggestedFirstDue && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">1º vencimento</Label>
+                <Input
+                  type="date"
+                  value={firstDue}
+                  onChange={(e) => setFirstDue(e.target.value)}
+                  className="h-9 text-sm"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Sugerido: primeiro vencimento após o fim da carência.
+                </p>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label className="text-xs">Dia de vencimento</Label>
               <Input

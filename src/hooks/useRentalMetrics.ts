@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardScope, type RentalScope } from '@/hooks/useDashboardScope';
 import { differenceInDays, startOfDay } from 'date-fns';
+import { fetchSettlementGroups, settlementNet } from "@/lib/settlement-group";
 import { parseDateOnly, toDateOnly, todayDateOnly } from "@/lib/date-only";
 
 export interface RentalMetricsOutput {
@@ -57,17 +58,29 @@ export function useRentalMetrics(params: {
       // 2. Fetch rental income transactions in period
       const { data: txns = [] } = await supabase
         .from('financial_transactions')
-        .select('id, description, amount, due_date, status, property_id, unit_id, contact_id, asset_expense_category')
+        .select('id, description, amount, due_date, status, property_id, unit_id, contact_id, asset_expense_category, settlement_group_id')
         .in('broker_id', brokerIds)
         .eq('type', 'income')
         .gte('due_date', fmt(from))
         .lte('due_date', fmt(to));
 
       // Filter to rental-related
-      const rentalTxns = txns.filter(t =>
+      const rentalRaw = txns.filter((t: any) =>
         t.asset_expense_category === 'rental_income' ||
         (!t.asset_expense_category && t.description?.toLowerCase().includes('aluguel'))
       );
+
+      // Baixa conjunta: aluguel em aberto com grupo vale o LÍQUIDO (aluguel − abatimentos − IRRF)
+      const openGroupIds = rentalRaw
+        .filter((t: any) => t.settlement_group_id && t.status !== 'paid')
+        .map((t: any) => t.settlement_group_id as string);
+      const groups = openGroupIds.length ? await fetchSettlementGroups(openGroupIds) : {};
+      const rentalTxns = rentalRaw.map((t: any) => {
+        const lines = t.settlement_group_id && t.status !== 'paid' ? groups[t.settlement_group_id] : null;
+        if (!lines || lines.length < 2) return t;
+        const net = settlementNet(lines);
+        return net > 0 ? { ...t, amount: net } : t;
+      });
 
       // 3. Aggregate
       const today = new Date();
