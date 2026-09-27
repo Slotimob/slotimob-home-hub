@@ -6,7 +6,7 @@ import { SlotiSymbol } from './SlotiSymbol';
 const NAV: { label: string; href: string; route: boolean }[] = [
   { label: 'Início',          href: '/',              route: true },
   { label: 'Como Funciona',   href: '#como-funciona', route: false },
-  { label: 'Funcionalidades', href: '/presentation',  route: true },
+  { label: 'Funcionalidades', href: '/apresentacao',  route: true },
   { label: 'Comparativo',     href: '#comparativo',   route: false },
   { label: 'Planos',          href: '/planos',        route: true },
   { label: 'Blog',            href: '/blog',          route: true },
@@ -15,7 +15,7 @@ const NAV: { label: string; href: string; route: boolean }[] = [
 function isNavActive(href: string, pathname: string): boolean {
   if (!href.startsWith('/')) return false;
   if (href === '/') return pathname === '/';
-  if (href === '/presentation') {
+  if (href === '/apresentacao') {
     return pathname === '/apresentacao' || pathname === '/presentation';
   }
   return pathname === href || pathname.startsWith(href + '/');
