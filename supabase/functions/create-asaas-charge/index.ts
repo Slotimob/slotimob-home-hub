@@ -110,13 +110,22 @@ Deno.serve(async (req) => {
           id, name, email, phone, document_number, document_type,
           address, neighborhood, city, state, postal_code
         ),
-        unit:units!leases_unit_id_fkey (id, name)
+        unit:units!leases_unit_id_fkey (id, unit_number, address, property:properties(name))
       `)
       .eq("id", lease_id)
       .eq("broker_id", effectiveBrokerId)
       .maybeSingle();
 
-    if (leaseErr || !lease) return resp({ error: "Contrato não encontrado." });
+    if (leaseErr) {
+      console.error("[create-asaas-charge] Lease query error:", leaseErr);
+      return resp({ error: "Erro ao carregar o contrato. Tente novamente em instantes." });
+    }
+    if (!lease) return resp({ error: "Contrato não encontrado." });
+
+    const leaseUnit = (lease as any).unit;
+    const unitLabel = [leaseUnit?.property?.name, leaseUnit?.unit_number ? `Unidade ${leaseUnit.unit_number}` : null]
+      .filter(Boolean)
+      .join(" - ");
 
     const tenant = (lease as any).tenant_contact;
     if (!tenant) return resp({ error: "Inquilino não cadastrado neste contrato." });
@@ -153,7 +162,7 @@ Deno.serve(async (req) => {
         pix_copy_paste: existingCharge.pix_copy_paste,
         invoice_url: existingCharge.invoice_url,
         tenant_name: tenant.name,
-        unit_name: (lease as any).unit?.name || "",
+        unit_name: unitLabel,
       });
     }
 
@@ -222,7 +231,7 @@ Deno.serve(async (req) => {
     if (!asaasCustomerId) return resp({ error: "Não foi possível identificar o cliente no Asaas." });
 
     const value = overrideValue ?? Number(lease.rent_amount);
-    const unitName = (lease as any).unit?.name || "";
+    const unitName = unitLabel;
     const dueDateObj = new Date(due_date + "T12:00:00");
     const monthYear = dueDateObj.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
     const chargeDesc = description || `Aluguel${unitName ? " — " + unitName : ""} (${monthYear})`;
