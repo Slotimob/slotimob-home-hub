@@ -37,6 +37,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LeaseFinancialConditionsCard, computeLeaseMonthFromConfig } from "@/components/assets/LeaseFinancialConditionsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -550,6 +551,8 @@ export default function ContratoDetalhe() {
               </div>
             </CardContent>
           </Card>
+
+          <LeaseFinancialConditionsCard lease={lease as any} canEdit={canEdit} />
         </TabsContent>
 
         {/* Fiscal */}
@@ -610,17 +613,34 @@ export default function ContratoDetalhe() {
               {(() => {
                 const rent = Number(lease.rent_amount) || 0;
                 const feePct = Number(lease.admin_fee_percentage) || 0;
+                const typical = computeLeaseMonthFromConfig(lease as any);
                 const fee = rent * feePct / 100;
                 const lateFee = billingStatus.overdue ? rent * 0.1 : 0; // 10% multa padrão
-                const net = rent - fee;
+                const net = rent - typical.deductions - typical.irrf - fee;
                 return (
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Aluguel Recebido</span>
+                      <span className="text-muted-foreground">Aluguel bruto</span>
                       <span className="font-medium">
                         {rent.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </span>
                     </div>
+                    {typical.deductions > 0 && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">Abatimentos do mês</span>
+                        <span className="font-medium text-destructive">
+                          -{typical.deductions.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </span>
+                      </div>
+                    )}
+                    {typical.irrf > 0 && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">IRRF retido</span>
+                        <span className="font-medium text-destructive">
+                          -{typical.irrf.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Taxa Administração ({feePct}%)</span>
                       <span className="font-medium text-destructive">
