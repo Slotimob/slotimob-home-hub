@@ -53,6 +53,11 @@ const STATUS_CONFIG: Record<ObligationStatus, {
     textClassName: "text-red-600",
     label: "Atrasado",
   },
+  grace: {
+    bgClassName: "bg-sky-500/20",
+    textClassName: "text-sky-600",
+    label: "Carência",
+  },
   ignored: {
     bgClassName: "bg-muted",
     textClassName: "text-muted-foreground",

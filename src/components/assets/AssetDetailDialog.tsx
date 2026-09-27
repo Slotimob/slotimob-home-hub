@@ -56,7 +56,7 @@ import {
   Download,
   FileSpreadsheet,
   Calendar as CalendarIcon,
-} from "lucide-react";
+  CalendarClock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -140,6 +140,12 @@ const STATUS_CONFIG: Record<ObligationStatus, {
     icon: AlertCircle,
     className: "text-red-600",
     bgClassName: "bg-red-500/15 text-red-600 border-red-500/30",
+  },
+  grace: {
+    label: "Carência",
+    icon: CalendarClock,
+    className: "text-sky-600",
+    bgClassName: "bg-sky-500/15 text-sky-600 border-sky-500/30",
   },
   ignored: {
     label: "Desativado",

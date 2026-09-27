@@ -11,7 +11,9 @@ import type {
   IptuChargeConfig,
   ObligationChargeConfig,
   LeaseChargeResponsible,
+  RentGraceConfig,
 } from "@/hooks/useLeases";
+import { resolveGraceSchedule } from "@/lib/lease-special-conditions";
 
 export interface LeaseObligationsSource {
   leaseId: string;
@@ -22,6 +24,36 @@ export interface LeaseObligationsSource {
   fireInsurance?: FireInsuranceConfig | null;
   iptuCharge?: IptuChargeConfig | null;
   additionalObligations?: ObligationChargeConfig[] | null;
+  /** Início do contrato ("yyyy-MM-dd"), base da carência. */
+  startDate?: string | null;
+  /** Carência do aluguel: só os meses ISENTOS viram `grace_competencies`. */
+  rentGrace?: RentGraceConfig | null;
+}
+
+/** Competências "yyyy-MM" isentas (carência modo `free`), em ordem. */
+export function freeGraceCompetencies(
+  grace: RentGraceConfig | null | undefined,
+  startDate: string | null | undefined
+): string[] {
+  if (!grace?.enabled || !startDate) return [];
+  return Array.from(resolveGraceSchedule(grace, startDate).entries())
+    .filter(([, g]) => g.mode === "free")
+    .map(([c]) => c)
+    .sort();
+}
+
+/**
+ * True quando o aluguel da competência está em carência isenta.
+ * Prefere o contrato ativo (vale para imóveis configurados antes da herança);
+ * sem contrato, usa `grace_competencies` gravado na obrigação `rent`.
+ */
+export function isRentGraceCompetency(
+  competency: string,
+  rentConfig: ObligationConfig | null | undefined,
+  lease?: { rent_grace?: RentGraceConfig | null; start_date?: string | null } | null
+): boolean {
+  if (lease) return freeGraceCompetencies(lease.rent_grace, lease.start_date).includes(competency);
+  return (rentConfig?.grace_competencies || []).includes(competency);
 }
 
 const dayFromDate = (value?: string | null, fallback = 10): number => {
@@ -81,6 +113,10 @@ export function buildObligationsConfigFromLease(
     source.dueDay || 10,
     null
   );
+  const graceComps = freeGraceCompetencies(source.rentGrace, source.startDate);
+  out.rent.grace_competencies = graceComps;
+  out.rent.grace_until = graceComps.length ? graceComps[graceComps.length - 1] : null;
+  // Abatimentos e IRRF NÃO viram obrigações do imóvel.
 
   if (source.fireInsurance?.enabled) {
     put(
@@ -157,6 +193,10 @@ export interface LeaseChargesTarget {
  * Mapeamento reverso de `units.obligations_config` para os encargos do contrato
  * (`leases.fire_insurance`, `leases.iptu_charge`, `leases.additional_obligations`
  * e `leases.due_day`). Função irmã de `buildObligationsConfigFromLease`.
+ *
+ * O patch só contém `due_day`, `fire_insurance`, `iptu_charge` e
+ * `additional_obligations`: `rent_grace`, `rent_deductions` e
+ * `rent_withholding` nunca são tocados pelo caminho reverso.
  *
  * Nunca sobrescreve uma `first_due_date` já existente no contrato: só define
  * uma nova quando a obrigação está sendo ativada e o contrato não tem valor.

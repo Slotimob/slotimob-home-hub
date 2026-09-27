@@ -879,6 +879,8 @@ export default function NovoContrato() {
               additionalObligations: (formData.additional_obligations || []).filter(
                 (o) => o.enabled
               ),
+              startDate: formData.start_date || null,
+              rentGrace: formData.rent_grace?.enabled ? formData.rent_grace : null,
             });
             await markLeaseObligationsInherited(
               editLease.id,
@@ -916,6 +918,8 @@ export default function NovoContrato() {
               additionalObligations: (formData.additional_obligations || []).filter(
                 (o) => o.enabled
               ),
+              startDate: formData.start_date || null,
+              rentGrace: formData.rent_grace?.enabled ? formData.rent_grace : null,
             });
             await markLeaseObligationsInherited(resultId, {});
             queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", effectiveUnitId] });

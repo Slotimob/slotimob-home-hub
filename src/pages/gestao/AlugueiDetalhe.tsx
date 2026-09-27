@@ -24,7 +24,7 @@ import {
   type LucideIcon,
   Loader2,
   Save,
-} from "lucide-react";
+  CalendarClock } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -54,6 +54,10 @@ import {
 } from "@/hooks/useAssetHealth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { LeaseSpecialConditionsSummaryCard } from "@/components/assets/LeaseFinancialConditionsCard";
+import { useLeaseByUnitId } from "@/hooks/useLeases";
+import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
+import { formatCurrencyBRL } from "@/utils/unitPricing";
 import { obligationTypeMatches, resolveObligationLabel, customObligationTypeId } from "@/lib/obligation-labels";
 import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
 import { toast } from "@/hooks/use-toast";
@@ -115,6 +119,12 @@ const STATUS_CONFIG: Record<
     className: "text-red-600",
     bgClassName: "bg-red-500/15 text-red-600 border-red-500/30",
   },
+  grace: {
+    label: "Carência",
+    icon: CalendarClock,
+    className: "text-sky-600",
+    bgClassName: "bg-sky-500/15 text-sky-600 border-sky-500/30",
+  },
   ignored: {
     label: "Desativado",
     icon: MoreHorizontal,
@@ -150,6 +160,8 @@ interface MonthlyObligation {
     transaction_date: string;
     description: string;
   } | null;
+  /** Só aluguel: líquido quando há abatimentos/IRRF na competência. */
+  net?: { gross: number; deductions: number; irrf: number; net: number } | null;
 }
 
 const AlugueiDetalhe = () => {
@@ -241,6 +253,8 @@ const AlugueiDetalhe = () => {
     enabled: !!unitId,
   });
 
+  const { data: activeLease } = useLeaseByUnitId(unitId);
+
   const { data: monthTransactions = [] } = useQuery({
     queryKey: ["unit-month-transactions", unitId, competencyPeriod],
     queryFn: async () => {
@@ -250,7 +264,7 @@ const AlugueiDetalhe = () => {
       const { data, error } = await supabase
         .from("financial_transactions")
         .select(
-          `id, amount, status, transaction_date, description, obligation_type, competency_period, is_reconciled, category:financial_categories(name)`
+          `id, amount, status, transaction_date, description, obligation_type, competency_period, is_reconciled, lease_id, reference, category:financial_categories(name)`
         )
         .eq("unit_id", unitId)
         .or(
@@ -364,11 +378,39 @@ const AlugueiDetalhe = () => {
           }
         }
 
+        let net: MonthlyObligation["net"] = null;
+        if (type === "rent" && config.active) {
+          if (
+            status !== "paid" &&
+            isRentGraceCompetency(competencyPeriod, config, activeLease ?? null)
+          ) {
+            status = "grace";
+          }
+          const sameLease = (t: any) =>
+            t.competency_period === competencyPeriod &&
+            t.status !== "cancelled" &&
+            (!transaction ||
+              (t.lease_id && t.lease_id === (transaction as any).lease_id) ||
+              (t.reference && t.reference === (transaction as any).reference));
+          const sum = (list: any[]) => list.reduce((a, t) => a + (Number(t.amount) || 0), 0);
+          const deductions = sum(
+            monthTransactions.filter(
+              (t: any) => (t.obligation_type || "").startsWith("rent_deduction_") && sameLease(t)
+            )
+          );
+          const irrf = sum(monthTransactions.filter((t: any) => t.obligation_type === "irrf" && sameLease(t)));
+          if (deductions > 0 || irrf > 0) {
+            const gross = Number(transaction?.amount) || Number(activeLease?.rent_amount) || 0;
+            net = { gross, deductions, irrf, net: Math.round((gross - deductions - irrf) * 100) / 100 };
+          }
+        }
+
         return {
           type,
           label: labelFor(type),
           config: config.active ? config : null,
           status,
+          net,
           transaction: transaction
             ? {
                 id: transaction.id,
@@ -381,7 +423,7 @@ const AlugueiDetalhe = () => {
         };
       })
       .filter((o) => o.config !== null);
-  }, [unitConfig, monthTransactions, competencyPeriod, customObligationTypes]);
+  }, [unitConfig, monthTransactions, competencyPeriod, customObligationTypes, activeLease]);
 
   const handleCreateTransaction = (obligationType: ObligationType) => {
     if (!unitId) return;
@@ -714,6 +756,7 @@ const AlugueiDetalhe = () => {
 
           {/* Obligations */}
           <TabsContent value="obligations" className="mt-4 space-y-6">
+            {activeLease && <LeaseSpecialConditionsSummaryCard lease={activeLease as any} />}
             <Tabs
               value={obligationsView}
               onValueChange={(v) => setObligationsView(v as typeof obligationsView)}
@@ -811,6 +854,17 @@ const AlugueiDetalhe = () => {
                                     Vence dia {obligation.config.due_day}
                                   </p>
                                 )}
+                                {obligation.net && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 break-words">
+                                    Líquido esperado:{" "}
+                                    <span className="font-medium text-foreground">
+                                      {formatCurrencyBRL(obligation.net.net)}
+                                    </span>{" "}
+                                    (bruto {formatCurrencyBRL(obligation.net.gross)} − abatimentos{" "}
+                                    {formatCurrencyBRL(obligation.net.deductions)} − IRRF{" "}
+                                    {formatCurrencyBRL(obligation.net.irrf)})
+                                  </p>
+                                )}
                                 {obligation.transaction ? (
                                   <div className="mt-2 p-2 bg-muted/50 rounded-md">
                                     <div className="flex items-center justify-between">
@@ -835,7 +889,7 @@ const AlugueiDetalhe = () => {
                                     </p>
                                   </div>
                                 ) : (
-                                  obligation.status !== "ignored" && canCreate && (
+                                  obligation.status !== "ignored" && obligation.status !== "grace" && canCreate && (
                                     <div className="flex gap-2 mt-2">
                                       <Button
                                         variant="outline"

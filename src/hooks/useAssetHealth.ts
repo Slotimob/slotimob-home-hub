@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import type { Json } from "@/integrations/supabase/types";
+import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
 import { toDateOnly, todayDateOnly } from "@/lib/date-only";
 
 export type ObligationType = 
@@ -17,7 +18,8 @@ export type ObligationType =
   | "insurance" 
   | "other";
 
-export type ObligationStatus = "paid" | "pending" | "overdue" | "ignored";
+/** `grace`: aluguel em carência isenta — neutro, nunca atrasado. */
+export type ObligationStatus = "paid" | "pending" | "overdue" | "ignored" | "grace";
 
 export type ResponsibleRole = "owner" | "tenant" | "agency";
 
@@ -33,6 +35,10 @@ export interface ObligationConfig {
   control_type?: ControlType;
   /** Valor mensal herdado do contrato, quando aplicável */
   amount?: number | null;
+  /** Só `rent`: competências "yyyy-MM" isentas por carência (herdado do contrato). */
+  grace_competencies?: string[];
+  /** Só `rent`: última competência isenta. */
+  grace_until?: string | null;
 }
 
 /**
@@ -343,6 +349,20 @@ export function useAssetHealth(referenceDate?: Date) {
 
       if (managerialError) throw managerialError;
 
+      // Contratos ativos (unidade inteira): fonte preferida da carência
+      const { data: activeLeases, error: leasesError } = await supabase
+        .from("leases")
+        .select("unit_id, rent_grace, start_date, created_at")
+        .in("unit_id", unitIds)
+        .is("unit_subdivision_id", null)
+        .in("status", ["active", "pending"])
+        .order("created_at", { ascending: false });
+      if (leasesError) throw leasesError;
+      const leaseByUnit = new Map<string, any>();
+      (activeLeases || []).forEach((l) => {
+        if (!leaseByUnit.has(l.unit_id)) leaseByUnit.set(l.unit_id, l);
+      });
+
       // Process each unit
       const assetHealthList: AssetHealth[] = units.map((unit) => {
         const config = (unit.obligations_config as ObligationsConfig) || {};
@@ -370,7 +390,15 @@ export function useAssetHealth(referenceDate?: Date) {
             );
           }
 
-          const status = calculateObligationStatus(obligationConfig, matchingTx, targetDate);
+          let status = calculateObligationStatus(obligationConfig, matchingTx, targetDate);
+          if (
+            type === "rent" &&
+            obligationConfig.active &&
+            status !== "paid" &&
+            isRentGraceCompetency(competencyPeriod, obligationConfig, leaseByUnit.get(unit.id) ?? null)
+          ) {
+            status = "grace";
+          }
 
           obligations.push({
             type,
