@@ -21,7 +21,7 @@ interface LeaseWithReview extends Lease {
   tenant_review_note?: string | null;
   unit_subdivision_id?: string | null;
   subdivision?: { id: string; label: string; area: number | null } | null;
-  lease_units?: { unit_id: string; is_primary: boolean }[] | null;
+  lease_units?: { unit_id: string; unit_subdivision_id: string | null; is_primary: boolean; subdivision?: { label: string } | null }[] | null;
 }
 
 interface UnitContractTabProps {
@@ -118,7 +118,14 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
           label: lease.status,
           variant: 'outline' as const,
         };
-        const fracao = lease.subdivision?.label;
+        const fracao =
+          lease.unit_id === unitId
+            ? lease.subdivision?.label
+            : (lease.lease_units || [])
+                .filter((l) => l.unit_id === unitId && l.unit_subdivision_id)
+                .map((l) => l.subdivision?.label)
+                .filter(Boolean)
+                .join(', ') || undefined;
 
         const details = (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -146,7 +153,10 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
         );
 
         // Contrato com vários imóveis
-        const unitCount = new Set((lease.lease_units || []).map((l) => l.unit_id)).size;
+        const unitCount = new Set(
+          (lease.lease_units || []).map((l) => `${l.unit_id}:${l.unit_subdivision_id ?? ''}`)
+        ).size;
+        const hasFractionLink = (lease.lease_units || []).some((l) => !!l.unit_subdivision_id);
         const isAdditional = unitCount > 1 && lease.unit_id !== unitId;
         const primaryUnit = (lease as any).unit;
         const primaryLabel = primaryUnit
@@ -166,7 +176,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
               )}
               {unitCount > 1 && (
                 <Badge variant="secondary" className="w-fit">
-                  Contrato com {unitCount} imóveis
+                  Contrato com {unitCount} {hasFractionLink ? 'imóveis/frações' : 'imóveis'}
                 </Badge>
               )}
             </div>

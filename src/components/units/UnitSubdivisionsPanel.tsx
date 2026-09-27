@@ -206,6 +206,21 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
           map[lease.unit_subdivision_id] = { id: lease.id, status: lease.status };
         }
       });
+      // Frações que entram como adicionais em contratos de outro imóvel
+      const { data: links, error: linksError } = await supabase
+        .from('lease_units')
+        .select('lease_id, unit_subdivision_id, lease:leases!inner(id, status, created_at)')
+        .in('unit_subdivision_id', subdivisionIds)
+        .in('lease.status', ['active', 'pending']);
+      if (linksError) throw linksError;
+      const sorted = [...((links as any[]) || [])].sort((a, b) =>
+        String(b.lease?.created_at || '').localeCompare(String(a.lease?.created_at || ''))
+      );
+      sorted.forEach((l) => {
+        if (l.unit_subdivision_id && l.lease && !map[l.unit_subdivision_id]) {
+          map[l.unit_subdivision_id] = { id: l.lease.id, status: l.lease.status };
+        }
+      });
       return map;
     },
   });
