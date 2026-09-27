@@ -39,8 +39,29 @@ import {
   getInitialIptuCharge,
   getInitialAdditionalObligations,
   normalizeAdditionalObligations,
+  getInitialRentGrace,
+  getInitialRentWithholding,
+  normalizeRentDeductions,
   type LeaseFinancialValue,
 } from "@/components/assets/LeaseFinancialStep";
+import {
+  isValidRentDeduction,
+  validateSpecialConditions,
+} from "@/lib/lease-special-conditions";
+import type {
+  RentDeductionConfig,
+  RentGraceConfig,
+  RentWithholdingConfig,
+} from "@/hooks/useLeases";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog as ReviewDialog,
+  DialogContent as ReviewDialogContent,
+  DialogDescription as ReviewDialogDescription,
+  DialogFooter as ReviewDialogFooter,
+  DialogHeader as ReviewDialogHeader,
+  DialogTitle as ReviewDialogTitle,
+} from "@/components/ui/dialog";
 import {
   inheritObligationsConfigFromLease,
   markLeaseObligationsInherited,
@@ -93,6 +114,17 @@ const CIVIL_STATUS_OPTIONS = [
 
 const DRAFT_KEY = "novo-contrato-draft";
 
+/** Valores das condições especiais como são gravados no contrato. */
+const specialConditionsForSave = (fd: {
+  rent_grace: RentGraceConfig;
+  rent_deductions: RentDeductionConfig[];
+  rent_withholding: RentWithholdingConfig;
+}) => ({
+  rent_grace: fd.rent_grace?.enabled ? fd.rent_grace : null,
+  rent_deductions: (fd.rent_deductions || []).filter((d) => d.enabled && isValidRentDeduction(d)),
+  rent_withholding: fd.rent_withholding?.enabled ? fd.rent_withholding : null,
+});
+
 const getInitialFormData = () => ({
   tenant_contact_id: "",
   unit_subdivision_id: null as string | null,
@@ -113,6 +145,9 @@ const getInitialFormData = () => ({
   fire_insurance: getInitialFireInsurance(),
   iptu_charge: getInitialIptuCharge(),
   additional_obligations: getInitialAdditionalObligations(),
+  rent_grace: getInitialRentGrace(format(new Date(), "yyyy-MM-dd")) as RentGraceConfig,
+  rent_deductions: [] as RentDeductionConfig[],
+  rent_withholding: getInitialRentWithholding() as RentWithholdingConfig,
 });
 
 const getInitialGuarantor = (): GuarantorData => ({
@@ -162,6 +197,9 @@ export default function NovoContrato() {
   const queryClient = useQueryClient();
   const [selectedUnitInfo, setSelectedUnitInfo] = useState<any>(null);
   const [formData, setFormData] = useState(getInitialFormData);
+  /** Condições especiais como vieram do banco (edição), para detectar mudança. */
+  const initialSpecialRef = useRef<string | null>(null);
+  const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
   const [selectedGuarantorContactId, setSelectedGuarantorContactId] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>(getInitialPayment);
@@ -318,7 +356,16 @@ export default function NovoContrato() {
       if (raw) {
         const draft = JSON.parse(raw);
         if (draft.unitId === unitIdParam) {
-          if (draft.formData) setFormData((prev) => ({ ...prev, ...draft.formData }));
+          if (draft.formData)
+            setFormData((prev) => {
+              const merged = { ...prev, ...draft.formData };
+              return {
+                ...merged,
+                rent_grace: merged.rent_grace ?? getInitialRentGrace(merged.start_date),
+                rent_deductions: normalizeRentDeductions(merged.rent_deductions),
+                rent_withholding: merged.rent_withholding ?? getInitialRentWithholding(),
+              };
+            });
           if (draft.guarantorData) setGuarantorData(draft.guarantorData);
           if (draft.paymentInfo) setPaymentInfo(draft.paymentInfo);
           if (draft.billingContact) setBillingContact(draft.billingContact);
@@ -395,7 +442,18 @@ export default function NovoContrato() {
       additional_obligations: normalizeAdditionalObligations(
         (editLease as any).additional_obligations
       ),
+      rent_grace: ((editLease as any).rent_grace as RentGraceConfig) ?? getInitialRentGrace(editLease.start_date),
+      rent_deductions: normalizeRentDeductions((editLease as any).rent_deductions),
+      rent_withholding:
+        ((editLease as any).rent_withholding as RentWithholdingConfig) ?? getInitialRentWithholding(),
     });
+    initialSpecialRef.current = JSON.stringify(
+      specialConditionsForSave({
+        rent_grace: (editLease as any).rent_grace ?? getInitialRentGrace(editLease.start_date),
+        rent_deductions: normalizeRentDeductions((editLease as any).rent_deductions),
+        rent_withholding: (editLease as any).rent_withholding ?? getInitialRentWithholding(),
+      })
+    );
     if (editLease.guarantor_data) setGuarantorData(editLease.guarantor_data);
     if (editLease.payment_info) setPaymentInfo(editLease.payment_info);
     if (editLease.billing_automation?.billing_contact) {
@@ -583,6 +641,13 @@ export default function NovoContrato() {
 
   const currentIndex = STEPS.findIndex((s) => s.id === step);
 
+  const specialConditionErrors = validateSpecialConditions({
+    rentAmount: Number(formData.rent_amount) || 0,
+    grace: formData.rent_grace,
+    deductions: formData.rent_deductions,
+    withholding: formData.rent_withholding,
+  });
+
   const canProceed = () => {
     switch (step) {
       case "unit":
@@ -598,7 +663,8 @@ export default function NovoContrato() {
           formData.rent_amount > 0 &&
           formData.due_day >= 1 &&
           formData.due_day <= 31 &&
-          endDateValid
+          endDateValid &&
+          specialConditionErrors.length === 0
         );
       }
       case "guarantee":
@@ -642,6 +708,15 @@ export default function NovoContrato() {
     }
     if (!formData.rent_amount || formData.rent_amount <= 0) {
       toast({ title: "Informe o valor do aluguel", variant: "destructive" });
+      setStep("financial");
+      return;
+    }
+    if (specialConditionErrors.length > 0) {
+      toast({
+        title: "Revise as condições especiais",
+        description: specialConditionErrors[0],
+        variant: "destructive",
+      });
       setStep("financial");
       return;
     }
@@ -732,6 +807,7 @@ export default function NovoContrato() {
         fire_insurance: formData.fire_insurance.enabled ? formData.fire_insurance : null,
         iptu_charge: formData.iptu_charge.enabled ? formData.iptu_charge : null,
         additional_obligations: (formData.additional_obligations || []).filter((o) => o.enabled),
+        ...specialConditionsForSave(formData),
         billing_automation: (() => {
           // Fonte única de verdade: `email_to` alimenta os avisos automáticos e
           // `billing_contact.contact_id` pré-seleciona o bloco manual de WhatsApp.
@@ -871,8 +947,14 @@ export default function NovoContrato() {
 
       sessionStorage.removeItem(DRAFT_KEY);
 
+      const specialChanged =
+        isEditMode &&
+        !shouldOfferProjection &&
+        initialSpecialRef.current !== null &&
+        initialSpecialRef.current !== JSON.stringify(specialConditionsForSave(formData));
+
       // Lançamentos financeiros só acontecem após confirmação explícita do usuário.
-      if (resultId && (!isEditMode || shouldOfferProjection)) {
+      if (resultId && (!isEditMode || shouldOfferProjection || specialChanged)) {
         setPostProjectionNavId(resultId);
         setProjectionLease({
           id: resultId,
@@ -889,6 +971,8 @@ export default function NovoContrato() {
           fire_insurance: formData.fire_insurance?.enabled ? formData.fire_insurance : null,
           iptu_charge: formData.iptu_charge?.enabled ? formData.iptu_charge : null,
           additional_obligations: (formData.additional_obligations || []).filter((o) => o.enabled),
+          admin_fee_percentage: Number(formData.admin_fee_percentage) || 0,
+          ...specialConditionsForSave(formData),
           unit: selectedUnitInfo
             ? { unit_number: selectedUnitInfo.unit_number, address: selectedUnitInfo.address }
             : null,
@@ -897,7 +981,12 @@ export default function NovoContrato() {
               (tenants || []).find((t: any) => t.id === formData.tenant_contact_id)?.name || null,
           },
         } as LeaseForProjection);
-        setProjectionOpen(true);
+        if (specialChanged) {
+          // Edição comum: avisa e só abre a revisão se o usuário pedir
+          setReviewPromptOpen(true);
+        } else {
+          setProjectionOpen(true);
+        }
         return;
       }
 
@@ -1184,6 +1273,18 @@ export default function NovoContrato() {
           )}
 
           {/* Financial */}
+          {step === "financial" && specialConditionErrors.length > 0 && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Revise as condições especiais</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc pl-4 space-y-0.5 text-xs mt-1">
+                  {specialConditionErrors.map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
           {step === "financial" && (
             <LeaseFinancialStep
               value={formData as unknown as LeaseFinancialValue}
@@ -1970,6 +2071,47 @@ export default function NovoContrato() {
         }}
         lease={projectionLease}
       />
+      <ReviewDialog
+        open={reviewPromptOpen}
+        onOpenChange={(o) => {
+          if (o) return;
+          setReviewPromptOpen(false);
+          const id = postProjectionNavId;
+          setProjectionLease(null);
+          navigate(id ? `/gestao/contratos?id=${id}` : "/gestao/contratos");
+        }}
+      >
+        <ReviewDialogContent>
+          <ReviewDialogHeader>
+            <ReviewDialogTitle>Condições especiais alteradas</ReviewDialogTitle>
+            <ReviewDialogDescription>
+              Os lançamentos já gerados deste contrato não mudam sozinhos. Revise os lançamentos para aplicar a
+              carência, os abatimentos e o IRRF novos.
+            </ReviewDialogDescription>
+          </ReviewDialogHeader>
+          <ReviewDialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReviewPromptOpen(false);
+                const id = postProjectionNavId;
+                setProjectionLease(null);
+                navigate(id ? `/gestao/contratos?id=${id}` : "/gestao/contratos");
+              }}
+            >
+              Agora não
+            </Button>
+            <Button
+              onClick={() => {
+                setReviewPromptOpen(false);
+                setProjectionOpen(true);
+              }}
+            >
+              Revisar lançamentos
+            </Button>
+          </ReviewDialogFooter>
+        </ReviewDialogContent>
+      </ReviewDialog>
     </AppLayout>
   );
 }
