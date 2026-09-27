@@ -44,6 +44,8 @@ interface Transaction {
   amount: number;
   type: string;
   status?: string | null;
+  /** Item representa uma baixa conjunta (valor = líquido do grupo). */
+  settlement_summary?: string | null;
 }
 
 interface GroupedItem<T> {
@@ -363,6 +365,15 @@ export function ReconciliationPendingListGrouped({
       <div className="flex-1 min-w-0 overflow-hidden">
         <p className="font-medium truncate text-xs leading-tight">{transaction.description}</p>
       </div>
+      {transaction.settlement_summary && (
+        <Badge
+          variant="outline"
+          title={transaction.settlement_summary}
+          className="text-[9px] h-3.5 px-1 flex-shrink-0 bg-primary/10 text-primary border-primary/30"
+        >
+          Baixa conjunta
+        </Badge>
+      )}
       {transaction.status && (
         <Badge
           variant={transaction.status === "paid" ? "secondary" : "outline"}
