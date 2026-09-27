@@ -5,7 +5,7 @@ import { buildWithholdingInstallments } from "@/lib/lease-special-conditions";
 
 export interface IrrfRecalcResult {
   updated: number;
-  /** Linhas cujo recálculo deu 0 (mantidas, não apagadas). */
+  /** Linhas cujo recálculo deu ≤ 0: valor mantido, marcadas `needs_review`. */
   zeroed: number;
 }
 
@@ -90,15 +90,24 @@ export async function recalculatePendingIrrf(
     });
     const value = calc?.amount ?? 0;
     const base = calc?.meta?.base ?? 0;
-    const metadata = { ...((row.metadata as Record<string, unknown>) || {}), kind: "irrf", base };
+    const current = (row.metadata as Record<string, unknown>) || {};
+    // CHECK amount > 0: com cálculo ≤ 0 o valor fica como está e a linha é
+    // marcada para revisão manual.
+    const isZero = !(value > 0);
+    const metadata = isZero
+      ? { ...current, needs_review: true, suggested_amount: 0 }
+      : { ...current, kind: "irrf", base, needs_review: false, suggested_amount: null };
+    const patch = isZero
+      ? { metadata: metadata as unknown as Json }
+      : { amount: value, metadata: metadata as unknown as Json };
     const { error } = await supabase
       .from("financial_transactions")
-      .update({ amount: value, metadata: metadata as unknown as Json })
+      .update(patch)
       .eq("id", row.id)
       .eq("status", "pending");
     if (error) throw error;
-    result.updated += 1;
-    if (!(value > 0)) result.zeroed += 1;
+    if (isZero) result.zeroed += 1;
+    else result.updated += 1;
   }
   return result;
 }
@@ -109,7 +118,7 @@ export function describeAdjustmentCascade(rent: number, irrf: IrrfRecalcResult |
   if (irrf && irrf.updated > 0) parts.push(`${irrf.updated} de IRRF`);
   let text = `${parts.join(" e ")} atualizada(s)`;
   if (irrf && irrf.zeroed > 0) {
-    text += ` • Atenção: ${irrf.zeroed} linha(s) de IRRF ficaram com valor R$ 0,00 (mantidas; revise)`;
+    text += ` • ${irrf.zeroed} linha(s) de IRRF precisam de revisão manual (o cálculo deu R$ 0,00)`;
   }
   return text;
 }

@@ -56,7 +56,9 @@ export function useDREReport(
             name,
             dre_type
           )
-        `);
+        `)
+        // Lançamentos cancelados nunca entram na DRE (ambos os regimes)
+        .neq("status", "cancelled");
 
       // Build date periods for each selected year × month combination
       type Period = { start: string; end: string };
