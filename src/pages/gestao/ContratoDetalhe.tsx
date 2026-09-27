@@ -671,7 +671,7 @@ export default function ContratoDetalhe() {
                 <div className="divide-y">
                   {recentTransactions.map((t: any) => {
                     const due = t.due_date ? new Date(t.due_date + "T00:00:00") : null;
-                    const paid = t.payment_date ? new Date(t.payment_date + "T00:00:00") : null;
+                    const paid = t.paid_date ? new Date(t.paid_date + "T00:00:00") : null;
                     const today = new Date();
                     const isPaid = t.status === "paid" || !!paid;
                     const isOverdue = !isPaid && due && due < today;
