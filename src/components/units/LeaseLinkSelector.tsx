@@ -130,7 +130,7 @@ export function LeaseLinkSelector({
           leaseId: lease.id,
           tenantContactId: lease.tenant_contact_id,
           startDate: lease.start_date,
-          unitIds: [unitId],
+          refs: [{ unit_id: unitId, unit_subdivision_id: null }],
         });
       }
     },
