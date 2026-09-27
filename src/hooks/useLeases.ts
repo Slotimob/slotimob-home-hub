@@ -355,7 +355,7 @@ export function useLeases() {
  * principal (leases.unit_id) ou adicional (lease_units.unit_id).
  * wholeUnitOnly: só vínculos da unidade inteira (sem fração), como antes.
  */
-async function leaseUnitFilter(unitId: string, opts: { wholeUnitOnly?: boolean } = {}): Promise<string> {
+export async function leaseUnitFilter(unitId: string, opts: { wholeUnitOnly?: boolean } = {}): Promise<string> {
   let q = supabase.from("lease_units").select("lease_id").eq("unit_id", unitId);
   if (opts.wholeUnitOnly) q = q.is("unit_subdivision_id", null);
   const { data, error } = await q;
