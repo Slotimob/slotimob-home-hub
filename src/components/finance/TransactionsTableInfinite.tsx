@@ -205,9 +205,6 @@ export function TransactionsTableInfinite({
       </Badge>
     );
   };
-    const config = variants[transaction.status] || variants.pending;
-    return <Badge className={`${config.className} text-[10px] px-1.5 py-0`}>{config.label}</Badge>;
-  };
 
   // Open reconciliation matcher dialog for pending transactions
   const handleOpenReconciliationMatcher = (transaction: any) => {
