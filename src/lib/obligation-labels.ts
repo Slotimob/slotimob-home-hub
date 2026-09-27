@@ -55,3 +55,21 @@ export function resolveObligationLabel(
 
   return FALLBACK_OBLIGATION_LABEL;
 }
+
+/**
+ * Casamento entre a chave da obrigação do imóvel (`units.obligations_config`)
+ * e `financial_transactions.obligation_type`. O imóvel usa `insurance` e o
+ * motor de lançamento do contrato grava `fire_insurance`: são a mesma obrigação.
+ */
+const OBLIGATION_TYPE_ALIASES: Record<string, string> = {
+  fire_insurance: "insurance",
+};
+
+export function obligationTypeMatches(
+  configKey: string,
+  txObligationType: string | null | undefined
+): boolean {
+  if (!txObligationType) return false;
+  const norm = (t: string) => OBLIGATION_TYPE_ALIASES[t] ?? t;
+  return norm(configKey) === norm(txObligationType);
+}

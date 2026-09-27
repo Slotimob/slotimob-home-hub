@@ -54,6 +54,8 @@ import {
 } from "@/hooks/useAssetHealth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { obligationTypeMatches, resolveObligationLabel, customObligationTypeId } from "@/lib/obligation-labels";
+import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
 import { toast } from "@/hooks/use-toast";
 
 import {
@@ -303,28 +305,40 @@ const AlugueiDetalhe = () => {
     ...availableManagerialTransactions,
   ];
 
+  const { data: customObligationTypes } = useCustomObligationTypes();
+
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
     if (!unitConfig) return [];
     const today = new Date();
     const isCurrentMonth = format(today, "yyyy-MM") === competencyPeriod;
     const currentDay = today.getDate();
 
-    return (Object.keys(OBLIGATION_LABELS) as ObligationType[])
+    const fixedTypes = Object.keys(OBLIGATION_LABELS) as ObligationType[];
+    const extraTypes = Object.keys(unitConfig).filter(
+      (k) => !fixedTypes.includes(k as ObligationType) && (k === "other" || !!customObligationTypeId(k))
+    ) as ObligationType[];
+    const customTypeNames = Object.fromEntries(
+      (customObligationTypes || []).map((c) => [c.id, c.name])
+    );
+    const labelFor = (type: ObligationType) =>
+      OBLIGATION_LABELS[type] ?? resolveObligationLabel(type, null, customTypeNames);
+
+    return [...fixedTypes, ...extraTypes]
       .map((type) => {
-        const config = unitConfig[type] || { active: false };
+        const config = (unitConfig as any)[type] || { active: false };
         const transaction =
           monthTransactions.find(
             (t) =>
-              t.obligation_type === type && t.competency_period === competencyPeriod
+              obligationTypeMatches(type, t.obligation_type) && t.competency_period === competencyPeriod
           ) ||
           monthTransactions.find(
-            (t) => t.obligation_type === type && !t.competency_period
+            (t) => obligationTypeMatches(type, t.obligation_type) && !t.competency_period
           ) ||
           monthTransactions.find((t) => {
             if (t.obligation_type) return false;
             const categoryName = (t.category?.name || "").toLowerCase();
             const description = (t.description || "").toLowerCase();
-            const keywords = [OBLIGATION_LABELS[type].toLowerCase()];
+            const keywords = [labelFor(type).toLowerCase()];
             return keywords.some(
               (k) => categoryName.includes(k) || description.includes(k)
             );
@@ -352,7 +366,7 @@ const AlugueiDetalhe = () => {
 
         return {
           type,
-          label: OBLIGATION_LABELS[type],
+          label: labelFor(type),
           config: config.active ? config : null,
           status,
           transaction: transaction
@@ -367,7 +381,7 @@ const AlugueiDetalhe = () => {
         };
       })
       .filter((o) => o.config !== null);
-  }, [unitConfig, monthTransactions, competencyPeriod]);
+  }, [unitConfig, monthTransactions, competencyPeriod, customObligationTypes]);
 
   const handleCreateTransaction = (obligationType: ObligationType) => {
     if (!unitId) return;
@@ -761,7 +775,7 @@ const AlugueiDetalhe = () => {
                     </div>
                   ) : (
                     monthlyObligations.map((obligation) => {
-                      const Icon = OBLIGATION_ICONS[obligation.type];
+                      const Icon = OBLIGATION_ICONS[obligation.type] ?? Receipt;
                       const statusConfig = STATUS_CONFIG[obligation.status];
                       const StatusIcon = statusConfig.icon;
                       return (
