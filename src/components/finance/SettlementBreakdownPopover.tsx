@@ -25,7 +25,7 @@ export function SettlementBreakdownPopover({ breakdown: b, paid, children }: Pro
   return (
     <Popover>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-72 text-sm space-y-1.5" aria-label="Composição do aluguel">
+      <PopoverContent className="w-72 text-sm space-y-1.5" aria-label="Composição do aluguel" onClick={(e) => e.stopPropagation()}>
         <Row label="Aluguel bruto" value={f(b.rent)} />
         {b.additions > 0 && <Row label="+ Multa/juros e acréscimos" value={f(b.additions)} />}
         {b.deductions > 0 && <Row label="− Abatimentos" value={f(b.deductions)} />}
