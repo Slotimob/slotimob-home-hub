@@ -593,7 +593,9 @@ export default function ContratoDetalhe() {
           <LeaseBoletos
             leaseId={lease.id}
             brokerId={effectiveBrokerId || user!.id}
-            rentAmount={Number(lease.rent_amount) || 0}
+            rentAmount={boletoDefaults.amount}
+            amountBreakdown={boletoDefaults.breakdown}
+            suggestedFirstDue={boletoDefaults.firstDue}
             dueDay={lease.due_day ?? null}
             billingAutomation={(lease.billing_automation as Record<string, any>) || null}
             canEdit={canEdit}
