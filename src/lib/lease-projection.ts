@@ -271,6 +271,8 @@ export interface PlannedInstallment {
     gross_amount?: number;
     deduction_id?: string;
     base?: number;
+    /** Valor ajustado à mão no editor: o recálculo automático não sobrescreve. */
+    manual_override?: boolean;
   };
   /** Mês isento de carência: aparece no preview, NÃO é gravado. */
   isGrace?: boolean;

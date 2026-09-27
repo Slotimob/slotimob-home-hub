@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, RotateCcw } from "lucide-react";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import type { PlannedInstallment } from "@/lib/lease-projection";
 
@@ -67,6 +67,12 @@ export interface ProjectionBlockProps {
   competencyLabel?: string;
   /** Esconde o campo de nº de parcelas quando o bloco é de parcela única. */
   hideMonths?: boolean;
+  /** Valores ajustados à mão, por key. */
+  amountOverrides?: Record<string, number>;
+  /** Quando presente, o valor das linhas selecionáveis fica editável (null = restaurar). */
+  onAmountOverride?: (key: string, amount: number | null) => void;
+  /** Atalho "Editar no mês" nas linhas já lançadas. */
+  onEditExisting?: (i: PlannedInstallment) => void;
 }
 
 const brDate = (iso: string) => {
@@ -96,10 +102,60 @@ export function ProjectionBlock({
   competencyLabel = "Competência inicial (emissão)",
   hideMonths = false,
   hideConfig = false,
+  amountOverrides,
+  onAmountOverride,
+  onEditExisting,
 }: ProjectionBlockProps) {
+  const amountOf = (i: PlannedInstallment) => amountOverrides?.[i.key] ?? i.amount;
+  const renderAmount = (i: PlannedInstallment) => {
+    if (i.isGrace) return "Isento";
+    if (!onAmountOverride || i.alreadyExists) return formatCurrency(i.amount);
+    const v = amountOf(i);
+    const overridden = amountOverrides?.[i.key] !== undefined && Math.abs(v - i.amount) > 0.001;
+    return (
+      <div className="flex flex-col items-end gap-0.5">
+        <div className="flex items-center gap-1">
+          {overridden && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              aria-label="Restaurar valor calculado"
+              onClick={() => onAmountOverride(i.key, null)}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <CurrencyInput
+            className="h-8 w-28 text-right text-base sm:text-sm"
+            aria-label={`Valor de ${i.description}`}
+            value={String(v)}
+            onChange={(val) => onAmountOverride(i.key, parseFloat(val) || 0)}
+          />
+        </div>
+        {overridden && (
+          <span className="text-[10px] text-muted-foreground">calculado {formatCurrency(i.amount)}</span>
+        )}
+        {!(v > 0) && <span className="text-[10px] text-destructive">zerado: não será lançado</span>}
+      </div>
+    );
+  };
+  const editExistingBtn = (i: PlannedInstallment) =>
+    i.alreadyExists && onEditExisting ? (
+      <Button
+        type="button"
+        variant="link"
+        size="sm"
+        className="h-auto p-0 ml-2 text-xs"
+        onClick={() => onEditExisting(i)}
+      >
+        Editar no mês
+      </Button>
+    ) : null;
   const selectableKeys = installments.filter((i) => !i.alreadyExists && !i.isGrace).map((i) => i.key);
   const selectedList = installments.filter((i) => selected.has(i.key) && !i.alreadyExists && !i.isGrace);
-  const total = selectedList.reduce((sum, i) => sum + i.amount, 0);
+  const total = selectedList.reduce((sum, i) => sum + amountOf(i), 0);
 
   return (
     <section className="rounded-lg border border-border bg-card p-3 sm:p-4 space-y-3">
@@ -233,9 +289,9 @@ export function ProjectionBlock({
                 {installments.map((i) => (
                   <tr
                     key={i.key}
-                    className={`border-t border-border ${i.alreadyExists || i.isGrace ? "opacity-50" : ""}`}
+                    className="border-t border-border"
                   >
-                    <td className="p-2">
+                    <td className={`p-2 ${i.alreadyExists || i.isGrace ? "opacity-50" : ""}`}>
                       <Checkbox
                         checked={!i.isGrace && selected.has(i.key)}
                         disabled={i.alreadyExists || i.isGrace}
@@ -244,12 +300,13 @@ export function ProjectionBlock({
                       />
                     </td>
                     <td className="p-2">
-                      {i.competencyLabel}
+                      <span className={i.alreadyExists || i.isGrace ? "opacity-50" : ""}>{i.competencyLabel}</span>
                       {i.alreadyExists && (
                         <Badge variant="secondary" className="ml-2 text-[10px]">
                           Já lançado
                         </Badge>
                       )}
+                      {editExistingBtn(i)}
                       {i.isGrace && (
                         <Badge variant="outline" className="ml-2 text-[10px]">
                           Carência
@@ -259,10 +316,10 @@ export function ProjectionBlock({
                         <span className="ml-1 text-xs text-muted-foreground">(carência)</span>
                       )}
                     </td>
-                    <td className="p-2 tabular-nums">{brDate(i.issueDate)}</td>
-                    <td className="p-2 tabular-nums">{brDate(i.dueDate)}</td>
-                    <td className="p-2 text-right tabular-nums">
-                      {i.isGrace ? "Isento" : formatCurrency(i.amount)}
+                    <td className={`p-2 tabular-nums ${i.alreadyExists || i.isGrace ? "opacity-50" : ""}`}>{brDate(i.issueDate)}</td>
+                    <td className={`p-2 tabular-nums ${i.alreadyExists || i.isGrace ? "opacity-50" : ""}`}>{brDate(i.dueDate)}</td>
+                    <td className={`p-2 text-right tabular-nums ${i.alreadyExists || i.isGrace ? "opacity-50" : ""}`}>
+                      {renderAmount(i)}
                     </td>
                   </tr>
                 ))}
@@ -275,9 +332,7 @@ export function ProjectionBlock({
             {installments.map((i) => (
               <li
                 key={i.key}
-                className={`rounded-md border border-border p-2 flex items-start gap-2 ${
-                  i.alreadyExists || i.isGrace ? "opacity-50" : ""
-                }`}
+                className="rounded-md border border-border p-2 flex items-start gap-2"
               >
                 <Checkbox
                   checked={!i.isGrace && selected.has(i.key)}
@@ -287,7 +342,7 @@ export function ProjectionBlock({
                   className="mt-0.5"
                 />
                 <div className="min-w-0 flex-1 space-y-0.5">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className={`flex items-center justify-between gap-2 ${i.alreadyExists || i.isGrace ? "opacity-50" : ""}`}>
                     <span className="text-sm font-medium truncate">
                       {i.competencyLabel}
                       {!i.isGrace && i.meta?.kind === "grace" && (
@@ -295,16 +350,19 @@ export function ProjectionBlock({
                       )}
                     </span>
                     <span className="text-sm tabular-nums">
-                      {i.isGrace ? "Isento" : formatCurrency(i.amount)}
+                      {renderAmount(i)}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground tabular-nums">
                     Emissão {brDate(i.issueDate)} · Vence {brDate(i.dueDate)}
                   </p>
                   {i.alreadyExists && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Já lançado
-                    </Badge>
+                    <div className="flex items-center">
+                      <Badge variant="secondary" className="text-[10px]">
+                        Já lançado
+                      </Badge>
+                      {editExistingBtn(i)}
+                    </div>
                   )}
                   {i.isGrace && (
                     <Badge variant="outline" className="text-[10px]">
