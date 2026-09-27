@@ -159,6 +159,40 @@ interface LeaseWithDetails {
   } | null;
   unit_subdivision_id?: string | null;
   subdivision?: { id: string; label: string } | null;
+  lease_units?: {
+    unit_id: string;
+    is_primary: boolean;
+    unit: { unit_number: string | null; property: { name: string } | null } | null;
+  }[] | null;
+}
+
+/** Imóveis adicionais (não principais) de um contrato. */
+function extraLeaseUnits(lease: LeaseWithDetails) {
+  return (lease.lease_units || []).filter((lu) => !lu.is_primary && lu.unit_id !== lease.unit_id);
+}
+
+function ExtraUnitsBadge({ lease }: { lease: LeaseWithDetails }) {
+  const extras = extraLeaseUnits(lease);
+  if (!extras.length) return null;
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1 cursor-default">
+            +{extras.length}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-xs font-medium mb-1">Outros imóveis deste contrato</p>
+          {extras.map((lu) => (
+            <p key={lu.unit_id} className="text-xs">
+              {[lu.unit?.property?.name, lu.unit?.unit_number].filter(Boolean).join(" — ") || "Imóvel"}
+            </p>
+          ))}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 interface LeaseWithAdjustment extends LeaseWithDetails {
@@ -312,7 +346,8 @@ export function ContractsTab() {
           tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
           unit:units!leases_unit_id_fkey(id, unit_number, address),
           unit_subdivision_id,
-          subdivision:unit_subdivisions!leases_unit_subdivision_id_fkey(id, label)
+          subdivision:unit_subdivisions!leases_unit_subdivision_id_fkey(id, label),
+          lease_units(unit_id, is_primary, unit:units(unit_number, property:properties(name)))
         `)
         .eq("broker_id", effectiveBrokerId || user.id)
         .order("created_at", { ascending: false });
@@ -356,7 +391,12 @@ export function ContractsTab() {
           lease.unit?.unit_number?.toLowerCase().includes(search) ||
           lease.tenant_contact?.name?.toLowerCase().includes(search) ||
           lease.unit?.address?.toLowerCase().includes(search) ||
-          lease.subdivision?.label?.toLowerCase().includes(search);
+          lease.subdivision?.label?.toLowerCase().includes(search) ||
+          (lease.lease_units || []).some(
+            (lu) =>
+              lu.unit?.unit_number?.toLowerCase().includes(search) ||
+              lu.unit?.property?.name?.toLowerCase().includes(search)
+          );
         if (!matchesSearch) return false;
       }
 
@@ -411,8 +451,12 @@ export function ContractsTab() {
   const handleUnitSelected = (unit: { id: string; unit_number: string; owner_contact_id: string | null }) => {
     // Check if there's already an active lease for this unit
     // Imóvel fracionado tem um contrato por fração: não bloqueia por unit_id.
+    // Considera também imóveis ADICIONAIS de contratos com vários imóveis.
     const existingLease = leases?.find(
-      (l) => l.unit_id === unit.id && l.status === "active" && !l.unit_subdivision_id
+      (l) =>
+        l.status === "active" &&
+        ((l.unit_id === unit.id && !l.unit_subdivision_id) ||
+          extraLeaseUnits(l).some((lu) => lu.unit_id === unit.id))
     );
     
     if (existingLease) {
@@ -814,8 +858,9 @@ export function ContractsTab() {
                                 );
                               })()}
                               <div className="min-w-0">
-                                <p className="font-medium truncate">
-                                  {lease.unit?.unit_number || "—"}
+                                <p className="font-medium truncate flex items-center">
+                                  <span className="truncate">{lease.unit?.unit_number || "—"}</span>
+                                  <ExtraUnitsBadge lease={lease} />
                                 </p>
                                 {lease.subdivision?.label && (
                                   <p className="text-xs font-medium text-primary truncate">
