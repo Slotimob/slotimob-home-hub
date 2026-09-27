@@ -96,7 +96,7 @@ export function useAssetImprovements(assetType: AssetType, assetId: string | und
       const { data, error } = await supabase
         .from('asset_improvements')
         .select('*')
-        .eq(col, assetId)
+        .eq(col === 'unit_id' ? 'alloc_unit_id' : col, assetId)
         .order('completed_at', { ascending: false });
       if (error) throw error;
       return (data || []) as Improvement[];
@@ -203,7 +203,8 @@ export function useUnitFinancialTransactions(
     queryKey: ['asset-expense-transactions', assetType, assetId],
     queryFn: async () => {
       if (!assetId) return [];
-      const select = 'id, description, amount, transaction_date, status';
+      // Rateio de contratos com vários imóveis: lê da view por alloc_unit_id / alloc_amount
+      const select = 'id, description, amount:alloc_amount, transaction_date, status, alloc_unit_id, is_allocated, lease_id, alloc_factor';
 
       if (assetType === 'property') {
         const { data: childUnits, error: unitsError } = await supabase
@@ -215,12 +216,12 @@ export function useUnitFinancialTransactions(
         const unitIds = (childUnits || []).map((u: any) => u.id).filter(Boolean);
 
         let query = supabase
-          .from('financial_transactions')
+          .from('v_financial_transactions_by_unit' as any)
           .select(select)
           .eq('type', 'expense');
 
         query = unitIds.length
-          ? query.or(`property_id.eq.${assetId},unit_id.in.(${unitIds.join(',')})`)
+          ? query.or(`property_id.eq.${assetId},alloc_unit_id.in.(${unitIds.join(',')})`)
           : query.eq('property_id', assetId);
 
         const { data, error } = await query.order('transaction_date', { ascending: false });
@@ -228,8 +229,9 @@ export function useUnitFinancialTransactions(
 
         const seen = new Set<string>();
         const unique = (data || []).filter((t: any) => {
-          if (seen.has(t.id)) return false;
-          seen.add(t.id);
+          const k = `${t.id}:${t.alloc_unit_id ?? ''}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
           return true;
         });
         return unique as AssetExpenseTransaction[];
@@ -237,10 +239,10 @@ export function useUnitFinancialTransactions(
 
       const col = fkColumn(assetType);
       const { data, error } = await supabase
-        .from('financial_transactions')
+        .from('v_financial_transactions_by_unit' as any)
         .select(select)
         .eq('type', 'expense')
-        .eq(col, assetId)
+        .eq(col === 'unit_id' ? 'alloc_unit_id' : col, assetId)
         .order('transaction_date', { ascending: false });
       if (error) throw error;
       return (data || []) as AssetExpenseTransaction[];
@@ -270,11 +272,11 @@ export function useAssetCashflowTransactions(
     queryKey: ['asset-cashflow-transactions', assetType, assetId, sinceDate],
     queryFn: async () => {
       if (!assetId || !sinceDate) return [];
-      const select = 'id, amount, type, paid_date';
+      const select = 'id, amount:alloc_amount, type, paid_date, alloc_unit_id';
 
       const base = () =>
         supabase
-          .from('financial_transactions')
+          .from('v_financial_transactions_by_unit' as any)
           .select(select)
           .eq('status', 'paid')
           .gte('paid_date', sinceDate);
@@ -289,7 +291,7 @@ export function useAssetCashflowTransactions(
         const unitIds = (childUnits || []).map((u: any) => u.id).filter(Boolean);
         let query = base();
         query = unitIds.length
-          ? query.or(`property_id.eq.${assetId},unit_id.in.(${unitIds.join(',')})`)
+          ? query.or(`property_id.eq.${assetId},alloc_unit_id.in.(${unitIds.join(',')})`)
           : query.eq('property_id', assetId);
 
         const { data, error } = await query;
@@ -298,8 +300,9 @@ export function useAssetCashflowTransactions(
         const seen = new Set<string>();
         return (data || [])
           .filter((t: any) => {
-            if (seen.has(t.id)) return false;
-            seen.add(t.id);
+            const k = `${t.id}:${t.alloc_unit_id ?? ''}`;
+            if (seen.has(k)) return false;
+            seen.add(k);
             return true;
           })
           .map((t: any) => ({
@@ -309,7 +312,7 @@ export function useAssetCashflowTransactions(
           })) as AssetCashflowTransaction[];
       }
 
-      const { data, error } = await base().eq(fkColumn(assetType), assetId);
+      const { data, error } = await base().eq(fkColumn(assetType) === 'unit_id' ? 'alloc_unit_id' : fkColumn(assetType), assetId);
       if (error) throw error;
       return (data || []).map((t: any) => ({
         amount: Number(t.amount) || 0,
@@ -381,7 +384,7 @@ export function useMarketValueHistory(
       let query = supabase
         .from('market_value_history')
         .select('id, value, effective_date, source, appraiser_name, note, recorded_at')
-        .eq(col, assetId)
+        .eq(col === 'unit_id' ? 'alloc_unit_id' : col, assetId)
         .order('effective_date', { ascending: true });
 
       if (periodFrom) query = query.gte('effective_date', periodFrom);
