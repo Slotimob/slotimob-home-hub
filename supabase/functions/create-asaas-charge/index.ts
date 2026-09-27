@@ -237,7 +237,7 @@ Deno.serve(async (req) => {
       let txQuery = supabase
         .from("financial_transactions")
         .select("id, settlement_group_id")
-        .eq("broker_id", lease.broker_id)
+        .eq("broker_id", effectiveBrokerId)
         .eq("type", "income")
         .not("settlement_group_id", "is", null)
         .or(`lease_id.eq.${lease_id},reference.eq.lease:${lease_id}`)
@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
       const { data: groupTx, error: groupTxErr } = await txQuery.maybeSingle();
       if (groupTxErr) console.warn("[create-asaas-charge] busca do grupo:", groupTxErr.message);
       if (groupTx?.settlement_group_id) {
-        settlement = await fetchSettlementNet(supabase, groupTx.settlement_group_id, lease.broker_id);
+        settlement = await fetchSettlementNet(supabase, groupTx.settlement_group_id, effectiveBrokerId);
         if (settlement && !(settlement.net > 0)) settlement = null;
       }
     }
