@@ -87,7 +87,6 @@ import { AssetMetricsCards } from "./AssetMetricsCards";
 import { ObligationsConfigForm } from "./ObligationsConfigForm";
 import { DimobStatusCard } from "./DimobStatusCard";
 import { ContractGeneratorDialog } from "./ContractGeneratorDialog";
-import { CreateLeaseWizard } from "./CreateLeaseWizard";
 import { toast } from "@/hooks/use-toast";
 
 interface AssetDetailDialogProps {
@@ -201,7 +200,6 @@ export function AssetDetailDialog({
   // New state for in-place editing
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
-  const [leaseWizardOpen, setLeaseWizardOpen] = useState(false);
   
   // Inline CIB editing state
   const [editingCib, setEditingCib] = useState(false);
@@ -1117,7 +1115,7 @@ export function AssetDetailDialog({
                 <DimobStatusCard
                   unitId={asset.unitId}
                   onEditUnit={() => setEditDialogOpen(true)}
-                  onCreateLease={() => setLeaseWizardOpen(true)}
+                  onCreateLease={() => { onOpenChange(false); navigate(`/gestao/contratos/novo?unitId=${asset.unitId}`); }}
                 />
               )}
             </div>
@@ -1369,24 +1367,6 @@ export function AssetDetailDialog({
         />
       )}
 
-      {/* Create Lease Wizard */}
-      {asset && (
-        <CreateLeaseWizard
-          open={leaseWizardOpen}
-          onOpenChange={setLeaseWizardOpen}
-          unitId={asset.unitId}
-          unitName={asset.unitNumber || unitData?.unit_number || "Imóvel"}
-          ownerContactId={unitData?.owner_contact_id || undefined}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["unit-full-data", asset.unitId] });
-            queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-            toast({
-              title: "Contrato criado",
-              description: "O contrato de locação foi criado com sucesso.",
-            });
-          }}
-        />
-      )}
     </div>
   );
 
