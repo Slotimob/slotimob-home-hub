@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +48,10 @@ export default function Blog() {
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
   // Ao trocar de categoria ou região, volta para a página 1 (remove ?page da URL).
+  // Ignora a montagem para não descartar ?page em acesso direto.
+  const isFirstRun = useRef(true);
   useEffect(() => {
+    if (isFirstRun.current) { isFirstRun.current = false; return; }
     if (searchParams.get('page')) {
       const next = new URLSearchParams(searchParams);
       next.delete('page');
