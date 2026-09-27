@@ -215,8 +215,8 @@ export function useUnitFinancialTransactions(
 
         const unitIds = (childUnits || []).map((u: any) => u.id).filter(Boolean);
 
-        let query = supabase
-          .from('v_financial_transactions_by_unit' as any)
+        let query = (supabase as any)
+          .from('v_financial_transactions_by_unit')
           .select(select)
           .eq('type', 'expense');
 
@@ -238,8 +238,8 @@ export function useUnitFinancialTransactions(
       }
 
       const col = fkColumn(assetType);
-      const { data, error } = await supabase
-        .from('v_financial_transactions_by_unit' as any)
+      const { data, error } = await (supabase as any)
+        .from('v_financial_transactions_by_unit')
         .select(select)
         .eq('type', 'expense')
         .eq(col === 'unit_id' ? 'alloc_unit_id' : col, assetId)
@@ -275,8 +275,8 @@ export function useAssetCashflowTransactions(
       const select = 'id, amount:alloc_amount, type, paid_date, alloc_unit_id';
 
       const base = () =>
-        supabase
-          .from('v_financial_transactions_by_unit' as any)
+        (supabase as any)
+          .from('v_financial_transactions_by_unit')
           .select(select)
           .eq('status', 'paid')
           .gte('paid_date', sinceDate);

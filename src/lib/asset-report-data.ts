@@ -234,8 +234,8 @@ export async function buildAssetReport(params: {
 
   if (sections.income || sections.expenses) {
     if (sections.income) {
-      const { data: incomeData = [] } = await supabase
-        .from('v_financial_transactions_by_unit' as any)
+      const { data: incomeData = [] } = await (supabase as any)
+        .from('v_financial_transactions_by_unit')
         .select('property_id, alloc_unit_id, alloc_amount, is_allocated, lease_id, alloc_factor')
         .eq('broker_id', brokerId)
         .eq('type', 'income')
@@ -251,8 +251,8 @@ export async function buildAssetReport(params: {
     }
 
     if (sections.expenses) {
-      const { data: expenseData = [] } = await supabase
-        .from('v_financial_transactions_by_unit' as any)
+      const { data: expenseData = [] } = await (supabase as any)
+        .from('v_financial_transactions_by_unit')
         .select('property_id, alloc_unit_id, alloc_amount, is_allocated, lease_id, alloc_factor, description, transaction_date, asset_expense_category')
         .eq('broker_id', brokerId)
         .eq('type', 'expense')
