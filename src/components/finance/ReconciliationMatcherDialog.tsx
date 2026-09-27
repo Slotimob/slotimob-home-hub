@@ -12,7 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { ReconciliationMismatchDialog } from "./ReconciliationMismatchDialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface ReconciliationMatcherDialogProps {
   open: boolean;
@@ -23,6 +25,7 @@ interface ReconciliationMatcherDialogProps {
     amount: number;
     type: string;
     transaction_date: string;
+    due_date?: string | null;
     bank_account_id?: string | null;
   };
   onReconciled: () => void;
@@ -38,6 +41,76 @@ interface StatementEntry {
   bank_account?: { name: string; bank_name?: string } | null;
 }
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+function EntryItem({
+entry,
+isSuggestion = false,
+isSelected,
+isReconciling,
+onSelect,
+}: {
+entry: StatementEntry;
+isSuggestion?: boolean;
+isSelected: boolean;
+isReconciling: boolean;
+onSelect: (entry: StatementEntry) => void;
+}) {
+  
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer",
+        isSelected && "border-primary bg-primary/5 ring-2 ring-primary/20",
+        !isSelected && "hover:bg-muted/50 hover:border-muted-foreground/20",
+        isSuggestion && !isSelected && "border-emerald-200 bg-emerald-500/5"
+      )}
+      onClick={() => onSelect(entry)}
+    >
+      <div
+        className={cn(
+          "p-1.5 rounded-full flex-shrink-0",
+          entry.is_credit ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
+        )}
+      >
+        {entry.is_credit ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium truncate">{entry.description}</p>
+          {isSuggestion && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-600 bg-emerald-50">
+              <Sparkles className="h-2.5 w-2.5 mr-0.5" />
+              Sugerido
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>{format(parseISO(entry.entry_date), "dd/MM/yyyy", { locale: ptBR })}</span>
+          {entry.bank_account && (
+            <>
+              <span>•</span>
+              <span className="truncate">{entry.bank_account.name}</span>
+            </>
+          )}
+        </div>
+      </div>
+      <span
+        className={cn(
+          "font-semibold text-sm whitespace-nowrap",
+          entry.is_credit ? "text-emerald-500" : "text-red-500"
+        )}
+      >
+        {entry.is_credit ? "+" : "-"}{formatCurrency(Math.abs(entry.amount))}
+      </span>
+      {isSelected && isReconciling && (
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+      )}
+    </div>
+  );
+}
+
 export function ReconciliationMatcherDialog({
   open,
   onOpenChange,
@@ -51,6 +124,7 @@ export function ReconciliationMatcherDialog({
   const [isReconciling, setIsReconciling] = useState(false);
   const [showMismatchDialog, setShowMismatchDialog] = useState(false);
   const [markAsPaid, setMarkAsPaid] = useState(true);
+  const [showAllAccounts, setShowAllAccounts] = useState(false);
 
   // Reset selection and options when the dialog opens/closes
   useEffect(() => {
@@ -59,6 +133,7 @@ export function ReconciliationMatcherDialog({
       setMarkAsPaid(true);
       setShowMismatchDialog(false);
       setSearchTerm("");
+      setShowAllAccounts(false);
     }
   }, [open]);
 
@@ -81,9 +156,6 @@ export function ReconciliationMatcherDialog({
         .eq("is_reconciled", false)
         .order("entry_date", { ascending: false });
 
-      // If transaction has a bank account, prioritize that account's entries
-      // but still show all entries for flexibility
-      
       const { data, error } = await query;
       if (error) throw error;
       return data as StatementEntry[];
@@ -91,20 +163,20 @@ export function ReconciliationMatcherDialog({
     enabled: open,
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
   // Smart suggestions: entries with matching value and close date (±3 days)
   const { suggestions, others } = useMemo(() => {
-    const transactionDate = parseISO(transaction.transaction_date);
+    const transactionDate = parseISO(transaction.due_date ?? transaction.transaction_date);
     const transactionAmount = Math.abs(transaction.amount);
     const isIncome = transaction.type === "income";
 
     const filtered = entries.filter((entry) => {
+      if (
+        transaction.bank_account_id &&
+        !showAllAccounts &&
+        entry.bank_account_id !== transaction.bank_account_id
+      ) {
+        return false;
+      }
       if (!searchTerm) return true;
       const term = searchTerm.toLowerCase();
       return (
@@ -131,7 +203,7 @@ export function ReconciliationMatcherDialog({
     });
 
     return { suggestions, others };
-  }, [entries, transaction, searchTerm]);
+  }, [entries, transaction, searchTerm, showAllAccounts]);
 
   const handleSelectEntry = (entry: StatementEntry) => {
     setSelectedEntry(entry);
@@ -214,72 +286,18 @@ export function ReconciliationMatcherDialog({
     }
   };
 
-  const handleMismatchConfirm = () => {
-    if (selectedEntry) {
-      handleReconcile(selectedEntry);
-    }
-  };
-
-  const EntryItem = ({ entry, isSuggestion = false }: { entry: StatementEntry; isSuggestion?: boolean }) => {
-    const isSelected = selectedEntry?.id === entry.id;
-    
-    return (
-      <div
-        className={cn(
-          "flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer",
-          isSelected && "border-primary bg-primary/5 ring-2 ring-primary/20",
-          !isSelected && "hover:bg-muted/50 hover:border-muted-foreground/20",
-          isSuggestion && !isSelected && "border-emerald-200 bg-emerald-500/5"
-        )}
-        onClick={() => handleSelectEntry(entry)}
-      >
-        <div
-          className={cn(
-            "p-1.5 rounded-full flex-shrink-0",
-            entry.is_credit ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
-          )}
-        >
-          {entry.is_credit ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium truncate">{entry.description}</p>
-            {isSuggestion && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-600 bg-emerald-50">
-                <Sparkles className="h-2.5 w-2.5 mr-0.5" />
-                Sugerido
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{format(parseISO(entry.entry_date), "dd/MM/yyyy", { locale: ptBR })}</span>
-            {entry.bank_account && (
-              <>
-                <span>•</span>
-                <span className="truncate">{entry.bank_account.name}</span>
-              </>
-            )}
-          </div>
-        </div>
-        <span
-          className={cn(
-            "font-semibold text-sm whitespace-nowrap",
-            entry.is_credit ? "text-emerald-500" : "text-red-500"
-          )}
-        >
-          {entry.is_credit ? "+" : "-"}{formatCurrency(Math.abs(entry.amount))}
-        </span>
-        {isSelected && isReconciling && (
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-        )}
-      </div>
-    );
-  };
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogContent
+          className="sm:max-w-[600px] max-h-[85vh] flex flex-col overflow-hidden"
+          onInteractOutside={(e) => {
+            if (showMismatchDialog || isReconciling) e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (showMismatchDialog || isReconciling) e.preventDefault();
+          }}
+        >
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Conciliar Lançamento</DialogTitle>
             <DialogDescription>
@@ -324,6 +342,19 @@ export function ReconciliationMatcherDialog({
             </div>
           </div>
 
+          {transaction.bank_account_id && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Switch
+                id="show-all-accounts"
+                checked={showAllAccounts}
+                onCheckedChange={setShowAllAccounts}
+              />
+              <Label htmlFor="show-all-accounts" className="text-sm cursor-pointer">
+                Mostrar todas as contas
+              </Label>
+            </div>
+          )}
+
           {/* Search */}
           <div className="relative flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -364,7 +395,7 @@ export function ReconciliationMatcherDialog({
                     </div>
                     <div className="space-y-2">
                       {suggestions.map((entry) => (
-                        <EntryItem key={entry.id} entry={entry} isSuggestion />
+                        <EntryItem key={entry.id} entry={entry} isSuggestion  isSelected={selectedEntry?.id === entry.id} isReconciling={isReconciling} onSelect={handleSelectEntry} />
                       ))}
                     </div>
                   </div>
@@ -380,7 +411,7 @@ export function ReconciliationMatcherDialog({
                     )}
                     <div className="space-y-2">
                       {others.map((entry) => (
-                        <EntryItem key={entry.id} entry={entry} />
+                        <EntryItem key={entry.id} entry={entry}  isSelected={selectedEntry?.id === entry.id} isReconciling={isReconciling} onSelect={handleSelectEntry} />
                       ))}
                     </div>
                   </div>
@@ -397,7 +428,42 @@ export function ReconciliationMatcherDialog({
 
           {/* Footer info */}
           <div className="space-y-3 pt-3 border-t flex-shrink-0">
-            {selectedEntry ? (
+            {selectedEntry && showMismatchDialog ? (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Valores diferentes</AlertTitle>
+                <AlertDescription>
+                  <div className="space-y-1 text-sm mt-1">
+                    <p>Valor do lançamento: <span className="font-medium">{formatCurrency(Math.abs(transaction.amount))}</span></p>
+                    <p>Valor do extrato: <span className="font-medium">{formatCurrency(Math.abs(selectedEntry.amount))}</span></p>
+                    <p>
+                      Diferença:{" "}
+                      <span className="font-medium">
+                        {formatCurrency(Math.abs(Math.abs(selectedEntry.amount) - Math.abs(transaction.amount)))}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col-reverse sm:flex-row gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowMismatchDialog(false)}
+                      disabled={isReconciling}
+                    >
+                      Voltar
+                    </Button>
+                    <Button
+                      className="flex-1 gap-2"
+                      onClick={() => handleReconcile(selectedEntry)}
+                      disabled={isReconciling}
+                    >
+                      {isReconciling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      Conciliar mesmo assim
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            ) : selectedEntry ? (
               <>
                 <div className="flex items-start gap-2">
                   <Checkbox
@@ -448,19 +514,6 @@ export function ReconciliationMatcherDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Mismatch Dialog */}
-      {selectedEntry && (
-        <ReconciliationMismatchDialog
-          open={showMismatchDialog}
-          onOpenChange={(open) => {
-            setShowMismatchDialog(open);
-            if (!open) setSelectedEntry(null);
-          }}
-          entryValue={Math.abs(selectedEntry.amount)}
-          transactionValue={Math.abs(transaction.amount)}
-          onConfirm={handleMismatchConfirm}
-        />
-      )}
     </>
   );
 }
