@@ -24,7 +24,7 @@ import {
   type LucideIcon,
   Loader2,
   Save,
-} from "lucide-react";
+  CalendarClock } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -114,6 +114,12 @@ const STATUS_CONFIG: Record<
     icon: AlertCircle,
     className: "text-red-600",
     bgClassName: "bg-red-500/15 text-red-600 border-red-500/30",
+  },
+  grace: {
+    label: "Carência",
+    icon: CalendarClock,
+    className: "text-sky-600",
+    bgClassName: "bg-sky-500/15 text-sky-600 border-sky-500/30",
   },
   ignored: {
     label: "Desativado",
