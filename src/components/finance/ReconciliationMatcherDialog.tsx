@@ -417,6 +417,12 @@ export function ReconciliationMatcherDialog({
                   </div>
                 )}
 
+                {suggestions.length === 0 && others.length === 0 && !searchTerm && (
+                  <p className="text-center py-4 text-sm text-muted-foreground">
+                    Nenhum item do extrato desta conta. Ative "Mostrar todas as contas" para ver as demais.
+                  </p>
+                )}
+
                 {suggestions.length === 0 && others.length === 0 && searchTerm && (
                   <p className="text-center py-4 text-sm text-muted-foreground">
                     Nenhum resultado para "{searchTerm}"
