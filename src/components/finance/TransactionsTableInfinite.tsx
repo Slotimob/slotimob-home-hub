@@ -400,6 +400,19 @@ export function TransactionsTableInfinite({
     );
   }
 
+  // Única instância do matcher, usada nos layouts mobile e desktop
+  const matcherDialog = matcherTransaction ? (
+    <ReconciliationMatcherDialog
+      open={!!matcherTransaction}
+      onOpenChange={(open) => !open && setMatcherTransaction(null)}
+      transaction={matcherTransaction}
+      onReconciled={() => {
+        setMatcherTransaction(null);
+        onTransactionUpdated();
+      }}
+    />
+  ) : null;
+
   // Mobile card view
   if (isMobile) {
     return (
@@ -511,6 +524,8 @@ export function TransactionsTableInfinite({
             transaction={improvementTransaction}
           />
         )}
+
+        {matcherDialog}
       </>
 
     );
@@ -888,17 +903,7 @@ export function TransactionsTableInfinite({
       </AlertDialog>
 
       {/* Reconciliation Matcher Dialog */}
-      {matcherTransaction && (
-        <ReconciliationMatcherDialog
-          open={!!matcherTransaction}
-          onOpenChange={(open) => !open && setMatcherTransaction(null)}
-          transaction={matcherTransaction}
-          onReconciled={() => {
-            setMatcherTransaction(null);
-            onTransactionUpdated();
-          }}
-        />
-      )}
+      {matcherDialog}
 
       {/* Mark as improvement */}
       {improvementTransaction && (
