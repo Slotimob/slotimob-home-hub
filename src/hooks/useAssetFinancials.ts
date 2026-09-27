@@ -96,7 +96,7 @@ export function useAssetImprovements(assetType: AssetType, assetId: string | und
       const { data, error } = await supabase
         .from('asset_improvements')
         .select('*')
-        .eq(col === 'unit_id' ? 'alloc_unit_id' : col, assetId)
+        .eq(col, assetId)
         .order('completed_at', { ascending: false });
       if (error) throw error;
       return (data || []) as Improvement[];
@@ -384,7 +384,7 @@ export function useMarketValueHistory(
       let query = supabase
         .from('market_value_history')
         .select('id, value, effective_date, source, appraiser_name, note, recorded_at')
-        .eq(col === 'unit_id' ? 'alloc_unit_id' : col, assetId)
+        .eq(col, assetId)
         .order('effective_date', { ascending: true });
 
       if (periodFrom) query = query.gte('effective_date', periodFrom);
