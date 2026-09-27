@@ -24,6 +24,10 @@ interface DimobRecord {
   grossAnnualRent: number;
   annualCommission: number;
   taxWithheld: number;
+  /** Abatimentos pagos no ano (informativo; não reduzem o bruto). */
+  deductions: number;
+  /** Sem lançamentos de aluguel pagos no ano: bruto calculado pelo contrato. */
+  isEstimated: boolean;
   isComplete: boolean;
   missingFields: string[];
 }
@@ -89,6 +93,30 @@ export const DimobReportTab = () => {
 
       if (leasesError) throw leasesError;
 
+      // Lançamentos reais PAGOS no ano-calendário (aluguel, IRRF, abatimentos)
+      const leaseIds = (leases || []).map((l) => l.id);
+      const paidTx: any[] = [];
+      for (let i = 0; i < leaseIds.length; i += 100) {
+        const chunk = leaseIds.slice(i, i + 100);
+        const refs = chunk.map((id) => `lease:${id}`);
+        const { data: txs, error: txError } = await supabase
+          .from('financial_transactions')
+          .select('lease_id, reference, type, amount, obligation_type, metadata')
+          .or(`lease_id.in.(${chunk.join(',')}),reference.in.(${refs.map((r) => `"${r}"`).join(',')})`)
+          .eq('status', 'paid')
+          .gte('paid_date', startDate)
+          .lte('paid_date', endDate);
+        if (txError) throw txError;
+        paidTx.push(...(txs || []));
+      }
+      const txByLease = new Map<string, any[]>();
+      paidTx.forEach((t) => {
+        const id = t.lease_id || (t.reference?.startsWith('lease:') ? t.reference.slice(6) : null);
+        if (!id) return;
+        if (!txByLease.has(id)) txByLease.set(id, []);
+        txByLease.get(id)!.push(t);
+      });
+
       const dimobRecords: DimobRecord[] = [];
 
       for (const lease of leases || []) {
@@ -143,14 +171,29 @@ export const DimobReportTab = () => {
         );
 
         const monthlyRent = lease.gross_rent_value || lease.rent_amount || 0;
-        const grossAnnualRent = monthlyRent * monthsActive;
+        const leaseTx = txByLease.get(lease.id) || [];
+        const rentTx = leaseTx.filter(
+          (t) => t.type === 'income' && (!t.obligation_type || t.obligation_type === 'rent')
+        );
+        const isEstimated = rentTx.length === 0;
+        const grossAnnualRent = isEstimated
+          ? monthlyRent * monthsActive
+          : rentTx.reduce(
+              (sum, t) => sum + (Number((t.metadata as any)?.gross_amount) || Number(t.amount) || 0),
+              0
+            );
+        // Retenção efetivada: IRRF pago no ano. Sem linhas → 0 (não estimar)
+        const taxWithheld = leaseTx
+          .filter((t) => t.obligation_type === 'irrf')
+          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+        const deductions = leaseTx
+          .filter((t) => (t.obligation_type || '').startsWith('rent_deduction_'))
+          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
         
         const adminFee = lease.administration_fee_value || 
           (monthlyRent * (lease.admin_fee_percentage || 10) / 100);
         const annualCommission = adminFee * monthsActive;
-        
-        // Tax withheld calculation (simplified - 15% on gross)
-        const taxWithheld = grossAnnualRent * 0.15;
+
 
         // Check for missing fields
         const missingFields: string[] = [];
@@ -169,6 +212,8 @@ export const DimobReportTab = () => {
           grossAnnualRent,
           annualCommission,
           taxWithheld,
+          deductions,
+          isEstimated,
           isComplete: missingFields.length === 0,
           missingFields
         });
@@ -435,8 +480,21 @@ export const DimobReportTab = () => {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell
+                        className="text-right"
+                        title={`IRRF retido: ${formatCurrency(record.taxWithheld)} • Abatimentos (informativo, não reduzem o bruto): ${formatCurrency(record.deductions)}`}
+                      >
                         {formatCurrency(record.grossAnnualRent)}
+                        {record.isEstimated && (
+                          <p className="text-[10px] text-amber-600">estimado (sem lançamentos)</p>
+                        )}
+                        {!record.isEstimated && (record.taxWithheld > 0 || record.deductions > 0) && (
+                          <p className="text-[10px] text-muted-foreground">
+                            {record.taxWithheld > 0 ? `IRRF ${formatCurrency(record.taxWithheld)}` : ''}
+                            {record.taxWithheld > 0 && record.deductions > 0 ? ' · ' : ''}
+                            {record.deductions > 0 ? `abat. ${formatCurrency(record.deductions)}` : ''}
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(record.annualCommission)}
