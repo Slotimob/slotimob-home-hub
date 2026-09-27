@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, CheckCircle2, Repeat, Calendar, Circle, Loader2, Hammer } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, CheckCircle2, Repeat, Calendar, Circle, Loader2, Hammer, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDateOnly } from "@/lib/date-only";
 import { WhatsAppBillingButton } from "./WhatsAppBillingButton";
@@ -23,6 +23,8 @@ interface TransactionCardProps {
   isEligibleForBilling?: boolean;
   onMarkAsImprovement?: (transaction: any) => void;
   isAlreadyImprovement?: boolean;
+  /** Resumo da baixa conjunta, quando a linha pertence a um grupo. */
+  settlementSummary?: string | null;
 }
 
 
@@ -40,6 +42,7 @@ export function TransactionCard({
   isEligibleForBilling = false,
   onMarkAsImprovement,
   isAlreadyImprovement = false,
+  settlementSummary = null,
 }: TransactionCardProps) {
 
   const formatCurrency = (value: number) => {
@@ -110,6 +113,14 @@ export function TransactionCard({
               <p className="text-sm font-medium line-clamp-1">{transaction.description}</p>
               {transaction.group_id && (
                 <Repeat className="h-3 w-3 text-muted-foreground shrink-0" />
+              )}
+              {settlementSummary && (
+                <span
+                  title={settlementSummary}
+                  className="inline-flex items-center gap-0.5 rounded border border-primary/30 bg-primary/10 px-1 text-[9px] font-medium text-primary shrink-0"
+                >
+                  <Layers className="h-2.5 w-2.5" /> Baixa conjunta
+                </span>
               )}
             </div>
             {/* Dates Row */}

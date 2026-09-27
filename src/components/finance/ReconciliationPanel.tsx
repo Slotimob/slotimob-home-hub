@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useSettlementGroups, settlementBreakdown, settlementAnchor, describeSettlement } from "@/lib/settlement-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -73,6 +74,30 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
     },
   });
 
+  // Baixa conjunta: o grupo vira UM item (linha do aluguel com valor líquido);
+  // abatimentos/IRRF do grupo somem da lista de pendentes.
+  const { data: groups = {} } = useSettlementGroups(transactions.map((t: any) => t.settlement_group_id));
+  const displayTransactions = useMemo(() => {
+    const out: any[] = [];
+    for (const t of transactions as any[]) {
+      const lines = t.settlement_group_id ? groups[t.settlement_group_id] : undefined;
+      if (!lines || lines.length < 2) {
+        out.push(t);
+        continue;
+      }
+      const anchor = settlementAnchor(lines);
+      if (anchor && anchor.id !== t.id) continue;
+      const b = settlementBreakdown(lines);
+      out.push({
+        ...t,
+        amount: Math.abs(b.net),
+        type: b.net >= 0 ? "income" : "expense",
+        settlement_summary: describeSettlement(b),
+      });
+    }
+    return out;
+  }, [transactions, groups]);
+
   // Fetch reconciled entries with transaction details and optional date filter
   const { data: reconciledEntries = [], isLoading: reconciledLoading } = useQuery({
     queryKey: ["reconciled-entries", bankAccountId, dateFrom, dateTo],
@@ -117,7 +142,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
   });
 
   const getSelectedEntry = () => entries.find((e) => e.id === selectedEntry);
-  const getSelectedTransaction = () => transactions.find((t) => t.id === selectedTransaction);
+  const getSelectedTransaction = () => displayTransactions.find((t) => t.id === selectedTransaction);
 
   const handleReconcileClick = () => {
     if (!selectedEntry || !selectedTransaction) return;
@@ -177,7 +202,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
     try {
       for (const entry of entries) {
         const entryDate = parseISO(entry.entry_date);
-        const match = transactions.find((t) => {
+        const match = displayTransactions.find((t) => {
           if (usedTransactionIds.has(t.id)) return false;
           const typeMatch = entry.is_credit ? t.type === "income" : t.type === "expense";
           if (!typeMatch) return false;
@@ -223,7 +248,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
 
   const isLoading = entriesLoading || transactionsLoading;
   const canReconcileSelection = selectedEntry && selectedTransaction;
-  const hasData = entries.length > 0 && transactions.length > 0;
+  const hasData = entries.length > 0 && displayTransactions.length > 0;
 
   return (
     <div className="w-full max-w-full overflow-hidden space-y-3">
@@ -293,7 +318,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
 
           <ReconciliationPendingListGrouped
             entries={entries}
-            transactions={transactions}
+            transactions={displayTransactions}
             selectedEntry={selectedEntry}
             selectedTransaction={selectedTransaction}
             onSelectEntry={setSelectedEntry}

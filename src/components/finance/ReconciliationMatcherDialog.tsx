@@ -11,6 +11,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useReconciliation } from "@/hooks/useReconciliation";
+import { fetchSettlementGroup, settlementBreakdown } from "@/lib/settlement-group";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
@@ -27,6 +28,7 @@ interface ReconciliationMatcherDialogProps {
     transaction_date: string;
     due_date?: string | null;
     bank_account_id?: string | null;
+    settlement_group_id?: string | null;
   };
   onReconciled: () => void;
 }
@@ -162,11 +164,34 @@ export function ReconciliationMatcherDialog({
     enabled: open,
   });
 
+  // Baixa conjunta: compara pelo LÍQUIDO do grupo
+  const { data: settlement } = useQuery({
+    queryKey: ["settlement-groups", "for-tx", transaction.id],
+    queryFn: async () => {
+      let groupId = transaction.settlement_group_id ?? null;
+      if (groupId === null || groupId === undefined) {
+        const { data, error } = await supabase
+          .from("financial_transactions")
+          .select("settlement_group_id")
+          .eq("id", transaction.id)
+          .maybeSingle();
+        if (error) throw error;
+        groupId = data?.settlement_group_id ?? null;
+      }
+      if (!groupId) return null;
+      const lines = await fetchSettlementGroup(groupId);
+      return lines.length > 1 ? settlementBreakdown(lines) : null;
+    },
+    enabled: open,
+  });
+  const compareAmount = settlement ? Math.abs(settlement.net) : Math.abs(transaction.amount);
+  const compareIsIncome = settlement ? settlement.net >= 0 : transaction.type === "income";
+
   // Smart suggestions: entries with matching value and close date (±3 days)
   const { suggestions, others } = useMemo(() => {
     const transactionDate = parseISO(transaction.due_date ?? transaction.transaction_date);
-    const transactionAmount = Math.abs(transaction.amount);
-    const isIncome = transaction.type === "income";
+    const transactionAmount = compareAmount;
+    const isIncome = compareIsIncome;
 
     const filtered = entries.filter((entry) => {
       if (
@@ -202,7 +227,7 @@ export function ReconciliationMatcherDialog({
     });
 
     return { suggestions, others };
-  }, [entries, transaction, searchTerm, showAllAccounts]);
+  }, [entries, transaction, searchTerm, showAllAccounts, compareAmount, compareIsIncome]);
 
   const handleSelectEntry = (entry: StatementEntry) => {
     setSelectedEntry(entry);
@@ -212,7 +237,7 @@ export function ReconciliationMatcherDialog({
     if (!selectedEntry) return;
 
     // Check for value mismatch
-    const transactionAmount = Math.abs(transaction.amount);
+    const transactionAmount = compareAmount;
     const entryAmount = Math.abs(selectedEntry.amount);
 
     if (Math.abs(transactionAmount - entryAmount) >= 0.01) {
@@ -298,6 +323,14 @@ export function ReconciliationMatcherDialog({
                 {transaction.type === "income" ? "+" : "-"}{formatCurrency(Math.abs(transaction.amount))}
               </span>
             </div>
+            {settlement && (
+              <div className="mt-2 rounded-md border border-border bg-background px-2 py-1.5 text-xs">
+                <span className="font-medium">Baixa conjunta:</span> aluguel {formatCurrency(settlement.rent)} − abatimentos{" "}
+                {formatCurrency(settlement.deductions)} − IRRF {formatCurrency(settlement.irrf)}
+                {settlement.otherExpenses > 0 ? ` − outros ${formatCurrency(settlement.otherExpenses)}` : ""} ={" "}
+                <span className="font-semibold">líquido {formatCurrency(settlement.net)}</span>
+              </div>
+            )}
           </div>
 
           {transaction.bank_account_id && (
@@ -398,12 +431,12 @@ export function ReconciliationMatcherDialog({
                 <AlertTitle>Valores diferentes</AlertTitle>
                 <AlertDescription>
                   <div className="space-y-1 text-sm mt-1">
-                    <p>Valor do lançamento: <span className="font-medium">{formatCurrency(Math.abs(transaction.amount))}</span></p>
+                    <p>{settlement ? "Líquido da baixa conjunta" : "Valor do lançamento"}: <span className="font-medium">{formatCurrency(compareAmount)}</span></p>
                     <p>Valor do extrato: <span className="font-medium">{formatCurrency(Math.abs(selectedEntry.amount))}</span></p>
                     <p>
                       Diferença:{" "}
                       <span className="font-medium">
-                        {formatCurrency(Math.abs(Math.abs(selectedEntry.amount) - Math.abs(transaction.amount)))}
+                        {formatCurrency(Math.abs(Math.abs(selectedEntry.amount) - compareAmount))}
                       </span>
                     </p>
                   </div>
