@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import type { Json } from "@/integrations/supabase/types";
 import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
 import { toDateOnly, todayDateOnly } from "@/lib/date-only";
+import { fetchUnitLeaseLinks, fetchLeaseRentTransactions, viaLeaseText } from "@/lib/lease-multi-unit";
 
 export type ObligationType = 
   | "rent" 
@@ -76,6 +77,8 @@ export interface ObligationHealth {
   controlType: ControlType;
   transactionId?: string;
   amount?: number;
+  /** Imóvel adicional: "Pago/Pendente pelo contrato <principal>". */
+  viaLease?: string | null;
 }
 
 export interface AssetHealth {
@@ -349,19 +352,12 @@ export function useAssetHealth(referenceDate?: Date) {
 
       if (managerialError) throw managerialError;
 
-      // Contratos ativos (unidade inteira): fonte preferida da carência
-      const { data: activeLeases, error: leasesError } = await supabase
-        .from("leases")
-        .select("unit_id, rent_grace, start_date, created_at")
-        .in("unit_id", unitIds)
-        .is("unit_subdivision_id", null)
-        .in("status", ["active", "pending"])
-        .order("created_at", { ascending: false });
-      if (leasesError) throw leasesError;
-      const leaseByUnit = new Map<string, any>();
-      (activeLeases || []).forEach((l) => {
-        if (!leaseByUnit.has(l.unit_id)) leaseByUnit.set(l.unit_id, l);
-      });
+      // Contrato vivo de cada imóvel (principal OU adicional via lease_units): carência e aluguel
+      const leaseLinks = await fetchUnitLeaseLinks(unitIds);
+      const additionalLeaseIds = Array.from(
+        new Set(Array.from(leaseLinks.values()).filter((l) => !l.isPrimary).map((l) => l.leaseId))
+      );
+      const leaseRentTx = await fetchLeaseRentTransactions(additionalLeaseIds, competencyPeriod);
 
       // Process each unit
       const assetHealthList: AssetHealth[] = units.map((unit) => {
@@ -374,8 +370,13 @@ export function useAssetHealth(referenceDate?: Date) {
           const controlType: ControlType = obligationConfig.control_type || "financial";
 
           let matchingTx: any = null;
+          const link = leaseLinks.get(unit.id);
+          const viaLease = type === "rent" && !!link && !link.isPrimary;
 
-          if (controlType === "managerial") {
+          if (viaLease) {
+            // Imóvel adicional: o aluguel é lançado no principal, casado pelo lease_id
+            matchingTx = leaseRentTx.find((t) => t.lease_id === link!.leaseId) || null;
+          } else if (controlType === "managerial") {
             // Search in managerial_transactions
             matchingTx = (managerialTx || []).find((t) => 
               t.unit_id === unit.id && t.obligation_type === type
@@ -395,7 +396,7 @@ export function useAssetHealth(referenceDate?: Date) {
             type === "rent" &&
             obligationConfig.active &&
             status !== "paid" &&
-            isRentGraceCompetency(competencyPeriod, obligationConfig, leaseByUnit.get(unit.id) ?? null)
+            isRentGraceCompetency(competencyPeriod, obligationConfig, (link as any) ?? null)
           ) {
             status = "grace";
           }
@@ -409,6 +410,7 @@ export function useAssetHealth(referenceDate?: Date) {
             controlType,
             transactionId: matchingTx?.id,
             amount: matchingTx?.amount,
+            viaLease: viaLease && status !== "grace" ? viaLeaseText(status, link!.primaryLabel) : null,
           });
         });
 
