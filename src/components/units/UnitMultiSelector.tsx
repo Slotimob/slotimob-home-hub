@@ -22,12 +22,26 @@ interface UnitMultiSelectorProps {
   value: UnitOption[];
   onChange: (units: UnitOption[]) => void;
   placeholder?: string;
+  /** Fonte própria de opções (ex.: mesmos filtros de outra seleção). Sem isto, usa useUnitOptions. */
+  options?: UnitOption[];
+  optionsLoading?: boolean;
+  /** Ids que não podem ser escolhidos (ex.: imóvel principal). */
+  excludeIds?: string[];
 }
 
-export const UnitMultiSelector = ({ value, onChange, placeholder = 'Buscar unidades...' }: UnitMultiSelectorProps) => {
+export const UnitMultiSelector = ({
+  value,
+  onChange,
+  placeholder = 'Buscar unidades...',
+  options,
+  optionsLoading,
+  excludeIds = [],
+}: UnitMultiSelectorProps) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const { units, loading } = useUnitOptions();
+  const fallback = useUnitOptions({ enabled: !options });
+  const units = (options ?? fallback.units).filter((u) => !excludeIds.includes(u.id));
+  const loading = options ? !!optionsLoading : fallback.loading;
 
   const isSelected = (id: string) => value.some((u) => u.id === id);
 

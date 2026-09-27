@@ -25,11 +25,13 @@ export interface UnitOption {
   property_name: string | null;
 }
 
-export function useUnitOptions() {
+export function useUnitOptions(opts: { enabled?: boolean } = {}) {
+  const enabled = opts.enabled ?? true;
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     setLoading(true);
     supabase
@@ -54,7 +56,7 @@ export function useUnitOptions() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return { units, loading };
 }
