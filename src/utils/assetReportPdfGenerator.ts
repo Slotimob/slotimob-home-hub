@@ -236,6 +236,7 @@ export async function generateAssetReportPdf(report: AssetReportData) {
             ['Receitas no período', fmtCurrency(asset.period.income_total)],
             ['Despesas no período', fmtCurrency(asset.period.expenses_total)],
             ['Resultado líquido', fmtCurrency(asset.period.income_total - asset.period.expenses_total)],
+            ...(asset.period.allocation_notes || []).map((n) => ['Rateio', n]),
           ],
           theme: 'plain',
           styles: { fontSize: 9, cellPadding: 2 },

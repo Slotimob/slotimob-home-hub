@@ -130,7 +130,33 @@ export function useRentalMetrics(params: {
         count: number;
       }>();
 
-      for (const t of overdueItems) {
+      // Contrato com vários imóveis: o lançamento é único (no principal), mas o
+      // agrupamento por imóvel usa o rateio de v_financial_transactions_by_unit.
+      const overdueIds = overdueItems.map((t: any) => t.id).filter(Boolean);
+      const allocById = new Map<string, { alloc_unit_id: string; alloc_factor: number }[]>();
+      if (overdueIds.length) {
+        const { data: allocRows } = await (supabase as any)
+          .from('v_financial_transactions_by_unit')
+          .select('id, alloc_unit_id, alloc_factor')
+          .in('id', overdueIds)
+          .eq('is_allocated', true);
+        for (const r of (allocRows as any[]) || []) {
+          const list = allocById.get(r.id) || [];
+          list.push({ alloc_unit_id: r.alloc_unit_id, alloc_factor: Number(r.alloc_factor) || 0 });
+          allocById.set(r.id, list);
+        }
+      }
+      const overdueByUnit = overdueItems.flatMap((t: any) => {
+        const allocs = allocById.get(t.id);
+        if (!allocs?.length) return [t];
+        return allocs.map((a) => ({
+          ...t,
+          unit_id: a.alloc_unit_id,
+          amount: Math.round((Number(t.amount) || 0) * a.alloc_factor * 100) / 100,
+        }));
+      });
+
+      for (const t of overdueByUnit) {
         const key = `${t.property_id || ''}_${t.unit_id || ''}`;
         const existing = openMap.get(key);
         const amt = Number(t.amount) || 0;

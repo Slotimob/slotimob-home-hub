@@ -1,5 +1,6 @@
 import { useLeaseByUnitId } from "@/hooks/useLeases";
 import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
+import { fetchLeaseRentTransactions, viaLeaseText, unitLabel as unitLabelOf } from "@/lib/lease-multi-unit";
 import { useState, useMemo } from "react";
 import { format, addMonths, startOfMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -175,6 +176,7 @@ interface MonthlyObligation {
     transaction_date: string;
     description: string;
   } | null;
+  viaLease?: string | null;
 }
 
 export function AssetDetailDialog({
@@ -257,6 +259,14 @@ export function AssetDetailDialog({
 
   // Fetch transactions for the selected month
   const { data: activeLease } = useLeaseByUnitId(asset?.unitId ?? null);
+  // Imóvel ADICIONAL: aluguel lançado no imóvel principal, casado pelo lease_id.
+  const isAdditionalUnit = !!activeLease && (activeLease as any).unit_id !== asset?.unitId;
+  const { data: leaseRentTx = [] } = useQuery({
+    queryKey: ["lease-rent-tx", activeLease?.id, competencyPeriod],
+    queryFn: () => fetchLeaseRentTransactions([activeLease!.id], competencyPeriod),
+    enabled: isAdditionalUnit,
+  });
+  const primaryUnitLabel = isAdditionalUnit ? unitLabelOf((activeLease as any)?.unit) : "";
 
   const { data: monthTransactions = [] } = useQuery({
     queryKey: ["unit-month-transactions", asset?.unitId, competencyPeriod],
@@ -535,7 +545,7 @@ export function AssetDetailDialog({
       // 1. Exact match by obligation_type + competency_period
       // 2. Match by obligation_type only
       // 3. Legacy fallback by description/category
-      const transaction = monthTransactions.find((t) => {
+      const transaction = type === "rent" && isAdditionalUnit ? ((leaseRentTx[0] as any) ?? null) : monthTransactions.find((t) => {
         if (t.obligation_type === type && t.competency_period === competencyPeriod) {
           return true;
         }
@@ -585,16 +595,17 @@ export function AssetDetailDialog({
         label: OBLIGATION_LABELS[type],
         config: config.active ? config : null,
         status,
+        viaLease: type === "rent" && isAdditionalUnit && status !== "grace" ? viaLeaseText(status, primaryUnitLabel) : null,
         transaction: transaction ? {
           id: transaction.id,
           amount: transaction.amount,
           status: transaction.status,
           transaction_date: transaction.transaction_date,
-          description: transaction.description,
+          description: transaction.description ?? `Aluguel (contrato ${primaryUnitLabel})`,
         } : null,
       };
     }).filter(o => o.config !== null);
-  }, [unitConfig, monthTransactions, competencyPeriod, activeLease]);
+  }, [unitConfig, monthTransactions, competencyPeriod, activeLease, isAdditionalUnit, leaseRentTx, primaryUnitLabel]);
 
   const handleCreateTransaction = (obligationType: ObligationType) => {
     if (!asset) return;
@@ -936,6 +947,9 @@ export function AssetDetailDialog({
                                   {obligation.config?.due_day && (
                                     <p className="text-xs text-muted-foreground mt-0.5">Vence dia {obligation.config.due_day}</p>
                                   )}
+                                  {obligation.viaLease && (
+                                    <p className="text-xs text-primary mt-0.5 break-words">{obligation.viaLease}</p>
+                                  )}
                                   {obligation.transaction ? (
                                     <div className="mt-2 p-2 bg-muted/50 rounded-md">
                                       <div className="flex items-center justify-between">
@@ -946,7 +960,7 @@ export function AssetDetailDialog({
                                         {format(parseISO(obligation.transaction.transaction_date), "dd/MM/yyyy")}
                                       </p>
                                     </div>
-                                  ) : obligation.status !== "ignored" && (
+                                  ) : obligation.status !== "ignored" && !obligation.viaLease && (
                                     <div className="flex gap-2 mt-2">
                                       <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => handleCreateTransaction(obligation.type)}>
                                         <Plus className="h-3 w-3 mr-1" /> Criar Lançamento

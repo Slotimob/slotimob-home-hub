@@ -57,6 +57,7 @@ import { cn } from "@/lib/utils";
 import { LeaseSpecialConditionsSummaryCard } from "@/components/assets/LeaseFinancialConditionsCard";
 import { useLeaseByUnitId } from "@/hooks/useLeases";
 import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
+import { fetchLeaseRentTransactions, viaLeaseText, unitLabel as unitLabelOf } from "@/lib/lease-multi-unit";
 import { formatCurrencyBRL } from "@/utils/unitPricing";
 import { obligationTypeMatches, resolveObligationLabel, customObligationTypeId } from "@/lib/obligation-labels";
 import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
@@ -162,6 +163,8 @@ interface MonthlyObligation {
   } | null;
   /** Só aluguel: líquido quando há abatimentos/IRRF na competência. */
   net?: { gross: number; deductions: number; irrf: number; net: number } | null;
+  /** Imóvel adicional: aluguel lançado no imóvel principal do contrato. */
+  viaLease?: string | null;
 }
 
 const AlugueiDetalhe = () => {
@@ -254,6 +257,14 @@ const AlugueiDetalhe = () => {
   });
 
   const { data: activeLease } = useLeaseByUnitId(unitId);
+  // Imóvel ADICIONAL de um contrato: o aluguel é lançado no imóvel principal (lease_id).
+  const isAdditionalUnit = !!activeLease && (activeLease as any).unit_id !== unitId;
+  const { data: leaseRentTx = [] } = useQuery({
+    queryKey: ["lease-rent-tx", activeLease?.id, competencyPeriod],
+    queryFn: () => fetchLeaseRentTransactions([activeLease!.id], competencyPeriod),
+    enabled: isAdditionalUnit,
+  });
+  const primaryUnitLabel = isAdditionalUnit ? unitLabelOf((activeLease as any)?.unit) : "";
 
   const { data: monthTransactions = [] } = useQuery({
     queryKey: ["unit-month-transactions", unitId, competencyPeriod],
@@ -340,7 +351,8 @@ const AlugueiDetalhe = () => {
     return [...fixedTypes, ...extraTypes]
       .map((type) => {
         const config = (unitConfig as any)[type] || { active: false };
-        const transaction =
+        const viaLeaseTx = type === "rent" && isAdditionalUnit ? (leaseRentTx[0] as any) ?? null : null;
+        const transaction = type === "rent" && isAdditionalUnit ? viaLeaseTx :
           monthTransactions.find(
             (t) =>
               obligationTypeMatches(type, t.obligation_type) && t.competency_period === competencyPeriod
@@ -411,19 +423,23 @@ const AlugueiDetalhe = () => {
           config: config.active ? config : null,
           status,
           net,
+          viaLease:
+            type === "rent" && isAdditionalUnit && status !== "grace"
+              ? viaLeaseText(status, primaryUnitLabel)
+              : null,
           transaction: transaction
             ? {
                 id: transaction.id,
                 amount: transaction.amount,
                 status: transaction.status,
                 transaction_date: transaction.transaction_date,
-                description: transaction.description,
+                description: transaction.description ?? `Aluguel (contrato ${primaryUnitLabel})`,
               }
             : null,
         };
       })
       .filter((o) => o.config !== null);
-  }, [unitConfig, monthTransactions, competencyPeriod, customObligationTypes, activeLease]);
+  }, [unitConfig, monthTransactions, competencyPeriod, customObligationTypes, activeLease, isAdditionalUnit, leaseRentTx, primaryUnitLabel]);
 
   const handleCreateTransaction = (obligationType: ObligationType) => {
     if (!unitId) return;
@@ -854,6 +870,11 @@ const AlugueiDetalhe = () => {
                                     Vence dia {obligation.config.due_day}
                                   </p>
                                 )}
+                                {obligation.viaLease && (
+                                  <p className="text-xs text-primary mt-0.5 break-words">
+                                    {obligation.viaLease}
+                                  </p>
+                                )}
                                 {obligation.net && (
                                   <p className="text-xs text-muted-foreground mt-0.5 break-words">
                                     Líquido esperado:{" "}
@@ -889,7 +910,7 @@ const AlugueiDetalhe = () => {
                                     </p>
                                   </div>
                                 ) : (
-                                  obligation.status !== "ignored" && obligation.status !== "grace" && canCreate && (
+                                  obligation.status !== "ignored" && obligation.status !== "grace" && !obligation.viaLease && canCreate && (
                                     <div className="flex gap-2 mt-2">
                                       <Button
                                         variant="outline"

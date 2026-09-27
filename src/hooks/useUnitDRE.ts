@@ -1,3 +1,4 @@
+import { allocationNotesFor } from "@/lib/lease-multi-unit";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, format } from "date-fns";
@@ -27,6 +28,8 @@ export interface UnitDREData {
   financialRevenue: DRESection;
   profitDistribution: DRESection;
   netResult: number;
+  /** "Inclui X% do contrato … (rateio entre N imóveis)" */
+  allocationNotes?: string[];
 }
 
 export function useUnitDRE(unitId: string | null, startDate?: Date, endDate?: Date) {
@@ -37,30 +40,32 @@ export function useUnitDRE(unitId: string | null, startDate?: Date, endDate?: Da
     queryKey: ["unit-dre-report", unitId, format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd")],
     queryFn: async (): Promise<UnitDREData> => {
       // Fetch all paid transactions for this unit with their categories
-      let query = supabase
-        .from("financial_transactions")
-        .select(`
-          id,
-          amount,
-          type,
-          category_id,
-          financial_categories (
-            id,
-            name,
-            dre_type
-          )
-        `)
+      // Por imóvel: lê a view com rateio (contratos com vários imóveis) e soma alloc_amount.
+      let query = (supabase as any)
+        .from("v_financial_transactions_by_unit")
+        .select("id, amount:alloc_amount, type, category_id, lease_id, alloc_factor, is_allocated")
         .eq("status", "paid")
         .gte("paid_date", format(start, "yyyy-MM-dd"))
         .lte("paid_date", format(end, "yyyy-MM-dd"));
 
       if (unitId) {
-        query = query.eq("unit_id", unitId);
+        query = query.eq("alloc_unit_id", unitId);
       }
 
-      const { data: transactions, error } = await query;
+      const { data: rawTx, error } = await query;
 
       if (error) throw error;
+      const catIds = Array.from(new Set(((rawTx as any[]) || []).map((t) => t.category_id).filter(Boolean)));
+      const { data: cats } = catIds.length
+        ? await supabase.from("financial_categories").select("id, name, dre_type").in("id", catIds)
+        : { data: [] as any[] };
+      const catById = new Map((cats || []).map((c: any) => [c.id, c]));
+      const transactions = ((rawTx as any[]) || []).map((t) => ({
+        ...t,
+        amount: Number(t.amount) || 0,
+        financial_categories: catById.get(t.category_id) ?? null,
+      }));
+      const allocationNotes = unitId ? await allocationNotesFor(transactions) : [];
 
       // Initialize sections
       const sections: Record<string, DRESection> = {
@@ -136,6 +141,7 @@ export function useUnitDRE(unitId: string | null, startDate?: Date, endDate?: Da
         financialRevenue: sections.financial_revenue,
         profitDistribution: sections.profit_distribution,
         netResult,
+        allocationNotes,
       };
     },
     enabled: !!unitId || unitId === null, // Allow null to show all units
