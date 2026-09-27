@@ -51,6 +51,7 @@ import {
 } from "@/hooks/useLeaseFinancialProjection";
 import { supabase } from "@/integrations/supabase/client";
 import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
+import { RentCompositionDialog } from "@/components/finance/RentCompositionDialog";
 import {
   isUncategorizedObligation,
   resolveObligationLabel,
@@ -163,6 +164,38 @@ export const LeaseProjectionEditor = forwardRef<
   const { data: existingCompetencies, isLoading: loadingExisting } =
     useExistingLeaseCompetencies(lease?.id ?? null, true);
   const { data: customObligationTypes } = useCustomObligationTypes();
+  const [amountOverrides, setAmountOverrides] = useState<Record<string, number>>({});
+  const [compositionTxId, setCompositionTxId] = useState<string | null>(null);
+  useEffect(() => {
+    setAmountOverrides({});
+  }, [lease?.id]);
+  const onAmountOverride = (key: string, amount: number | null) =>
+    setAmountOverrides((prev) => {
+      const next = { ...prev };
+      if (amount === null) delete next[key];
+      else next[key] = amount;
+      return next;
+    });
+  const applyOverride = (i: PlannedInstallment): PlannedInstallment =>
+    i.key in amountOverrides
+      ? { ...i, amount: amountOverrides[i.key], meta: { ...(i.meta || { kind: "irrf" }), manual_override: true } as PlannedInstallment["meta"] }
+      : i;
+  const handleEditExisting = async (i: PlannedInstallment) => {
+    if (!lease) return;
+    const { data, error } = await supabase
+      .from("financial_transactions")
+      .select("id")
+      .or(`lease_id.eq.${lease.id},reference.eq.lease:${lease.id}`)
+      .eq("competency_period", i.competencyPeriod)
+      .or("obligation_type.eq.rent,obligation_type.is.null")
+      .neq("status", "cancelled")
+      .limit(1);
+    if (error || !data?.length) {
+      toast({ title: "O aluguel deste mês não foi encontrado no financeiro", variant: "destructive" });
+      return;
+    }
+    setCompositionTxId(data[0].id);
+  };
 
   /** `uuid do tipo customizado -> nome`, usado só como fallback do rótulo. */
   const customTypeNames = useMemo(
@@ -501,6 +534,7 @@ export const LeaseProjectionEditor = forwardRef<
   const deductionInstallments = deductionResult.installments;
 
   const hasWithholding = !!lease?.rent_withholding?.enabled;
+  const deductionView = useMemo(() => deductionInstallments.map(applyOverride), [deductionInstallments, amountOverrides]);
   const withholdingInstallments = useMemo(() => {
     if (!lease || !hasWithholding || rentInstallments.length === 0) return [];
     const condo = additionalConfigs.find((o) => o.type === "condominium");
@@ -579,6 +613,8 @@ export const LeaseProjectionEditor = forwardRef<
       return next;
     });
 
+  const withholdingView = useMemo(() => withholdingInstallments.map(applyOverride), [withholdingInstallments, amountOverrides]);
+
   const confirmedInstallments = useMemo(() => {
     const list: PlannedInstallment[] = [];
     if (enabled.rent && !window?.blocked) list.push(...rentInstallments);
@@ -588,10 +624,11 @@ export const LeaseProjectionEditor = forwardRef<
       if (enabled[g.cfg.type]) list.push(...g.installments);
     }
     if (enabled.rent && !window?.blocked) {
-      if (enabled.rent_deductions !== false) list.push(...deductionInstallments);
-      if (enabled.irrf !== false) list.push(...withholdingInstallments);
+      if (enabled.rent_deductions !== false) list.push(...deductionView);
+      if (enabled.irrf !== false) list.push(...withholdingView);
     }
-    return list.filter((i) => !i.alreadyExists && !i.isGrace && selected.has(i.key));
+    // CHECK amount > 0 no banco: linhas zeradas não são lançadas
+    return list.filter((i) => !i.alreadyExists && !i.isGrace && selected.has(i.key) && i.amount > 0);
   }, [
     enabled,
     window,
@@ -599,8 +636,8 @@ export const LeaseProjectionEditor = forwardRef<
     insuranceInstallments,
     iptuInstallments,
     additionalGroups,
-    deductionInstallments,
-    withholdingInstallments,
+    deductionView,
+    withholdingView,
     selected,
   ]);
 
@@ -790,6 +827,7 @@ export const LeaseProjectionEditor = forwardRef<
               onToggle={toggle}
               onSelectAll={selectAll}
               onClearAll={clearAll}
+              onEditExisting={handleEditExisting}
             />
           )}
 
@@ -800,6 +838,9 @@ export const LeaseProjectionEditor = forwardRef<
               icon={<MinusCircle className="h-4 w-4" />}
               transactionType="expense"
               installments={deductionInstallments}
+              amountOverrides={amountOverrides}
+              onAmountOverride={onAmountOverride}
+              onEditExisting={handleEditExisting}
               hideConfig
               enabled={enabled.rent_deductions !== false}
               onEnabledChange={(v) => setEnabled((p) => ({ ...p, rent_deductions: v }))}
@@ -831,6 +872,9 @@ export const LeaseProjectionEditor = forwardRef<
               icon={<FileMinus className="h-4 w-4" />}
               transactionType="expense"
               installments={withholdingInstallments}
+              amountOverrides={amountOverrides}
+              onAmountOverride={onAmountOverride}
+              onEditExisting={handleEditExisting}
               hideConfig
               enabled={enabled.irrf !== false}
               onEnabledChange={(v) => setEnabled((p) => ({ ...p, irrf: v }))}
@@ -840,7 +884,7 @@ export const LeaseProjectionEditor = forwardRef<
               onClearAll={clearAll}
               notice={
                 lease.rent_withholding?.mode === "table"
-                  ? "Estimativa. Ajuste para o valor que o inquilino realmente reteve."
+                  ? "Estimativa. Ajuste o valor de cada mês para o que o inquilino realmente reteve."
                   : undefined
               }
             />
@@ -1010,6 +1054,15 @@ export const LeaseProjectionEditor = forwardRef<
           </details>
         )}
       </div>
+      <RentCompositionDialog
+        open={!!compositionTxId}
+        onOpenChange={(o) => !o && setCompositionTxId(null)}
+        transactionId={compositionTxId}
+        onDone={() => {
+          queryClient.invalidateQueries({ queryKey: ["lease-competencies"] });
+          queryClient.invalidateQueries({ queryKey: ["lease-transactions"] });
+        }}
+      />
     </div>
   );
 });
