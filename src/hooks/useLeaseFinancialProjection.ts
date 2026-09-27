@@ -267,6 +267,7 @@ export function useUpdateFutureProjections() {
         .from("financial_transactions")
         .update({ amount: newAmount })
         .eq("reference", `lease:${leaseId}`)
+          .or("obligation_type.eq.rent,obligation_type.is.null")
         .eq("status", "pending")
         .gte("due_date", effectiveDateStr)
         .select("id");
