@@ -5,9 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Loader2, Link2, Unlink } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useReconciliation } from "@/hooks/useReconciliation";
 import { cn } from "@/lib/utils";
 
 interface ReconciliationDetailsPopoverProps {
@@ -26,49 +24,16 @@ export function ReconciliationDetailsPopover({
 }: ReconciliationDetailsPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isUndoing, setIsUndoing] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { unreconcile } = useReconciliation();
 
   const handleUndoReconciliation = async () => {
     setIsUndoing(true);
     try {
-      // First, find the bank statement entry linked to this transaction
-      const { data: entries } = await supabase
-        .from("bank_statement_entries")
-        .select("id")
-        .eq("transaction_id", transaction.id);
-
-      // Unlink bank statement entries
-      if (entries && entries.length > 0) {
-        const entryIds = entries.map(e => e.id);
-        await supabase
-          .from("bank_statement_entries")
-          .update({ transaction_id: null, is_reconciled: false })
-          .in("id", entryIds);
-      }
-
-      // Update the transaction
-      const { error } = await supabase
-        .from("financial_transactions")
-        .update({ 
-          is_reconciled: false, 
-          reconciled_at: null 
-        })
-        .eq("id", transaction.id);
-
-      if (error) throw error;
-
-      toast({ title: "Conciliação desfeita com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: ["infinite-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["bank-statement-entries"] });
+      await unreconcile.mutateAsync({ transactionId: transaction.id });
       onReconciliationChange();
       setIsOpen(false);
-    } catch (error: any) {
-      toast({
-        title: "Erro ao desfazer conciliação",
-        description: error.message,
-        variant: "destructive",
-      });
+    } catch {
+      // toast de erro vem do hook
     } finally {
       setIsUndoing(false);
     }

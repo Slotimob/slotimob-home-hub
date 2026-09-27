@@ -20,7 +20,7 @@ import { ReconciliationDetailsPopover } from "./ReconciliationDetailsPopover";
 import { ReconciliationMatcherDialog } from "./ReconciliationMatcherDialog";
 import { WhatsAppBillingButton } from "./WhatsAppBillingButton";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProgressiveBalance } from "@/hooks/useProgressiveBalance";
+import { useReconciliation } from "@/hooks/useReconciliation";
 import { useWhatsAppBilling } from "@/hooks/useWhatsAppBilling";
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,8 @@ export function TransactionsTableInfinite({
 }: TransactionsTableInfiniteProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { reconcileTransaction, isReconciling } = useProgressiveBalance();
+  const { unreconcile } = useReconciliation();
+  const isReconciling = unreconcile.isPending;
   const { sendBillingReminder, isEligibleForBilling, isSending: isSendingBilling } = useWhatsAppBilling();
   const { isOwner, hasPermission } = usePermissions();
   const canEditTx = isOwner || hasPermission('finance_transactions', 'edit');
@@ -223,6 +224,7 @@ export function TransactionsTableInfinite({
       amount: transaction.amount,
       type: transaction.type,
       transaction_date: transaction.transaction_date,
+      due_date: transaction.due_date ?? null,
       bank_account_id: transaction.bank_account_id,
     });
   };
@@ -235,18 +237,14 @@ export function TransactionsTableInfinite({
       return;
     }
     
-    // For reconciled, toggle off
+    // For reconciled, undo both sides (lançamento + linha do extrato)
     setReconcilingId(transaction.id);
     try {
-      reconcileTransaction({
-        transactionId: transaction.id,
-        reconcile: false,
-      });
-      setTimeout(() => {
-        onTransactionUpdated();
-        setReconcilingId(null);
-      }, 300);
-    } catch (error) {
+      await unreconcile.mutateAsync({ transactionId: transaction.id });
+      onTransactionUpdated();
+    } catch {
+      // toast de erro vem do hook
+    } finally {
       setReconcilingId(null);
     }
   };
