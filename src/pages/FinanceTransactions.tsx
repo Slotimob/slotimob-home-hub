@@ -1,3 +1,4 @@
+import { getEffectiveStatus, EFFECTIVE_STATUS_LABELS } from "@/lib/transaction-status";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
@@ -46,11 +47,17 @@ const FinanceTransactions = () => {
   const urlUnitId = searchParams.get("unitId") || "";
   const urlBankAccountId = searchParams.get("bankAccountId") || "";
   const urlAction = searchParams.get("action") || "";
+  const VALID_STATUS = ["all", "pending", "paid", "overdue", "cancelled"];
+  const VALID_TYPE = ["all", "income", "expense", "transfer"];
+  const rawStatus = searchParams.get("status") || "";
+  const rawType = searchParams.get("type") || "";
+  const urlStatus = VALID_STATUS.includes(rawStatus) ? rawStatus : "";
+  const urlType = VALID_TYPE.includes(rawType) ? rawType : "";
 
 
   const [filters, setFilters] = useState<TransactionFilters>({
-    type: "all",
-    status: "all",
+    type: urlType || "all",
+    status: urlStatus || "all",
     categoryId: "all",
     issueDateFrom: "",
     issueDateTo: "",
@@ -75,7 +82,13 @@ const FinanceTransactions = () => {
     if (urlBankAccountId && urlBankAccountId !== filters.bankAccountId) {
       setFilters((prev) => ({ ...prev, bankAccountId: urlBankAccountId }));
     }
-  }, [urlUnitId, urlBankAccountId]);
+    if (urlStatus && urlStatus !== filters.status) {
+      setFilters((prev) => ({ ...prev, status: urlStatus }));
+    }
+    if (urlType && urlType !== filters.type) {
+      setFilters((prev) => ({ ...prev, type: urlType }));
+    }
+  }, [urlUnitId, urlBankAccountId, urlStatus, urlType]);
 
 
   // Auto-open create dialog when action=new is present in URL
@@ -149,7 +162,7 @@ const FinanceTransactions = () => {
       t.description,
       t.category?.name || "",
       t.amount,
-      t.status,
+      EFFECTIVE_STATUS_LABELS[getEffectiveStatus(t)],
       t.unit?.unit_number || "",
     ]);
 
