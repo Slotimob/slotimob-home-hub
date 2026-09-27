@@ -59,7 +59,7 @@ import { useLeaseByUnitId } from "@/hooks/useLeases";
 import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
 import { fetchLeaseRentTransactions, viaLeaseText, unitLabel as unitLabelOf } from "@/lib/lease-multi-unit";
 import { formatCurrencyBRL } from "@/utils/unitPricing";
-import { obligationTypeMatches, resolveObligationLabel, customObligationTypeId } from "@/lib/obligation-labels";
+import { obligationTypeMatches, pickObligationTx, resolveObligationLabel, customObligationTypeId } from "@/lib/obligation-labels";
 import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
 import { toast } from "@/hooks/use-toast";
 
