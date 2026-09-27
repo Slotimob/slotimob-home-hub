@@ -351,15 +351,15 @@ const AlugueiDetalhe = () => {
     return [...fixedTypes, ...extraTypes]
       .map((type) => {
         const config = (unitConfig as any)[type] || { active: false };
-        const viaLeaseTx = type === "rent" && isAdditionalUnit ? (leaseRentTx[0] as any) ?? null : null;
+        const viaLeaseTx = type === "rent" && isAdditionalUnit ? (pickObligationTx(leaseRentTx as any[]) as any) ?? null : null;
         const transaction = type === "rent" && isAdditionalUnit ? viaLeaseTx :
-          monthTransactions.find(
+          pickObligationTx(monthTransactions.filter(
             (t) =>
               obligationTypeMatches(type, t.obligation_type) && t.competency_period === competencyPeriod
-          ) ||
-          monthTransactions.find(
+          )) ||
+          pickObligationTx(monthTransactions.filter(
             (t) => obligationTypeMatches(type, t.obligation_type) && !t.competency_period
-          ) ||
+          )) ||
           monthTransactions.find((t) => {
             if (t.obligation_type) return false;
             const categoryName = (t.category?.name || "").toLowerCase();

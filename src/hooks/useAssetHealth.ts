@@ -200,18 +200,18 @@ function findMatchingTransaction(
   const keywords = OBLIGATION_CATEGORIES[obligationType];
   
   // Priority 1: Exact match by obligation_type AND competency_period (strongest binding)
-  const exactMatch = transactions.find((t) => {
+  const exactMatch = pickObligationTx(transactions.filter((t) => {
     if (t.unit_id !== unitId) return false;
     return obligationTypeMatches(obligationType, t.obligation_type) && t.competency_period === competencyPeriod;
-  });
+  }));
   
   if (exactMatch) return exactMatch;
   
   // Priority 2: Match by obligation_type only (for transactions linked but missing period)
-  const typeMatch = transactions.find((t) => {
+  const typeMatch = pickObligationTx(transactions.filter((t) => {
     if (t.unit_id !== unitId) return false;
     return obligationTypeMatches(obligationType, t.obligation_type) && !t.competency_period;
-  });
+  }));
   
   if (typeMatch) return typeMatch;
   
@@ -375,7 +375,7 @@ export function useAssetHealth(referenceDate?: Date) {
 
           if (viaLease) {
             // Imóvel adicional: o aluguel é lançado no principal, casado pelo lease_id
-            matchingTx = leaseRentTx.find((t) => t.lease_id === link!.leaseId) || null;
+            matchingTx = pickObligationTx(leaseRentTx.filter((t) => t.lease_id === link!.leaseId)) || null;
           } else if (controlType === "managerial") {
             // Search in managerial_transactions
             matchingTx = (managerialTx || []).find((t) => 

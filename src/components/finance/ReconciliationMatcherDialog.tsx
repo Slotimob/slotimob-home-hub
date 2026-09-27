@@ -11,7 +11,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useReconciliation } from "@/hooks/useReconciliation";
-import { fetchSettlementGroup, settlementBreakdown } from "@/lib/settlement-group";
+import { fetchSettlementGroup, settlementBreakdown, describeSettlement } from "@/lib/settlement-group";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
@@ -325,10 +325,7 @@ export function ReconciliationMatcherDialog({
             </div>
             {settlement && (
               <div className="mt-2 rounded-md border border-border bg-background px-2 py-1.5 text-xs">
-                <span className="font-medium">Baixa conjunta:</span> aluguel {formatCurrency(settlement.rent)} − abatimentos{" "}
-                {formatCurrency(settlement.deductions)} − IRRF {formatCurrency(settlement.irrf)}
-                {settlement.otherExpenses > 0 ? ` − outros ${formatCurrency(settlement.otherExpenses)}` : ""} ={" "}
-                <span className="font-semibold">líquido {formatCurrency(settlement.net)}</span>
+                <span className="font-medium">Baixa conjunta:</span> {describeSettlement(settlement)}
               </div>
             )}
           </div>
