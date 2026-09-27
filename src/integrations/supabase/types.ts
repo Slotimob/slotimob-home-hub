@@ -2602,6 +2602,8 @@ export type Database = {
           id: string
           is_reconciled: boolean | null
           lead_id: string | null
+          lease_id: string | null
+          metadata: Json
           notes: string | null
           obligation_type: string | null
           paid_date: string | null
@@ -2611,6 +2613,7 @@ export type Database = {
           reconciled_at: string | null
           recurrence_info: Json | null
           reference: string | null
+          settlement_group_id: string | null
           status: string
           transaction_date: string
           type: string
@@ -2635,6 +2638,8 @@ export type Database = {
           id?: string
           is_reconciled?: boolean | null
           lead_id?: string | null
+          lease_id?: string | null
+          metadata?: Json
           notes?: string | null
           obligation_type?: string | null
           paid_date?: string | null
@@ -2644,6 +2649,7 @@ export type Database = {
           reconciled_at?: string | null
           recurrence_info?: Json | null
           reference?: string | null
+          settlement_group_id?: string | null
           status?: string
           transaction_date?: string
           type: string
@@ -2668,6 +2674,8 @@ export type Database = {
           id?: string
           is_reconciled?: boolean | null
           lead_id?: string | null
+          lease_id?: string | null
+          metadata?: Json
           notes?: string | null
           obligation_type?: string | null
           paid_date?: string | null
@@ -2677,6 +2685,7 @@ export type Database = {
           reconciled_at?: string | null
           recurrence_info?: Json | null
           reference?: string | null
+          settlement_group_id?: string | null
           status?: string
           transaction_date?: string
           type?: string
@@ -2732,6 +2741,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
             referencedColumns: ["id"]
           },
           {
@@ -3138,6 +3154,9 @@ export type Database = {
           owner_contact_id: string | null
           payment_info: Json | null
           rent_amount: number
+          rent_deductions: Json
+          rent_grace: Json | null
+          rent_withholding: Json | null
           signature_status: string | null
           signed_contract_path: string | null
           start_date: string
@@ -3181,6 +3200,9 @@ export type Database = {
           owner_contact_id?: string | null
           payment_info?: Json | null
           rent_amount?: number
+          rent_deductions?: Json
+          rent_grace?: Json | null
+          rent_withholding?: Json | null
           signature_status?: string | null
           signed_contract_path?: string | null
           start_date: string
@@ -3224,6 +3246,9 @@ export type Database = {
           owner_contact_id?: string | null
           payment_info?: Json | null
           rent_amount?: number
+          rent_deductions?: Json
+          rent_grace?: Json | null
+          rent_withholding?: Json | null
           signature_status?: string | null
           signed_contract_path?: string | null
           start_date?: string

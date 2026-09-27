@@ -352,6 +352,24 @@ export const DEFAULT_FINANCIAL_CATEGORIES: FinancialCategory[] = [
     dre_type: "profit_distribution", 
     color: CATEGORY_COLORS.expense,
     priority: 100
+  },
+  {
+    name: "IRRF Retido na Fonte",
+    type: "expense",
+    group: "Impostos",
+    dre_type: "tax_deduction",
+    color: CATEGORY_COLORS.expense,
+    priority: 60,
+    tooltip: "Imposto de renda retido pelo inquilino pessoa jurídica sobre o aluguel"
+  },
+  {
+    name: "Abatimento de Aluguel (Encargo do Proprietário)",
+    type: "expense",
+    group: "Encargos de Locação",
+    dre_type: "variable_cost",
+    color: CATEGORY_COLORS.expense,
+    priority: 61,
+    tooltip: "Valor assumido pelo proprietário e descontado do aluguel do inquilino"
   }
 ];
 

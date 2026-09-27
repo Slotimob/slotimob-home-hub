@@ -153,6 +153,48 @@ export interface BillingLog {
   notes?: string;   // Optional notes about the contact
 }
 
+/** Carência: meses iniciais com aluguel zerado, com desconto % ou com valor fixo. */
+export interface RentGraceTier {
+  months: number;
+  mode: "free" | "percent" | "fixed";
+  value?: number;
+}
+
+export interface RentGraceConfig {
+  enabled: boolean;
+  /** "yyyy-MM" */
+  first_competency: string;
+  tiers: RentGraceTier[];
+  notes?: string;
+}
+
+export type RentDeductionReason = "condominium_extra" | "improvement" | "repair" | "other";
+
+/** Valor que o PROPRIETÁRIO assume e é descontado do aluguel do inquilino. */
+export interface RentDeductionConfig {
+  id: string;
+  enabled: boolean;
+  label: string;
+  reason: RentDeductionReason;
+  amount: number;
+  recurrence: "once" | "installments" | "monthly";
+  installments?: number;
+  /** "yyyy-MM" */
+  first_competency: string;
+  notes?: string;
+}
+
+/** Imposto retido na fonte sobre o aluguel (IRRF). */
+export interface RentWithholdingConfig {
+  enabled: boolean;
+  tax: "irrf";
+  mode: "fixed" | "percent" | "table";
+  fixed_amount?: number;
+  percent?: number;
+  base_deductions: { iptu: boolean; condominium: boolean; admin_fee: boolean };
+  notes?: string;
+}
+
 export interface Lease {
   id: string;
   broker_id: string;
@@ -191,6 +233,9 @@ export interface Lease {
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
   additional_obligations?: ObligationChargeConfig[] | null;
+  rent_grace?: RentGraceConfig | null;
+  rent_deductions?: RentDeductionConfig[] | null;
+  rent_withholding?: RentWithholdingConfig | null;
   property_id?: string | null;
   // Joined data
   tenant?: {
@@ -245,6 +290,9 @@ export interface CreateLeaseData {
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
   additional_obligations?: ObligationChargeConfig[] | null;
+  rent_grace?: RentGraceConfig | null;
+  rent_deductions?: RentDeductionConfig[] | null;
+  rent_withholding?: RentWithholdingConfig | null;
 }
 
 export interface CreateLeaseResult {
@@ -435,6 +483,9 @@ export function useCreateLease() {
           fire_insurance: (data.fire_insurance as unknown as Json) ?? null,
           iptu_charge: (data.iptu_charge as unknown as Json) ?? null,
           additional_obligations: (data.additional_obligations as unknown as Json) ?? [],
+          rent_grace: (data.rent_grace as unknown as Json) ?? null,
+          rent_deductions: (data.rent_deductions as unknown as Json) ?? [],
+          rent_withholding: (data.rent_withholding as unknown as Json) ?? null,
         } as never)
         .select()
         .single();
@@ -489,6 +540,15 @@ export function useUpdateLease() {
       if (data.additional_obligations !== undefined) {
         updateData.additional_obligations =
           (data.additional_obligations as unknown as Json) ?? [];
+      }
+      if (data.rent_grace !== undefined) {
+        updateData.rent_grace = (data.rent_grace as unknown as Json) ?? null;
+      }
+      if (data.rent_deductions !== undefined) {
+        updateData.rent_deductions = (data.rent_deductions as unknown as Json) ?? [];
+      }
+      if (data.rent_withholding !== undefined) {
+        updateData.rent_withholding = (data.rent_withholding as unknown as Json) ?? null;
       }
 
       const { data: updated, error } = await supabase
