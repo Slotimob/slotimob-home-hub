@@ -9,7 +9,10 @@ import { TrendingUp, TrendingDown, Search, Check, Loader2, AlertTriangle, Sparkl
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { settleRentPayment, invalidateRentSettlementQueries, type DifferenceKind } from "@/hooks/useRentSettlement";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useToast } from "@/hooks/use-toast";
 import { useReconciliation } from "@/hooks/useReconciliation";
 import { fetchSettlementGroup, settlementBreakdown, describeSettlement } from "@/lib/settlement-group";
 import { cn } from "@/lib/utils";
@@ -29,6 +32,9 @@ interface ReconciliationMatcherDialogProps {
     due_date?: string | null;
     bank_account_id?: string | null;
     settlement_group_id?: string | null;
+    obligation_type?: string | null;
+    lease_id?: string | null;
+    reference?: string | null;
   };
   onReconciled: () => void;
 }
@@ -120,6 +126,9 @@ export function ReconciliationMatcherDialog({
   onReconciled,
 }: ReconciliationMatcherDialogProps) {
   const { reconcile } = useReconciliation();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [adjustKind, setAdjustKind] = useState<DifferenceKind | "none" | "">("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEntry, setSelectedEntry] = useState<StatementEntry | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
@@ -135,6 +144,7 @@ export function ReconciliationMatcherDialog({
       setShowMismatchDialog(false);
       setSearchTerm("");
       setShowAllAccounts(false);
+      setAdjustKind("");
     }
   }, [open]);
 
@@ -165,25 +175,55 @@ export function ReconciliationMatcherDialog({
   });
 
   // Baixa conjunta: compara pelo LÍQUIDO do grupo
-  const { data: settlement } = useQuery({
+  const { data: settlementData } = useQuery({
     queryKey: ["settlement-groups", "for-tx", transaction.id],
     queryFn: async () => {
       let groupId = transaction.settlement_group_id ?? null;
-      if (groupId === null || groupId === undefined) {
+      let meta = {
+        type: transaction.type,
+        obligation_type: transaction.obligation_type ?? null,
+        lease_id: transaction.lease_id ?? null,
+        reference: transaction.reference ?? null,
+        due_date: transaction.due_date ?? null,
+      };
+      const needsMeta =
+        groupId === null || groupId === undefined ||
+        transaction.obligation_type === undefined || transaction.lease_id === undefined || transaction.reference === undefined;
+      if (needsMeta) {
         const { data, error } = await supabase
           .from("financial_transactions")
-          .select("settlement_group_id")
+          .select("settlement_group_id, type, obligation_type, lease_id, reference, due_date")
           .eq("id", transaction.id)
           .maybeSingle();
         if (error) throw error;
-        groupId = data?.settlement_group_id ?? null;
+        if (data) {
+          groupId = data.settlement_group_id ?? null;
+          meta = {
+            type: data.type,
+            obligation_type: data.obligation_type ?? null,
+            lease_id: data.lease_id ?? null,
+            reference: data.reference ?? null,
+            due_date: data.due_date ?? meta.due_date,
+          };
+        }
       }
-      if (!groupId) return null;
-      const lines = await fetchSettlementGroup(groupId);
-      return lines.length > 1 ? settlementBreakdown(lines) : null;
+      let breakdown = null as ReturnType<typeof settlementBreakdown> | null;
+      if (groupId) {
+        const lines = await fetchSettlementGroup(groupId);
+        breakdown = lines.length > 1 ? settlementBreakdown(lines) : null;
+      }
+      return { breakdown, meta };
     },
     enabled: open,
   });
+  const settlement = settlementData?.breakdown ?? null;
+  const txMeta = settlementData?.meta;
+  const isRentTx =
+    !!settlement ||
+    (!!txMeta &&
+      txMeta.type === "income" &&
+      (!txMeta.obligation_type || ["rent", "rent_balance"].includes(txMeta.obligation_type)) &&
+      (!!txMeta.lease_id || String(txMeta.reference || "").startsWith("lease:")));
   const compareAmount = settlement ? Math.abs(settlement.net) : Math.abs(transaction.amount);
   const compareIsIncome = settlement ? settlement.net >= 0 : transaction.type === "income";
 
@@ -245,6 +285,76 @@ export function ReconciliationMatcherDialog({
     } else {
       handleReconcile(selectedEntry);
     }
+  };
+
+  const rentDiff = selectedEntry ? Math.round((Math.abs(selectedEntry.amount) - compareAmount) * 100) / 100 : 0;
+  const defaultAdjust: DifferenceKind | "none" =
+    rentDiff > 0
+      ? selectedEntry && txMeta?.due_date && selectedEntry.entry_date > txMeta.due_date ? "late_fee" : "other_addition"
+      : "partial";
+  const allowedAdjust: (DifferenceKind | "none")[] =
+    rentDiff > 0 ? ["late_fee", "other_addition", "none"] : ["discount", "partial", "none"];
+  const effectiveAdjust = adjustKind && allowedAdjust.includes(adjustKind) ? adjustKind : defaultAdjust;
+  const adjustPreview = (() => {
+    if (!selectedEntry) return "";
+    const d = formatCurrency(Math.abs(rentDiff));
+    const rec = formatCurrency(Math.abs(selectedEntry.amount));
+    switch (effectiveAdjust) {
+      case "late_fee": return `Lança multa/juros de ${d} e concilia ${rec}`;
+      case "other_addition": return `Lança acréscimo de ${d} e concilia ${rec}`;
+      case "discount": return `Lança desconto de ${d} e concilia ${rec}`;
+      case "partial": return `Concilia ${rec} e deixa saldo de ${d} em aberto no mesmo mês`;
+      default: return `Concilia ${rec} sem ajustar os lançamentos`;
+    }
+  })();
+
+  const handleAdjustAndReconcile = async (entry: StatementEntry) => {
+    if (effectiveAdjust === "none") return handleReconcile(entry);
+    setIsReconciling(true);
+    let res;
+    try {
+      res = await settleRentPayment({
+        transactionId: transaction.id,
+        paidDate: entry.entry_date,
+        received: Math.abs(entry.amount),
+        differenceKind: effectiveAdjust,
+        bankAccountId: entry.bank_account_id,
+      });
+    } catch (e: any) {
+      toast({ title: "Erro ao lançar o ajuste", description: e?.message, variant: "destructive" });
+      setIsReconciling(false);
+      return;
+    }
+    try {
+      await reconcile.mutateAsync({
+        entryId: entry.id,
+        transactionId: res.anchor_id,
+        markAsPaid: true,
+        entryDate: entry.entry_date,
+        bankAccountId: entry.bank_account_id,
+      });
+    } catch {
+      invalidateRentSettlementQueries(queryClient);
+      toast({
+        title: "O ajuste foi lançado, mas a conciliação falhou. Tente conciliar de novo.",
+        variant: "destructive",
+      });
+      setIsReconciling(false);
+      return;
+    }
+    invalidateRentSettlementQueries(queryClient);
+    const d = formatCurrency(Math.abs(Number(res?.difference ?? rentDiff)));
+    const description =
+      effectiveAdjust === "late_fee" ? `Multa de ${d} lançada`
+      : effectiveAdjust === "other_addition" ? `Acréscimo de ${d} lançado`
+      : effectiveAdjust === "discount" ? `Desconto de ${d} lançado`
+      : `Saldo de ${d} ficou em aberto`;
+    toast({ title: "Conciliado com ajuste", description });
+    onReconciled();
+    onOpenChange(false);
+    setSelectedEntry(null);
+    setShowMismatchDialog(false);
+    setIsReconciling(false);
   };
 
   const handleReconcile = async (entry: StatementEntry) => {
@@ -437,6 +547,26 @@ export function ReconciliationMatcherDialog({
                       </span>
                     </p>
                   </div>
+                  {isRentTx && (
+                    <div className="mt-3 space-y-2 text-foreground">
+                      <RadioGroup
+                        value={effectiveAdjust}
+                        onValueChange={(v) => setAdjustKind(v as DifferenceKind | "none")}
+                        className="gap-2"
+                      >
+                        {(rentDiff > 0
+                          ? [["late_fee", "Lançar multa/juros por atraso"], ["other_addition", "Lançar outro acréscimo"]]
+                          : [["discount", "Lançar desconto concedido"], ["partial", "Pagamento parcial: o saldo fica em aberto"]]
+                        ).concat([["none", "Só conciliar, sem ajustar"]]).map(([v, label]) => (
+                          <div key={v} className="flex items-center gap-2">
+                            <RadioGroupItem value={v} id={`adj-${v}`} />
+                            <Label htmlFor={`adj-${v}`} className="font-normal text-sm">{label}</Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                      <p className="text-xs text-muted-foreground">{adjustPreview}</p>
+                    </div>
+                  )}
                   <div className="flex flex-col-reverse sm:flex-row gap-2 mt-3">
                     <Button
                       variant="outline"
@@ -448,11 +578,15 @@ export function ReconciliationMatcherDialog({
                     </Button>
                     <Button
                       className="flex-1 gap-2"
-                      onClick={() => handleReconcile(selectedEntry)}
+                      onClick={() =>
+                        isRentTx && effectiveAdjust !== "none"
+                          ? handleAdjustAndReconcile(selectedEntry)
+                          : handleReconcile(selectedEntry)
+                      }
                       disabled={isReconciling}
                     >
                       {isReconciling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                      Conciliar mesmo assim
+                      {isRentTx && effectiveAdjust !== "none" ? "Ajustar e conciliar" : "Conciliar mesmo assim"}
                     </Button>
                   </div>
                 </AlertDescription>
