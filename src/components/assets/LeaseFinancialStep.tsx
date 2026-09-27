@@ -32,7 +32,19 @@ import type {
   LeaseChargeResponsible,
   ObligationChargeConfig,
   LeaseChargeResponsibleLink,
+  RentDeductionConfig,
+  RentGraceConfig,
+  RentWithholdingConfig,
 } from "@/hooks/useLeases";
+import { LeaseSpecialConditionsCard } from "./LeaseSpecialConditionsCard";
+import { buildRentInstallments } from "@/lib/lease-projection";
+import {
+  buildRentDeductionInstallments,
+  buildWithholdingInstallments,
+  graceSummary,
+  resolveGraceSchedule,
+  summarizeSettlement,
+} from "@/lib/lease-special-conditions";
 
 export const ADJUSTMENT_PERIODICITY_OPTIONS = [12, 24, 30, 36];
 
@@ -50,6 +62,41 @@ export interface LeaseFinancialValue {
   fire_insurance: FireInsuranceConfig;
   iptu_charge: IptuChargeConfig;
   additional_obligations: ObligationChargeConfig[];
+  rent_grace: RentGraceConfig;
+  rent_deductions: RentDeductionConfig[];
+  rent_withholding: RentWithholdingConfig;
+}
+
+export function getInitialRentGrace(startDate?: string | null): RentGraceConfig {
+  const competency =
+    startDate && /^\d{4}-\d{2}/.test(startDate) ? startDate.slice(0, 7) : format(new Date(), "yyyy-MM");
+  return { enabled: false, first_competency: competency, tiers: [{ months: 1, mode: "free" }] };
+}
+
+export function getInitialRentWithholding(): RentWithholdingConfig {
+  return {
+    enabled: false,
+    tax: "irrf",
+    mode: "table",
+    base_deductions: { iptu: false, condominium: false, admin_fee: false },
+  };
+}
+
+export function normalizeRentDeductions(v: unknown): RentDeductionConfig[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((d) => d && typeof d === "object" && typeof (d as any).id === "string")
+    .map((d: any) => ({
+      id: d.id,
+      enabled: d.enabled !== false,
+      label: String(d.label ?? ""),
+      reason: d.reason ?? "other",
+      amount: Number(d.amount) || 0,
+      recurrence: d.recurrence ?? "once",
+      installments: d.installments != null ? Number(d.installments) : undefined,
+      first_competency: String(d.first_competency ?? ""),
+      notes: d.notes ?? undefined,
+    }));
 }
 
 /** Dados do imóvel usados como default dos encargos */
@@ -479,8 +526,51 @@ export function LeaseFinancialStep({
   const ownerCharges = sumBy("owner");
   const agencyCharges = sumBy("agency");
 
-  const totalTenant = round2(value.rent_amount + tenantCharges);
-  const netToOwner = round2(value.rent_amount - adminFeeAmount + ownerCharges);
+  /* ─── Condições especiais: mês típico (1ª competência sem carência) ─── */
+  const rentGrace = value.rent_grace ?? getInitialRentGrace(value.start_date);
+  const rentDeductions = normalizeRentDeductions(value.rent_deductions);
+  const rentWithholding = value.rent_withholding ?? getInitialRentWithholding();
+  const startForCalc = value.start_date || format(new Date(), "yyyy-MM-dd");
+  const graceInfo = graceSummary(rentGrace, startForCalc);
+  const projectionRents = buildRentInstallments({
+    startDate: startForCalc,
+    months: 60,
+    amount: value.rent_amount || 0,
+    dueDay: value.due_day || 10,
+    graceSchedule: resolveGraceSchedule(rentGrace, startForCalc),
+  });
+  const typicalRent = projectionRents.find((r) => r.meta?.kind === "rent");
+  const graceDiscountTotal = round2(
+    projectionRents
+      .filter((r) => r.meta?.kind === "grace")
+      .reduce((sum, r) => sum + ((r.meta?.gross_amount ?? r.amount) - r.amount), 0)
+  );
+  const iptuForBase = value.iptu_charge.enabled ? iptuInstallment : 0;
+  const condoForBase =
+    additionalObligations.find((o) => o.type === "condominium" && o.enabled)?.installment_amount || 0;
+  const { installments: deductionLines } = buildRentDeductionInstallments({
+    deductions: rentDeductions,
+    rentInstallments: projectionRents,
+  });
+  const irrfLines = buildWithholdingInstallments({
+    withholding: rentWithholding,
+    rentInstallments: typicalRent ? [typicalRent] : [],
+    baseDeductions: { iptu: iptuForBase, condominium: condoForBase, adminFeePercent: value.admin_fee_percentage || 0 },
+  });
+  const typicalSettlement = typicalRent
+    ? summarizeSettlement([
+        typicalRent,
+        ...deductionLines.filter((d) => d.settlementKey === typicalRent.settlementKey),
+        ...irrfLines,
+      ])[0]
+    : undefined;
+  const typicalGross = typicalSettlement?.gross ?? round2(value.rent_amount || 0);
+  const typicalDeductions = typicalSettlement?.deductions ?? 0;
+  const typicalIrrf = typicalSettlement?.irrf ?? 0;
+  const typicalNetRent = typicalSettlement?.net ?? typicalGross;
+
+  const totalTenant = round2(typicalNetRent + tenantCharges);
+  const netToOwner = round2(typicalGross - typicalDeductions - typicalIrrf - adminFeeAmount + ownerCharges);
 
   return (
     <div className="space-y-4">
@@ -928,12 +1018,48 @@ export function LeaseFinancialStep({
         </CardContent>
       </Card>
 
-      {/* Resumo */}
+      <LeaseSpecialConditionsCard
+        startDate={value.start_date}
+        rentAmount={value.rent_amount}
+        dueDay={value.due_day}
+        adminFeePercent={value.admin_fee_percentage || 0}
+        ownerIptu={iptuForBase}
+        ownerCondominium={condoForBase}
+        rentGrace={rentGrace}
+        rentDeductions={rentDeductions}
+        rentWithholding={rentWithholding}
+        onChange={onChange}
+      />
+
+      {/* Resumo — mês típico (1ª competência sem carência) */}
       <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
+        {typicalRent && (
+          <p className="text-[11px] text-muted-foreground pb-0.5">Mês típico: {typicalRent.competencyLabel}</p>
+        )}
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Aluguel</span>
-          <span className="font-medium">{formatCurrency(value.rent_amount)}</span>
+          <span className="text-muted-foreground">Aluguel bruto</span>
+          <span className="font-medium">{formatCurrency(typicalGross)}</span>
         </div>
+        {rentGrace.enabled && graceInfo.label && (
+          <div className="flex justify-between gap-2">
+            <span className="text-muted-foreground">(−) Carência ({graceInfo.label})</span>
+            <span className="font-medium text-destructive whitespace-nowrap">
+              −{formatCurrency(graceDiscountTotal)} no período
+            </span>
+          </div>
+        )}
+        {typicalDeductions > 0 && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">(−) Abatimentos do mês</span>
+            <span className="font-medium text-destructive">−{formatCurrency(typicalDeductions)}</span>
+          </div>
+        )}
+        {typicalIrrf > 0 && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">(−) IRRF retido</span>
+            <span className="font-medium text-destructive">−{formatCurrency(typicalIrrf)}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-muted-foreground">
             Taxa de Administração ({(value.admin_fee_percentage || 0).toLocaleString("pt-BR")}% sobre aluguel)
@@ -974,12 +1100,14 @@ export function LeaseFinancialStep({
         )}
 
         <Separator className="my-1" />
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Total mensal a cobrar do inquilino</span>
-          <span className="font-semibold">{formatCurrency(totalTenant)}</span>
+        <div className="flex justify-between items-center rounded-md bg-primary/10 px-2 py-1.5">
+          <span className="font-semibold">= Líquido a receber do inquilino</span>
+          <span className="font-bold text-primary text-base">{formatCurrency(totalTenant)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Repasse Líquido (estimado)</span>
+          <span className="text-muted-foreground">
+            Repasse líquido ao proprietário (estimado{typicalDeductions > 0 || typicalIrrf > 0 ? ", já com abatimentos e IRRF" : ""})
+          </span>
           <span className="font-semibold text-primary">{formatCurrency(netToOwner)}</span>
         </div>
       </div>
