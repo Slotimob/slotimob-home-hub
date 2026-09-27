@@ -91,6 +91,7 @@ import {
   isLeasePendingSetup,
 } from "@/lib/lease-status";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
+import { LeaseUnitsCard } from "@/components/assets/LeaseUnitsCard";
 import { freeGraceCompetencies } from "@/lib/lease-obligations-inheritance";
 import { todayInSaoPauloDateOnly } from "@/lib/date-only";
 
@@ -574,6 +575,8 @@ export default function ContratoDetalhe() {
               </div>
             </CardContent>
           </Card>
+
+          <LeaseUnitsCard leaseId={lease.id} canEdit={canEdit} />
 
           <LeaseFinancialConditionsCard lease={lease as any} canEdit={canEdit} />
         </TabsContent>
