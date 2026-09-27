@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { format, getDate, parseISO } from "date-fns";
@@ -36,7 +37,7 @@ interface FinancialTransaction {
   property_id?: string | null;
   category_id?: string | null;
   lease_id: string;
-  metadata: Record<string, unknown>;
+  metadata: Json;
   settlement_group_id: string | null;
 }
 
@@ -230,7 +231,7 @@ export function useLeaseFinancialProjection() {
           property_id: propertyId || null,
           category_id: findCategory(i.obligationType, transactionType),
           lease_id: leaseId,
-          metadata: (i.meta ?? {}) as Record<string, unknown>,
+          metadata: (i.meta ?? {}) as Json,
           settlement_group_id: i.settlementKey ? settlementIds.get(i.settlementKey) ?? null : null,
         };
       });
