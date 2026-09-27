@@ -53,7 +53,18 @@ export async function syncUnitStatusForLease(
       return;
     }
 
-    const hasActiveLease = (leases || []).length > 0;
+    // Contratos com vários imóveis: vínculo adicional via lease_units
+    let linked = 0;
+    if ((leases || []).length === 0) {
+      const { data: links } = await supabase
+        .from("lease_units")
+        .select("lease_id, lease:leases!inner(status)")
+        .eq("unit_id", unitId)
+        .not("lease.status", "in", `(${TERMINAL_LEASE_STATUSES.join(",")})`);
+      linked = (links || []).length;
+    }
+
+    const hasActiveLease = (leases || []).length > 0 || linked > 0;
     const isRentable =
       unit.intent_type === "rental" || unit.intent_type === "both";
 
@@ -77,5 +88,91 @@ export async function syncUnitStatusForLease(
     }
   } catch (error) {
     console.error("[syncUnitStatusForLease] Falha inesperada:", error);
+  }
+}
+
+
+const LIVE_LEASE_STATUSES = ["active", "pending"];
+
+/**
+ * Todos os imóveis de um contrato (principal em `leases.unit_id` + `lease_units`).
+ * Capture ANTES de excluir o contrato (lease_units cai em cascata).
+ */
+export async function getLeaseUnitIds(leaseId: string): Promise<string[]> {
+  const ids = new Set<string>();
+  const [{ data: lease }, { data: links }] = await Promise.all([
+    supabase.from("leases").select("unit_id").eq("id", leaseId).maybeSingle(),
+    supabase.from("lease_units").select("unit_id").eq("lease_id", leaseId),
+  ]);
+  if (lease?.unit_id) ids.add(lease.unit_id);
+  (links || []).forEach((l) => l.unit_id && ids.add(l.unit_id));
+  return Array.from(ids);
+}
+
+/** True se o imóvel tem outro contrato vivo (active/pending), direto ou via lease_units. */
+export async function unitHasOtherLiveLease(unitId: string, excludeLeaseId: string): Promise<boolean> {
+  const [{ data: direct, error: e1 }, { data: links, error: e2 }] = await Promise.all([
+    supabase
+      .from("leases")
+      .select("id")
+      .eq("unit_id", unitId)
+      .neq("id", excludeLeaseId)
+      .in("status", LIVE_LEASE_STATUSES)
+      .limit(1),
+    supabase
+      .from("lease_units")
+      .select("lease_id, lease:leases!inner(status)")
+      .eq("unit_id", unitId)
+      .neq("lease_id", excludeLeaseId)
+      .in("lease.status", LIVE_LEASE_STATUSES)
+      .limit(1),
+  ]);
+  // Em caso de erro, assume que há outro contrato (não libera às cegas)
+  if (e1 || e2) {
+    console.error("[unitHasOtherLiveLease]", e1 || e2);
+    return true;
+  }
+  return (direct || []).length > 0 || (links || []).length > 0;
+}
+
+/**
+ * Libera os imóveis de um contrato encerrado/excluído: só zera ocupação e
+ * inquilino dos que NÃO têm outro contrato vivo; depois sincroniza o status.
+ * Best-effort: nunca lança.
+ */
+export async function releaseLeaseUnits(leaseId: string, unitIds: string[]): Promise<void> {
+  for (const unitId of unitIds) {
+    try {
+      if (!(await unitHasOtherLiveLease(unitId, leaseId))) {
+        const { error } = await supabase
+          .from("units")
+          .update({ is_occupied: false, tenant_contact_id: null })
+          .eq("id", unitId);
+        if (error) console.error("[releaseLeaseUnits] Erro ao liberar imóvel:", error);
+      }
+      await syncUnitStatusForLease(unitId);
+    } catch (error) {
+      console.error("[releaseLeaseUnits] Falha inesperada:", error);
+    }
+  }
+}
+
+/** Ocupa todos os imóveis do contrato (sync_unit_tenant_from_lease em cada um). Best-effort. */
+export async function occupyLeaseUnits(params: {
+  leaseId: string;
+  tenantContactId: string;
+  startDate: string;
+  unitIds?: string[];
+}): Promise<void> {
+  const unitIds = params.unitIds ?? (await getLeaseUnitIds(params.leaseId));
+  for (const unitId of unitIds) {
+    const { error } = await supabase.rpc("sync_unit_tenant_from_lease", {
+      p_unit_id: unitId,
+      p_tenant_contact_id: params.tenantContactId,
+      p_lease_id: params.leaseId,
+      p_start_date: params.startDate,
+    });
+    if (error) console.error("[occupyLeaseUnits] Falha ao sincronizar imóvel:", error);
+    await syncUnitStatusForLease(unitId);
   }
 }
