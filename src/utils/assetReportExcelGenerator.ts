@@ -100,7 +100,7 @@ export async function generateAssetReportExcel(report: AssetReportData) {
   // Tab 6: Activities
   const wsAct = wb.addWorksheet('Atividades');
   wsAct.columns = [{ width: 30 }, { width: 10 }, { width: 15 }, { width: 15 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }];
-  addHeader(wsAct, ['Imóvel', 'Tipo', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Atividades', 'Manutenções', 'Custo Est. Manutenções']);
+  addHeader(wsAct, ['Imóvel', 'Tipo', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Eventos no histórico', 'Manutenções', 'Custo Est. Manutenções']);
   for (const a of report.assets) {
     wsAct.addRow([
       a.name, a.type === 'property' ? 'Imóvel' : 'Unidade',
@@ -129,6 +129,16 @@ export async function generateAssetReportExcel(report: AssetReportData) {
         m.attachments_count,
         m.is_completed ? 'Concluída' : 'Pendente',
       ]);
+    }
+  }
+
+  // Tab 8: Histórico do imóvel
+  const wsTl = wb.addWorksheet('Histórico');
+  wsTl.columns = [{ width: 30 }, { width: 12 }, { width: 20 }, { width: 36 }, { width: 50 }];
+  addHeader(wsTl, ['Imóvel', 'Data', 'Categoria', 'Evento', 'Detalhe']);
+  for (const a of report.assets) {
+    for (const t of a.period?.timeline_items || []) {
+      wsTl.addRow([a.name, formatDateOnly(t.date), t.category_label, t.event, t.detail || '']);
     }
   }
 

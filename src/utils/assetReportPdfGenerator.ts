@@ -1,3 +1,4 @@
+import { formatDateOnly } from "@/lib/date-only";
 /**
  * PDF generator for comprehensive asset report.
  * Cover page + summary + per-asset pages.
@@ -392,26 +393,24 @@ export async function generateAssetReportPdf(report: AssetReportData) {
       y += 3;
     }
 
-    // ══ 4. Atividades no Período (log completo, por último) ══
-    if (asset.period && (asset.period.activities_items?.length ?? 0) > 0) {
-      sectionTitle('Atividades no Período');
+    // ══ 4. Histórico do imóvel ══
+    if (asset.period && (asset.period.timeline_items?.length ?? 0) > 0) {
+      sectionTitle('Histórico do imóvel');
 
-      const items = asset.period.activities_items;
+      const items = asset.period.timeline_items;
       autoTable(doc, {
         startY: y,
-        head: [['Data e hora', 'Usuário', 'Evento', 'Alterações']],
+        head: [['Data', 'Categoria', 'Evento', 'Detalhe']],
         body: items.map(a => pdfSafeRow([
-          fmtDateTimeFull(a.date),
-          pdfSafeText(a.user_name || 'Sistema').slice(0, 28),
-          `${a.group}\n${pdfSafeText(a.description)}`,
-          (a.changes || []).length
-            ? a.changes.map(c => `${pdfSafeText(c.label)}: ${pdfSafeText(c.from)} » ${pdfSafeText(c.to)}`).join('\n')
-            : '—',
+          formatDateOnly(a.date),
+          pdfSafeText(a.category_label),
+          pdfSafeText(a.event),
+          pdfSafeText(a.detail || '—'),
         ])),
         theme: 'striped',
         styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', valign: 'top' },
         headStyles: { fillColor: [30, 58, 95] },
-        columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 28 }, 2: { cellWidth: 62 } },
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 26 }, 2: { cellWidth: 55 } },
         margin: { left: margin, right: margin },
       });
       y = (doc as any).lastAutoTable.finalY + 3;
@@ -422,7 +421,7 @@ export async function generateAssetReportPdf(report: AssetReportData) {
         doc.setTextColor(120, 120, 120);
         doc.text(
           pdfSafeLabel(
-            `Exibindo as ${items.length} atividades mais recentes de ${asset.period.activities_count} no período (limite de ${ACTIVITIES_REPORT_LIMIT} por imóvel).`,
+            `Exibindo as ${items.length} eventos mais recentes de ${asset.period.activities_count} no período (limite de ${ACTIVITIES_REPORT_LIMIT} por imóvel).`,
           ),
           margin, y,
         );

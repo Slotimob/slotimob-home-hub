@@ -46,7 +46,7 @@ export function generateAssetReportCsv(report: AssetReportData) {
     ['Cap Rate médio', report.summary.cap_rate_avg != null ? `${report.summary.cap_rate_avg.toFixed(2)}%` : '—'],
     [],
     ['DETALHAMENTO POR IMÓVEL'],
-    ['Nome', 'Tipo', 'Endereço', 'Valor Aquisição', 'Custos', 'Total Investido', 'Valor Mercado', 'Valorização %', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Atividades', 'Manutenções', 'Custo Est. Manutenções'],
+    ['Nome', 'Tipo', 'Endereço', 'Valor Aquisição', 'Custos', 'Total Investido', 'Valor Mercado', 'Valorização %', 'Receitas', 'Despesas', 'ROI %', 'Yield %', 'Cap Rate %', 'Eventos no histórico', 'Manutenções', 'Custo Est. Manutenções'],
   ];
 
   for (const a of report.assets) {
@@ -92,6 +92,15 @@ export function generateAssetReportCsv(report: AssetReportData) {
   } else {
     rows.push(...maintenanceRows);
   }
+
+  const timelineRows = report.assets.flatMap(a => (a.period?.timeline_items || []).map(t => [
+    a.name, formatDateOnly(t.date), t.category_label, t.event, t.detail || '',
+  ]));
+  rows.push([]);
+  rows.push(['HISTÓRICO DO IMÓVEL']);
+  rows.push(['Imóvel', 'Data', 'Categoria', 'Evento', 'Detalhe']);
+  if (timelineRows.length === 0) rows.push(['Nenhum evento no período']);
+  else rows.push(...timelineRows);
 
   downloadCsv(toCsv(rows), `relatorio-imovel-${report.period.from}-${report.period.to}.csv`);
 }
