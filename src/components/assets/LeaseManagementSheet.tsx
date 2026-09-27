@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { computeLeaseMonthFromConfig } from "@/components/assets/LeaseFinancialConditionsCard";
 import { formatDateOnly } from "@/lib/date-only";
 import { format, addDays, isBefore, isToday, addMonths, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -917,36 +918,45 @@ export function LeaseManagementSheet({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="py-2 px-4">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Aluguel Recebido</span>
-                        <span className="font-medium">
-                          {lease.rent_amount.toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Taxa Administração ({lease.admin_fee_percentage}%)</span>
-                        <span className="font-medium text-destructive">
-                          -{(lease.rent_amount * lease.admin_fee_percentage / 100).toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
-                        </span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="font-medium">Repasse Líquido</span>
-                        <span className="font-bold text-emerald-600">
-                          {(lease.rent_amount * (1 - lease.admin_fee_percentage / 100)).toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
-                        </span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const m = computeLeaseMonthFromConfig(lease as any);
+                      const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+                      const feePct = Number(lease.admin_fee_percentage) || 0;
+                      const fee = (m.net * feePct) / 100;
+                      return (
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Aluguel bruto</span>
+                            <span className="font-medium">{brl(m.gross)}</span>
+                          </div>
+                          {m.deductions > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">− Abatimentos do mês</span>
+                              <span className="font-medium text-destructive">-{brl(m.deductions)}</span>
+                            </div>
+                          )}
+                          {m.irrf > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">− IRRF retido</span>
+                              <span className="font-medium text-destructive">-{brl(m.irrf)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Aluguel líquido do mês (estimado)</span>
+                            <span className="font-medium">{brl(m.net)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Taxa Administração ({feePct}%)</span>
+                            <span className="font-medium text-destructive">-{brl(fee)}</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between">
+                            <span className="font-medium">Repasse Líquido</span>
+                            <span className="font-bold text-emerald-600">{brl(m.net - fee)}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <Button
                       className="w-full mt-3"
                       variant="outline"

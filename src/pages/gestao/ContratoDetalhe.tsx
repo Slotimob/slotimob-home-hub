@@ -37,6 +37,8 @@ import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SettlementBreakdownPopover } from "@/components/finance/SettlementBreakdownPopover";
+import { fetchSettlementGroups, settlementBreakdown } from "@/lib/settlement-group";
 import { LeaseFinancialConditionsCard, computeLeaseMonthFromConfig } from "@/components/assets/LeaseFinancialConditionsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
@@ -174,14 +176,27 @@ export default function ContratoDetalhe() {
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
       const { data, error } = await supabase
         .from("financial_transactions")
-        .select("id, amount, due_date, paid_date, status, description, type")
+        .select("id, amount, due_date, paid_date, status, description, type, obligation_type, settlement_group_id, competency_period, lease_id")
         .eq("broker_id", effectiveBrokerId || user!.id)
-        .like("reference", `lease:${lease.id}%`)
+        .or(`lease_id.eq.${lease.id},reference.like.lease:${lease.id}%`)
+        .neq("status", "cancelled")
         .gte("due_date", toDateOnly(threeMonthsAgo))
         .order("due_date", { ascending: false })
-        .limit(6);
+        .limit(60);
       if (error) throw error;
-      return data || [];
+      // Baixa conjunta: o grupo vira UMA linha (âncora = receita de aluguel) com o líquido.
+      const isAnchor = (t: any) =>
+        t.type === "income" &&
+        (!t.obligation_type || t.obligation_type === "rent" || t.obligation_type === "rent_balance");
+      const rows = (data || []).filter((t: any) => !t.settlement_group_id || isAnchor(t));
+      const groupIds = rows.map((t: any) => t.settlement_group_id).filter(Boolean) as string[];
+      const groups = groupIds.length ? await fetchSettlementGroups(groupIds) : {};
+      return rows.slice(0, 6).map((t: any) => {
+        const lines = t.settlement_group_id ? groups[t.settlement_group_id] : null;
+        if (!lines || lines.length < 2) return t;
+        const breakdown = settlementBreakdown(lines);
+        return { ...t, amount: breakdown.net, breakdown };
+      });
     },
     enabled: !!user && !!lease,
   });
@@ -753,6 +768,13 @@ export default function ContratoDetalhe() {
                           <p className="font-medium">
                             {Number(t.amount || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </p>
+                          {t.breakdown && (
+                            <SettlementBreakdownPopover breakdown={t.breakdown} paid={isPaid}>
+                              <button type="button" className="text-[10px] text-muted-foreground underline-offset-2 hover:underline">
+                                detalhe
+                              </button>
+                            </SettlementBreakdownPopover>
+                          )}
                         </div>
                         <Badge variant="outline" className={cn("text-[10px]", statusClass)}>
                           {statusLabel}
