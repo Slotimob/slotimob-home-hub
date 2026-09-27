@@ -37,6 +37,7 @@ interface FullPost {
   ai_summary: string | null;
   is_published: boolean;
   published_at: string | null;
+  updated_at: string | null;
   views_count: number;
   reading_time_min: number | null;
   faqs: FaqItem[];
@@ -205,6 +206,8 @@ export default function BlogPost() {
 
   if (!post) {
     return (
+      <>
+      <SEOHead title="Artigo não encontrado" description="Este artigo não existe ou foi removido." path={`/blog/${slug ?? ''}`} noIndex />
       <div data-lp="v2" className="min-h-screen bg-background">
         <LpHeader />
         <div className="pt-24 text-center py-20">
@@ -214,6 +217,7 @@ export default function BlogPost() {
           </Button>
         </div>
       </div>
+      </>
     );
   }
 
@@ -227,7 +231,7 @@ export default function BlogPost() {
     description: seoTags.description || post.excerpt || '',
     image: post.featured_image || 'https://slotimob.com.br/sloti-logo.png',
     datePublished: post.published_at,
-    dateModified: post.published_at,
+    dateModified: post.updated_at ?? post.published_at,
     author: {
       '@type': 'Person',
       name: author?.full_name || 'SlotiMob',
