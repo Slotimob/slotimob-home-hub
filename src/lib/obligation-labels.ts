@@ -88,7 +88,8 @@ export function rentSettlementLabel(obligationType: string | null | undefined): 
 export function pickObligationTx<T extends { status?: string | null; is_reconciled?: boolean | null }>(
   list: T[]
 ): T | undefined {
-  return list.find((t) => t.status !== "paid" && t.is_reconciled !== true) ?? list[0];
+  const live = list.filter((t) => t.status !== "cancelled");
+  return live.find((t) => t.status !== "paid" && t.is_reconciled !== true) ?? live[0] ?? list[0];
 }
 
 export function obligationTypeMatches(

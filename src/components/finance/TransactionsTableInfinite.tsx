@@ -15,7 +15,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreateTransactionDialog } from "./CreateTransactionDialog";
 import { TransactionCard } from "./TransactionCard";
-import { useSettlementGroups, settlementBreakdown, describeSettlement, markPaidWithSettlement } from "@/lib/settlement-group";
+import { useSettlementGroups, settlementBreakdown, describeSettlement, markPaidWithSettlement, settlementAnchor } from "@/lib/settlement-group";
+import { rentSettlementLabel } from "@/lib/obligation-labels";
+import { SettlementBreakdownPopover } from "./SettlementBreakdownPopover";
+import { RegisterRentPaymentDialog } from "./RegisterRentPaymentDialog";
+import { RentCompositionDialog } from "./RentCompositionDialog";
 import { TransactionsBulkActionsBar } from "./TransactionsBulkActionsBar";
 import { SortableTableHead } from "./SortableTableHead";
 import { ReconciliationDetailsPopover } from "./ReconciliationDetailsPopover";
@@ -265,7 +269,31 @@ export function TransactionsTableInfinite({
     return lines && lines.length > 1 ? describeSettlement(settlementBreakdown(lines)) : null;
   };
 
+  const [rentPaymentTx, setRentPaymentTx] = useState<any | null>(null);
+  const [compositionTxId, setCompositionTxId] = useState<string | null>(null);
+  const groupLinesOf = (t: any) => (t.settlement_group_id ? settlementGroups[t.settlement_group_id] : undefined);
+  const isRentLeaseLine = (t: any) =>
+    t.type === "income" &&
+    (!t.obligation_type || ["rent", "rent_balance"].includes(t.obligation_type)) &&
+    (!!t.lease_id || String(t.reference || "").startsWith("lease:"));
+  const canRentComposition = (t: any) => isRentLeaseLine(t) || !!t.settlement_group_id;
+  const anchorBreakdownFor = (t: any) => {
+    const lines = groupLinesOf(t);
+    if (!lines || lines.length < 2 || settlementAnchor(lines)?.id !== t.id) return null;
+    return settlementBreakdown(lines);
+  };
+  const groupBadgeFor = (t: any): string | null => {
+    const lines = groupLinesOf(t);
+    if (!lines || lines.length < 2 || settlementAnchor(lines)?.id === t.id) return null;
+    return rentSettlementLabel(t.obligation_type);
+  };
+
   const handleMarkAsPaid = async (id: string) => {
+    const tx = transactions.find((t) => t.id === id);
+    if (tx && tx.type === "income" && canRentComposition(tx)) {
+      setRentPaymentTx(tx);
+      return;
+    }
     try {
       const { count, grouped } = await markPaidWithSettlement([id], todayDateOnly());
       toast({
@@ -465,6 +493,9 @@ export function TransactionsTableInfinite({
               key={transaction.id}
               transaction={transaction}
               settlementSummary={settlementSummaryFor(transaction)}
+              settlementBreakdown={anchorBreakdownFor(transaction)}
+              settlementBadge={groupBadgeFor(transaction)}
+              onRentComposition={canRentComposition(transaction) ? (t: any) => setCompositionTxId(t.id) : undefined}
               isSelected={selectedIds.has(transaction.id)}
               onSelect={(checked) => handleSelectOne(transaction.id, checked)}
               onEdit={canEditTx ? setEditTransaction : undefined}
@@ -490,6 +521,20 @@ export function TransactionsTableInfinite({
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           )}
         </div>
+
+        {/* Diálogos de aluguel */}
+        <RegisterRentPaymentDialog
+          open={!!rentPaymentTx}
+          onOpenChange={(o) => !o && setRentPaymentTx(null)}
+          transaction={rentPaymentTx}
+          onDone={onTransactionUpdated}
+        />
+        <RentCompositionDialog
+          open={!!compositionTxId}
+          onOpenChange={(o) => !o && setCompositionTxId(null)}
+          transactionId={compositionTxId}
+          onDone={onTransactionUpdated}
+        />
 
         {/* Bulk Actions Bar */}
         <TransactionsBulkActionsBar
@@ -739,6 +784,11 @@ export function TransactionsTableInfinite({
                         {transaction.group_id && (
                           <Repeat className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
                         )}
+                        {groupBadgeFor(transaction) && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0 font-normal">
+                            {groupBadgeFor(transaction)}
+                          </Badge>
+                        )}
                         {settlementSummaryFor(transaction) && (
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -794,6 +844,20 @@ export function TransactionsTableInfinite({
                         {isTransferTransaction ? "" : (transaction.type === "income" ? "+" : "-")}
                         {formatCurrency(Number(transaction.amount))}
                       </span>
+                      {(() => {
+                        const b = anchorBreakdownFor(transaction);
+                        return b ? (
+                          <SettlementBreakdownPopover breakdown={b} paid={transaction.status === "paid"}>
+                            <button
+                              type="button"
+                              onClick={(e) => e.stopPropagation()}
+                              className="block text-[10px] text-muted-foreground hover:underline tabular-nums"
+                            >
+                              líquido {formatCurrency(b.net)}
+                            </button>
+                          </SettlementBreakdownPopover>
+                        ) : null;
+                      })()}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">
                       <div className="flex items-center gap-1">
@@ -855,6 +919,12 @@ export function TransactionsTableInfinite({
                               <DropdownMenuSeparator />
                             </>
                           )}
+                          {canRentComposition(transaction) && (
+                            <DropdownMenuItem onClick={() => setCompositionTxId(transaction.id)} className="text-xs">
+                              <Layers className="h-3.5 w-3.5 mr-2" />
+                              Composição do aluguel
+                            </DropdownMenuItem>
+                          )}
                           {canMarkAsImprovement(transaction) && (
                             <DropdownMenuItem
                               className="text-xs"
@@ -908,7 +978,21 @@ export function TransactionsTableInfinite({
         </div>
       </div>
 
-      {/* Bulk Actions Bar */}
+      {/* Diálogos de aluguel */}
+        <RegisterRentPaymentDialog
+          open={!!rentPaymentTx}
+          onOpenChange={(o) => !o && setRentPaymentTx(null)}
+          transaction={rentPaymentTx}
+          onDone={onTransactionUpdated}
+        />
+        <RentCompositionDialog
+          open={!!compositionTxId}
+          onOpenChange={(o) => !o && setCompositionTxId(null)}
+          transactionId={compositionTxId}
+          onDone={onTransactionUpdated}
+        />
+
+        {/* Bulk Actions Bar */}
       <TransactionsBulkActionsBar
         selectedTransactions={selectedTransactions}
         onClearSelection={handleClearSelection}

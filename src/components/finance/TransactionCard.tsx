@@ -7,6 +7,8 @@ import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, CheckC
 import { cn } from "@/lib/utils";
 import { formatDateOnly } from "@/lib/date-only";
 import { WhatsAppBillingButton } from "./WhatsAppBillingButton";
+import { SettlementBreakdownPopover } from "./SettlementBreakdownPopover";
+import type { SettlementBreakdown } from "@/lib/settlement-group";
 import { ASSET_EXPENSE_CATEGORIES, type AssetExpenseCategory } from "@/lib/asset-expense-categories";
 
 interface TransactionCardProps {
@@ -25,6 +27,11 @@ interface TransactionCardProps {
   isAlreadyImprovement?: boolean;
   /** Resumo da baixa conjunta, quando a linha pertence a um grupo. */
   settlementSummary?: string | null;
+  /** Quebra bruto/líquido quando a linha é o aluguel-âncora de um grupo. */
+  settlementBreakdown?: SettlementBreakdown | null;
+  /** Rótulo da linha de grupo que não é o aluguel (IRRF, abatimento...). */
+  settlementBadge?: string | null;
+  onRentComposition?: (transaction: any) => void;
 }
 
 
@@ -43,6 +50,9 @@ export function TransactionCard({
   onMarkAsImprovement,
   isAlreadyImprovement = false,
   settlementSummary = null,
+  settlementBreakdown = null,
+  settlementBadge = null,
+  onRentComposition,
 }: TransactionCardProps) {
 
   const formatCurrency = (value: number) => {
@@ -113,6 +123,9 @@ export function TransactionCard({
               <p className="text-sm font-medium line-clamp-1">{transaction.description}</p>
               {transaction.group_id && (
                 <Repeat className="h-3 w-3 text-muted-foreground shrink-0" />
+              )}
+              {settlementBadge && (
+                <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0 font-normal">{settlementBadge}</Badge>
               )}
               {settlementSummary && (
                 <span
@@ -185,6 +198,12 @@ export function TransactionCard({
                 <DropdownMenuItem onClick={() => onMarkAsPaid(transaction.id)} className="text-xs">
                   <Check className="h-3.5 w-3.5 mr-2" />
                   Marcar como Pago
+                </DropdownMenuItem>
+              )}
+              {onRentComposition && (
+                <DropdownMenuItem onClick={() => onRentComposition(transaction)} className="text-xs">
+                  <Layers className="h-3.5 w-3.5 mr-2" />
+                  Composição do aluguel
                 </DropdownMenuItem>
               )}
               {onMarkAsImprovement &&
@@ -303,6 +322,15 @@ export function TransactionCard({
           {formatCurrency(Number(transaction.amount))}
         </span>
       </div>
+      {settlementBreakdown && (
+        <div className="flex justify-end -mt-1" onClick={(e) => e.stopPropagation()}>
+          <SettlementBreakdownPopover breakdown={settlementBreakdown} paid={transaction.status === "paid"}>
+            <button type="button" className="text-[10px] text-muted-foreground hover:underline tabular-nums">
+              líquido {formatCurrency(settlementBreakdown.net)}
+            </button>
+          </SettlementBreakdownPopover>
+        </div>
+      )}
 
       {/* Unit info if available */}
       {transaction.unit && (
