@@ -63,16 +63,7 @@ export function useLeaseConversionContext() {
    * The context is stored in sessionStorage and passed via URL state
    */
   const navigateToCreateLease = useCallback((context: LeaseConversionContext) => {
-    // Store context in sessionStorage as backup
-    sessionStorage.setItem(CONTEXT_STORAGE_KEY, JSON.stringify(context));
-
-    // Navigate with state to the gestão contratos page
-    navigate('/gestao/contratos', {
-      state: {
-        leaseConversion: context,
-        autoOpenWizard: true,
-      },
-    });
+    navigate(`/gestao/contratos/novo?unitId=${context.unitId}&dealId=${context.dealId}`);
   }, [navigate]);
 
   /**

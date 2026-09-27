@@ -186,6 +186,7 @@ export default function NovoContrato() {
   const editLeaseId = searchParams.get("edit") ?? searchParams.get("editLeaseId");
   const unitIdParam = searchParams.get("unitId");
   const tenantIdParam = searchParams.get("tenantId");
+  const dealIdParam = editLeaseId ? null : searchParams.get("dealId");
 
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
@@ -526,6 +527,135 @@ export default function NovoContrato() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unitInfo?.id, tenantIdParam]);
+
+  // ===== CRM → contrato =====
+  const { data: crmDeal } = useQuery({
+    queryKey: ["crm-deal-for-lease", dealIdParam, effectiveBrokerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("deals")
+        .select("id, lead_id, contact_id, unit_id, estimated_value, lead:leads!deals_lead_id_fkey(id, name, email, phone, cpf_cnpj, address, city, state)")
+        .eq("id", dealIdParam!)
+        .eq("broker_id", effectiveBrokerId || user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!user && !!dealIdParam,
+  });
+
+  const [crmContact, setCrmContact] = useState<{ id: string; name: string; categories: string[] } | null>(null);
+  const [crmUsingTenant, setCrmUsingTenant] = useState(false);
+
+  useEffect(() => {
+    if (!crmDeal || !user) return;
+    let cancelled = false;
+    (async () => {
+      const brokerId = effectiveBrokerId || user.id;
+      const sel = "id, name, categories, email, phone, whatsapp";
+      let found: any = null;
+      if (crmDeal.contact_id) {
+        const { data } = await supabase.from("contacts").select(sel).eq("id", crmDeal.contact_id).maybeSingle();
+        found = data;
+      }
+      if (!found && crmDeal.lead_id) {
+        const { data } = await supabase
+          .from("contacts").select(sel).eq("broker_id", brokerId).eq("legacy_lead_id", crmDeal.lead_id).limit(1);
+        found = data?.[0] ?? null;
+      }
+      const lead = crmDeal.lead;
+      if (!found && lead?.email) {
+        const { data } = await supabase
+          .from("contacts").select(sel).eq("broker_id", brokerId).ilike("email", lead.email.replace(/[%_\\]/g, "\\$&")).limit(1);
+        found = data?.[0] ?? null;
+      }
+      const digits = (lead?.phone || "").replace(/\D/g, "");
+      if (!found && digits.length >= 8) {
+        const tail = digits.slice(-8);
+        const { data } = await supabase
+          .from("contacts").select(sel).eq("broker_id", brokerId)
+          .or(`phone.ilike.%${tail}%,whatsapp.ilike.%${tail}%`).limit(50);
+        found = (data || []).find((c: any) =>
+          [c.phone, c.whatsapp].some((p: string | null) => p && p.replace(/\D/g, "") === digits),
+        ) ?? null;
+      }
+      if (!cancelled) {
+        setCrmContact(found ? { id: found.id, name: found.name, categories: found.categories || [] } : null);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crmDeal?.id, effectiveBrokerId, user?.id]);
+
+  // Valor do negócio tem prioridade sobre rent_price da unidade (se o usuário não digitou outro)
+  const crmRentAppliedRef = useRef(false);
+  useEffect(() => {
+    if (isEditMode || crmRentAppliedRef.current || !crmDeal) return;
+    const value = Number(crmDeal.estimated_value) || 0;
+    crmRentAppliedRef.current = true;
+    if (value <= 0) return;
+    setFormData((prev) => {
+      const current = Number(prev.rent_amount) || 0;
+      const unitRent = Number(unitInfo?.rent_price) || 0;
+      if (current === 0 || (unitRent > 0 && current === unitRent)) return { ...prev, rent_amount: value };
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crmDeal?.id, isEditMode]);
+
+  useEffect(() => {
+    if (!crmContact || !crmContact.categories.includes("Inquilino")) return;
+    setFormData((prev) => (prev.tenant_contact_id ? prev : { ...prev, tenant_contact_id: crmContact.id }));
+  }, [crmContact?.id]);
+
+  const useCrmClientAsTenant = async () => {
+    if (!crmDeal?.lead || !user) return;
+    setCrmUsingTenant(true);
+    try {
+      let contactId: string;
+      if (crmContact) {
+        contactId = crmContact.id;
+        if (!crmContact.categories.includes("Inquilino")) {
+          const categories = [...crmContact.categories, "Inquilino"];
+          const { error } = await supabase.from("contacts").update({ categories }).eq("id", contactId);
+          if (error) throw error;
+          setCrmContact({ ...crmContact, categories });
+        }
+      } else {
+        const lead = crmDeal.lead;
+        const doc = (lead.cpf_cnpj || "").replace(/\D/g, "");
+        const { data, error } = await supabase
+          .from("contacts")
+          .insert({
+            broker_id: effectiveBrokerId || user.id,
+            name: lead.name,
+            email: lead.email || null,
+            phone: lead.phone || null,
+            whatsapp: lead.phone || null,
+            document_number: doc || null,
+            document_type: doc.length === 11 ? "CPF" : doc.length === 14 ? "CNPJ" : null,
+            address: lead.address || null,
+            city: lead.city || null,
+            state: lead.state || null,
+            categories: ["Inquilino"],
+            legacy_lead_id: lead.id,
+          } as any)
+          .select("id, name, categories")
+          .single();
+        if (error) throw error;
+        contactId = data.id;
+        setCrmContact({ id: data.id, name: data.name, categories: (data.categories as string[]) || ["Inquilino"] });
+      }
+      setFormData((prev) => ({ ...prev, tenant_contact_id: contactId }));
+      await queryClient.invalidateQueries({ queryKey: ["contacts-tenants"] });
+      toast({ title: "Cliente cadastrado como inquilino" });
+    } catch (err: any) {
+      console.error("[NovoContrato] Erro ao usar cliente do CRM:", err);
+      toast({ title: "Erro ao cadastrar inquilino", description: err?.message, variant: "destructive" });
+    } finally {
+      setCrmUsingTenant(false);
+    }
+  };
 
   // CIB: o valor mestre vive em `units.cib`. Se a unidade já tem CIB, ele prevalece
   // sobre o valor legado gravado em `leases.cib` (fallback apenas quando a unit está vazia).
@@ -996,6 +1126,14 @@ export default function NovoContrato() {
         const result = await createLease.mutateAsync(leaseData);
         resultId = (result as any).id || (result as any).lease?.id || "";
 
+        if (resultId && dealIdParam && crmDeal && !crmDeal.contact_id && formData.tenant_contact_id) {
+          const { error: dealErr } = await supabase
+            .from("deals")
+            .update({ contact_id: formData.tenant_contact_id })
+            .eq("id", dealIdParam);
+          if (dealErr) console.error("[NovoContrato] Falha ao vincular contato ao negócio:", dealErr);
+        }
+
         if (resultId && leaseUnitIds.length > 1) {
           const unitsError = await saveLeaseUnits(resultId);
           if (unitsError) {
@@ -1169,8 +1307,13 @@ export default function NovoContrato() {
           Contratos
         </Button>
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold truncate">
+          <h1 className="text-xl font-semibold truncate flex items-center gap-2">
             {isPendingSetup ? "Finalizar Contrato" : isEditMode ? "Editar Contrato" : "Novo Contrato"}
+            {dealIdParam && (
+              <span className="text-[10px] font-medium rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">
+                Vindo do CRM
+              </span>
+            )}
           </h1>
           {unitName && (
             <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
@@ -1337,6 +1480,21 @@ export default function NovoContrato() {
           {/* Tenant */}
           {step === "tenant" && (
             <div className="space-y-4">
+              {crmDeal?.lead && (!crmContact || formData.tenant_contact_id !== crmContact.id) && (
+                <Card className="bg-card">
+                  <CardContent className="p-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                    <p className="text-sm">
+                      <span className="text-muted-foreground">Cliente do negócio no CRM: </span>
+                      <span className="font-medium">
+                        {[crmDeal.lead.name, crmDeal.lead.email, crmDeal.lead.phone].filter(Boolean).join(" · ")}
+                      </span>
+                    </p>
+                    <Button size="sm" onClick={useCrmClientAsTenant} disabled={crmUsingTenant}>
+                      Usar como inquilino
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
               <div className="space-y-2">
                 <Label>Buscar Inquilino</Label>
                 <div className="relative">
