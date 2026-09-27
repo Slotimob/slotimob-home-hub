@@ -7,7 +7,7 @@ import { useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
 import { format } from "date-fns";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
-import { syncUnitStatusForLease } from "@/lib/unit-status-sync";
+import { syncUnitStatusForLease, getLeaseUnitIds, occupyLeaseUnits, releaseLeaseUnits } from "@/lib/unit-status-sync";
 
 
 export interface GuarantorData {
@@ -350,6 +350,94 @@ export function useLeases() {
   });
 }
 
+/**
+ * Filtro PostgREST (.or) que encontra contratos por QUALQUER imóvel vinculado:
+ * principal (leases.unit_id) ou adicional (lease_units.unit_id).
+ * wholeUnitOnly: só vínculos da unidade inteira (sem fração), como antes.
+ */
+export async function leaseUnitFilter(
+  unitId: string | string[],
+  opts: { wholeUnitOnly?: boolean } = {}
+): Promise<string> {
+  const unitIds = Array.isArray(unitId) ? unitId : [unitId];
+  let q = supabase.from("lease_units").select("lease_id").in("unit_id", unitIds);
+  if (opts.wholeUnitOnly) q = q.is("unit_subdivision_id", null);
+  const { data, error } = await q;
+  if (error) console.error("[leaseUnitFilter]", error);
+  const ids = Array.from(new Set((data || []).map((r) => r.lease_id)));
+  const unitList = `unit_id.in.(${unitIds.join(",")})`;
+  const direct = opts.wholeUnitOnly ? `and(${unitList},unit_subdivision_id.is.null)` : unitList;
+  return ids.length ? `${direct},id.in.(${ids.join(",")})` : direct;
+}
+
+export interface LeaseUnitRow {
+  id: string;
+  lease_id: string;
+  unit_id: string;
+  unit_subdivision_id: string | null;
+  is_primary: boolean;
+  share_percent: number | null;
+  unit: {
+    id: string;
+    unit_number: string | null;
+    address: string | null;
+    is_standalone: boolean | null;
+    property: { name: string } | null;
+  } | null;
+  subdivision: { id: string; label: string; area: number | null } | null;
+}
+
+/** Imóveis vinculados a um contrato (principal primeiro). */
+export function useLeaseUnits(leaseId: string | null | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["lease-units", leaseId],
+    queryFn: async () => {
+      if (!leaseId) return [] as LeaseUnitRow[];
+      const { data, error } = await supabase
+        .from("lease_units")
+        .select(`
+          id, lease_id, unit_id, unit_subdivision_id, is_primary, share_percent,
+          unit:units(id, unit_number, address, is_standalone, property:properties(name)),
+          subdivision:unit_subdivisions(id, label, area)
+        `)
+        .eq("lease_id", leaseId)
+        .order("is_primary", { ascending: false })
+        .order("created_at", { ascending: true });
+      if (error) throw new Error(error.message || error.details || "Erro inesperado");
+      return (data || []) as unknown as LeaseUnitRow[];
+    },
+    enabled: !!user && !!leaseId,
+  });
+}
+
+export interface SetLeaseUnitInput {
+  unit_id: string;
+  unit_subdivision_id?: string | null;
+  is_primary: boolean;
+  share_percent?: number | null;
+}
+
+/** Define os imóveis do contrato via RPC set_lease_units. */
+export function useSetLeaseUnits() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leaseId, units }: { leaseId: string; units: SetLeaseUnitInput[] }) => {
+      const { error } = await supabase.rpc("set_lease_units", {
+        p_lease_id: leaseId,
+        p_units: units as unknown as Json,
+      });
+      if (error) throw new Error(error.message || error.details || "Erro ao salvar imóveis do contrato");
+    },
+    onSuccess: async (_d, { leaseId }) => {
+      await invalidateLeaseQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["lease-units", leaseId] });
+      queryClient.invalidateQueries({ queryKey: ["lease"] });
+      queryClient.invalidateQueries({ queryKey: ["units"] });
+    },
+  });
+}
+
 export function useLeaseByUnitId(unitId: string | null) {
   const { user } = useAuth();
 
@@ -366,10 +454,10 @@ export function useLeaseByUnitId(unitId: string | null) {
           owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone, document_number, address, city, state, neighborhood, postal_code),
           unit:units!leases_unit_id_fkey(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name))
         `)
-        .eq("unit_id", unitId)
+        // Qualquer imóvel vinculado (principal ou adicional via lease_units).
         // Contrato da unidade inteira: frações têm contrato próprio
         // (ver useLeasesByUnitId para listar todos).
-        .is("unit_subdivision_id", null)
+        .or(await leaseUnitFilter(unitId, { wholeUnitOnly: true }))
         .in("status", ["active", "pending"])
         .order("created_at", { ascending: false })
         .limit(1)
@@ -413,9 +501,11 @@ export function useLeasesByUnitId(unitId: string | null) {
           tenant:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp, document_number, address, city, state, neighborhood, postal_code),
           owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone, document_number, address, city, state, neighborhood, postal_code),
           unit:units!leases_unit_id_fkey(id, unit_number, address, city, state, neighborhood, postal_code, registration_number, cib, area, rent_price, condo_fee, iptu, property:properties(name)),
-          subdivision:unit_subdivisions!leases_unit_subdivision_id_fkey(id, label, area)
+          subdivision:unit_subdivisions!leases_unit_subdivision_id_fkey(id, label, area),
+          lease_units(unit_id, is_primary)
         `)
-        .eq("unit_id", unitId)
+        // Qualquer imóvel vinculado (principal ou adicional via lease_units)
+        .or(await leaseUnitFilter(unitId))
         .in("status", ["active", "pending"])
         .order("created_at", { ascending: false });
 
@@ -492,25 +582,20 @@ export function useCreateLease() {
 
       if (error) throw new Error(error.message || error.details || "Erro inesperado");
 
-      // Step 2: Sync unit tenant from lease (uses real start_date for tenant history)
-      const { error: syncError } = await supabase.rpc("sync_unit_tenant_from_lease", {
-        p_unit_id: data.unit_id,
-        p_tenant_contact_id: data.tenant_contact_id,
-        p_lease_id: lease.id,
-        p_start_date: data.start_date,
+      // Step 2: Ocupa TODOS os imóveis do contrato (sync_unit_tenant_from_lease em cada um)
+      // e sincroniza o status de cada imóvel.
+      const createdUnitIds = await getLeaseUnitIds(lease.id);
+      await occupyLeaseUnits({
+        leaseId: lease.id,
+        tenantContactId: data.tenant_contact_id,
+        startDate: data.start_date,
+        unitIds: createdUnitIds.length ? createdUnitIds : [data.unit_id],
       });
-
-      if (syncError) {
-        console.error("Failed to sync unit tenant from lease:", syncError);
-      }
 
       // Lançamentos financeiros NÃO são gerados aqui.
       // A criação de parcelas passa obrigatoriamente pela confirmação do usuário
       // em ConfirmLeaseProjectionDialog (ver src/lib/lease-projection.ts).
       const projectionsGenerated = 0;
-
-      // Sincronização best-effort do status da unidade (sugestão automática)
-      await syncUnitStatusForLease(data.unit_id);
 
       return { lease, projectionsGenerated };
 
@@ -555,14 +640,28 @@ export function useUpdateLease() {
         .from("leases")
         .update(updateData)
         .eq("id", id)
-        .select("unit_id")
+        .select("unit_id, tenant_contact_id, start_date, status")
         .maybeSingle();
 
       if (error) throw new Error(error.message || error.details || "Erro ao salvar");
 
-      // Sincronização best-effort do status da unidade quando o status do contrato muda
-      if (data.status !== undefined && updated?.unit_id) {
-        await syncUnitStatusForLease(updated.unit_id);
+      // Ocupação de TODOS os imóveis do contrato quando o status muda
+      if (data.status !== undefined && updated) {
+        const unitIds = await getLeaseUnitIds(id);
+        if (!unitIds.length && updated.unit_id) unitIds.push(updated.unit_id);
+        if ((updated.status === "active" || updated.status === "pending") && updated.tenant_contact_id) {
+          await occupyLeaseUnits({
+            leaseId: id,
+            tenantContactId: updated.tenant_contact_id,
+            startDate: updated.start_date,
+            unitIds,
+          });
+        } else if (updated.status === "active" || updated.status === "pending") {
+          for (const unitId of unitIds) await syncUnitStatusForLease(unitId);
+        } else {
+          // Encerrado/expirado: libera só imóveis sem outro contrato vivo
+          await releaseLeaseUnits(id, unitIds);
+        }
       }
 
     },
@@ -659,27 +758,12 @@ export function useTerminateLease() {
 
       console.log("[useTerminateLease] Lease terminated successfully:", leaseId);
 
-      // Step 4: Update unit as vacant
-      try {
-        const { error: unitError } = await supabase
-          .from("units")
-          .update({
-            is_occupied: false,
-            tenant_contact_id: null,
-          })
-          .eq("id", lease.unit_id);
-
-        if (unitError) {
-          console.error("Error updating unit:", unitError);
-          // Don't throw - lease was already terminated successfully
-        }
-      } catch (error) {
-        console.error("Exception updating unit:", error);
-        // Don't throw - lease was already terminated
-      }
-
-      // Sincronização best-effort do status da unidade (sugestão automática)
-      await syncUnitStatusForLease(lease.unit_id);
+      // Step 4: Libera os imóveis do contrato que não têm outro contrato vivo
+      const terminatedUnitIds = await getLeaseUnitIds(leaseId);
+      await releaseLeaseUnits(
+        leaseId,
+        terminatedUnitIds.length ? terminatedUnitIds : [lease.unit_id]
+      );
 
       return { deletedTransactions: deletedCount };
 

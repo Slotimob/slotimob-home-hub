@@ -221,7 +221,8 @@ export function ObligationsConfigForm({
 
       // Sync reverso: propaga as obrigações do imóvel para o contrato ATIVO
       let syncedLease = false;
-      if (activeLease && activeLease.status === "active") {
+      // Só o imóvel PRINCIPAL sincroniza de volta (imóvel adicional não altera o contrato)
+      if (activeLease && activeLease.status === "active" && activeLease.unit_id === unitId) {
         const patch = buildLeaseChargesFromObligationsConfig(
           config as Record<string, any>,
           {

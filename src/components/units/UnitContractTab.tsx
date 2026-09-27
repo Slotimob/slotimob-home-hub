@@ -21,6 +21,7 @@ interface LeaseWithReview extends Lease {
   tenant_review_note?: string | null;
   unit_subdivision_id?: string | null;
   subdivision?: { id: string; label: string; area: number | null } | null;
+  lease_units?: { unit_id: string; is_primary: boolean }[] | null;
 }
 
 interface UnitContractTabProps {
@@ -144,11 +145,37 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
           </div>
         );
 
-        const fracaoBadge = fracao ? (
-          <Badge variant="outline" className="w-fit">
-            <Layers className="h-3 w-3 mr-1" />
-            {fracao}
-          </Badge>
+        // Contrato com vários imóveis
+        const unitCount = new Set((lease.lease_units || []).map((l) => l.unit_id)).size;
+        const isAdditional = unitCount > 1 && lease.unit_id !== unitId;
+        const primaryUnit = (lease as any).unit;
+        const primaryLabel = primaryUnit
+          ? [primaryUnit.property?.name, primaryUnit.unit_number].filter(Boolean).join(' — ') ||
+            primaryUnit.address ||
+            'imóvel principal'
+          : 'imóvel principal';
+
+        const fracaoBadge = fracao || unitCount > 1 ? (
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap gap-1">
+              {fracao && (
+                <Badge variant="outline" className="w-fit">
+                  <Layers className="h-3 w-3 mr-1" />
+                  {fracao}
+                </Badge>
+              )}
+              {unitCount > 1 && (
+                <Badge variant="secondary" className="w-fit">
+                  Contrato com {unitCount} imóveis
+                </Badge>
+              )}
+            </div>
+            {isAdditional && (
+              <p className="text-xs text-muted-foreground">
+                Imóvel adicional deste contrato (principal: {primaryLabel})
+              </p>
+            )}
+          </div>
         ) : null;
 
         return (

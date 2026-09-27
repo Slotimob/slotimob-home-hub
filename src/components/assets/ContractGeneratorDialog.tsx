@@ -1,3 +1,4 @@
+import { leaseUnitFilter } from "@/hooks/useLeases";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -100,7 +101,8 @@ import {
          : await supabase
              .from("leases")
              .select(baseSelect)
-             .eq("unit_id", unitId)
+             // Qualquer imóvel vinculado (principal ou adicional via lease_units)
+             .or(await leaseUnitFilter(unitId))
              .eq("status", "active")
              .order("start_date", { ascending: false })
              .limit(1)

@@ -81,7 +81,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useUpdateLease } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { syncUnitStatusForLease } from "@/lib/unit-status-sync";
+import { getLeaseUnitIds, releaseLeaseUnits } from "@/lib/unit-status-sync";
 import { cn } from "@/lib/utils";
 import { toast as sonnerToast } from "sonner";
 import {
@@ -238,10 +238,8 @@ export default function ContratoDetalhe() {
         .eq("broker_id", effectiveBrokerId || user.id)
         .eq("reference", `lease:${lease.id}`);
 
-      await supabase
-        .from("units")
-        .update({ is_occupied: false, tenant_contact_id: null })
-        .eq("id", lease.unit_id);
+      // Captura os imóveis antes da exclusão (lease_units cai em cascata)
+      const leaseUnitIds = await getLeaseUnitIds(lease.id);
 
       const { error } = await supabase
         .from("leases")
@@ -250,8 +248,8 @@ export default function ContratoDetalhe() {
         .eq("broker_id", effectiveBrokerId || user.id);
       if (error) throw error;
 
-      // Sincronização best-effort do status da unidade
-      await syncUnitStatusForLease(lease.unit_id);
+      // Libera só os imóveis sem outro contrato vivo e sincroniza o status
+      await releaseLeaseUnits(lease.id, leaseUnitIds.length ? leaseUnitIds : [lease.unit_id]);
 
 
       sonnerToast.success("Contrato excluído com sucesso");

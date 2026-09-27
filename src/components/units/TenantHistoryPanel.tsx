@@ -1,3 +1,4 @@
+import { leaseUnitFilter } from '@/hooks/useLeases';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -80,7 +81,8 @@ export const TenantHistoryPanel = ({
       const { data, error } = await (supabase as any)
         .from('leases')
         .select(select)
-        .in('unit_id', unitIds)
+        // Qualquer imóvel vinculado (principal ou adicional via lease_units)
+        .or(await leaseUnitFilter(unitIds))
         .order('start_date', { ascending: false });
       if (error) throw error;
       return (data || []) as LeaseRow[];
