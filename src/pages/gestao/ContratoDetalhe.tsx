@@ -92,7 +92,7 @@ import {
 } from "@/lib/lease-status";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import { freeGraceCompetencies } from "@/lib/lease-obligations-inheritance";
-import { todayInSaoPauloDateOnly } from "@/lib/transaction-status";
+import { todayInSaoPauloDateOnly } from "@/lib/date-only";
 
 export default function ContratoDetalhe() {
   const [searchParams] = useSearchParams();
