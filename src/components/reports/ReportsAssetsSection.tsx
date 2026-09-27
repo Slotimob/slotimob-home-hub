@@ -9,6 +9,7 @@ import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/re
 import { translateUnitStatus } from '@/utils/reportTranslations';
 import { generateOwnerReportPDF, formatCurrency as formatCurrencyReport } from '@/utils/leaseReportGenerator';
 import { generateTenantStatementPDF } from '@/utils/tenantStatementPdf';
+import { computeOwnerReport } from '@/lib/owner-report';
 import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiFormat';
 import { generateAssetReportPdf } from '@/utils/assetReportPdfGenerator';
 import { generateAssetReportDocx } from '@/utils/assetReportDocxGenerator';
@@ -157,18 +158,18 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
       const { data: expenses } = await supabase.from('financial_transactions').select('*')
         .eq('unit_id', selectedLease.unit_id).eq('type', 'expense').eq('status', 'paid')
         .gte('paid_date', format(dateRange.from, 'yyyy-MM-dd')).lte('paid_date', format(dateRange.to, 'yyyy-MM-dd'));
-      const rentReceived = (income || []).reduce((s, t) => s + Number(t.amount), 0);
-      const adminFee = rentReceived * (selectedLease.admin_fee_percentage / 100);
-      const maintenanceExpenses = (expenses || []).filter(t => t.obligation_type === 'maintenance' || t.description.toLowerCase().includes('manutenção'))
-        .map(t => ({ description: t.description, amount: Number(t.amount), date: t.paid_date || t.transaction_date }));
-      const otherDeductions = (expenses || []).filter(t => t.obligation_type !== 'maintenance' && !t.description.toLowerCase().includes('manutenção'))
-        .map(t => ({ description: t.description, amount: Number(t.amount) }));
-      const totalExpenses = (expenses || []).reduce((s, t) => s + Number(t.amount), 0);
-      const netTransfer = rentReceived - adminFee - totalExpenses;
+      const r = computeOwnerReport({
+        income: (income || []) as any,
+        expenses: (expenses || []) as any,
+        adminFeePercentage: selectedLease.admin_fee_percentage,
+      });
       await generateOwnerReportPDF({
         lease: selectedLease as any,
         period: { start: format(dateRange.from, 'dd/MM/yyyy'), end: format(dateRange.to, 'dd/MM/yyyy') },
-        rentReceived, adminFee, maintenanceExpenses, otherDeductions, netTransfer,
+        rentReceived: r.rentReceived, adminFee: r.adminFee,
+        maintenanceExpenses: r.maintenanceExpenses, otherDeductions: r.otherDeductions, netTransfer: r.netTransfer,
+        rentGross: r.rentGross, rentAdditions: r.rentAdditions, rentIrrf: r.rentIrrf,
+        rentDeductions: r.rentDeductions, rentDiscounts: r.rentDiscounts, otherIncome: r.otherIncome,
       });
       toast({ title: 'PDF gerado com sucesso!' });
     } catch (error: any) { toast({ title: 'Erro ao gerar PDF', description: error.message, variant: 'destructive' }); }

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { computeOwnerReport } from "@/lib/owner-report";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -80,17 +81,11 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
   const isLoading = loadingIncome || loadingExpense;
 
   const reportData = useMemo(() => {
-    const rentReceived = incomeTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-    const adminFee = rentReceived * (lease.admin_fee_percentage / 100);
-    const maintenanceExpenses = expenseTransactions
-      .filter((t) => t.obligation_type === "maintenance" || t.description.toLowerCase().includes("manutenção"))
-      .map((t) => ({ description: t.description, amount: Number(t.amount), date: t.paid_date || t.transaction_date }));
-    const otherDeductions = expenseTransactions
-      .filter((t) => t.obligation_type !== "maintenance" && !t.description.toLowerCase().includes("manutenção"))
-      .map((t) => ({ description: t.description, amount: Number(t.amount) }));
-    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-    const netTransfer = rentReceived - adminFee - totalExpenses;
-    return { rentReceived, adminFee, maintenanceExpenses, otherDeductions, totalExpenses, netTransfer };
+    return computeOwnerReport({
+      income: incomeTransactions as any,
+      expenses: expenseTransactions as any,
+      adminFeePercentage: lease.admin_fee_percentage,
+    });
   }, [incomeTransactions, expenseTransactions, lease.admin_fee_percentage]);
 
   const handleGeneratePDF = async () => {
@@ -104,6 +99,12 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
         maintenanceExpenses: reportData.maintenanceExpenses,
         otherDeductions: reportData.otherDeductions,
         netTransfer: reportData.netTransfer,
+        rentGross: reportData.rentGross,
+        rentAdditions: reportData.rentAdditions,
+        rentIrrf: reportData.rentIrrf,
+        rentDeductions: reportData.rentDeductions,
+        rentDiscounts: reportData.rentDiscounts,
+        otherIncome: reportData.otherIncome,
       };
       await generateOwnerReportPDF(data);
       toast({ title: "PDF gerado com sucesso!" });
@@ -165,11 +166,45 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
                     Receitas
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="py-2 px-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Aluguel Recebido</span>
-                    <span className="font-semibold text-green-600">{formatCurrency(reportData.rentReceived)}</span>
+                <CardContent className="py-2 px-4 space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Aluguel bruto</span>
+                    <span>{formatCurrency(reportData.rentGross)}</span>
                   </div>
+                  {reportData.rentAdditions > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span>+ Multa/juros e acréscimos</span>
+                      <span>{formatCurrency(reportData.rentAdditions)}</span>
+                    </div>
+                  )}
+                  {reportData.rentIrrf > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span>− IRRF retido</span>
+                      <span className="text-red-600">-{formatCurrency(reportData.rentIrrf)}</span>
+                    </div>
+                  )}
+                  {reportData.rentDeductions > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span>− Abatimentos</span>
+                      <span className="text-red-600">-{formatCurrency(reportData.rentDeductions)}</span>
+                    </div>
+                  )}
+                  {reportData.rentDiscounts > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span>− Descontos</span>
+                      <span className="text-red-600">-{formatCurrency(reportData.rentDiscounts)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t pt-1.5">
+                    <span className="text-sm font-medium">Aluguel líquido recebido</span>
+                    <span className="font-semibold text-green-600">{formatCurrency(reportData.rentNet)}</span>
+                  </div>
+                  {reportData.otherIncome > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Outras receitas</span>
+                      <span className="text-green-600">{formatCurrency(reportData.otherIncome)}</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -185,7 +220,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-sm">Taxa de Administração ({lease.admin_fee_percentage}%)</span>
+                      <span className="text-sm">Taxa de Administração ({lease.admin_fee_percentage}% sobre o aluguel)</span>
                     </div>
                     <span className="font-medium text-red-600">-{formatCurrency(reportData.adminFee)}</span>
                   </div>

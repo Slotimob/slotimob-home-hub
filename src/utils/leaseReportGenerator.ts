@@ -23,6 +23,12 @@ export interface OwnerReportData {
   maintenanceExpenses: { description: string; amount: number; date: string }[];
   otherDeductions: { description: string; amount: number }[];
   netTransfer: number;
+  rentGross?: number;
+  rentAdditions?: number;
+  rentIrrf?: number;
+  rentDeductions?: number;
+  rentDiscounts?: number;
+  otherIncome?: number;
   incomeTransactions?: { description: string; amount: number; date: string; status: string }[];
 }
 
@@ -53,6 +59,7 @@ export const generateOwnerReportPDF = async (data: OwnerReportData): Promise<voi
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
   const { lease, period, rentReceived, adminFee, maintenanceExpenses, otherDeductions, netTransfer } = data;
+  const hasDetail = data.rentGross !== undefined;
 
   // === HEADER ===
   doc.setFillColor(30, 41, 59); // slate-800
@@ -128,7 +135,7 @@ export const generateOwnerReportPDF = async (data: OwnerReportData): Promise<voi
   doc.setFontSize(7);
   doc.setTextColor(22, 101, 52);
   doc.setFont('helvetica', 'bold');
-  doc.text('TOTAL ARRECADADO', margin + cardW / 2, y + 8, { align: 'center' });
+  doc.text(hasDetail ? normalizeText('ALUGUEL LIQUIDO RECEBIDO') : 'TOTAL ARRECADADO', margin + cardW / 2, y + 8, { align: 'center' });
   doc.setFontSize(13);
   doc.text(formatCurrency(rentReceived), margin + cardW / 2, y + 18, { align: 'center' });
 
@@ -164,7 +171,17 @@ export const generateOwnerReportPDF = async (data: OwnerReportData): Promise<voi
   y += 4;
 
   const rows: string[][] = [];
-  rows.push([normalizeText('Aluguel Recebido'), '', formatCurrency(rentReceived), 'Receita']);
+  if (hasDetail) {
+    rows.push([normalizeText('Aluguel bruto'), '', formatCurrency(data.rentGross || 0), 'Receita']);
+    if ((data.rentAdditions || 0) > 0) rows.push([normalizeText('+ Multa/juros e acrescimos'), '', formatCurrency(data.rentAdditions!), 'Receita']);
+    if ((data.rentIrrf || 0) > 0) rows.push([normalizeText('- IRRF retido'), '', `-${formatCurrency(data.rentIrrf!)}`, 'Receita']);
+    if ((data.rentDeductions || 0) > 0) rows.push([normalizeText('- Abatimentos'), '', `-${formatCurrency(data.rentDeductions!)}`, 'Receita']);
+    if ((data.rentDiscounts || 0) > 0) rows.push([normalizeText('- Descontos'), '', `-${formatCurrency(data.rentDiscounts!)}`, 'Receita']);
+    rows.push([normalizeText('Aluguel liquido recebido'), '', formatCurrency(rentReceived), 'Receita']);
+    if ((data.otherIncome || 0) > 0) rows.push([normalizeText('Outras receitas'), '', formatCurrency(data.otherIncome!), 'Receita']);
+  } else {
+    rows.push([normalizeText('Aluguel Recebido'), '', formatCurrency(rentReceived), 'Receita']);
+  }
   rows.push([normalizeText(`Taxa de Administracao (${lease.admin_fee_percentage}%)`), '', `-${formatCurrency(adminFee)}`, normalizeText('Deducao')]);
 
   maintenanceExpenses.forEach((e) => {
@@ -175,7 +192,7 @@ export const generateOwnerReportPDF = async (data: OwnerReportData): Promise<voi
     rows.push([normalizeText(pdfSafeText(d.description).substring(0, 40)), '', `-${formatCurrency(d.amount)}`, normalizeText('Deducao')]);
   });
 
-  if (rows.length === 2 && maintenanceExpenses.length === 0 && otherDeductions.length === 0) {
+  if (maintenanceExpenses.length === 0 && otherDeductions.length === 0) {
     rows.push([normalizeText('Nenhuma despesa no periodo'), '', '-', '-']);
   }
 
