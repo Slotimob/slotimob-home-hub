@@ -12,6 +12,7 @@ import {
   startOfMonth,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { GraceMonth } from "./lease-special-conditions";
 
 /** Teto de segurança: nunca lançamos mais que isso numa única operação. */
 export const MAX_PROJECTION_MONTHS = 24;
@@ -264,10 +265,21 @@ export interface PlannedInstallment {
   contactId?: string | null;
   /** True quando já existe transação para essa competência+tipo+vencimento. */
   alreadyExists: boolean;
+  /** Metadados gravados em financial_transactions.metadata. */
+  meta?: {
+    kind: "rent" | "grace" | "rent_deduction" | "irrf";
+    gross_amount?: number;
+    deduction_id?: string;
+    base?: number;
+  };
+  /** Mês isento de carência: aparece no preview, NÃO é gravado. */
+  isGrace?: boolean;
+  /** Competência "yyyy-MM"; linhas com a mesma chave são baixadas juntas. */
+  settlementKey?: string;
 }
 
 
-function monthLabel(date: Date): string {
+export function monthLabel(date: Date): string {
   const label = format(date, "MMMM/yyyy", { locale: ptBR });
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
@@ -289,7 +301,11 @@ export interface BuildRentInstallmentsInput {
    * e seria cobrada em dobro.
    */
   existingRentCompetencies?: Set<string>;
+  /** Carência por competência "yyyy-MM" (ver resolveGraceSchedule). */
+  graceSchedule?: Map<string, GraceMonth>;
 }
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export function buildRentInstallments({
   startDate,
@@ -300,6 +316,7 @@ export function buildRentInstallments({
   issueDay,
   existingCompetencies,
   existingRentCompetencies,
+  graceSchedule,
 }: BuildRentInstallmentsInput): PlannedInstallment[] {
   const start = toDate(startDate);
   if (!start || months <= 0) return [];
@@ -321,18 +338,43 @@ export function buildRentInstallments({
     );
     const dedupKey = `rent:${competencyPeriod}:${dueDate}`;
 
+    const label = monthLabel(competencyDate);
+    const grace = graceSchedule?.get(competencyPeriod);
+    let finalAmount = amount;
+    let description = `Aluguel ${label}`;
+    let meta: PlannedInstallment["meta"] = { kind: "rent" };
+    let isGrace: boolean | undefined;
+    if (grace) {
+      if (grace.mode === "free") {
+        finalAmount = 0;
+        isGrace = true;
+        description = `Aluguel ${label} (carência: isento)`;
+        meta = { kind: "grace", gross_amount: amount };
+      } else {
+        finalAmount =
+          grace.mode === "percent"
+            ? round2(amount * (1 - grace.value / 100))
+            : Math.min(grace.value, amount);
+        description = `Aluguel ${label} (carência)`;
+        meta = { kind: "grace", gross_amount: amount };
+      }
+    }
+
     result.push({
       key: dedupKey,
       dedupKey,
       obligationType: "rent",
       competencyPeriod,
-      competencyLabel: monthLabel(competencyDate),
+      competencyLabel: label,
       dueDate,
       issueDate,
-      amount,
-      description: `Aluguel ${monthLabel(competencyDate)}`,
+      amount: finalAmount,
+      description,
       transactionType: "income",
       alreadyExists: existingCompetencies?.has(dedupKey) || existingRentCompetencies?.has(competencyPeriod) || false,
+      meta,
+      ...(isGrace ? { isGrace } : {}),
+      settlementKey: competencyPeriod,
     });
   }
 
