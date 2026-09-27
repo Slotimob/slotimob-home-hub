@@ -19,15 +19,6 @@ export interface SettlementLine {
   description?: string | null;
 }
 
-export interface SettlementBreakdown {
-  rent: number;
-  deductions: number;
-  irrf: number;
-  /** Outras despesas do grupo que não são abatimento/IRRF. */
-  otherExpenses: number;
-  net: number;
-}
-
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const SELECT = "id, type, amount, obligation_type, status, bank_account_id, settlement_group_id, description";
 
@@ -40,29 +31,72 @@ export function settlementNet(lines: SettlementLine[]): number {
   );
 }
 
+export interface SettlementBreakdown {
+  /** Aluguel bruto (linhas de aluguel: obligation_type nulo, `rent` ou `rent_balance`). */
+  rent: number;
+  /** Acréscimos: multa/juros e outros acréscimos (`rent_addition_*` e demais receitas do grupo). */
+  additions: number;
+  /** Abatimentos (despesa do proprietário, `rent_deduction_*`). */
+  deductions: number;
+  irrf: number;
+  /** Descontos concedidos (`rent_discount`). */
+  discounts: number;
+  /** Outras despesas do grupo que não são abatimento/IRRF/desconto. */
+  otherExpenses: number;
+  /** Líquido = aluguel + acréscimos − abatimentos − IRRF − descontos − outras. */
+  net: number;
+}
+
+const RENT_TYPES = new Set(["rent", "rent_balance"]);
+const isRentLine = (l: SettlementLine) =>
+  l.type === "income" && (!l.obligation_type || RENT_TYPES.has(l.obligation_type));
+
 export function settlementBreakdown(lines: SettlementLine[]): SettlementBreakdown {
   const active = lines.filter((l) => l.status !== "cancelled");
-  let rent = 0, deductions = 0, irrf = 0, otherExpenses = 0;
+  let rent = 0, additions = 0, deductions = 0, irrf = 0, discounts = 0, otherExpenses = 0;
   for (const l of active) {
     const v = Number(l.amount) || 0;
-    if (l.type === "income") rent += v;
-    else if (l.obligation_type === "irrf") irrf += v;
+    if (l.type === "income") {
+      if (isRentLine(l)) rent += v;
+      else additions += v;
+    } else if (l.obligation_type === "irrf") irrf += v;
     else if ((l.obligation_type || "").startsWith("rent_deduction_")) deductions += v;
+    else if (l.obligation_type === "rent_discount") discounts += v;
     else otherExpenses += v;
   }
   return {
     rent: round2(rent),
+    additions: round2(additions),
     deductions: round2(deductions),
     irrf: round2(irrf),
+    discounts: round2(discounts),
     otherExpenses: round2(otherExpenses),
     net: settlementNet(active),
   };
 }
 
+/** "Aluguel R$ X + acréscimos R$ Y − abatimentos R$ Z − IRRF R$ W − descontos R$ D = líquido R$ N" (só partes não nulas). */
 export function describeSettlement(b: SettlementBreakdown): string {
   const f = formatCurrencyBRL;
-  const other = b.otherExpenses > 0 ? ` − outros ${f(b.otherExpenses)}` : "";
-  return `Aluguel ${f(b.rent)} − abatimentos ${f(b.deductions)} − IRRF ${f(b.irrf)}${other} = líquido ${f(b.net)}`;
+  const parts = [`Aluguel ${f(b.rent)}`];
+  if (b.additions > 0) parts.push(`+ acréscimos ${f(b.additions)}`);
+  if (b.deductions > 0) parts.push(`− abatimentos ${f(b.deductions)}`);
+  if (b.irrf > 0) parts.push(`− IRRF ${f(b.irrf)}`);
+  if (b.discounts > 0) parts.push(`− descontos ${f(b.discounts)}`);
+  if (b.otherExpenses > 0) parts.push(`− outros ${f(b.otherExpenses)}`);
+  return `${parts.join(" ")} = líquido ${f(b.net)}`;
+}
+
+export type CompositionKind = "deduction" | "irrf" | "late_fee" | "other_addition" | "discount";
+
+export function compositionKindOf(l: SettlementLine): CompositionKind | null {
+  const t = l.obligation_type || "";
+  if (t === "irrf") return "irrf";
+  if (t.startsWith("rent_deduction_")) return "deduction";
+  if (t === "rent_addition_late_fee") return "late_fee";
+  if (t === "rent_addition_other") return "other_addition";
+  if (t === "rent_discount") return "discount";
+  return null;
 }
 
 /** Linha "âncora" do grupo: o aluguel (receita). */

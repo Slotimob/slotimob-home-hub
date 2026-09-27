@@ -63,7 +63,33 @@ export function resolveObligationLabel(
  */
 const OBLIGATION_TYPE_ALIASES: Record<string, string> = {
   fire_insurance: "insurance",
+  rent_balance: "rent",
 };
+
+export const RENT_SETTLEMENT_LABELS: Record<string, string> = {
+  rent_balance: "Saldo do aluguel",
+  rent_addition_late_fee: "Multa/juros de atraso",
+  rent_addition_other: "Acréscimo no aluguel",
+  rent_discount: "Desconto concedido",
+  irrf: "IRRF retido",
+};
+
+export function rentSettlementLabel(obligationType: string | null | undefined): string | null {
+  if (!obligationType) return null;
+  if (obligationType.startsWith("rent_deduction_")) return "Abatimento";
+  return RENT_SETTLEMENT_LABELS[obligationType] ?? null;
+}
+
+/**
+ * Entre lançamentos da mesma obrigação/competência (ex.: aluguel + saldo de
+ * pagamento parcial), devolve um NÃO pago se houver — a competência só é
+ * "Paga" quando todas as linhas estão pagas.
+ */
+export function pickObligationTx<T extends { status?: string | null; is_reconciled?: boolean | null }>(
+  list: T[]
+): T | undefined {
+  return list.find((t) => t.status !== "paid" && t.is_reconciled !== true) ?? list[0];
+}
 
 export function obligationTypeMatches(
   configKey: string,
