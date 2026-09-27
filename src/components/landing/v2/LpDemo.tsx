@@ -48,7 +48,7 @@ export default function LpDemo() {
             <Reveal delay={180}>
               <div className="flex flex-wrap items-center gap-3">
                 <Link
-                  to="/presentation"
+                  to="/apresentacao"
                   className="lp-btn lp-btn-primary inline-flex items-center gap-2"
                 >
                   conheça o tour <ArrowUpRight className="w-4 h-4" />
