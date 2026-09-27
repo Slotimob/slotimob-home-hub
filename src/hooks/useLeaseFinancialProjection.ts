@@ -1,3 +1,4 @@
+import { recalculatePendingIrrf, type IrrfRecalcResult } from "@/lib/lease-irrf-recalc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
@@ -307,7 +308,7 @@ export function useUpdateFutureProjections() {
       leaseId: string;
       newAmount: number;
       effectiveDate: Date;
-    }): Promise<{ updated: number }> => {
+    }): Promise<{ updated: number; irrf: IrrfRecalcResult | null }> => {
       if (!user) throw new Error("Usuário não autenticado");
 
       const effectiveDateStr = format(effectiveDate, "yyyy-MM-dd");
@@ -325,7 +326,13 @@ export function useUpdateFutureProjections() {
 
       if (error) throw error;
 
-      return { updated: data?.length || 0 };
+      let irrf: IrrfRecalcResult | null = null;
+      try {
+        irrf = await recalculatePendingIrrf(leaseId, effectiveDateStr.slice(0, 7));
+      } catch (e) {
+        console.error("Erro ao recalcular IRRF:", e);
+      }
+      return { updated: data?.length || 0, irrf };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });

@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
  import { toast } from "sonner";
+import { describeAdjustmentCascade } from "@/lib/lease-irrf-recalc";
 import { useQueryClient } from "@tanstack/react-query";
 import { todayDateOnly } from "@/lib/date-only";
  
@@ -132,7 +133,7 @@ import { todayDateOnly } from "@/lib/date-only";
        });
  
        toast.success("Dados atualizados e lançamentos futuros recalculados!", {
-         description: `Novo valor: ${formatCurrency(amount)} • ${result.updated} parcelas atualizadas`,
+         description: `Novo valor: ${formatCurrency(amount)} • ${describeAdjustmentCascade(result.updated, result.irrf)}`,
        });
  
       // Invalidate lease adjustments query to update timeline

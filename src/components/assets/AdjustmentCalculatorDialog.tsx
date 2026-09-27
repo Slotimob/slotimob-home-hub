@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
+import { recalculatePendingIrrf, describeAdjustmentCascade, type IrrfRecalcResult } from "@/lib/lease-irrf-recalc";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   LeaseProjectionEditor,
@@ -279,6 +280,7 @@ export function AdjustmentCalculatorDialog({
           .eq("status", "pending")
           .gte("competency_period", firstAdjustedPeriod)
           .or("obligation_type.eq.rent,obligation_type.is.null")
+          .or("metadata->>kind.is.null,metadata->>kind.neq.grace")
           .select("id");
 
         if (cascadeError) {
@@ -291,10 +293,16 @@ export function AdjustmentCalculatorDialog({
           });
         } else {
           const updatedCount = updatedTransactions?.length || 0;
+          let irrf: IrrfRecalcResult | null = null;
+          try {
+            irrf = await recalculatePendingIrrf(lease.id, firstAdjustedPeriod);
+          } catch (e) {
+            console.error("Erro ao recalcular IRRF:", e);
+          }
 
           toast({
             title: "Reajuste aplicado com sucesso!",
-            description: `Novo valor: ${brl(newValue)}${updatedCount > 0 ? ` • ${updatedCount} parcelas atualizadas` : ""}`,
+            description: `Novo valor: ${brl(newValue)} • ${describeAdjustmentCascade(updatedCount, irrf)}`,
           });
         }
 
