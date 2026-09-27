@@ -13,24 +13,21 @@ import {
   computeCapRate,
 } from './asset-financials';
 import { ASSET_EXPENSE_CATEGORIES } from './asset-expense-categories';
-import { EVENT_GROUPS, humanizeLog, getChangedFields, TABLE_LABELS, type AuditLog } from './audit-formatting';
+import { categoryDef, eventTitle, type AssetTimelineEvent } from './asset-timeline';
 import { activityTypeLabel } from './activity-types';
 
 /** Max activity rows rendered per asset in the report */
 export const ACTIVITIES_REPORT_LIMIT = 120;
 
-export interface AssetReportActivity {
+/** Item do histórico do imóvel (view asset_timeline) */
+export interface AssetReportTimelineItem {
+  /** yyyy-MM-dd */
   date: string;
-  group: string;
-  description: string;
-  /** Nome do autor da ação (actor_user_id, fallback broker_id) */
-  user_name: string;
-  /** Diff campo a campo (vazio para eventos sem alteração detectável) */
-  changes: Array<{ label: string; from: string; to: string }>;
-  action: string | null;
-  table_label: string | null;
+  category: string;
+  category_label: string;
+  event: string;
+  detail: string;
 }
-
 
 /** Manutenção / atividade registrada manualmente (property_activities) */
 export interface AssetReportMaintenanceItem {
@@ -102,10 +99,12 @@ export interface AssetReportAsset {
     }>;
     /** "Inclui X% do contrato … (rateio entre N imóveis)" */
     allocation_notes?: string[];
+    /** Total de eventos do histórico no período */
     activities_count: number;
+    /** Contadores por categoria do histórico */
     activities_by_type: Record<string, number>;
-    /** Most recent activities within the period (capped at ACTIVITIES_REPORT_LIMIT) */
-    activities_items: AssetReportActivity[];
+    /** Eventos do histórico (mais recentes primeiro, até ACTIVITIES_REPORT_LIMIT) */
+    timeline_items: AssetReportTimelineItem[];
     /** Manutenções/atividades registradas manualmente no período */
     maintenance_items: AssetReportMaintenanceItem[];
     maintenance_count: number;
@@ -288,117 +287,40 @@ export async function buildAssetReport(params: {
     allocationNotesMap[key] = await allocationNotesFor(rows);
   }
 
-  let activitiesMap: Record<string, { count: number; byType: Record<string, number>; items: AssetReportActivity[] }> = {};
-  if (sections.activities) {
-    const rawPerAsset: Record<string, { logs: AuditLog[]; notes: any[] }> = {};
-
-    const loadActivities = async (id: string, kind: 'property' | 'unit') => {
-      const metaKey = kind === 'property' ? 'property_id' : 'unit_id';
-      const tableName = kind === 'property' ? 'properties' : 'units';
-
-      const [directRes, metaRes, notesRes] = await Promise.all([
-        supabase
-          .from('audit_logs')
-          .select('*')
-          .eq('table_name', tableName)
-          .eq('record_id', id)
-          .gte('created_at', fromStr)
-          .lte('created_at', toStr + 'T23:59:59')
-          .order('created_at', { ascending: false })
-          .limit(500),
-        supabase
-          .from('audit_logs')
-          .select('*')
-          .filter(`metadata->>${metaKey}`, 'eq', id)
-          .gte('created_at', fromStr)
-          .lte('created_at', toStr + 'T23:59:59')
-          .order('created_at', { ascending: false })
-          .limit(500),
-        supabase
-          .from('property_activities')
-          .select('id, title, scheduled_at, created_at, broker_id')
-          .eq(metaKey, id)
-          .order('created_at', { ascending: false })
-          .limit(500),
-      ]);
-
-      const logMap = new Map<string, AuditLog>();
-      for (const l of [...(directRes.data || []), ...(metaRes.data || [])]) {
-        logMap.set((l as any).id, l as unknown as AuditLog);
+  let activitiesMap: Record<string, { count: number; byType: Record<string, number>; items: AssetReportTimelineItem[] }> = {};
+  if (sections.activities && (propertyIds.length || unitIds.length)) {
+    // UMA consulta no histórico (asset_timeline) para todos os imóveis selecionados.
+    const ors: string[] = [];
+    if (unitIds.length) ors.push(`unit_id.in.(${unitIds.join(',')})`);
+    if (propertyIds.length) ors.push(`property_id.in.(${propertyIds.join(',')})`);
+    let q = supabase.from('asset_timeline').select('*').or(ors.join(','));
+    if (period.from) q = q.gte('occurred_on', fromStr);
+    q = q.lte('occurred_on', toStr);
+    const { data: rows = [] } = await q
+      .order('occurred_on', { ascending: false, nullsFirst: false })
+      .order('occurred_at', { ascending: false, nullsFirst: false })
+      .limit(10000);
+    const unitSet = new Set(unitIds);
+    const propSet = new Set(propertyIds);
+    for (const r of (rows || []) as AssetTimelineEvent[]) {
+      const targets: string[] = [];
+      if (r.unit_id && unitSet.has(r.unit_id)) targets.push(r.unit_id);
+      if (r.property_id && propSet.has(r.property_id)) targets.push(r.property_id);
+      const label = categoryDef(r.category).label;
+      for (const id of targets) {
+        const entry = (activitiesMap[id] ||= { count: 0, byType: {}, items: [] });
+        entry.count++;
+        entry.byType[label] = (entry.byType[label] || 0) + 1;
+        if (entry.items.length < ACTIVITIES_REPORT_LIMIT) {
+          entry.items.push({
+            date: r.occurred_on || '',
+            category: r.category || 'nota',
+            category_label: label,
+            event: eventTitle(r),
+            detail: r.detail || '',
+          });
+        }
       }
-
-      rawPerAsset[id] = { logs: [...logMap.values()], notes: (notesRes.data || []) as any[] };
-    };
-
-    await Promise.all([
-      ...propertyIds.map(pid => loadActivities(pid, 'property')),
-      ...unitIds.map(uid => loadActivities(uid, 'unit')),
-    ]);
-
-    // ── Resolve nomes de usuário: prioriza actor_user_id, fallback broker_id ──
-    const userIds = new Set<string>();
-    for (const { logs, notes } of Object.values(rawPerAsset)) {
-      for (const l of logs) {
-        if (l.actor_user_id) userIds.add(l.actor_user_id);
-        else if (l.broker_id) userIds.add(l.broker_id);
-      }
-      for (const n of notes) if (n.broker_id) userIds.add(n.broker_id);
-    }
-
-    const nameMap: Record<string, string> = {};
-    if (userIds.size > 0) {
-      const { data: profiles = [] } = await (supabase as any)
-        .from('profile_directory')
-        .select('id, full_name')
-        .in('id', [...userIds]);
-      (profiles || []).forEach((p: any) => { nameMap[p.id] = p.full_name || 'Usuário'; });
-    }
-    const resolveName = (log: AuditLog) =>
-      nameMap[log.actor_user_id || ''] || nameMap[log.broker_id || ''] || 'Sistema';
-
-    for (const [id, { logs, notes }] of Object.entries(rawPerAsset)) {
-      const byType: Record<string, number> = {};
-      const items: AssetReportActivity[] = [];
-
-      for (const log of logs) {
-        const groupKey = Object.keys(EVENT_GROUPS).find(k => EVENT_GROUPS[k].match(log));
-        const groupLabel = groupKey ? EVENT_GROUPS[groupKey].label : 'Outros';
-        byType[groupLabel] = (byType[groupLabel] || 0) + 1;
-        items.push({
-          date: log.created_at,
-          group: groupLabel,
-          description: humanizeLog(log),
-          user_name: resolveName(log),
-          changes: getChangedFields(log),
-          action: log.action ?? null,
-          table_label: TABLE_LABELS[log.table_name] ?? log.table_name ?? null,
-        });
-      }
-
-      for (const note of notes) {
-        const d = note.scheduled_at || note.created_at;
-        if (!d) continue;
-        const dayStr = String(d).slice(0, 10);
-        if (dayStr < fromStr || dayStr > toStr) continue;
-        byType['Notas manuais'] = (byType['Notas manuais'] || 0) + 1;
-        items.push({
-          date: d,
-          group: 'Notas manuais',
-          description: note.title || 'Nota manual',
-          user_name: nameMap[note.broker_id] || 'Sistema',
-          changes: [],
-          action: null,
-          table_label: 'Nota manual',
-        });
-      }
-
-      items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-      activitiesMap[id] = {
-        count: items.length,
-        byType,
-        items: items.slice(0, ACTIVITIES_REPORT_LIMIT),
-      };
     }
   }
 
@@ -565,7 +487,7 @@ export async function buildAssetReport(params: {
         allocation_notes: allocationNotesMap[id] || [],
         activities_count: activitiesMap[id]?.count ?? 0,
         activities_by_type: activitiesMap[id]?.byType ?? {},
-        activities_items: activitiesMap[id]?.items ?? [],
+        timeline_items: activitiesMap[id]?.items ?? [],
         ...maintenanceFor(id),
         roi_pct: roi?.roi_pct ?? null,
         monthly_yield: monthlyYield,
@@ -640,7 +562,7 @@ export async function buildAssetReport(params: {
         allocation_notes: allocationNotesMap[id] || [],
         activities_count: activitiesMap[id]?.count ?? 0,
         activities_by_type: activitiesMap[id]?.byType ?? {},
-        activities_items: activitiesMap[id]?.items ?? [],
+        timeline_items: activitiesMap[id]?.items ?? [],
         ...maintenanceFor(id),
         roi_pct: roi?.roi_pct ?? null,
         monthly_yield: monthlyYield,
