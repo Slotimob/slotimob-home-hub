@@ -241,3 +241,64 @@ export function summarizeSettlement(installments: PlannedInstallment[]): Settlem
     .map((s) => ({ ...s, net: round2(s.gross - s.grace - s.deductions - s.irrf) }))
     .sort((a, b) => a.competency.localeCompare(b.competency));
 }
+
+/* ─── Validação (assistente de contrato) ───────────────────────────── */
+
+export function isValidRentDeduction(d: RentDeductionConfig): boolean {
+  return (
+    !!d.label?.trim() &&
+    Number(d.amount) > 0 &&
+    /^\d{4}-\d{2}$/.test(d.first_competency || "") &&
+    (d.recurrence !== "installments" || Number(d.installments) >= 2)
+  );
+}
+
+/** Mensagens de erro das condições especiais; lista vazia = válido. */
+export function validateSpecialConditions({
+  rentAmount,
+  grace,
+  deductions,
+  withholding,
+}: {
+  rentAmount: number;
+  grace: RentGraceConfig | null | undefined;
+  deductions: RentDeductionConfig[] | null | undefined;
+  withholding: RentWithholdingConfig | null | undefined;
+}): string[] {
+  const errors: string[] = [];
+
+  if (grace?.enabled) {
+    const tiers = grace.tiers || [];
+    if (tiers.length === 0) errors.push("Carência: adicione ao menos uma faixa.");
+    tiers.forEach((t, i) => {
+      const n = `Carência, faixa ${i + 1}`;
+      if (!(Number(t.months) >= 1)) errors.push(`${n}: informe ao menos 1 mês.`);
+      if (t.mode === "percent" && !(Number(t.value) >= 1 && Number(t.value) <= 100))
+        errors.push(`${n}: o desconto deve ficar entre 1% e 100%.`);
+      if (t.mode === "fixed" && !(Number(t.value) > 0 && Number(t.value) < rentAmount))
+        errors.push(`${n}: o valor a pagar deve ser maior que zero e menor que o aluguel.`);
+    });
+  }
+
+  (deductions || []).forEach((d, i) => {
+    if (!d.enabled) return;
+    const n = `Abatimento ${i + 1}${d.label?.trim() ? ` (${d.label.trim()})` : ""}`;
+    if (!d.label?.trim()) errors.push(`${n}: informe a descrição.`);
+    if (!(Number(d.amount) > 0)) errors.push(`${n}: informe um valor maior que zero.`);
+    if (!/^\d{4}-\d{2}$/.test(d.first_competency || "")) errors.push(`${n}: informe a competência inicial.`);
+    if (d.recurrence === "installments" && !(Number(d.installments) >= 2))
+      errors.push(`${n}: parcelado exige ao menos 2 parcelas.`);
+  });
+
+  if (withholding?.enabled) {
+    if (withholding.mode === "fixed" && !(Number(withholding.fixed_amount) > 0))
+      errors.push("IRRF: informe o valor fixo retido por mês.");
+    if (
+      withholding.mode === "percent" &&
+      !(Number(withholding.percent) >= 0.01 && Number(withholding.percent) <= 27.5)
+    )
+      errors.push("IRRF: o percentual deve ficar entre 0,01% e 27,5%.");
+  }
+
+  return errors;
+}

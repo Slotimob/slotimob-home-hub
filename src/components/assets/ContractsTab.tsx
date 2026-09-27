@@ -394,27 +394,8 @@ export function ContractsTab() {
       return;
     }
     
-    // Fetch full lease data for editing
-    supabase
-      .from("leases")
-      .select(`
-        id, unit_id, tenant_contact_id, owner_contact_id, rent_amount,
-        admin_fee_percentage, due_day, deposit_amount, start_date, end_date,
-        status, cib, is_dimob_deductible, notes, adjustment_index,
-        next_adjustment_date, guarantee_type, guarantor_data, payment_info,
-        metadata
-      `)
-      .eq("id", lease.id)
-      .single()
-      .then(({ data, error }) => {
-        if (error) {
-          toast.error("Erro ao carregar dados do contrato");
-          return;
-        }
-        setEditingLeaseData(data);
-        setEditingLease(lease);
-        setEditWizardOpen(true);
-      });
+    // Edição sempre no assistente principal (encargos e condições especiais)
+    navigate(`/gestao/contratos/novo?edit=${lease.id}`);
   };
 
   // Handle create new contract - navigate to dedicated page
@@ -438,9 +419,7 @@ export function ContractsTab() {
     }
     
     setUnitSelectionOpen(false);
-    setCreateUnitId(unit.id);
-    setCreateUnitName(unit.unit_number);
-    setCreateWizardOpen(true);
+    navigate(`/gestao/contratos/novo?unitId=${unit.id}`);
   };
 
   // Check for duplicate contracts before creating
