@@ -3150,6 +3150,47 @@ export type Database = {
           },
         ]
       }
+      lease_events: {
+        Row: {
+          broker_id: string
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          lease_id: string | null
+          occurred_on: string
+          unit_ids: string[]
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string
+          details?: Json
+          event_type: string
+          id?: string
+          lease_id?: string | null
+          occurred_on: string
+          unit_ids?: string[]
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          lease_id?: string | null
+          occurred_on?: string
+          unit_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_events_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lease_units: {
         Row: {
           broker_id: string
@@ -6036,6 +6077,24 @@ export type Database = {
       }
     }
     Views: {
+      asset_timeline: {
+        Row: {
+          broker_id: string | null
+          category: string | null
+          contact_id: string | null
+          detail: string | null
+          event_type: string | null
+          lease_id: string | null
+          occurred_at: string | null
+          occurred_on: string | null
+          property_id: string | null
+          source_id: string | null
+          source_table: string | null
+          title: string | null
+          unit_id: string | null
+        }
+        Relationships: []
+      }
       profile_directory: {
         Row: {
           author_role: string | null
