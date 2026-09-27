@@ -6092,6 +6092,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_blog_post_views: {
+        Args: { p_post_id: string }
+        Returns: undefined
+      }
       is_crm_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
       maintain_audit_partitions: { Args: never; Returns: undefined }
