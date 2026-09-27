@@ -164,7 +164,7 @@ const AtivosEmGestao = () => {
   const handleCreateLease = () => {
     if (selectedAsset) {
       setLeaseSheetOpen(false);
-      setLeaseWizardOpen(true);
+      navigate(`/gestao/contratos/novo?unitId=${selectedAsset.unitId}`);
     }
   };
 
