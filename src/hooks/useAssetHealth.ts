@@ -1,3 +1,4 @@
+import { obligationTypeMatches } from "@/lib/obligation-labels";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -192,7 +193,7 @@ function findMatchingTransaction(
   // Priority 1: Exact match by obligation_type AND competency_period (strongest binding)
   const exactMatch = transactions.find((t) => {
     if (t.unit_id !== unitId) return false;
-    return t.obligation_type === obligationType && t.competency_period === competencyPeriod;
+    return obligationTypeMatches(obligationType, t.obligation_type) && t.competency_period === competencyPeriod;
   });
   
   if (exactMatch) return exactMatch;
@@ -200,7 +201,7 @@ function findMatchingTransaction(
   // Priority 2: Match by obligation_type only (for transactions linked but missing period)
   const typeMatch = transactions.find((t) => {
     if (t.unit_id !== unitId) return false;
-    return t.obligation_type === obligationType && !t.competency_period;
+    return obligationTypeMatches(obligationType, t.obligation_type) && !t.competency_period;
   });
   
   if (typeMatch) return typeMatch;
