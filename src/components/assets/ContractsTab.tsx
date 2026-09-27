@@ -71,7 +71,6 @@ import { AdjustmentCalculatorDialog } from "./AdjustmentCalculatorDialog";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "./ConfirmLeaseProjectionDialog";
 import { ContractCard } from "./ContractCard";
 import { ContractGeneratorDialog } from "./ContractGeneratorDialog";
-import { CreateLeaseWizard } from "./CreateLeaseWizard";
 import { CreateTransactionDialog, TransactionPrefill } from "@/components/finance/CreateTransactionDialog";
 import { TerminateContractDialog } from "./TerminateContractDialog";
 import { UploadSignedContractDialog } from "./UploadSignedContractDialog";
@@ -192,11 +191,6 @@ export function ContractsTab() {
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
   const [selectedIsUrgent, setSelectedIsUrgent] = useState(false);
   
-  // Edit lease wizard state
-  const [editWizardOpen, setEditWizardOpen] = useState(false);
-  const [editingLease, setEditingLease] = useState<LeaseWithDetails | null>(null);
-  const [editingLeaseData, setEditingLeaseData] = useState<any>(null);
-  
   // Quick transaction dialog state
   const [quickTransactionOpen, setQuickTransactionOpen] = useState(false);
   const [transactionPrefill, setTransactionPrefill] = useState<TransactionPrefill | null>(null);
@@ -216,11 +210,6 @@ export function ContractsTab() {
   const [editAdjustmentDateOpen, setEditAdjustmentDateOpen] = useState(false);
   const [editingAdjustmentLease, setEditingAdjustmentLease] = useState<LeaseWithDetails | null>(null);
 
-  // Create new contract wizard state
-  const [createWizardOpen, setCreateWizardOpen] = useState(false);
-  const [createUnitId, setCreateUnitId] = useState<string | null>(null);
-  const [createUnitName, setCreateUnitName] = useState("");
-  
   // Duplicate warning dialog state
   const [duplicateWarningOpen, setDuplicateWarningOpen] = useState(false);
   const [pendingLeaseEdit, setPendingLeaseEdit] = useState<LeaseWithDetails | null>(null);
@@ -1171,9 +1160,7 @@ export function ContractsTab() {
               // Proceed with creation anyway
               setDuplicateWarningOpen(false);
               if (pendingLeaseEdit) {
-                setCreateUnitId(pendingLeaseEdit.unit_id);
-                setCreateUnitName(pendingLeaseEdit.unit?.unit_number || "");
-                setCreateWizardOpen(true);
+                navigate(`/gestao/contratos/novo?unitId=${pendingLeaseEdit.unit_id}`);
               }
               setPendingLeaseEdit(null);
             }}>
@@ -1182,52 +1169,6 @@ export function ContractsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Create Lease Wizard - for new contracts */}
-      {createUnitId && (
-        <CreateLeaseWizard
-          open={createWizardOpen}
-          onOpenChange={(open) => {
-            setCreateWizardOpen(open);
-            if (!open) {
-              setCreateUnitId(null);
-              setCreateUnitName("");
-            }
-          }}
-          unitId={createUnitId}
-          unitName={createUnitName}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
-            setCreateWizardOpen(false);
-            setCreateUnitId(null);
-            setCreateUnitName("");
-          }}
-        />
-      )}
-
-      {/* Edit Lease Wizard - for editing existing contracts */}
-      {editingLease && editingLeaseData && (
-        <CreateLeaseWizard
-          open={editWizardOpen}
-          onOpenChange={(open) => {
-            setEditWizardOpen(open);
-            if (!open) {
-              setEditingLease(null);
-              setEditingLeaseData(null);
-            }
-          }}
-          unitId={editingLease.unit_id}
-          unitName={editingLease.unit?.unit_number || ""}
-          editLease={editingLeaseData}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["leases-contracts"] });
-            queryClient.invalidateQueries({ queryKey: ["leases"] });
-            setEditWizardOpen(false);
-            setEditingLease(null);
-            setEditingLeaseData(null);
-          }}
-        />
-      )}
 
       {/* Unit Selection Dialog for New Contract */}
       <Dialog open={unitSelectionOpen} onOpenChange={setUnitSelectionOpen}>

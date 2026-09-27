@@ -1,15 +1,13 @@
 import { Loader2 } from "lucide-react";
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAssetHealth, AssetHealth as AssetHealthType, ObligationHealth } from "@/hooks/useAssetHealth";
-import { useLeaseConversionContext, type LeaseConversionContext } from "@/hooks/useLeaseConversionContext";
 import { AppLayout } from "@/components/AppLayout";
 import { AssetHealthCard } from "@/components/assets/AssetHealthCard";
 import { AssetHealthListItem } from "@/components/assets/AssetHealthListItem";
 import { AssetHealthEmptyState } from "@/components/assets/AssetHealthEmptyState";
 import { LeaseManagementSheet } from "@/components/assets/LeaseManagementSheet";
-import { CreateLeaseWizard } from "@/components/assets/CreateLeaseWizard";
 import { LinkTransactionDialog } from "@/components/assets/LinkTransactionDialog";
 import { AssetManagementGuide } from "@/components/assets/AssetManagementGuide";
 import { MonthYearPicker } from "@/components/schedule/MonthYearPicker";
@@ -67,16 +65,12 @@ type StatusFilter = "all" | "healthy" | "attention" | "critical";
 const AtivosEmGestao = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { hasPermission } = usePermissions();
   const canView = hasPermission("management_rentals", "view");
   const canCreate = hasPermission("management_rentals", "create");
-
-  const { consumeConversionContext, clearContext } = useLeaseConversionContext();
-  const [crmConversionData, setCrmConversionData] = useState<LeaseConversionContext | null>(null);
 
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
   const { data: assets, isLoading, refetch } = useAssetHealth(selectedMonth);
@@ -86,13 +80,7 @@ const AtivosEmGestao = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [leaseSheetOpen, setLeaseSheetOpen] = useState(false);
-  const [leaseWizardOpen, setLeaseWizardOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetHealthType | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<{
-    id: string;
-    name: string;
-    ownerContactId?: string | null;
-  } | null>(null);
 
   const [guideOpen, setGuideOpen] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -105,28 +93,6 @@ const AtivosEmGestao = () => {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
-
-  useEffect(() => {
-    const locationState = location.state as {
-      leaseConversion?: LeaseConversionContext;
-      autoOpenWizard?: boolean;
-    } | null;
-
-    if (locationState?.leaseConversion && locationState?.autoOpenWizard) {
-      const context = locationState.leaseConversion;
-      setCrmConversionData(context);
-      setSelectedUnit({
-        id: context.unitId,
-        name: context.unitNumber,
-      });
-      setLeaseWizardOpen(true);
-      window.history.replaceState({}, document.title);
-      toast({
-        title: "📄 Criando contrato",
-        description: `Preencha os dados do contrato para ${context.leadName}`,
-      });
-    }
-  }, [location.state, toast]);
 
   const filteredAssets = useMemo(() => {
     if (!assets) return [];
@@ -455,28 +421,6 @@ const AtivosEmGestao = () => {
 
         <LeaseManagementSheet open={leaseSheetOpen} onOpenChange={setLeaseSheetOpen} asset={selectedAsset} onCreateLease={handleCreateLease} onEditUnit={handleEditUnit} />
 
-        {(selectedAsset || selectedUnit) && (
-          <CreateLeaseWizard
-            open={leaseWizardOpen}
-            onOpenChange={(open) => { setLeaseWizardOpen(open); if (!open) setCrmConversionData(null); }}
-            unitId={selectedAsset?.unitId || selectedUnit?.id || ""}
-            unitName={selectedAsset?.unitNumber || selectedUnit?.name || ""}
-            ownerContactId={selectedUnit?.ownerContactId}
-            preFillData={crmConversionData ? {
-              tenantName: crmConversionData.leadName,
-              tenantEmail: crmConversionData.leadEmail,
-              tenantPhone: crmConversionData.leadPhone,
-              rentAmount: crmConversionData.estimatedValue || 0,
-              dealId: crmConversionData.dealId,
-            } : undefined}
-            conversionContext={crmConversionData}
-            onSuccess={() => {
-              queryClient.invalidateQueries({ queryKey: ["asset-health"] });
-              queryClient.invalidateQueries({ queryKey: ["leases"] });
-              setCrmConversionData(null);
-            }}
-          />
-        )}
       </AppLayout>
     </>
   );
