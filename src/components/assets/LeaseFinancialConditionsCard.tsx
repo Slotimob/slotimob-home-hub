@@ -361,3 +361,69 @@ export function LeaseFinancialConditionsCard({
 }
 
 export default LeaseFinancialConditionsCard;
+
+/**
+ * Resumo compacto das condições especiais (carência, abatimentos, IRRF).
+ * Não renderiza nada quando nenhuma está ligada.
+ */
+export function LeaseSpecialConditionsSummaryCard({ lease }: { lease: LeaseFinancialConditionsLease }) {
+  const navigate = useNavigate();
+  const grace = lease.rent_grace?.enabled ? graceSummary(lease.rent_grace, lease.start_date) : null;
+  const deductions = (lease.rent_deductions || []).filter((d) => d?.enabled && Number(d.amount) > 0);
+  const withholding = lease.rent_withholding?.enabled ? lease.rent_withholding : null;
+  const irrfTypical = useMemo(
+    () => (withholding ? computeLeaseMonthFromConfig(lease).irrf : 0),
+    [lease, withholding]
+  );
+  if (!grace?.label && deductions.length === 0 && !withholding) return null;
+
+  const deductionsTotal = round2(
+    deductions.reduce((s, d) => {
+      const n = d.recurrence === "installments" ? d.installments || 2 : 1;
+      return s + (Number(d.amount) || 0) * n;
+    }, 0)
+  );
+  const hasMonthly = deductions.some((d) => d.recurrence === "monthly");
+
+  return (
+    <Card>
+      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between gap-2 space-y-0">
+        <CardTitle className="text-sm font-medium">Condições especiais do contrato</CardTitle>
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-xs"
+          onClick={() => navigate(`/gestao/contratos/novo?edit=${lease.id}&step=financial`)}
+        >
+          Editar no contrato
+        </Button>
+      </CardHeader>
+      <CardContent className="py-2 px-4 space-y-1.5 text-sm">
+        {grace?.label && (
+          <p className="break-words">
+            <span className="text-muted-foreground">Carência: </span>
+            {grace.label}
+          </p>
+        )}
+        {deductions.length > 0 && (
+          <p className="break-words">
+            <span className="text-muted-foreground">Abatimentos: </span>
+            {deductions.length} {deductions.length === 1 ? "item" : "itens"} · total{" "}
+            {formatCurrency(deductionsTotal)}
+            {hasMonthly ? " (+ recorrentes mensais)" : ""}
+          </p>
+        )}
+        {withholding && (
+          <p className="break-words">
+            <span className="text-muted-foreground">IRRF retido: </span>
+            {withholding.mode === "fixed"
+              ? `fixo ${formatCurrency(Number(withholding.fixed_amount) || 0)}/mês`
+              : withholding.mode === "percent"
+                ? `${(Number(withholding.percent) || 0).toLocaleString("pt-BR")}% (${formatCurrency(irrfTypical)})`
+                : `estimado pela tabela: ${formatCurrency(irrfTypical)}`}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
