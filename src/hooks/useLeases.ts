@@ -355,15 +355,18 @@ export function useLeases() {
  * principal (leases.unit_id) ou adicional (lease_units.unit_id).
  * wholeUnitOnly: só vínculos da unidade inteira (sem fração), como antes.
  */
-export async function leaseUnitFilter(unitId: string, opts: { wholeUnitOnly?: boolean } = {}): Promise<string> {
-  let q = supabase.from("lease_units").select("lease_id").eq("unit_id", unitId);
+export async function leaseUnitFilter(
+  unitId: string | string[],
+  opts: { wholeUnitOnly?: boolean } = {}
+): Promise<string> {
+  const unitIds = Array.isArray(unitId) ? unitId : [unitId];
+  let q = supabase.from("lease_units").select("lease_id").in("unit_id", unitIds);
   if (opts.wholeUnitOnly) q = q.is("unit_subdivision_id", null);
   const { data, error } = await q;
   if (error) console.error("[leaseUnitFilter]", error);
   const ids = Array.from(new Set((data || []).map((r) => r.lease_id)));
-  const direct = opts.wholeUnitOnly
-    ? `and(unit_id.eq.${unitId},unit_subdivision_id.is.null)`
-    : `unit_id.eq.${unitId}`;
+  const unitList = `unit_id.in.(${unitIds.join(",")})`;
+  const direct = opts.wholeUnitOnly ? `and(${unitList},unit_subdivision_id.is.null)` : unitList;
   return ids.length ? `${direct},id.in.(${ids.join(",")})` : direct;
 }
 

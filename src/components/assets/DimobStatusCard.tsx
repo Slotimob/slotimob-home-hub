@@ -1,3 +1,4 @@
+import { leaseUnitFilter } from '@/hooks/useLeases';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -160,7 +161,8 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
           start_date,
           end_date
         `)
-        .eq('unit_id', unitId)
+        // Qualquer imóvel vinculado (principal ou adicional via lease_units)
+        .or(await leaseUnitFilter(unitId))
         .eq('status', 'active')
         // Imóvel fracionado pode ter mais de um contrato ativo (um por fração).
         .order('start_date', { ascending: false })
