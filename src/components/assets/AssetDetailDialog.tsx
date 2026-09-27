@@ -1,3 +1,5 @@
+import { useLeaseByUnitId } from "@/hooks/useLeases";
+import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
 import { useState, useMemo } from "react";
 import { format, addMonths, startOfMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -254,6 +256,8 @@ export function AssetDetailDialog({
   });
 
   // Fetch transactions for the selected month
+  const { data: activeLease } = useLeaseByUnitId(asset?.unitId ?? null);
+
   const { data: monthTransactions = [] } = useQuery({
     queryKey: ["unit-month-transactions", asset?.unitId, competencyPeriod],
     queryFn: async () => {
@@ -567,6 +571,13 @@ export function AssetDetailDialog({
           const dueDay = config.due_day || 10;
           status = isCurrentMonth && currentDay > dueDay ? "overdue" : "pending";
         }
+        if (
+          type === "rent" &&
+          status !== "paid" &&
+          isRentGraceCompetency(competencyPeriod, config, (activeLease as any) ?? null)
+        ) {
+          status = "grace";
+        }
       }
 
       return {
@@ -583,7 +594,7 @@ export function AssetDetailDialog({
         } : null,
       };
     }).filter(o => o.config !== null);
-  }, [unitConfig, monthTransactions, competencyPeriod]);
+  }, [unitConfig, monthTransactions, competencyPeriod, activeLease]);
 
   const handleCreateTransaction = (obligationType: ObligationType) => {
     if (!asset) return;

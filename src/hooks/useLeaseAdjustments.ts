@@ -4,6 +4,7 @@ import { todayDateOnly } from "@/lib/date-only";
  import { useAuth } from "./useAuth";
  import { useWorkspace } from "./useWorkspace";
  import { toast } from "sonner";
+import { recalculatePendingIrrf, describeAdjustmentCascade, type IrrfRecalcResult } from "@/lib/lease-irrf-recalc";
  
  export interface LeaseAdjustment {
    id: string;
@@ -77,6 +78,7 @@ import { todayDateOnly } from "@/lib/date-only";
           .update({ amount: previousValue })
           .eq("reference", `lease:${leaseId}`)
           .or("obligation_type.eq.rent,obligation_type.is.null")
+          .or("metadata->>kind.is.null,metadata->>kind.neq.grace")
          .eq("status", "pending")
          .gte("due_date", today)
          .select("id");
@@ -85,14 +87,22 @@ import { todayDateOnly } from "@/lib/date-only";
          console.error("Error updating transactions:", txError);
        }
  
-       return { updatedTransactions: updatedTx?.length || 0 };
+       let irrf: IrrfRecalcResult | null = null;
+       try {
+         irrf = await recalculatePendingIrrf(leaseId, today.slice(0, 7));
+       } catch (e) {
+         console.error("Erro ao recalcular IRRF:", e);
+       }
+       return { updatedTransactions: updatedTx?.length || 0, irrf };
      },
-     onSuccess: (_, variables) => {
+     onSuccess: (result, variables) => {
        queryClient.invalidateQueries({ queryKey: ["lease-adjustments", variables.leaseId] });
        queryClient.invalidateQueries({ queryKey: ["leases"] });
        queryClient.invalidateQueries({ queryKey: ["lease-by-unit"] });
        queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
-       toast.success("Reajuste excluído e valor revertido!");
+       toast.success("Reajuste excluído e valor revertido!", {
+         description: describeAdjustmentCascade(result.updatedTransactions, result.irrf),
+       });
      },
      onError: (error: any) => {
        toast.error("Erro ao excluir reajuste", { description: error.message });
@@ -146,9 +156,10 @@ export function useUpdateLeaseAdjustment() {
 
       if (updateError) throw updateError;
 
-      if (!isLatest) return { updatedTransactions: 0 };
+      if (!isLatest) return { updatedTransactions: 0, irrf: null as IrrfRecalcResult | null };
 
       let updatedTransactions = 0;
+      let irrf: IrrfRecalcResult | null = null;
 
       // Cascata 1: valor vigente do contrato = novo valor do reajuste.
       if (typeof values.new_value === "number") {
@@ -170,6 +181,7 @@ export function useUpdateLeaseAdjustment() {
           .update({ amount: values.new_value })
           .eq("reference", `lease:${leaseId}`)
           .or("obligation_type.eq.rent,obligation_type.is.null")
+          .or("metadata->>kind.is.null,metadata->>kind.neq.grace")
           .eq("status", "pending")
           .gte("due_date", cascadeFrom)
           .select("id");
@@ -192,6 +204,7 @@ export function useUpdateLeaseAdjustment() {
             .update({ amount: values.previous_value })
             .eq("reference", `lease:${leaseId}`)
           .or("obligation_type.eq.rent,obligation_type.is.null")
+          .or("metadata->>kind.is.null,metadata->>kind.neq.grace")
             .eq("status", "pending")
             .gte("due_date", revertFrom)
             .lt("due_date", cascadeFrom)
@@ -203,9 +216,15 @@ export function useUpdateLeaseAdjustment() {
             updatedTransactions += reverted?.length || 0;
           }
         }
+        try {
+          const today = todayDateOnly();
+          irrf = await recalculatePendingIrrf(leaseId, today.slice(0, 7));
+        } catch (e) {
+          console.error("Erro ao recalcular IRRF:", e);
+        }
       }
 
-      return { updatedTransactions };
+      return { updatedTransactions, irrf };
     },
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["lease-adjustments", variables.leaseId] });
@@ -215,8 +234,11 @@ export function useUpdateLeaseAdjustment() {
       queryClient.invalidateQueries({ queryKey: ["finance-overview"] });
       toast.success(
         variables.isLatest
-          ? `Reajuste atualizado${result.updatedTransactions ? ` • ${result.updatedTransactions} parcela(s) recalculada(s)` : ""}`
-          : "Observações atualizadas"
+          ? "Reajuste atualizado"
+          : "Observações atualizadas",
+        variables.isLatest
+          ? { description: describeAdjustmentCascade(result.updatedTransactions, result.irrf) }
+          : undefined
       );
     },
     onError: (error: any) => {
