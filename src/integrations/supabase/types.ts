@@ -553,6 +553,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "asaas_payments_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_financial_transactions_by_unit"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "asaas_payments_lease_id_fkey"
             columns: ["lease_id"]
             isOneToOne: false
@@ -630,6 +637,13 @@ export type Database = {
             columns: ["financial_transaction_id"]
             isOneToOne: false
             referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_improvements_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_financial_transactions_by_unit"
             referencedColumns: ["id"]
           },
           {
@@ -1217,6 +1231,13 @@ export type Database = {
             referencedRelation: "financial_transactions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bank_statement_entries_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_financial_transactions_by_unit"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bank_statement_imports: {
@@ -1330,6 +1351,13 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_reminder_logs_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_financial_transactions_by_unit"
             referencedColumns: ["id"]
           },
         ]
@@ -3122,6 +3150,64 @@ export type Database = {
           },
         ]
       }
+      lease_units: {
+        Row: {
+          broker_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          lease_id: string
+          share_percent: number | null
+          unit_id: string
+          unit_subdivision_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          lease_id: string
+          share_percent?: number | null
+          unit_id: string
+          unit_subdivision_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          lease_id?: string
+          share_percent?: number | null
+          unit_id?: string
+          unit_subdivision_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_units_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_units_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_units_unit_subdivision_id_fkey"
+            columns: ["unit_subdivision_id"]
+            isOneToOne: false
+            referencedRelation: "unit_subdivisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leases: {
         Row: {
           additional_obligations: Json
@@ -4126,6 +4212,13 @@ export type Database = {
             columns: ["financial_transaction_id"]
             isOneToOne: false
             referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_activities_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_financial_transactions_by_unit"
             referencedColumns: ["id"]
           },
           {
@@ -5982,6 +6075,120 @@ export type Database = {
         }
         Relationships: []
       }
+      v_financial_transactions_by_unit: {
+        Row: {
+          alloc_amount: number | null
+          alloc_factor: number | null
+          alloc_unit_id: string | null
+          amount: number | null
+          asset_expense_category: string | null
+          assigned_user_id: string | null
+          bank_account_id: string | null
+          broker_id: string | null
+          category_id: string | null
+          competency_period: string | null
+          contact_id: string | null
+          created_at: string | null
+          deal_id: string | null
+          description: string | null
+          due_date: string | null
+          group_id: string | null
+          id: string | null
+          is_allocated: boolean | null
+          is_reconciled: boolean | null
+          lead_id: string | null
+          lease_id: string | null
+          metadata: Json | null
+          notes: string | null
+          obligation_type: string | null
+          paid_date: string | null
+          payment_method: string | null
+          property_id: string | null
+          receipt_path: string | null
+          reconciled_at: string | null
+          recurrence_info: Json | null
+          reference: string | null
+          settlement_group_id: string | null
+          status: string | null
+          transaction_date: string | null
+          type: string | null
+          unit_id: string | null
+          updated_at: string | null
+          whatsapp_sent_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_latest_terms: {
@@ -6150,6 +6357,26 @@ export type Database = {
         Returns: undefined
       }
       reset_monthly_ai_credits: { Args: never; Returns: number }
+      set_lease_units: {
+        Args: { p_lease_id: string; p_units: Json }
+        Returns: {
+          broker_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          lease_id: string
+          share_percent: number | null
+          unit_id: string
+          unit_subdivision_id: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "lease_units"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       sync_unit_tenant_from_lease: {
         Args: {
           p_lease_id: string
