@@ -214,6 +214,8 @@ Deno.serve(async (req) => {
 
     // Level 5: Depend on level 4 tables
     await upsertTable('lease_adjustments', tables.lease_adjustments);
+    await upsertTable('lease_units', tables.lease_units);
+    await upsertTable('lease_events', tables.lease_events);
     await upsertTable('notification_logs', tables.notification_logs);
     await upsertTable('generated_documents', tables.generated_documents);
 
