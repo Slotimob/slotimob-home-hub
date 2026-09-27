@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { format, getDate, parseISO } from "date-fns";
@@ -35,6 +36,9 @@ interface FinancialTransaction {
   reference: string;
   property_id?: string | null;
   category_id?: string | null;
+  lease_id: string;
+  metadata: Json;
+  settlement_group_id: string | null;
 }
 
 /**
@@ -52,25 +56,33 @@ const CATEGORY_NAMES: Record<string, { income: string[]; expense: string[] }> = 
   gas: { income: ["Gás"], expense: ["Repasse de Gás"] },
   garbage_fee: { income: ["Taxa de Lixo"], expense: ["Repasse de Taxa de Lixo"] },
   other: { income: [], expense: [] },
+  // Condições especiais (abatimento = encargo do proprietário; IRRF = dedução)
+  rent_deduction: { income: [], expense: ["Abatimento de Aluguel (Encargo do Proprietário)"] },
+  irrf: { income: [], expense: ["IRRF Retido na Fonte"] },
 };
+
+/** `rent_deduction_<id8>` compartilha a categoria de `rent_deduction`. */
+const categoryKey = (obligation: string) =>
+  obligation.startsWith("rent_deduction_") ? "rent_deduction" : obligation;
 
 type CategoryLookup = (
   obligation: string,
   type: "income" | "expense"
 ) => string | null;
 
-async function resolveCategoryIds(): Promise<CategoryLookup> {
+async function resolveCategoryIds(brokerId: string): Promise<CategoryLookup> {
   const allNames = Object.values(CATEGORY_NAMES).flatMap((v) => [...v.income, ...v.expense]);
 
   const { data, error } = await supabase
     .from("financial_categories")
     .select("id, name, type")
+    .eq("broker_id", brokerId)
     .in("name", allNames);
 
   const rows = error || !data ? [] : data;
 
   return (obligation, type) => {
-    const names = CATEGORY_NAMES[obligation]?.[type] ?? [];
+    const names = CATEGORY_NAMES[categoryKey(obligation)]?.[type] ?? [];
     for (const name of names) {
       const match = rows.find((c: any) => c.name === name && c.type === type);
       if (match) return match.id;
@@ -131,11 +143,43 @@ export function useLeaseFinancialProjection() {
       // Idempotência por PARCELA (tipo:competência:vencimento): recarrega o estado
       // atual e descarta duplicatas — mesma chave usada na camada de UI.
       const existing = await fetchExistingCompetencies(leaseId);
-      const toInsert = installments.filter((i) => !existing.has(i.dedupKey ?? i.key));
+      // Mês isento de carência só aparece no preview; o banco exige amount > 0.
+      const toInsert = installments.filter(
+        (i) => !i.isGrace && Number(i.amount) > 0 && !existing.has(i.dedupKey ?? i.key)
+      );
 
       if (toInsert.length === 0) return { count: 0 };
 
-      const findCategory = await resolveCategoryIds();
+      const brokerId = effectiveBrokerId || user.id;
+      const findCategory = await resolveCategoryIds(brokerId);
+
+      /**
+       * Baixa conjunta: competência com aluguel + (abatimento ou IRRF) ganha um
+       * `settlement_group_id`. Reaproveita o id de um aluguel já lançado da mesma
+       * competência; competência só com aluguel fica null.
+       */
+      const { data: existingGroups } = await supabase
+        .from("financial_transactions")
+        .select("competency_period, settlement_group_id")
+        .eq("reference", `lease:${leaseId}`)
+        .or("obligation_type.eq.rent,obligation_type.is.null")
+        .not("settlement_group_id", "is", null);
+      const groupByCompetency = new Map<string, string>();
+      (existingGroups || []).forEach((r: any) => {
+        if (r.competency_period && r.settlement_group_id)
+          groupByCompetency.set(r.competency_period, r.settlement_group_id);
+      });
+      const isRentLine = (i: PlannedInstallment) => i.obligationType === "rent";
+      const isSettlementExtra = (i: PlannedInstallment) =>
+        i.obligationType === "irrf" || i.obligationType.startsWith("rent_deduction_");
+      const keys = new Set(toInsert.map((i) => i.settlementKey).filter(Boolean) as string[]);
+      const settlementIds = new Map<string, string>();
+      keys.forEach((k) => {
+        const lines = toInsert.filter((i) => i.settlementKey === k);
+        const hasRent = lines.some(isRentLine) || groupByCompetency.has(k);
+        const hasExtra = lines.some(isSettlementExtra);
+        if (hasRent && hasExtra) settlementIds.set(k, groupByCompetency.get(k) ?? crypto.randomUUID());
+      });
 
       /**
        * Data de emissão (regime de competência): dia do mês em que o contrato começou,
@@ -160,6 +204,8 @@ export function useLeaseFinancialProjection() {
        */
       const resolveContactId = (i: PlannedInstallment): string | null => {
         if (i.contactId) return i.contactId;
+        if (i.obligationType.startsWith("rent_deduction_")) return ownerContactId ?? null;
+        if (i.obligationType === "irrf") return tenantContactId ?? null;
         if ((i.transactionType ?? "income") === "expense") return ownerContactId ?? null;
         return tenantContactId ?? null;
       };
@@ -167,7 +213,7 @@ export function useLeaseFinancialProjection() {
       const transactions: FinancialTransaction[] = toInsert.map((i) => {
         const transactionType = i.transactionType ?? "income";
         return {
-          broker_id: effectiveBrokerId || user.id,
+          broker_id: brokerId,
           unit_id: unitId,
           contact_id: resolveContactId(i),
           type: transactionType,
@@ -184,6 +230,9 @@ export function useLeaseFinancialProjection() {
           reference: `lease:${leaseId}`,
           property_id: propertyId || null,
           category_id: findCategory(i.obligationType, transactionType),
+          lease_id: leaseId,
+          metadata: (i.meta ?? {}) as Json,
+          settlement_group_id: i.settlementKey ? settlementIds.get(i.settlementKey) ?? null : null,
         };
       });
 
@@ -267,7 +316,9 @@ export function useUpdateFutureProjections() {
         .from("financial_transactions")
         .update({ amount: newAmount })
         .eq("reference", `lease:${leaseId}`)
-          .or("obligation_type.eq.rent,obligation_type.is.null")
+        .or("obligation_type.eq.rent,obligation_type.is.null")
+        // Parcelas de carência mantêm o valor reduzido acordado
+        .or("metadata->>kind.is.null,metadata->>kind.neq.grace")
         .eq("status", "pending")
         .gte("due_date", effectiveDateStr)
         .select("id");
