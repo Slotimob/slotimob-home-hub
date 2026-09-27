@@ -9,6 +9,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useReconciliation } from "@/hooks/useReconciliation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,7 +52,7 @@ export function ReconciliationHistoryTable({
   bankAccountId,
 }: ReconciliationHistoryTableProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { unreconcile } = useReconciliation();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [unreconciling, setUnreconciling] = useState<string | null>(null);
@@ -91,37 +92,9 @@ export function ReconciliationHistoryTable({
     setConfirmDialog({ open: false, entryId: "", transactionId: "" });
 
     try {
-      const { error: entryError } = await supabase
-        .from("bank_statement_entries")
-        .update({
-          is_reconciled: false,
-          transaction_id: null,
-        })
-        .eq("id", entryId);
-
-      if (entryError) throw entryError;
-
-      const { error: transactionError } = await supabase
-        .from("financial_transactions")
-        .update({
-          is_reconciled: false,
-          reconciled_at: null,
-        })
-        .eq("id", transactionId);
-
-      if (transactionError) throw transactionError;
-
-      toast({ title: "Desconciliação realizada com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: ["reconciled-entries", bankAccountId] });
-      queryClient.invalidateQueries({ queryKey: ["bank-statement-entries", bankAccountId] });
-      queryClient.invalidateQueries({ queryKey: ["unreconciled-transactions", bankAccountId] });
-      queryClient.invalidateQueries({ queryKey: ["reconciliation-totals", bankAccountId] });
-    } catch (error: any) {
-      toast({
-        title: "Erro ao desconciliar",
-        description: error.message,
-        variant: "destructive",
-      });
+      await unreconcile.mutateAsync({ entryId, transactionId: transactionId || null });
+    } catch {
+      // toast de erro vem do hook
     } finally {
       setUnreconciling(null);
     }

@@ -9,8 +9,8 @@ import { TrendingUp, TrendingDown, Search, Check, Loader2, AlertTriangle, Sparkl
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { useReconciliation } from "@/hooks/useReconciliation";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
@@ -117,8 +117,7 @@ export function ReconciliationMatcherDialog({
   transaction,
   onReconciled,
 }: ReconciliationMatcherDialogProps) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { reconcile } = useReconciliation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEntry, setSelectedEntry] = useState<StatementEntry | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
@@ -226,63 +225,22 @@ export function ReconciliationMatcherDialog({
   const handleReconcile = async (entry: StatementEntry) => {
     setIsReconciling(true);
     try {
-      // Update the statement entry to link to the transaction
-      const { error: entryError } = await supabase
-        .from("bank_statement_entries")
-        .update({
-          transaction_id: transaction.id,
-          is_reconciled: true,
-        })
-        .eq("id", entry.id);
-
-      if (entryError) throw entryError;
-
-      // Build transaction update: only reconcile by default; optionally mark as paid
-      const txUpdate: Record<string, unknown> = {
-        is_reconciled: true,
-        reconciled_at: new Date().toISOString(),
-      };
-
-      if (markAsPaid) {
-        txUpdate.status = "paid";
-        txUpdate.paid_date = entry.entry_date;
-      }
-
-      // Only set bank_account_id if the transaction does not already have one
-      if (!transaction.bank_account_id) {
-        txUpdate.bank_account_id = entry.bank_account_id;
-      }
-
-      // Update the transaction to mark as reconciled
-      const { error: txError } = await supabase
-        .from("financial_transactions")
-        .update(txUpdate)
-        .eq("id", transaction.id);
-
-      if (txError) throw txError;
-
-      toast({ title: "Lançamento conciliado com sucesso!" });
-      
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["infinite-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["bank-statement-entries"] });
-      queryClient.invalidateQueries({ queryKey: ["unreconciled-statement-entries"] });
-      queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
-      queryClient.invalidateQueries({ queryKey: ["transaction-summaries-progressive"] });
-      
+      await reconcile.mutateAsync({
+        entryId: entry.id,
+        transactionId: transaction.id,
+        markAsPaid,
+        entryDate: entry.entry_date,
+        bankAccountId: entry.bank_account_id,
+      });
       onReconciled();
       onOpenChange(false);
-    } catch (error: any) {
-      toast({
-        title: "Erro ao conciliar",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsReconciling(false);
       setSelectedEntry(null);
       setShowMismatchDialog(false);
       setMarkAsPaid(true);
+    } catch {
+      // toast de erro vem do hook; mantém a seleção para nova tentativa
+    } finally {
+      setIsReconciling(false);
     }
   };
 
