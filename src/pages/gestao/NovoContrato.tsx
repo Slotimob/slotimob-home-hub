@@ -70,7 +70,16 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useCreateLease, useUpdateLease, type GuarantorData, type PaymentInfo } from "@/hooks/useLeases";
+import { useCreateLease, useUpdateLease, useLeaseUnits, useSetLeaseUnits, type GuarantorData, type PaymentInfo } from "@/hooks/useLeases";
+import {
+  LeaseExtraUnitsSection,
+  EMPTY_EXTRA_UNITS,
+  leaseUnitIdsFor,
+  validateLeaseShares,
+  type LeaseExtraUnitsState,
+} from "@/components/assets/LeaseExtraUnitsSection";
+import { unitLabel } from "@/components/units/UnitSelector";
+import { occupyLeaseUnits, releaseLeaseUnits } from "@/lib/unit-status-sync";
 import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
@@ -210,6 +219,10 @@ export default function NovoContrato() {
     contact_id: "" as string,
   });
   const [draftLoaded, setDraftLoaded] = useState(false);
+  // Contrato com vários imóveis (principal = imóvel escolhido acima)
+  const [extraUnits, setExtraUnits] = useState<LeaseExtraUnitsState>(EMPTY_EXTRA_UNITS);
+  const initialLeaseUnitIdsRef = useRef<string[] | null>(null);
+  const setLeaseUnits = useSetLeaseUnits();
   const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
   const [projectionOpen, setProjectionOpen] = useState(false);
   const [postProjectionNavId, setPostProjectionNavId] = useState<string>("");
@@ -232,6 +245,30 @@ export default function NovoContrato() {
 
 
   const isEditMode = !!editLeaseId;
+  const { data: editLeaseUnits, isSuccess: leaseUnitsLoaded } = useLeaseUnits(editLeaseId);
+
+  // Hidrata os imóveis do contrato (modo edição)
+  useEffect(() => {
+    if (!editLeaseUnits || initialLeaseUnitIdsRef.current) return;
+    initialLeaseUnitIdsRef.current = editLeaseUnits.map((r) => r.unit_id);
+    const extras = editLeaseUnits.filter((r) => !r.is_primary);
+    const hasShares = editLeaseUnits.some((r) => r.share_percent != null);
+    setExtraUnits({
+      enabled: extras.length > 0,
+      units: extras.map((r) => ({
+        id: r.unit_id,
+        unit_number: r.unit?.unit_number || "Imóvel",
+        is_standalone: !!r.unit?.is_standalone,
+        tenant_contact_id: null,
+        property_id: null,
+        property_name: r.unit?.property?.name ?? null,
+      })),
+      shareEnabled: hasShares,
+      shares: hasShares
+        ? Object.fromEntries(editLeaseUnits.map((r) => [r.unit_id, Number(r.share_percent) || 0]))
+        : {},
+    });
+  }, [editLeaseUnits]);
 
   // Fetch existing lease for edit mode
   const { data: editLease, isLoading: loadingEdit } = useQuery({
@@ -371,6 +408,7 @@ export default function NovoContrato() {
           if (draft.billingContact) setBillingContact(draft.billingContact);
           if (draft.selectedUnitId) setSelectedUnitId(draft.selectedUnitId);
           if (draft.selectedUnitInfo) setSelectedUnitInfo(draft.selectedUnitInfo);
+          if (draft.extraUnits) setExtraUnits({ ...EMPTY_EXTRA_UNITS, ...draft.extraUnits });
           if (draft.step && STEPS.some((s) => s.id === draft.step)) setStep(draft.step as WizardStep);
         }
       }
@@ -391,6 +429,7 @@ export default function NovoContrato() {
           step,
           selectedUnitId,
           selectedUnitInfo,
+          extraUnits,
           formData,
           guarantorData,
           paymentInfo,
@@ -407,6 +446,7 @@ export default function NovoContrato() {
     step,
     selectedUnitId,
     selectedUnitInfo,
+    extraUnits,
     formData,
     guarantorData,
     paymentInfo,
@@ -648,10 +688,46 @@ export default function NovoContrato() {
     withholding: formData.rent_withholding,
   });
 
+  const leaseSharesError = validateLeaseShares(effectiveUnitId, extraUnits);
+  const leaseUnitIds = leaseUnitIdsFor(effectiveUnitId, extraUnits);
+
+  /**
+   * Grava os imóveis do contrato (RPC set_lease_units), ocupa os atuais e libera os removidos.
+   * Retorna a mensagem de erro da RPC, ou null em caso de sucesso.
+   */
+  const saveLeaseUnits = async (leaseId: string): Promise<string | null> => {
+    const withShares = extraUnits.enabled && extraUnits.shareEnabled && leaseUnitIds.length > 1;
+    try {
+      await setLeaseUnits.mutateAsync({
+        leaseId,
+        units: leaseUnitIds.map((id, i) => ({
+          unit_id: id,
+          unit_subdivision_id: i === 0 ? formData.unit_subdivision_id || null : null,
+          is_primary: i === 0,
+          share_percent: withShares ? Number(extraUnits.shares[id]) || 0 : null,
+        })),
+      });
+    } catch (e) {
+      return e instanceof Error ? e.message : "Erro ao salvar os imóveis do contrato";
+    }
+    if (formData.tenant_contact_id) {
+      await occupyLeaseUnits({
+        leaseId,
+        tenantContactId: formData.tenant_contact_id,
+        startDate: formData.start_date,
+        unitIds: leaseUnitIds,
+      });
+    }
+    const removed = (initialLeaseUnitIdsRef.current || []).filter((id) => !leaseUnitIds.includes(id));
+    if (removed.length) await releaseLeaseUnits(leaseId, removed);
+    initialLeaseUnitIdsRef.current = leaseUnitIds;
+    return null;
+  };
+
   const canProceed = () => {
     switch (step) {
       case "unit":
-        return !!effectiveUnitId;
+        return !!effectiveUnitId && !leaseSharesError;
       case "tenant":
         return !!formData.tenant_contact_id;
       case "financial": {
@@ -709,6 +785,15 @@ export default function NovoContrato() {
     if (!formData.rent_amount || formData.rent_amount <= 0) {
       toast({ title: "Informe o valor do aluguel", variant: "destructive" });
       setStep("financial");
+      return;
+    }
+    if (leaseSharesError) {
+      toast({ title: "Revise o rateio dos imóveis", description: leaseSharesError, variant: "destructive" });
+      setStep("unit");
+      return;
+    }
+    if (isEditMode && !leaseUnitsLoaded) {
+      toast({ title: "Aguarde o carregamento dos imóveis do contrato", variant: "destructive" });
       return;
     }
     if (specialConditionErrors.length > 0) {
@@ -865,6 +950,13 @@ export default function NovoContrato() {
 
         await updateLease.mutateAsync({ id: editLease.id, data: leaseData });
 
+        const unitsError = await saveLeaseUnits(editLease.id);
+        if (unitsError) {
+          toast({ title: "Erro nos imóveis do contrato", description: unitsError, variant: "destructive" });
+          setStep("unit");
+          return;
+        }
+
         // Herança automática da Matriz de Responsabilidades ao ativar o contrato
         if (promoted) {
           try {
@@ -903,6 +995,21 @@ export default function NovoContrato() {
       } else {
         const result = await createLease.mutateAsync(leaseData);
         resultId = (result as any).id || (result as any).lease?.id || "";
+
+        if (resultId && leaseUnitIds.length > 1) {
+          const unitsError = await saveLeaseUnits(resultId);
+          if (unitsError) {
+            // O contrato já existe: segue em modo edição, na etapa Imóvel, para corrigir
+            toast({
+              title: "Contrato criado, mas os imóveis adicionais não foram salvos",
+              description: unitsError,
+              variant: "destructive",
+            });
+            sessionStorage.removeItem(DRAFT_KEY);
+            navigate(`/gestao/contratos/novo?edit=${resultId}&step=unit`, { replace: true });
+            return;
+          }
+        }
 
         // Contrato nasce ativo: herda a Matriz de Responsabilidades para o imóvel
         if (resultId) {
@@ -1124,6 +1231,13 @@ export default function NovoContrato() {
                 Para que um imóvel apareça aqui, ative <strong>"Habilitar Gestão de Ativo"</strong> nas configurações da unidade.
               </div>
 
+              {isEditMode || unitIdParam ? (
+                <div className="p-3 rounded-lg border text-sm">
+                  <span className="text-muted-foreground">Imóvel principal: </span>
+                  <span className="font-medium">{unitName || "—"}</span>
+                </div>
+              ) : (
+              <>
               <div className="space-y-2">
                 <Label>Buscar Imóvel</Label>
                 <div className="relative">
@@ -1204,6 +1318,19 @@ export default function NovoContrato() {
                   </div>
                 )}
               </div>
+              </>
+              )}
+
+              {effectiveUnitId && (
+                <LeaseExtraUnitsSection
+                  primaryUnitId={effectiveUnitId}
+                  primaryLabel={unitName || "Imóvel principal"}
+                  value={extraUnits}
+                  onChange={setExtraUnits}
+                  brokerId={effectiveBrokerId || user.id}
+                  editLeaseId={editLeaseId}
+                />
+              )}
             </div>
           )}
 
@@ -2015,6 +2142,24 @@ export default function NovoContrato() {
               <div className="p-3 border rounded-lg bg-muted/30 space-y-2 text-sm">
                 <p className="font-medium">Resumo do Contrato</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-muted-foreground text-xs sm:text-sm">
+                  <span>{leaseUnitIds.length > 1 ? "Imóveis:" : "Imóvel:"}</span>
+                  <span className="font-medium text-foreground">
+                    {leaseUnitIds.map((id, i) => {
+                      const extra = extraUnits.units.find((u) => u.id === id);
+                      const label = i === 0 ? unitName || "Imóvel principal" : extra ? unitLabel(extra) : id;
+                      const share =
+                        extraUnits.enabled && extraUnits.shareEnabled && leaseUnitIds.length > 1
+                          ? ` · ${(Number(extraUnits.shares[id]) || 0).toLocaleString("pt-BR")}%`
+                          : "";
+                      return (
+                        <span key={id} className="block">
+                          {label}
+                          {i === 0 && leaseUnitIds.length > 1 ? " (principal)" : ""}
+                          {share}
+                        </span>
+                      );
+                    })}
+                  </span>
                   <span>Inquilino:</span>
                   <span className="font-medium text-foreground">
                     {selectedTenant?.name || "-"}
