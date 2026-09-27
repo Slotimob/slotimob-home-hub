@@ -7,6 +7,8 @@ export interface IrrfRecalcResult {
   updated: number;
   /** Linhas cujo recálculo deu ≤ 0: valor mantido, marcadas `needs_review`. */
   zeroed: number;
+  /** Linhas ajustadas à mão (`metadata.manual_override`): mantidas. */
+  manual: number;
 }
 
 /**
@@ -19,7 +21,7 @@ export async function recalculatePendingIrrf(
   leaseId: string,
   fromCompetency?: string | null
 ): Promise<IrrfRecalcResult> {
-  const empty = { updated: 0, zeroed: 0 };
+  const empty = { updated: 0, zeroed: 0, manual: 0 };
 
   const { data: lease, error: leaseError } = await supabase
     .from("leases")
@@ -69,6 +71,10 @@ export async function recalculatePendingIrrf(
 
   const result = { ...empty };
   for (const row of irrfRows) {
+    if ((row.metadata as Record<string, unknown> | null)?.manual_override === true) {
+      result.manual += 1;
+      continue;
+    }
     const comp = row.competency_period as string;
     const rentAmount = rentByComp.get(comp);
     if (rentAmount === undefined) continue;
@@ -120,5 +126,6 @@ export function describeAdjustmentCascade(rent: number, irrf: IrrfRecalcResult |
   if (irrf && irrf.zeroed > 0) {
     text += ` • ${irrf.zeroed} linha(s) de IRRF precisam de revisão manual (o cálculo deu R$ 0,00)`;
   }
+  if (irrf && irrf.manual > 0) text += ` · ${irrf.manual} de IRRF mantidos (ajuste manual)`;
   return text;
 }
