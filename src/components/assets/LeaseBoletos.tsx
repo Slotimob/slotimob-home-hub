@@ -101,6 +101,8 @@ interface Props {
   leaseId: string;
   brokerId: string;
   rentAmount: number;
+  amountBreakdown?: string | null;
+  suggestedFirstDue?: string | null;
   dueDay: number | null;
   billingAutomation: Record<string, any> | null;
   canEdit?: boolean;
@@ -120,7 +122,7 @@ function billingLabel(t: string | null | undefined) {
   return "Fatura";
 }
 
-export function LeaseBoletos({ leaseId, brokerId, rentAmount, dueDay, billingAutomation, canEdit = true }: Props) {
+export function LeaseBoletos({ leaseId, brokerId, rentAmount, amountBreakdown, suggestedFirstDue, dueDay, billingAutomation, canEdit = true }: Props) {
   const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dueDateDialog, setDueDateDialog] = useState<{ id: string; current: string } | null>(
@@ -308,6 +310,8 @@ export function LeaseBoletos({ leaseId, brokerId, rentAmount, dueDay, billingAut
       <AsaasSubscriptionCard
         leaseId={leaseId}
         rentAmount={rentAmount}
+        amountBreakdown={amountBreakdown}
+        suggestedFirstDue={suggestedFirstDue}
         dueDay={dueDay}
         billingAutomation={billingAutomation}
       />
