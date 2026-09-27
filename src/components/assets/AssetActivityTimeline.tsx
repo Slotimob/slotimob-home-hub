@@ -131,7 +131,8 @@ export const AssetActivityTimeline = ({ assetType, assetId }: AssetActivityTimel
 
   const reportRange = useMemo(() => {
     const to = parseDateOnly(range.to) || new Date();
-    const from = parseDateOnly(range.from) || subMonths(to, 12);
+    // Sem início definido ("Tudo") → todo o histórico
+    const from = parseDateOnly(range.from);
     return { from, to };
   }, [range]);
 

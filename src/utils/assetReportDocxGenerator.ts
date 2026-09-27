@@ -148,12 +148,26 @@ export async function generateAssetReportDocx(report: AssetReportData) {
         sections.push(new Paragraph({ children: [new TextRun({ text: `Total: ${asset.period.maintenance_count} atividade(s) • ${asset.period.maintenance_pending_count} pendente(s) • Custo estimado ${fmtCurrency(asset.period.maintenance_estimated_cost)}`, size: 16, color: '666666' })], spacing: { before: 80 } }));
       }
 
+      if ((asset.period.timeline_items?.length ?? 0) > 0) {
+        sections.push(new Paragraph({ text: 'Histórico do imóvel', heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 50 } }));
+        const tlHeader = new TableRow({
+          children: ['Data', 'Categoria', 'Evento', 'Detalhe'].map(h =>
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 14 })] })] })
+          ),
+        });
+        const tlRows = asset.period.timeline_items.map(t => new TableRow({
+          children: [formatDateOnly(t.date), t.category_label, t.event, t.detail || '—']
+            .map(v => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: v, size: 14 })] })] })),
+        }));
+        sections.push(new Table({ rows: [tlHeader, ...tlRows], width: { size: 100, type: WidthType.PERCENTAGE } }));
+      }
+
       sections.push(new Paragraph({ text: 'Indicadores', heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 50 } }));
       sections.push(new Table({ rows: [
         kvRow('ROI no período', fmtPct(asset.period.roi_pct)),
         kvRow('Yield mensal', fmtPct(asset.period.monthly_yield)),
         kvRow('Cap Rate', fmtPct(asset.period.cap_rate)),
-        kvRow('Atividades', String(asset.period.activities_count)),
+        kvRow('Eventos no histórico', String(asset.period.activities_count)),
         kvRow('Manutenções no período', String(asset.period.maintenance_count)),
         kvRow('Custo estimado de manutenções', fmtCurrency(asset.period.maintenance_estimated_cost)),
       ], width: { size: 100, type: WidthType.PERCENTAGE } }));
