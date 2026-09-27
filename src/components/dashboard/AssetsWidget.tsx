@@ -86,7 +86,7 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
 
   if (loading) {
     return (
-      <Card>
+      <Card className="h-full">
         <CardHeader className="pb-2 px-3 lg:px-6">
           <Skeleton className="h-5 w-32" />
         </CardHeader>

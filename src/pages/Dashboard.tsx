@@ -182,36 +182,31 @@ const Dashboard = () => {
                 {/* ═══════════════════════════════════════════════════════════════
                     BLOCO 1+2: CONTAGEM DE ATIVOS | CONTRATOS | PATRIMÔNIO/YIELD/VACÂNCIA
                     ═══════════════════════════════════════════════════════════════ */}
-                {(preferences.widgets.assets ||
-                  (preferences.widgets.leases && canSeeLeaseContracts) ||
-                  preferences.widgets.portfolio) && (
-                  {(() => {
-                    const topWidgets = [
-                      preferences.widgets.assets && { key: 'assets', node: <AssetsWidget /> },
-                      preferences.widgets.leases && canSeeLeaseContracts && { key: 'leases', node: <LeaseContractsWidget /> },
-                      preferences.widgets.portfolio && { key: 'portfolio', node: <PortfolioWidget refreshKey={refreshKey} /> },
-                    ].filter(Boolean) as { key: string; node: JSX.Element }[];
-                    const colsMap: Record<number, string> = {
-                      1: 'lg:grid-cols-1',
-                      2: 'md:grid-cols-2 lg:grid-cols-2',
-                      3: 'md:grid-cols-2 lg:grid-cols-3',
-                    };
-                    if (topWidgets.length === 0) return null;
-                    return (
-                      <section className={`grid grid-cols-1 ${colsMap[topWidgets.length]} gap-4 lg:gap-6 items-stretch`}>
-                        {topWidgets.map((w, i) => (
-                          <div
-                            key={w.key}
-                            className={topWidgets.length === 3 && i === 2 ? 'h-full md:col-span-2 lg:col-span-1' : 'h-full'}
-                          >
-                            {w.node}
-                          </div>
-                        ))}
-                      </section>
-                    );
-                  })()}
-                  </section>
-                )}
+                {(() => {
+                  const topWidgets = [
+                    preferences.widgets.assets && { key: 'assets', node: <AssetsWidget /> },
+                    preferences.widgets.leases && canSeeLeaseContracts && { key: 'leases', node: <LeaseContractsWidget /> },
+                    preferences.widgets.portfolio && { key: 'portfolio', node: <PortfolioWidget refreshKey={refreshKey} /> },
+                  ].filter(Boolean) as { key: string; node: JSX.Element }[];
+                  const colsMap: Record<number, string> = {
+                    1: 'lg:grid-cols-1',
+                    2: 'md:grid-cols-2 lg:grid-cols-2',
+                    3: 'md:grid-cols-2 lg:grid-cols-3',
+                  };
+                  if (topWidgets.length === 0) return null;
+                  return (
+                    <section className={`grid grid-cols-1 ${colsMap[topWidgets.length]} gap-4 lg:gap-6 items-stretch`}>
+                      {topWidgets.map((w, i) => (
+                        <div
+                          key={w.key}
+                          className={topWidgets.length === 3 && i === 2 ? 'h-full md:col-span-2 lg:col-span-1' : 'h-full'}
+                        >
+                          {w.node}
+                        </div>
+                      ))}
+                    </section>
+                  );
+                })()}
 
                 {/* ═══════════════════════════════════════════════════════════════
                     BLOCO 3: ALUGUÉIS | INADIMPLÊNCIA
