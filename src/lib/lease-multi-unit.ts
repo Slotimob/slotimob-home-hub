@@ -77,3 +77,35 @@ export async function fetchLeaseRentTransactions(leaseIds: string[], competency:
 export function viaLeaseText(status: string, primaryLabel: string): string {
   return `${status === "paid" ? "Pago" : "Pendente"} pelo contrato ${primaryLabel}`;
 }
+
+/** Nota de rateio: "Inclui X% do contrato <id curto> (rateio entre N imóveis)". */
+export function allocationNote(leaseId: string, factor: number, unitCount: number): string {
+  const pct = Math.round(factor * 10000) / 100;
+  return `Inclui ${pct.toLocaleString("pt-BR")}% do contrato ${leaseId.slice(0, 8)} (rateio entre ${unitCount} imóveis)`;
+}
+
+/** Nº de imóveis por contrato (lease_units). */
+export async function fetchLeaseUnitCounts(leaseIds: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  const ids = Array.from(new Set(leaseIds.filter(Boolean)));
+  if (!ids.length) return out;
+  const { data } = await supabase.from("lease_units").select("lease_id").in("lease_id", ids);
+  for (const r of data || []) out[r.lease_id] = (out[r.lease_id] || 0) + 1;
+  return out;
+}
+
+/**
+ * Notas únicas (por contrato) a partir de linhas da view v_financial_transactions_by_unit
+ * já filtradas para um imóvel.
+ */
+export async function allocationNotesFor(
+  rows: { is_allocated?: boolean | null; lease_id?: string | null; alloc_factor?: number | null }[]
+): Promise<string[]> {
+  const byLease = new Map<string, number>();
+  for (const r of rows) {
+    if (r.is_allocated && r.lease_id && !byLease.has(r.lease_id)) byLease.set(r.lease_id, Number(r.alloc_factor) || 0);
+  }
+  if (!byLease.size) return [];
+  const counts = await fetchLeaseUnitCounts(Array.from(byLease.keys()));
+  return Array.from(byLease.entries()).map(([id, f]) => allocationNote(id, f, counts[id] || 0));
+}

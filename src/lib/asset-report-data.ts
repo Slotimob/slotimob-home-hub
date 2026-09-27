@@ -1,3 +1,4 @@
+import { allocationNotesFor } from '@/lib/lease-multi-unit';
 /**
  * Data layer for the comprehensive asset report.
  * Queries Supabase directly (no materialized view for v1).
@@ -99,6 +100,8 @@ export interface AssetReportAsset {
       date: string;
       category: string | null;
     }>;
+    /** "Inclui X% do contrato … (rateio entre N imóveis)" */
+    allocation_notes?: string[];
     activities_count: number;
     activities_by_type: Record<string, number>;
     /** Most recent activities within the period (capped at ACTIVITIES_REPORT_LIMIT) */
@@ -222,37 +225,45 @@ export async function buildAssetReport(params: {
   let expenseMap: Record<string, number> = {};
   let expenseByCatMap: Record<string, Record<string, number>> = {};
   let topExpensesMap: Record<string, any[]> = {};
+  // Contratos com vários imóveis: linhas rateadas por imóvel (v_financial_transactions_by_unit)
+  const allocRowsByKey: Record<string, { is_allocated: boolean; lease_id: string | null; alloc_factor: number }[]> = {};
+  const trackAlloc = (key: string, t: any) => {
+    if (!t.is_allocated) return;
+    (allocRowsByKey[key] ||= []).push(t);
+  };
 
   if (sections.income || sections.expenses) {
     if (sections.income) {
       const { data: incomeData = [] } = await supabase
-        .from('financial_transactions')
-        .select('property_id, unit_id, amount')
+        .from('v_financial_transactions_by_unit' as any)
+        .select('property_id, alloc_unit_id, alloc_amount, is_allocated, lease_id, alloc_factor')
         .eq('broker_id', brokerId)
         .eq('type', 'income')
         .eq('status', 'paid')
         .gte('transaction_date', fromStr)
         .lte('transaction_date', toStr);
-      for (const t of incomeData) {
-        const key = t.unit_id || t.property_id;
+      for (const t of incomeData as any[]) {
+        const key = t.alloc_unit_id || t.property_id;
         if (!key) continue;
-        incomeMap[key] = (incomeMap[key] || 0) + Number(t.amount);
+        incomeMap[key] = (incomeMap[key] || 0) + Number(t.alloc_amount);
+        trackAlloc(key, t);
       }
     }
 
     if (sections.expenses) {
       const { data: expenseData = [] } = await supabase
-        .from('financial_transactions')
-        .select('property_id, unit_id, amount, description, transaction_date, asset_expense_category')
+        .from('v_financial_transactions_by_unit' as any)
+        .select('property_id, alloc_unit_id, alloc_amount, is_allocated, lease_id, alloc_factor, description, transaction_date, asset_expense_category')
         .eq('broker_id', brokerId)
         .eq('type', 'expense')
         .eq('status', 'paid')
         .gte('transaction_date', fromStr)
         .lte('transaction_date', toStr);
-      for (const t of expenseData) {
-        const key = t.unit_id || t.property_id;
+      for (const t of expenseData as any[]) {
+        const key = t.alloc_unit_id || t.property_id;
         if (!key) continue;
-        const amt = Number(t.amount);
+        const amt = Number(t.alloc_amount);
+        trackAlloc(key, t);
         expenseMap[key] = (expenseMap[key] || 0) + amt;
         const catKey = t.asset_expense_category || 'other';
         if (!expenseByCatMap[key]) expenseByCatMap[key] = {};
@@ -270,6 +281,11 @@ export async function buildAssetReport(params: {
         topExpensesMap[key] = topExpensesMap[key].slice(0, 10);
       }
     }
+  }
+
+  const allocationNotesMap: Record<string, string[]> = {};
+  for (const [key, rows] of Object.entries(allocRowsByKey)) {
+    allocationNotesMap[key] = await allocationNotesFor(rows);
   }
 
   let activitiesMap: Record<string, { count: number; byType: Record<string, number>; items: AssetReportActivity[] }> = {};
@@ -546,6 +562,7 @@ export async function buildAssetReport(params: {
         expenses_total: exp,
         expenses_by_category: expenseByCatMap[id] || {},
         top_expenses: topExpensesMap[id] || [],
+        allocation_notes: allocationNotesMap[id] || [],
         activities_count: activitiesMap[id]?.count ?? 0,
         activities_by_type: activitiesMap[id]?.byType ?? {},
         activities_items: activitiesMap[id]?.items ?? [],
@@ -620,6 +637,7 @@ export async function buildAssetReport(params: {
         expenses_total: exp,
         expenses_by_category: expenseByCatMap[id] || {},
         top_expenses: topExpensesMap[id] || [],
+        allocation_notes: allocationNotesMap[id] || [],
         activities_count: activitiesMap[id]?.count ?? 0,
         activities_by_type: activitiesMap[id]?.byType ?? {},
         activities_items: activitiesMap[id]?.items ?? [],
