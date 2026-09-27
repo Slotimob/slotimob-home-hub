@@ -43,6 +43,7 @@ interface Transaction {
   transaction_date: string;
   amount: number;
   type: string;
+  status?: string | null;
 }
 
 interface GroupedItem<T> {
@@ -362,6 +363,14 @@ export function ReconciliationPendingListGrouped({
       <div className="flex-1 min-w-0 overflow-hidden">
         <p className="font-medium truncate text-xs leading-tight">{transaction.description}</p>
       </div>
+      {transaction.status && (
+        <Badge
+          variant={transaction.status === "paid" ? "secondary" : "outline"}
+          className="text-[9px] h-3.5 px-1 flex-shrink-0"
+        >
+          {transaction.status === "paid" ? "Pago" : "Pendente"}
+        </Badge>
+      )}
       <span
         className={cn(
           "font-semibold text-[11px] flex-shrink-0",
