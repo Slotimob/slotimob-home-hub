@@ -26,6 +26,20 @@ import { useWhatsAppBilling } from "@/hooks/useWhatsAppBilling";
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import { SortConfig, SortField } from "@/hooks/useInfiniteTransactions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowUp, ArrowDown } from "lucide-react";
+
+const MOBILE_SORT_OPTIONS: { value: SortField; label: string }[] = [
+  { value: "due_date", label: "Vencimento" },
+  { value: "transaction_date", label: "Emissão" },
+  { value: "description", label: "Descrição" },
+  { value: "amount", label: "Valor" },
+  { value: "status", label: "Status" },
+  { value: "category", label: "Categoria" },
+  { value: "unit", label: "Unidade" },
+  { value: "type", label: "Tipo" },
+  { value: "is_reconciled", label: "Conciliação" },
+];
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +66,7 @@ interface TransactionsTableInfiniteProps {
   onTransactionUpdated: () => void;
   sortConfig?: SortConfig;
   onSortChange?: (field: SortField) => void;
+  onSortSet?: (config: SortConfig) => void;
 }
 
 // Helper to check if transaction is a transfer
@@ -73,6 +88,7 @@ export function TransactionsTableInfinite({
   onTransactionUpdated,
   sortConfig,
   onSortChange,
+  onSortSet,
 }: TransactionsTableInfiniteProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -352,9 +368,9 @@ export function TransactionsTableInfinite({
               <TableHead className="w-8 px-2">Tipo</TableHead>
               <TableHead className="px-2">Descrição</TableHead>
               <TableHead className="px-2 text-xs hidden md:table-cell">Unidade</TableHead>
-              <TableHead className="px-2">Categoria</TableHead>
+              <TableHead className="px-2 hidden lg:table-cell">Categoria</TableHead>
               <TableHead className="px-2 w-20">Emissão</TableHead>
-              <TableHead className="px-2 w-20">Vencim.</TableHead>
+              <TableHead className="px-2 w-20 hidden lg:table-cell">Vencim.</TableHead>
               <TableHead className="px-2">Valor</TableHead>
               <TableHead className="px-2">Status</TableHead>
               <TableHead className="w-8 px-2"></TableHead>
@@ -364,7 +380,10 @@ export function TransactionsTableInfinite({
             {[...Array(5)].map((_, i) => (
               <TableRow key={i}>
                 {[...Array(10)].map((_, j) => (
-                  <TableCell key={j} className="px-2 py-2">
+                  <TableCell
+                    key={j}
+                    className={cn("px-2 py-2", j === 3 && "hidden md:table-cell", (j === 4 || j === 6) && "hidden lg:table-cell")}
+                  >
                     <Skeleton className="h-3 w-full" />
                   </TableCell>
                 ))}
@@ -405,6 +424,36 @@ export function TransactionsTableInfinite({
   if (isMobile) {
     return (
       <>
+        {onSortSet && sortConfig && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Ordenar por</span>
+            <Select
+              value={sortConfig.field}
+              onValueChange={(v) => onSortSet({ field: v as SortField, order: sortConfig.order ?? "asc" })}
+            >
+              <SelectTrigger className="h-9 flex-1 text-base sm:text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MOBILE_SORT_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              aria-label={sortConfig.order === "desc" ? "Ordem decrescente" : "Ordem crescente"}
+              title={sortConfig.order === "desc" ? "Decrescente" : "Crescente"}
+              onClick={() =>
+                onSortSet({ field: sortConfig.field, order: sortConfig.order === "desc" ? "asc" : "desc" })
+              }
+            >
+              {sortConfig.order === "desc" ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />}
+            </Button>
+          </div>
+        )}
         <div className="space-y-2 pb-20">
           {transactions.map((transaction) => (
             <TransactionCard
@@ -539,24 +588,33 @@ export function TransactionsTableInfinite({
                     aria-label="Selecionar todos"
                   />
                 </TableHead>
-                <TableHead className="w-8 px-2 text-center">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="cursor-help text-xs">✓</span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Conciliação</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TableHead>
-                <TableHead className="w-10 px-2 text-xs">Tipo</TableHead>
+                <SortableTableHead
+                  field="is_reconciled"
+                  label="✓"
+                  currentSort={sortConfig}
+                  onSort={handleSortClick}
+                  className="w-8"
+                />
+                <SortableTableHead
+                  field="type"
+                  label="Tipo"
+                  currentSort={sortConfig}
+                  onSort={handleSortClick}
+                  className="w-10"
+                />
                 <SortableTableHead
                   field="description"
                   label="Descrição"
                   currentSort={sortConfig}
                   onSort={handleSortClick}
                 />
-                <TableHead className="px-2 text-xs hidden md:table-cell">Unidade</TableHead>
+                <SortableTableHead
+                  field="unit"
+                  label="Unidade"
+                  currentSort={sortConfig}
+                  onSort={handleSortClick}
+                  className="hidden md:table-cell"
+                />
                 <SortableTableHead
                   field="category"
                   label="Categoria"
@@ -571,14 +629,25 @@ export function TransactionsTableInfinite({
                   onSort={handleSortClick}
                   className="w-20"
                 />
-                <TableHead className="px-2 text-xs w-20 hidden xl:table-cell">Vencim.</TableHead>
+                <SortableTableHead
+                  field="due_date"
+                  label="Vencim."
+                  currentSort={sortConfig}
+                  onSort={handleSortClick}
+                  className="w-20 hidden lg:table-cell"
+                />
                 <SortableTableHead
                   field="amount"
                   label="Valor"
                   currentSort={sortConfig}
                   onSort={handleSortClick}
                 />
-                <TableHead className="px-2 text-xs">Status</TableHead>
+                <SortableTableHead
+                  field="status"
+                  label="Status"
+                  currentSort={sortConfig}
+                  onSort={handleSortClick}
+                />
                 <TableHead className="w-8 px-2"></TableHead>
               </TableRow>
             </TableHeader>
@@ -691,7 +760,7 @@ export function TransactionsTableInfinite({
                     <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
                       {formatDateOnly(transaction.transaction_date, "dd/MM/yy")}
                     </TableCell>
-                    <TableCell className="px-2 py-1.5 text-xs text-muted-foreground hidden xl:table-cell">
+                    <TableCell className="px-2 py-1.5 text-xs text-muted-foreground hidden lg:table-cell">
                       {formatDateOnly(transaction.due_date, "dd/MM/yy")}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">
