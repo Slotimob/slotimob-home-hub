@@ -22,6 +22,8 @@ export interface PaymentHistoryItem {
   totalPaid: number;
   status: 'paid' | 'pending' | 'overdue';
   reference: string;
+  /** Ex.: "bruto R$ 3.000,00 − IRRF R$ 150,00" */
+  breakdown?: string;
 }
 
 export interface TenantStatementData {
@@ -200,7 +202,7 @@ export const generateTenantStatementPDF = async (data: TenantStatementData): Pro
     y += 20;
   } else {
     const tableRows = payments.map((p) => [
-      normalizeText(p.month),
+      normalizeText(p.breakdown ? `${p.month}\n${p.breakdown.replace(/−/g, '-')}` : p.month),
       formatDateBR(p.dueDate),
       p.paidDate ? formatDateBR(p.paidDate) : '-',
       formatCurrency(p.amount),

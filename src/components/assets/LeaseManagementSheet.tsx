@@ -922,7 +922,7 @@ export function LeaseManagementSheet({
                       const m = computeLeaseMonthFromConfig(lease as any);
                       const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
                       const feePct = Number(lease.admin_fee_percentage) || 0;
-                      const fee = (m.net * feePct) / 100;
+                      const fee = (m.gross * feePct) / 100;
                       return (
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
