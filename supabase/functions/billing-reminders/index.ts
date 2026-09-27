@@ -6,6 +6,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
+const FROM_ADDRESS = Deno.env.get("BILLING_FROM_EMAIL") ?? "noreply@slotimob.com.br";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
@@ -69,7 +71,7 @@ function formatDateBR(dateStr: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function emailLayout(title: string, bodyHtml: string): string {
+function emailLayout(title: string, bodyHtml: string, footerNote: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -86,7 +88,7 @@ ${bodyHtml}
 </td></tr>
 <tr><td style="padding:20px 28px;background:${BRAND.mutedBg};text-align:center;font-size:12px;color:${BRAND.mutedFg};">
 <p style="margin:0;">© ${new Date().getFullYear()} SlotiMob — O futuro da gestão imobiliária</p>
-<p style="margin:4px 0 0;">Dúvidas sobre esta cobrança? Basta responder este e-mail.</p>
+<p style="margin:4px 0 0;">${footerNote}</p>
 </td></tr>
 </table>
 </td></tr>
@@ -290,6 +292,7 @@ Deno.serve(async (req) => {
               }
 
               const copy = offsetCopy(offset);
+              const replyTo = broker.email && EMAIL_RE.test(broker.email) ? broker.email : undefined;
               const html = emailLayout(
                 copy.title,
                 `
@@ -308,13 +311,16 @@ Deno.serve(async (req) => {
       <p style="color:${BRAND.mutedFg};font-size:14px;">Se o pagamento já foi realizado, desconsidere este aviso.</p>
       <p style="color:${BRAND.mutedFg};font-size:14px;">Atenciosamente, ${escapeHtml(broker.name)}.</p>
     `,
+                replyTo
+                  ? "Dúvidas sobre esta cobrança? Basta responder este e-mail."
+                  : `Este é um e-mail automático, não responda. Em caso de dúvida, fale com ${escapeHtml(broker.name)}.`,
               );
 
               try {
                 const result = await resend.emails.send({
-                  from: `${broker.name.replace(/[<>"]/g, "")} via Slotimob <cobranca@slotimob.com.br>`,
+                  from: `${broker.name.replace(/[<>"]/g, "")} via Slotimob <${FROM_ADDRESS}>`,
                   to: [to],
-                  reply_to: broker.email && EMAIL_RE.test(broker.email) ? broker.email : undefined,
+                  reply_to: replyTo,
                   subject: copy.subject,
                   html,
                 } as any);
