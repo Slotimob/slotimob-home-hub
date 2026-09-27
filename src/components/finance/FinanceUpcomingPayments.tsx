@@ -1,12 +1,13 @@
+import { getEffectiveStatus, EFFECTIVE_STATUS_LABELS } from "@/lib/transaction-status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, Home, Building2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, addDays, isBefore, isToday } from "date-fns";
+import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { parseDateOnly } from "@/lib/date-only";
+import { parseDateOnly, todayInSaoPauloDateOnly } from "@/lib/date-only";
 
 interface FinanceUpcomingPaymentsProps {
   unitId?: string;
@@ -58,12 +59,13 @@ export function FinanceUpcomingPayments({ unitId, dateFrom, dateTo }: FinanceUpc
     }).format(value);
   };
 
-  const getDueDateStatus = (dueDateStr: string) => {
+  const getDueDateStatus = (dueDateStr: string, status: string = "pending") => {
+    const todaySP = todayInSaoPauloDateOnly();
     const dueDate = parseDateOnly(dueDateStr) ?? new Date(dueDateStr);
-    if (isBefore(dueDate, today) && !isToday(dueDate)) {
-      return { label: "Vencido", variant: "destructive" as const, icon: AlertTriangle };
+    if (getEffectiveStatus({ status, due_date: dueDateStr }, todaySP) === "overdue") {
+      return { label: EFFECTIVE_STATUS_LABELS.overdue, variant: "destructive" as const, icon: AlertTriangle };
     }
-    if (isToday(dueDate)) {
+    if (dueDateStr === todaySP) {
       return { label: "Hoje", variant: "default" as const, icon: Clock };
     }
     return { label: format(dueDate, "dd/MM", { locale: ptBR }), variant: "secondary" as const, icon: Clock };

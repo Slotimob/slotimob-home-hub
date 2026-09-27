@@ -112,7 +112,7 @@ export function TransactionsFilters({ filters, onFiltersChange }: TransactionsFi
                 <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="pending">Pendente</SelectItem>
                 <SelectItem value="paid">Pago</SelectItem>
-                <SelectItem value="overdue">Vencido</SelectItem>
+                <SelectItem value="overdue">Atrasado</SelectItem>
                 <SelectItem value="cancelled">Cancelado</SelectItem>
               </SelectContent>
             </Select>
