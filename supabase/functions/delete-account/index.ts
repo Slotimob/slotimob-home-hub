@@ -178,6 +178,8 @@ Deno.serve(async (req) => {
       { table: "documents", column: "broker_id" },
       { table: "generated_documents", column: "broker_id" },
       { table: "lease_adjustments", column: "broker_id" },
+      { table: "lease_units", column: "broker_id" },
+      { table: "lease_events", column: "broker_id" },
       { table: "leases", column: "broker_id" },
       { table: "sales", column: "broker_id" },
       { table: "visits", column: "broker_id" },
