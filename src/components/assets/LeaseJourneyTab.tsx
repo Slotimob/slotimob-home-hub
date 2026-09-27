@@ -105,6 +105,10 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
      fire_insurance?: any;
      iptu_charge?: any;
      additional_obligations?: any;
+     rent_grace?: any;
+     rent_deductions?: any;
+     rent_withholding?: any;
+     admin_fee_percentage?: number | null;
      unit?: { unit_number: string } | null;
      tenant?: { name: string } | null;
     initial_rent?: number;
@@ -909,6 +913,10 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                fire_insurance: fullLeaseData.fire_insurance ?? null,
                iptu_charge: fullLeaseData.iptu_charge ?? null,
                additional_obligations: fullLeaseData.additional_obligations ?? null,
+               rent_grace: fullLeaseData.rent_grace ?? null,
+               rent_deductions: fullLeaseData.rent_deductions ?? null,
+               rent_withholding: fullLeaseData.rent_withholding ?? null,
+               admin_fee_percentage: fullLeaseData.admin_fee_percentage ?? null,
                tenant_contact: fullLeaseData.tenant,
                unit: fullLeaseData.unit,
              }}

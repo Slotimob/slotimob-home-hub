@@ -49,8 +49,10 @@ export interface ProjectionBlockProps {
   icon: ReactNode;
   transactionType: "income" | "expense";
   installments: PlannedInstallment[];
-  config: BlockConfig;
-  onConfigChange: (patch: Partial<BlockConfig>) => void;
+  config?: BlockConfig;
+  onConfigChange?: (patch: Partial<BlockConfig>) => void;
+  /** Esconde os campos editáveis (blocos derivados do contrato, ex.: abatimentos/IRRF). */
+  hideConfig?: boolean;
   enabled: boolean;
   onEnabledChange: (value: boolean) => void;
   selected: Set<string>;
@@ -93,9 +95,10 @@ export function ProjectionBlock({
   notice,
   competencyLabel = "Competência inicial (emissão)",
   hideMonths = false,
+  hideConfig = false,
 }: ProjectionBlockProps) {
-  const selectableKeys = installments.filter((i) => !i.alreadyExists).map((i) => i.key);
-  const selectedList = installments.filter((i) => selected.has(i.key) && !i.alreadyExists);
+  const selectableKeys = installments.filter((i) => !i.alreadyExists && !i.isGrace).map((i) => i.key);
+  const selectedList = installments.filter((i) => selected.has(i.key) && !i.alreadyExists && !i.isGrace);
   const total = selectedList.reduce((sum, i) => sum + i.amount, 0);
 
   return (
@@ -135,6 +138,7 @@ export function ProjectionBlock({
         </p>
       )}
 
+      {!hideConfig && config && onConfigChange && (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
           <Label
@@ -209,6 +213,7 @@ export function ProjectionBlock({
           />
         </div>
       </div>
+      )}
 
       {enabled && installments.length > 0 && (
         <div className="space-y-2">
@@ -228,12 +233,12 @@ export function ProjectionBlock({
                 {installments.map((i) => (
                   <tr
                     key={i.key}
-                    className={`border-t border-border ${i.alreadyExists ? "opacity-50" : ""}`}
+                    className={`border-t border-border ${i.alreadyExists || i.isGrace ? "opacity-50" : ""}`}
                   >
                     <td className="p-2">
                       <Checkbox
-                        checked={selected.has(i.key)}
-                        disabled={i.alreadyExists}
+                        checked={!i.isGrace && selected.has(i.key)}
+                        disabled={i.alreadyExists || i.isGrace}
                         onCheckedChange={() => onToggle(i.key)}
                         aria-label={`Lançar ${i.description}`}
                       />
@@ -245,10 +250,20 @@ export function ProjectionBlock({
                           Já lançado
                         </Badge>
                       )}
+                      {i.isGrace && (
+                        <Badge variant="outline" className="ml-2 text-[10px]">
+                          Carência
+                        </Badge>
+                      )}
+                      {!i.isGrace && i.meta?.kind === "grace" && (
+                        <span className="ml-1 text-xs text-muted-foreground">(carência)</span>
+                      )}
                     </td>
                     <td className="p-2 tabular-nums">{brDate(i.issueDate)}</td>
                     <td className="p-2 tabular-nums">{brDate(i.dueDate)}</td>
-                    <td className="p-2 text-right tabular-nums">{formatCurrency(i.amount)}</td>
+                    <td className="p-2 text-right tabular-nums">
+                      {i.isGrace ? "Isento" : formatCurrency(i.amount)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -261,20 +276,27 @@ export function ProjectionBlock({
               <li
                 key={i.key}
                 className={`rounded-md border border-border p-2 flex items-start gap-2 ${
-                  i.alreadyExists ? "opacity-50" : ""
+                  i.alreadyExists || i.isGrace ? "opacity-50" : ""
                 }`}
               >
                 <Checkbox
-                  checked={selected.has(i.key)}
-                  disabled={i.alreadyExists}
+                  checked={!i.isGrace && selected.has(i.key)}
+                  disabled={i.alreadyExists || i.isGrace}
                   onCheckedChange={() => onToggle(i.key)}
                   aria-label={`Lançar ${i.description}`}
                   className="mt-0.5"
                 />
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium truncate">{i.competencyLabel}</span>
-                    <span className="text-sm tabular-nums">{formatCurrency(i.amount)}</span>
+                    <span className="text-sm font-medium truncate">
+                      {i.competencyLabel}
+                      {!i.isGrace && i.meta?.kind === "grace" && (
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">(carência)</span>
+                      )}
+                    </span>
+                    <span className="text-sm tabular-nums">
+                      {i.isGrace ? "Isento" : formatCurrency(i.amount)}
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground tabular-nums">
                     Emissão {brDate(i.issueDate)} · Vence {brDate(i.dueDate)}
@@ -282,6 +304,11 @@ export function ProjectionBlock({
                   {i.alreadyExists && (
                     <Badge variant="secondary" className="text-[10px]">
                       Já lançado
+                    </Badge>
+                  )}
+                  {i.isGrace && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Carência
                     </Badge>
                   )}
                 </div>

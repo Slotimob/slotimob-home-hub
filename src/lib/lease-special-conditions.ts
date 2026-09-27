@@ -100,7 +100,7 @@ export function buildRentDeductionInstallments({
   deductions: RentDeductionConfig[] | null | undefined;
   rentInstallments: PlannedInstallment[];
   ownerContactId?: string | null;
-}): { installments: PlannedInstallment[]; skipped: number } {
+}): { installments: PlannedInstallment[]; skipped: number; unallocated: number } {
   const rentByComp = new Map(rentInstallments.map((r) => [r.competencyPeriod, r]));
   const comps = Array.from(rentByComp.keys()).sort();
   const active = (deductions || []).filter((d) => d.enabled && Number(d.amount) > 0);
@@ -151,7 +151,9 @@ export function buildRentDeductionInstallments({
     }
   }
 
-  return { installments, skipped };
+  // Excedente que não coube em nenhuma competência da janela
+  const unallocated = round2(requested.reduce((sum, r) => sum + r.carry, 0));
+  return { installments, skipped, unallocated };
 }
 
 /* ─── IRRF ─────────────────────────────────────────────────────────── */

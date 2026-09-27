@@ -104,6 +104,16 @@ describe("abatimentos", () => {
     ]);
   });
 
+  it("excedente após o fim da janela vira unallocated", () => {
+    const r = rents(1000, null, 2);
+    const { installments, unallocated } = buildRentDeductionInstallments({
+      deductions: [ded({ amount: 2500 })],
+      rentInstallments: r,
+    });
+    expect(installments.map((i) => i.amount)).toEqual([1000, 1000]);
+    expect(unallocated).toBe(500);
+  });
+
   it("competência fora da janela é ignorada e contada", () => {
     const { installments, skipped } = buildRentDeductionInstallments({
       deductions: [ded({ first_competency: "2030-01" })],

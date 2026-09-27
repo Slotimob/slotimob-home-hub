@@ -15,6 +15,8 @@ import {
   Receipt,
   ShieldCheck,
   Landmark,
+  MinusCircle,
+  FileMinus,
 } from "lucide-react";
 import { format, getDate, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +33,12 @@ import {
   type PlannedInstallment,
 } from "@/lib/lease-projection";
 import { formatDateOnly } from "@/lib/date-only";
+import {
+  buildRentDeductionInstallments,
+  buildWithholdingInstallments,
+  resolveGraceSchedule,
+  summarizeSettlement,
+} from "@/lib/lease-special-conditions";
 import {
   ProjectionBlock,
   competencyPeriodOf,
@@ -53,6 +61,9 @@ import type {
   IptuChargeConfig,
   LeaseChargeResponsible,
   ObligationChargeConfig,
+  RentDeductionConfig,
+  RentGraceConfig,
+  RentWithholdingConfig,
 } from "@/hooks/useLeases";
 
 /** tenant => receita; owner/agency => despesa (repasse assumido). */
@@ -74,6 +85,10 @@ export interface LeaseForProjection {
   fire_insurance?: FireInsuranceConfig | null;
   iptu_charge?: IptuChargeConfig | null;
   additional_obligations: ObligationChargeConfig[] | null;
+  rent_grace?: RentGraceConfig | null;
+  rent_deductions?: RentDeductionConfig[] | null;
+  rent_withholding?: RentWithholdingConfig | null;
+  admin_fee_percentage?: number | null;
   unit?: { unit_number?: string | null; address?: string | null } | null;
   tenant?: { name?: string | null } | null;
   tenant_contact?: { name?: string | null } | null;
@@ -379,8 +394,12 @@ export const LeaseProjectionEditor = forwardRef<
       issueDay: issueDayOf(cfg.competency),
       existingCompetencies,
       existingRentCompetencies,
+      // Pós-reajuste não aplica carência (ela já passou ou não se reajusta)
+      graceSchedule: postAdjustment
+        ? undefined
+        : resolveGraceSchedule(lease.rent_grace, lease.start_date),
     });
-  }, [lease, window, blocks.rent, existingCompetencies, existingRentCompetencies]);
+  }, [lease, window, blocks.rent, existingCompetencies, existingRentCompetencies, postAdjustment]);
 
   const insuranceInstallments = useMemo(() => {
     const cfg = blocks.fire_insurance;
@@ -463,6 +482,63 @@ export const LeaseProjectionEditor = forwardRef<
     [additionalGroups]
   );
 
+  /* ─── Condições especiais: abatimentos e IRRF, derivados do aluguel ─── */
+  const markExisting = (list: PlannedInstallment[]) =>
+    list.map((i) => ({ ...i, alreadyExists: !!existingCompetencies?.has(i.dedupKey ?? i.key) }));
+
+  const hasDeductions = (lease?.rent_deductions || []).some((d) => d?.enabled && Number(d.amount) > 0);
+  const deductionResult = useMemo(() => {
+    if (!lease || !hasDeductions || rentInstallments.length === 0)
+      return { installments: [] as PlannedInstallment[], skipped: 0, unallocated: 0 };
+    const r = buildRentDeductionInstallments({
+      deductions: lease.rent_deductions,
+      rentInstallments,
+      ownerContactId: lease.owner_contact_id ?? null,
+    });
+    return { ...r, installments: markExisting(r.installments) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lease, hasDeductions, rentInstallments, existingCompetencies]);
+  const deductionInstallments = deductionResult.installments;
+
+  const hasWithholding = !!lease?.rent_withholding?.enabled;
+  const withholdingInstallments = useMemo(() => {
+    if (!lease || !hasWithholding || rentInstallments.length === 0) return [];
+    const condo = additionalConfigs.find((o) => o.type === "condominium");
+    return markExisting(
+      buildWithholdingInstallments({
+        withholding: lease.rent_withholding,
+        rentInstallments,
+        baseDeductions: {
+          iptu: iptuAmountDefault ?? 0,
+          condominium: condo?.installment_amount || 0,
+          adminFeePercent: Number(lease.admin_fee_percentage) || 0,
+        },
+        tenantContactId: lease.tenant_contact_id,
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lease, hasWithholding, rentInstallments, additionalConfigs, iptuAmountDefault, existingCompetencies]);
+
+  /** Linhas derivadas seguem a seleção do aluguel da mesma competência. */
+  useEffect(() => {
+    const unselectedRent = new Set(
+      rentInstallments
+        .filter((r) => !r.alreadyExists && !r.isGrace && !selected.has(r.key))
+        .map((r) => r.settlementKey ?? r.competencyPeriod)
+    );
+    if (!enabled.rent) rentInstallments.forEach((r) => unselectedRent.add(r.settlementKey ?? r.competencyPeriod));
+    const toDrop = [...deductionInstallments, ...withholdingInstallments]
+      .filter((i) => selected.has(i.key) && unselectedRent.has(i.settlementKey ?? i.competencyPeriod))
+      .map((i) => i.key);
+    if (toDrop.length > 0) {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        toDrop.forEach((k) => next.delete(k));
+        return next;
+      });
+    }
+  }, [selected, enabled.rent, rentInstallments, deductionInstallments, withholdingInstallments]);
+
   // Selecionar por padrão tudo que ainda não existe
   useEffect(() => {
     const next = new Set<string>();
@@ -471,8 +547,10 @@ export const LeaseProjectionEditor = forwardRef<
       ...insuranceInstallments,
       ...iptuInstallments,
       ...additionalInstallments,
+      ...deductionInstallments,
+      ...withholdingInstallments,
     ]) {
-      if (!i.alreadyExists) next.add(i.key);
+      if (!i.alreadyExists && !i.isGrace) next.add(i.key);
     }
     setSelected(next);
   }, [
@@ -481,6 +559,8 @@ export const LeaseProjectionEditor = forwardRef<
     insuranceInstallments,
     iptuInstallments,
     additionalInstallments,
+    deductionInstallments,
+    withholdingInstallments,
   ]);
 
   const toggle = (key: string) =>
@@ -507,7 +587,11 @@ export const LeaseProjectionEditor = forwardRef<
     for (const g of additionalGroups) {
       if (enabled[g.cfg.type]) list.push(...g.installments);
     }
-    return list.filter((i) => !i.alreadyExists && selected.has(i.key));
+    if (enabled.rent && !window?.blocked) {
+      if (enabled.rent_deductions !== false) list.push(...deductionInstallments);
+      if (enabled.irrf !== false) list.push(...withholdingInstallments);
+    }
+    return list.filter((i) => !i.alreadyExists && !i.isGrace && selected.has(i.key));
   }, [
     enabled,
     window,
@@ -515,8 +599,21 @@ export const LeaseProjectionEditor = forwardRef<
     insuranceInstallments,
     iptuInstallments,
     additionalGroups,
+    deductionInstallments,
+    withholdingInstallments,
     selected,
   ]);
+
+  /** Líquido esperado do inquilino por competência (aluguel − abatimentos − IRRF). */
+  const settlementRows = useMemo(
+    () =>
+      summarizeSettlement(confirmedInstallments.filter((i) => !!i.settlementKey)).filter(
+        (r) => r.gross > 0
+      ),
+    [confirmedInstallments]
+  );
+  const settlementNetTotal = settlementRows.reduce((s, r) => s + r.net, 0);
+  const settlementHasAdjustments = settlementRows.some((r) => r.deductions > 0 || r.irrf > 0 || r.grace > 0);
 
   const totalIncome = confirmedInstallments
     .filter((i) => (i.transactionType ?? "income") === "income")
@@ -679,6 +776,7 @@ export const LeaseProjectionEditor = forwardRef<
 
           {blocks.rent && (
             <ProjectionBlock
+              key="rent-block"
               blockKey="rent"
               title="Aluguel"
               icon={<Home className="h-4 w-4" />}
@@ -692,6 +790,59 @@ export const LeaseProjectionEditor = forwardRef<
               onToggle={toggle}
               onSelectAll={selectAll}
               onClearAll={clearAll}
+            />
+          )}
+
+          {enabled.rent && deductionInstallments.length > 0 && (
+            <ProjectionBlock
+              blockKey="rent_deductions"
+              title="Abatimentos do aluguel (encargo do proprietário)"
+              icon={<MinusCircle className="h-4 w-4" />}
+              transactionType="expense"
+              installments={deductionInstallments}
+              hideConfig
+              enabled={enabled.rent_deductions !== false}
+              onEnabledChange={(v) => setEnabled((p) => ({ ...p, rent_deductions: v }))}
+              selected={selected}
+              onToggle={toggle}
+              onSelectAll={selectAll}
+              onClearAll={clearAll}
+              warning={
+                deductionResult.unallocated > 0 || deductionResult.skipped > 0 ? (
+                  <div className="rounded-md border border-border bg-muted/40 p-2 flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      Parte do abatimento fica para o próximo lançamento
+                      {deductionResult.unallocated > 0
+                        ? ` (${formatCurrency(deductionResult.unallocated)} sem competência nesta janela)`
+                        : ""}
+                      .
+                    </p>
+                  </div>
+                ) : null
+              }
+            />
+          )}
+
+          {enabled.rent && withholdingInstallments.length > 0 && (
+            <ProjectionBlock
+              blockKey="irrf"
+              title="IRRF retido na fonte"
+              icon={<FileMinus className="h-4 w-4" />}
+              transactionType="expense"
+              installments={withholdingInstallments}
+              hideConfig
+              enabled={enabled.irrf !== false}
+              onEnabledChange={(v) => setEnabled((p) => ({ ...p, irrf: v }))}
+              selected={selected}
+              onToggle={toggle}
+              onSelectAll={selectAll}
+              onClearAll={clearAll}
+              notice={
+                lease.rent_withholding?.mode === "table"
+                  ? "Estimativa. Ajuste para o valor que o inquilino realmente reteve."
+                  : undefined
+              }
             />
           )}
         </>
@@ -834,6 +985,30 @@ export const LeaseProjectionEditor = forwardRef<
           · {formatCurrency(totalIncome)} em receitas · {formatCurrency(totalExpense)} em
           despesas
         </span>
+        {settlementHasAdjustments && settlementRows.length > 0 && (
+          <details className="mt-1.5">
+            <summary className="cursor-pointer text-xs">
+              Líquido esperado do inquilino:{" "}
+              <span className="font-semibold">{formatCurrency(settlementNetTotal)}</span>
+              <span className="text-muted-foreground">
+                {" "}
+                em {settlementRows.length} competência{settlementRows.length === 1 ? "" : "s"}
+              </span>
+            </summary>
+            <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground max-h-40 overflow-y-auto">
+              {settlementRows.map((r) => (
+                <li key={r.competency} className="flex justify-between gap-2">
+                  <span>
+                    {format(parseISO(`${r.competency}-01`), "MM/yyyy")}
+                    {r.deductions > 0 ? ` · abat. ${formatCurrency(r.deductions)}` : ""}
+                    {r.irrf > 0 ? ` · IRRF ${formatCurrency(r.irrf)}` : ""}
+                  </span>
+                  <span className="text-foreground">{formatCurrency(r.net)}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
     </div>
   );
