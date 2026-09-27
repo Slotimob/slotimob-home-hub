@@ -60,7 +60,7 @@ export function LeaseLinkSelector({
       const { data, error } = await supabase
         .from('leases')
         .select(
-          'id, status, rent_amount, unit_id, tenant:contacts!leases_tenant_contact_id_fkey(name), unit:units(unit_number, is_standalone, property:properties(name))'
+          'id, status, rent_amount, unit_id, tenant:contacts!leases_tenant_contact_id_fkey(name), unit:units!leases_unit_id_fkey(unit_number, is_standalone, property:properties(name))'
         )
         .in('status', ['active', 'pending'])
         .neq('unit_id', unitId)

@@ -312,7 +312,7 @@ export function ContractsTab() {
           tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
           unit:units!leases_unit_id_fkey(id, unit_number, address),
           unit_subdivision_id,
-          subdivision:unit_subdivisions(id, label)
+          subdivision:unit_subdivisions!leases_unit_subdivision_id_fkey(id, label)
         `)
         .eq("broker_id", effectiveBrokerId || user.id)
         .order("created_at", { ascending: false });

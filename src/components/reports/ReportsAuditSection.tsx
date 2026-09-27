@@ -239,7 +239,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
   const buildProjecoesData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
-    let leasesQuery = supabase.from('leases').select(`*, unit:units(unit_number, id), tenant:contacts!leases_tenant_contact_id_fkey(name)`).eq('status', 'active');
+    let leasesQuery = supabase.from('leases').select(`*, unit:units!leases_unit_id_fkey(unit_number, id), tenant:contacts!leases_tenant_contact_id_fkey(name)`).eq('status', 'active');
     if (selectedUnitId) leasesQuery = leasesQuery.eq('unit_id', selectedUnitId);
     const { data: leases } = await leasesQuery;
     const today = new Date();
@@ -283,7 +283,7 @@ export const ReportsAuditSection = ({ dateRange, userName, selectedUnitId }: Rep
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
-      let leasesQuery = supabase.from('leases').select(`*, unit:units(unit_number, id), tenant:contacts!leases_tenant_contact_id_fkey(name)`).eq('status', 'active');
+      let leasesQuery = supabase.from('leases').select(`*, unit:units!leases_unit_id_fkey(unit_number, id), tenant:contacts!leases_tenant_contact_id_fkey(name)`).eq('status', 'active');
       if (selectedUnitId) leasesQuery = leasesQuery.eq('unit_id', selectedUnitId);
       const { data: leases } = await leasesQuery;
       const today = new Date(); const futureDate = addDays(today, 60);
