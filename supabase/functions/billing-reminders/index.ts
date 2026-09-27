@@ -4,6 +4,7 @@
 // Não há envio automático por WhatsApp (Evolution API não é oficial): o WhatsApp
 // é apenas atalho manual na interface.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
+import { fetchSettlementNet, describeSettlementNet } from "../_shared/settlement.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const FROM_ADDRESS = Deno.env.get("BILLING_FROM_EMAIL") ?? "noreply@slotimob.com.br";
@@ -192,7 +193,7 @@ Deno.serve(async (req) => {
 
         const { data: transactions, error: txError } = await supabase
           .from("financial_transactions")
-          .select("id, description, amount, due_date, status, contact_id, broker_id")
+          .select("id, description, amount, due_date, status, contact_id, broker_id, settlement_group_id, competency_period")
           .eq("broker_id", brokerId)
           .eq("reference", `lease:${lease.id}`)
           .eq("status", "pending")
@@ -217,7 +218,18 @@ Deno.serve(async (req) => {
         }
         const broker = brokerCache.get(brokerId)!;
 
-        for (const tx of transactions ?? []) {
+        for (const rawTx of transactions ?? []) {
+          // Baixa conjunta: cobra o LÍQUIDO do grupo (aluguel − abatimentos − IRRF)
+          let tx: any = rawTx;
+          if ((rawTx as any).settlement_group_id) {
+            const s = await fetchSettlementNet(supabase, (rawTx as any).settlement_group_id, brokerId);
+            if (s && s.net > 0) {
+              const comp = (rawTx as any).competency_period
+                ? `${String((rawTx as any).competency_period).slice(5, 7)}/${String((rawTx as any).competency_period).slice(0, 4)}`
+                : "";
+              tx = { ...rawTx, amount: s.net, description: `Aluguel ${comp} (${describeSettlementNet(s)})`.replace("Aluguel  (", "Aluguel (") };
+            }
+          }
           if (budget <= 0) break;
           try {
             if (!tx.due_date) continue;
