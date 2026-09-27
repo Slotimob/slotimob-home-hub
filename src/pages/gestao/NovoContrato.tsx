@@ -74,12 +74,12 @@ import { useCreateLease, useUpdateLease, useLeaseUnits, useSetLeaseUnits, type G
 import {
   LeaseExtraUnitsSection,
   EMPTY_EXTRA_UNITS,
-  leaseUnitIdsFor,
-  validateLeaseShares,
+  leaseUnitRefsFor,
+  validateExtraUnits,
   type LeaseExtraUnitsState,
 } from "@/components/assets/LeaseExtraUnitsSection";
 import { unitLabel } from "@/components/units/UnitSelector";
-import { occupyLeaseUnits, releaseLeaseUnits } from "@/lib/unit-status-sync";
+import { occupyLeaseUnits, releaseLeaseUnits, leaseUnitRefKey, type LeaseUnitRef } from "@/lib/unit-status-sync";
 import { useToast } from "@/hooks/use-toast";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
@@ -222,7 +222,7 @@ export default function NovoContrato() {
   const [draftLoaded, setDraftLoaded] = useState(false);
   // Contrato com vários imóveis (principal = imóvel escolhido acima)
   const [extraUnits, setExtraUnits] = useState<LeaseExtraUnitsState>(EMPTY_EXTRA_UNITS);
-  const initialLeaseUnitIdsRef = useRef<string[] | null>(null);
+  const initialLeaseUnitRefsRef = useRef<LeaseUnitRef[] | null>(null);
   const setLeaseUnits = useSetLeaseUnits();
   const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
   const [projectionOpen, setProjectionOpen] = useState(false);
@@ -250,23 +250,40 @@ export default function NovoContrato() {
 
   // Hidrata os imóveis do contrato (modo edição)
   useEffect(() => {
-    if (!editLeaseUnits || initialLeaseUnitIdsRef.current) return;
-    initialLeaseUnitIdsRef.current = editLeaseUnits.map((r) => r.unit_id);
+    if (!editLeaseUnits || initialLeaseUnitRefsRef.current) return;
+    const toRef = (r: any): LeaseUnitRef => ({ unit_id: r.unit_id, unit_subdivision_id: r.unit_subdivision_id ?? null });
+    initialLeaseUnitRefsRef.current = editLeaseUnits.map(toRef);
     const extras = editLeaseUnits.filter((r) => !r.is_primary);
     const hasShares = editLeaseUnits.some((r) => r.share_percent != null);
+    const units: LeaseExtraUnitsState["units"] = [];
+    const fractions: Record<string, string[] | null> = {};
+    const fractionLabels: Record<string, string> = {};
+    extras.forEach((r: any) => {
+      if (!units.some((u) => u.id === r.unit_id)) {
+        units.push({
+          id: r.unit_id,
+          unit_number: r.unit?.unit_number || "Imóvel",
+          is_standalone: !!r.unit?.is_standalone,
+          tenant_contact_id: null,
+          property_id: null,
+          property_name: r.unit?.property?.name ?? null,
+        });
+      }
+      if (r.unit_subdivision_id) {
+        fractions[r.unit_id] = [...(fractions[r.unit_id] || []), r.unit_subdivision_id];
+        if (r.subdivision?.label) fractionLabels[r.unit_subdivision_id] = r.subdivision.label;
+      } else if (!(r.unit_id in fractions)) {
+        fractions[r.unit_id] = null;
+      }
+    });
     setExtraUnits({
       enabled: extras.length > 0,
-      units: extras.map((r) => ({
-        id: r.unit_id,
-        unit_number: r.unit?.unit_number || "Imóvel",
-        is_standalone: !!r.unit?.is_standalone,
-        tenant_contact_id: null,
-        property_id: null,
-        property_name: r.unit?.property?.name ?? null,
-      })),
+      units,
+      fractions,
+      fractionLabels,
       shareEnabled: hasShares,
       shares: hasShares
-        ? Object.fromEntries(editLeaseUnits.map((r) => [r.unit_id, Number(r.share_percent) || 0]))
+        ? Object.fromEntries(editLeaseUnits.map((r) => [leaseUnitRefKey(toRef(r)), Number(r.share_percent) || 0]))
         : {},
     });
   }, [editLeaseUnits]);
@@ -818,23 +835,24 @@ export default function NovoContrato() {
     withholding: formData.rent_withholding,
   });
 
-  const leaseSharesError = validateLeaseShares(effectiveUnitId, extraUnits);
-  const leaseUnitIds = leaseUnitIdsFor(effectiveUnitId, extraUnits);
+  const primaryRef: LeaseUnitRef = { unit_id: effectiveUnitId, unit_subdivision_id: formData.unit_subdivision_id || null };
+  const leaseSharesError = validateExtraUnits(primaryRef, extraUnits);
+  const leaseUnitRefs = leaseUnitRefsFor(primaryRef, extraUnits);
 
   /**
    * Grava os imóveis do contrato (RPC set_lease_units), ocupa os atuais e libera os removidos.
    * Retorna a mensagem de erro da RPC, ou null em caso de sucesso.
    */
   const saveLeaseUnits = async (leaseId: string): Promise<string | null> => {
-    const withShares = extraUnits.enabled && extraUnits.shareEnabled && leaseUnitIds.length > 1;
+    const withShares = extraUnits.enabled && extraUnits.shareEnabled && leaseUnitRefs.length > 1;
     try {
       await setLeaseUnits.mutateAsync({
         leaseId,
-        units: leaseUnitIds.map((id, i) => ({
-          unit_id: id,
-          unit_subdivision_id: i === 0 ? formData.unit_subdivision_id || null : null,
+        units: leaseUnitRefs.map((ref, i) => ({
+          unit_id: ref.unit_id,
+          unit_subdivision_id: ref.unit_subdivision_id,
           is_primary: i === 0,
-          share_percent: withShares ? Number(extraUnits.shares[id]) || 0 : null,
+          share_percent: withShares ? Number(extraUnits.shares[leaseUnitRefKey(ref)]) || 0 : null,
         })),
       });
     } catch (e) {
@@ -845,12 +863,13 @@ export default function NovoContrato() {
         leaseId,
         tenantContactId: formData.tenant_contact_id,
         startDate: formData.start_date,
-        unitIds: leaseUnitIds,
+        refs: leaseUnitRefs,
       });
     }
-    const removed = (initialLeaseUnitIdsRef.current || []).filter((id) => !leaseUnitIds.includes(id));
+    const currentKeys = new Set(leaseUnitRefs.map(leaseUnitRefKey));
+    const removed = (initialLeaseUnitRefsRef.current || []).filter((r) => !currentKeys.has(leaseUnitRefKey(r)));
     if (removed.length) await releaseLeaseUnits(leaseId, removed);
-    initialLeaseUnitIdsRef.current = leaseUnitIds;
+    initialLeaseUnitRefsRef.current = leaseUnitRefs;
     return null;
   };
 
@@ -1134,7 +1153,7 @@ export default function NovoContrato() {
           if (dealErr) console.error("[NovoContrato] Falha ao vincular contato ao negócio:", dealErr);
         }
 
-        if (resultId && leaseUnitIds.length > 1) {
+        if (resultId && leaseUnitRefs.length > 1) {
           const unitsError = await saveLeaseUnits(resultId);
           if (unitsError) {
             // O contrato já existe: segue em modo edição, na etapa Imóvel, para corrigir
@@ -1466,7 +1485,7 @@ export default function NovoContrato() {
 
               {effectiveUnitId && (
                 <LeaseExtraUnitsSection
-                  primaryUnitId={effectiveUnitId}
+                  primary={primaryRef}
                   primaryLabel={unitName || "Imóvel principal"}
                   value={extraUnits}
                   onChange={setExtraUnits}
@@ -2300,19 +2319,24 @@ export default function NovoContrato() {
               <div className="p-3 border rounded-lg bg-muted/30 space-y-2 text-sm">
                 <p className="font-medium">Resumo do Contrato</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-muted-foreground text-xs sm:text-sm">
-                  <span>{leaseUnitIds.length > 1 ? "Imóveis:" : "Imóvel:"}</span>
+                  <span>{leaseUnitRefs.length > 1 ? "Imóveis:" : "Imóvel:"}</span>
                   <span className="font-medium text-foreground">
-                    {leaseUnitIds.map((id, i) => {
-                      const extra = extraUnits.units.find((u) => u.id === id);
-                      const label = i === 0 ? unitName || "Imóvel principal" : extra ? unitLabel(extra) : id;
+                    {leaseUnitRefs.map((ref, i) => {
+                      const key = leaseUnitRefKey(ref);
+                      const extra = extraUnits.units.find((u) => u.id === ref.unit_id);
+                      const base = i === 0 ? unitName || "Imóvel principal" : extra ? unitLabel(extra) : ref.unit_id;
+                      const label =
+                        i > 0 && ref.unit_subdivision_id
+                          ? `${base} — ${extraUnits.fractionLabels?.[ref.unit_subdivision_id] || "Fração"}`
+                          : base;
                       const share =
-                        extraUnits.enabled && extraUnits.shareEnabled && leaseUnitIds.length > 1
-                          ? ` · ${(Number(extraUnits.shares[id]) || 0).toLocaleString("pt-BR")}%`
+                        extraUnits.enabled && extraUnits.shareEnabled && leaseUnitRefs.length > 1
+                          ? ` · ${(Number(extraUnits.shares[key]) || 0).toLocaleString("pt-BR")}%`
                           : "";
                       return (
-                        <span key={id} className="block">
+                        <span key={key} className="block">
                           {label}
-                          {i === 0 && leaseUnitIds.length > 1 ? " (principal)" : ""}
+                          {i === 0 && leaseUnitRefs.length > 1 ? " (principal)" : ""}
                           {share}
                         </span>
                       );
