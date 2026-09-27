@@ -1,3 +1,4 @@
+import { fetchSettlementGroup, settlementNet } from "@/lib/settlement-group";
 import { getEffectiveStatus } from "@/lib/transaction-status";
 import { useState } from "react";
 import { formatDateOnly, todayDateOnly } from "@/lib/date-only";
@@ -17,6 +18,7 @@ interface Transaction {
   contact_id: string | null;
   unit_id: string | null;
   status: string;
+  settlement_group_id?: string | null;
 }
 
 interface ContactData {
@@ -191,6 +193,20 @@ Equipe de Administração`;
         return;
       }
 
+      // Baixa conjunta: cobra o LÍQUIDO do grupo
+      let billingAmount = Number(transaction.amount) || 0;
+      if (transaction.settlement_group_id) {
+        try {
+          const lines = await fetchSettlementGroup(transaction.settlement_group_id);
+          if (lines.length > 1) {
+            const net = settlementNet(lines);
+            if (net > 0) billingAmount = net;
+          }
+        } catch {
+          // mantém o valor da linha
+        }
+      }
+
       let unitInfo: string | undefined;
       if (transaction.unit_id) {
         const info = await fetchUnitInfo(transaction.unit_id);
@@ -200,7 +216,7 @@ Equipe de Administração`;
       const messageData: BillingMessageData = {
         contactName: contact.name.split(" ")[0],
         contactPhone: phoneNumber,
-        amount: formatCurrency(transaction.amount),
+        amount: formatCurrency(billingAmount),
         dueDate: formatDate(transaction.due_date),
         description: transaction.description,
         unitInfo,
