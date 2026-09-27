@@ -76,6 +76,7 @@ import { todayDateOnly } from "@/lib/date-only";
          .from("financial_transactions")
           .update({ amount: previousValue })
           .eq("reference", `lease:${leaseId}`)
+          .or("obligation_type.eq.rent,obligation_type.is.null")
          .eq("status", "pending")
          .gte("due_date", today)
          .select("id");
@@ -168,6 +169,7 @@ export function useUpdateLeaseAdjustment() {
           .from("financial_transactions")
           .update({ amount: values.new_value })
           .eq("reference", `lease:${leaseId}`)
+          .or("obligation_type.eq.rent,obligation_type.is.null")
           .eq("status", "pending")
           .gte("due_date", cascadeFrom)
           .select("id");
@@ -189,6 +191,7 @@ export function useUpdateLeaseAdjustment() {
             .from("financial_transactions")
             .update({ amount: values.previous_value })
             .eq("reference", `lease:${leaseId}`)
+          .or("obligation_type.eq.rent,obligation_type.is.null")
             .eq("status", "pending")
             .gte("due_date", revertFrom)
             .lt("due_date", cascadeFrom)
