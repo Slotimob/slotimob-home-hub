@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseDateOnly } from "@/lib/date-only";
+import { buildDimobMonths, sumMonths, type DimobMonth } from "@/lib/dimob";
+
+const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 interface DimobRecord {
   /** Chave única da linha (contrato + imóvel). */
@@ -31,6 +34,9 @@ interface DimobRecord {
   taxWithheld: number;
   /** Abatimentos pagos no ano (informativo; não reduzem o bruto). */
   deductions: number;
+  /** Valores por mês de pagamento (Jan–Dez). */
+  months: DimobMonth[];
+  commissionEstimated: boolean;
   /** Sem lançamentos de aluguel pagos no ano: bruto calculado pelo contrato. */
   isEstimated: boolean;
   isComplete: boolean;
@@ -53,6 +59,7 @@ export const DimobReportTab = () => {
   const [selectedYear, setSelectedYear] = useState(String(currentYear - 1));
   const [isLoading, setIsLoading] = useState(true);
   const [records, setRecords] = useState<DimobRecord[]>([]);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [summary, setSummary] = useState<DimobSummary>({
     totalUnits: 0,
     completeUnits: 0,
@@ -106,7 +113,7 @@ export const DimobReportTab = () => {
         const refs = chunk.map((id) => `lease:${id}`);
         const { data: txs, error: txError } = await supabase
           .from('financial_transactions')
-          .select('lease_id, reference, type, amount, obligation_type, metadata')
+          .select('lease_id, reference, type, amount, obligation_type, metadata, paid_date, competency_period, category:financial_categories(name)')
           .or(`lease_id.in.(${chunk.join(',')}),reference.in.(${refs.map((r) => `"${r}"`).join(',')})`)
           .eq('status', 'paid')
           .gte('paid_date', startDate)
@@ -140,13 +147,17 @@ export const DimobReportTab = () => {
       for (const lease of leases || []) {
         const lus = luByLease.get(lease.id) || [];
         const isMulti = lus.length > 1;
+        // Frações do mesmo imóvel viram uma linha só (fatores somados por unit_id)
         const shares = isMulti
-          ? [...lus]
-              .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
-              .map((lu) => ({
-                unit_id: lu.unit_id,
-                factor: lu.share_percent != null ? Number(lu.share_percent) / 100 : 1 / lus.length,
-              }))
+          ? Array.from(
+              [...lus]
+                .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+                .reduce((acc, lu) => {
+                  const f = lu.share_percent != null ? Number(lu.share_percent) / 100 : 1 / lus.length;
+                  acc.set(lu.unit_id, (acc.get(lu.unit_id) || 0) + f);
+                  return acc;
+                }, new Map<string, number>())
+            ).map(([unit_id, factor]) => ({ unit_id, factor }))
           : [{ unit_id: lease.unit_id, factor: 1 }];
         const unitIdsForLease = shares.map((x) => x.unit_id);
         const { data: unitRows } = await supabase
@@ -200,28 +211,29 @@ export const DimobReportTab = () => {
 
         const monthlyRent = lease.gross_rent_value || lease.rent_amount || 0;
         const leaseTx = txByLease.get(lease.id) || [];
-        const rentTx = leaseTx.filter(
-          (t) => t.type === 'income' && (!t.obligation_type || t.obligation_type === 'rent')
-        );
-        const isEstimated = rentTx.length === 0;
-        const grossAnnualRent = isEstimated
-          ? monthlyRent * monthsActive
-          : rentTx.reduce(
-              (sum, t) => sum + (Number((t.metadata as any)?.gross_amount) || Number(t.amount) || 0),
-              0
-            );
-        // Retenção efetivada: IRRF pago no ano. Sem linhas → 0 (não estimar)
-        const taxWithheld = leaseTx
-          .filter((t) => t.obligation_type === 'irrf')
-          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-        const deductions = leaseTx
-          .filter((t) => (t.obligation_type || '').startsWith('rent_deduction_'))
-          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-        
-        const adminFee = lease.administration_fee_value || 
-          (monthlyRent * (lease.admin_fee_percentage || 10) / 100);
-        const annualCommission = adminFee * monthsActive;
-
+        const built = buildDimobMonths(leaseTx, {
+          adminFeePercentage: lease.admin_fee_percentage,
+          administrationFeeValue: lease.administration_fee_value,
+        });
+        const isEstimated = !built.hasRent;
+        let months = built.months;
+        let commissionEstimated = built.commissionEstimated;
+        if (isEstimated) {
+          // Fallback: valor do contrato distribuído nos meses ativos
+          const adminFee = lease.administration_fee_value ||
+            (monthlyRent * (lease.admin_fee_percentage || 10) / 100);
+          months = months.map((m, i) => {
+            const active = monthsActive > 0 && i >= activeStart.getMonth() && i <= activeEnd.getMonth()
+              && activeStart.getFullYear() === Number(selectedYear);
+            return {
+              rent: active ? monthlyRent : 0,
+              commission: active ? Math.round(adminFee * 100) / 100 : 0,
+              tax: m.tax,
+            };
+          });
+          commissionEstimated = true;
+        }
+        const deductions = built.deductions;
 
         // Rateio: arredonda por imóvel e ajusta a diferença no último, para a soma bater
         const split = (total: number) => {
@@ -233,9 +245,11 @@ export const DimobReportTab = () => {
             return v;
           });
         };
-        const grossParts = split(grossAnnualRent);
-        const commParts = split(annualCommission);
-        const taxParts = split(taxWithheld);
+        const monthParts: DimobMonth[][] = shares.map(() => []);
+        months.forEach((m) => {
+          const rp = split(m.rent), cp = split(m.commission), tp = split(m.tax);
+          shares.forEach((_, idx) => monthParts[idx].push({ rent: rp[idx], commission: cp[idx], tax: tp[idx] }));
+        });
         const dedParts = split(deductions);
 
         shares.forEach((x, idx) => {
@@ -258,9 +272,11 @@ export const DimobReportTab = () => {
             ownerDocument,
             tenantName,
             tenantDocument,
-            grossAnnualRent: grossParts[idx],
-            annualCommission: commParts[idx],
-            taxWithheld: taxParts[idx],
+            grossAnnualRent: sumMonths(monthParts[idx], 'rent'),
+            annualCommission: sumMonths(monthParts[idx], 'commission'),
+            taxWithheld: sumMonths(monthParts[idx], 'tax'),
+            months: monthParts[idx],
+            commissionEstimated,
             deductions: dedParts[idx],
             isEstimated,
             isComplete: missingFields.length === 0,
@@ -313,7 +329,10 @@ export const DimobReportTab = () => {
       'Valor Bruto Anual',
       'Comissão Anual',
       'Imposto Retido',
-      'Status'
+      'Status',
+      ...MONTH_LABELS.map((m) => `Aluguel ${m}`),
+      ...MONTH_LABELS.map((m) => `Comissão ${m}`),
+      ...MONTH_LABELS.map((m) => `Imposto ${m}`),
     ];
 
     const csvData = records.map(r => [
@@ -326,7 +345,10 @@ export const DimobReportTab = () => {
       r.grossAnnualRent.toFixed(2),
       r.annualCommission.toFixed(2),
       r.taxWithheld.toFixed(2),
-      r.isComplete ? 'Completo' : `Pendente: ${r.missingFields.join(', ')}`
+      r.isComplete ? 'Completo' : `Pendente: ${r.missingFields.join(', ')}`,
+      ...r.months.map((m) => m.rent.toFixed(2)),
+      ...r.months.map((m) => m.commission.toFixed(2)),
+      ...r.months.map((m) => m.tax.toFixed(2)),
     ]);
 
     const csvContent = [
@@ -391,6 +413,15 @@ export const DimobReportTab = () => {
           </Button>
         </div>
       </div>
+
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-xs text-muted-foreground">
+          A Dimob usa o mês em que o inquilino pagou (regime de caixa) e o valor bruto do aluguel. Multa e juros
+          repassados entram no aluguel; o IRRF vai no campo de imposto retido. Pessoa física não entrega Dimob: use
+          estes valores como base para carnê-leão e DIRPF.
+        </AlertDescription>
+      </Alert>
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -507,7 +538,8 @@ export const DimobReportTab = () => {
                 </TableHeader>
                 <TableBody>
                   {records.map((record) => (
-                    <TableRow key={record.rowKey}>
+                    <Fragment key={record.rowKey}>
+                    <TableRow>
                       <TableCell className="font-medium">
                         {record.unitName}
                         {record.unitAddress && (
@@ -556,6 +588,9 @@ export const DimobReportTab = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(record.annualCommission)}
+                        {record.commissionEstimated && (
+                          <div><Badge variant="outline" className="text-[10px] mt-1">comissão estimada</Badge></div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {record.isComplete ? (
@@ -567,8 +602,60 @@ export const DimobReportTab = () => {
                             Pendente
                           </Badge>
                         )}
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 mt-1 text-xs block"
+                          aria-expanded={expanded.has(record.rowKey)}
+                          onClick={() =>
+                            setExpanded((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(record.rowKey)) next.delete(record.rowKey);
+                              else next.add(record.rowKey);
+                              return next;
+                            })
+                          }
+                        >
+                          Mês a mês
+                        </Button>
                       </TableCell>
                     </TableRow>
+                    {expanded.has(record.rowKey) && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="bg-muted/30 p-2">
+                          <div className="max-w-full overflow-x-auto">
+                            <table className="w-full text-[11px] tabular-nums">
+                              <thead>
+                                <tr className="text-muted-foreground">
+                                  <th className="p-1 text-left font-medium" />
+                                  {MONTH_LABELS.map((m) => (
+                                    <th key={m} className="p-1 text-right font-medium">{m}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {([
+                                  ['Aluguel', 'rent'],
+                                  ['Comissão', 'commission'],
+                                  ['Imposto retido', 'tax'],
+                                ] as const).map(([label, k]) => (
+                                  <tr key={k} className="border-t border-border">
+                                    <td className="p-1 font-medium whitespace-nowrap">{label}</td>
+                                    {record.months.map((m, i) => (
+                                      <td key={i} className="p-1 text-right whitespace-nowrap">
+                                        {m[k] ? formatCurrency(m[k]) : '–'}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>
