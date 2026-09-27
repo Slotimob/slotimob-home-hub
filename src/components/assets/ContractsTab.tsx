@@ -9,7 +9,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ExtraUnitsBadge, extraLeaseUnits } from "@/components/assets/LeaseExtraUnitsBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -165,35 +165,6 @@ interface LeaseWithDetails {
     is_primary: boolean;
     unit: { unit_number: string | null; property: { name: string } | null } | null;
   }[] | null;
-}
-
-/** Imóveis adicionais (não principais) de um contrato. */
-function extraLeaseUnits(lease: LeaseWithDetails) {
-  return (lease.lease_units || []).filter((lu) => !lu.is_primary && lu.unit_id !== lease.unit_id);
-}
-
-function ExtraUnitsBadge({ lease }: { lease: LeaseWithDetails }) {
-  const extras = extraLeaseUnits(lease);
-  if (!extras.length) return null;
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1 cursor-default">
-            +{extras.length}
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p className="text-xs font-medium mb-1">Outros imóveis deste contrato</p>
-          {extras.map((lu) => (
-            <p key={lu.unit_id} className="text-xs">
-              {[lu.unit?.property?.name, lu.unit?.unit_number].filter(Boolean).join(" — ") || "Imóvel"}
-            </p>
-          ))}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
 }
 
 interface LeaseWithAdjustment extends LeaseWithDetails {
