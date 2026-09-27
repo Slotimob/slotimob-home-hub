@@ -1,3 +1,4 @@
+import { markPaidWithSettlement } from "@/lib/settlement-group";
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -200,9 +201,16 @@ export function TransactionsBulkEditDialog({
 
       if (error) throw error;
 
+      // Baixa conjunta: marcar como pago leva o grupo inteiro, mesma data
+      let settlementNote = "";
+      if (updateStatus && status === "paid") {
+        const { count, grouped } = await markPaidWithSettlement(ids, updateData.paid_date);
+        if (grouped) settlementNote = ` Baixa conjunta: ${count} lançamentos.`;
+      }
+
       toast({
         title: "Lançamentos atualizados!",
-        description: `${selectedCount} lançamento${selectedCount > 1 ? "s foram atualizados" : " foi atualizado"} com sucesso.`,
+        description: `${selectedCount} lançamento${selectedCount > 1 ? "s foram atualizados" : " foi atualizado"} com sucesso.${settlementNote}`,
       });
 
       queryClient.invalidateQueries({ queryKey: ["infinite-transactions"] });

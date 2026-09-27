@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader2, Repeat, CheckCircle2, Circle, ArrowRightLeft, Link2, Hammer } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Check, TrendingUp, TrendingDown, Loader2, Repeat, CheckCircle2, Circle, ArrowRightLeft, Link2, Hammer, Layers } from "lucide-react";
 import { useTransactionsWithImprovement } from "@/hooks/useAssetFinancials";
 import { MarkAsImprovementDialog } from "./MarkAsImprovementDialog";
 
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreateTransactionDialog } from "./CreateTransactionDialog";
 import { TransactionCard } from "./TransactionCard";
+import { useSettlementGroups, settlementBreakdown, describeSettlement, markPaidWithSettlement } from "@/lib/settlement-group";
 import { TransactionsBulkActionsBar } from "./TransactionsBulkActionsBar";
 import { SortableTableHead } from "./SortableTableHead";
 import { ReconciliationDetailsPopover } from "./ReconciliationDetailsPopover";
@@ -255,18 +256,21 @@ export function TransactionsTableInfinite({
     }
   };
 
+  const { data: settlementGroups = {} } = useSettlementGroups(
+    transactions.map((t) => t.settlement_group_id)
+  );
+  const settlementSummaryFor = (t: any): string | null => {
+    const lines = t.settlement_group_id ? settlementGroups[t.settlement_group_id] : undefined;
+    return lines && lines.length > 1 ? describeSettlement(settlementBreakdown(lines)) : null;
+  };
+
   const handleMarkAsPaid = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("financial_transactions")
-        .update({
-          status: "paid",
-          paid_date: todayDateOnly(),
-        })
-        .eq("id", id);
-
-      if (error) throw error;
-      toast({ title: "Lançamento marcado como pago!" });
+      const { count, grouped } = await markPaidWithSettlement([id], todayDateOnly());
+      toast({
+        title: "Lançamento marcado como pago!",
+        description: grouped ? `Baixa conjunta: ${count} lançamentos` : undefined,
+      });
       onTransactionUpdated();
     } catch (error: any) {
       toast({
@@ -459,6 +463,7 @@ export function TransactionsTableInfinite({
             <TransactionCard
               key={transaction.id}
               transaction={transaction}
+              settlementSummary={settlementSummaryFor(transaction)}
               isSelected={selectedIds.has(transaction.id)}
               onSelect={(checked) => handleSelectOne(transaction.id, checked)}
               onEdit={canEditTx ? setEditTransaction : undefined}
@@ -732,6 +737,17 @@ export function TransactionsTableInfinite({
                         <span className="text-xs font-medium truncate">{transaction.description}</span>
                         {transaction.group_id && (
                           <Repeat className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                        )}
+                        {settlementSummaryFor(transaction) && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Layers className="h-2.5 w-2.5 text-primary shrink-0" aria-label="Baixa conjunta" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs font-medium">Baixa conjunta</p>
+                              <p className="text-xs">{settlementSummaryFor(transaction)}</p>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                         {isTransferTransaction && (
                           <Tooltip>
