@@ -13,7 +13,7 @@ import { Plus, Upload, FileSpreadsheet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { useInfiniteTransactions, SortField, SortOrder, SortConfig } from "@/hooks/useInfiniteTransactions";
+import { useInfiniteTransactions, SortField, SortOrder, SortConfig, DEFAULT_SORT } from "@/hooks/useInfiniteTransactions";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -72,7 +72,7 @@ const FinanceTransactions = () => {
   });
 
 
-  const [sortConfig, setSortConfig] = useState<SortConfig | undefined>(undefined);
+  const [sortConfig, setSortConfig] = useState<SortConfig>(DEFAULT_SORT);
 
   // Update filters when URL changes
   useEffect(() => {
@@ -113,17 +113,16 @@ const FinanceTransactions = () => {
     refetch,
   } = useInfiniteTransactions(filters, user?.id, sortConfig);
 
+  // Ciclo: asc -> desc -> volta ao padrão (vencimento crescente)
   const handleSortChange = (field: SortField) => {
     setSortConfig((prev) => {
-      if (!prev || prev.field !== field) {
-        return { field, order: "desc" };
-      }
-      if (prev.order === "desc") {
-        return { field, order: "asc" };
-      }
-      return undefined; // Reset to default
+      if (prev.field !== field) return { field, order: "asc" };
+      if (prev.order === "asc") return { field, order: "desc" };
+      return DEFAULT_SORT;
     });
   };
+
+  const handleSortSet = (config: SortConfig) => setSortConfig(config);
 
   // Flatten paginated data
   const transactions = useMemo(() => {
@@ -240,6 +239,7 @@ const FinanceTransactions = () => {
           onTransactionUpdated={handleTransactionCreated}
           sortConfig={sortConfig}
           onSortChange={handleSortChange}
+          onSortSet={handleSortSet}
         />
 
         {/* Create Transaction Dialog */}

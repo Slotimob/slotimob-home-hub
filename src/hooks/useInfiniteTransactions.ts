@@ -5,13 +5,41 @@ import { TransactionFilters } from "@/pages/FinanceTransactions";
 
 const PAGE_SIZE = 20;
 
-export type SortField = "transaction_date" | "description" | "amount" | "category";
+export type SortField =
+  | "is_reconciled"
+  | "type"
+  | "description"
+  | "unit"
+  | "category"
+  | "transaction_date"
+  | "due_date"
+  | "amount"
+  | "status";
 export type SortOrder = "asc" | "desc" | null;
 
 export interface SortConfig {
   field: SortField;
   order: SortOrder;
 }
+
+/** Ordenação padrão: vencimento crescente, sem vencimento por último. */
+export const DEFAULT_SORT: SortConfig = { field: "due_date", order: "asc" };
+
+/**
+ * Coluna enviada ao PostgREST. Unidade e Categoria ordenam pela relação to-one
+ * (sintaxe `alias(coluna)`, validada contra o PostgREST do projeto).
+ */
+const SORT_COLUMNS: Record<SortField, string> = {
+  is_reconciled: "is_reconciled",
+  type: "type",
+  description: "description",
+  unit: "unit(unit_number)",
+  category: "category(name)",
+  transaction_date: "transaction_date",
+  due_date: "due_date",
+  amount: "amount",
+  status: "status",
+};
 
 export function useInfiniteTransactions(
   filters: TransactionFilters, 
@@ -30,20 +58,18 @@ export function useInfiniteTransactions(
           unit:units(id, unit_number, is_standalone, property:properties(name))
         `);
 
-      // Apply sorting
-      if (sortConfig?.order) {
-        if (sortConfig.field === "category") {
-          // For category, we need to sort by the joined field
-          // Supabase doesn't support sorting by joined fields directly in the same query
-          // So we sort by category_id as a workaround, then we'll do client re-fetch
-          query = query.order("category_id", { ascending: sortConfig.order === "asc", nullsFirst: false });
-        } else {
-          query = query.order(sortConfig.field, { ascending: sortConfig.order === "asc" });
-        }
+      // Apply sorting (servidor) + desempate fixo para a paginação não repetir/pular linhas
+      const sort = sortConfig?.order ? sortConfig : DEFAULT_SORT;
+      const ascending = sort.order === "asc";
+      if (sort.field !== "due_date") {
+        query = query.order(SORT_COLUMNS[sort.field] as any, { ascending, nullsFirst: false });
       } else {
-        // Default sort by transaction_date desc
-        query = query.order("transaction_date", { ascending: false });
+        query = query.order("due_date", { ascending, nullsFirst: false });
       }
+      query = query
+        .order("due_date", { ascending: true, nullsFirst: false })
+        .order("transaction_date", { ascending: true })
+        .order("id", { ascending: true });
 
       // Apply pagination
       query = query.range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1);
