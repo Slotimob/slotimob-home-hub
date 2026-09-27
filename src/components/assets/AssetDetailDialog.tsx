@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useLeaseByUnitId } from "@/hooks/useLeases";
 import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
 import { fetchLeaseRentTransactions, viaLeaseText, unitLabel as unitLabelOf } from "@/lib/lease-multi-unit";
@@ -184,6 +185,7 @@ export function AssetDetailDialog({
   asset,
 }: AssetDetailDialogProps) {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
