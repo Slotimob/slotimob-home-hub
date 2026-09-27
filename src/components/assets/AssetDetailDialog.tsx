@@ -545,17 +545,11 @@ export function AssetDetailDialog({
       // 1. Exact match by obligation_type + competency_period
       // 2. Match by obligation_type only
       // 3. Legacy fallback by description/category
-      const transaction = type === "rent" && isAdditionalUnit ? ((leaseRentTx[0] as any) ?? null) : monthTransactions.find((t) => {
-        if (t.obligation_type === type && t.competency_period === competencyPeriod) {
-          return true;
-        }
-        return false;
-      }) || monthTransactions.find((t) => {
-        if (t.obligation_type === type && !t.competency_period) {
-          return true;
-        }
-        return false;
-      }) || monthTransactions.find((t) => {
+      const transaction = type === "rent" && isAdditionalUnit ? ((pickObligationTx(leaseRentTx as any[]) as any) ?? null) : pickObligationTx(monthTransactions.filter((t) =>
+        obligationTypeMatches(type, t.obligation_type) && t.competency_period === competencyPeriod
+      )) || pickObligationTx(monthTransactions.filter((t) =>
+        obligationTypeMatches(type, t.obligation_type) && !t.competency_period
+      )) || monthTransactions.find((t) => {
         if (t.obligation_type) return false; // Skip if already typed
         const categoryName = (t.category?.name || "").toLowerCase();
         const description = (t.description || "").toLowerCase();
