@@ -132,7 +132,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
       const { data, error } = await supabase.from('leases').select(`
         id, unit_id, rent_amount, admin_fee_percentage, due_day, start_date, end_date, status,
         is_dimob_deductible, cib, adjustment_index, next_adjustment_date,
-        unit:units(id, unit_number, address, property:properties(name, address)),
+        unit:units!leases_unit_id_fkey(id, unit_number, address, property:properties(name, address)),
         tenant:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, document_number),
         owner:contacts!leases_owner_contact_id_fkey(id, name, email, phone)
       `).eq('broker_id', user.id).eq('status', 'active').order('created_at', { ascending: false });
@@ -380,7 +380,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
   const buildReajustesData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
-    let query = supabase.from('leases').select(`*, unit:units(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
+    let query = supabase.from('leases').select(`*, unit:units!leases_unit_id_fkey(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
       .eq('broker_id', user.id).eq('status', 'active')
       .gte('next_adjustment_date', toDateOnly(dateRange.from)).lte('next_adjustment_date', toDateOnly(dateRange.to));
     if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
@@ -406,7 +406,7 @@ export const ReportsAssetsSection = ({ dateRange, userName, selectedUnitId }: Re
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
-      let query = supabase.from('leases').select(`*, unit:units(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
+      let query = supabase.from('leases').select(`*, unit:units!leases_unit_id_fkey(unit_number), tenant:contacts!leases_tenant_contact_id_fkey(name)`)
         .eq('broker_id', user.id).eq('status', 'active')
         .gte('next_adjustment_date', toDateOnly(dateRange.from)).lte('next_adjustment_date', toDateOnly(dateRange.to));
       if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);

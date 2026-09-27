@@ -207,7 +207,7 @@ export function useActionCenterPending(): ActionCenterData {
         .select(`
           id, status, unit_id, rent_amount, contract_status, signature_status,
           signed_contract_path, next_adjustment_date, end_date, adjustment_index,
-          unit:units(unit_number, property:properties(name)),
+          unit:units!leases_unit_id_fkey(unit_number, property:properties(name)),
           tenant_contact:contacts!leases_tenant_contact_id_fkey(name, phone, whatsapp)
         `)
         .eq("broker_id", brokerId)

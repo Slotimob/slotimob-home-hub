@@ -74,7 +74,7 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
         .from('leases')
         .select(`
           *,
-          unit:units(unit_number, address, city, state, postal_code, property:properties(name, address, city, state, postal_code)),
+          unit:units!leases_unit_id_fkey(unit_number, address, city, state, postal_code, property:properties(name, address, city, state, postal_code)),
           tenant:contacts!leases_tenant_contact_id_fkey(name, document_number),
           owner:contacts!leases_owner_contact_id_fkey(name, document_number)
         `)
@@ -156,7 +156,7 @@ export const ReportsFiscalSection = ({ dateRange, userName, selectedUnitId }: Re
         .from('leases')
         .select(`
           *,
-          unit:units(unit_number, address, city, state, postal_code, property:properties(name, address, city, state, postal_code)),
+          unit:units!leases_unit_id_fkey(unit_number, address, city, state, postal_code, property:properties(name, address, city, state, postal_code)),
           tenant:contacts!leases_tenant_contact_id_fkey(name, document_number, address, city, state, postal_code),
           owner:contacts!leases_owner_contact_id_fkey(name, document_number)
         `);
