@@ -130,6 +130,7 @@ export default function ContratoDetalhe() {
            fire_insurance, iptu_charge, additional_obligations,
            termination_reason, guarantee_type, guarantor_data, payment_info,
            is_indefinite_term, adjustment_periodicity_months, unit_subdivision_id,
+           rent_grace, rent_deductions, rent_withholding,
            tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
            unit:units!leases_unit_id_fkey(id, unit_number, address)`
         )
@@ -450,6 +451,10 @@ export default function ContratoDetalhe() {
               fire_insurance: lease.fire_insurance ?? null,
               iptu_charge: lease.iptu_charge ?? null,
               additional_obligations: lease.additional_obligations ?? null,
+              rent_grace: lease.rent_grace ?? null,
+              rent_deductions: lease.rent_deductions ?? null,
+              rent_withholding: lease.rent_withholding ?? null,
+              admin_fee_percentage: lease.admin_fee_percentage ?? null,
               unit: unit,
               tenant: tenant,
             }}

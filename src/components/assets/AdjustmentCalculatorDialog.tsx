@@ -60,6 +60,10 @@ interface LeaseForAdjustment {
   fire_insurance?: any;
   iptu_charge?: any;
   additional_obligations?: any;
+  rent_grace?: any;
+  rent_deductions?: any;
+  rent_withholding?: any;
+  admin_fee_percentage?: number | null;
   tenant_contact?: {
     name: string;
   } | null;
@@ -206,6 +210,10 @@ export function AdjustmentCalculatorDialog({
       fire_insurance: lease.fire_insurance ?? null,
       iptu_charge: lease.iptu_charge ?? null,
       additional_obligations: lease.additional_obligations ?? null,
+      rent_grace: lease.rent_grace ?? null,
+      rent_deductions: lease.rent_deductions ?? null,
+      rent_withholding: lease.rent_withholding ?? null,
+      admin_fee_percentage: lease.admin_fee_percentage ?? null,
       unit: lease.unit ? { unit_number: lease.unit.unit_number } : null,
       tenant: lease.tenant_contact ? { name: lease.tenant_contact.name } : null,
     };

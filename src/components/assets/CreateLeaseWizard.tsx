@@ -512,6 +512,9 @@ export function CreateLeaseWizard({
             : null,
           additional_obligations:
             ((formData as any).additional_obligations || []).filter((o: any) => o?.enabled) ?? null,
+          rent_grace: null,
+          rent_deductions: null,
+          rent_withholding: null,
         } as LeaseForProjection);
         setProjectionOpen(true);
       }
