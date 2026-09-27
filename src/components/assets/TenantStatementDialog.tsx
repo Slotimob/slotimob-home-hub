@@ -22,6 +22,8 @@ import {
   generateTenantStatementPDF, TenantStatementData, PaymentHistoryItem, formatCurrency,
 } from "@/utils/tenantStatementPdf";
 import { useToast } from "@/hooks/use-toast";
+import { fetchSettlementGroups, settlementBreakdown } from "@/lib/settlement-group";
+import { isRentIncome, isRentAddition, isIrrf, isRentDeduction, isRentDiscount } from "@/lib/owner-report";
 
 interface TenantStatementDialogProps {
   open: boolean;
@@ -40,20 +42,25 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
     return { start: startOfMonth(subMonths(new Date(), months - 1)), end: endOfMonth(new Date()) };
   }, [periodMonths]);
 
-  const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ["lease-transactions", lease.unit_id, periodDates.start, periodDates.end],
+  const { data: txData, isLoading } = useQuery({
+    queryKey: ["lease-transactions", lease.id, periodDates.start, periodDates.end],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) return { rows: [] as any[], groups: {} as Record<string, any[]> };
       const { data, error } = await supabase
         .from("financial_transactions")
         .select("*")
-        .eq("unit_id", lease.unit_id)
-        .eq("type", "income")
+        .or(`lease_id.eq.${lease.id},reference.like.lease:${lease.id}%`)
+        .neq("status", "cancelled")
         .gte("due_date", format(periodDates.start, "yyyy-MM-dd"))
         .lte("due_date", format(periodDates.end, "yyyy-MM-dd"))
         .order("due_date", { ascending: true });
       if (error) throw error;
-      return data || [];
+      const rows = data || [];
+      const ids = rows
+        .filter((t: any) => t.settlement_group_id && t.type === "income" && isRentIncome(t))
+        .map((t: any) => t.settlement_group_id as string);
+      const groups = ids.length ? await fetchSettlementGroups(ids) : {};
+      return { rows, groups };
     },
     enabled: open && !!user,
   });
@@ -65,27 +72,65 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
       const monthDate = subMonths(new Date(), i);
       const monthStr = format(monthDate, "MMMM/yyyy", { locale: ptBR });
       const dueDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), lease.due_day);
-      const transaction = transactions.find((t) => {
-        if (!t.due_date) return false;
-        const tDate = parseDateOnly(t.due_date);
-        if (!tDate) return false;
-        return tDate.getMonth() === monthDate.getMonth() && tDate.getFullYear() === monthDate.getFullYear();
-      });
-      const isPaid = transaction?.status === "paid";
+      const period = format(monthDate, "yyyy-MM");
+      const rows = (txData?.rows || []).filter(
+        (t: any) => (t.competency_period || (t.due_date || "").slice(0, 7)) === period
+      );
+      const groups = txData?.groups || {};
+      const rentLines = rows.filter((t: any) => t.type === "income" && isRentIncome(t));
+      // Soma do mês: grupos de baixa conjunta pelo breakdown; linhas soltas pelo tipo.
+      let gross = 0, additions = 0, irrf = 0, deductions = 0, discounts = 0, other = 0, paidNet = 0;
+      const seen = new Set<string>();
+      for (const a of rentLines) {
+        const gid = a.settlement_group_id;
+        if (!gid || !groups[gid] || groups[gid].length < 2 || seen.has(gid)) continue;
+        seen.add(gid);
+        const b = settlementBreakdown(groups[gid] as any);
+        gross += b.rent; additions += b.additions; irrf += b.irrf;
+        deductions += b.deductions; discounts += b.discounts; other += b.otherExpenses;
+        if (a.status === "paid") paidNet += b.net;
+      }
+      for (const t of rows) {
+        if (t.settlement_group_id && seen.has(t.settlement_group_id)) continue;
+        const v = Number(t.amount) || 0;
+        let signed = 0;
+        if (t.type === "income" && isRentIncome(t)) { gross += v; signed = v; }
+        else if (t.type === "income" && isRentAddition(t)) { additions += v; signed = v; }
+        else if (t.type === "expense" && isIrrf(t)) { irrf += v; signed = -v; }
+        else if (t.type === "expense" && isRentDeduction(t)) { deductions += v; signed = -v; }
+        else if (t.type === "expense" && isRentDiscount(t)) { discounts += v; signed = -v; }
+        if (signed && t.status === "paid") paidNet += signed;
+      }
+      const net = gross + additions - irrf - deductions - discounts - other;
+      const hasLines = rentLines.length > 0;
+      const isPaid = hasLines && rentLines.every((t: any) => t.status === "paid");
       const isOverdue = !isPaid && dueDate < new Date();
+      const paidDate = isPaid
+        ? rentLines.map((t: any) => t.paid_date).filter(Boolean).sort().pop() || null
+        : null;
+      const parts: string[] = [];
+      if (hasLines && (additions || irrf || deductions || discounts || other)) {
+        parts.push(`bruto ${formatCurrency(gross)}`);
+        if (additions) parts.push(`+ acréscimos ${formatCurrency(additions)}`);
+        if (irrf) parts.push(`− IRRF ${formatCurrency(irrf)}`);
+        if (deductions) parts.push(`− abatimento ${formatCurrency(deductions)}`);
+        if (discounts) parts.push(`− desconto ${formatCurrency(discounts)}`);
+        if (other) parts.push(`− outras ${formatCurrency(other)}`);
+      }
       items.push({
         month: monthStr.charAt(0).toUpperCase() + monthStr.slice(1),
         reference: format(monthDate, "MM/yyyy"),
         dueDate: format(dueDate, "yyyy-MM-dd"),
-        paidDate: transaction?.paid_date || null,
-        amount: lease.rent_amount,
-        lateFee: 0,
-        totalPaid: isPaid ? (transaction?.amount || lease.rent_amount) : 0,
+        paidDate,
+        amount: hasLines ? Math.round(net * 100) / 100 : lease.rent_amount,
+        lateFee: Math.round(additions * 100) / 100,
+        totalPaid: Math.round(paidNet * 100) / 100,
         status: isPaid ? "paid" : isOverdue ? "overdue" : "pending",
+        breakdown: parts.length ? parts.join(" ") : undefined,
       });
     }
     return items;
-  }, [transactions, periodMonths, lease]);
+  }, [txData, periodMonths, lease]);
 
   const summary = useMemo(() => {
     const paid = paymentHistory.filter((p) => p.status === "paid");
@@ -216,6 +261,9 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
                         Venc: {formatDateOnly(payment.dueDate, "dd/MM/yyyy")}
                         {payment.paidDate && ` • Pago: ${formatDateOnly(payment.paidDate, "dd/MM/yyyy")}`}
                       </p>
+                      {payment.breakdown && (
+                        <p className="text-[10px] text-muted-foreground">{payment.breakdown}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
