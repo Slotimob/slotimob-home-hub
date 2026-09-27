@@ -21,7 +21,7 @@ const COLS = [
     title: 'recursos',
     links: [
       { l: 'blog', h: '/blog', ext: true },
-      { l: 'tour do produto', h: '/presentation', ext: true },
+      { l: 'tour do produto', h: '/apresentacao', ext: true },
       { l: 'sobre', h: '/sobre', ext: true },
       { l: 'central de ajuda', h: '/auth', ext: true },
       { l: 'calculadoras', h: '/calculadoras', ext: true },
