@@ -54,6 +54,8 @@ export function ReconciliationDetailsPopover({
             "bg-blue-500 text-white hover:bg-blue-600"
           )}
           onClick={(e) => e.stopPropagation()}
+          title="Conciliado"
+          aria-label="Conciliado"
         >
           <CheckCircle2 className="h-3 w-3" />
         </Button>

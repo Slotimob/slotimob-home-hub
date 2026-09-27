@@ -1,3 +1,4 @@
+import { getEffectiveStatus } from "@/lib/transaction-status";
 import { useState } from "react";
 import { formatDateOnly, todayDateOnly } from "@/lib/date-only";
 import { supabase } from "@/integrations/supabase/client";
@@ -260,13 +261,7 @@ Equipe de Administração`;
   };
 
   const isEligibleForBilling = (transaction: Transaction): boolean => {
-    if (transaction.status === "overdue") return true;
-    
-    if (transaction.status === "pending" && transaction.due_date) {
-      return transaction.due_date < todayDateOnly();
-    }
-    
-    return false;
+    return getEffectiveStatus(transaction) === "overdue";
   };
 
   return {

@@ -1,3 +1,4 @@
+import { getEffectiveStatus, EFFECTIVE_STATUS_LABELS, EFFECTIVE_STATUS_BADGE_CLASSES } from "@/lib/transaction-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -49,25 +50,12 @@ export function TransactionCard({
   };
 
   const getStatusBadge = () => {
-    // Priority: is_reconciled first
-    if (transaction.is_reconciled) {
-      return (
-        <Badge className="bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20 dark:text-blue-400 dark:border-blue-800 gap-0.5 text-[10px] px-1.5 py-0">
-          <CheckCircle2 className="h-2.5 w-2.5" />
-          Conciliado
-        </Badge>
-      );
-    }
-
-    // Status-based badges with semantic colors
-    const variants: Record<string, { label: string; className: string }> = {
-      paid: { label: "Pago", className: "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-800" },
-      pending: { label: "Pendente", className: "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-800" },
-      overdue: { label: "Vencido", className: "bg-red-100 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800" },
-      cancelled: { label: "Cancelado", className: "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-500/10 dark:text-gray-400 dark:border-gray-800" },
-    };
-    const config = variants[transaction.status] || variants.pending;
-    return <Badge className={`${config.className} text-[10px] px-1.5 py-0`}>{config.label}</Badge>;
+    const effective = getEffectiveStatus(transaction);
+    return (
+      <Badge className={`${EFFECTIVE_STATUS_BADGE_CLASSES[effective]} text-[10px] px-1.5 py-0`}>
+        {EFFECTIVE_STATUS_LABELS[effective]}
+      </Badge>
+    );
   };
 
   const handleCardClick = () => {
@@ -276,6 +264,8 @@ export function TransactionCard({
               )}
               onClick={handleReconcileClick}
               disabled={isReconciling}
+              title={transaction.is_reconciled ? "Conciliado" : "Pendente de conciliar"}
+              aria-label={transaction.is_reconciled ? "Conciliado" : "Pendente de conciliar"}
             >
               {isReconciling ? (
                 <Loader2 className="h-3 w-3 animate-spin" />

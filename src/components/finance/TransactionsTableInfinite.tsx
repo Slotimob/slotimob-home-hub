@@ -1,3 +1,4 @@
+import { getEffectiveStatus, EFFECTIVE_STATUS_LABELS, EFFECTIVE_STATUS_BADGE_CLASSES } from "@/lib/transaction-status";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -197,21 +198,13 @@ export function TransactionsTableInfinite({
 
 
   const getStatusBadge = (transaction: any) => {
-    if (transaction.is_reconciled) {
-      return (
-        <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-200 hover:bg-indigo-500/20 gap-0.5 text-[10px] px-1.5 py-0">
-          <CheckCircle2 className="h-2.5 w-2.5" />
-          Conciliado
-        </Badge>
-      );
-    }
-
-    const variants: Record<string, { label: string; className: string }> = {
-      paid: { label: "Pago", className: "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
-      pending: { label: "Pendente", className: "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100" },
-      overdue: { label: "Vencido", className: "bg-red-100 text-red-700 border-red-200 hover:bg-red-100" },
-      cancelled: { label: "Cancelado", className: "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-100" },
-    };
+    const effective = getEffectiveStatus(transaction);
+    return (
+      <Badge className={`${EFFECTIVE_STATUS_BADGE_CLASSES[effective]} text-[10px] px-1.5 py-0`}>
+        {EFFECTIVE_STATUS_LABELS[effective]}
+      </Badge>
+    );
+  };
     const config = variants[transaction.status] || variants.pending;
     return <Badge className={`${config.className} text-[10px] px-1.5 py-0`}>{config.label}</Badge>;
   };
@@ -641,7 +634,7 @@ export function TransactionsTableInfinite({
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p className="text-xs">Conciliar com extrato</p>
+                            <p className="text-xs">Pendente de conciliar</p>
                           </TooltipContent>
                         </Tooltip>
                       ) : (

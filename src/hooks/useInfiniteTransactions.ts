@@ -1,3 +1,4 @@
+import { todayInSaoPauloDateOnly } from "@/lib/date-only";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TransactionFilters } from "@/pages/FinanceTransactions";
@@ -57,7 +58,14 @@ export function useInfiniteTransactions(
         }
       }
       if (filters.status !== "all") {
-        query = query.eq("status", filters.status);
+        const todaySP = todayInSaoPauloDateOnly();
+        if (filters.status === "overdue") {
+          query = query.or(`status.eq.overdue,and(status.eq.pending,due_date.lt.${todaySP})`);
+        } else if (filters.status === "pending") {
+          query = query.eq("status", "pending").or(`due_date.gte.${todaySP},due_date.is.null`);
+        } else {
+          query = query.eq("status", filters.status);
+        }
       }
       if (filters.categoryId !== "all") {
         query = query.eq("category_id", filters.categoryId);

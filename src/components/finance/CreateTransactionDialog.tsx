@@ -685,7 +685,6 @@ export function CreateTransactionDialog({
                       <SelectContent>
                         <SelectItem value="pending">Pendente</SelectItem>
                         <SelectItem value="paid">Pago</SelectItem>
-                        <SelectItem value="overdue">Vencido</SelectItem>
                         <SelectItem value="cancelled">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
