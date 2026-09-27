@@ -4,5 +4,6 @@ Disallow: /auth
 Disallow: /dashboard
 Disallow: /checkout
 Disallow: /admin
+Disallow: /__probe/
 
 Sitemap: https://slotimob.com.br/sitemap-index.xml
