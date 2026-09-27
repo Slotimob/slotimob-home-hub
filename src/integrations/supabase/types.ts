@@ -6250,6 +6250,20 @@ export type Database = {
       }
     }
     Functions: {
+      _ensure_rent_category: {
+        Args: {
+          p_broker_id: string
+          p_dre: string
+          p_group: string
+          p_name: string
+          p_type: string
+        }
+        Returns: string
+      }
+      _unreconcile_settlement: {
+        Args: { p_anchor: string; p_group: string }
+        Returns: undefined
+      }
       accept_latest_terms: {
         Args: { p_terms_version: string }
         Returns: undefined
@@ -6435,6 +6449,20 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      set_rent_composition: {
+        Args: { p_anchor_id: string; p_lines: Json; p_rent_amount: number }
+        Returns: Json
+      }
+      settle_rent_payment: {
+        Args: {
+          p_bank_account_id?: string
+          p_difference_kind?: string
+          p_paid_date: string
+          p_received?: number
+          p_transaction_id: string
+        }
+        Returns: Json
       }
       sync_unit_tenant_from_lease: {
         Args: {
