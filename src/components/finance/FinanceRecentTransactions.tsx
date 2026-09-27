@@ -1,3 +1,4 @@
+import { getEffectiveStatus, EFFECTIVE_STATUS_LABELS, EFFECTIVE_STATUS_BADGE_CLASSES } from "@/lib/transaction-status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateOnly } from "@/lib/date-only";
 import { Badge } from "@/components/ui/badge";
@@ -26,15 +27,9 @@ export function FinanceRecentTransactions({ unitId }: FinanceRecentTransactionsP
     }).format(value);
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      paid: { label: "Pago", variant: "default" },
-      pending: { label: "Pendente", variant: "secondary" },
-      overdue: { label: "Vencido", variant: "destructive" },
-      cancelled: { label: "Cancelado", variant: "outline" },
-    };
-    const config = variants[status] || variants.pending;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const getStatusBadge = (transaction: { status: string; due_date?: string | null }) => {
+    const effective = getEffectiveStatus(transaction);
+    return <Badge className={EFFECTIVE_STATUS_BADGE_CLASSES[effective]}>{EFFECTIVE_STATUS_LABELS[effective]}</Badge>;
   };
 
   if (isLoading) {
@@ -142,7 +137,7 @@ export function FinanceRecentTransactions({ unitId }: FinanceRecentTransactionsP
                     {transaction.type === "income" ? "+" : "-"}
                     {formatCurrency(Number(transaction.amount))}
                   </span>
-                  {getStatusBadge(transaction.status)}
+                  {getStatusBadge(transaction)}
                 </div>
               </div>
             ))}

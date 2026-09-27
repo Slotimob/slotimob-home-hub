@@ -1,3 +1,4 @@
+import { getEffectiveStatus, EFFECTIVE_STATUS_LABELS, EFFECTIVE_STATUS_BADGE_CLASSES } from "@/lib/transaction-status";
 import { useState } from "react";
 import { formatDateOnly, todayDateOnly } from "@/lib/date-only";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -61,27 +62,10 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
       );
     }
 
-    // Status-based badges with semantic colors
-    const variants: Record<string, { label: string; className: string }> = {
-      paid: { 
-        label: transaction.type === "income" ? "Recebido" : "Pago", 
-        className: "bg-green-100 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800" 
-      },
-      pending: { 
-        label: "Pendente", 
-        className: "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-800" 
-      },
-      overdue: { 
-        label: "Vencido", 
-        className: "bg-amber-200 text-amber-800 border-amber-300 hover:bg-amber-200 dark:bg-amber-600/20 dark:text-amber-300 dark:border-amber-700" 
-      },
-      cancelled: { 
-        label: "Cancelado", 
-        className: "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-100 dark:bg-gray-500/10 dark:text-gray-400 dark:border-gray-800" 
-      },
-    };
-    const config = variants[transaction.status] || variants.pending;
-    return <Badge className={config.className}>{config.label}</Badge>;
+    const effective = getEffectiveStatus(transaction);
+    const label =
+      effective === "paid" && transaction.type === "income" ? "Recebido" : EFFECTIVE_STATUS_LABELS[effective];
+    return <Badge className={EFFECTIVE_STATUS_BADGE_CLASSES[effective]}>{label}</Badge>;
   };
 
   const handleQuickReconcile = async (transaction: any) => {
