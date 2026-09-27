@@ -111,6 +111,26 @@ const normalizeText = (text: string): string => {
 // INTERFACE DE DADOS DO CONTRATO
 // ============================================================================
 
+/** Um imóvel do objeto do contrato (contratos com vários imóveis). */
+export interface ContractPropertyItem {
+  endereco: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade: string;
+  estado: string;
+  cep?: string;
+  matricula?: string;
+  cib?: string;
+  fracaoLabel?: string;
+  principal?: boolean;
+}
+
+/** Descrição de um imóvel para a cláusula do objeto. */
+export function describeContractProperty(p: ContractPropertyItem): string {
+  return `${p.endereco}${p.numero ? `, nº ${p.numero}` : ''}${p.complemento ? `, ${p.complemento}` : ''}${p.bairro ? `, Bairro ${p.bairro}` : ''}, ${p.cidade}/${p.estado}${p.cep ? `, CEP ${p.cep}` : ''}${p.matricula ? `, matrícula nº ${p.matricula}` : ''}${p.cib ? `, CIB nº ${p.cib}` : ''}${p.fracaoLabel ? `, fração "${p.fracaoLabel}"` : ''}${p.principal ? ' (imóvel principal)' : ''}`;
+}
+
 export interface LegalContractData {
   // Locador
   locador: {
@@ -199,6 +219,8 @@ export interface LegalContractData {
     fracaoLabel?: string;
     fracaoArea?: number | null;
   };
+  /** Contrato com vários imóveis: todos os imóveis (principal primeiro). Opcional; sem isto, só `imovel`. */
+  imoveis?: ContractPropertyItem[];
   // Contrato
   contrato: {
     valorAluguel: number;
@@ -653,7 +675,12 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
     ? `, correspondente à fração/unidade autônoma "${data.imovel.fracaoLabel}"${data.imovel.fracaoArea ? `, com área aproximada de ${data.imovel.fracaoArea}m²` : ''}`
     : '';
 
-  addSubClause('1.1', `Este contrato tem por objeto a locação do imóvel ${data.contrato.finalidade === 'residencial' ? 'residencial' : 'comercial'} situado em ${enderecoCompleto}${data.imovel.matricula ? `, matrícula nº ${data.imovel.matricula}` : ''}${data.imovel.cib ? `, CIB nº ${data.imovel.cib}` : ''}${fracaoTexto}.`);
+  if (data.imoveis && data.imoveis.length > 1) {
+    const lista = data.imoveis.map((p, i) => `(${i + 1}) ${describeContractProperty(p)}`).join('; ');
+    addSubClause('1.1', `Este contrato tem por objeto a locação conjunta dos seguintes imóveis ${data.contrato.finalidade === 'residencial' ? 'residenciais' : 'comerciais'}: ${lista}.`);
+  } else {
+    addSubClause('1.1', `Este contrato tem por objeto a locação do imóvel ${data.contrato.finalidade === 'residencial' ? 'residencial' : 'comercial'} situado em ${enderecoCompleto}${data.imovel.matricula ? `, matrícula nº ${data.imovel.matricula}` : ''}${data.imovel.cib ? `, CIB nº ${data.imovel.cib}` : ''}${fracaoTexto}.`);
+  }
   
   addSubClause('1.2', `O imóvel destina-se exclusivamente para fins ${data.contrato.finalidade === 'residencial' ? 'residenciais' : 'comerciais'}, sendo vedada qualquer outra destinação sem prévia autorização por escrito do LOCADOR.`);
 

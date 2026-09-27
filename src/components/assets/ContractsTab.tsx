@@ -9,6 +9,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ExtraUnitsBadge, extraLeaseUnits } from "@/components/assets/LeaseExtraUnitsBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -159,6 +160,11 @@ interface LeaseWithDetails {
   } | null;
   unit_subdivision_id?: string | null;
   subdivision?: { id: string; label: string } | null;
+  lease_units?: {
+    unit_id: string;
+    is_primary: boolean;
+    unit: { unit_number: string | null; property: { name: string } | null } | null;
+  }[] | null;
 }
 
 interface LeaseWithAdjustment extends LeaseWithDetails {
@@ -312,7 +318,8 @@ export function ContractsTab() {
           tenant_contact:contacts!leases_tenant_contact_id_fkey(id, name, email, phone, whatsapp),
           unit:units!leases_unit_id_fkey(id, unit_number, address),
           unit_subdivision_id,
-          subdivision:unit_subdivisions!leases_unit_subdivision_id_fkey(id, label)
+          subdivision:unit_subdivisions!leases_unit_subdivision_id_fkey(id, label),
+          lease_units(unit_id, is_primary, unit:units(unit_number, property:properties(name)))
         `)
         .eq("broker_id", effectiveBrokerId || user.id)
         .order("created_at", { ascending: false });
@@ -356,7 +363,12 @@ export function ContractsTab() {
           lease.unit?.unit_number?.toLowerCase().includes(search) ||
           lease.tenant_contact?.name?.toLowerCase().includes(search) ||
           lease.unit?.address?.toLowerCase().includes(search) ||
-          lease.subdivision?.label?.toLowerCase().includes(search);
+          lease.subdivision?.label?.toLowerCase().includes(search) ||
+          (lease.lease_units || []).some(
+            (lu) =>
+              lu.unit?.unit_number?.toLowerCase().includes(search) ||
+              lu.unit?.property?.name?.toLowerCase().includes(search)
+          );
         if (!matchesSearch) return false;
       }
 
@@ -411,8 +423,12 @@ export function ContractsTab() {
   const handleUnitSelected = (unit: { id: string; unit_number: string; owner_contact_id: string | null }) => {
     // Check if there's already an active lease for this unit
     // Imóvel fracionado tem um contrato por fração: não bloqueia por unit_id.
+    // Considera também imóveis ADICIONAIS de contratos com vários imóveis.
     const existingLease = leases?.find(
-      (l) => l.unit_id === unit.id && l.status === "active" && !l.unit_subdivision_id
+      (l) =>
+        l.status === "active" &&
+        ((l.unit_id === unit.id && !l.unit_subdivision_id) ||
+          extraLeaseUnits(l).some((lu) => lu.unit_id === unit.id))
     );
     
     if (existingLease) {
@@ -814,8 +830,9 @@ export function ContractsTab() {
                                 );
                               })()}
                               <div className="min-w-0">
-                                <p className="font-medium truncate">
-                                  {lease.unit?.unit_number || "—"}
+                                <p className="font-medium truncate flex items-center">
+                                  <span className="truncate">{lease.unit?.unit_number || "—"}</span>
+                                  <ExtraUnitsBadge lease={lease} />
                                 </p>
                                 {lease.subdivision?.label && (
                                   <p className="text-xs font-medium text-primary truncate">

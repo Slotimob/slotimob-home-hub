@@ -1,3 +1,4 @@
+import { ExtraUnitsBadge } from "@/components/assets/LeaseExtraUnitsBadge";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -149,6 +150,7 @@ export function ContractCard({
             <div className="min-w-0">
               <p className="font-medium truncate">
                 {lease.unit?.unit_number || "—"}
+                <ExtraUnitsBadge lease={lease as any} />
               </p>
               {lease.subdivision?.label && (
                 <p className="text-xs font-medium text-primary truncate">

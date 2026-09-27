@@ -83,7 +83,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
             </Button>
             <Button variant="outline" onClick={() => setLinkDialogOpen(true)}>
               <Link2 className="h-4 w-4 mr-2" />
-              Vincular a Contrato Existente
+              Adicionar este imóvel a um contrato existente
             </Button>
           </div>
           {linkSelector}
@@ -102,7 +102,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
         <div className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={() => setLinkDialogOpen(true)}>
             <Link2 className="h-4 w-4 mr-2" />
-            Vincular a Contrato Existente
+            Adicionar este imóvel a um contrato existente
           </Button>
           <Button onClick={() => navigate(`/gestao/contratos/novo?unitId=${unitId}`)}>
             <FileSignature className="h-4 w-4 mr-2" />

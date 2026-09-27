@@ -1,3 +1,5 @@
+import type { ContractPropertyItem } from './legalContractPdfGenerator';
+import { describeContractProperty } from './legalContractPdfGenerator';
 /**
  * Legal Document Templates for Real Estate Contracts
  * Based on Brazilian Tenancy Law (Lei 8.245/91 - Lei do Inquilinato)
@@ -171,6 +173,8 @@ export interface FullContractData {
     fracaoLabel?: string;
     fracaoArea?: number | null;
   };
+  /** Contrato com vários imóveis: todos os imóveis (principal primeiro). Opcional; sem isto, só `imovel`. */
+  imoveis?: ContractPropertyItem[];
 
   // ===== VALORES E CONDIÇÕES =====
   valores: {
@@ -441,7 +445,7 @@ As partes acima identificadas, neste ato denominadas simplesmente LOCADOR(A) e L
                 CLÁUSULA I – DO OBJETO DA LOCAÇÃO
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1.1. O presente contrato tem por **OBJETO** a locação do imóvel situado à **${data.imovel.endereco}${data.imovel.numero ? `, nº ${data.imovel.numero}` : ''}${data.imovel.complemento ? `, ${data.imovel.complemento}` : ''}**, Bairro ${data.imovel.bairro || 'não informado'}, na cidade de **${data.imovel.cidade}/${data.imovel.estado}**, CEP ${data.imovel.cep}${data.imovel.fracaoLabel ? `, correspondente à fração/unidade autônoma "${data.imovel.fracaoLabel}"${data.imovel.fracaoArea ? `, com área aproximada de ${data.imovel.fracaoArea}m²` : ''}` : ''}.
+${data.imoveis && data.imoveis.length > 1 ? `1.1. O presente contrato tem por **OBJETO** a locação conjunta dos seguintes imóveis: ${data.imoveis.map((p, i) => `**(${i + 1}) ${describeContractProperty(p)}**`).join('; ')}.` : `1.1. O presente contrato tem por **OBJETO** a locação do imóvel situado à **${data.imovel.endereco}${data.imovel.numero ? `, nº ${data.imovel.numero}` : ''}${data.imovel.complemento ? `, ${data.imovel.complemento}` : ''}**, Bairro ${data.imovel.bairro || 'não informado'}, na cidade de **${data.imovel.cidade}/${data.imovel.estado}**, CEP ${data.imovel.cep}${data.imovel.fracaoLabel ? `, correspondente à fração/unidade autônoma "${data.imovel.fracaoLabel}"${data.imovel.fracaoArea ? `, com área aproximada de ${data.imovel.fracaoArea}m²` : ''}` : ''}.`}
 
 1.2. **DESCRIÇÃO REGISTRAL:** O imóvel encontra-se regularmente registrado sob a **Matrícula nº ${data.imovel.matricula || '_______________'}**, junto ao **${data.imovel.cartorio || 'Cartório de Registro de Imóveis competente'}**${data.imovel.cib ? `, CIB/Inscrição Imobiliária nº ${data.imovel.cib}` : ''}${data.imovel.inscricaoMunicipal ? `, Inscrição Municipal nº ${data.imovel.inscricaoMunicipal}` : ''}.
 
