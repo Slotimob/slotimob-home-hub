@@ -7,7 +7,7 @@ import { useDeleteLeaseProjections } from "@/hooks/useLeaseFinancialProjection";
 import { format } from "date-fns";
 import { formatPhoneForWhatsApp } from "@/lib/utils";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
-import { syncUnitStatusForLease, getLeaseUnitIds, occupyLeaseUnits, releaseLeaseUnits } from "@/lib/unit-status-sync";
+import { syncUnitStatusForLease, getLeaseUnitRefs, occupyLeaseUnits, releaseLeaseUnits } from "@/lib/unit-status-sync";
 
 
 export interface GuarantorData {
@@ -584,12 +584,15 @@ export function useCreateLease() {
 
       // Step 2: Ocupa TODOS os imóveis do contrato (sync_unit_tenant_from_lease em cada um)
       // e sincroniza o status de cada imóvel.
-      const createdUnitIds = await getLeaseUnitIds(lease.id);
+      let createdRefs = await getLeaseUnitRefs(lease.id);
+      if (!createdRefs.length) {
+        createdRefs = [{ unit_id: data.unit_id, unit_subdivision_id: (lease as any).unit_subdivision_id ?? null }];
+      }
       await occupyLeaseUnits({
         leaseId: lease.id,
         tenantContactId: data.tenant_contact_id,
         startDate: data.start_date,
-        unitIds: createdUnitIds.length ? createdUnitIds : [data.unit_id],
+        refs: createdRefs,
       });
 
       // Lançamentos financeiros NÃO são gerados aqui.
@@ -640,27 +643,29 @@ export function useUpdateLease() {
         .from("leases")
         .update(updateData)
         .eq("id", id)
-        .select("unit_id, tenant_contact_id, start_date, status")
+        .select("unit_id, unit_subdivision_id, tenant_contact_id, start_date, status")
         .maybeSingle();
 
       if (error) throw new Error(error.message || error.details || "Erro ao salvar");
 
       // Ocupação de TODOS os imóveis do contrato quando o status muda
       if (data.status !== undefined && updated) {
-        const unitIds = await getLeaseUnitIds(id);
-        if (!unitIds.length && updated.unit_id) unitIds.push(updated.unit_id);
+        const refs = await getLeaseUnitRefs(id);
+        if (!refs.length && updated.unit_id) {
+          refs.push({ unit_id: updated.unit_id, unit_subdivision_id: (updated as any).unit_subdivision_id ?? null });
+        }
         if ((updated.status === "active" || updated.status === "pending") && updated.tenant_contact_id) {
           await occupyLeaseUnits({
             leaseId: id,
             tenantContactId: updated.tenant_contact_id,
             startDate: updated.start_date,
-            unitIds,
+            refs,
           });
         } else if (updated.status === "active" || updated.status === "pending") {
-          for (const unitId of unitIds) await syncUnitStatusForLease(unitId);
+          for (const r of refs) if (!r.unit_subdivision_id) await syncUnitStatusForLease(r.unit_id);
         } else {
           // Encerrado/expirado: libera só imóveis sem outro contrato vivo
-          await releaseLeaseUnits(id, unitIds);
+          await releaseLeaseUnits(id, refs);
         }
       }
 
@@ -701,7 +706,7 @@ export function useTerminateLease() {
       // Step 1: Get the lease first to get unit_id
       const { data: lease, error: fetchError } = await supabase
         .from("leases")
-        .select("unit_id, broker_id")
+        .select("unit_id, unit_subdivision_id, broker_id")
         .eq("id", leaseId)
         .single();
 
@@ -759,10 +764,12 @@ export function useTerminateLease() {
       console.log("[useTerminateLease] Lease terminated successfully:", leaseId);
 
       // Step 4: Libera os imóveis do contrato que não têm outro contrato vivo
-      const terminatedUnitIds = await getLeaseUnitIds(leaseId);
+      const terminatedRefs = await getLeaseUnitRefs(leaseId);
       await releaseLeaseUnits(
         leaseId,
-        terminatedUnitIds.length ? terminatedUnitIds : [lease.unit_id]
+        terminatedRefs.length
+          ? terminatedRefs
+          : [{ unit_id: lease.unit_id, unit_subdivision_id: (lease as any).unit_subdivision_id ?? null }]
       );
 
       return { deletedTransactions: deletedCount };

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getLeaseUnitIds, releaseLeaseUnits } from "@/lib/unit-status-sync";
+import { getLeaseUnitRefs, releaseLeaseUnits } from "@/lib/unit-status-sync";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -524,7 +524,7 @@ export function ContractsTab() {
       }
 
       // Captura os imóveis antes da exclusão (lease_units cai em cascata)
-      const leaseUnitIds = await getLeaseUnitIds(deletingLease.id);
+      const leaseUnitRefs = await getLeaseUnitRefs(deletingLease.id);
 
       // Delete the lease
       const { error } = await supabase
@@ -536,7 +536,12 @@ export function ContractsTab() {
       if (error) throw error;
 
       // Libera só os imóveis sem outro contrato vivo e sincroniza o status
-      await releaseLeaseUnits(deletingLease.id, leaseUnitIds.length ? leaseUnitIds : [deletingLease.unit_id]);
+      await releaseLeaseUnits(
+        deletingLease.id,
+        leaseUnitRefs.length
+          ? leaseUnitRefs
+          : [{ unit_id: deletingLease.unit_id, unit_subdivision_id: deletingLease.unit_subdivision_id ?? null }]
+      );
 
 
       toast.success("Contrato excluído com sucesso", {
