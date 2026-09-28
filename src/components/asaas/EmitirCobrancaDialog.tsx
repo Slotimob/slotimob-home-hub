@@ -92,11 +92,7 @@ export function EmitirCobrancaDialog({
 
   const brokerId = effectiveBrokerId || user?.id;
 
-  if (!hasPermission("management_boletos", "create")) {
-    return null;
-  }
-
-  const { data: leases, isLoading: leasesLoading } = useQuery({
+  const { data: leases, isLoading: leasesLoading, isError: leasesError, error: leasesErrorObj } = useQuery({
     queryKey: ["leases-for-charge", brokerId],
     queryFn: async (): Promise<LeaseOption[]> => {
       const { data, error } = await supabase
@@ -104,7 +100,7 @@ export function EmitirCobrancaDialog({
         .select(`
           id, rent_amount, due_day,
           tenant_contact:contacts!leases_tenant_contact_id_fkey (name),
-          unit:units!leases_unit_id_fkey (name)
+          unit:units!leases_unit_id_fkey (unit_number)
         `)
         .eq("broker_id", brokerId!)
         .eq("status", "active");
@@ -115,7 +111,7 @@ export function EmitirCobrancaDialog({
           rent_amount: Number(l.rent_amount) || 0,
           due_day: l.due_day,
           tenant_name: l.tenant_contact?.name || "Sem inquilino",
-          unit_name: l.unit?.name || "",
+          unit_name: l.unit?.unit_number || "",
         }))
         .sort((a, b) => a.tenant_name.localeCompare(b.tenant_name));
     },
@@ -224,6 +220,10 @@ export function EmitirCobrancaDialog({
     navigator.clipboard.writeText(text);
     toast({ title: `${label} copiado!` });
   };
+
+  if (!hasPermission("management_boletos", "create")) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? handleClose() : onOpenChange(o))}>
@@ -343,6 +343,11 @@ export function EmitirCobrancaDialog({
             ) : (
               <div className="space-y-1.5">
                 <Label>Contrato</Label>
+                {leasesError ? (
+                  <p className="text-sm text-destructive">
+                    Não foi possível carregar os contratos.{leasesErrorObj instanceof Error ? ` ${leasesErrorObj.message}` : ""}
+                  </p>
+                ) : (
                 <Select value={selectedLeaseId} onValueChange={setSelectedLeaseId}>
                   <SelectTrigger>
                     <SelectValue placeholder={leasesLoading ? "Carregando..." : "Selecione o contrato"} />
@@ -357,6 +362,7 @@ export function EmitirCobrancaDialog({
                     ))}
                   </SelectContent>
                 </Select>
+                )}
               </div>
             )}
 
