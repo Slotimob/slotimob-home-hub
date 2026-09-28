@@ -19,6 +19,7 @@ import { EmitirCobrancaDialog } from "@/components/asaas/EmitirCobrancaDialog";
 import { AsaasFinancialSeal, AsaasTransparencyNote } from "@/components/asaas/AsaasFinancialSeal";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
+import { leaseUnitFilter } from "@/hooks/useLeases";
 import { cn } from "@/lib/utils";
 import { CurrencyInput } from "@/components/ui/currency-input";
 
@@ -60,7 +61,7 @@ export default function BoletosEmGestao() {
 
 
 
-  const { data: boletos, isLoading, refetch } = useQuery({
+  const { data: boletos, isLoading, isError, refetch } = useQuery({
     queryKey: ['asaas-payments', effectiveBrokerId, user?.id, statusFilter, unitFilter, dateFrom, dateTo],
     queryFn: async () => {
       let query = supabase
@@ -82,14 +83,23 @@ export default function BoletosEmGestao() {
             id,
             rent_amount,
             tenant_contact:contacts!leases_tenant_contact_id_fkey (id, name, email),
-            unit:units!leases_unit_id_fkey (id, name)
+            unit:units!leases_unit_id_fkey (id, unit_number)
           )
         `)
         .eq('broker_id', effectiveBrokerId || user!.id)
         .order('due_date', { ascending: false });
 
       if (statusFilter !== "all") query = query.eq('status', statusFilter);
-      if (unitFilter !== "all") query = query.eq('lease_id', unitFilter);
+      if (unitFilter !== "all") {
+        const { data: unitLeases, error: leasesErr } = await supabase
+          .from('leases')
+          .select('id')
+          .or(await leaseUnitFilter(unitFilter));
+        if (leasesErr) throw leasesErr;
+        const ids = (unitLeases || []).map((l) => l.id);
+        if (ids.length === 0) return [];
+        query = query.in('lease_id', ids);
+      }
       if (dateFrom) query = query.gte('due_date', dateFrom);
       if (dateTo) query = query.lte('due_date', dateTo);
 
@@ -116,7 +126,7 @@ export default function BoletosEmGestao() {
   const filtered = boletos?.filter(b => {
     if (!search) return true;
     const tenantName = (b.leases as any)?.tenant_contact?.name?.toLowerCase() || '';
-    const unitName = (b.leases as any)?.unit?.name?.toLowerCase() || '';
+    const unitName = (b.leases as any)?.unit?.unit_number?.toLowerCase() || '';
     const s = search.toLowerCase();
     return tenantName.includes(s) || unitName.includes(s) || b.asaas_payment_id?.toLowerCase().includes(s);
   }) || [];
@@ -308,6 +318,14 @@ export default function BoletosEmGestao() {
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
+      ) : isError ? (
+        <div className="text-center py-12 border rounded-lg">
+          <AlertCircle className="h-10 w-10 mx-auto text-destructive mb-3 opacity-70" />
+          <p className="text-sm font-medium">Não foi possível carregar as cobranças.</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Tentar de novo
+          </Button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 border rounded-lg">
           <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
@@ -340,7 +358,7 @@ export default function BoletosEmGestao() {
                       <p className="text-sm font-medium">{lease?.tenant_contact?.name || '—'}</p>
                       <p className="text-xs text-muted-foreground">{lease?.tenant_contact?.email || ''}</p>
                     </TableCell>
-                    <TableCell className="text-sm">{lease?.unit?.name || '—'}</TableCell>
+                    <TableCell className="text-sm">{lease?.unit?.unit_number || '—'}</TableCell>
                     <TableCell>
                       <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
                         {boleto.billing_type === 'BOLETO' ? 'Boleto' : 'PIX'}
