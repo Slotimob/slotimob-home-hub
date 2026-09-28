@@ -212,6 +212,7 @@ export default function NovoContrato() {
   const initialSpecialRef = useRef<string | null>(null);
   const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
+  const guarantorCpfError = onlyDigits(guarantorData.cpf) ? cpfCnpjError(guarantorData.cpf, "CPF") : null;
   const [selectedGuarantorContactId, setSelectedGuarantorContactId] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>(getInitialPayment);
   const [billingContact, setBillingContact] = useState({
