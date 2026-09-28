@@ -1,7 +1,8 @@
 import { addMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { RentDeductionConfig, RentGraceConfig, RentWithholdingConfig } from "@/hooks/useLeases";
-import { monthLabel, type PlannedInstallment } from "./lease-projection";
+import { buildRentInstallments, monthLabel, type PlannedInstallment } from "./lease-projection";
+import { todayInSaoPauloDateOnly } from "./date-only";
 import { estimateIrrfMonthly } from "./irrf";
 
 /**
@@ -303,4 +304,168 @@ export function validateSpecialConditions({
   }
 
   return errors;
+}
+
+/* ─── Mês a mês pela configuração do contrato ─────────────────────── */
+
+/** Campos do contrato usados pelas condições financeiras. */
+export interface LeaseFinancialConditionsLease {
+  id: string;
+  rent_amount: number;
+  due_day: number;
+  start_date: string;
+  admin_fee_percentage?: number | null;
+  fire_insurance?: any;
+  iptu_charge?: any;
+  additional_obligations?: any[] | null;
+  rent_grace?: RentGraceConfig | null;
+  rent_deductions?: RentDeductionConfig[] | null;
+  rent_withholding?: RentWithholdingConfig | null;
+}
+
+export interface LeaseMonthFigures {
+  competency: string | null;
+  gross: number;
+  grace: number;
+  deductions: number;
+  irrf: number;
+  /** Líquido esperado do inquilino: bruto − carência − abatimentos − IRRF. */
+  net: number;
+}
+
+/**
+ * Valores de um mês calculados pela CONFIGURAÇÃO do contrato.
+ * Sem `competency`, usa o mês típico (1ª competência sem carência).
+ */
+export function computeLeaseMonthFromConfig(
+  lease: LeaseFinancialConditionsLease,
+  competency?: string
+): LeaseMonthFigures {
+  const start = lease.start_date || todayInSaoPauloDateOnly();
+  const rent = Number(lease.rent_amount) || 0;
+  const target = competency ?? null;
+  const months = target
+    ? Math.max(1, monthsBetween(start.slice(0, 7), target) + 13)
+    : 60;
+  const rents = buildRentInstallments({
+    startDate: `${start.slice(0, 7)}-01`,
+    months,
+    amount: rent,
+    dueDay: lease.due_day || 10,
+    graceSchedule: resolveGraceSchedule(lease.rent_grace, start),
+  });
+  const month = target
+    ? rents.find((r) => r.competencyPeriod === target)
+    : rents.find((r) => r.meta?.kind === "rent");
+  if (!month) {
+    return { competency: target, gross: rent, grace: 0, deductions: 0, irrf: 0, net: rent };
+  }
+  const { installments: deductions } = buildRentDeductionInstallments({
+    deductions: lease.rent_deductions,
+    rentInstallments: rents,
+  });
+  const iptu = lease.iptu_charge?.enabled ? Number(lease.iptu_charge.installment_amount) || 0 : 0;
+  const condo =
+    (lease.additional_obligations || []).find((o: any) => o?.type === "condominium" && o?.enabled)
+      ?.installment_amount || 0;
+  const irrf = buildWithholdingInstallments({
+    withholding: lease.rent_withholding,
+    rentInstallments: [month],
+    baseDeductions: { iptu, condominium: condo, adminFeePercent: Number(lease.admin_fee_percentage) || 0 },
+  });
+  const s = summarizeSettlement([
+    month,
+    ...deductions.filter((d) => d.settlementKey === month.settlementKey),
+    ...irrf,
+  ])[0];
+  return {
+    competency: month.competencyPeriod,
+    gross: s?.gross ?? rent,
+    grace: s?.grace ?? 0,
+    deductions: s?.deductions ?? 0,
+    irrf: s?.irrf ?? 0,
+    net: s?.net ?? rent,
+  };
+}
+
+function monthsBetween(a: string, b: string): number {
+  const [ay, am] = a.split("-").map(Number);
+  const [by, bm] = b.split("-").map(Number);
+  return (by - ay) * 12 + (bm - am);
+}
+
+
+/* ─── Sugestão de início da assinatura automática ─────────────────── */
+
+export interface SubscriptionStartSuggestion {
+  /** Competência a partir da qual o valor mensal fica estável. */
+  stableCompetency: string;
+  /** Valor líquido da competência estável (valor da assinatura). */
+  amount: number;
+  figures: LeaseMonthFigures;
+  /** 1º vencimento sugerido (YYYY-MM-DD). */
+  firstDue: string;
+  /** Meses entre hoje/início e a competência estável com líquido diferente. */
+  differentMonths: { competency: string; net: number }[];
+}
+
+function dueDateOf(competency: string, dueDay: number): string {
+  const [y, m] = competency.split("-").map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  const day = Math.min(Math.max(1, dueDay || 10), lastDay);
+  return `${competency}-${String(day).padStart(2, "0")}`;
+}
+
+export function suggestSubscriptionStart(
+  lease: LeaseFinancialConditionsLease,
+  today: string = todayInSaoPauloDateOnly()
+): SubscriptionStartSuggestion {
+  const start = (lease.start_date || today).slice(0, 7);
+  const dueDay = lease.due_day || 10;
+  let lastAffected: string | null = null;
+  const bump = (c: string) => {
+    if (!lastAffected || c > lastAffected) lastAffected = c;
+  };
+
+  // Carência em qualquer modo
+  const graceSchedule = resolveGraceSchedule(lease.rent_grace, lease.start_date || today);
+  for (const c of graceSchedule.keys()) bump(c);
+
+  // Abatimentos pontuais/parcelados (com o deslocamento causado pela carência)
+  const finite = (lease.rent_deductions || []).filter(
+    (d) => d.enabled && Number(d.amount) > 0 && (d.recurrence === "once" || d.recurrence === "installments")
+  );
+  if (finite.length > 0) {
+    const rents = buildRentInstallments({
+      startDate: `${start}-01`,
+      months: 120,
+      amount: Number(lease.rent_amount) || 0,
+      dueDay,
+      graceSchedule,
+    });
+    const { installments } = buildRentDeductionInstallments({ deductions: finite, rentInstallments: rents });
+    for (const i of installments) bump(i.competencyPeriod);
+  }
+
+  const stableCompetency = lastAffected ? shiftCompetency(lastAffected, 1) : start;
+  const figures = computeLeaseMonthFromConfig(lease, stableCompetency);
+  const amount = figures.net > 0 ? figures.net : Number(lease.rent_amount) || 0;
+
+  let firstComp = stableCompetency;
+  let firstDue = dueDateOf(firstComp, dueDay);
+  while (firstDue < today) {
+    firstComp = shiftCompetency(firstComp, 1);
+    firstDue = dueDateOf(firstComp, dueDay);
+  }
+
+  const differentMonths: { competency: string; net: number }[] = [];
+  const todayComp = today.slice(0, 7);
+  let c = todayComp > start ? todayComp : start;
+  while (c < stableCompetency) {
+    const net = computeLeaseMonthFromConfig(lease, c).net;
+    if (round2(net) !== round2(amount)) differentMonths.push({ competency: c, net: round2(net) });
+    c = shiftCompetency(c, 1);
+  }
+
+  return { stableCompetency, amount, figures, firstDue, differentMonths };
 }

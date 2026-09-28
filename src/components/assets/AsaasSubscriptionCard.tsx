@@ -43,8 +43,12 @@ import {
   PowerOff,
   Info,
   Settings,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { format as fmtDate, parseISO } from "date-fns";
 import { AsaasFinancialSeal } from "@/components/asaas/AsaasFinancialSeal";
 import { usePermissions } from "@/hooks/usePermissions";
 import { CurrencyInput, PercentInput } from "@/components/ui/currency-input";
@@ -72,6 +76,8 @@ interface Props {
   amountBreakdown?: string | null;
   /** 1º vencimento sugerido (após o fim da carência). */
   suggestedFirstDue?: string | null;
+  /** Meses com valor diferente do mensal, antes do 1º vencimento sugerido. */
+  differentMonths?: { competency: string; net: number }[];
   dueDay: number | null;
   billingAutomation: Record<string, any> | null;
   onChanged?: () => void;
@@ -92,6 +98,7 @@ export function AsaasSubscriptionCard({
   rentAmount,
   amountBreakdown,
   suggestedFirstDue,
+  differentMonths = [],
   dueDay,
   billingAutomation,
   onChanged,
@@ -112,6 +119,14 @@ export function AsaasSubscriptionCard({
   const [billingType, setBillingType] = useState<BillingType>("UNDEFINED");
   const [value, setValue] = useState<string>(String(rentAmount ?? ""));
   const [firstDue, setFirstDue] = useState<string>(suggestedFirstDue ?? "");
+  const [ackEarlyStart, setAckEarlyStart] = useState(false);
+  const startsBeforeSuggested = !!suggestedFirstDue && !!firstDue && firstDue < suggestedFirstDue;
+  const differentMonthsText = differentMonths
+    .map((m) => {
+      const l = fmtDate(parseISO(`${m.competency}-01`), "MMM/yyyy", { locale: ptBR });
+      return `${l.charAt(0).toUpperCase()}${l.slice(1)} ${brl(m.net)}`;
+    })
+    .join(", ");
   const [fine, setFine] = useState<string>("10");
   const [interest, setInterest] = useState<string>("1");
   const [activating, setActivating] = useState(false);
@@ -334,7 +349,7 @@ export function AsaasSubscriptionCard({
                   className="h-9 text-sm"
                 />
                 <p className="text-[10px] text-muted-foreground">
-                  Sugerido: primeiro vencimento após o fim da carência.
+                  Sugerido: primeiro mês com o valor cheio (depois da carência e dos abatimentos parcelados).
                 </p>
               </div>
             )}
@@ -368,10 +383,31 @@ export function AsaasSubscriptionCard({
             </div>
           </div>
 
+          {differentMonths.length > 0 && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Estes meses têm valor diferente do valor mensal e não entram na assinatura: {differentMonthsText}.
+                Cobre-os pela "Nova cobrança avulsa" ou registre o recebimento manual.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {startsBeforeSuggested && (
+            <label className="flex items-start gap-2 text-xs cursor-pointer">
+              <Checkbox
+                checked={ackEarlyStart}
+                onCheckedChange={(v) => setAckEarlyStart(v === true)}
+                className="mt-0.5"
+              />
+              <span>Entendo que a assinatura cobra o valor mensal fixo também nesses meses</span>
+            </label>
+          )}
+
           <Button
             className="w-full"
             onClick={handleActivate}
-            disabled={activating || !hasSubconta || !canCreate}
+            disabled={activating || !hasSubconta || !canCreate || (startsBeforeSuggested && !ackEarlyStart)}
           >
             {activating ? (
               <>
