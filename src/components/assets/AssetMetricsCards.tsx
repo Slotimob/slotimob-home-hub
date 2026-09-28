@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { leaseUnitFilter } from "@/hooks/useLeases";
 
 interface AssetMetricsCardsProps {
   unitId: string;
@@ -27,41 +28,68 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
   const { effectiveBrokerId } = useWorkspace();
   const brokerId = effectiveBrokerId || undefined;
 
-  // Fetch lease data for occupancy metrics
-  const { data: activeLease } = useQuery({
-    queryKey: ["unit-active-lease", unitId, brokerId],
+  // Contratos vivos do imóvel: principal, adicional ou fração (lease_units)
+  const { data: liveLeases = [] } = useQuery({
+    queryKey: ["unit-live-leases", unitId, brokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leases")
-        .select("id, start_date, end_date, status, rent_amount")
-        .eq("unit_id", unitId)
-        .eq("status", "active")
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
+        .select("id, unit_id, unit_subdivision_id, start_date, end_date, status, rent_amount, next_adjustment_date, lease_units(unit_id, unit_subdivision_id, share_percent, is_primary)")
+        .or(await leaseUnitFilter(unitId))
+        .in("status", ["active", "pending"])
+        .order("start_date", { ascending: false });
       if (error) throw error;
-      return data;
+      return (data || []) as any[];
     },
   });
 
-  // Fetch last ended lease for vacancy calculation
+  const { data: subdivisionCount = 0 } = useQuery({
+    queryKey: ["unit-subdivision-count", unitId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("unit_subdivisions")
+        .select("id", { count: "exact", head: true })
+        .eq("unit_id", unitId);
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  // Vínculos deste imóvel em cada contrato vivo
+  const leaseLinks = useMemo(
+    () =>
+      liveLeases.map((l) => {
+        const links = ((l.lease_units || []) as any[]).filter((u) => u.unit_id === unitId);
+        const wholeUnit = links.length
+          ? links.some((u) => !u.unit_subdivision_id)
+          : l.unit_id === unitId && !l.unit_subdivision_id;
+        const fractionIds = links.length
+          ? links.filter((u) => u.unit_subdivision_id).map((u) => u.unit_subdivision_id as string)
+          : l.unit_id === unitId && l.unit_subdivision_id ? [l.unit_subdivision_id as string] : [];
+        const shares = links.map((u) => u.share_percent).filter((v) => v != null) as number[];
+        const share = shares.length ? shares.reduce((a, b) => a + Number(b), 0) : 100;
+        return { lease: l, wholeUnit, fractionIds, share };
+      }),
+    [liveLeases, unitId]
+  );
+  const activeLease = leaseLinks.find((x) => x.wholeUnit)?.lease ?? null;
+
+  // Último contrato encerrado (vacância)
   const { data: lastLease } = useQuery({
     queryKey: ["unit-last-lease", unitId, brokerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leases")
         .select("id, end_date, status")
-        .eq("unit_id", unitId)
+        .or(await leaseUnitFilter(unitId))
         .in("status", ["active", "terminated"])
         .order("end_date", { ascending: false })
         .limit(1)
         .maybeSingle();
-      
       if (error) throw error;
       return data;
     },
-    enabled: !activeLease,
+    enabled: liveLeases.length === 0,
   });
 
   // Fetch recent rental transactions for yield calculation
@@ -91,11 +119,20 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
     let avgYield = 0;
     let yieldStatus: "good" | "warning" | "neutral" = "neutral";
     let hasYieldData = false;
-    
-    if (rentAmount && marketValue && marketValue > 0) {
-      const annualRent = rentAmount * 12;
-      avgYield = (annualRent / marketValue) * 100;
+    let yieldEstimated = false;
+    const contractMonthly = leaseLinks.reduce(
+      (sum, x) => sum + (Number(x.lease.rent_amount) || 0) * (x.share / 100),
+      0
+    );
+
+    if (leaseLinks.length > 0 && contractMonthly > 0 && marketValue && marketValue > 0) {
+      avgYield = ((contractMonthly * 12) / marketValue) * 100;
       yieldStatus = avgYield >= 6 ? "good" : avgYield >= 4 ? "warning" : "neutral";
+      hasYieldData = true;
+    } else if (leaseLinks.length === 0 && rentAmount && marketValue && marketValue > 0) {
+      avgYield = ((rentAmount * 12) / marketValue) * 100;
+      yieldStatus = "neutral";
+      yieldEstimated = true;
       hasYieldData = true;
     } else if (rentalTransactions.length >= 3 && marketValue && marketValue > 0) {
       const totalReceived = rentalTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -123,6 +160,10 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
       }
       occupancyStatus = "good";
       occupancyDays = days;
+    } else if (leaseLinks.length > 0) {
+      const rented = new Set(leaseLinks.flatMap((x) => x.fractionIds)).size;
+      occupancyLabel = `Ocupado parcialmente: ${rented} de ${Math.max(subdivisionCount, rented)} frações`;
+      occupancyStatus = "good";
     } else if (lastLease?.end_date) {
       const endDate = parseISO(lastLease.end_date);
       const daysVacant = differenceInDays(today, endDate);
@@ -139,8 +180,13 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
     let nextActionDate: Date | null = null;
     let nextActionUrgent = false;
     
-    if (activeLease?.end_date) {
-      const endDate = parseISO(activeLease.end_date);
+    const refLease = activeLease ?? leaseLinks[0]?.lease ?? null;
+    const minAdjustment = liveLeases
+      .map((l) => l.next_adjustment_date as string | null)
+      .filter(Boolean)
+      .sort()[0] as string | undefined;
+    if (refLease?.end_date) {
+      const endDate = parseISO(refLease.end_date);
       const daysUntilEnd = differenceInDays(endDate, today);
       
       if (daysUntilEnd <= 90 && daysUntilEnd > 0) {
@@ -152,27 +198,38 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
         nextActionUrgent = true;
       } else {
         // Calculate next annual adjustment
-        const startDate = parseISO(activeLease.start_date);
-        let nextAdjustment = new Date(startDate);
-        while (nextAdjustment <= today) {
-          nextAdjustment = addMonths(nextAdjustment, 12);
+        let nextAdjustment: Date;
+        if (minAdjustment) {
+          nextAdjustment = parseISO(minAdjustment);
+        } else {
+          nextAdjustment = new Date(parseISO(refLease.start_date));
+          while (nextAdjustment <= today) {
+            nextAdjustment = addMonths(nextAdjustment, 12);
+          }
         }
         const daysUntilAdjustment = differenceInDays(nextAdjustment, today);
         nextActionLabel = `Reajuste em ${format(nextAdjustment, "MMM/yyyy", { locale: ptBR })}`;
         nextActionDate = nextAdjustment;
         nextActionUrgent = daysUntilAdjustment <= 30;
       }
+    } else if (refLease && minAdjustment) {
+      const nextAdjustment = parseISO(minAdjustment);
+      nextActionLabel = `Reajuste em ${format(nextAdjustment, "MMM/yyyy", { locale: ptBR })}`;
+      nextActionDate = nextAdjustment;
+      nextActionUrgent = differenceInDays(nextAdjustment, today) <= 30;
+    } else if (refLease) {
+      nextActionLabel = "Contrato ativo sem prazo definido";
     } else {
       nextActionLabel = "Sem contrato ativo";
       nextActionUrgent = false;
     }
 
     return {
-      yield: { value: avgYield, status: yieldStatus, hasData: hasYieldData },
+      yield: { value: avgYield, status: yieldStatus, hasData: hasYieldData, estimated: yieldEstimated },
       occupancy: { label: occupancyLabel, status: occupancyStatus, days: occupancyDays },
       nextAction: { label: nextActionLabel, date: nextActionDate, urgent: nextActionUrgent },
     };
-  }, [activeLease, lastLease, rentalTransactions, rentAmount, marketValue]);
+  }, [activeLease, leaseLinks, liveLeases, subdivisionCount, lastLease, rentalTransactions, rentAmount, marketValue]);
 
   const statusColors = {
     good: "text-green-600 bg-green-500/10",
@@ -208,7 +265,9 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
                 }
               </p>
               <p className="text-xs text-muted-foreground">
-                {metrics.yield.hasData
+                {metrics.yield.hasData && metrics.yield.estimated
+                  ? "estimado pelo preço anunciado"
+                  : metrics.yield.hasData
                   ? (metrics.yield.value >= 6 ? "Acima da média" : 
                      metrics.yield.value >= 4 ? "Na média" : 
                      "Abaixo da média")
