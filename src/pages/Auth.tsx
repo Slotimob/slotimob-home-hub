@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { isValidCPF, isValidCNPJ } from "@/lib/document-validation";
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/auth/TurnstileWidget';
@@ -120,36 +121,6 @@ const completeProfileSchema = z.object({
 });
 
 // ─── Validation helpers ───
-
-const isValidCPF = (cpf: string): boolean => {
-  const digits = cpf.replace(/\D/g, '');
-  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
-  let remainder = (sum * 10) % 11;
-  if (remainder === 10) remainder = 0;
-  if (remainder !== parseInt(digits[9])) return false;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
-  remainder = (sum * 10) % 11;
-  if (remainder === 10) remainder = 0;
-  return remainder === parseInt(digits[10]);
-};
-
-const isValidCNPJ = (cnpj: string): boolean => {
-  const digits = cnpj.replace(/\D/g, '');
-  if (digits.length !== 14 || /^(\d)\1{13}$/.test(digits)) return false;
-  const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  let sum = 0;
-  for (let i = 0; i < 12; i++) sum += parseInt(digits[i]) * weights1[i];
-  let remainder = sum % 11;
-  if (parseInt(digits[12]) !== (remainder < 2 ? 0 : 11 - remainder)) return false;
-  sum = 0;
-  for (let i = 0; i < 13; i++) sum += parseInt(digits[i]) * weights2[i];
-  remainder = sum % 11;
-  return parseInt(digits[13]) === (remainder < 2 ? 0 : 11 - remainder);
-};
 
 const getAuthErrorMessage = (error: any): { title: string; description: string } => {
   const errorMessage = error?.message?.toLowerCase() || '';
