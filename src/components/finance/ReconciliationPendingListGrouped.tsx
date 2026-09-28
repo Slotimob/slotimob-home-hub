@@ -565,7 +565,7 @@ export function ReconciliationPendingListGrouped({
 
         <CreateTransactionDialog
           open={createDialogOpen}
-          onOpenChange={setCreateDialogOpen}
+          onOpenChange={(o) => { setCreateDialogOpen(o); if (!o) setEntryForCreate(null); }}
           onSuccess={handleTransactionSuccess}
           prefill={prefillData}
         />
@@ -676,7 +676,7 @@ export function ReconciliationPendingListGrouped({
 
       <CreateTransactionDialog
         open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
+        onOpenChange={(o) => { setCreateDialogOpen(o); if (!o) setEntryForCreate(null); }}
         onSuccess={handleTransactionSuccess}
         prefill={prefillData}
       />
