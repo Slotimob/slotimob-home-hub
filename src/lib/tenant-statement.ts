@@ -1,9 +1,8 @@
 import { settlementBreakdown } from "@/lib/settlement-group";
 import { isRentIncome, isRentAddition, isIrrf, isRentDeduction, isRentDiscount } from "@/lib/owner-report";
 import { resolveGraceSchedule } from "@/lib/lease-special-conditions";
-import type { RentGraceConfig } from "@/lib/lease-projection";
-import type { PaymentHistoryItem } from "@/utils/tenantStatementPdf";
-import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
+import type { RentGraceConfig } from "@/hooks/useLeases";
+import { formatCurrency, type PaymentHistoryItem } from "@/utils/tenantStatementPdf";
 
 export interface TenantStatementLease {
   start_date?: string | null;

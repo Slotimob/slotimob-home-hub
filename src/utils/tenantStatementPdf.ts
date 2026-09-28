@@ -20,7 +20,7 @@ export interface PaymentHistoryItem {
   amount: number;
   lateFee: number;
   totalPaid: number;
-  status: 'paid' | 'pending' | 'overdue';
+  status: 'paid' | 'pending' | 'overdue' | 'grace' | 'not_launched';
   reference: string;
   /** Ex.: "bruto R$ 3.000,00 − IRRF R$ 150,00" */
   breakdown?: string;
@@ -205,9 +205,10 @@ export const generateTenantStatementPDF = async (data: TenantStatementData): Pro
       normalizeText(p.breakdown ? `${p.month}\n${p.breakdown.replace(/−/g, '-')}` : p.month),
       formatDateBR(p.dueDate),
       p.paidDate ? formatDateBR(p.paidDate) : '-',
-      formatCurrency(p.amount),
+      p.status === 'grace' || p.status === 'not_launched' ? '—' : formatCurrency(p.amount),
       p.status === 'paid' ? formatCurrency(p.totalPaid) : '-',
-      p.status === 'paid' ? 'Pago' : p.status === 'pending' ? 'Pendente' : 'Atrasado',
+      p.status === 'paid' ? 'Pago' : p.status === 'pending' ? 'Pendente' : p.status === 'overdue' ? 'Atrasado'
+        : p.status === 'grace' ? normalizeText('Carência') : normalizeText('Não lançado'),
     ]);
 
     autoTable(doc, {
@@ -245,6 +246,8 @@ export const generateTenantStatementPDF = async (data: TenantStatementData): Pro
           } else if (val === 'Atrasado') {
             cellData.cell.styles.textColor = [153, 27, 27];
             cellData.cell.styles.fontStyle = 'bold';
+          } else {
+            cellData.cell.styles.textColor = [100, 116, 139];
           }
         }
       },

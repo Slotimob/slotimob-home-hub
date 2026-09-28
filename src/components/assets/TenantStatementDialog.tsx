@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { FileText, Download, CheckCircle2, Clock, AlertCircle, Calendar, Loader2 } from "lucide-react";
+import { FileText, Download, CheckCircle2, Clock, AlertCircle, Calendar, Loader2, MinusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Lease } from "@/hooks/useLeases";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,8 +22,10 @@ import {
   generateTenantStatementPDF, TenantStatementData, PaymentHistoryItem, formatCurrency,
 } from "@/utils/tenantStatementPdf";
 import { useToast } from "@/hooks/use-toast";
-import { fetchSettlementGroups, settlementBreakdown } from "@/lib/settlement-group";
-import { isRentIncome, isRentAddition, isIrrf, isRentDeduction, isRentDiscount } from "@/lib/owner-report";
+import { fetchSettlementGroups } from "@/lib/settlement-group";
+import { isRentIncome } from "@/lib/owner-report";
+import { buildTenantStatementMonths } from "@/lib/tenant-statement";
+import { todayInSaoPauloDateOnly } from "@/lib/date-only";
 
 interface TenantStatementDialogProps {
   open: boolean;
@@ -66,70 +68,16 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
   });
 
   const paymentHistory: PaymentHistoryItem[] = useMemo(() => {
-    const items: PaymentHistoryItem[] = [];
     const months = parseInt(periodMonths);
-    for (let i = months - 1; i >= 0; i--) {
-      const monthDate = subMonths(new Date(), i);
-      const monthStr = format(monthDate, "MMMM/yyyy", { locale: ptBR });
-      const dueDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), lease.due_day);
-      const period = format(monthDate, "yyyy-MM");
-      const rows = (txData?.rows || []).filter(
-        (t: any) => (t.competency_period || (t.due_date || "").slice(0, 7)) === period
-      );
-      const groups = txData?.groups || {};
-      const rentLines = rows.filter((t: any) => t.type === "income" && isRentIncome(t));
-      // Soma do mês: grupos de baixa conjunta pelo breakdown; linhas soltas pelo tipo.
-      let gross = 0, additions = 0, irrf = 0, deductions = 0, discounts = 0, other = 0, paidNet = 0;
-      const seen = new Set<string>();
-      for (const a of rentLines) {
-        const gid = a.settlement_group_id;
-        if (!gid || !groups[gid] || groups[gid].length < 2 || seen.has(gid)) continue;
-        seen.add(gid);
-        const b = settlementBreakdown(groups[gid] as any);
-        gross += b.rent; additions += b.additions; irrf += b.irrf;
-        deductions += b.deductions; discounts += b.discounts; other += b.otherExpenses;
-        if (a.status === "paid") paidNet += b.net;
-      }
-      for (const t of rows) {
-        if (t.settlement_group_id && seen.has(t.settlement_group_id)) continue;
-        const v = Number(t.amount) || 0;
-        let signed = 0;
-        if (t.type === "income" && isRentIncome(t)) { gross += v; signed = v; }
-        else if (t.type === "income" && isRentAddition(t)) { additions += v; signed = v; }
-        else if (t.type === "expense" && isIrrf(t)) { irrf += v; signed = -v; }
-        else if (t.type === "expense" && isRentDeduction(t)) { deductions += v; signed = -v; }
-        else if (t.type === "expense" && isRentDiscount(t)) { discounts += v; signed = -v; }
-        if (signed && t.status === "paid") paidNet += signed;
-      }
-      const net = gross + additions - irrf - deductions - discounts - other;
-      const hasLines = rentLines.length > 0;
-      const isPaid = hasLines && rentLines.every((t: any) => t.status === "paid");
-      const isOverdue = !isPaid && dueDate < new Date();
-      const paidDate = isPaid
-        ? rentLines.map((t: any) => t.paid_date).filter(Boolean).sort().pop() || null
-        : null;
-      const parts: string[] = [];
-      if (hasLines && (additions || irrf || deductions || discounts || other)) {
-        parts.push(`bruto ${formatCurrency(gross)}`);
-        if (additions) parts.push(`+ acréscimos ${formatCurrency(additions)}`);
-        if (irrf) parts.push(`− IRRF ${formatCurrency(irrf)}`);
-        if (deductions) parts.push(`− abatimento ${formatCurrency(deductions)}`);
-        if (discounts) parts.push(`− desconto ${formatCurrency(discounts)}`);
-        if (other) parts.push(`− outras ${formatCurrency(other)}`);
-      }
-      items.push({
-        month: monthStr.charAt(0).toUpperCase() + monthStr.slice(1),
-        reference: format(monthDate, "MM/yyyy"),
-        dueDate: format(dueDate, "yyyy-MM-dd"),
-        paidDate,
-        amount: hasLines ? Math.round(net * 100) / 100 : lease.rent_amount,
-        lateFee: Math.round(additions * 100) / 100,
-        totalPaid: Math.round(paidNet * 100) / 100,
-        status: isPaid ? "paid" : isOverdue ? "overdue" : "pending",
-        breakdown: parts.length ? parts.join(" ") : undefined,
-      });
-    }
-    return items;
+    const periods: string[] = [];
+    for (let i = months - 1; i >= 0; i--) periods.push(format(subMonths(new Date(), i), "yyyy-MM"));
+    return buildTenantStatementMonths({
+      periods,
+      lease: lease as any,
+      rows: txData?.rows || [],
+      groups: txData?.groups || {},
+      today: todayInSaoPauloDateOnly(),
+    });
   }, [txData, periodMonths, lease]);
 
   const summary = useMemo(() => {
@@ -166,6 +114,8 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
       case "paid": return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
       case "overdue": return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case "grace":
+      case "not_launched": return <MinusCircle className="h-4 w-4 text-muted-foreground" />;
       default: return null;
     }
   };
@@ -175,6 +125,8 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
       case "paid": return <Badge className="bg-green-500/15 text-green-600 border-green-500/30">Pago</Badge>;
       case "pending": return <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30">Pendente</Badge>;
       case "overdue": return <Badge className="bg-red-500/15 text-red-600 border-red-500/30">Atrasado</Badge>;
+      case "grace": return <Badge className="bg-sky-500/15 text-sky-600 border-sky-500/30">Carência</Badge>;
+      case "not_launched": return <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Não lançado</Badge>;
       default: return null;
     }
   };
@@ -269,7 +221,9 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="font-semibold text-sm">
-                        {payment.status === "paid" ? formatCurrency(payment.totalPaid) : formatCurrency(payment.amount)}
+                        {payment.status === "grace" || payment.status === "not_launched"
+                          ? "—"
+                          : payment.status === "paid" ? formatCurrency(payment.totalPaid) : formatCurrency(payment.amount)}
                       </p>
                     </div>
                     {getStatusBadge(payment.status)}
