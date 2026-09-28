@@ -82,6 +82,7 @@ import { unitLabel } from "@/components/units/UnitSelector";
 import { occupyLeaseUnits, releaseLeaseUnits, leaseUnitRefKey, type LeaseUnitRef } from "@/lib/unit-status-sync";
 import { useToast } from "@/hooks/use-toast";
 import { cpfCnpjError, onlyDigits } from "@/lib/document-validation";
+import { defaultLeasePurpose, type LeasePurpose } from "@/lib/lease-purpose";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
 import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
@@ -224,6 +225,8 @@ export default function NovoContrato() {
   const [draftLoaded, setDraftLoaded] = useState(false);
   // Contrato com vários imóveis (principal = imóvel escolhido acima)
   const [extraUnits, setExtraUnits] = useState<LeaseExtraUnitsState>(EMPTY_EXTRA_UNITS);
+  const [leasePurpose, setLeasePurpose] = useState<LeasePurpose>("residencial");
+  const [purposeTouched, setPurposeTouched] = useState(false);
   const initialLeaseUnitRefsRef = useRef<LeaseUnitRef[] | null>(null);
   const setLeaseUnits = useSetLeaseUnits();
   const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
@@ -514,6 +517,13 @@ export default function NovoContrato() {
         rent_withholding: (editLease as any).rent_withholding ?? getInitialRentWithholding(),
       })
     );
+    {
+      const p = (editLease.metadata as any)?.purpose;
+      if (p === "residencial" || p === "comercial") {
+        setLeasePurpose(p);
+        setPurposeTouched(true);
+      }
+    }
     if (editLease.guarantor_data) setGuarantorData(editLease.guarantor_data);
     if (editLease.payment_info) setPaymentInfo(editLease.payment_info);
     if (editLease.billing_automation?.billing_contact) {
@@ -849,6 +859,26 @@ export default function NovoContrato() {
   const primaryRef: LeaseUnitRef = { unit_id: effectiveUnitId, unit_subdivision_id: formData.unit_subdivision_id || null };
   const leaseSharesError = validateExtraUnits(primaryRef, extraUnits);
   const leaseUnitRefs = leaseUnitRefsFor(primaryRef, extraUnits);
+  const purposeUnitIds = Array.from(new Set(leaseUnitRefs.map((r) => r.unit_id).filter(Boolean))).sort();
+  const { data: purposeUnitTypes = [] } = useQuery({
+    queryKey: ["lease-purpose-unit-types", purposeUnitIds.join(",")],
+    queryFn: async () => {
+      const { data } = await supabase.from("units").select("property_type").in("id", purposeUnitIds);
+      return (data || []).map((u: any) => u.property_type as string | null);
+    },
+    enabled: purposeUnitIds.length > 0,
+  });
+  const suggestedPurpose = defaultLeasePurpose(purposeUnitTypes);
+  useEffect(() => {
+    if (!purposeTouched) setLeasePurpose(suggestedPurpose);
+  }, [suggestedPurpose, purposeTouched]);
+
+  const savePurpose = async (leaseId: string) => {
+    const { data: row } = await supabase.from("leases").select("metadata").eq("id", leaseId).maybeSingle();
+    const metadata = { ...(((row as any)?.metadata as Record<string, unknown>) || {}), purpose: leasePurpose };
+    const { error } = await supabase.from("leases").update({ metadata } as any).eq("id", leaseId);
+    if (error) console.error("[NovoContrato] Falha ao gravar a finalidade:", error);
+  };
 
   /**
    * Grava os imóveis do contrato (RPC set_lease_units), ocupa os atuais e libera os removidos.
@@ -1157,9 +1187,11 @@ export default function NovoContrato() {
             : undefined,
         });
         resultId = editLease.id;
+        await savePurpose(editLease.id);
       } else {
         const result = await createLease.mutateAsync(leaseData);
         resultId = (result as any).id || (result as any).lease?.id || "";
+        if (resultId) await savePurpose(resultId);
 
         if (resultId && dealIdParam && crmDeal && !crmDeal.contact_id && formData.tenant_contact_id) {
           const { error: dealErr } = await supabase
@@ -1497,6 +1529,30 @@ export default function NovoContrato() {
                 )}
               </div>
               </>
+              )}
+
+              {effectiveUnitId && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm">Finalidade da locação</Label>
+                  <Select
+                    value={leasePurpose}
+                    onValueChange={(v) => {
+                      setLeasePurpose(v as LeasePurpose);
+                      setPurposeTouched(true);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-64">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="residencial">Residencial</SelectItem>
+                      <SelectItem value="comercial">Comercial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!purposeTouched && (
+                    <p className="text-[10px] text-muted-foreground">Sugerida pelo tipo dos imóveis do contrato.</p>
+                  )}
+                </div>
               )}
 
               {effectiveUnitId && (
