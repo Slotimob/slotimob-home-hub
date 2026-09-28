@@ -68,7 +68,7 @@ export const DimobReportTab = () => {
     totalCommission: 0
   });
 
-  const yearOptions = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
+  const yearOptions = Array.from({ length: 6 }, (_, i) => String(currentYear - i));
 
   useEffect(() => {
     if (user) {
@@ -393,7 +393,7 @@ export const DimobReportTab = () => {
         <div>
           <h3 className="text-lg font-semibold">Relatório DIMOB</h3>
           <p className="text-sm text-muted-foreground">
-            Prévia dos dados para declaração à Receita Federal
+            Prévia para conferência e preenchimento no programa da DIMOB (PGD) da Receita Federal. Valores pelo mês do pagamento (regime de caixa).
           </p>
         </div>
         <div className="flex items-center gap-3">
