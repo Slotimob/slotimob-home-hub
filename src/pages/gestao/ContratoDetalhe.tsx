@@ -96,6 +96,7 @@ import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import { LeaseUnitsCard } from "@/components/assets/LeaseUnitsCard";
 import { freeGraceCompetencies } from "@/lib/lease-obligations-inheritance";
 import { todayInSaoPauloDateOnly } from "@/lib/date-only";
+import { suggestSubscriptionStart } from "@/lib/lease-special-conditions";
 
 export default function ContratoDetalhe() {
   const [searchParams] = useSearchParams();
@@ -329,27 +330,16 @@ export default function ContratoDetalhe() {
   const adjustmentConfig = getAdjustmentStatusConfig(lease.next_adjustment_date);
   const tenant = lease.tenant_contact;
 
-  // Cobrança pelo LÍQUIDO do mês típico (carência/abatimentos/IRRF)
+  // Cobrança pelo LÍQUIDO da competência estável (depois da carência e dos abatimentos parcelados)
   const boletoDefaults = (() => {
-    const typical = computeLeaseMonthFromConfig(lease as any);
+    const sug = suggestSubscriptionStart(lease as any, todayInSaoPauloDateOnly());
+    const f = sug.figures;
     const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     const breakdown =
-      typical.deductions > 0 || typical.irrf > 0
-        ? `Aluguel ${fmt(typical.gross)} − abatimentos ${fmt(typical.deductions)} − IRRF ${fmt(typical.irrf)} = líquido ${fmt(typical.net)}`
+      f.deductions > 0 || f.irrf > 0 || f.grace > 0
+        ? `Aluguel ${fmt(f.gross)}${f.grace > 0 ? ` − carência ${fmt(f.grace)}` : ""} − abatimentos ${fmt(f.deductions)} − IRRF ${fmt(f.irrf)} = líquido ${fmt(f.net)}`
         : null;
-    const graceMonths = freeGraceCompetencies((lease as any).rent_grace, lease.start_date);
-    let firstDue: string | null = null;
-    const lastGrace = graceMonths[graceMonths.length - 1];
-    if (lastGrace) {
-      const [y, m] = lastGrace.split("-").map(Number);
-      const ny = m === 12 ? y + 1 : y;
-      const nm = m === 12 ? 1 : m + 1;
-      const lastDay = new Date(ny, nm, 0).getDate();
-      const day = Math.min(lease.due_day || 10, lastDay);
-      const candidate = `${ny}-${String(nm).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      if (candidate >= todayInSaoPauloDateOnly()) firstDue = candidate;
-    }
-    return { amount: typical.net > 0 ? typical.net : Number(lease.rent_amount) || 0, breakdown, firstDue };
+    return { amount: sug.amount, breakdown, firstDue: sug.firstDue, differentMonths: sug.differentMonths };
   })();
   const unit = lease.unit;
   const isSigned = lease.signature_status === "signed";
@@ -642,6 +632,7 @@ export default function ContratoDetalhe() {
             rentAmount={boletoDefaults.amount}
             amountBreakdown={boletoDefaults.breakdown}
             suggestedFirstDue={boletoDefaults.firstDue}
+            differentMonths={boletoDefaults.differentMonths}
             dueDay={lease.due_day ?? null}
             billingAutomation={(lease.billing_automation as Record<string, any>) || null}
             canEdit={canEdit}
