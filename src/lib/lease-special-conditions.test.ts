@@ -179,3 +179,54 @@ describe("summarizeSettlement", () => {
     ]);
   });
 });
+
+import { suggestSubscriptionStart } from "./lease-special-conditions";
+
+describe("suggestSubscriptionStart", () => {
+  const base = {
+    id: "l1",
+    rent_amount: 4000,
+    due_day: 10,
+    start_date: "2026-09-01",
+  };
+
+  it("pula carência parcial e abatimentos parcelados", () => {
+    const s = suggestSubscriptionStart(
+      {
+        ...base,
+        rent_grace: {
+          enabled: true,
+          first_competency: "2026-09",
+          tiers: [
+            { months: 1, mode: "free" },
+            { months: 1, mode: "percent", value: 50 },
+          ],
+        },
+        rent_deductions: [
+          ded({ label: "condomínio extra", reason: "condominium_extra", recurrence: "installments", installments: 2, first_competency: "2026-09" }),
+        ],
+        rent_withholding: {
+          enabled: true,
+          tax: "irrf",
+          mode: "percent",
+          percent: 5,
+          base_deductions: { iptu: false, condominium: false, admin_fee: false },
+        },
+      },
+      "2026-09-28"
+    );
+    expect(s.firstDue).toBe("2026-11-10");
+    expect(s.amount).toBe(3800);
+    expect(s.differentMonths).toEqual([
+      { competency: "2026-09", net: 0 },
+      { competency: "2026-10", net: 1300 },
+    ]);
+  });
+
+  it("contrato sem condições especiais", () => {
+    const s = suggestSubscriptionStart(base, "2026-09-28");
+    expect(s.firstDue).toBe("2026-10-10");
+    expect(s.amount).toBe(4000);
+    expect(s.differentMonths).toEqual([]);
+  });
+});
