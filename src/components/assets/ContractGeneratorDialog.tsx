@@ -1,4 +1,5 @@
 import { leaseUnitFilter } from "@/hooks/useLeases";
+import { resolveLeasePurpose, leaseTermMonths } from "@/lib/lease-purpose";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -64,7 +65,7 @@ import {
        const { data, error } = await supabase
          .from("units")
          .select(`id, unit_number, address, city, state, postal_code, neighborhood,
-           registration_number, cib, area, rent_price, condo_fee, iptu, owner_contact_id`)
+           registration_number, cib, area, rent_price, condo_fee, iptu, owner_contact_id, property_type`)
          .eq("id", unitId)
          .single();
        if (error) throw error;
@@ -94,7 +95,7 @@ import {
      queryFn: async () => {
        const baseSelect = `id, rent_amount, start_date, end_date, due_day, admin_fee_percentage,
            tenant_contact_id, adjustment_index, deposit_amount, guarantee_type, guarantor_data, payment_info,
-           unit_subdivision_id`;
+           unit_subdivision_id, metadata`;
 
        const { data: lease } = leaseId
          ? await supabase.from("leases").select(baseSelect).eq("id", leaseId).maybeSingle()
@@ -123,7 +124,7 @@ import {
        if (lease?.id) {
          const { data: lu } = await supabase
            .from("lease_units")
-           .select("unit_id, is_primary, unit:units(address, neighborhood, city, state, postal_code, registration_number, cib), subdivision:unit_subdivisions(label)")
+           .select("unit_id, is_primary, unit:units(address, neighborhood, city, state, postal_code, registration_number, cib, property_type), subdivision:unit_subdivisions(label)")
            .eq("lease_id", lease.id)
            .order("is_primary", { ascending: false });
          leaseUnits = (lu as any[]) || [];
@@ -204,9 +205,9 @@ import {
     };
     const startDate = parseLocal(lease.start_date);
     const endDate = lease.end_date ? parseLocal(lease.end_date) : null;
-    const prazoMeses = endDate
-      ? (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth())
-      : 30;
+    const prazoMeses = lease.end_date ? leaseTermMonths(lease.start_date, lease.end_date) : 30;
+    void endDate;
+    void startDate;
 
     const ownerDocDigits = (ownerContact?.document_number || '').replace(/\D/g, '');
     const ownerIsCnpj = ownerDocDigits.length === 14;
@@ -361,7 +362,11 @@ import {
         indiceReajuste: lease.adjustment_index || 'IGP-M/FGV',
         garantia: guaranteeType,
         valorCaucao: lease.deposit_amount || undefined,
-        finalidade: 'residencial',
+        finalidade: resolveLeasePurpose({
+          metadata: (lease as any).metadata,
+          unit: { property_type: (unitData as any)?.property_type },
+          lease_units: activeLease?.leaseUnits || [],
+        }),
       },
       pagamento: paymentInfo?.pix || paymentInfo?.banco ? {
         pix: paymentInfo.pix || '',

@@ -1,4 +1,5 @@
 import type jsPDF from 'jspdf';
+import { resolveLeasePurpose, leaseTermMonths } from '@/lib/lease-purpose';
 import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
 // Extend jsPDF type for autoTable
@@ -1227,11 +1228,11 @@ export const generateLegalContractFromLease = async (lease: any): Promise<void> 
       diaVencimento: lease.due_day || 10,
       dataInicio: lease.start_date,
       dataFim: lease.end_date,
-      prazoMeses: lease.end_date ? calculateMonthsDiff(lease.start_date, lease.end_date) : 30,
+      prazoMeses: lease.end_date ? leaseTermMonths(lease.start_date, lease.end_date) : 30,
       indiceReajuste: lease.adjustment_index || 'IGP-M/FGV',
       garantia: (lease.guarantee_type as any) || 'nenhuma',
       valorCaucao: lease.deposit_amount,
-      finalidade: 'residencial',
+      finalidade: resolveLeasePurpose(lease),
       multaPercent: Number(billingAutomation.multa_percent) || Number(billingAutomation.multaPercent) || undefined,
       jurosPercent: Number(billingAutomation.juros_percent) || Number(billingAutomation.jurosPercent) || undefined,
     },
@@ -1253,16 +1254,4 @@ export const generateLegalContractFromLease = async (lease: any): Promise<void> 
   await generateLegalContractPDF(data);
 };
 
-function calculateMonthsDiff(startDate: string, endDate: string): number {
-  const parse = (v: string): Date => {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-      const [y, m, d] = v.split('-').map(Number);
-      return new Date(y, m - 1, d);
-    }
-    return new Date(v);
-  };
-  const start = parse(startDate);
-  const end = parse(endDate);
-  return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-}
 
