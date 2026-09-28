@@ -172,15 +172,15 @@ export const DealClosingDialog = ({
         const { error: transactionError } = await supabase.from('financial_transactions').insert({
           broker_id: effectiveBrokerId || user.id,
           type: 'income',
-          description: `Comissão - ${deal.lead?.name || 'Lead'} - ${deal.property?.name || 'Imóvel'}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`,
+          description: `Comissão - ${deal.lead?.name || 'Lead'} - ${deal.property?.name || (deal.unit ? '' : 'Imóvel')}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`,
           amount: commissionValue,
           transaction_date: format(transactionDate, 'yyyy-MM-dd'),
           due_date: format(transactionDate, 'yyyy-MM-dd'),
           status: 'pending',
           deal_id: deal.id,
-          property_id: deal.property.id,
+          property_id: deal.property?.id ?? null,
           unit_id: deal.unit?.id || null,
-          lead_id: deal.lead.id,
+          lead_id: deal.lead?.id ?? null,
           notes: `${businessType === 'rental' ? 'Locação' : 'Venda'} fechada: R$ ${saleValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Taxa: ${commissionRate}%`,
         });
 
@@ -267,7 +267,9 @@ export const DealClosingDialog = ({
                   {deal.lead?.name || 'Lead'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {deal.property?.name || 'Sem imóvel'}{deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}
+                  {deal.property?.name
+                    ? `${deal.property.name}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`
+                    : deal.unit?.unit_number || 'Sem imóvel'}
                 </p>
               </div>
             </div>
