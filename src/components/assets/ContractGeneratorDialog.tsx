@@ -95,7 +95,7 @@ import {
      queryFn: async () => {
        const baseSelect = `id, rent_amount, start_date, end_date, due_day, admin_fee_percentage,
            tenant_contact_id, adjustment_index, deposit_amount, guarantee_type, guarantor_data, payment_info,
-           unit_subdivision_id, metadata`;
+           unit_subdivision_id, metadata, rent_grace, rent_deductions, rent_withholding`;
 
        const { data: lease } = leaseId
          ? await supabase.from("leases").select(baseSelect).eq("id", leaseId).maybeSingle()
@@ -124,7 +124,7 @@ import {
        if (lease?.id) {
          const { data: lu } = await supabase
            .from("lease_units")
-           .select("unit_id, is_primary, unit:units(address, neighborhood, city, state, postal_code, registration_number, cib, property_type), subdivision:unit_subdivisions(label)")
+           .select("unit_id, is_primary, share_percent, unit:units(unit_number, address, neighborhood, city, state, postal_code, registration_number, cib, property_type), subdivision:unit_subdivisions(label)")
            .eq("lease_id", lease.id)
            .order("is_primary", { ascending: false });
          leaseUnits = (lu as any[]) || [];
@@ -356,6 +356,15 @@ import {
           unit: { property_type: (unitData as any)?.property_type },
           lease_units: activeLease?.leaseUnits || [],
         }),
+        carencia: (lease as any).rent_grace ?? null,
+        abatimentos: (lease as any).rent_deductions ?? null,
+        retencaoIrrf: (lease as any).rent_withholding ?? null,
+        rateio: (activeLease?.leaseUnits || [])
+          .filter((lu: any) => lu?.share_percent != null)
+          .map((lu: any) => ({
+            imovel: [lu.unit?.unit_number || lu.unit?.address || 'Imóvel', lu.subdivision?.label].filter(Boolean).join(' — '),
+            percentual: Number(lu.share_percent),
+          })),
       },
       pagamento: paymentInfo?.pix || paymentInfo?.banco ? {
         pix: paymentInfo.pix || '',
