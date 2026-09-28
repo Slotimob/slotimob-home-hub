@@ -195,19 +195,8 @@ import {
       ? JSON.parse(lease.payment_info || '{}')
       : (lease.payment_info || {});
 
-    // Prazo em meses (usando parse local para evitar bug de timezone)
-    const parseLocal = (v: string): Date => {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-        const [y, m, d] = v.split('-').map(Number);
-        return new Date(y, m - 1, d);
-      }
-      return new Date(v);
-    };
-    const startDate = parseLocal(lease.start_date);
-    const endDate = lease.end_date ? parseLocal(lease.end_date) : null;
+    // Prazo em meses (conta o mês final quando o fim é a véspera do aniversário)
     const prazoMeses = lease.end_date ? leaseTermMonths(lease.start_date, lease.end_date) : 30;
-    void endDate;
-    void startDate;
 
     const ownerDocDigits = (ownerContact?.document_number || '').replace(/\D/g, '');
     const ownerIsCnpj = ownerDocDigits.length === 14;
