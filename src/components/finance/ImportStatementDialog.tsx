@@ -19,6 +19,7 @@ interface ImportStatementDialogProps {
   onOpenChange: (open: boolean) => void;
   bankAccountId?: string;
   onSuccess: () => void;
+  onImported?: (bankAccountId: string) => void;
 }
 
 interface ParsedEntry {
@@ -26,6 +27,7 @@ interface ParsedEntry {
   amount: number;
   entry_date: string;
   is_credit: boolean;
+  fitid?: string;
 }
 
 interface OFXBalanceInfo {
@@ -38,6 +40,7 @@ export function ImportStatementDialog({
   onOpenChange,
   bankAccountId: initialBankAccountId = "",
   onSuccess,
+  onImported,
 }: ImportStatementDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -53,6 +56,8 @@ export function ImportStatementDialog({
   const [selectedBankAccountId, setSelectedBankAccountId] = useState(initialBankAccountId);
   const [importComplete, setImportComplete] = useState(false);
   const [extractedBalance, setExtractedBalance] = useState<OFXBalanceInfo | null>(null);
+  const [totalEntries, setTotalEntries] = useState(0);
+  const [importedAccountId, setImportedAccountId] = useState<string | null>(null);
 
   // Fetch existing imports for duplicate detection
   const { data: existingImports = [] } = useQuery({
@@ -117,6 +122,7 @@ export function ImportStatementDialog({
           try {
             const entries = parseCSVData(results.data as any[]);
             setPreview(entries.slice(0, 5)); // Preview first 5
+            setTotalEntries(entries.length);
           } catch (err: any) {
             setError(err.message);
           }
@@ -131,6 +137,7 @@ export function ImportStatementDialog({
       try {
         const { entries, balanceInfo } = parseOFXDataWithBalance(text);
         setPreview(entries.slice(0, 5));
+        setTotalEntries(entries.length);
         setExtractedBalance(balanceInfo);
       } catch (err: any) {
         setError(err.message);
@@ -256,6 +263,7 @@ export function ImportStatementDialog({
       const dateMatch = block.match(/<DTPOSTED>\s*([^<\s]+)/i);
       const memoMatch = block.match(/<MEMO>\s*([^<]+)/i);
       const nameMatch = block.match(/<NAME>\s*([^<]+)/i);
+      const fitidMatch = block.match(/<FITID>\s*([^<\r\n]+)/i);
 
       if (amountMatch && dateMatch) {
         const amount = parseFloat(amountMatch[1].trim().replace(',', '.'));
@@ -269,6 +277,7 @@ export function ImportStatementDialog({
           amount: Math.abs(amount),
           entry_date: entryDate,
           is_credit: amount > 0,
+          fitid: fitidMatch?.[1]?.trim() || undefined,
         });
       }
     }
@@ -304,7 +313,41 @@ export function ImportStatementDialog({
         balanceInfo = parsed.balanceInfo;
       }
 
-      // First, create the import record
+      // Deduplicação no front (os índices únicos são parciais; upsert não funciona)
+      const naturalKey = (e: { entry_date: string; amount: number; description: string | null }) =>
+        `${e.entry_date}|${Number(e.amount).toFixed(2)}|${(e.description ?? "").trim()}`;
+      const dates = entries.map((e) => e.entry_date).sort();
+      const { data: existing, error: existingError } = await supabase
+        .from("bank_statement_entries")
+        .select("fitid, entry_date, amount, description")
+        .eq("bank_account_id", selectedBankAccountId)
+        .gte("entry_date", dates[0])
+        .lte("entry_date", dates[dates.length - 1])
+        .limit(10000);
+      if (existingError) throw existingError;
+      const seenFitids = new Set((existing || []).filter((e) => e.fitid).map((e) => e.fitid as string));
+      const seenNatural = new Set(
+        (existing || []).filter((e) => !e.fitid).map((e) => naturalKey(e as any))
+      );
+      const newEntries: ParsedEntry[] = [];
+      for (const entry of entries) {
+        if (entry.fitid) {
+          if (seenFitids.has(entry.fitid)) continue;
+          seenFitids.add(entry.fitid);
+        } else {
+          const k = naturalKey(entry);
+          if (seenNatural.has(k)) continue;
+          seenNatural.add(k);
+        }
+        newEntries.push(entry);
+      }
+      const skipped = entries.length - newEntries.length;
+
+      if (newEntries.length === 0) {
+        toast({ title: `Nada novo: as ${entries.length} linhas deste arquivo já estavam importadas.` });
+        return;
+      }
+
       const { data: importRecord, error: importError } = await supabase
         .from("bank_statement_imports")
         .insert({
@@ -312,15 +355,14 @@ export function ImportStatementDialog({
           bank_account_id: selectedBankAccountId,
           file_name: file.name,
           file_type: fileExtension,
-          entries_count: entries.length,
+          entries_count: newEntries.length,
         })
         .select()
         .single();
 
       if (importError) throw importError;
 
-      // Insert entries linked to the import
-      const insertData = entries.map((entry) => ({
+      const insertData = newEntries.map((entry) => ({
         broker_id: brokerId,
         bank_account_id: selectedBankAccountId,
         description: entry.description,
@@ -328,10 +370,14 @@ export function ImportStatementDialog({
         entry_date: entry.entry_date,
         is_credit: entry.is_credit,
         import_id: importRecord.id,
+        fitid: entry.fitid ?? null,
       }));
 
       const { error } = await supabase.from("bank_statement_entries").insert(insertData);
-      if (error) throw error;
+      if (error) {
+        await supabase.from("bank_statement_imports").delete().eq("id", importRecord.id);
+        throw error;
+      }
 
       // Update bank account with extracted balance if available (OFX only)
       if (balanceInfo.ledgerBalance !== null && balanceInfo.balanceDate) {
@@ -355,14 +401,19 @@ export function ImportStatementDialog({
         ? ` Saldo do extrato: R$ ${balanceInfo.ledgerBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
         : "";
 
-      toast({ 
-        title: `${entries.length} entradas importadas com sucesso!${balanceMessage}`,
+      toast({
+        title: `${newEntries.length} lançamentos novos importados${skipped > 0 ? `, ${skipped} já existiam` : ""}.${balanceMessage}`,
       });
       setImportComplete(true);
+      setImportedAccountId(selectedBankAccountId);
+      onImported?.(selectedBankAccountId);
     } catch (error: any) {
       toast({
         title: "Erro ao importar",
-        description: error.message,
+        description:
+          error?.code === "23505" || /duplicate key/i.test(error?.message || "")
+            ? "Algumas linhas já tinham sido importadas. Tente de novo."
+            : "Não foi possível importar o extrato.",
         variant: "destructive",
       });
     } finally {
@@ -377,14 +428,17 @@ export function ImportStatementDialog({
     setDuplicateWarning(null);
     setImportComplete(false);
     setExtractedBalance(null);
+    setTotalEntries(0);
+    setImportedAccountId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleGoToReconciliation = () => {
+    const accountId = importedAccountId || selectedBankAccountId;
     onSuccess();
     resetForm();
     onOpenChange(false);
-    navigate("/finance/reconciliation");
+    navigate(accountId ? `/finance/reconciliation?account=${accountId}` : "/finance/reconciliation");
   };
 
   const handleClose = () => {
@@ -421,7 +475,7 @@ export function ImportStatementDialog({
               onValueChange={setSelectedBankAccountId}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione uma conta (opcional)" />
+                <SelectValue placeholder="Selecione uma conta" />
               </SelectTrigger>
               <SelectContent>
                 {bankAccounts.map((acc) => (
@@ -514,7 +568,7 @@ export function ImportStatementDialog({
                   <tbody>
                     {preview.map((entry, i) => (
                       <tr key={i} className="border-t">
-                        <td className="p-2">{entry.entry_date}</td>
+                        <td className="p-2">{entry.entry_date.split("-").reverse().join("/")}</td>
                         <td className="p-2 truncate max-w-[150px]">{entry.description}</td>
                         <td
                           className={`p-2 text-right font-medium ${
@@ -529,9 +583,11 @@ export function ImportStatementDialog({
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Mostrando as primeiras 5 entradas
-              </p>
+              {totalEntries > 5 && (
+                <p className="text-xs text-muted-foreground">
+                  Mostrando 5 de {totalEntries} entradas
+                </p>
+              )}
             </div>
           )}
         </div>

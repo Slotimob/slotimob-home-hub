@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Upload, Building2, History, RefreshCw, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useReconciliationDateRange } from "@/hooks/useReconciliationDateRange";
@@ -28,6 +28,7 @@ const FinanceReconciliation = () => {
   const queryClient = useQueryClient();
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -65,6 +66,16 @@ const FinanceReconciliation = () => {
     },
     enabled: !!user,
   });
+
+  // Pré-seleciona a conta vinda de ?account=<id> (ex.: depois de importar extrato)
+  const accountParam = searchParams.get("account");
+  useEffect(() => {
+    if (!accountParam || bankAccounts.length === 0) return;
+    if (bankAccounts.some((a: any) => a.id === accountParam)) setSelectedAccountId(accountParam);
+    const next = new URLSearchParams(searchParams);
+    next.delete("account");
+    setSearchParams(next, { replace: true });
+  }, [accountParam, bankAccounts]);
 
   // Auto-select first account
   useEffect(() => {
@@ -309,6 +320,7 @@ const FinanceReconciliation = () => {
             onOpenChange={setIsImportOpen}
             bankAccountId={selectedAccountId}
             onSuccess={handleStatementImported}
+            onImported={(id) => setSelectedAccountId(id)}
           />
 
           {selectedAccountId && (
