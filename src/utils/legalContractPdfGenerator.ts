@@ -1,4 +1,5 @@
 import type jsPDF from 'jspdf';
+import { buildSpecialConditionsClauses, buildRenewalClause, type ContractSpecialConditions } from '@/lib/lease-contract-clauses';
 import { resolveLeasePurpose, leaseTermMonths } from '@/lib/lease-purpose';
 import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
@@ -235,6 +236,10 @@ export interface LegalContractData {
     finalidade: 'residencial' | 'comercial';
     multaPercent?: number;
     jurosPercent?: number;
+    carencia?: ContractSpecialConditions['carencia'];
+    abatimentos?: ContractSpecialConditions['abatimentos'];
+    retencaoIrrf?: ContractSpecialConditions['retencaoIrrf'];
+    rateio?: ContractSpecialConditions['rateio'];
   };
   // Pagamento
   pagamento?: {
@@ -690,7 +695,8 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   
   addSubClause('2.1', `O prazo de locação é de ${data.contrato.prazoMeses} (${numberToWords(data.contrato.prazoMeses)}) meses, iniciando-se em ${formatDate(data.contrato.dataInicio)}${data.contrato.dataFim ? ` e terminando em ${formatDate(data.contrato.dataFim)}` : ''}, independentemente de qualquer aviso, notificação ou interpelação judicial ou extrajudicial.`);
   
-  addSubClause('2.2', 'Findo o prazo estipulado, se o LOCATÁRIO continuar na posse do imóvel, sem oposição do LOCADOR, a locação prorroga-se automaticamente por prazo indeterminado, nas mesmas condições ora contratadas, ressalvado o disposto no artigo 46 da Lei 8.245/91.');
+  // Texto a ser revisado por advogado (art. 46 / 47 / 56 da Lei 8.245/91)
+  addSubClause('2.2', buildRenewalClause(data.contrato.finalidade, data.contrato.prazoMeses));
 
   // CLÁUSULA TERCEIRA - DO ALUGUEL
   addClauseHeader('TERCEIRA', 'DO ALUGUEL E REAJUSTE');
@@ -702,6 +708,16 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   addSubClause('3.3', 'Caso o índice pactuado seja extinto ou tenha sua aplicação vedada por lei, as partes adotarão outro índice oficial que reflita a variação do poder aquisitivo da moeda nacional.');
 
   addSubClause('3.4', 'Na hipótese de a variação acumulada do índice de reajuste ser negativa no período, o valor do aluguel vigente será integralmente mantido, não havendo redução, permanecendo inalterado até o reajuste positivo subsequente.');
+
+  buildSpecialConditionsClauses(
+    {
+      carencia: data.contrato.carencia,
+      abatimentos: data.contrato.abatimentos,
+      retencaoIrrf: data.contrato.retencaoIrrf,
+      rateio: data.contrato.rateio,
+    },
+    data.contrato.dataInicio
+  ).forEach((text, idx) => addSubClause(`3.${5 + idx}`, text));
 
   // CLÁUSULA QUARTA - DO PAGAMENTO
   addClauseHeader('QUARTA', 'DA FORMA DE PAGAMENTO');
@@ -1233,6 +1249,15 @@ export const generateLegalContractFromLease = async (lease: any): Promise<void> 
       garantia: (lease.guarantee_type as any) || 'nenhuma',
       valorCaucao: lease.deposit_amount,
       finalidade: resolveLeasePurpose(lease),
+      carencia: lease.rent_grace ?? null,
+      abatimentos: lease.rent_deductions ?? null,
+      retencaoIrrf: lease.rent_withholding ?? null,
+      rateio: (lease.lease_units || [])
+        .filter((lu: any) => lu?.share_percent != null)
+        .map((lu: any) => ({
+          imovel: [lu.unit?.unit_number || lu.unit?.address || 'Imóvel', lu.subdivision?.label].filter(Boolean).join(' — '),
+          percentual: Number(lu.share_percent),
+        })),
       multaPercent: Number(billingAutomation.multa_percent) || Number(billingAutomation.multaPercent) || undefined,
       jurosPercent: Number(billingAutomation.juros_percent) || Number(billingAutomation.jurosPercent) || undefined,
     },
