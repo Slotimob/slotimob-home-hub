@@ -80,9 +80,10 @@ const FinanceReconciliation = () => {
   // Auto-select first account
   useEffect(() => {
     if (bankAccounts.length > 0 && !selectedAccountId) {
-      setSelectedAccountId(bankAccounts[0].id);
+      const fromParam = accountParam && bankAccounts.find((a: any) => a.id === accountParam);
+      setSelectedAccountId(fromParam ? fromParam.id : bankAccounts[0].id);
     }
-  }, [bankAccounts, selectedAccountId]);
+  }, [bankAccounts, selectedAccountId, accountParam]);
 
   // Fetch reconciliation totals
   const dateFromStr = format(dateRange.from, "yyyy-MM-dd");
