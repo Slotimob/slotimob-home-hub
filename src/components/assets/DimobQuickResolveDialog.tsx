@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { cpfCnpjError } from "@/lib/document-validation";
 import {
   Dialog,
   DialogContent,
@@ -133,8 +134,10 @@ export function DimobQuickResolveDialog({
 }: DimobQuickResolveDialogProps) {
   const [value, setValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [docError, setDocError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (open) setDocError(null);
     if (open) setValue(initialValue ?? '');
   }, [open, initialValue, resolveType]);
 
@@ -151,6 +154,12 @@ export function DimobQuickResolveDialog({
         variant: 'destructive',
       });
       return;
+    }
+
+    if (resolveType === 'owner_document' || resolveType === 'tenant_document') {
+      const err = cpfCnpjError(value);
+      setDocError(err);
+      if (err) return;
     }
 
     setIsLoading(true);
@@ -350,7 +359,9 @@ export function DimobQuickResolveDialog({
               onChange={handleInputChange}
               placeholder={config.fieldPlaceholder}
               autoFocus
+              aria-invalid={!!docError}
             />
+            {docError && <p className="text-sm text-destructive">{docError}</p>}
           </div>
 
           <div className="flex gap-2 pt-2">
