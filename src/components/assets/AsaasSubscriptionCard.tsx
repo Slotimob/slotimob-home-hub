@@ -43,6 +43,7 @@ import {
   PowerOff,
   Info,
   Settings,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
