@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import { isValidCpfCnpj } from "@/lib/document-validation";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -257,7 +258,9 @@ export const DimobReportTab = () => {
           const missingFields: string[] = [];
           if (!unit?.cib) missingFields.push('CIB');
           if (!ownerDocument) missingFields.push('CPF/CNPJ Proprietário');
+          else if (!isValidCpfCnpj(ownerDocument)) missingFields.push('CPF/CNPJ inválido (Proprietário)');
           if (!tenantDocument) missingFields.push('CPF/CNPJ Inquilino');
+          else if (!isValidCpfCnpj(tenantDocument)) missingFields.push('CPF/CNPJ inválido (Inquilino)');
 
           dimobRecords.push({
             rowKey: `${lease.id}:${x.unit_id}`,

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { cpfCnpjError, onlyDigits } from "@/lib/document-validation";
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -196,8 +197,17 @@ export const CreateContactDialog = ({
     }
   };
 
+  const docError =
+    (formData.document_type === 'CPF' || formData.document_type === 'CNPJ') && onlyDigits(formData.document_number)
+      ? cpfCnpjError(formData.document_number, formData.document_type)
+      : null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (docError) {
+      toast({ title: docError, variant: 'destructive' });
+      return;
+    }
     if (!user || !formData.name.trim() || formData.categories.length === 0) {
       toast({ 
         title: 'Preencha os campos obrigatórios', 
@@ -397,6 +407,9 @@ export const CreateContactDialog = ({
                 placeholder={formData.document_type === 'CNPJ' ? '00.000.000/0000-00' : '000.000.000-00'}
                 inputMode="numeric"
               />
+                {docError && onlyDigits(formData.document_number).length >= (formData.document_type === 'CNPJ' ? 14 : 11) && (
+                  <p className="text-xs text-destructive">{docError}</p>
+                )}
             </div>
           </div>
 

@@ -81,6 +81,7 @@ import {
 import { unitLabel } from "@/components/units/UnitSelector";
 import { occupyLeaseUnits, releaseLeaseUnits, leaseUnitRefKey, type LeaseUnitRef } from "@/lib/unit-status-sync";
 import { useToast } from "@/hooks/use-toast";
+import { cpfCnpjError, onlyDigits } from "@/lib/document-validation";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
 import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
@@ -211,6 +212,7 @@ export default function NovoContrato() {
   const initialSpecialRef = useRef<string | null>(null);
   const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
   const [guarantorData, setGuarantorData] = useState<GuarantorData>(getInitialGuarantor);
+  const guarantorCpfError = onlyDigits(guarantorData.cpf) ? cpfCnpjError(guarantorData.cpf, "CPF") : null;
   const [selectedGuarantorContactId, setSelectedGuarantorContactId] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>(getInitialPayment);
   const [billingContact, setBillingContact] = useState({
@@ -641,6 +643,15 @@ export default function NovoContrato() {
       } else {
         const lead = crmDeal.lead;
         const doc = (lead.cpf_cnpj || "").replace(/\D/g, "");
+        const leadDocError = doc ? cpfCnpjError(doc) : null;
+        if (leadDocError) {
+          toast({
+            title: leadDocError,
+            description: "Corrija o CPF/CNPJ do cliente no CRM antes de usá-lo como inquilino.",
+            variant: "destructive",
+          });
+          return;
+        }
         const { data, error } = await supabase
           .from("contacts")
           .insert({
@@ -894,7 +905,7 @@ export default function NovoContrato() {
       }
       case "guarantee":
         if (formData.guarantee_type === "fiador") {
-          const hasBasicInfo = !!(guarantorData.nome && guarantorData.cpf);
+          const hasBasicInfo = !!(guarantorData.nome && guarantorData.cpf) && !guarantorCpfError;
           if (needsSpouseData) {
             return hasBasicInfo && !!guarantorData.conjuge?.nome && !!guarantorData.conjuge?.cpf;
           }
@@ -922,6 +933,11 @@ export default function NovoContrato() {
   };
 
   const handleSubmit = async () => {
+    if (formData.guarantee_type === "fiador" && guarantorCpfError) {
+      toast({ title: guarantorCpfError, variant: "destructive" });
+      setStep("guarantee");
+      return;
+    }
     if (!effectiveUnitId) {
       toast({ title: "Unidade não definida", variant: "destructive" });
       return;
@@ -1712,7 +1728,11 @@ export default function NovoContrato() {
                         value={guarantorData.cpf}
                         onChange={(e) => setGuarantorData({ ...guarantorData, cpf: e.target.value })}
                         placeholder="000.000.000-00"
+                        aria-invalid={!!guarantorCpfError}
                       />
+                      {guarantorCpfError && onlyDigits(guarantorData.cpf).length >= 11 && (
+                        <p className="text-xs text-destructive">{guarantorCpfError}</p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs sm:text-sm">RG</Label>
