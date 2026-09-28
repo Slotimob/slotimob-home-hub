@@ -27,7 +27,7 @@ export {
   type LeaseFinancialConditionsLease,
   type LeaseMonthFigures,
 } from "@/lib/lease-special-conditions";
-import type { LeaseFinancialConditionsLease, LeaseMonthFigures } from "@/lib/lease-special-conditions";
+import { computeLeaseMonthFromConfig, type LeaseFinancialConditionsLease, type LeaseMonthFigures } from "@/lib/lease-special-conditions";
 import type {
   RentDeductionConfig,
   RentGraceConfig,
