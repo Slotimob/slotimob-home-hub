@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { CreateTransactionDialog, TransactionPrefill } from "./CreateTransactionDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { reconcileEntry, invalidateReconciliationQueries } from "@/hooks/useReconciliation";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Entry {
@@ -63,6 +64,7 @@ export function ReconciliationPendingList({
   const [searchTerm, setSearchTerm] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [prefillData, setPrefillData] = useState<TransactionPrefill | undefined>();
+  const [entryForCreate, setEntryForCreate] = useState<Entry | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -82,13 +84,37 @@ export function ReconciliationPendingList({
       dueDate: entry.entry_date,
       status: "paid",
       bankAccountId: bankAccountId,
+      paidDate: entry.entry_date,
+      requireCategory: true,
     });
+    setEntryForCreate(entry);
     setCreateDialogOpen(true);
   };
 
-  const handleTransactionSuccess = () => {
+  const handleTransactionSuccess = async (created?: { id: string }) => {
+    const entry = entryForCreate;
     setCreateDialogOpen(false);
     setPrefillData(undefined);
+    setEntryForCreate(null);
+    if (created?.id && entry) {
+      try {
+        await reconcileEntry({
+          entryId: entry.id,
+          transactionId: created.id,
+          markAsPaid: true,
+          entryDate: entry.entry_date,
+          bankAccountId: (entry as any).bank_account_id || bankAccountId || null,
+        });
+        toast({ title: "Lançamento criado e conciliado" });
+      } catch (err) {
+        console.error("[reconcile after create]", err);
+        toast({
+          title: "Lançamento criado, mas não foi possível conciliar. Vincule manualmente.",
+          variant: "destructive",
+        });
+      }
+      invalidateReconciliationQueries(queryClient);
+    }
     onTransactionCreated();
   };
 

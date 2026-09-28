@@ -37,12 +37,16 @@ export interface TransactionPrefill {
   dueDate?: string;
   status?: string;
   bankAccountId?: string;
+  /** Data do pagamento (ex.: data da linha do extrato). */
+  paidDate?: string;
+  /** Torna a categoria obrigatória (ex.: lançamento criado pela conciliação). */
+  requireCategory?: boolean;
 }
 
 interface CreateTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess: (created?: { id: string }) => void;
   editTransaction?: any;
   prefill?: TransactionPrefill;
   obligationType?: ObligationType | null;
@@ -248,6 +252,9 @@ export function CreateTransactionDialog({
       }
 
       // Normal transaction flow
+      if (!editTransaction && prefill?.requireCategory && !formData.categoryId) {
+        throw new Error("Selecione uma categoria");
+      }
       // Auto-preenche property_id a partir da unidade selecionada (unidade de
       // empreendimento) para que o lançamento também seja encontrável no nível
       // do imóvel pai (usado no vínculo financeiro de benfeitorias).
@@ -276,7 +283,10 @@ export function CreateTransactionDialog({
         status: formData.status,
         payment_method: formData.paymentMethod || null,
         notes: formData.notes || null,
-        paid_date: formData.status === "paid" ? todayDateOnly() : null,
+        paid_date:
+          formData.status === "paid"
+            ? (!editTransaction && prefill?.paidDate) || todayDateOnly()
+            : null,
         unit_id: formData.unitId || null,
         property_id: resolvedPropertyId,
         contact_id: formData.contactId || null,
@@ -322,11 +332,16 @@ export function CreateTransactionDialog({
         if (error) throw error;
         toast({ title: `${count} lançamentos recorrentes criados!` });
       } else {
-        const { error } = await supabase
+        const { data: createdRow, error } = await supabase
           .from("financial_transactions")
-          .insert(baseTransactionData);
+          .insert(baseTransactionData)
+          .select("id")
+          .single();
         if (error) throw error;
         toast({ title: "Lançamento criado com sucesso!" });
+        onSuccess(createdRow ? { id: createdRow.id } : undefined);
+        resetForm();
+        return;
       }
 
       onSuccess();
