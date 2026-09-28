@@ -1,4 +1,5 @@
 import { leaseUnitFilter } from '@/hooks/useLeases';
+import { isValidCpfCnpj } from "@/lib/document-validation";
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -123,14 +124,17 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
           .single();
 
         if (owner) {
-          const hasValidDoc = owner.document_number && owner.document_number.length >= 11;
+          const docFilled = !!owner.document_number;
+          const hasValidDoc = docFilled && isValidCpfCnpj(owner.document_number);
           checks.push({
             id: 'owner',
             label: 'Documento do Proprietário',
             status: hasValidDoc ? 'ok' : 'pending',
             message: hasValidDoc 
               ? `${owner.name} - ${owner.document_type || 'CPF'}: ${owner.document_number}` 
-              : `${owner.name} - CPF/CNPJ não cadastrado`,
+              : docFilled
+                ? `${owner.name} - CPF/CNPJ inválido`
+                : `${owner.name} - CPF/CNPJ não cadastrado`,
             resolveType: 'owner_document',
             contactId: unit.owner_contact_id,
             contactName: owner.name,
@@ -179,13 +183,16 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
             .single();
 
           if (tenant) {
-            const hasValidDoc = tenant.document_number && tenant.document_number.length >= 11;
+            const docFilled = !!tenant.document_number;
+          const hasValidDoc = docFilled && isValidCpfCnpj(tenant.document_number);
             checks.push({
               id: 'tenant',
               label: 'Documento do Inquilino',
               status: hasValidDoc ? 'ok' : 'pending',
               message: hasValidDoc 
                 ? `${tenant.name} - ${tenant.document_type || 'CPF'}: ${tenant.document_number}` 
+                : docFilled
+                ? `${tenant.name} - CPF/CNPJ inválido`
                 : `${tenant.name} - CPF/CNPJ não cadastrado`,
               resolveType: 'tenant_document',
               contactId: activeLease.tenant_contact_id,
