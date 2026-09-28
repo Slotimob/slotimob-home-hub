@@ -22,26 +22,17 @@ import {
   resolveGraceSchedule,
   summarizeSettlement,
 } from "@/lib/lease-special-conditions";
+export {
+  computeLeaseMonthFromConfig,
+  type LeaseFinancialConditionsLease,
+  type LeaseMonthFigures,
+} from "@/lib/lease-special-conditions";
+import type { LeaseFinancialConditionsLease, LeaseMonthFigures } from "@/lib/lease-special-conditions";
 import type {
   RentDeductionConfig,
   RentGraceConfig,
   RentWithholdingConfig,
 } from "@/hooks/useLeases";
-
-/** Campos do contrato usados pelas condições financeiras. */
-export interface LeaseFinancialConditionsLease {
-  id: string;
-  rent_amount: number;
-  due_day: number;
-  start_date: string;
-  admin_fee_percentage?: number | null;
-  fire_insurance?: any;
-  iptu_charge?: any;
-  additional_obligations?: any[] | null;
-  rent_grace?: RentGraceConfig | null;
-  rent_deductions?: RentDeductionConfig[] | null;
-  rent_withholding?: RentWithholdingConfig | null;
-}
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const RESPONSIBLE_LABEL: Record<string, string> = {
@@ -59,77 +50,6 @@ const competencyLabel = (c: string) => {
   const l = format(parseISO(`${c}-01`), "MMM/yyyy", { locale: ptBR });
   return l.charAt(0).toUpperCase() + l.slice(1);
 };
-
-export interface LeaseMonthFigures {
-  competency: string | null;
-  gross: number;
-  grace: number;
-  deductions: number;
-  irrf: number;
-  /** Líquido esperado do inquilino: bruto − carência − abatimentos − IRRF. */
-  net: number;
-}
-
-/**
- * Valores de um mês calculados pela CONFIGURAÇÃO do contrato.
- * Sem `competency`, usa o mês típico (1ª competência sem carência).
- */
-export function computeLeaseMonthFromConfig(
-  lease: LeaseFinancialConditionsLease,
-  competency?: string
-): LeaseMonthFigures {
-  const start = lease.start_date || todayInSaoPauloDateOnly();
-  const rent = Number(lease.rent_amount) || 0;
-  const target = competency ?? null;
-  const months = target
-    ? Math.max(1, monthsBetween(start.slice(0, 7), target) + 13)
-    : 60;
-  const rents = buildRentInstallments({
-    startDate: `${start.slice(0, 7)}-01`,
-    months,
-    amount: rent,
-    dueDay: lease.due_day || 10,
-    graceSchedule: resolveGraceSchedule(lease.rent_grace, start),
-  });
-  const month = target
-    ? rents.find((r) => r.competencyPeriod === target)
-    : rents.find((r) => r.meta?.kind === "rent");
-  if (!month) {
-    return { competency: target, gross: rent, grace: 0, deductions: 0, irrf: 0, net: rent };
-  }
-  const { installments: deductions } = buildRentDeductionInstallments({
-    deductions: lease.rent_deductions,
-    rentInstallments: rents,
-  });
-  const iptu = lease.iptu_charge?.enabled ? Number(lease.iptu_charge.installment_amount) || 0 : 0;
-  const condo =
-    (lease.additional_obligations || []).find((o: any) => o?.type === "condominium" && o?.enabled)
-      ?.installment_amount || 0;
-  const irrf = buildWithholdingInstallments({
-    withholding: lease.rent_withholding,
-    rentInstallments: [month],
-    baseDeductions: { iptu, condominium: condo, adminFeePercent: Number(lease.admin_fee_percentage) || 0 },
-  });
-  const s = summarizeSettlement([
-    month,
-    ...deductions.filter((d) => d.settlementKey === month.settlementKey),
-    ...irrf,
-  ])[0];
-  return {
-    competency: month.competencyPeriod,
-    gross: s?.gross ?? rent,
-    grace: s?.grace ?? 0,
-    deductions: s?.deductions ?? 0,
-    irrf: s?.irrf ?? 0,
-    net: s?.net ?? rent,
-  };
-}
-
-function monthsBetween(a: string, b: string): number {
-  const [ay, am] = a.split("-").map(Number);
-  const [by, bm] = b.split("-").map(Number);
-  return (by - ay) * 12 + (bm - am);
-}
 
 /** Valores reais já lançados na competência (aluguel, abatimentos, IRRF). */
 function useLeaseMonthActuals(leaseId: string, competency: string) {
