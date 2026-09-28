@@ -606,8 +606,38 @@ const Pipeline = () => {
   const handleBulkMove = async (targetStage: string) => {
     if (selectedDeals.size === 0) return;
 
-    // Gate check
     const dealIds = Array.from(selectedDeals);
+
+    // Ganho/perdido exigem comissão ou motivo: uma negociação por vez, pelo mesmo caminho do arrastar.
+    if (targetStage === 'won' || targetStage === 'lost') {
+      if (dealIds.length > 1) {
+        toast({
+          title: 'Mova uma negociação por vez',
+          description: 'Para ganho ou perdido, mova uma negociação por vez: cada uma precisa de comissão ou motivo.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      await updateDealPlacement(
+        dealIds[0],
+        targetStage,
+        customStages,
+        deals,
+        (id, oldStage, oldVisibleStageId) => {
+          setPendingLossDeal({ dealId: id, oldStage, oldVisibleStageId });
+          setIsLossDialogOpen(true);
+        },
+        (movedDeal) => {
+          setPendingWonDeal(movedDeal);
+          setIsCommissionDialogOpen(true);
+        },
+      );
+      setSelectionMode(false);
+      setSelectedDeals(new Set());
+      return;
+    }
+
+    // Gate check
     const gateInput: BulkGateInput = { actionType: 'bulk_status_change', itemCount: dealIds.length, targetTable: 'deals', targetIds: dealIds };
     const r = await gate.check(gateInput);
     if (!r.canProceed) {

@@ -11,7 +11,7 @@ export interface LeaseConversionContext {
   leadName: string;
   leadEmail?: string | null;
   leadPhone?: string | null;
-  propertyId: string;
+  propertyId: string | null;
   propertyName: string;
   estimatedValue?: number | null;
   businessType: 'rental' | 'sale';
@@ -43,12 +43,12 @@ export function useLeaseConversionContext() {
       dealId: deal.id,
       unitId: deal.unit.id,
       unitNumber: deal.unit.unit_number,
-      leadId: deal.lead.id,
-      leadName: deal.lead.name,
-      leadEmail: deal.lead.email,
-      leadPhone: deal.lead.phone,
-      propertyId: deal.property.id,
-      propertyName: deal.property.name,
+      leadId: deal.lead?.id ?? '',
+      leadName: deal.lead?.name ?? '',
+      leadEmail: deal.lead?.email ?? null,
+      leadPhone: deal.lead?.phone ?? null,
+      propertyId: deal.property?.id ?? null,
+      propertyName: deal.property?.name ?? deal.unit?.unit_number ?? '',
       estimatedValue: deal.estimated_value,
       businessType: 'rental',
     };
