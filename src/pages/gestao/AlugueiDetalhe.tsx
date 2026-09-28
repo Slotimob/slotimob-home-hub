@@ -55,7 +55,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { LeaseSpecialConditionsSummaryCard } from "@/components/assets/LeaseFinancialConditionsCard";
-import { useLeaseByUnitId } from "@/hooks/useLeases";
+import { useLeaseByUnitId, leaseUnitFilter } from "@/hooks/useLeases";
 import { isRentGraceCompetency } from "@/lib/lease-obligations-inheritance";
 import { fetchLeaseRentTransactions, viaLeaseText, unitLabel as unitLabelOf } from "@/lib/lease-multi-unit";
 import { formatCurrencyBRL } from "@/utils/unitPricing";
@@ -233,6 +233,34 @@ const AlugueiDetalhe = () => {
         .single();
       if (error) throw error;
       return data;
+    },
+    enabled: !!unitId,
+  });
+
+  // Aluguel dos contratos vivos que cabe a este imóvel (rateio por lease_units.share_percent)
+  const { data: contractRent } = useQuery({
+    queryKey: ["unit-contract-rent-share", unitId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leases")
+        .select("id, unit_id, rent_amount, lease_units(unit_id, share_percent)")
+        .or(await leaseUnitFilter(unitId!))
+        .in("status", ["active", "pending"]);
+      if (error) throw error;
+      const rows = (data || []) as any[];
+      if (rows.length === 0) return null;
+      let amount = 0;
+      let full = 0;
+      for (const l of rows) {
+        const shares = ((l.lease_units || []) as any[])
+          .filter((u) => u.unit_id === unitId && u.share_percent != null)
+          .map((u) => Number(u.share_percent));
+        const share = shares.length ? shares.reduce((a, b) => a + b, 0) : 100;
+        amount += (Number(l.rent_amount) || 0) * (share / 100);
+        full += Number(l.rent_amount) || 0;
+      }
+      const percent = full > 0 ? Math.round((amount / full) * 1000) / 10 : 100;
+      return { amount: Math.round(amount * 100) / 100, percent };
     },
     enabled: !!unitId,
   });
@@ -708,9 +736,10 @@ const AlugueiDetalhe = () => {
                   <div className="col-span-2">
                     <p className="text-muted-foreground text-xs">Endereço</p>
                     <p className="font-medium truncate">
-                      {unitData?.address
-                        ? `${unitData.address}, ${unitData.city} - ${unitData.state}`
-                        : "—"}
+                      {(() => {
+                        const cityUf = [unitData?.city, unitData?.state].filter(Boolean).join(" - ");
+                        return [unitData?.address, cityUf].filter(Boolean).join(", ") || "—";
+                      })()}
                     </p>
                   </div>
                   <div>
@@ -734,10 +763,21 @@ const AlugueiDetalhe = () => {
                   <div>
                     <p className="text-muted-foreground text-xs">Aluguel</p>
                     <p className="font-medium">
-                      {unitData?.rent_price
-                        ? `R$ ${unitData.rent_price.toLocaleString("pt-BR")}`
-                        : "—"}
+                      {contractRent
+                        ? contractRent.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                        : unitData?.rent_price
+                          ? unitData.rent_price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                          : "—"}
                     </p>
+                    {(contractRent || unitData?.rent_price) && (
+                      <p className="text-[10px] text-muted-foreground">
+                        {contractRent
+                          ? contractRent.percent < 100
+                            ? `do contrato (${contractRent.percent.toLocaleString("pt-BR")}%)`
+                            : "do contrato"
+                          : "anunciado"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Condomínio</p>
