@@ -29,6 +29,8 @@ import {
   buildRentInstallments,
   calculateDueDate,
   calculateProjectionWindow,
+  firstDueOnOrAfter,
+  proRataFirstMonth,
   resolveFirstAdjustedDueDate,
   resolveRentDueOffset,
   type PlannedInstallment,
@@ -276,6 +278,7 @@ export const LeaseProjectionEditor = forwardRef<
 
   // --- Estado editável, um BlockConfig por bloco ---
   const [blocks, setBlocks] = useState<Record<string, BlockConfig>>({});
+  const [rentProRata, setRentProRata] = useState(false);
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [obligationsRevealed, setObligationsRevealed] = useState(true);
@@ -334,12 +337,18 @@ export const LeaseProjectionEditor = forwardRef<
           resolveFirstAdjustedDueDate(parseISO(`${windowMonth}-01`), dueDay, rentDueOffset),
           "yyyy-MM-dd"
         )
-      : format(calculateDueDate(base, dueDay), "yyyy-MM-dd");
+      : format(firstDueOnOrAfter(base, dueDay), "yyyy-MM-dd");
     // Emissão default = dia de início do contrato (mesma regra do motor legado).
     const issueDay = lease.start_date ? getDate(parseISO(lease.start_date)) : 1;
     /** Competência completa: mês do parâmetro + dia de emissão, com clamp de mês curto. */
     const withIssueDay = (yyyyMm: string) =>
       format(calculateDueDate(parseISO(`${yyyyMm}-01`), issueDay), "yyyy-MM-dd");
+
+    // Encargos: 1º vencimento nunca antes do início (fora do pós-reajuste)
+    const chargeFirstDue = (from: Date, day: number) =>
+      postAdjustment
+        ? calculateDueDate(from, day)
+        : firstDueOnOrAfter(from.getTime() < base.getTime() ? base : from, day);
 
     const next: Record<string, BlockConfig> = {
       rent: {
@@ -357,7 +366,7 @@ export const LeaseProjectionEditor = forwardRef<
         firstDueDate:
           lease.fire_insurance.first_due_date ||
           format(
-            calculateDueDate(parseISO(`${competency}-01`), unitDueDay("insurance") ?? dueDay),
+            chargeFirstDue(parseISO(`${competency}-01`), unitDueDay("insurance") ?? dueDay),
             "yyyy-MM-dd"
           ),
         months: insuranceCount,
@@ -372,7 +381,7 @@ export const LeaseProjectionEditor = forwardRef<
         firstDueDate:
           lease.iptu_charge.first_due_date ||
           format(
-            calculateDueDate(parseISO(`${competency}-01`), unitDueDay("iptu") ?? dueDay),
+            chargeFirstDue(parseISO(`${competency}-01`), unitDueDay("iptu") ?? dueDay),
             "yyyy-MM-dd"
           ),
         months: iptuCount,
@@ -385,7 +394,7 @@ export const LeaseProjectionEditor = forwardRef<
         competency: withIssueDay(windowMonth),
         firstDueDate:
           (cfg.first_due_date as string) ||
-          format(calculateDueDate(base, unitDueDay(cfg.type) ?? dueDay), "yyyy-MM-dd"),
+          format(chargeFirstDue(base, unitDueDay(cfg.type) ?? dueDay), "yyyy-MM-dd"),
         months: Math.max(1, window.months),
         amount: cfg.installment_amount || 0,
       };
@@ -419,7 +428,7 @@ export const LeaseProjectionEditor = forwardRef<
   const rentInstallments = useMemo(() => {
     const cfg = blocks.rent;
     if (!lease || !window || window.blocked || !cfg) return [];
-    return buildRentInstallments({
+    const list = buildRentInstallments({
       startDate: `${competencyPeriodOf(cfg.competency)}-01`,
       months: Math.max(0, cfg.months),
       amount: cfg.amount,
@@ -433,7 +442,25 @@ export const LeaseProjectionEditor = forwardRef<
         ? undefined
         : resolveGraceSchedule(lease.rent_grace, lease.start_date),
     });
-  }, [lease, window, blocks.rent, existingCompetencies, existingRentCompetencies, postAdjustment]);
+    // Pró-rata do 1º mês: só na competência do início do contrato
+    const first = list[0];
+    if (
+      rentProRata && first && !first.isGrace && !postAdjustment && lease.start_date &&
+      first.competencyPeriod === lease.start_date.slice(0, 7)
+    ) {
+      const pr = proRataFirstMonth(parseISO(lease.start_date), first.amount);
+      list[0] = { ...first, amount: pr.amount, description: `${first.description} (pró-rata ${pr.days} de ${pr.totalDays} dias)` };
+    }
+    return list;
+  }, [lease, window, blocks.rent, existingCompetencies, existingRentCompetencies, postAdjustment, rentProRata]);
+
+  const rentProRataInfo = useMemo(() => {
+    const first = rentInstallments[0];
+    if (!lease?.start_date || postAdjustment || !first || first.isGrace) return null;
+    if (first.competencyPeriod !== lease.start_date.slice(0, 7)) return null;
+    const pr = proRataFirstMonth(parseISO(lease.start_date), blocks.rent?.amount || 0);
+    return pr.days === pr.totalDays ? null : pr;
+  }, [lease, postAdjustment, rentInstallments, blocks.rent]);
 
   const insuranceInstallments = useMemo(() => {
     const cfg = blocks.fire_insurance;
@@ -822,6 +849,11 @@ export const LeaseProjectionEditor = forwardRef<
               installments={rentInstallments}
               config={blocks.rent}
               onConfigChange={(patch) => patchBlock("rent", patch)}
+              proRata={
+                rentProRataInfo
+                  ? { checked: rentProRata, onChange: setRentProRata, days: rentProRataInfo.days, totalDays: rentProRataInfo.totalDays }
+                  : undefined
+              }
               enabled={!!enabled.rent}
               onEnabledChange={(v) => setEnabled((p) => ({ ...p, rent: v }))}
               selected={selected}

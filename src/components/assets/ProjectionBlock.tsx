@@ -73,6 +73,8 @@ export interface ProjectionBlockProps {
   amountOverrides?: Record<string, number>;
   /** Quando presente, o valor das linhas selecionáveis fica editável (null = restaurar). */
   onAmountOverride?: (key: string, amount: number | null) => void;
+  /** Opção "Cobrar o 1º mês proporcional" (só aluguel; ausente = escondida). */
+  proRata?: { checked: boolean; onChange: (v: boolean) => void; days: number; totalDays: number };
   /** Atalho "Editar no mês" nas linhas já lançadas. */
   onEditExisting?: (i: PlannedInstallment) => void;
 }
@@ -108,6 +110,7 @@ export function ProjectionBlock({
   onAmountOverride,
   onEditExisting,
   countLabel,
+  proRata,
 }: ProjectionBlockProps) {
   const amountOf = (i: PlannedInstallment) => amountOverrides?.[i.key] ?? i.amount;
   const renderAmount = (i: PlannedInstallment) => {
@@ -272,6 +275,22 @@ export function ProjectionBlock({
           />
         </div>
       </div>
+      )}
+
+      {!hideConfig && proRata && (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={`prorata-${blockKey}`}
+            checked={proRata.checked}
+            onCheckedChange={(c) => proRata.onChange(c === true)}
+          />
+          <Label htmlFor={`prorata-${blockKey}`} className="text-sm font-normal">
+            Cobrar o 1º mês proporcional (pró-rata)
+          </Label>
+          <span className="text-xs text-muted-foreground">
+            {proRata.days} dias de {proRata.totalDays}
+          </span>
+        </div>
       )}
 
       {enabled && installments.length > 0 && (

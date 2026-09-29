@@ -185,6 +185,26 @@ export function calculateDueDate(baseDate: Date, dueDay: number): Date {
 
 
 /** Competência a partir da qual vale o valor reajustado: o mês do aniversário (12 meses completos). */
+/**
+ * 1º vencimento: primeira data com o dia de vencimento >= início do contrato
+ * (se o dia já passou no mês do início, vai para o mês seguinte; clamp de mês curto).
+ */
+export function firstDueOnOrAfter(start: Date, dueDay: number): Date {
+  const s = startOfDay(start);
+  const sameMonth = calculateDueDate(s, dueDay);
+  if (sameMonth.getTime() >= s.getTime()) return sameMonth;
+  return calculateDueDate(addMonths(startOfMonth(s), 1), dueDay);
+}
+
+/** Pró-rata do 1º mês: dias do início até o fim do mês ÷ dias do mês. */
+export function proRataFirstMonth(start: Date, amount: number): { days: number; totalDays: number; amount: number } {
+  const totalDays = getDate(lastDayOfMonth(start));
+  const days = totalDays - getDate(start) + 1;
+  return { days, totalDays, amount: Math.round(((amount * days) / totalDays) * 100) / 100 };
+}
+
+const minDateStr = (a: string, b: string) => (a <= b ? a : b);
+
 export function resolveAnniversaryCompetency(adjustmentDate: string | Date): Date {
   return startOfMonth(toDate(adjustmentDate) ?? startOfDay(new Date()));
 }
@@ -305,6 +325,8 @@ export interface BuildRentInstallmentsInput {
   existingRentCompetencies?: Set<string>;
   /** Carência por competência "yyyy-MM" (ver resolveGraceSchedule). */
   graceSchedule?: Map<string, GraceMonth>;
+  /** Cobra a 1ª parcela proporcional aos dias do início até o fim do mês. */
+  proRataFirst?: boolean;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -319,31 +341,34 @@ export function buildRentInstallments({
   existingCompetencies,
   existingRentCompetencies,
   graceSchedule,
+  proRataFirst,
 }: BuildRentInstallmentsInput): PlannedInstallment[] {
   const start = toDate(startDate);
   if (!start || months <= 0) return [];
 
-  const firstDue = toDate(firstDueDate ?? null);
+  const explicitFirstDue = toDate(firstDueDate ?? null);
+  const firstDue = explicitFirstDue ?? firstDueOnOrAfter(start, dueDay);
+  const rentDueDay = explicitFirstDue ? getDate(explicitFirstDue) : dueDay;
+  const issueDayEff = issueDay && issueDay > 0 ? issueDay : getDate(start);
   const baseMonth = startOfMonth(start);
   const result: PlannedInstallment[] = [];
 
   for (let i = 0; i < months; i++) {
     const competencyDate = addMonths(baseMonth, i);
-    const due = firstDue
-      ? calculateDueDate(addMonths(firstDue, i), getDate(firstDue))
-      : calculateDueDate(competencyDate, dueDay);
+    const due = calculateDueDate(addMonths(firstDue, i), rentDueDay);
     const competencyPeriod = format(competencyDate, "yyyy-MM");
     const dueDate = format(due, "yyyy-MM-dd");
-    const issueDate = format(
-      calculateDueDate(competencyDate, issueDay && issueDay > 0 ? issueDay : getDate(competencyDate)),
-      "yyyy-MM-dd"
+    const issueDate = minDateStr(
+      format(calculateDueDate(competencyDate, issueDayEff), "yyyy-MM-dd"),
+      dueDate
     );
     const dedupKey = `rent:${competencyPeriod}:${dueDate}`;
 
     const label = monthLabel(competencyDate);
     const grace = graceSchedule?.get(competencyPeriod);
-    let finalAmount = amount;
-    let description = `Aluguel ${label}`;
+    const pr = i === 0 && proRataFirst ? proRataFirstMonth(start, amount) : null;
+    let finalAmount = pr ? pr.amount : amount;
+    let description = pr ? `Aluguel ${label} (pró-rata ${pr.days} de ${pr.totalDays} dias)` : `Aluguel ${label}`;
     let meta: PlannedInstallment["meta"] = { kind: "rent" };
     let isGrace: boolean | undefined;
     if (grace) {
@@ -402,7 +427,7 @@ function resolveChargeFirstDue(
   const base = toDate(fallbackStartDate) ?? new Date();
   const day =
     obligationDueDay && obligationDueDay > 0 ? obligationDueDay : fallbackDueDay;
-  return calculateDueDate(base, day);
+  return firstDueOnOrAfter(base, day);
 }
 
 export interface BuildChargeInstallmentsInput {
@@ -461,7 +486,7 @@ export function buildChargeInstallments({
     toDate(cycleStartDate ?? null) ?? toDate(fallbackStartDate) ?? first;
   const competencyDate = startOfMonth(cycleBase);
   const competencyPeriod = format(competencyDate, "yyyy-MM");
-  const issueDate = format(
+  const cycleIssueDate = format(
     calculateDueDate(competencyDate, issueDay && issueDay > 0 ? issueDay : getDate(competencyDate)),
     "yyyy-MM-dd"
   );
@@ -470,6 +495,7 @@ export function buildChargeInstallments({
 
   for (let i = 0; i < count; i++) {
     const dueDate = format(calculateDueDate(addMonths(first, i), dueDay), "yyyy-MM-dd");
+    const issueDate = minDateStr(cycleIssueDate, dueDate);
     // Dedup por PARCELA: dentro da mesma competência anual, o vencimento é o
     // discriminador (não existe coluna de índice de parcela na tabela).
     const dedupKey = `${obligationType}:${competencyPeriod}:${dueDate}`;
@@ -553,9 +579,9 @@ export function buildMonthlyChargeInstallments({
     const competencyDate = addMonths(baseMonth, i);
     const competencyPeriod = format(competencyDate, "yyyy-MM");
     const dueDate = format(calculateDueDate(addMonths(first, i), dueDay), "yyyy-MM-dd");
-    const issueDate = format(
-      calculateDueDate(competencyDate, issueDay && issueDay > 0 ? issueDay : getDate(competencyDate)),
-      "yyyy-MM-dd"
+    const issueDate = minDateStr(
+      format(calculateDueDate(competencyDate, issueDay && issueDay > 0 ? issueDay : getDate(start)), "yyyy-MM-dd"),
+      dueDate
     );
     const dedupKey = `${obligationType}:${competencyPeriod}:${dueDate}`;
 
