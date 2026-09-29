@@ -14,16 +14,16 @@ export function useCreateProperty() {
   const { effectiveBrokerId } = useWorkspace();
   const [saving, setSaving] = useState(false);
 
-  const createProperty = async (payload: PropertyPayload): Promise<boolean> => {
+  const createProperty = async (payload: PropertyPayload): Promise<string | null> => {
     try {
       setSaving(true);
 
-      const { error } = await supabase.from('properties').insert([
+      const { data: inserted, error } = await supabase.from('properties').insert([
         {
           broker_id: effectiveBrokerId,
           ...payload,
         },
-      ]);
+      ]).select('id').single();
 
       if (error) throw error;
 
@@ -32,14 +32,14 @@ export function useCreateProperty() {
         description: 'O empreendimento foi cadastrado com sucesso.',
       });
 
-      return true;
+      return inserted?.id ?? null;
     } catch (error: any) {
       toast({
         title: 'Erro ao criar empreendimento',
         description: error.message,
         variant: 'destructive',
       });
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }

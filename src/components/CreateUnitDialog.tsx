@@ -61,12 +61,18 @@ export const CreateUnitDialog = ({
     e.preventDefault();
 
     const effectivePropertyId = standalone ? null : (propertyId || formData.property_id || null);
-    const ok = await createUnit(formData, effectivePropertyId);
+    const created = await createUnit(formData, effectivePropertyId);
 
-    if (ok) {
+    if (created) {
       onOpenChange(false);
       setFormData(getInitialFormData());
       onSuccess();
+      // I7: sempre abre o detalhe do imóvel criado
+      navigate(
+        (standalone ? '/real-estate' : '/units') +
+          `?id=${created.id}` +
+          (!standalone && effectivePropertyId ? `&propertyId=${effectivePropertyId}` : ''),
+      );
     }
   };
 

@@ -46,10 +46,10 @@ export default function NovoEmpreendimento() {
   };
 
   const handleSubmit = async (payload: PropertyPayload) => {
-    const ok = await createProperty(payload);
-    if (ok) {
+    const newId = await createProperty(payload);
+    if (newId) {
       clearDraft();
-      navigate('/properties');
+      navigate(`/properties?id=${newId}`);
     }
   };
 
