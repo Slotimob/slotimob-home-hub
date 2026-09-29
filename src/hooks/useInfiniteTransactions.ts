@@ -73,7 +73,8 @@ export function useInfiniteTransactions(
           *,
           category:financial_categories(id, name, color, icon),
           bank_account:bank_accounts(id, name, bank_name),
-          unit:units(id, unit_number, is_standalone, property:properties(name))
+          unit:units(id, unit_number, is_standalone, property:properties(name)),
+          lease:leases!financial_transactions_lease_id_fkey(subdivision:unit_subdivisions!leases_unit_subdivision_id_fkey(label))
         `);
 
       // Apply sorting (servidor) + desempate fixo para a paginação não repetir/pular linhas
