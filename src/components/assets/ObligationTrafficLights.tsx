@@ -58,6 +58,11 @@ const STATUS_CONFIG: Record<ObligationStatus, {
     textClassName: "text-sky-600",
     label: "Carência",
   },
+  before_contract: {
+    bgClassName: "bg-muted",
+    textClassName: "text-muted-foreground",
+    label: "Antes do contrato",
+  },
   not_launched: {
     bgClassName: "bg-muted",
     textClassName: "text-muted-foreground",

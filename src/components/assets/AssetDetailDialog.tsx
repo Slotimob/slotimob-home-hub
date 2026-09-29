@@ -153,6 +153,12 @@ const STATUS_CONFIG: Record<ObligationStatus, {
     className: "text-sky-600",
     bgClassName: "bg-sky-500/15 text-sky-600 border-sky-500/30",
   },
+  before_contract: {
+    label: "Antes do contrato",
+    icon: MoreHorizontal,
+    className: "text-muted-foreground",
+    bgClassName: "bg-muted text-muted-foreground",
+  },
   not_launched: {
     label: "Não lançado",
     icon: MoreHorizontal,
