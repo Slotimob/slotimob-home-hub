@@ -19,6 +19,7 @@ import {
   FileMinus,
 } from "lucide-react";
 import { format, getDate, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
