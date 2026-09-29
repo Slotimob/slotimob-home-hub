@@ -360,7 +360,7 @@ export function ReconciliationPendingListGrouped({
       <span
         className={cn(
           "font-semibold text-[11px] flex-shrink-0",
-          entry.is_credit ? "text-emerald-600" : "text-red-600"
+          entry.is_credit ? "text-emerald-600" : "text-red-700 dark:text-red-400"
         )}
       >
         {entry.is_credit ? "+" : ""}
@@ -439,7 +439,7 @@ export function ReconciliationPendingListGrouped({
       <span
         className={cn(
           "font-semibold text-[11px] flex-shrink-0",
-          transaction.type === "income" ? "text-emerald-600" : "text-red-600"
+          transaction.type === "income" ? "text-emerald-600" : "text-red-700 dark:text-red-400"
         )}
       >
         {transaction.type === "income" ? "+" : "-"}

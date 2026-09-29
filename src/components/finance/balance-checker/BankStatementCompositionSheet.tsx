@@ -93,10 +93,10 @@ export function BankStatementCompositionSheet({
             </div>
             <div className="p-3 rounded-lg bg-red-500/10">
               <p className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
-                <TrendingDown className="h-3 w-3 text-red-600" />
+                <TrendingDown className="h-3 w-3 text-red-700 dark:text-red-400" />
                 Débitos
               </p>
-              <p className="text-sm font-semibold text-red-600">-{formatCurrency(totalDebits)}</p>
+              <p className="text-sm font-semibold text-red-700 dark:text-red-400">-{formatCurrency(totalDebits)}</p>
             </div>
           </div>
 
@@ -139,7 +139,7 @@ export function BankStatementCompositionSheet({
                           )}
                         </div>
                       </div>
-                      <p className={`text-sm font-semibold ml-3 ${entry.is_credit ? "text-emerald-600" : "text-red-600"}`}>
+                      <p className={`text-sm font-semibold ml-3 ${entry.is_credit ? "text-emerald-600" : "text-red-700 dark:text-red-400"}`}>
                         {entry.is_credit ? "+" : "-"}{formatCurrency(Number(entry.amount))}
                       </p>
                     </div>

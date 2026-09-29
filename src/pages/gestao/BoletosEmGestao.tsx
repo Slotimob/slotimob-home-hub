@@ -265,8 +265,8 @@ export default function BoletosEmGestao() {
         {[
           { label: "Total", value: total, format: "count", color: "text-foreground" },
           { label: "Pendente", value: pendingAmount, format: "currency", color: "text-yellow-700 dark:text-yellow-400" },
-          { label: "Recebido", value: paidAmount, format: "currency", color: "text-green-600" },
-          { label: "Vencido", value: overdueAmount, format: "currency", color: "text-red-600" },
+          { label: "Recebido", value: paidAmount, format: "currency", color: "text-green-700 dark:text-green-400" },
+          { label: "Vencido", value: overdueAmount, format: "currency", color: "text-red-700 dark:text-red-400" },
         ].map(card => (
           <div key={card.label} className="border rounded-lg p-3 bg-card">
             <p className="text-xs text-muted-foreground">{card.label}</p>

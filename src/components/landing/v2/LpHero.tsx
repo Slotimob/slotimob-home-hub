@@ -122,7 +122,7 @@ export function LpHero() {
 
 function BoletoRow({ address, value, status }: { address: string; value: string; status: 'paid' | 'pending' }) {
   const Icon = status === 'paid' ? CheckCircle2 : Clock;
-  const color = status === 'paid' ? 'text-accent' : 'text-amber-500';
+  const color = status === 'paid' ? 'text-accent' : 'text-amber-700 dark:text-amber-400';
   const label = status === 'paid' ? 'Pago' : 'Pendente';
   return (
     <li className="flex items-center justify-between gap-3">

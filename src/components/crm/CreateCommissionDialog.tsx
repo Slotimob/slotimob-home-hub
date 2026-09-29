@@ -101,7 +101,7 @@ export const CreateCommissionDialog = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
+            <CheckCircle className="h-5 w-5 text-green-700 dark:text-green-400" />
             Parabéns pela venda!
           </DialogTitle>
           <DialogDescription>
@@ -112,7 +112,7 @@ export const CreateCommissionDialog = ({
         <div className="space-y-4 py-4">
           {/* Sale info */}
           <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-            <p className="text-sm font-medium text-green-600 dark:text-green-400">
+            <p className="text-sm font-medium text-green-700 dark:text-green-400">
               {deal.lead?.name || 'Lead'}
             </p>
             <p className="text-xs text-muted-foreground">

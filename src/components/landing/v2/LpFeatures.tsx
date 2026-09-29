@@ -97,7 +97,7 @@ function MockBoletos() {
   const rows = [
     { addr: 'Rua das Flores, 42', val: 'R$ 1.200', status: 'paid' as const, Icon: CheckCircle2, color: 'text-accent' },
     { addr: 'Av. Paulista, 800', val: 'R$ 2.100', status: 'paid' as const, Icon: CheckCircle2, color: 'text-accent' },
-    { addr: 'Rua Augusta, 15', val: 'R$ 900', status: 'pending' as const, Icon: Clock, color: 'text-amber-500' },
+    { addr: 'Rua Augusta, 15', val: 'R$ 900', status: 'pending' as const, Icon: Clock, color: 'text-amber-700 dark:text-amber-400' },
     { addr: 'Alameda Santos, 3', val: 'R$ 1.500', status: 'late' as const, Icon: AlertCircle, color: 'text-destructive' },
   ];
   return (
@@ -106,7 +106,7 @@ function MockBoletos() {
       <div className="grid grid-cols-4 divide-x divide-border border-b border-border text-center">
         <KPI label="Todos" value="12" />
         <KPI label="Pagos" value="9" color="text-accent" />
-        <KPI label="Pendentes" value="2" color="text-amber-500" />
+        <KPI label="Pendentes" value="2" color="text-amber-700 dark:text-amber-400" />
         <KPI label="Atraso" value="1" color="text-destructive" />
       </div>
       <ul className="divide-y divide-border">
@@ -194,7 +194,7 @@ function MockContrato() {
           </li>
           <li className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-foreground">
-              <Clock className="h-4 w-4 text-amber-500" />
+              <Clock className="h-4 w-4 text-amber-700 dark:text-amber-400" />
               Locatário
             </span>
             <span className="text-xs text-amber-700 dark:text-amber-400">Aguardando…</span>

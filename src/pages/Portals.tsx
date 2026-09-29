@@ -212,7 +212,7 @@ const Portals = () => {
   const getSyncStatusBadge = (status: string | null) => {
     switch (status) {
       case 'synced':
-        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20"><CheckCircle className="h-3 w-3 mr-1" />Sincronizado</Badge>;
+        return <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"><CheckCircle className="h-3 w-3 mr-1" />Sincronizado</Badge>;
       case 'syncing':
         return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20"><Clock className="h-3 w-3 mr-1" />Sincronizando</Badge>;
       case 'error':

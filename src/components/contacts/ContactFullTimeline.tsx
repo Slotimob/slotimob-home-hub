@@ -109,23 +109,23 @@ const getEventColor = (event: TimelineEvent) => {
     case 'deal_created':
       return 'bg-primary/20 text-primary border-primary/30';
     case 'deal_stage_change':
-      if (event.metadata?.to_stage === 'won') return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
-      if (event.metadata?.to_stage === 'lost') return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
+      if (event.metadata?.to_stage === 'won') return 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30';
+      if (event.metadata?.to_stage === 'lost') return 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30';
       return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
     case 'activity':
       const activityType = event.metadata?.activity_type;
       if (activityType === 'call') return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
       if (activityType === 'email') return 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30';
-      if (activityType === 'whatsapp') return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
+      if (activityType === 'whatsapp') return 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30';
       if (activityType === 'meeting') return 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30';
       return 'bg-muted text-muted-foreground border-muted-foreground/30';
     case 'visit':
       const status = event.metadata?.visit_status;
-      if (status === 'completed') return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
-      if (status === 'cancelled') return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
+      if (status === 'completed') return 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30';
+      if (status === 'cancelled') return 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30';
       return 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-500/30';
     case 'message':
-      return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
+      return 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30';
     case 'lead_created':
       return 'bg-primary/20 text-primary border-primary/30';
     default:

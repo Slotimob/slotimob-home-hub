@@ -774,7 +774,7 @@ export default function Schedule() {
                             <Card key={visit.id} className="relative cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleVisitClick(visit as VisitLike)}>
                               {visit.lead_confirmed && (
                                 <div className="absolute top-2 right-2">
-                                  <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 dark:bg-green-950 px-2 py-1 rounded-full">
+                                  <div className="flex items-center gap-1 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950 px-2 py-1 rounded-full">
                                     <CheckCircle2 className="h-3 w-3" />
                                     <span>Cliente Informado</span>
                                   </div>

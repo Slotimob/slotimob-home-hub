@@ -132,7 +132,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "paid": return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case "paid": return <CheckCircle2 className="h-4 w-4 text-green-700 dark:text-green-400" />;
       case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
       case "overdue": return <AlertCircle className="h-4 w-4 text-red-500" />;
       case "grace":
@@ -143,9 +143,9 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid": return <Badge className="bg-green-500/15 text-green-600 border-green-500/30">Pago</Badge>;
+      case "paid": return <Badge className="bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30">Pago</Badge>;
       case "pending": return <Badge className="bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30">Pendente</Badge>;
-      case "overdue": return <Badge className="bg-red-500/15 text-red-600 border-red-500/30">Atrasado</Badge>;
+      case "overdue": return <Badge className="bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30">Atrasado</Badge>;
       case "grace": return <Badge className="bg-sky-500/15 text-sky-600 border-sky-500/30">Carência</Badge>;
       case "not_launched": return <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Não lançado</Badge>;
       default: return null;
@@ -191,7 +191,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg bg-green-500/10 p-3 text-center">
             <p className="text-xs text-muted-foreground">Pago</p>
-            <p className="text-lg font-bold text-green-600">{formatCurrency(summary.totalPaid)}</p>
+            <p className="text-lg font-bold text-green-700 dark:text-green-400">{formatCurrency(summary.totalPaid)}</p>
             <p className="text-xs text-muted-foreground">{summary.paidCount} parcelas</p>
           </div>
           <div className="rounded-lg bg-yellow-500/10 p-3 text-center">
@@ -201,7 +201,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
           </div>
           <div className="rounded-lg bg-red-500/10 p-3 text-center">
             <p className="text-xs text-muted-foreground">Atrasado</p>
-            <p className="text-lg font-bold text-red-600">{formatCurrency(summary.totalOverdue)}</p>
+            <p className="text-lg font-bold text-red-700 dark:text-red-400">{formatCurrency(summary.totalOverdue)}</p>
             <p className="text-xs text-muted-foreground">{summary.overdueCount} parcelas</p>
           </div>
         </div>

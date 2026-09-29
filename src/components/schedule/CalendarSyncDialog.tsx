@@ -134,7 +134,7 @@ export function CalendarSyncDialog() {
               disabled={isLoading || !feedUrl}
             >
               {copied ? (
-                <Check className="h-4 w-4 text-green-500" />
+                <Check className="h-4 w-4 text-green-700 dark:text-green-400" />
               ) : (
                 <Copy className="h-4 w-4" />
               )}

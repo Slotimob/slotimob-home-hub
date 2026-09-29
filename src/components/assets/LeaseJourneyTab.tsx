@@ -721,7 +721,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                   )}
                   {isComingSoon && !isOverdue && adjustmentDate && (
                     <div className="p-2 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-start gap-2">
-                      <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                      <Clock className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
                       <p className="text-[10px] text-amber-700">
                         Reajuste em {daysUntilAdjustment} dias ({format(adjustmentDate, "dd/MM/yyyy")}).
                       </p>

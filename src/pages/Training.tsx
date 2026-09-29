@@ -269,7 +269,7 @@ const Training = () => {
                   </CardDescription>
                 </div>
                 {overallProgress === 100 && (
-                  <Badge variant="secondary" className="gap-1 text-green-600">
+                  <Badge variant="secondary" className="gap-1 text-green-700 dark:text-green-400">
                     <Award className="h-4 w-4" />
                     Curso Completo!
                   </Badge>

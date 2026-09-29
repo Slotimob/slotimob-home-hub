@@ -451,7 +451,7 @@ const AfazeresEmGestao = () => {
                   <SectionCard
                     title="A pagar"
                     icon={ArrowUpCircle}
-                    accent="text-amber-500"
+                    accent="text-amber-700 dark:text-amber-400"
                     count={payables.length}
                   >
                     {payables.map((p) => (

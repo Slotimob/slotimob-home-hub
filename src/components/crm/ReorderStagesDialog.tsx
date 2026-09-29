@@ -104,13 +104,13 @@ const SortableStageItem = forwardRef<HTMLDivElement, SortableStageItemProps>(({ 
       )}
       
       {stage.isWonStage && (
-        <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded">
+        <span className="text-xs text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded">
           Ganho
         </span>
       )}
       
       {stage.isLostStage && (
-        <span className="text-xs text-red-600 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded">
+        <span className="text-xs text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded">
           Perdido
         </span>
       )}

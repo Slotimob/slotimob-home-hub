@@ -170,7 +170,7 @@ export function PropertiesTableView({
                           className={`${
                             isHighCommission
                               ? 'bg-orange-500/15 text-orange-600 border-orange-500/30'
-                              : 'bg-green-500/15 text-green-600 border-green-500/30'
+                              : 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30'
                           }`}
                         >
                           {isHighCommission && <Flame className="h-3 w-3 mr-1" />}

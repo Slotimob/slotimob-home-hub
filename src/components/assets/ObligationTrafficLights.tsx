@@ -40,7 +40,7 @@ const STATUS_CONFIG: Record<ObligationStatus, {
 }> = {
   paid: {
     bgClassName: "bg-green-500/20",
-    textClassName: "text-green-600",
+    textClassName: "text-green-700 dark:text-green-400",
     label: "Pago",
   },
   pending: {
@@ -50,7 +50,7 @@ const STATUS_CONFIG: Record<ObligationStatus, {
   },
   overdue: {
     bgClassName: "bg-red-500/20",
-    textClassName: "text-red-600",
+    textClassName: "text-red-700 dark:text-red-400",
     label: "Atrasado",
   },
   grace: {

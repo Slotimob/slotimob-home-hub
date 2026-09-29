@@ -388,7 +388,7 @@ export const SubscriptionManagement = () => {
               const total = aiCredits?.limit ?? (plan === 'business' ? 750 : 250);
               const bonus = aiCredits?.bonus_credits ?? 0;
               const pct = total > 0 ? Math.round((used / total) * 100) : 0;
-              const colorClass = pct > 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-500' : 'text-emerald-500';
+              const colorClass = pct > 90 ? 'text-red-500' : pct >= 70 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-500';
               const barClass = pct > 90 ? '[&>div]:bg-red-500' : pct >= 70 ? '[&>div]:bg-amber-500' : '[&>div]:bg-emerald-500';
               return (
                 <>

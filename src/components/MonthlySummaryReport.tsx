@@ -36,8 +36,8 @@ interface Comparison {
 
 const ChangeIndicator = ({ value, suffix = '' }: { value: number; suffix?: string }) => {
   if (value === 0) return <span className="text-muted-foreground flex items-center gap-1"><Minus className="h-3 w-3" /> 0%</span>;
-  if (value > 0) return <span className="text-green-600 flex items-center gap-1"><ArrowUp className="h-3 w-3" /> +{value.toFixed(1)}{suffix}</span>;
-  return <span className="text-red-600 flex items-center gap-1"><ArrowDown className="h-3 w-3" /> {value.toFixed(1)}{suffix}</span>;
+  if (value > 0) return <span className="text-green-700 dark:text-green-400 flex items-center gap-1"><ArrowUp className="h-3 w-3" /> +{value.toFixed(1)}{suffix}</span>;
+  return <span className="text-red-700 dark:text-red-400 flex items-center gap-1"><ArrowDown className="h-3 w-3" /> {value.toFixed(1)}{suffix}</span>;
 };
 
 export const MonthlySummaryReport = () => {
@@ -453,7 +453,7 @@ export const MonthlySummaryReport = () => {
               <TrendingUp className="h-4 w-4" />
               Comissões
             </div>
-            <p className="mt-2 text-2xl font-bold text-green-600">
+            <p className="mt-2 text-2xl font-bold text-green-700 dark:text-green-400">
               R$ {currentMonth.totalCommissions.toLocaleString('pt-BR')}
             </p>
             <div className="mt-1 text-xs">

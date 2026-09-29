@@ -32,12 +32,12 @@ const rows: RowConfig[] = [
 
 function getValueColor(value: number, type?: "income" | "expense" | "balance"): string {
   if (type === "balance") {
-    if (value > 0) return "text-green-600 dark:text-green-400";
-    if (value < 0) return "text-red-600 dark:text-red-400";
+    if (value > 0) return "text-green-700 dark:text-green-400";
+    if (value < 0) return "text-red-700 dark:text-red-400";
     return "text-muted-foreground";
   }
-  if (type === "income") return "text-green-600 dark:text-green-400";
-  if (type === "expense") return "text-red-600 dark:text-red-400";
+  if (type === "income") return "text-green-700 dark:text-green-400";
+  if (type === "expense") return "text-red-700 dark:text-red-400";
   return "";
 }
 
@@ -45,12 +45,12 @@ function getCashHealthStatus(closingBalance: number): { text: string; className:
   if (closingBalance < 0) {
     return {
       text: "Risco de Quebra",
-      className: "text-red-600 dark:text-red-400 font-bold"
+      className: "text-red-700 dark:text-red-400 font-bold"
     };
   }
   return {
     text: "Caixa Saudável",
-    className: "text-green-600 dark:text-green-400 font-semibold"
+    className: "text-green-700 dark:text-green-400 font-semibold"
   };
 }
 
@@ -153,7 +153,7 @@ export function CashFlowMovementTable({ data }: CashFlowMovementTableProps) {
                       <span>{formatCurrencyFull(rowTotal)}</span>
                       <span className={cn(
                         "text-[10px]",
-                        netVariation >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                        netVariation >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
                       )}>
                         ({netVariation >= 0 ? "+" : ""}{formatCurrencyFull(netVariation)})
                       </span>

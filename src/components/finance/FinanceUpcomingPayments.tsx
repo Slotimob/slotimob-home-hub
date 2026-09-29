@@ -91,7 +91,7 @@ export function FinanceUpcomingPayments({ unitId, dateFrom, dateTo }: FinanceUpc
     <Card>
       <CardHeader className="p-3 pb-1">
         <CardTitle className="text-sm flex items-center gap-1.5">
-          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
           Próximos Vencimentos
         </CardTitle>
         <CardDescription className="text-xs">Despesas a pagar {periodLabel}</CardDescription>

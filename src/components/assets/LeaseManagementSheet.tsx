@@ -422,7 +422,7 @@ export function LeaseManagementSheet({
                   <Badge
                     variant={lease ? "default" : "secondary"}
                     className={cn(
-                      lease ? "bg-green-500/15 text-green-600 border-green-500/30" : ""
+                      lease ? "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30" : ""
                     )}
                   >
                     {lease ? "Ocupado" : "Vago"}
@@ -549,8 +549,8 @@ export function LeaseManagementSheet({
                   <div className="flex items-center gap-2">
                     {asset.overallStatus === "healthy" && (
                       <>
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <span className="text-sm text-green-600 font-medium">Em dia</span>
+                        <CheckCircle2 className="h-5 w-5 text-green-700 dark:text-green-400" />
+                        <span className="text-sm text-green-700 dark:text-green-400 font-medium">Em dia</span>
                       </>
                     )}
                     {asset.overallStatus === "attention" && (
@@ -562,7 +562,7 @@ export function LeaseManagementSheet({
                     {asset.overallStatus === "critical" && (
                       <>
                         <AlertCircle className="h-5 w-5 text-red-500" />
-                        <span className="text-sm text-red-600 font-medium">Em atraso</span>
+                        <span className="text-sm text-red-700 dark:text-red-400 font-medium">Em atraso</span>
                       </>
                     )}
                   </div>
@@ -619,7 +619,7 @@ export function LeaseManagementSheet({
                                 navigate(`/whatsapp?phone=${formatPhoneForWhatsApp(whatsappPhone)}&text=${encodedMessage}`);
                               }}
                             >
-                              <MessageSquare className="h-4 w-4 mr-1.5 text-green-600" />
+                              <MessageSquare className="h-4 w-4 mr-1.5 text-green-700 dark:text-green-400" />
                               WhatsApp
                             </Button>
                           )}
@@ -755,7 +755,7 @@ export function LeaseManagementSheet({
                             <SelectContent>
                               <SelectItem value="whatsapp">
                                 <div className="flex items-center gap-2">
-                                  <MessageSquare className="h-3.5 w-3.5 text-green-600" />
+                                  <MessageSquare className="h-3.5 w-3.5 text-green-700 dark:text-green-400" />
                                   WhatsApp
                                 </div>
                               </SelectItem>
@@ -852,7 +852,7 @@ export function LeaseManagementSheet({
                         {lease.billing_logs.slice().reverse().slice(0, 10).map((log, index) => (
                           <div key={index} className="flex items-center justify-between text-sm py-1 border-b border-border/50 last:border-0">
                             <div className="flex items-center gap-2">
-                              {log.method === "whatsapp" && <MessageSquare className="h-3.5 w-3.5 text-green-600" />}
+                              {log.method === "whatsapp" && <MessageSquare className="h-3.5 w-3.5 text-green-700 dark:text-green-400" />}
                               {log.method === "phone" && <Phone className="h-3.5 w-3.5 text-blue-600" />}
                               {log.method === "email" && <Mail className="h-3.5 w-3.5 text-violet-600" />}
                               {log.method === "in_person" && <Users className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />}
@@ -874,7 +874,7 @@ export function LeaseManagementSheet({
                                 {format(new Date(log.sent_at), "dd/MM HH:mm")}
                               </span>
                               {log.success ? (
-                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-700 dark:text-green-400" />
                               ) : (
                                 <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                               )}

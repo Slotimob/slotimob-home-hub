@@ -334,7 +334,7 @@ export function ObligationsConfigForm({
         {/* Vacancy Warning */}
         {isVacant && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-            <Info className="h-4 w-4 text-amber-500 flex-shrink-0" />
+            <Info className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0" />
             <p className="text-sm text-amber-700 dark:text-amber-400">
               Este imóvel está vago. A opção "Inquilino" está desabilitada.
             </p>
@@ -544,7 +544,7 @@ function ObligationResponsibilityCard({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                <p className="text-xs text-green-600 font-medium">Monitorando</p>
+                <p className="text-xs text-green-700 dark:text-green-400 font-medium">Monitorando</p>
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">Não monitorado</p>

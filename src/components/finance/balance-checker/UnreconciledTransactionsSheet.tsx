@@ -80,14 +80,14 @@ export function UnreconciledTransactionsSheet({
             </div>
             <div className="p-3 rounded-lg bg-red-500/10">
               <p className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
-                <TrendingDown className="h-3 w-3 text-red-600" />
+                <TrendingDown className="h-3 w-3 text-red-700 dark:text-red-400" />
                 Despesas
               </p>
-              <p className="text-sm font-semibold text-red-600">-{formatCurrency(totalExpense)}</p>
+              <p className="text-sm font-semibold text-red-700 dark:text-red-400">-{formatCurrency(totalExpense)}</p>
             </div>
             <div className="p-3 rounded-lg bg-amber-500/10">
               <p className="text-[10px] text-muted-foreground uppercase">Impacto</p>
-              <p className={`text-sm font-semibold ${totalPending >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+              <p className={`text-sm font-semibold ${totalPending >= 0 ? "text-emerald-600" : "text-red-700 dark:text-red-400"}`}>
                 {totalPending >= 0 ? "+" : ""}{formatCurrency(totalPending)}
               </p>
             </div>
@@ -137,7 +137,7 @@ export function UnreconciledTransactionsSheet({
                           )}
                         </div>
                       </div>
-                      <p className={`text-sm font-semibold ml-3 ${tx.type === "income" ? "text-emerald-600" : "text-red-600"}`}>
+                      <p className={`text-sm font-semibold ml-3 ${tx.type === "income" ? "text-emerald-600" : "text-red-700 dark:text-red-400"}`}>
                         {tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount))}
                       </p>
                     </div>

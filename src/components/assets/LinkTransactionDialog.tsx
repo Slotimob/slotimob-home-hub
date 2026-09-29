@@ -196,7 +196,7 @@ export function LinkTransactionDialog({
                             {formatCurrency(tx.amount || 0)}
                           </span>
                           {isAlreadyLinked ? (
-                            <Check className="h-4 w-4 text-green-600" />
+                            <Check className="h-4 w-4 text-green-700 dark:text-green-400" />
                           ) : (
                             <Link2 className="h-4 w-4 text-muted-foreground" />
                           )}

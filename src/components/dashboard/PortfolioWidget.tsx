@@ -165,7 +165,7 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
             <div className="space-y-1.5 min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-green-500/10">
-                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-500" />
+                  <TrendingUp className="h-4 w-4 text-green-700 dark:text-green-500" />
                 </div>
                 <span className="text-sm font-medium text-muted-foreground">
                   Yield de Aluguel
@@ -206,7 +206,7 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
               </div>
 
               <div className="flex items-baseline gap-2">
-                <p className="text-xl lg:text-2xl font-bold text-green-600 dark:text-green-500">
+                <p className="text-xl lg:text-2xl font-bold text-green-700 dark:text-green-500">
                   {metrics.annualRentalYield.toFixed(1)}%
                 </p>
                 <span className="text-sm text-muted-foreground">

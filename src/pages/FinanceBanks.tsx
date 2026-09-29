@@ -95,7 +95,7 @@ export default function FinanceBanks() {
                 <CardContent className="px-4 pb-4">
                   <span className={cn(
                     "text-xl font-bold",
-                    totals.projectedBalance >= 0 ? "text-muted-foreground" : "text-amber-500"
+                    totals.projectedBalance >= 0 ? "text-muted-foreground" : "text-amber-700 dark:text-amber-400"
                   )}>
                     <SmartCurrency value={totals.projectedBalance} forceCompact showTooltip={false} />
                   </span>
@@ -190,7 +190,7 @@ export default function FinanceBanks() {
                           {account.hasCashFlowRisk && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="text-xs">Risco de caixa futuro detectado</p>
@@ -242,13 +242,13 @@ export default function FinanceBanks() {
                               <span
                                 className={cn(
                                   "text-sm cursor-help flex items-center gap-1",
-                                  account.projectedBalance >= 0 ? "text-muted-foreground" : "text-amber-500"
+                                  account.projectedBalance >= 0 ? "text-muted-foreground" : "text-amber-700 dark:text-amber-400"
                                 )}
                               >
                                 {account.projectedBalance !== account.realBalance && (
                                   account.projectedBalance > account.realBalance
                                     ? <TrendingUp className="h-3 w-3 text-emerald-500" />
-                                    : <TrendingDown className="h-3 w-3 text-amber-500" />
+                                    : <TrendingDown className="h-3 w-3 text-amber-700 dark:text-amber-400" />
                                 )}
                                 <SmartCurrency value={account.projectedBalance} forceCompact showTooltip={false} />
                               </span>

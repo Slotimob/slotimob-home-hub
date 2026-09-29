@@ -109,8 +109,8 @@ const STATUS_CONFIG: Record<
   paid: {
     label: "Pago",
     icon: Check,
-    className: "text-green-600",
-    bgClassName: "bg-green-500/15 text-green-600 border-green-500/30",
+    className: "text-green-700 dark:text-green-400",
+    bgClassName: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
   },
   pending: {
     label: "Pendente",
@@ -121,8 +121,8 @@ const STATUS_CONFIG: Record<
   overdue: {
     label: "Atrasado",
     icon: AlertCircle,
-    className: "text-red-600",
-    bgClassName: "bg-red-500/15 text-red-600 border-red-500/30",
+    className: "text-red-700 dark:text-red-400",
+    bgClassName: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
   },
   grace: {
     label: "Carência",
@@ -153,7 +153,7 @@ const STATUS_CONFIG: Record<
 const OVERALL_STATUS_CONFIG = {
   healthy: {
     label: "Saudável",
-    className: "bg-green-500/15 text-green-600 border-green-500/30",
+    className: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
   },
   attention: {
     label: "Atenção",
@@ -161,7 +161,7 @@ const OVERALL_STATUS_CONFIG = {
   },
   critical: {
     label: "Crítico",
-    className: "bg-red-500/15 text-red-600 border-red-500/30",
+    className: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
   },
 } as const;
 

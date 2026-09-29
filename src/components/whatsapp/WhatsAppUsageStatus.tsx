@@ -18,7 +18,7 @@ export const WhatsAppUsageStatus = ({ activeConnections, instancesLimit, onBuyEx
   const statusColor = isAtLimit 
     ? 'text-destructive' 
     : isNearLimit 
-    ? 'text-amber-500' 
+    ? 'text-amber-700 dark:text-amber-400' 
     : 'text-emerald-500';
 
   if (compact) {

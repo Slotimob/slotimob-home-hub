@@ -120,7 +120,7 @@ export const PipelineMetrics = ({ deals, stageHistory }: PipelineMetricsProps) =
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
               {totalWonValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', compactDisplay: 'short' } as any)}
             </div>
             <p className="text-xs text-muted-foreground">{wonDeals.length} vendas fechadas</p>

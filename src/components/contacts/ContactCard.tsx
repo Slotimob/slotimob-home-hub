@@ -150,7 +150,7 @@ export const ContactCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 ml-auto text-green-600 hover:text-green-700 hover:bg-green-50"
+                className="h-6 w-6 ml-auto text-green-700 dark:text-green-400 hover:text-green-700 hover:bg-green-50"
                 onClick={handleWhatsAppClick}
                 aria-label={`Abrir WhatsApp de ${contact.name}`}
               >

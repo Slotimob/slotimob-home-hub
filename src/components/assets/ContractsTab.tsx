@@ -1203,7 +1203,7 @@ export function ContractsTab() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-400" />
               Contrato Duplicado
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -1292,7 +1292,7 @@ export function ContractsTab() {
                         </div>
                         <Badge 
                           variant={unit.is_occupied ? "secondary" : "outline"}
-                          className={`text-[10px] ${!unit.is_occupied ? "border-green-500 text-green-600" : ""}`}
+                          className={`text-[10px] ${!unit.is_occupied ? "border-green-500 text-green-700 dark:text-green-400" : ""}`}
                         >
                           {unit.is_occupied ? "Ocupado" : "Disponível"}
                         </Badge>

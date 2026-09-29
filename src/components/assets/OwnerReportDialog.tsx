@@ -161,7 +161,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
               {/* Income */}
               <Card className="border-green-500/30 bg-green-500/5">
                 <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-600">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-700 dark:text-green-400">
                     <TrendingUp className="h-4 w-4" />
                     Receitas
                   </CardTitle>
@@ -180,29 +180,29 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
                   {reportData.rentIrrf > 0 && (
                     <div className="flex items-center justify-between text-sm">
                       <span>− IRRF retido</span>
-                      <span className="text-red-600">-{formatCurrency(reportData.rentIrrf)}</span>
+                      <span className="text-red-700 dark:text-red-400">-{formatCurrency(reportData.rentIrrf)}</span>
                     </div>
                   )}
                   {reportData.rentDeductions > 0 && (
                     <div className="flex items-center justify-between text-sm">
                       <span>− Abatimentos</span>
-                      <span className="text-red-600">-{formatCurrency(reportData.rentDeductions)}</span>
+                      <span className="text-red-700 dark:text-red-400">-{formatCurrency(reportData.rentDeductions)}</span>
                     </div>
                   )}
                   {reportData.rentDiscounts > 0 && (
                     <div className="flex items-center justify-between text-sm">
                       <span>− Descontos</span>
-                      <span className="text-red-600">-{formatCurrency(reportData.rentDiscounts)}</span>
+                      <span className="text-red-700 dark:text-red-400">-{formatCurrency(reportData.rentDiscounts)}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between border-t pt-1.5">
                     <span className="text-sm font-medium">Aluguel líquido recebido</span>
-                    <span className="font-semibold text-green-600">{formatCurrency(reportData.rentNet)}</span>
+                    <span className="font-semibold text-green-700 dark:text-green-400">{formatCurrency(reportData.rentNet)}</span>
                   </div>
                   {reportData.otherIncome > 0 && (
                     <div className="flex items-center justify-between text-sm">
                       <span>Outras receitas</span>
-                      <span className="text-green-600">{formatCurrency(reportData.otherIncome)}</span>
+                      <span className="text-green-700 dark:text-green-400">{formatCurrency(reportData.otherIncome)}</span>
                     </div>
                   )}
                 </CardContent>
@@ -211,7 +211,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
               {/* Deductions */}
               <Card className="border-red-500/30 bg-red-500/5">
                 <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-600">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-700 dark:text-red-400">
                     <TrendingDown className="h-4 w-4" />
                     Deduções
                   </CardTitle>
@@ -222,7 +222,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
                       <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-sm">Taxa de Administração ({lease.admin_fee_percentage}% sobre o aluguel)</span>
                     </div>
-                    <span className="font-medium text-red-600">-{formatCurrency(reportData.adminFee)}</span>
+                    <span className="font-medium text-red-700 dark:text-red-400">-{formatCurrency(reportData.adminFee)}</span>
                   </div>
                   {reportData.maintenanceExpenses.map((expense, i) => (
                     <div key={i} className="flex items-center justify-between">
@@ -230,13 +230,13 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
                         <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-sm truncate max-w-[200px]">{expense.description}</span>
                       </div>
-                      <span className="font-medium text-red-600">-{formatCurrency(expense.amount)}</span>
+                      <span className="font-medium text-red-700 dark:text-red-400">-{formatCurrency(expense.amount)}</span>
                     </div>
                   ))}
                   {reportData.otherDeductions.map((d, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <span className="text-sm truncate max-w-[200px]">{d.description}</span>
-                      <span className="font-medium text-red-600">-{formatCurrency(d.amount)}</span>
+                      <span className="font-medium text-red-700 dark:text-red-400">-{formatCurrency(d.amount)}</span>
                     </div>
                   ))}
                   {reportData.maintenanceExpenses.length === 0 && reportData.otherDeductions.length === 0 && (

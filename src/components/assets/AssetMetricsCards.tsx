@@ -232,7 +232,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
   }, [activeLease, leaseLinks, liveLeases, subdivisionCount, lastLease, rentalTransactions, rentAmount, marketValue]);
 
   const statusColors = {
-    good: "text-green-600 bg-green-500/10",
+    good: "text-green-700 dark:text-green-400 bg-green-500/10",
     warning: "text-amber-700 dark:text-amber-400 bg-amber-500/10",
     neutral: "text-muted-foreground bg-muted",
   };
@@ -297,7 +297,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
                 variant="outline" 
                 className={cn(
                   "text-xs",
-                  metrics.occupancy.status === "good" && "border-green-500/30 text-green-600",
+                  metrics.occupancy.status === "good" && "border-green-500/30 text-green-700 dark:text-green-400",
                   metrics.occupancy.status === "warning" && "border-amber-500/30 text-amber-700 dark:text-amber-400"
                 )}
               >
@@ -319,7 +319,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
               metrics.nextAction.urgent 
-                ? "text-red-600 bg-red-500/10" 
+                ? "text-red-700 dark:text-red-400 bg-red-500/10" 
                 : "text-blue-600 bg-blue-500/10"
             )}>
               {metrics.nextAction.urgent ? (

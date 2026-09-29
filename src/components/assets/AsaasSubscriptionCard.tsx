@@ -276,7 +276,7 @@ export function AsaasSubscriptionCard({
       <Card>
         <CardHeader className="py-3 px-4">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Zap className="h-4 w-4 text-amber-500" />
+            <Zap className="h-4 w-4 text-amber-700 dark:text-amber-400" />
             Boletos automáticos
           </CardTitle>
           <p className="text-xs text-muted-foreground">
@@ -446,7 +446,7 @@ export function AsaasSubscriptionCard({
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Zap className="h-4 w-4 text-amber-500" />
+              <Zap className="h-4 w-4 text-amber-700 dark:text-amber-400" />
               Boletos automáticos
             </CardTitle>
             <Badge

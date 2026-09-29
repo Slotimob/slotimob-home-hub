@@ -405,7 +405,7 @@ export function CockpitBlogTab() {
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between mb-2">
                     <Label className="text-sm font-semibold">SEO Score</Label>
-                    <span className={`text-lg font-bold ${seoScore >= 70 ? 'text-emerald-600' : seoScore >= 40 ? 'text-amber-500' : 'text-destructive'}`}>
+                    <span className={`text-lg font-bold ${seoScore >= 70 ? 'text-emerald-600' : seoScore >= 40 ? 'text-amber-700 dark:text-amber-400' : 'text-destructive'}`}>
                       {seoScore}/100
                     </span>
                   </div>

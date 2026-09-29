@@ -102,7 +102,7 @@ export const ContactDetailSheet = ({
                   </Button>
                 )}
                 {(contact.whatsapp || contact.phone) && (
-                  <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="text-green-600">
+                  <Button variant="outline" size="sm" onClick={handleWhatsAppClick} className="text-green-700 dark:text-green-400">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     WhatsApp
                   </Button>

@@ -50,7 +50,7 @@ export function TrainingCoverageCard({ onCreateContent }: Props) {
             <span>{covered} cobertas</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
             <span>{uncovered.length} pendentes</span>
           </div>
         </div>

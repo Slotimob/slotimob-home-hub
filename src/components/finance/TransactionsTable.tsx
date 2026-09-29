@@ -251,7 +251,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
                       className={cn(
                         "p-1.5 rounded-full w-fit",
                         transaction.type === "income"
-                          ? "bg-green-500/10 text-green-500"
+                          ? "bg-green-500/10 text-green-700 dark:text-green-400"
                           : "bg-red-500/10 text-red-500"
                       )}
                     >
@@ -279,7 +279,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
                     <span
                       className={cn(
                         "font-semibold",
-                        transaction.type === "income" ? "text-green-500" : "text-red-500"
+                        transaction.type === "income" ? "text-green-700 dark:text-green-400" : "text-red-500"
                       )}
                     >
                       {transaction.type === "income" ? "+" : "-"}

@@ -132,8 +132,8 @@ const STATUS_CONFIG: Record<ObligationStatus, {
   paid: {
     label: "Pago",
     icon: Check,
-    className: "text-green-600",
-    bgClassName: "bg-green-500/15 text-green-600 border-green-500/30",
+    className: "text-green-700 dark:text-green-400",
+    bgClassName: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
   },
   pending: {
     label: "Pendente",
@@ -144,8 +144,8 @@ const STATUS_CONFIG: Record<ObligationStatus, {
   overdue: {
     label: "Atrasado",
     icon: AlertCircle,
-    className: "text-red-600",
-    bgClassName: "bg-red-500/15 text-red-600 border-red-500/30",
+    className: "text-red-700 dark:text-red-400",
+    bgClassName: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
   },
   grace: {
     label: "Carência",
@@ -174,9 +174,9 @@ const STATUS_CONFIG: Record<ObligationStatus, {
 };
 
 const OVERALL_STATUS_CONFIG = {
-  healthy: { label: "Saudável", className: "bg-green-500/15 text-green-600 border-green-500/30" },
+  healthy: { label: "Saudável", className: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30" },
   attention: { label: "Atenção", className: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30" },
-  critical: { label: "Crítico", className: "bg-red-500/15 text-red-600 border-red-500/30" },
+  critical: { label: "Crítico", className: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30" },
 } as const;
 
 interface MonthlyObligation {
@@ -1025,7 +1025,7 @@ export function AssetDetailDialog({
                   <div className="flex items-start gap-3">
                     <div className={cn(
                       "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                      unitData?.cib ? "bg-green-500/15 text-green-600" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                      unitData?.cib ? "bg-green-500/15 text-green-700 dark:text-green-400" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
                     )}>
                       {unitData?.cib ? (
                         <Check className="h-5 w-5" />
@@ -1042,7 +1042,7 @@ export function AssetDetailDialog({
                           </p>
                         </div>
                         {unitData?.cib && !editingCib && (
-                          <Badge variant="outline" className="border-green-500/30 text-green-600">
+                          <Badge variant="outline" className="border-green-500/30 text-green-700 dark:text-green-400">
                             {unitData.cib}
                           </Badge>
                         )}
@@ -1270,7 +1270,7 @@ export function AssetDetailDialog({
                       <div key={`${activity.source}-${activity.id}`} className="flex gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                         <div className={cn(
                           "h-7 w-7 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                          activity.is_completed ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"
+                          activity.is_completed ? "bg-green-100 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"
                         )}>
                           {activityIcons[activity.activity_type] || activityIcons.other}
                         </div>

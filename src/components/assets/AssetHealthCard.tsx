@@ -22,7 +22,7 @@ const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
   label: string;
 }> = {
   healthy: {
-    className: "bg-green-500/15 text-green-600 border-green-500/30",
+    className: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
     label: "Saudável",
   },
   attention: {
@@ -30,7 +30,7 @@ const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
     label: "Atenção",
   },
   critical: {
-    className: "bg-red-500/15 text-red-600 border-red-500/30",
+    className: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
     label: "Crítico",
   },
 };

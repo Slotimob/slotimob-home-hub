@@ -54,7 +54,7 @@ export function FinanceBankAccountsCard() {
               {totals.hasCashFlowRisk && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                    <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0" />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs">Risco de caixa futuro detectado</p>
@@ -99,7 +99,7 @@ export function FinanceBankAccountsCard() {
                     {account.hasCashFlowRisk && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400 flex-shrink-0" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="text-xs">⚠️ Risco de caixa futuro</p>
@@ -141,13 +141,13 @@ export function FinanceBankAccountsCard() {
                           <span
                             className={cn(
                               "text-xs lg:text-sm cursor-help flex items-center justify-end gap-1",
-                              account.projectedBalance >= 0 ? "text-muted-foreground" : "text-amber-500"
+                              account.projectedBalance >= 0 ? "text-muted-foreground" : "text-amber-700 dark:text-amber-400"
                             )}
                           >
                             {account.projectedBalance !== account.realBalance && (
                               account.projectedBalance > account.realBalance 
                                 ? <TrendingUp className="h-3 w-3 text-emerald-500" />
-                                : <TrendingDown className="h-3 w-3 text-amber-500" />
+                                : <TrendingDown className="h-3 w-3 text-amber-700 dark:text-amber-400" />
                             )}
                             <SmartCurrency value={account.projectedBalance} forceCompact showTooltip={false} />
                           </span>
@@ -194,7 +194,7 @@ export function FinanceBankAccountsCard() {
                       <p className="text-[10px] text-muted-foreground">Projeção</p>
                       <span className={cn(
                         "text-xs",
-                        totals.projectedBalance >= 0 ? "text-muted-foreground" : "text-amber-500"
+                        totals.projectedBalance >= 0 ? "text-muted-foreground" : "text-amber-700 dark:text-amber-400"
                       )}>
                         <SmartCurrency value={totals.projectedBalance} forceCompact showTooltip={false} />
                       </span>

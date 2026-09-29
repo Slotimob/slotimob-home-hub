@@ -57,7 +57,7 @@ export function RequestApprovalDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5 text-amber-500" />
+            <ShieldAlert className="h-5 w-5 text-amber-700 dark:text-amber-400" />
             Esta ação requer aprovação
           </AlertDialogTitle>
           <AlertDialogDescription asChild>

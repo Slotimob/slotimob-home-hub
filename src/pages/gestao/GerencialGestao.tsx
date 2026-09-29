@@ -76,9 +76,9 @@ interface ManagerialTransaction {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  paid: { label: "Pago", color: "text-green-600 bg-green-500/15", icon: CheckCircle2 },
+  paid: { label: "Pago", color: "text-green-700 dark:text-green-400 bg-green-500/15", icon: CheckCircle2 },
   pending: { label: "Pendente", color: "text-yellow-700 dark:text-yellow-400 bg-yellow-500/15", icon: AlertCircle },
-  overdue: { label: "Atrasado", color: "text-red-600 bg-red-500/15", icon: XCircle },
+  overdue: { label: "Atrasado", color: "text-red-700 dark:text-red-400 bg-red-500/15", icon: XCircle },
 };
 
 const OBLIGATION_LABELS: Record<string, { label: string; icon: typeof HomeIcon }> = {
@@ -281,7 +281,7 @@ const GerencialGestao = () => {
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground">Pagos</p>
-                <p className="text-2xl font-bold text-green-600">{stats.paid}</p>
+                <p className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.paid}</p>
               </CardContent>
             </Card>
             <Card>
@@ -293,7 +293,7 @@ const GerencialGestao = () => {
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground">Atrasados</p>
-                <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
+                <p className="text-2xl font-bold text-red-700 dark:text-red-400">{stats.overdue}</p>
               </CardContent>
             </Card>
           </div>

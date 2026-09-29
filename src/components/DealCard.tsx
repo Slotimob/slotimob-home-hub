@@ -278,7 +278,7 @@ export const DealCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30 flex-shrink-0"
+                className="h-6 w-6 text-green-700 dark:text-green-400 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30 flex-shrink-0"
                 onClick={handleWhatsAppClick}
                 aria-label={`Abrir WhatsApp de ${deal.lead?.name || 'contato'}`}
                 title="WhatsApp"
