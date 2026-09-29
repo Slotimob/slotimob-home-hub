@@ -359,10 +359,13 @@ export async function markLeaseObligationsInherited(
   leaseId: string,
   currentMetadata: Record<string, unknown> | null | undefined
 ): Promise<void> {
+  // W20: mescla com o metadata atual do banco para não apagar chaves gravadas antes (ex.: purpose)
+  const { data: row } = await supabase.from("leases").select("metadata").eq("id", leaseId).maybeSingle();
   const { error } = await supabase
     .from("leases")
     .update({
       metadata: {
+        ...(((row as any)?.metadata as Record<string, unknown>) || {}),
         ...(currentMetadata || {}),
         obligations_configured: true,
         obligations_inherited_at: new Date().toISOString(),

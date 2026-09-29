@@ -94,6 +94,15 @@ const Pipeline = () => {
   const [isDeletePipelineOpen, setIsDeletePipelineOpen] = useState(false);
   const [deletePipelineKey, setDeletePipelineKey] = useState('');
   const activePipeline = searchParams.get('type') || 'sale';
+
+  // CRM11: ?type= de funil inexistente → volta ao funil padrão de vendas
+  useEffect(() => {
+    if (pipelinesLoading || activePipeline === 'sale') return;
+    if (!customPipelines.some((p) => p.pipeline_key === activePipeline)) {
+      toast({ title: 'Funil não encontrado' });
+      navigate('/pipeline', { replace: true });
+    }
+  }, [pipelinesLoading, activePipeline, customPipelines]);
   const [teamFilter, setTeamFilter] = useState<string>('all');
   const { deals, loadingDeals, invalidateDeals, setDealsOptimistic } = usePipelineDeals({
     activePipeline,

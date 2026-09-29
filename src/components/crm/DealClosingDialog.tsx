@@ -1,3 +1,4 @@
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -346,10 +347,9 @@ export const DealClosingDialog = ({
                     <Wallet className="h-3 w-3" />
                     Valor da {businessType === 'rental' ? 'Locação' : 'Venda'}
                   </Label>
-                  <Input
-                    type="number"
-                    value={saleValue || ''}
-                    onChange={(e) => setSaleValue(parseFloat(e.target.value) || 0)}
+                  <CurrencyInput
+                    value={saleValue ? String(saleValue) : ''}
+                    onChange={(v) => setSaleValue(parseFloat(v) || 0)}
                     placeholder="0,00"
                   />
                 </div>
