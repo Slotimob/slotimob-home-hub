@@ -9,7 +9,11 @@ import { CreateTransactionDialog } from "@/components/finance/CreateTransactionD
 import { ImportStatementDialog } from "@/components/finance/ImportStatementDialog";
 import { Button } from "@/components/ui/button";
 import { PermissionGate } from "@/components/subscription/PermissionGate";
-import { Plus, Upload, FileSpreadsheet } from "lucide-react";
+import { Plus, Upload, FileSpreadsheet, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -38,7 +42,7 @@ const FinanceTransactions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isOwner, hasPermission } = usePermissions();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -72,12 +76,48 @@ const FinanceTransactions = () => {
   });
 
 
+  const removeUnitParam = () => {
+    if (!searchParams.get("unitId")) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("unitId");
+    setSearchParams(next, { replace: true });
+  };
+
+  // Limpar o imóvel pelos filtros também tira o parâmetro da URL
+  const handleFiltersChange = (next: TransactionFilters) => {
+    if (!next.unitId && filters.unitId) removeUnitParam();
+    setFilters(next);
+  };
+
+  const clearUnitFilter = () => handleFiltersChange({ ...filters, unitId: "" });
+
+  const { data: filterUnit } = useQuery({
+    queryKey: ["transactions-filter-unit", filters.unitId],
+    enabled: !!filters.unitId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("units")
+        .select("unit_number, address, property:properties(name)")
+        .eq("id", filters.unitId)
+        .maybeSingle();
+      return data as any;
+    },
+  });
+  const filterUnitLabel = filterUnit
+    ? [filterUnit.property?.name, filterUnit.unit_number].filter(Boolean).join(" — ") || filterUnit.address || "Imóvel"
+    : "Imóvel";
+
   const [sortConfig, setSortConfig] = useState<SortConfig>(DEFAULT_SORT);
 
-  // Update filters when URL changes
+  // S3: o filtro de imóvel vindo da URL some quando a URL deixa de trazer unitId
+  const unitFromUrl = useRef(!!urlUnitId);
   useEffect(() => {
     if (urlUnitId && urlUnitId !== filters.unitId) {
+      unitFromUrl.current = true;
       setFilters((prev) => ({ ...prev, unitId: urlUnitId }));
+    } else if (!urlUnitId && unitFromUrl.current) {
+      unitFromUrl.current = false;
+      setFilters((prev) => ({ ...prev, unitId: "" }));
     }
     if (urlBankAccountId && urlBankAccountId !== filters.bankAccountId) {
       setFilters((prev) => ({ ...prev, bankAccountId: urlBankAccountId }));
@@ -227,7 +267,28 @@ const FinanceTransactions = () => {
         </div>
 
         {/* Compact Filters */}
-        <TransactionsFiltersCompact filters={filters} onFiltersChange={setFilters} />
+        <TransactionsFiltersCompact filters={filters} onFiltersChange={handleFiltersChange} />
+
+        {filters.unitId && (
+          <div className="flex flex-wrap items-center gap-2 -mt-3">
+            <Badge variant="secondary" className="gap-1 pr-1 font-normal">
+              Imóvel: {filterUnitLabel}
+              <button
+                type="button"
+                onClick={clearUnitFilter}
+                aria-label="Remover filtro de imóvel"
+                className="rounded-sm p-0.5 hover:bg-muted-foreground/20"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+            {transactions.some((t: any) => t.via_lease_share_percent != null) && (
+              <span className="text-xs text-muted-foreground">
+                Valores cheios dos lançamentos; inclui lançamentos de contratos com vários imóveis.
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Transactions Table with Infinite Scroll */}
         <TransactionsTableInfinite
