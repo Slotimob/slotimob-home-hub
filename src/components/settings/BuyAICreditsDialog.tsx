@@ -17,7 +17,7 @@ import { useAICredits } from '@/hooks/useAICredits';
 import { useAICreditPacks } from '@/hooks/useAICreditPacks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentMethodSelector, type PlatformBillingType } from '@/components/checkout/PaymentMethodSelector';
-import { PlatformPaymentResult, type PlatformPaymentResultData } from '@/components/checkout/PlatformPaymentResult';
+import { PlatformPaymentResult, normalizePlatformPaymentResult, type PlatformPaymentResultData } from '@/components/checkout/PlatformPaymentResult';
 
 interface BuyAICreditsDialogProps {
   open: boolean;
@@ -53,8 +53,8 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
         toast.error(data.message || 'Informe seu CPF ou CNPJ para gerar o pagamento.');
       } else if (data?.error) {
         toast.error(data.message || data.error);
-      } else if ((data?.type === 'pix' && data?.pix?.encodedImage) || (data?.type === 'redirect' && data?.url)) {
-        setResult(data as PlatformPaymentResultData);
+      } else if (normalizePlatformPaymentResult(data)) {
+        setResult(normalizePlatformPaymentResult(data));
       } else {
         toast.error('Erro ao processar compra. Tente novamente.');
       }

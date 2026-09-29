@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { PlatformBillingType } from '@/components/checkout/PaymentMethodSelector';
-import type { PlatformPaymentResultData } from '@/components/checkout/PlatformPaymentResult';
+import { normalizePlatformPaymentResult, type PlatformPaymentResultData } from '@/components/checkout/PlatformPaymentResult';
 
 export type AddonId = 'extra-units-50' | 'extra-user';
 
@@ -30,14 +30,13 @@ export const useAddonCheckout = () => {
         },
       });
 
-      const valid =
-        (data?.type === 'pix' && data?.pix?.encodedImage) || (data?.type === 'redirect' && data?.url);
-      if (error || data?.error || !valid) {
+      const result = data?.error ? null : normalizePlatformPaymentResult(data);
+      if (error || !result) {
         toast.error(data?.message || data?.error || 'Erro ao contratar add-on');
         return null;
       }
 
-      return data as PlatformPaymentResultData;
+      return result;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro ao contratar add-on.';
       toast.error(message);

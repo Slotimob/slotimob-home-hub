@@ -30,7 +30,7 @@ import { usePlanPricing } from '@/hooks/usePlanPricing';
 
 import { trackStartTrial, trackSubscriptionPaid, trackInitiateCheckout } from '@/components/TrackingProvider';
 import { PaymentMethodSelector, type PlatformBillingType } from '@/components/checkout/PaymentMethodSelector';
-import { PlatformPaymentResult, type PlatformPaymentResultData } from '@/components/checkout/PlatformPaymentResult';
+import { PlatformPaymentResult, normalizePlatformPaymentResult, type PlatformPaymentResultData } from '@/components/checkout/PlatformPaymentResult';
 import { usePlatformPaymentStatus } from '@/hooks/usePlatformPaymentStatus';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { buttonVariants } from '@/components/ui/button';
@@ -578,9 +578,8 @@ export default function Checkout() {
         return;
       }
 
-      const isPix = data?.type === 'pix' && data?.pix?.encodedImage;
-      const isRedirect = data?.type === 'redirect' && data?.url;
-      if (!isPix && !isRedirect) {
+      const normalized = normalizePlatformPaymentResult(data);
+      if (!normalized) {
         setCheckoutError('Resposta inesperada do servidor.');
         toast.error('Resposta inesperada do servidor.');
         resetCaptcha();
@@ -604,7 +603,7 @@ export default function Checkout() {
       setBaselinePeriodEnd(baseline);
       setPaymentSince(sinceIso);
       paidTrackedRef.current = false;
-      setPaymentResult(data as PlatformPaymentResultData);
+      setPaymentResult(normalized);
 
       // Add-ons: cada um tem sua própria cobrança
       const results: AddonResult[] = [];
