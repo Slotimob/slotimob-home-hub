@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
 import { parseDateOnly } from "@/lib/date-only";
+import { buildDRESections, dreRegimeFilter } from "@/lib/dre-sections";
 
 interface CategoryTotal {
   categoryId: string;
@@ -14,7 +15,7 @@ interface DRESection {
   items: CategoryTotal[];
 }
 
-export type DRERegime = "gerencial" | "contabil";
+export type DRERegime = "gerencial" | "contabil" | "caixa";
 
 export interface DREData {
   regime: DRERegime;
@@ -30,6 +31,9 @@ export interface DREData {
   operatingProfit: number;
   financialRevenue: DRESection;
   profitDistribution: DRESection;
+  uncategorizedRevenue: number;
+  uncategorizedExpense: number;
+  irrfWithheld: DRESection;
   netResult: number;
 }
 
@@ -50,6 +54,7 @@ export function useDREReport(
           id,
           amount,
           type,
+          obligation_type,
           category_id,
           financial_categories (
             id,
@@ -83,25 +88,10 @@ export function useDREReport(
         }
       }
 
-      if (regime === "gerencial") {
-        // Regime gerencial: pelo vencimento (due_date); sem vencimento, cai na emissão.
-        const orFilter = periods
-          .map(
-            (p) =>
-              `and(due_date.gte.${p.start},due_date.lte.${p.end}),and(due_date.is.null,transaction_date.gte.${p.start},transaction_date.lte.${p.end})`
-          )
-          .join(",");
-        query = query.or(orFilter);
-      } else if (periods.length === 1) {
-        query = query
-          .gte("transaction_date", periods[0].start)
-          .lte("transaction_date", periods[0].end);
-      } else {
-        const orFilter = periods
-          .map((p) => `and(transaction_date.gte.${p.start},transaction_date.lte.${p.end})`)
-          .join(",");
-        query = query.or(orFilter);
-      }
+      const regimeFilter = dreRegimeFilter(regime, periods);
+      query = query.or(regimeFilter.or);
+      // Regime caixa: só o que foi efetivamente recebido/pago
+      if (regimeFilter.paidOnly) query = query.eq("status", "paid");
 
       // Filter by units if provided
       if (unitIds && unitIds.length > 0) {
@@ -118,81 +108,12 @@ export function useDREReport(
 
       if (error) throw error;
 
-      // Initialize sections
-      const sections: Record<string, DRESection> = {
-        gross_revenue: { total: 0, items: [] },
-        financial_revenue: { total: 0, items: [] },
-        tax_deduction: { total: 0, items: [] },
-        variable_cost: { total: 0, items: [] },
-        sales_expense: { total: 0, items: [] },
-        admin_expense: { total: 0, items: [] },
-        financial_expense: { total: 0, items: [] },
-        profit_distribution: { total: 0, items: [] },
-      };
-
-      // Group transactions by category and dre_type
-      const categoryTotals: Record<string, { name: string; dreType: string; total: number }> = {};
-
-      transactions?.forEach((tx) => {
-        const category = tx.financial_categories;
-        if (!category || !category.dre_type) return;
-
-        const key = category.id;
-        if (!categoryTotals[key]) {
-          categoryTotals[key] = {
-            name: category.name,
-            dreType: category.dre_type,
-            total: 0,
-          };
-        }
-        categoryTotals[key].total += tx.amount;
-      });
-
-      // Distribute to sections
-      Object.entries(categoryTotals).forEach(([categoryId, data]) => {
-        const section = sections[data.dreType];
-        if (section) {
-          section.items.push({
-            categoryId,
-            categoryName: data.name,
-            total: data.total,
-          });
-          section.total += data.total;
-        }
-      });
-
-      // Calculate DRE values
-      const grossRevenue = sections.gross_revenue.total;
-      const taxDeductions = sections.tax_deduction.total;
-      const netRevenue = grossRevenue - taxDeductions;
-      
-      const variableCosts = sections.variable_cost.total;
-      const grossProfit = netRevenue - variableCosts;
-      
-      const salesExpenses = sections.sales_expense.total;
-      const adminExpenses = sections.admin_expense.total;
-      const financialExpenses = sections.financial_expense.total;
-      const operatingProfit = grossProfit - salesExpenses - adminExpenses - financialExpenses;
-      
-      const financialRevenue = sections.financial_revenue.total;
-      const profitDistribution = sections.profit_distribution.total;
-      const netResult = operatingProfit + financialRevenue - profitDistribution;
+      const built = buildDRESections((transactions as any[]) || []);
 
       return {
         regime,
         period: { start, end },
-        grossRevenue: sections.gross_revenue,
-        taxDeductions: sections.tax_deduction,
-        netRevenue,
-        variableCosts: sections.variable_cost,
-        grossProfit,
-        salesExpenses: sections.sales_expense,
-        adminExpenses: sections.admin_expense,
-        financialExpenses: sections.financial_expense,
-        operatingProfit,
-        financialRevenue: sections.financial_revenue,
-        profitDistribution: sections.profit_distribution,
-        netResult,
+        ...built,
       };
     },
   });
