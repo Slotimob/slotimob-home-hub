@@ -334,7 +334,7 @@ export const LeaseProjectionEditor = forwardRef<
           resolveFirstAdjustedDueDate(parseISO(`${windowMonth}-01`), dueDay, rentDueOffset),
           "yyyy-MM-dd"
         )
-      : format(calculateDueDate(base, dueDay), "yyyy-MM-dd");
+      : format(firstDueOnOrAfter(base, dueDay), "yyyy-MM-dd");
     // Emissão default = dia de início do contrato (mesma regra do motor legado).
     const issueDay = lease.start_date ? getDate(parseISO(lease.start_date)) : 1;
     /** Competência completa: mês do parâmetro + dia de emissão, com clamp de mês curto. */
