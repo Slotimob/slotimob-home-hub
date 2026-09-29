@@ -298,7 +298,7 @@ export const DealClosingDialog = ({
               </p>
             )}
             {!deal.unit?.id && (
-              <p className="text-sm text-amber-600 pl-6">
+              <p className="text-sm text-amber-700 dark:text-amber-400 pl-6">
                 Nenhuma unidade vinculada a este deal.
               </p>
             )}

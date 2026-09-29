@@ -82,11 +82,11 @@ export default function FinanceCategories() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout title="Categorias Financeiras">
       <div className="container max-w-4xl mx-auto py-6 px-4 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Categorias Financeiras</h1>
+            <h2 className="text-2xl font-bold">Categorias Financeiras</h2>
             <p className="text-muted-foreground">
               Gerencie suas categorias de receitas e despesas
             </p>

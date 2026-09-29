@@ -398,7 +398,7 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                   className={areaExcess > 0 ? 'border-amber-500 focus-visible:ring-amber-500' : undefined}
                 />
                 {areaExcess > 0 && (
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
                     Excede o saldo em {areaExcess.toLocaleString('pt-BR')} m²
                   </p>
                 )}
@@ -413,7 +413,7 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                   />
                 </div>
                 {rentExcess > 0 && (
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
                     Excede o saldo em {formatCurrencyBRL(rentExcess)}
                   </p>
                 )}

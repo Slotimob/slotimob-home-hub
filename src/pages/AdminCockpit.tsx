@@ -248,7 +248,7 @@ const AdminCockpit = () => {
           <div className="flex items-center gap-3">
             <Shield className="h-6 w-6 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold">Cockpit Master</h1>
+              <h2 className="text-2xl font-bold">Cockpit Master</h2>
               <p className="text-sm text-muted-foreground">Gestão global da plataforma SlotiMob</p>
             </div>
           </div>
@@ -359,7 +359,7 @@ const AdminCockpit = () => {
                                       {planLabels[org.plan_id] || org.plan_id}
                                     </Badge>
                                     {org.is_early_adopter && (
-                                      <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">EA</Badge>
+                                      <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-700 dark:text-amber-400">EA</Badge>
                                     )}
                                     {isTrialActive && (
                                       <Badge variant="outline" className="text-xs">Trial</Badge>

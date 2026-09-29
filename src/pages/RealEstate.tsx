@@ -447,7 +447,7 @@ const RealEstate = () => {
             >
               <CardContent className="pb-3 pt-3 px-3">
                 <p className="text-xs font-medium text-muted-foreground">Reservado</p>
-                <p className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.reserved}</p>
+                <p className="text-xl sm:text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.reserved}</p>
               </CardContent>
             </Card>
             <Card 

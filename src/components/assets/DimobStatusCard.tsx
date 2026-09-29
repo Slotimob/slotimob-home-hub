@@ -285,7 +285,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
       case 'ok':
         return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
       case 'pending':
-        return <AlertTriangle className="h-4 w-4 text-amber-600" />;
+        return <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />;
       case 'error':
         return <AlertTriangle className="h-4 w-4 text-destructive" />;
     }

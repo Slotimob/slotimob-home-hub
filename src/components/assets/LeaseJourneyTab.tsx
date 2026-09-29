@@ -514,7 +514,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
        case "completed":
          return "bg-emerald-500 text-white border-emerald-500";
        case "pending":
-         return "bg-amber-500/20 text-amber-600 border-amber-500";
+         return "bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500";
        default:
          return "bg-muted text-muted-foreground border-muted";
      }

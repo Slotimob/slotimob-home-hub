@@ -140,7 +140,7 @@ export function PermissionsMatrix({ permissions, onChange, disabled, readOnly, g
       <div className="space-y-3">
         {readOnly && (
           <Alert variant="default" className="border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20">
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />
             <AlertDescription className="text-yellow-700 dark:text-yellow-400 text-sm">
               Você não tem permissão para alterar permissões da equipe. Solicite ao administrador da conta.
             </AlertDescription>
@@ -186,7 +186,7 @@ export function PermissionsMatrix({ permissions, onChange, disabled, readOnly, g
                   <TableRow key={mod.key} className={isAdminModule ? 'bg-amber-50/30 dark:bg-amber-950/10' : undefined}>
                     <TableCell className={`font-medium text-sm ${mod.indent ? 'pl-6' : ''}`}>
                       <span className="inline-flex items-center gap-1">
-                        {isAdminModule && <Lock className="h-3.5 w-3.5 text-amber-600" />}
+                        {isAdminModule && <Lock className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />}
                         {mod.label}
                         {MODULE_TOOLTIPS[mod.key] && (
                           <Tooltip>

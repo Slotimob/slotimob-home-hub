@@ -42,7 +42,7 @@ const Finance = () => {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AppLayout title="Visão Geral Financeira">
         <div className="flex items-center justify-center h-[50vh]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -61,11 +61,11 @@ const Finance = () => {
   const bankAccountId = isAll ? undefined : selectedBankAccountId;
 
   return (
-    <AppLayout>
+    <AppLayout title="Visão Geral Financeira">
       <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="px-1">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-1.5">Visão Geral Financeira <HelpTooltip featureKey="finance.overview" /></h1>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-1.5">Visão Geral Financeira <HelpTooltip featureKey="finance.overview" /></h2>
           <p className="text-xs sm:text-sm text-muted-foreground">Acompanhe suas receitas, despesas e fluxo de caixa</p>
         </div>
 

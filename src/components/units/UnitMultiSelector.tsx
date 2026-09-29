@@ -108,7 +108,7 @@ export const UnitMultiSelector = ({
                       )}
                       <span className="flex-1 truncate">{unitLabel(u)}</span>
                       {u.tenant_contact_id && !selected && (
-                        <span className="ml-2 text-[10px] text-amber-600 dark:text-amber-400 flex-shrink-0">
+                        <span className="ml-2 text-[10px] text-amber-700 dark:text-amber-400 flex-shrink-0">
                           ocupado
                         </span>
                       )}

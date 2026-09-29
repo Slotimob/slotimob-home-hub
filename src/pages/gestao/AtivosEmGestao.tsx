@@ -185,7 +185,7 @@ const AtivosEmGestao = () => {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AppLayout title="Aluguéis">
         <div className="flex items-center justify-center h-[50vh]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -227,7 +227,7 @@ const AtivosEmGestao = () => {
           {/* Header */}
            <div className="flex items-center justify-between flex-wrap gap-2">
              <div>
-               <h1 className="text-2xl font-bold tracking-tight">Gestão de Ativos</h1>
+               <h2 className="text-2xl font-bold tracking-tight">Gestão de Ativos</h2>
                <p className="text-muted-foreground">
                  Monitore a saúde operacional dos seus imóveis em tempo real
                </p>
@@ -264,7 +264,7 @@ const AtivosEmGestao = () => {
                 label: "Atenção",
                 value: stats.attention,
                 icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
-                valueClass: "text-yellow-600",
+                valueClass: "text-yellow-700 dark:text-yellow-400",
                 ringClass: "ring-yellow-500",
                 bgClass: "",
               },

@@ -42,7 +42,7 @@ export function SubdivisionSetupAlert({
     <Alert
       className={`border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ${className ?? ''}`}
     >
-      <AlertTriangle className="h-4 w-4 text-amber-600" />
+      <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
       <AlertTitle className="text-amber-900 dark:text-amber-100">
         Frações pendentes de cadastro
       </AlertTitle>
@@ -89,7 +89,7 @@ export function UnitSubdivisionSetupAlert({
 export function SubdivisionFormHint({ onAction, actionLabel }: BaseProps) {
   return (
     <Alert className="border-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
-      <AlertTriangle className="h-4 w-4 text-amber-600" />
+      <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
       <AlertTitle className="text-amber-900 dark:text-amber-100">
         Frações pendentes de cadastro
       </AlertTitle>

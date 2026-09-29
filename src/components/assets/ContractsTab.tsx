@@ -968,7 +968,7 @@ export function ContractsTab() {
                                 return (
                                   <Badge
                                     variant="outline"
-                                    className="text-[10px] whitespace-nowrap border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30"
+                                    className="text-[10px] whitespace-nowrap border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30"
                                   >
                                     <Clock className="h-2.5 w-2.5 mr-0.5" />
                                     Aguardando Assinatura

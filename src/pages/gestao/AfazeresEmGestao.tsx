@@ -331,7 +331,7 @@ const AfazeresEmGestao = () => {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AppLayout title="Afazeres">
         <div className="flex items-center justify-center h-[50vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -361,7 +361,7 @@ const AfazeresEmGestao = () => {
         <div className="space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Afazeres</h1>
+              <h2 className="text-xl font-bold tracking-tight">Afazeres</h2>
               <p className="text-xs text-muted-foreground">
                 {grandTotal === 0
                   ? "Nenhuma pendência no momento"

@@ -113,8 +113,8 @@ const STATUS_CONFIG: Record<
   pending: {
     label: "Pendente",
     icon: Clock,
-    className: "text-yellow-600",
-    bgClassName: "bg-yellow-500/15 text-yellow-600 border-yellow-500/30",
+    className: "text-yellow-700 dark:text-yellow-400",
+    bgClassName: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
   },
   overdue: {
     label: "Atrasado",
@@ -149,7 +149,7 @@ const OVERALL_STATUS_CONFIG = {
   },
   attention: {
     label: "Atenção",
-    className: "bg-yellow-500/15 text-yellow-600 border-yellow-500/30",
+    className: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
   },
   critical: {
     label: "Crítico",

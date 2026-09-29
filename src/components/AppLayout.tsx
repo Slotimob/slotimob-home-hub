@@ -23,6 +23,11 @@ export function AppLayout({ children, title, titleExtra, headerActions, fullBlee
 
   useWhatsAppGlobalListener();
 
+  // G1: título da aba acompanha a tela (não depende de SEOHead)
+  useEffect(() => {
+    if (title) document.title = `${title} | Slotimob`;
+  }, [title]);
+
   // Sync theme from user profile — only inside authenticated pages
   useEffect(() => {
     let cancelled = false;

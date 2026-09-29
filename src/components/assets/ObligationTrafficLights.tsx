@@ -45,7 +45,7 @@ const STATUS_CONFIG: Record<ObligationStatus, {
   },
   pending: {
     bgClassName: "bg-yellow-500/20",
-    textClassName: "text-yellow-600",
+    textClassName: "text-yellow-700 dark:text-yellow-400",
     label: "Pendente",
   },
   overdue: {

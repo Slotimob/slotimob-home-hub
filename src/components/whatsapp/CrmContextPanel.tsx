@@ -345,10 +345,10 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
             }}
             className="w-full flex items-center gap-2.5 p-3 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors text-left"
           >
-            <UserX className="h-4 w-4 text-amber-600 flex-shrink-0" />
+            <UserX className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-amber-800">Contato não identificado</p>
-              <p className="text-[10px] text-amber-600">Toque para vincular a um contato existente</p>
+              <p className="text-[10px] text-amber-700 dark:text-amber-400">Toque para vincular a um contato existente</p>
             </div>
             <Link2 className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
           </button>
@@ -592,7 +592,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
             </div>
 
             {phoneMatchCount > 0 && !linkSearchQuery && (
-              <p className="text-[10px] text-amber-600 font-medium">
+              <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
                 📌 {phoneMatchCount} contato{phoneMatchCount > 1 ? 's' : ''} com telefone correspondente
               </p>
             )}
@@ -619,7 +619,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
                           <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
                           <p className="text-[10px] text-muted-foreground truncate">
                             {c.phone || c.email || '—'}
-                            {isMatch && <span className="ml-1 text-amber-600 font-medium">• Telefone correspondente</span>}
+                            {isMatch && <span className="ml-1 text-amber-700 dark:text-amber-400 font-medium">• Telefone correspondente</span>}
                           </p>
                         </div>
                         <Button

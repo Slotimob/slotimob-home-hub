@@ -261,7 +261,7 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
             <span className="hidden sm:inline">Pendentes</span>
             <span className="sm:hidden">Pend.</span>
             {entries.length > 0 && (
-              <span className="bg-amber-500/10 text-amber-600 text-[10px] px-1.5 py-0.5 rounded-full font-medium">
+              <span className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] px-1.5 py-0.5 rounded-full font-medium">
                 {entries.length}
               </span>
             )}

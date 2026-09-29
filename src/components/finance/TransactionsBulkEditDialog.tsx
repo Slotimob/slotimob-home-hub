@@ -566,7 +566,7 @@ export function TransactionsBulkEditDialog({
                   ))}
                 </ul>
               </div>
-              <p className="text-sm text-amber-600 font-medium">
+              <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
                 Esta ação não pode ser desfeita. Deseja continuar?
               </p>
             </AlertDialogDescription>

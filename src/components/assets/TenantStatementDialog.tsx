@@ -123,7 +123,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "paid": return <Badge className="bg-green-500/15 text-green-600 border-green-500/30">Pago</Badge>;
-      case "pending": return <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30">Pendente</Badge>;
+      case "pending": return <Badge className="bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30">Pendente</Badge>;
       case "overdue": return <Badge className="bg-red-500/15 text-red-600 border-red-500/30">Atrasado</Badge>;
       case "grace": return <Badge className="bg-sky-500/15 text-sky-600 border-sky-500/30">Carência</Badge>;
       case "not_launched": return <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Não lançado</Badge>;
@@ -174,7 +174,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
           </div>
           <div className="rounded-lg bg-yellow-500/10 p-3 text-center">
             <p className="text-xs text-muted-foreground">Pendente</p>
-            <p className="text-lg font-bold text-yellow-600">{formatCurrency(summary.totalPending)}</p>
+            <p className="text-lg font-bold text-yellow-700 dark:text-yellow-400">{formatCurrency(summary.totalPending)}</p>
             <p className="text-xs text-muted-foreground">{summary.pendingCount} parcelas</p>
           </div>
           <div className="rounded-lg bg-red-500/10 p-3 text-center">

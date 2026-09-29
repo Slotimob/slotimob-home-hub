@@ -60,7 +60,7 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
   // Determine vacancy alert level
   const isVacancyAlert = metrics.vacancyRate > 10;
   const vacancyColor = isVacancyAlert 
-    ? 'text-amber-600 dark:text-amber-500' 
+    ? 'text-amber-700 dark:text-amber-500' 
     : 'text-blue-600 dark:text-blue-500';
   const vacancyBgColor = isVacancyAlert 
     ? 'bg-amber-500/10' 
@@ -272,7 +272,7 @@ export function PortfolioWidget({ refreshKey }: PortfolioWidgetProps) {
                       <p className="text-muted-foreground">
                         O denominador considera <strong>apenas</strong> imóveis "Sob Gestão" com intenção de locação — por isso é menor que o total de disponíveis do bloco "Contagem de Ativos" ao lado.
                       </p>
-                      <p className="text-amber-600 text-xs mt-2 flex items-center gap-1">
+                      <p className="text-amber-700 dark:text-amber-400 text-xs mt-2 flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
                         Acima de 10% gera alerta visual
                       </p>

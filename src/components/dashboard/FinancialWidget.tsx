@@ -138,7 +138,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
     if (isOverdue) {
       return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 text-[10px] px-1.5">Atrasado</Badge>;
     }
-    return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-[10px] px-1.5">Pendente</Badge>;
+    return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 text-[10px] px-1.5">Pendente</Badge>;
   };
 
   if (loading) {

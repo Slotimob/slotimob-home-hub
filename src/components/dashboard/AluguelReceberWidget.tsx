@@ -59,7 +59,7 @@ export function AluguelReceberWidget({ dateRange: _dateRange, refreshKey }: Alug
                   <span className="text-sm text-foreground">A receber <span className="block text-[10px] text-muted-foreground">pelo vencimento</span></span>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-amber-600">{fmtCurrency(receivable.amount)}</p>
+                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">{fmtCurrency(receivable.amount)}</p>
                   <p className="text-[10px] text-muted-foreground">{receivable.count} cobrança{receivable.count !== 1 ? 's' : ''}</p>
                 </div>
               </div>

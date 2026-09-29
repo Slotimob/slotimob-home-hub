@@ -421,3 +421,13 @@ All colors MUST be HSL.
   min-height: 600px;
   color-scheme: light;
 }
+
+/* AX6: alvo de toque mínimo de 40×40 px no celular para botões só com ícone
+   (size="icon" ou sem texto). Não afeta o desktop. */
+@media (max-width: 767px) {
+  [data-ui="button"][data-size="icon"],
+  [data-ui="button"]:has(> svg:only-child) {
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+  }
+}

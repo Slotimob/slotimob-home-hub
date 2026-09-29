@@ -180,7 +180,7 @@ export function BillingEmailRemindersCard({
             {tenantEmail ? ` (${tenantEmail})` : ""}.
           </p>
           {noRecipient && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
+            <p className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
               <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
               O inquilino não tem e-mail cadastrado e o campo está vazio: nenhum aviso será enviado.
             </p>

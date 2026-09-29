@@ -26,7 +26,7 @@ const OVERALL_STATUS_CONFIG: Record<AssetHealth["overallStatus"], {
     label: "Saudável",
   },
   attention: {
-    className: "bg-yellow-500/15 text-yellow-600 border-yellow-500/30",
+    className: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
     label: "Atenção",
   },
   critical: {

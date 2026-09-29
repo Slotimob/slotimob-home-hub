@@ -188,10 +188,10 @@ const DataExport = () => {
   if (isMember) return null;
 
   return (
-    <AppLayout>
+    <AppLayout title="Exportar Meus Dados">
       <div className="max-w-4xl mx-auto space-y-6 p-4 md:p-6">
         <div>
-          <h1 className="text-2xl font-bold">Exportar Meus Dados</h1>
+          <h2 className="text-2xl font-bold">Exportar Meus Dados</h2>
           <p className="text-muted-foreground mt-1">Gerencie exportações completas do seu workspace</p>
         </div>
 

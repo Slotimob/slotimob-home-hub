@@ -490,7 +490,7 @@ export const WeeklySummaryReport = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Em andamento</span>
-                <span className="font-medium text-amber-600">{weeklyData.dealsInProgress}</span>
+                <span className="font-medium text-amber-700 dark:text-amber-400">{weeklyData.dealsInProgress}</span>
               </div>
             </div>
           </div>

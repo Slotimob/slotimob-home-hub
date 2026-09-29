@@ -565,7 +565,7 @@ export function LeaseManagementSheet({
                     {asset.overallStatus === "attention" && (
                       <>
                         <Clock className="h-5 w-5 text-yellow-500" />
-                        <span className="text-sm text-yellow-600 font-medium">Pendente</span>
+                        <span className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">Pendente</span>
                       </>
                     )}
                     {asset.overallStatus === "critical" && (
@@ -782,7 +782,7 @@ export function LeaseManagementSheet({
                               </SelectItem>
                               <SelectItem value="in_person">
                                 <div className="flex items-center gap-2">
-                                  <Users className="h-3.5 w-3.5 text-amber-600" />
+                                  <Users className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
                                   Presencial
                                 </div>
                               </SelectItem>
@@ -864,7 +864,7 @@ export function LeaseManagementSheet({
                               {log.method === "whatsapp" && <MessageSquare className="h-3.5 w-3.5 text-green-600" />}
                               {log.method === "phone" && <Phone className="h-3.5 w-3.5 text-blue-600" />}
                               {log.method === "email" && <Mail className="h-3.5 w-3.5 text-violet-600" />}
-                              {log.method === "in_person" && <Users className="h-3.5 w-3.5 text-amber-600" />}
+                              {log.method === "in_person" && <Users className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />}
                               {log.method === "other" && <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />}
                               <div className="flex flex-col">
                                 <span className="text-xs">

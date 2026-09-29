@@ -47,7 +47,7 @@ export default function AlugueisEmAberto() {
         : null;
 
   return (
-    <AppLayout>
+    <AppLayout title="Aluguéis em aberto">
       <div className="space-y-6 p-4 lg:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -59,10 +59,10 @@ export default function AlugueisEmAberto() {
             >
               <ArrowLeft className="h-4 w-4" /> Voltar
             </Button>
-            <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+            <h2 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
               <Building2 className="h-6 w-6" />
               Imóveis com aluguel em aberto
-            </h1>
+            </h2>
             <p className="text-sm text-muted-foreground mt-1">
               Ativos com cobranças de aluguel pendentes ou vencidas nos últimos 12 meses.
             </p>

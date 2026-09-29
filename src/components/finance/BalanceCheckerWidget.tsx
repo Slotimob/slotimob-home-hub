@@ -354,7 +354,7 @@ export function BalanceCheckerWidget({
         {hasCalculatedBalance && !useManualInput && (
           <div className="p-4 rounded-lg border bg-amber-500/10 border-amber-500/30">
             <div className="flex items-start gap-3">
-              <Calculator className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <Calculator className="h-5 w-5 text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
                   Variação calculada do extrato importado
@@ -544,7 +544,7 @@ export function BalanceCheckerWidget({
         {/* Info message for calculated mode */}
         {isCalculatedMode && (
           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm">
-            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600" />
+            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-700 dark:text-amber-400" />
             <div className="text-amber-700 dark:text-amber-400">
               <p className="font-medium">Variação calculada das entradas</p>
               <p className="text-xs mt-1">

@@ -244,10 +244,10 @@ export default function Proposals() {
               {/* Header */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
                     <FileText className="h-6 w-6 text-primary" />
                     Propostas Comerciais
-                  </h1>
+                  </h2>
                   <p className="text-muted-foreground text-sm mt-1">
                     Gere e gerencie propostas premium para seus clientes.
                   </p>
@@ -518,7 +518,7 @@ function StatCard({
   const tones = {
     primary: 'bg-primary/10 text-primary',
     green: 'bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-400',
-    amber: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
+    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400',
     blue: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400',
   } as const;
   return (

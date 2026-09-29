@@ -232,10 +232,10 @@ export default function BoletosEmGestao() {
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
             <Receipt className="h-5 w-5 text-primary" />
             Boletos e Cobranças
-          </h1>
+          </h2>
           <p className="text-sm text-muted-foreground mt-0.5">Gerencie as cobranças automáticas via Asaas</p>
         </div>
         {canCreate && (
@@ -264,7 +264,7 @@ export default function BoletosEmGestao() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total", value: total, format: "count", color: "text-foreground" },
-          { label: "Pendente", value: pendingAmount, format: "currency", color: "text-yellow-600" },
+          { label: "Pendente", value: pendingAmount, format: "currency", color: "text-yellow-700 dark:text-yellow-400" },
           { label: "Recebido", value: paidAmount, format: "currency", color: "text-green-600" },
           { label: "Vencido", value: overdueAmount, format: "currency", color: "text-red-600" },
         ].map(card => (

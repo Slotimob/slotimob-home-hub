@@ -59,7 +59,7 @@ export default function NovoEmpreendimento() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout title="Novo Empreendimento">
       <SEOHead
         title="Novo Empreendimento"
         description="Cadastre um novo empreendimento com ficha técnica completa."
@@ -77,10 +77,10 @@ export default function NovoEmpreendimento() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
               <Building2 className="h-5 w-5" />
               Novo Empreendimento
-            </h1>
+            </h2>
             <p className="text-sm text-muted-foreground">
               Cadastre um novo empreendimento com ficha técnica completa
             </p>

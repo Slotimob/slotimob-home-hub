@@ -590,7 +590,7 @@ export const CreateContactDialog = ({
                 placeholder="Buscar unidades ou imóveis avulsos..."
               />
               {occupiedSelectedCount > 0 && (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
+                <p className="text-xs text-amber-700 dark:text-amber-400">
                   {occupiedSelectedCount === 1
                     ? 'Uma das unidades selecionadas já possui inquilino vinculado.'
                     : `${occupiedSelectedCount} das unidades selecionadas já possuem inquilino vinculado.`}

@@ -233,7 +233,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
 
   const statusColors = {
     good: "text-green-600 bg-green-500/10",
-    warning: "text-amber-600 bg-amber-500/10",
+    warning: "text-amber-700 dark:text-amber-400 bg-amber-500/10",
     neutral: "text-muted-foreground bg-muted",
   };
 
@@ -298,7 +298,7 @@ export function AssetMetricsCards({ unitId, rentAmount, marketValue }: AssetMetr
                 className={cn(
                   "text-xs",
                   metrics.occupancy.status === "good" && "border-green-500/30 text-green-600",
-                  metrics.occupancy.status === "warning" && "border-amber-500/30 text-amber-600"
+                  metrics.occupancy.status === "warning" && "border-amber-500/30 text-amber-700 dark:text-amber-400"
                 )}
               >
                 {metrics.occupancy.status === "good" ? (

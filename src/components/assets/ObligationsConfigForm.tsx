@@ -303,7 +303,7 @@ export function ObligationsConfigForm({
         {/* Pending review (herdado do contrato) */}
         {wasPendingReview && (
           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/40">
-            <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
@@ -669,11 +669,11 @@ function ObligationResponsibilityCard({
                         htmlFor={`${type}-agency`}
                         className={cn(
                           "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all hover:bg-accent/50",
-                          currentResponsible === "agency" ? "border-amber-500 bg-amber-500/10 text-amber-600" : "border-input"
+                          currentResponsible === "agency" ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400" : "border-input"
                         )}
                       >
                         <div className="h-6 w-6 rounded-full bg-amber-500/10 flex items-center justify-center">
-                          <Briefcase className="h-3 w-3 text-amber-600" />
+                          <Briefcase className="h-3 w-3 text-amber-700 dark:text-amber-400" />
                         </div>
                         <span className="text-sm">Imobiliária</span>
                       </Label>

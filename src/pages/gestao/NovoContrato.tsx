@@ -1427,14 +1427,14 @@ export default function NovoContrato() {
           Contratos
         </Button>
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold truncate flex items-center gap-2">
+          <h2 className="text-xl font-semibold truncate flex items-center gap-2">
             {isPendingSetup ? "Finalizar Contrato" : isEditMode ? "Editar Contrato" : "Novo Contrato"}
             {dealIdParam && (
               <span className="text-[10px] font-medium rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">
                 Vindo do CRM
               </span>
             )}
-          </h1>
+          </h2>
           {unitName && (
             <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
               <Building2 className="h-3 w-3" />
@@ -1446,7 +1446,7 @@ export default function NovoContrato() {
 
       {isPendingSetup && (
         <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2">
-          <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-amber-800 dark:text-amber-200">
             Este contrato foi criado automaticamente a partir do cadastro do imóvel e ainda
             precisa ser finalizado.
@@ -2196,7 +2196,7 @@ export default function NovoContrato() {
                           {(selectedTenant as any)?.document_number ? (
                             (selectedTenant as any).document_number
                           ) : (
-                            <span className="text-amber-600 text-xs">
+                            <span className="text-amber-700 dark:text-amber-400 text-xs">
                               Não informado — edite o contato do inquilino antes de emitir boleto
                             </span>
                           )}

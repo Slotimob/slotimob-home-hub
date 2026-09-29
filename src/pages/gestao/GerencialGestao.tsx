@@ -77,7 +77,7 @@ interface ManagerialTransaction {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
   paid: { label: "Pago", color: "text-green-600 bg-green-500/15", icon: CheckCircle2 },
-  pending: { label: "Pendente", color: "text-yellow-600 bg-yellow-500/15", icon: AlertCircle },
+  pending: { label: "Pendente", color: "text-yellow-700 dark:text-yellow-400 bg-yellow-500/15", icon: AlertCircle },
   overdue: { label: "Atrasado", color: "text-red-600 bg-red-500/15", icon: XCircle },
 };
 
@@ -264,7 +264,7 @@ const GerencialGestao = () => {
       <AppLayout title="Gerencial">
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Controle Gerencial</h1>
+            <h2 className="text-2xl font-bold tracking-tight">Controle Gerencial</h2>
             <p className="text-muted-foreground">
               Acompanhe as obrigações e pagamentos de imóveis (água, luz, condomínio) que não afetam o DRE/Caixa da imobiliária
             </p>
@@ -287,7 +287,7 @@ const GerencialGestao = () => {
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground">Pendentes</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.pending}</p>
               </CardContent>
             </Card>
             <Card>

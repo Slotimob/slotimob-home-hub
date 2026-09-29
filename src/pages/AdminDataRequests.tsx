@@ -258,7 +258,7 @@ const AdminDataRequests = () => {
     }
   }, [checkingAdmin, isSuperAdmin, navigate]);
 
-  if (checkingAdmin) return <AppLayout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div></AppLayout>;
+  if (checkingAdmin) return <AppLayout title="Exportações de Dados"><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div></AppLayout>;
   if (!isSuperAdmin) return null;
 
   const formatSize = (bytes: number | null) => {
@@ -269,9 +269,9 @@ const AdminDataRequests = () => {
   };
 
   return (
-    <AppLayout>
+    <AppLayout title="Exportações de Dados">
       <div className="space-y-6 p-4 md:p-6">
-        <h1 className="text-2xl font-bold">Exportações de Dados</h1>
+        <h2 className="text-2xl font-bold">Exportações de Dados</h2>
 
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
