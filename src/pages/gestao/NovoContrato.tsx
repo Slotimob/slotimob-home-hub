@@ -111,7 +111,7 @@ const GUARANTEE_OPTIONS = [
   { value: "caucao" as GuaranteeType, label: "Caução em Dinheiro", description: "Depósito de até 3 meses de aluguel" },
   { value: "fiador" as GuaranteeType, label: "Fiador", description: "Pessoa física como garantidora" },
   { value: "seguro_fianca" as GuaranteeType, label: "Seguro Fiança", description: "Apólice junto a seguradora" },
-  { value: "none" as GuaranteeType, label: "Sem Garantia", description: "Aluguel antecipado (Art. 42)" },
+  { value: "none" as GuaranteeType, label: "Sem Garantia", description: "Sem caução, fiador ou seguro" },
 ];
 
 const CIVIL_STATUS_OPTIONS = [
@@ -149,7 +149,7 @@ const getInitialFormData = () => ({
   is_dimob_deductible: true,
   notes: "",
   adjustment_index: "IGPM",
-  guarantee_type: "caucao" as GuaranteeType,
+  guarantee_type: "" as GuaranteeType | "",
   is_indefinite_term: false,
   adjustment_periodicity_months: 12,
   next_adjustment_date: "",
@@ -365,6 +365,21 @@ export default function NovoContrato() {
     unitSubdivisionFlag ? effectiveUnitId : ""
   );
   const showSubdivisionSelect = !!unitSubdivisionFlag && subdivisions.length > 0;
+
+  // Link "Criar contrato" de uma fração: ?unitId=<id>&subdivisionId=<id>
+  const subdivisionIdParam = searchParams.get("subdivisionId");
+  const subdivisionParamAppliedRef = useRef(false);
+  useEffect(() => {
+    if (isEditMode || !subdivisionIdParam || subdivisionParamAppliedRef.current) return;
+    const fraction = subdivisions.find((s) => s.id === subdivisionIdParam);
+    if (!fraction) return;
+    subdivisionParamAppliedRef.current = true;
+    setFormData((prev) => ({
+      ...prev,
+      unit_subdivision_id: fraction.id,
+      rent_amount: fraction.rent_price != null ? Number(fraction.rent_price) : prev.rent_amount,
+    }));
+  }, [subdivisions, subdivisionIdParam, isEditMode]);
 
 
 
@@ -934,6 +949,7 @@ export default function NovoContrato() {
         );
       }
       case "guarantee":
+        if (!formData.guarantee_type) return false;
         if (formData.guarantee_type === "fiador") {
           const hasBasicInfo = !!(guarantorData.nome && guarantorData.cpf) && !guarantorCpfError;
           if (needsSpouseData) {
@@ -1556,6 +1572,46 @@ export default function NovoContrato() {
               )}
 
               {effectiveUnitId && (
+                showSubdivisionSelect ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="wizard-fraction">Fração do imóvel principal</Label>
+                    <Select
+                      value={formData.unit_subdivision_id ?? "none"}
+                      onValueChange={(v) => {
+                        const id = v === "none" ? null : v;
+                        const fraction = subdivisions.find((s) => s.id === id);
+                        setFormData((prev) => ({
+                          ...prev,
+                          unit_subdivision_id: id,
+                          rent_amount:
+                            fraction?.rent_price != null
+                              ? Number(fraction.rent_price)
+                              : prev.rent_amount,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger id="wizard-fraction">
+                        <SelectValue placeholder="Imóvel inteiro" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
+                        {subdivisions.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.label}
+                            {s.area != null ? ` — ${s.area}m²` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Opcional. Selecione a fração quando o contrato for de apenas uma parte do
+                      imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
+                    </p>
+                  </div>
+                ) : null
+              )}
+
+              {effectiveUnitId && (
                 <LeaseExtraUnitsSection
                   primary={primaryRef}
                   primaryLabel={unitName || "Imóvel principal"}
@@ -1587,10 +1643,11 @@ export default function NovoContrato() {
                 </Card>
               )}
               <div className="space-y-2">
-                <Label>Buscar Inquilino</Label>
+                <Label htmlFor="wizard-tenant-search">Buscar Inquilino</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="wizard-tenant-search"
                     placeholder="Nome, email ou telefone..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -1600,7 +1657,13 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>Selecionar Inquilino *</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label id="wizard-tenant-list-label">Selecionar Inquilino *</Label>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setCreateTenantOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Novo inquilino
+                  </Button>
+                </div>
                 {loadingTenants ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -1679,45 +1742,6 @@ export default function NovoContrato() {
                 name: ownerContactInfo?.name || editLease?.owner?.name || null,
               }}
               adjustmentLocked={isEditMode}
-              header={
-                showSubdivisionSelect ? (
-                  <div className="space-y-2">
-                    <Label>Fração</Label>
-                    <Select
-                      value={formData.unit_subdivision_id ?? "none"}
-                      onValueChange={(v) => {
-                        const id = v === "none" ? null : v;
-                        const fraction = subdivisions.find((s) => s.id === id);
-                        setFormData((prev) => ({
-                          ...prev,
-                          unit_subdivision_id: id,
-                          rent_amount:
-                            fraction?.rent_price != null
-                              ? Number(fraction.rent_price)
-                              : prev.rent_amount,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Imóvel inteiro" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
-                        {subdivisions.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.label}
-                            {s.area != null ? ` — ${s.area}m²` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Opcional. Selecione a fração quando o contrato for de apenas uma parte do
-                      imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
-                    </p>
-                  </div>
-                ) : null
-              }
             />
           )}
 
@@ -2367,10 +2391,10 @@ export default function NovoContrato() {
               <div className="flex items-center justify-between gap-3 p-3 border rounded-lg">
                 <div className="flex-1">
                   <Label htmlFor="dimob" className="text-sm font-medium cursor-pointer">
-                    Dedutível para DIMOB
+                    Declarar na DIMOB
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Marque se os valores devem ser declarados na DIMOB
+                    Marque para incluir os aluguéis deste contrato na declaração DIMOB
                   </p>
                 </div>
                 <Switch
@@ -2466,6 +2490,15 @@ export default function NovoContrato() {
           </Button>
         )}
       </div>
+      <CreateContactDialog
+        open={createTenantOpen}
+        onOpenChange={setCreateTenantOpen}
+        defaultCategory={"Inquilino" as any}
+        onSuccess={async (c) => {
+          await queryClient.invalidateQueries({ queryKey: ["contacts-tenants"] });
+          if (c?.id) setFormData((prev) => ({ ...prev, tenant_contact_id: c.id }));
+        }}
+      />
       <ConfirmLeaseProjectionDialog
         open={projectionOpen}
         onOpenChange={(o) => {
