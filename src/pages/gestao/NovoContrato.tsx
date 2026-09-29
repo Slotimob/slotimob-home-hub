@@ -1098,7 +1098,7 @@ export default function NovoContrato() {
         notes: formData.notes || undefined,
         adjustment_index: formData.adjustment_index,
         next_adjustment_date: formData.next_adjustment_date || undefined,
-        guarantee_type: formData.guarantee_type,
+        guarantee_type: (formData.guarantee_type || "none") as GuaranteeType,
         guarantor_data: finalGuarantorData,
         payment_info: finalPaymentInfo,
         is_indefinite_term: formData.is_indefinite_term,
