@@ -1,3 +1,4 @@
+import { focusFirstInvalid } from "@/lib/form-errors";
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { cpfCnpjError, onlyDigits } from "@/lib/document-validation";
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +24,8 @@ interface CreateContactDialogProps {
   onSuccess: (newContact?: any) => void;
   defaultCategory?: ContactCategory;
   initialPhone?: string;
+  /** Esconde "Vincular a Imóveis" (ex.: dentro do assistente de contrato). */
+  hideUnitLink?: boolean;
 }
 
 // Format helpers for automation-ready data
@@ -74,7 +77,10 @@ export const CreateContactDialog = ({
   onSuccess,
   defaultCategory,
   initialPhone,
+  hideUnitLink = false,
 }: CreateContactDialogProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [triedSubmit, setTriedSubmit] = useState(false);
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
@@ -205,10 +211,18 @@ export const CreateContactDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTriedSubmit(true);
+    if (!formData.name.trim()) {
+      focusFirstInvalid(contentRef.current);
+      toast({ title: 'Informe o nome ou a razão social', variant: 'destructive' });
+      return;
+    }
     if (docError) {
+      focusFirstInvalid(contentRef.current);
       toast({ title: docError, variant: 'destructive' });
       return;
     }
+    if (formData.email && !isValidEmail(formData.email)) focusFirstInvalid(contentRef.current);
     if (!user || !formData.name.trim() || formData.categories.length === 0) {
       toast({ 
         title: 'Preencha os campos obrigatórios', 
@@ -318,13 +332,13 @@ export const CreateContactDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent ref={contentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo Contato</DialogTitle>
           <DialogDescription>Preencha os dados do novo contato abaixo.</DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
           {/* Categories Selection */}
           <div className="space-y-2">
             <Label>Categorias *</Label>
@@ -364,7 +378,12 @@ export const CreateContactDialog = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Nome completo ou razão social"
                 required
+                aria-invalid={triedSubmit && !formData.name.trim()}
+                className={triedSubmit && !formData.name.trim() ? 'border-destructive' : ''}
               />
+              {triedSubmit && !formData.name.trim() && (
+                <p className="text-xs text-destructive">Informe o nome.</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -374,6 +393,7 @@ export const CreateContactDialog = ({
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="email@exemplo.com"
+                aria-invalid={!!formData.email && !isValidEmail(formData.email)}
                 className={formData.email && !isValidEmail(formData.email) ? 'border-destructive' : ''}
               />
               {formData.email && !isValidEmail(formData.email) && (
@@ -417,6 +437,8 @@ export const CreateContactDialog = ({
                 onChange={(e) => handleDocumentChange(e.target.value)}
                 placeholder={formData.document_type === 'CNPJ' ? '00.000.000/0000-00' : '000.000.000-00'}
                 inputMode="numeric"
+                aria-invalid={!!docError && (triedSubmit || onlyDigits(formData.document_number).length >= 11)}
+                className={docError && (triedSubmit || onlyDigits(formData.document_number).length >= 11) ? 'border-destructive' : ''}
               />
                 {docError && onlyDigits(formData.document_number).length >= (formData.document_type === 'CNPJ' ? 14 : 11) && (
                   <p className="text-xs text-destructive">{docError}</p>
@@ -587,7 +609,7 @@ export const CreateContactDialog = ({
           )}
 
           {/* Tenant-specific: link directly to one or more units/properties - use key to ensure stable mounting */}
-          {isTenant && (
+          {isTenant && !hideUnitLink && (
             <div key="inquilino-fields" className="space-y-3 p-4 rounded-lg border bg-muted/30">
               <div>
                 <h4 className="font-medium text-sm text-muted-foreground">Vincular a Imóveis (opcional)</h4>
