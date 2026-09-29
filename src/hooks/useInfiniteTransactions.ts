@@ -69,6 +69,7 @@ export function useInfiniteTransactions(
       query = query
         .order("due_date", { ascending: true, nullsFirst: false })
         .order("transaction_date", { ascending: true })
+        .order("created_at", { ascending: true })
         .order("id", { ascending: true });
 
       // Apply pagination
