@@ -62,7 +62,6 @@ export const SubscriptionManagement = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const navigate = useNavigate();
   const [addonDialog, setAddonDialog] = useState<{ addonId: AddonId; quantity: number; label: string; priceLabel: string } | null>(null);
-  const loadingAddonId = null;
 
 
   if (isLoading) {
@@ -308,14 +307,10 @@ export const SubscriptionManagement = () => {
                 </Button>
                 <Button
                   size="sm"
-                  disabled={!!loadingAction || !!loadingAddonId}
+                  disabled={!!loadingAction}
                   onClick={() => setAddonDialog({ addonId: 'extra-user', quantity: addonUserQty, label: '+1 Usuário Adicional', priceLabel: 'R$ 49,90/mês cada' })}
                 >
-                  {loadingAddonId === 'extra-user' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Adicionar'
-                  )}
+                  Adicionar
                 </Button>
 
               </div>
@@ -351,14 +346,10 @@ export const SubscriptionManagement = () => {
                 </Button>
                 <Button
                   size="sm"
-                  disabled={!!loadingAction || !!loadingAddonId}
+                  disabled={!!loadingAction}
                   onClick={() => setAddonDialog({ addonId: 'extra-units-50', quantity: addonUnitQty, label: 'Pack de Unidades (+50)', priceLabel: 'R$ 39,90/mês cada' })}
                 >
-                  {loadingAddonId === 'extra-units-50' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Adicionar'
-                  )}
+                  Adicionar
                 </Button>
 
               </div>
