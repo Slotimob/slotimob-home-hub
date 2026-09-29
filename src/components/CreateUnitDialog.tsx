@@ -30,6 +30,7 @@ export const CreateUnitDialog = ({
   standalone = false 
 }: CreateUnitDialogProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { createUnit, saving } = useCreateUnit(standalone);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState<UnitFormData>(() => {
