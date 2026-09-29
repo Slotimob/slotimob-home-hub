@@ -338,7 +338,7 @@ export function ObligationsConfigForm({
         <div className="flex gap-4 p-3 rounded-lg bg-muted/50">
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={ownerInfo?.avatar_url} />
+              <AvatarImage src={ownerInfo?.avatar_url} alt="" />
               <AvatarFallback className="bg-primary/10 text-primary text-xs">
                 {ownerInfo?.name?.charAt(0) || "P"}
               </AvatarFallback>
@@ -351,7 +351,7 @@ export function ObligationsConfigForm({
           <Separator orientation="vertical" className="h-auto" />
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={tenantInfo?.avatar_url} />
+              <AvatarImage src={tenantInfo?.avatar_url} alt="" />
               <AvatarFallback className={cn("text-xs", isVacant ? "bg-muted text-muted-foreground" : "bg-blue-500/10 text-blue-600")}>
                 {tenantInfo?.name?.charAt(0) || "?"}
               </AvatarFallback>
@@ -618,7 +618,7 @@ function ObligationResponsibilityCard({
                         )}
                       >
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={ownerInfo?.avatar_url || undefined} />
+                          <AvatarImage src={ownerInfo?.avatar_url || undefined} alt="" />
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
                             {ownerInfo?.name?.charAt(0) || <User className="h-3 w-3" />}
                           </AvatarFallback>
@@ -646,7 +646,7 @@ function ObligationResponsibilityCard({
                         )}
                       >
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={tenantInfo?.avatar_url || undefined} />
+                          <AvatarImage src={tenantInfo?.avatar_url || undefined} alt="" />
                           <AvatarFallback className={cn("text-xs", isVacant ? "bg-muted" : "bg-blue-500/10 text-blue-600")}>
                             {tenantInfo?.name?.charAt(0) || <Users className="h-3 w-3" />}
                           </AvatarFallback>

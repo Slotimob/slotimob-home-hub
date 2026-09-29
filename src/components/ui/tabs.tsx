@@ -23,16 +23,42 @@ TabsList.displayName = TabsPrimitive.List.displayName;
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
+>(({ className, ...props }, forwardedRef) => {
+  // O Radix aponta aria-controls para o painel mesmo quando ele não está montado
+  // (aba inativa). Remove o atributo enquanto a aba estiver inativa.
+  const innerRef = React.useRef<HTMLButtonElement | null>(null);
+  React.useEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const sync = () => {
+      const id = el.getAttribute("aria-controls") || el.dataset.ariaControls;
+      if (!id) return;
+      el.dataset.ariaControls = id;
+      const exists = !!document.getElementById(id);
+      if (exists && !el.hasAttribute("aria-controls")) el.setAttribute("aria-controls", id);
+      if (!exists && el.hasAttribute("aria-controls")) el.removeAttribute("aria-controls");
+    };
+    sync();
+    const obs = new MutationObserver(() => requestAnimationFrame(sync));
+    obs.observe(el, { attributes: true, attributeFilter: ["data-state", "aria-controls"] });
+    return () => obs.disconnect();
+  }, []);
+  const setRef = (node: HTMLButtonElement | null) => {
+    innerRef.current = node;
+    if (typeof forwardedRef === "function") forwardedRef(node);
+    else if (forwardedRef) (forwardedRef as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+  };
+  return (
   <TabsPrimitive.Trigger
-    ref={ref}
+    ref={setRef}
     className={cn(
       "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:ring-1 data-[state=active]:ring-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
       className,
     )}
     {...props}
   />
-));
+  );
+});
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
 const TabsContent = React.forwardRef<

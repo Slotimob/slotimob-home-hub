@@ -393,7 +393,7 @@ export function AppSidebar() {
                       <SidebarMenuButton 
                         tooltip={item.title}
                         aria-expanded={!collapsed && isOpen}
-                        aria-controls={`sidebar-group-${groupSlug(item.title)}`}
+                        aria-controls={!collapsed && isOpen ? `sidebar-group-${groupSlug(item.title)}` : undefined}
                         className={cn(
                           "flex items-center gap-3 w-full transition-all duration-200 cursor-pointer",
                           groupActive && "bg-primary/10 text-primary font-medium"

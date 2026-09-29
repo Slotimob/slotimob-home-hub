@@ -468,7 +468,7 @@ const Settings = () => {
         <SettingsSection title="Perfil" description="Foto, nome e telefone" icon={User} defaultOpen>
           <div className="flex items-center gap-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={avatarUrl} />
+              <AvatarImage src={avatarUrl} alt={`Foto de perfil de ${profile?.full_name || "usuário"}`} />
               <AvatarFallback className="text-2xl">{profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
