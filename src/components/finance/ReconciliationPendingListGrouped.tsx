@@ -488,7 +488,7 @@ export function ReconciliationPendingListGrouped({
               {groupedEntries.length === 0 ? (
                 <EmptyState icon={FileText} message="Nenhuma entrada pendente" />
               ) : (
-                <ScrollArea className="h-[300px]">
+                <ScrollArea viewportLabel="Entradas do extrato pendentes" className="h-[300px]">
                   <div className="space-y-3 pr-2">
                     {groupedEntries.map((group) => (
                       <div key={group.date}>
@@ -542,7 +542,7 @@ export function ReconciliationPendingListGrouped({
               {groupedTransactions.length === 0 ? (
                 <EmptyState icon={Receipt} message="Nenhum lançamento pendente" />
               ) : (
-                <ScrollArea className="h-[300px]">
+                <ScrollArea viewportLabel="Lançamentos pendentes" className="h-[300px]">
                   <div className="space-y-3 pr-2">
                     {groupedTransactions.map((group) => (
                       <div key={group.date}>
@@ -614,7 +614,7 @@ export function ReconciliationPendingListGrouped({
             {groupedEntries.length === 0 ? (
               <EmptyState icon={FileText} message={searchTerm ? "Nenhuma entrada encontrada" : "Nenhuma entrada pendente"} />
             ) : (
-              <ScrollArea className="h-[350px]" type="always">
+              <ScrollArea viewportLabel="Entradas do extrato pendentes" className="h-[350px]" type="always">
                 <div className="space-y-2 p-2 pr-3">
                   {groupedEntries.map((group) => (
                     <div key={group.date}>
@@ -653,7 +653,7 @@ export function ReconciliationPendingListGrouped({
             {groupedTransactions.length === 0 ? (
               <EmptyState icon={Receipt} message={searchTerm ? "Nenhum lançamento encontrado" : "Nenhum lançamento pendente"} />
             ) : (
-              <ScrollArea className="h-[350px]" type="always">
+              <ScrollArea viewportLabel="Lançamentos pendentes" className="h-[350px]" type="always">
                 <div className="space-y-2 p-2 pr-3">
                   {groupedTransactions.map((group) => (
                     <div key={group.date}>

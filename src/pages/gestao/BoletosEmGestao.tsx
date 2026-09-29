@@ -284,13 +284,14 @@ export default function BoletosEmGestao() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Inquilino, imóvel ou ID..."
+            aria-label="Buscar cobrança por inquilino, imóvel ou ID"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-[160px]" aria-label="Filtrar por status"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="PENDING">Pendente</SelectItem>
@@ -300,7 +301,7 @@ export default function BoletosEmGestao() {
           </SelectContent>
         </Select>
         <Select value={unitFilter} onValueChange={setUnitFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px]" aria-label="Filtrar por imóvel">
             <SelectValue placeholder="Todos os imóveis" />
           </SelectTrigger>
           <SelectContent>
@@ -310,8 +311,8 @@ export default function BoletosEmGestao() {
             ))}
           </SelectContent>
         </Select>
-        <Input type="date" className="w-[150px]" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-        <Input type="date" className="w-[150px]" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+        <Input type="date" className="w-[150px]" aria-label="Vencimento a partir de" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+        <Input type="date" className="w-[150px]" aria-label="Vencimento até" value={dateTo} onChange={e => setDateTo(e.target.value)} />
       </div>
 
       {isLoading ? (
@@ -378,7 +379,7 @@ export default function BoletosEmGestao() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ações da cobrança">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

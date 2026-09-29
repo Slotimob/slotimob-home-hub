@@ -130,7 +130,7 @@ function SectionCard({
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-1.5 max-h-[340px] overflow-y-auto">
+      <CardContent className="p-1.5 max-h-[340px] overflow-y-auto" tabIndex={0} role="region" aria-label={title}>
         <div className="divide-y divide-border/60">{children}</div>
       </CardContent>
     </Card>

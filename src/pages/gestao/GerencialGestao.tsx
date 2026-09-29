@@ -304,13 +304,14 @@ const GerencialGestao = () => {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar por descrição ou unidade..."
+                aria-label="Buscar por descrição ou unidade"
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-36 h-9" aria-label="Filtrar por status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="paid">Pagos</SelectItem>
@@ -395,12 +396,12 @@ const GerencialGestao = () => {
                           <TableCell>
                             <div className="flex gap-1">
                               {canEdit && (
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)} aria-label={`Editar ${tx.description ?? "lançamento"}`}>
                                 <Edit3 className="h-3.5 w-3.5" />
                               </Button>
                               )}
                               {canDelete && (
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(tx.id)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(tx.id)} aria-label={`Excluir ${tx.description ?? "lançamento"}`}>
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                               )}

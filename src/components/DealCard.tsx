@@ -129,6 +129,9 @@ export const DealCard = ({
       style={style}
       {...listeners}
       {...attributes}
+      // AX4: o card não é um botão (tem botões dentro); o título é o controle principal
+      role="article"
+      aria-label={(deal as any).title || deal.lead?.name || 'Negociação'}
       className={cn(
         "transition-all shadow-sm hover:shadow-md border bg-card cursor-grab active:cursor-grabbing touch-manipulation",
         isDragging && 'opacity-50 rotate-2',
@@ -153,6 +156,7 @@ export const DealCard = ({
           {selectionMode && (
             <div className="flex-shrink-0 mt-0.5 p-0.5">
               <Checkbox
+                aria-label={`Selecionar negociação ${(deal as any).title || deal.lead?.name || ''}`}
                 checked={isSelected}
                 onCheckedChange={(checked) => onSelectionChange?.(!!checked)}
               />
@@ -173,7 +177,12 @@ export const DealCard = ({
             <div className="flex items-start justify-between gap-1">
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate leading-tight">
-                  {(deal as any).title || deal.lead?.name || 'Sem título'}
+                  <button
+                    type="button"
+                    className="block w-full truncate text-left font-inherit rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {(deal as any).title || deal.lead?.name || 'Sem título'}
+                  </button>
                 </h4>
                 {/* Contact name - secondary */}
                 {(deal as any).title && deal.lead?.name && (
@@ -247,6 +256,7 @@ export const DealCard = ({
                   navigate(`/crm/propostas?${params.toString()}`);
                 }}
                 title="Gerar Proposta"
+                aria-label="Gerar proposta"
               >
                 <FileText className="h-3.5 w-3.5" />
               </Button>
@@ -255,6 +265,8 @@ export const DealCard = ({
                 size="icon"
                 className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30 flex-shrink-0"
                 onClick={handleWhatsAppClick}
+                aria-label={`Abrir WhatsApp de ${deal.lead?.name || 'contato'}`}
+                title="WhatsApp"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
               </Button>

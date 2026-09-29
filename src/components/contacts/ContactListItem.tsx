@@ -57,6 +57,7 @@ export const ContactListItem = ({
           onCheckedChange={(checked) => onSelectionChange?.(!!checked)}
           onClick={(e) => e.stopPropagation()}
           className="shrink-0"
+          aria-label={`Selecionar ${contact.name}`}
         />
       )}
 
@@ -108,6 +109,7 @@ export const ContactListItem = ({
                 size="icon"
                 className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950"
                 onClick={handleWhatsAppClick}
+                aria-label={`Abrir WhatsApp de ${contact.name}`}
               >
                 <MessageSquare className="h-4 w-4" />
               </Button>
@@ -120,7 +122,7 @@ export const ContactListItem = ({
       {!selectionMode && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button variant="ghost" size="icon" aria-label={`Ações do contato ${contact.name}`} className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

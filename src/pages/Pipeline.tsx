@@ -752,7 +752,7 @@ const Pipeline = () => {
           {isCurrentPipelineCustom && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Opções do pipeline">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Opções do pipeline" aria-label="Opções do pipeline">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
