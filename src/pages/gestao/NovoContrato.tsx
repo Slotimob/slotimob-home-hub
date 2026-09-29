@@ -16,7 +16,9 @@ import {
   ArrowLeft,
   ArrowRight,
   BellRing,
+  Plus,
 } from "lucide-react";
+import { CreateContactDialog } from "@/components/contacts/CreateContactDialog";
 
 
 import { ContactSelector } from "@/components/ContactSelector";
@@ -207,6 +209,7 @@ export default function NovoContrato() {
   const [unitSearchTerm, setUnitSearchTerm] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
   const queryClient = useQueryClient();
+  const [createTenantOpen, setCreateTenantOpen] = useState(false);
   const [selectedUnitInfo, setSelectedUnitInfo] = useState<any>(null);
   const [formData, setFormData] = useState(getInitialFormData);
   /** Condições especiais como vieram do banco (edição), para detectar mudança. */
