@@ -154,6 +154,19 @@ export default function ContratoDetalhe() {
     enabled: !!user && !!id,
   });
 
+  const { data: subdivisionLabel } = useQuery({
+    queryKey: ["lease-subdivision-label", lease?.unit_subdivision_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("unit_subdivisions")
+        .select("label")
+        .eq("id", lease!.unit_subdivision_id)
+        .maybeSingle();
+      return (data?.label as string) || null;
+    },
+    enabled: !!lease?.unit_subdivision_id,
+  });
+
   const nextDueDate = useMemo(() => {
     if (!lease) return null;
     const today = new Date();
@@ -392,7 +405,10 @@ export default function ContratoDetalhe() {
                 {unit?.address ? <Building2 className="h-5 w-5" /> : <Home className="h-5 w-5" />}
               </div>
               <div className="min-w-0">
-                <h2 className="text-lg font-bold truncate">{unit?.unit_number ?? "Unidade"}</h2>
+                <h2 className="text-lg font-bold truncate">
+                  {unit?.unit_number ?? "Unidade"}
+                  {subdivisionLabel ? ` · ${subdivisionLabel}` : ""}
+                </h2>
                 {unit?.address && <p className="text-sm text-muted-foreground truncate">{unit.address}</p>}
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>

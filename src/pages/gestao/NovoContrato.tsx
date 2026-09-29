@@ -2600,9 +2600,20 @@ export default function NovoContrato() {
                     {leaseUnitRefs.map((ref, i) => {
                       const key = leaseUnitRefKey(ref);
                       const extra = extraUnits.units.find((u) => u.id === ref.unit_id);
-                      const base = i === 0 ? unitName || "Imóvel principal" : extra ? unitLabel(extra) : ref.unit_id;
-                      const label =
-                        i > 0 && ref.unit_subdivision_id
+                      const primaryUnitIdForSummary = leaseUnitRefs[0]?.unit_id;
+                      const base =
+                        i === 0 || ref.unit_id === primaryUnitIdForSummary
+                          ? unitName || "Imóvel principal"
+                          : extra
+                            ? unitLabel(extra)
+                            : ref.unit_id;
+                      const primaryFraction =
+                        i === 0 && ref.unit_subdivision_id
+                          ? subdivisions.find((s) => s.id === ref.unit_subdivision_id)?.label || "Fração"
+                          : null;
+                      const label = primaryFraction
+                        ? `${base} · ${primaryFraction}`
+                        : i > 0 && ref.unit_subdivision_id
                           ? `${base} — ${extraUnits.fractionLabels?.[ref.unit_subdivision_id] || "Fração"}`
                           : base;
                       const share =

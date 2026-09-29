@@ -120,7 +120,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
   canEdit?: boolean;
  }
  
- type StepStatus = "completed" | "pending" | "disabled";
+ type StepStatus = "completed" | "pending" | "ontrack" | "disabled";
  
  interface JourneyStep {
    id: string;
@@ -266,8 +266,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
         (() => {
           const adjStatus = getAdjustmentStatus(fullLeaseData?.next_adjustment_date);
           const appliedThisYear = metadata.last_adjustment_year === currentYear;
-          // Concluído quando o reajuste não está vencido, ou já foi aplicado no ano corrente
-          const isDone = appliedThisYear || adjStatus === "em_dia" || adjStatus === "proximo";
+          // Concluído só quando o reajuste do ano foi aplicado; antes disso, "Em dia" (neutro)
+          const onTrack = !appliedThisYear && (adjStatus === "em_dia" || adjStatus === "proximo");
           return {
             id: "adjustment",
             title: "Reajuste Anual",
@@ -277,7 +277,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                 ? `Reajuste aplicado em ${currentYear}`
                 : "Data não configurada — clique para definir",
             icon: TrendingUp,
-            status: (isDone ? "completed" : "pending") as "completed" | "pending",
+            status: (appliedThisYear ? "completed" : onTrack ? "ontrack" : "pending") as StepStatus,
           };
         })(),
      ];
@@ -504,6 +504,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          return <Check className="h-4 w-4" />;
        case "pending":
          return <Clock className="h-4 w-4" />;
+       case "ontrack":
+         return <Check className="h-4 w-4" />;
        default:
          return <AlertCircle className="h-4 w-4" />;
      }
@@ -515,6 +517,8 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
          return "bg-emerald-500 text-white border-emerald-500";
        case "pending":
          return "bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500";
+       case "ontrack":
+         return "bg-muted text-foreground border-border";
        default:
          return "bg-muted text-muted-foreground border-muted";
      }
@@ -817,7 +821,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
                        step.status === "completed" && "bg-emerald-500"
                      )}
                    >
-                     {step.status === "completed" ? "Concluído" : "Pendente"}
+                     {step.status === "completed" ? "Concluído" : step.status === "ontrack" ? "Em dia" : "Pendente"}
                    </Badge>
                  </div>
                  <p className="text-xs text-muted-foreground mb-2">{step.description}</p>

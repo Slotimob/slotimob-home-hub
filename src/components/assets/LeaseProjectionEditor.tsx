@@ -766,10 +766,30 @@ export const LeaseProjectionEditor = forwardRef<
 
   useImperativeHandle(ref, () => ({ submit, count: confirmedInstallments.length }));
 
+  // W18: busca imóvel/fração pelo id quando não vierem carregados no objeto
+  const summaryUnitId = lease?.unit_id as string | undefined;
+  const summarySubId = (lease as any)?.unit_subdivision_id as string | undefined;
+  const { data: summaryPlace } = useQuery({
+    queryKey: ["projection-summary-place", summaryUnitId, summarySubId],
+    queryFn: async () => {
+      const [u, sd] = await Promise.all([
+        lease?.unit?.unit_number || !summaryUnitId
+          ? Promise.resolve(null)
+          : supabase.from("units").select("unit_number, address").eq("id", summaryUnitId).maybeSingle().then((r) => r.data),
+        summarySubId
+          ? supabase.from("unit_subdivisions").select("label").eq("id", summarySubId).maybeSingle().then((r) => r.data)
+          : Promise.resolve(null),
+      ]);
+      return { unit: (u as any)?.unit_number || (u as any)?.address || null, fraction: (sd as any)?.label || null };
+    },
+    enabled: !!showSummary && !!summaryUnitId,
+  });
+
   if (!lease || !window) return null;
 
   const tenantName = lease.tenant?.name || lease.tenant_contact?.name || "Inquilino";
-  const unitLabel = lease.unit?.unit_number || lease.unit?.address || "Imóvel";
+  const unitBase = lease.unit?.unit_number || lease.unit?.address || summaryPlace?.unit || "—";
+  const unitLabel = summaryPlace?.fraction ? `${unitBase} · ${summaryPlace.fraction}` : unitBase;
   const firstRent = rentInstallments[0];
   const lastRent = rentInstallments[rentInstallments.length - 1];
 
@@ -777,10 +797,14 @@ export const LeaseProjectionEditor = forwardRef<
     <div className="space-y-4">
       {showSummary && (
         <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1 text-sm">
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <p>
+            <span className="text-muted-foreground">Imóvel: </span>
             <span className="font-medium">{unitLabel}</span>
-            <span className="text-muted-foreground">{tenantName}</span>
-          </div>
+          </p>
+          <p>
+            <span className="text-muted-foreground">Inquilino: </span>
+            <span className="font-medium">{tenantName}</span>
+          </p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs tabular-nums">
             <span>Aluguel {formatCurrency(rentAmountDefault)}</span>
             <span>Vencimento dia {lease.due_day}</span>
