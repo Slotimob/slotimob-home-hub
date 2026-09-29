@@ -261,7 +261,7 @@ export function TransactionsTableInfinite({
     }
   };
 
-  const { data: settlementGroups = {} } = useSettlementGroups(
+  const { data: settlementGroups = {}, isPlaceholderData: groupsStale, isLoading: groupsLoading } = useSettlementGroups(
     transactions.map((t) => t.settlement_group_id)
   );
   const settlementSummaryFor = (t: any): string | null => {
@@ -280,7 +280,11 @@ export function TransactionsTableInfinite({
   const partialAnchorIds = transactions
     .filter((t: any) => t.type === "income" && (t.metadata as any)?.partial_payment)
     .map((t) => t.id);
-  const { data: rentBalances = {} } = useRentBalanceLines(partialAnchorIds);
+  const { data: rentBalances = {}, isPlaceholderData: balancesStale, isLoading: balancesLoading } = useRentBalanceLines(partialAnchorIds);
+  /** Dados do grupo/saldo da linha ainda não chegaram: não calcular "líquido" com grupo incompleto. */
+  const groupDataPending = (t: any) =>
+    (!!t.settlement_group_id && (groupsStale || groupsLoading || !settlementGroups[t.settlement_group_id])) ||
+    (t.type === "income" && !!(t.metadata as any)?.partial_payment && (balancesStale || balancesLoading));
   const anchorBreakdownFor = (t: any) => {
     const lines = groupLinesOf(t);
     const extra = rentBalances[t.id];
@@ -859,6 +863,9 @@ export function TransactionsTableInfinite({
                         {formatCurrency(Number(transaction.amount))}
                       </span>
                       {(() => {
+                        if (groupDataPending(transaction)) {
+                          return <Skeleton className="mt-0.5 h-2.5 w-14" aria-label="Calculando líquido" />;
+                        }
                         const b = anchorBreakdownFor(transaction);
                         return b ? (
                           <SettlementBreakdownPopover breakdown={b} paid={transaction.status === "paid"}>
