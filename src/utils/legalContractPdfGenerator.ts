@@ -903,7 +903,7 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
   // CLÁUSULA DÉCIMA SÉTIMA - RENOVAÇÃO E REVISÃO
   addClauseHeader('DÉCIMA SÉTIMA', 'DA RENOVAÇÃO E REVISÃO DO CONTRATO');
   addSubClause('17.1', `Qualquer das partes poderá propor a renovação deste contrato mediante notificação por escrito com antecedência mínima de 30 (trinta) dias do término do prazo.`);
-  addSubClause('17.2', `Na ausência de comunicação de não renovação, o contrato prorroga-se automaticamente por prazo indeterminado, nos termos do art. 46 da Lei 8.245/91, com todos os encargos e condições vigentes, sujeitos ao reajuste previsto na Cláusula Terceira.`);
+  addSubClause('17.2', `${buildRenewalClause(data.contrato.finalidade, data.contrato.prazoMeses)} Na prorrogação, mantêm-se todos os encargos e condições vigentes, sujeitos ao reajuste previsto na Cláusula Terceira.`);
   addSubClause('17.3', `O LOCATÁRIO poderá requerer revisão judicial do aluguel após 3 (três) anos de vigência do contrato ou de acordo da última revisão, conforme art. 68 da Lei 8.245/91.`);
 
   currentY += 8;
