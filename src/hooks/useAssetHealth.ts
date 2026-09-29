@@ -20,7 +20,7 @@ export type ObligationType =
   | "other";
 
 /** `grace`: aluguel em carência isenta — neutro, nunca atrasado. */
-export type ObligationStatus = "paid" | "pending" | "overdue" | "ignored" | "grace";
+export type ObligationStatus = "paid" | "pending" | "overdue" | "ignored" | "grace" | "not_launched";
 
 export type ResponsibleRole = "owner" | "tenant" | "agency";
 
@@ -130,7 +130,7 @@ function getCurrentMonthRange(): { start: string; end: string } {
   return getMonthRange(new Date());
 }
 
-function calculateObligationStatus(
+export function calculateObligationStatus(
   config: ObligationConfig,
   transaction: { status: string; transaction_date: string; due_date?: string | null; is_reconciled?: boolean } | null,
   referenceDate?: Date
@@ -183,12 +183,8 @@ function calculateObligationStatus(
     return "pending";
   }
   
-  const currentDay = isCurrentMonth ? today.getDate() : refDate.getDate();
-  if (currentDay > configDueDay) {
-    return "overdue";
-  }
-
-  return "pending";
+  // Sem lançamento no mês: "não lançado" (nunca atraso).
+  return "not_launched";
 }
 
 function findMatchingTransaction(
@@ -243,7 +239,7 @@ function calculateOverallStatus(
   }
 
   const hasOverdue = activeObligations.some((o) => o.status === "overdue");
-  const hasPending = activeObligations.some((o) => o.status === "pending");
+  const hasPending = activeObligations.some((o) => o.status === "pending" || o.status === "not_launched");
 
   if (hasOverdue) {
     return "critical";

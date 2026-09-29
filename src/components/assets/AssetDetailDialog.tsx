@@ -81,6 +81,7 @@ import {
   AssetHealth,
   ObligationType,
   ObligationStatus,
+  calculateObligationStatus,
   ObligationsConfig,
   ObligationConfig,
 } from "@/hooks/useAssetHealth";
@@ -89,6 +90,7 @@ import { AssetMetricsCards } from "./AssetMetricsCards";
 import { ObligationsConfigForm } from "./ObligationsConfigForm";
 import { DimobStatusCard } from "./DimobStatusCard";
 import { ContractGeneratorDialog } from "./ContractGeneratorDialog";
+import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "./ConfirmLeaseProjectionDialog";
 import { toast } from "@/hooks/use-toast";
 
 interface AssetDetailDialogProps {
@@ -151,6 +153,12 @@ const STATUS_CONFIG: Record<ObligationStatus, {
     className: "text-sky-600",
     bgClassName: "bg-sky-500/15 text-sky-600 border-sky-500/30",
   },
+  not_launched: {
+    label: "Não lançado",
+    icon: MoreHorizontal,
+    className: "text-muted-foreground",
+    bgClassName: "bg-muted text-muted-foreground",
+  },
   ignored: {
     label: "Desativado",
     icon: MoreHorizontal,
@@ -194,6 +202,7 @@ export function AssetDetailDialog({
 
   const [activeTab, setActiveTab] = useState("overview");
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
+  const [projectionOpen, setProjectionOpen] = useState(false);
   const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
   const [transactionPrefill, setTransactionPrefill] = useState<TransactionPrefill | undefined>();
   const [selectedObligationType, setSelectedObligationType] = useState<ObligationType | null>(null);
@@ -535,10 +544,6 @@ export function AssetDetailDialog({
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
     if (!unitConfig) return [];
 
-    const today = new Date();
-    const isCurrentMonth = format(today, "yyyy-MM") === competencyPeriod;
-    const currentDay = today.getDate();
-
     return (Object.keys(OBLIGATION_LABELS) as ObligationType[]).map((type) => {
       const config = unitConfig[type] || { active: false };
       
@@ -558,24 +563,8 @@ export function AssetDetailDialog({
         return keywords.some(k => categoryName.includes(k) || description.includes(k));
       });
 
-      let status: ObligationStatus = "ignored";
+      let status: ObligationStatus = calculateObligationStatus(config, (transaction as any) ?? null, currentMonth);
       if (config.active) {
-        if (transaction) {
-          // Reconciled transactions are always treated as paid (Master Rule)
-          if (transaction.is_reconciled === true) {
-            status = "paid";
-          } else if (transaction.status === "paid") {
-            status = "paid";
-          } else if (transaction.status === "overdue") {
-            status = "overdue";
-          } else {
-            const dueDay = config.due_day || 10;
-            status = isCurrentMonth && currentDay > dueDay ? "overdue" : "pending";
-          }
-        } else {
-          const dueDay = config.due_day || 10;
-          status = isCurrentMonth && currentDay > dueDay ? "overdue" : "pending";
-        }
         if (
           type === "rent" &&
           status !== "paid" &&
@@ -955,7 +944,13 @@ export function AssetDetailDialog({
                                         {format(parseISO(obligation.transaction.transaction_date), "dd/MM/yyyy")}
                                       </p>
                                     </div>
-                                  ) : obligation.status !== "ignored" && !obligation.viaLease && (
+                                  ) : obligation.type === "rent" && obligation.status === "not_launched" && activeLease && (activeLease as any).status === "active" ? (
+                                    <div className="flex gap-2 mt-2">
+                                      <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => setProjectionOpen(true)}>
+                                        <Plus className="h-3 w-3 mr-1" /> Gerar lançamentos
+                                      </Button>
+                                    </div>
+                                  ) : obligation.status !== "ignored" && obligation.status !== "grace" && !obligation.viaLease && (
                                     <div className="flex gap-2 mt-2">
                                       <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => handleCreateTransaction(obligation.type)}>
                                         <Plus className="h-3 w-3 mr-1" /> Criar Lançamento
@@ -1357,11 +1352,19 @@ export function AssetDetailDialog({
 
       {/* Contract Generator Dialog */}
       {asset && (
+        <>
+        <ConfirmLeaseProjectionDialog
+          open={projectionOpen}
+          onOpenChange={setProjectionOpen}
+          lease={(activeLease as unknown as LeaseForProjection) ?? null}
+          onConfirmed={() => queryClient.invalidateQueries()}
+        />
         <ContractGeneratorDialog
           open={contractDialogOpen}
           onOpenChange={setContractDialogOpen}
           unitId={asset.unitId}
         />
+        </>
       )}
 
     </div>

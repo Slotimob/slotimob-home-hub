@@ -58,6 +58,11 @@ const STATUS_CONFIG: Record<ObligationStatus, {
     textClassName: "text-sky-600",
     label: "Carência",
   },
+  not_launched: {
+    bgClassName: "bg-muted",
+    textClassName: "text-muted-foreground",
+    label: "Não lançado",
+  },
   ignored: {
     bgClassName: "bg-muted",
     textClassName: "text-muted-foreground",
