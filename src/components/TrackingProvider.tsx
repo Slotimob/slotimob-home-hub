@@ -125,7 +125,15 @@ export function trackStartTrial(planId?: string) {
   }
 }
 
-/** Convenience: track SubscriptionPaid (checkout de plano pago concluído: PIX/boleto gerado ou redirect de cartão) */
+/** Convenience: track InitiateCheckout (PIX ou link de cartão gerado) */
+export function trackInitiateCheckout(planId?: string, billingType?: string) {
+  trackEvent('InitiateCheckout', { plan: planId, billing_type: billingType });
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', 'InitiateCheckout', { plan: planId, billing_type: billingType });
+  }
+}
+
+/** Convenience: track SubscriptionPaid (pagamento confirmado) */
 export function trackSubscriptionPaid(planId?: string, billingType?: string) {
   trackEvent('SubscriptionPaid', { plan: planId, billing_type: billingType });
   if (typeof window !== 'undefined' && window.fbq) {
