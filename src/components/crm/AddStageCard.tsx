@@ -95,6 +95,7 @@ export const AddStageCard = ({ onAddStage, existingStages = [] }: AddStageCardPr
         <Card 
           className="h-full border-dashed border-2 hover:border-primary/50 hover:bg-accent/50 transition-colors cursor-pointer min-h-[200px] flex items-center justify-center touch-manipulation active:scale-[0.98]"
           role="button"
+          aria-label="Adicionar etapa"
           tabIndex={0}
           onClick={(e) => {
             e.stopPropagation();
