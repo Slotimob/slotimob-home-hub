@@ -142,6 +142,7 @@ const Units = () => {
     },
     enabled: !!user,
   });
+  const statusLabelFor = useUnitStatusLabels(units as any[]);
 
   const { data: allProperties = [] } = useQuery({
     queryKey: ['properties'],

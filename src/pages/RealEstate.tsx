@@ -166,6 +166,7 @@ const RealEstate = () => {
     },
     enabled: !!user,
   });
+  const statusLabelFor = useUnitStatusLabels(realEstateUnits as any[]);
 
   const reloadRealEstateUnits = () => {
     queryClient.invalidateQueries({ queryKey: ['units'] });
