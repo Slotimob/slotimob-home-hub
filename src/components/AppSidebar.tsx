@@ -301,6 +301,8 @@ export function AppSidebar() {
     return initial;
   });
 
+  const groupSlug = (t: string) => t.normalize('NFD').replace(/[^\w]+/g, '-').toLowerCase();
+
   const toggleGroup = (title: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -385,11 +387,13 @@ export function AppSidebar() {
                   <Collapsible
                     key={item.title}
                     open={!collapsed && isOpen}
-                    className="group/collapsible"
+                    asChild
                   >
-                    <SidebarMenuItem>
+                    <SidebarMenuItem className="group/collapsible">
                       <SidebarMenuButton 
                         tooltip={item.title}
+                        aria-expanded={!collapsed && isOpen}
+                        aria-controls={`sidebar-group-${groupSlug(item.title)}`}
                         className={cn(
                           "flex items-center gap-3 w-full transition-all duration-200 cursor-pointer",
                           groupActive && "bg-primary/10 text-primary font-medium"
@@ -412,17 +416,17 @@ export function AppSidebar() {
                             <Lock className="inline h-3 w-3 ml-1.5 text-muted-foreground" />
                           )}
                         </span>
-                        <CollapsibleTrigger asChild onClick={(e) => toggleGroup(item.title, e)}>
-                          <ChevronRight 
-                            className={cn(
-                              "h-4 w-4 shrink-0 transition-transform duration-200 hover:bg-muted rounded",
-                              collapsed ? 'opacity-0 w-0' : 'opacity-100',
-                              isOpen && "rotate-90"
-                            )} 
-                          />
-                        </CollapsibleTrigger>
+                        <ChevronRight 
+                          aria-hidden="true"
+                          onClick={(e) => toggleGroup(item.title, e)}
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-transform duration-200 hover:bg-muted rounded",
+                            collapsed ? 'opacity-0 w-0' : 'opacity-100',
+                            isOpen && "rotate-90"
+                          )} 
+                        />
                       </SidebarMenuButton>
-                      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                      <CollapsibleContent id={`sidebar-group-${groupSlug(item.title)}`} className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                         <SidebarMenuSub className="animate-fade-in">
                           {item.items.map((subItem) => {
                             if (subItem.nestedItems && subItem.nestedItems.length > 0) {
@@ -434,9 +438,9 @@ export function AppSidebar() {
                                 <Collapsible
                                   key={subItem.url}
                                   open={nestedOpen}
-                                  className="w-full"
+                                  asChild
                                 >
-                                  <SidebarMenuSubItem className="flex flex-col">
+                                  <SidebarMenuSubItem className="flex flex-col w-full">
                                     <div className="flex items-center w-full">
                                       <SidebarMenuSubButton 
                                         asChild 
@@ -457,9 +461,11 @@ export function AppSidebar() {
                                       </SidebarMenuSubButton>
                                       <CollapsibleTrigger 
                                         onClick={(e) => toggleGroup(nestedKey, e)}
+                                        aria-label={`${nestedOpen ? 'Recolher' : 'Expandir'} ${subItem.title}`}
                                         className="p-1 hover:bg-muted rounded transition-colors"
                                       >
                                         <ChevronDown 
+                                          aria-hidden="true"
                                           className={cn(
                                             "h-3 w-3 transition-transform duration-200",
                                             nestedOpen && "rotate-180"
