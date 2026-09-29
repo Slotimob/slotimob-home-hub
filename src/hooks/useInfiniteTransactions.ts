@@ -1,3 +1,4 @@
+import { leaseUnitFilter } from "@/hooks/useLeases";
 import { todayInSaoPauloDateOnly } from "@/lib/date-only";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +50,23 @@ export function useInfiniteTransactions(
   return useInfiniteQuery({
     queryKey: ["infinite-transactions", filters, userId, sortConfig],
     queryFn: async ({ pageParam = 0 }) => {
+      // C2: contratos em que o imóvel filtrado entra por lease_units (adicional/fração).
+      // Os lançamentos ficam com unit_id do principal; trazemos também pelo lease_id.
+      const leaseShares = new Map<string, number>();
+      if (filters.unitId) {
+        const { data: leases } = await supabase
+          .from("leases")
+          .select("id, unit_id, lease_units(unit_id, share_percent)")
+          .or(await leaseUnitFilter(filters.unitId));
+        for (const l of (leases as any[]) || []) {
+          const rows = (l.lease_units || []).filter((r: any) => r.unit_id === filters.unitId);
+          const share = rows.length
+            ? rows.reduce((s: number, r: any) => s + (r.share_percent == null ? 100 : Number(r.share_percent)), 0)
+            : 100;
+          leaseShares.set(l.id, share);
+        }
+      }
+
       let query = supabase
         .from("financial_transactions")
         .select(`
@@ -98,7 +116,10 @@ export function useInfiniteTransactions(
         query = query.eq("category_id", filters.categoryId);
       }
       if (filters.unitId) {
-        query = query.eq("unit_id", filters.unitId);
+        const ids = Array.from(leaseShares.keys());
+        query = ids.length
+          ? query.or(`unit_id.eq.${filters.unitId},lease_id.in.(${ids.join(",")})`)
+          : query.eq("unit_id", filters.unitId);
       }
       if (filters.bankAccountId) {
         query = query.eq("bank_account_id", filters.bankAccountId);
@@ -137,8 +158,12 @@ export function useInfiniteTransactions(
       const { data, error } = await query;
       if (error) throw error;
       
+      const rows = (data || []).map((t: any) => {
+        if (!filters.unitId || t.unit_id === filters.unitId || !t.lease_id || !leaseShares.has(t.lease_id)) return t;
+        return { ...t, via_lease_share_percent: leaseShares.get(t.lease_id) };
+      });
       return {
-        data: data || [],
+        data: rows,
         nextPage: data && data.length === PAGE_SIZE ? pageParam + 1 : undefined,
       };
     },
