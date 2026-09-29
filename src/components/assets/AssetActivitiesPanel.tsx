@@ -1,6 +1,5 @@
-import { useQuery as useLinkedQuery } from '@tanstack/react-query';
-import { Checkbox as LinkedCheckbox } from '@/components/ui/checkbox';
 import { formatCurrencyBRL } from '@/utils/unitPricing';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useMemo, useState } from 'react';
 import type { DateRange as RDPRange } from 'react-day-picker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
