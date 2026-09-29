@@ -569,7 +569,7 @@ export function AssetDetailDialog({
         return keywords.some(k => categoryName.includes(k) || description.includes(k));
       });
 
-      let status: ObligationStatus = calculateObligationStatus(config, (transaction as any) ?? null, currentMonth);
+      let status: ObligationStatus = calculateObligationStatus(config, (transaction as any) ?? null, currentMonth, (activeLease as any)?.start_date ?? null);
       if (config.active) {
         if (
           type === "rent" &&
