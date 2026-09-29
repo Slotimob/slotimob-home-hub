@@ -121,12 +121,15 @@ export function AsaasSubscriptionCard({
   const [firstDue, setFirstDue] = useState<string>(suggestedFirstDue ?? "");
   const [ackEarlyStart, setAckEarlyStart] = useState(false);
   const startsBeforeSuggested = !!suggestedFirstDue && !!firstDue && firstDue < suggestedFirstDue;
-  const differentMonthsText = differentMonths
-    .map((m) => {
-      const l = fmtDate(parseISO(`${m.competency}-01`), "MMM/yyyy", { locale: ptBR });
-      return `${l.charAt(0).toUpperCase()}${l.slice(1)} ${brl(m.net)}`;
-    })
-    .join(", ");
+  // B3: meses isentos (carência, líquido R$ 0) não precisam de cobrança avulsa
+  const monthLabel = (c: string) => {
+    const l = fmtDate(parseISO(`${c}-01`), "MMM/yyyy", { locale: ptBR });
+    return `${l.charAt(0).toUpperCase()}${l.slice(1)}`;
+  };
+  const exemptMonths = differentMonths.filter((m) => Math.abs(m.net) < 0.005);
+  const chargeableMonths = differentMonths.filter((m) => Math.abs(m.net) >= 0.005);
+  const differentMonthsText = chargeableMonths.map((m) => `${monthLabel(m.competency)} ${brl(m.net)}`).join(", ");
+  const exemptMonthsText = exemptMonths.map((m) => monthLabel(m.competency)).join(", ");
   const [fine, setFine] = useState<string>("10");
   const [interest, setInterest] = useState<string>("1");
   const [activating, setActivating] = useState(false);
@@ -383,7 +386,12 @@ export function AsaasSubscriptionCard({
             </div>
           </div>
 
-          {differentMonths.length > 0 && (
+          {chargeableMonths.length === 0 && exemptMonths.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {exemptMonthsText} {exemptMonths.length === 1 ? "isento" : "isentos"} (carência): nada a cobrar
+            </p>
+          )}
+          {chargeableMonths.length > 0 && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-xs">
