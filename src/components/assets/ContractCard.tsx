@@ -194,8 +194,8 @@ export function ContractCard({
             {hasActions && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <MoreVertical className="h-4 w-4" />
+                  <Button aria-label="Mais ações do contrato" variant="ghost" size="icon" className="h-7 w-7">
+                    <MoreVertical aria-hidden="true" className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">

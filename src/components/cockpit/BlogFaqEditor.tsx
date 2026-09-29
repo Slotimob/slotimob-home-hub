@@ -68,9 +68,9 @@ export function BlogFaqEditor({ faqs, onChange }: BlogFaqEditorProps) {
                   className="text-sm"
                 />
               </div>
-              <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0"
+              <Button aria-label="Remover pergunta" type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0"
                 onClick={() => removeFaq(i)}>
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
               </Button>
             </div>
           </CardContent>

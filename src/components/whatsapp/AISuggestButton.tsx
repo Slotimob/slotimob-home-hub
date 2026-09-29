@@ -83,7 +83,7 @@ export function AISuggestButton({ messages, contactName, onSuggestion, onOpenBuy
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
+          <Button aria-label="Sugerir resposta com IA"
             variant="ghost"
             size="icon"
             className="flex-shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground"
@@ -91,7 +91,7 @@ export function AISuggestButton({ messages, contactName, onSuggestion, onOpenBuy
             disabled={loading}
           >
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
             ) : hasCredits ? (
               <Sparkles className="h-5 w-5" />
             ) : (

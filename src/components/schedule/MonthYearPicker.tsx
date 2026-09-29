@@ -76,8 +76,8 @@ export function MonthYearPicker({
   return (
     <div className={cn("flex items-center gap-1", className)}>
       {showNavigation && (
-        <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8">
-          <ChevronLeft className="h-4 w-4" />
+        <Button aria-label="Mês anterior" variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8">
+          <ChevronLeft aria-hidden="true" className="h-4 w-4" />
         </Button>
       )}
 
@@ -139,8 +139,8 @@ export function MonthYearPicker({
       </Popover>
 
       {showNavigation && (
-        <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8">
-          <ChevronRight className="h-4 w-4" />
+        <Button aria-label="Próximo mês" variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8">
+          <ChevronRight aria-hidden="true" className="h-4 w-4" />
         </Button>
       )}
     </div>

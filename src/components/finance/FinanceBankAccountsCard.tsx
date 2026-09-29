@@ -66,8 +66,8 @@ export function FinanceBankAccountsCard() {
               Saldo Real vs Projetado
             </CardDescription>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => setIsCreateOpen(true)}>
-            <Plus className="h-3.5 w-3.5" />
+          <Button aria-label="Nova conta bancária" variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => setIsCreateOpen(true)}>
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" />
           </Button>
         </CardHeader>
         <CardContent className="px-3 lg:px-6 pb-3 lg:pb-6">

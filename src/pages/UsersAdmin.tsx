@@ -269,8 +269,8 @@ const UsersAdmin = () => {
     <AppLayout
       title="Gerenciamento de Usuários"
       headerActions={
-        <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button aria-label="Voltar para configurações" variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+          <ArrowLeft aria-hidden="true" className="h-5 w-5" />
         </Button>
       }
     >
@@ -403,13 +403,13 @@ const UsersAdmin = () => {
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button 
+                        <Button aria-label="Remover acesso do usuário" 
                           variant="ghost" 
                           size="icon"
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           disabled={userRole.user_id === user?.id && userRole.role === 'admin'}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 aria-hidden="true" className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>

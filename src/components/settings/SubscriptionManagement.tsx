@@ -286,23 +286,23 @@ export const SubscriptionManagement = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
+                <Button aria-label="Diminuir usuários adicionais"
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
                   disabled={addonUserQty <= 1}
                   onClick={() => setAddonUserQty(q => Math.max(1, q - 1))}
                 >
-                  <Minus className="h-3 w-3" />
+                  <Minus aria-hidden="true" className="h-3 w-3" />
                 </Button>
                 <span className="w-8 text-center font-semibold">{addonUserQty}</span>
-                <Button
+                <Button aria-label="Aumentar usuários adicionais"
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
                   onClick={() => setAddonUserQty(q => q + 1)}
                 >
-                  <Plus className="h-3 w-3" />
+                  <Plus aria-hidden="true" className="h-3 w-3" />
                 </Button>
                 <Button
                   size="sm"
@@ -329,23 +329,23 @@ export const SubscriptionManagement = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
+                <Button aria-label="Diminuir imóveis adicionais"
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
                   disabled={addonUnitQty <= 1}
                   onClick={() => setAddonUnitQty(q => Math.max(1, q - 1))}
                 >
-                  <Minus className="h-3 w-3" />
+                  <Minus aria-hidden="true" className="h-3 w-3" />
                 </Button>
                 <span className="w-8 text-center font-semibold">{addonUnitQty}</span>
-                <Button
+                <Button aria-label="Aumentar imóveis adicionais"
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
                   onClick={() => setAddonUnitQty(q => q + 1)}
                 >
-                  <Plus className="h-3 w-3" />
+                  <Plus aria-hidden="true" className="h-3 w-3" />
                 </Button>
                 <Button
                   size="sm"

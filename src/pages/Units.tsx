@@ -550,8 +550,8 @@ const Units = () => {
             <div className="flex items-center gap-2">
               <UnitsFilters filters={filters} onFiltersChange={setFilters} />
               {(activeFiltersCount > 0 || searchTerm) && (
-                <Button variant="ghost" size="icon" onClick={clearFilters} title="Limpar filtros">
-                  <X className="h-4 w-4" />
+                <Button aria-label="Limpar filtros" variant="ghost" size="icon" onClick={clearFilters} title="Limpar filtros">
+                  <X aria-hidden="true" className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -559,8 +559,8 @@ const Units = () => {
           viewModeSlot={
             <div className="flex items-center gap-3">
               <ViewModeTabs value={viewMode} onValueChange={handleViewModeChange} showTable={true} />
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => reloadUnits()} title="Atualizar lista">
-                <RefreshCw className="h-4 w-4" />
+              <Button aria-label="Atualizar lista" variant="outline" size="icon" className="h-8 w-8" onClick={() => reloadUnits()} title="Atualizar lista">
+                <RefreshCw aria-hidden="true" className="h-4 w-4" />
               </Button>
               {/* Active Filters Summary Badges */}
               {activeFiltersCount > 0 && (
@@ -842,13 +842,13 @@ const Units = () => {
             >
               Primeira
             </Button>
-            <Button
+            <Button aria-label="Página anterior"
               variant="outline"
               size="icon"
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft aria-hidden="true" className="h-4 w-4" />
             </Button>
             
             <div className="flex items-center gap-1">
@@ -877,13 +877,13 @@ const Units = () => {
               })}
             </div>
 
-            <Button
+            <Button aria-label="Próxima página"
               variant="outline"
               size="icon"
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight aria-hidden="true" className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"

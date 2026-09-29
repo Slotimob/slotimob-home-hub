@@ -219,7 +219,7 @@ export function LeaseManagementSheet({
             )}
             <SheetTitle className="text-lg">{asset.unitNumber}</SheetTitle>
             </div>
-            <Button
+            <Button aria-label="Atualizar dados do contrato"
               variant="ghost"
               size="icon"
               className="h-8 w-8"
@@ -230,7 +230,7 @@ export function LeaseManagementSheet({
                 toast({ title: "Dados atualizados!" });
               }}
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw aria-hidden="true" className="h-4 w-4" />
             </Button>
           </div>
           <SheetDescription>

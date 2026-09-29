@@ -488,13 +488,13 @@ const Documents = () => {
                             <div className="flex items-center justify-end gap-1">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button
+                                  <Button aria-label={`Baixar documento ${doc.title}`}
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8"
                                     onClick={() => handleDownload(doc)}
                                   >
-                                    <Download className="h-4 w-4" />
+                                    <Download aria-hidden="true" className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Baixar</TooltipContent>
@@ -503,13 +503,13 @@ const Documents = () => {
                               {doc.unit_id && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button
+                                    <Button aria-label={`Abrir imóvel do documento ${doc.title}`}
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8"
                                       onClick={() => handleNavigateToUnit(doc)}
                                     >
-                                      <Building2 className="h-4 w-4" />
+                                      <Building2 aria-hidden="true" className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>Ir para Imóvel</TooltipContent>
@@ -519,13 +519,13 @@ const Documents = () => {
                               <PermissionGate permission="documents.delete">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button
+                                    <Button aria-label={`Excluir documento ${doc.title}`}
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                       onClick={() => setDeleteDoc(doc)}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>Excluir</TooltipContent>

@@ -184,8 +184,8 @@ export const CustomTemplateEditorDialog = ({
           <Label htmlFor="content">Conteúdo do Contrato</Label>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <Info className="h-4 w-4" />
+              <Button aria-label="Ver variáveis disponíveis" variant="ghost" size="icon" className="h-6 w-6">
+                <Info aria-hidden="true" className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">

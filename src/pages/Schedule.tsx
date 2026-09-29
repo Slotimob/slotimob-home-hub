@@ -561,14 +561,14 @@ export default function Schedule() {
           <div className="flex flex-wrap items-center justify-between gap-3 bg-card border rounded-lg px-3 py-2">
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" onClick={goPrev} title="Anterior">
-                  <ChevronLeft className="h-4 w-4" />
+                <Button aria-label="Anterior" variant="outline" size="icon" onClick={goPrev} title="Anterior">
+                  <ChevronLeft aria-hidden="true" className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="sm" onClick={goToday}>
                   Hoje
                 </Button>
-                <Button variant="outline" size="icon" onClick={goNext} title="Próximo">
-                  <ChevronRight className="h-4 w-4" />
+                <Button aria-label="Próximo" variant="outline" size="icon" onClick={goNext} title="Próximo">
+                  <ChevronRight aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </div>
               <h2 className="text-base sm:text-lg font-semibold ml-1 capitalize">{periodLabel}</h2>
@@ -582,8 +582,8 @@ export default function Schedule() {
                   <TabsTrigger value="calendar">Mês</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <Button variant="outline" size="icon" onClick={handleRefresh} title="Atualizar agenda">
-                <RefreshCw className="h-4 w-4" />
+              <Button aria-label="Atualizar agenda" variant="outline" size="icon" onClick={handleRefresh} title="Atualizar agenda">
+                <RefreshCw aria-hidden="true" className="h-4 w-4" />
               </Button>
             </div>
           </div>

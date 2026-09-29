@@ -201,14 +201,14 @@ export function ApprovalSettingsTab() {
                   />
                 </div>
 
-                <Button
+                <Button aria-label="Salvar regra"
                   size="sm"
                   variant={row.dirty ? 'default' : 'ghost'}
                   onClick={() => saveRow(row)}
                   disabled={!row.dirty || saving === row.action_type}
                   className="h-8 self-end"
                 >
-                  <Save className="h-3.5 w-3.5" />
+                  <Save aria-hidden="true" className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>

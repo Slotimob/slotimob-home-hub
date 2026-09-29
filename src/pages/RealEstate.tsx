@@ -515,8 +515,8 @@ const RealEstate = () => {
                   showKanban={true}
                   showTable={true}
                 />
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => reloadRealEstateUnits()} title="Atualizar lista">
-                  <RefreshCw className="h-4 w-4" />
+                <Button aria-label="Atualizar lista" variant="outline" size="icon" className="h-8 w-8" onClick={() => reloadRealEstateUnits()} title="Atualizar lista">
+                  <RefreshCw aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </div>
             }
@@ -689,7 +689,7 @@ const RealEstate = () => {
                     </Badge>
                     {/* Share button overlay */}
                     <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
+                      <Button aria-label="Compartilhar imóvel"
                         variant="secondary"
                         size="icon"
                         className="h-8 w-8 shadow-md"
@@ -698,7 +698,7 @@ const RealEstate = () => {
                           navigate(`/crm/propostas?create=true&unitId=${unit.id}`);
                         }}
                       >
-                        <Share2 className="h-4 w-4" />
+                        <Share2 aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

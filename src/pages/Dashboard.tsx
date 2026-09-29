@@ -114,7 +114,7 @@ const Dashboard = () => {
       title="Dashboard"
       headerActions={
         <>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} aria-label="Configurações">
+          <Button variant="ghost" size="icon" className="max-sm:min-h-10 max-sm:min-w-10" onClick={() => navigate('/settings')} aria-label="Configurações">
             <SettingsIcon className="h-5 w-5" />
           </Button>
         </>

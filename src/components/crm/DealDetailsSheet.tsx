@@ -259,8 +259,8 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
             {canDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                    <Trash2 className="h-4 w-4" />
+                  <Button aria-label="Excluir negociação" variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 aria-hidden="true" className="h-4 w-4" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

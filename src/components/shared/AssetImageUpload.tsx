@@ -262,7 +262,7 @@ export function AssetImageUpload({
               key={preview}
             />
             <div className="absolute top-2 right-2 flex gap-2">
-              <Button
+              <Button aria-label="Trocar imagem"
                 type="button"
                 variant="secondary"
                 size="icon"
@@ -270,12 +270,12 @@ export function AssetImageUpload({
                 disabled={isLoading}
               >
                 {uploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 ) : (
                   <Upload className="h-4 w-4" />
                 )}
               </Button>
-              <Button
+              <Button aria-label="Remover imagem"
                 type="button"
                 variant="destructive"
                 size="icon"
@@ -283,7 +283,7 @@ export function AssetImageUpload({
                 disabled={isLoading}
               >
                 {removing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 ) : (
                   <X className="h-4 w-4" />
                 )}

@@ -399,33 +399,33 @@ export const UnitDocuments = ({ unitId, userId }: UnitDocumentsProps) => {
                     <div className="flex gap-1">
                       {isExternal ? (
                         safeExternalUrl && (
-                          <Button
+                          <Button aria-label={`Abrir documento ${doc.title}`}
                             size="icon"
                             variant="ghost"
                             onClick={() => window.open(safeExternalUrl, '_blank', 'noopener,noreferrer')}
                             title="Abrir"
                           >
-                            <ExternalLink className="h-4 w-4" />
+                            <ExternalLink aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         )
                       ) : (
-                        <Button
+                        <Button aria-label={`Baixar documento ${doc.title}`}
                           size="icon"
                           variant="ghost"
                           onClick={() => handleDownload(doc)}
                           title="Baixar"
                         >
-                          <Download className="h-4 w-4" />
+                          <Download aria-hidden="true" className="h-4 w-4" />
                         </Button>
                       )}
-                      <Button
+                      <Button aria-label={`Excluir documento ${doc.title}`}
                         size="icon"
                         variant="ghost"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setDeleteDoc(doc)}
                         title="Excluir"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </div>
                   </CardContent>

@@ -200,21 +200,21 @@ export default function FinanceCategories() {
                               ) : (
                                 <>
                                   {canEdit && (
-                                  <Button
+                                  <Button aria-label={`Editar categoria ${cat.name}`}
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleEdit(cat)}
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit aria-hidden="true" className="h-4 w-4" />
                                   </Button>
                                   )}
                                   {canDelete && (
-                                  <Button
+                                  <Button aria-label={`Excluir categoria ${cat.name}`}
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setDeleteCategory(cat)}
                                   >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <Trash2 aria-hidden="true" className="h-4 w-4 text-destructive" />
                                   </Button>
                                   )}
                                 </>

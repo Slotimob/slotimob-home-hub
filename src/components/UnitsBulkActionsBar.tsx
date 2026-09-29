@@ -285,8 +285,8 @@ export const UnitsBulkActionsBar = ({
           Excluir
         </Button>
 
-        <Button variant="ghost" size="sm" onClick={onClearSelection}>
-          <X className="h-4 w-4" />
+        <Button aria-label="Limpar seleção" variant="ghost" size="sm" onClick={onClearSelection}>
+          <X aria-hidden="true" className="h-4 w-4" />
         </Button>
       </div>
 

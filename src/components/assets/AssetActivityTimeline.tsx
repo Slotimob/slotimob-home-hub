@@ -150,8 +150,8 @@ export const AssetActivityTimeline = ({ assetType, assetId }: AssetActivityTimel
             <BarChart3 className="h-3.5 w-3.5" /> Relatório completo
           </Button>
           {filtered.length > 0 && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={exportCSV} title="Exportar CSV">
-              <Download className="h-3.5 w-3.5" />
+            <Button aria-label="Exportar CSV" variant="ghost" size="icon" className="h-8 w-8" onClick={exportCSV} title="Exportar CSV">
+              <Download aria-hidden="true" className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>

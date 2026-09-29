@@ -194,8 +194,8 @@ export const CustomTemplatesTab = () => {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <Button aria-label="Mais ações do modelo" variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -306,13 +306,13 @@ export const CustomTemplatesTab = () => {
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
+                          <Button aria-label={`Editar modelo ${template.name}`}
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleEdit(template)}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Editar</TooltipContent>
@@ -320,13 +320,13 @@ export const CustomTemplatesTab = () => {
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
+                          <Button aria-label={`Baixar modelo ${template.name}`}
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleDownload(template)}
                           >
-                            <Download className="h-4 w-4" />
+                            <Download aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Baixar PDF</TooltipContent>
@@ -334,13 +334,13 @@ export const CustomTemplatesTab = () => {
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
+                          <Button aria-label={`Excluir modelo ${template.name}`}
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => setDeleteTemplate(template)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Excluir</TooltipContent>

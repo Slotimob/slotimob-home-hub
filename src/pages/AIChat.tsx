@@ -398,14 +398,14 @@ export default function AIChat() {
           <div className="flex gap-2 items-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
+                <Button aria-label="Anexar arquivo"
                   variant="ghost"
                   size="icon"
                   className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
                   disabled={isLoading}
                   title="Anexar ao contexto"
                 >
-                  <Paperclip className="h-4 w-4" />
+                  <Paperclip aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" side="top">
@@ -450,13 +450,13 @@ export default function AIChat() {
               rows={1}
               disabled={isLoading}
             />
-            <Button
+            <Button aria-label="Enviar mensagem"
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
               size="icon"
               className="h-11 w-11 shrink-0"
             >
-              <Send className="h-4 w-4" />
+              <Send aria-hidden="true" className="h-4 w-4" />
             </Button>
           </div>
         </div>

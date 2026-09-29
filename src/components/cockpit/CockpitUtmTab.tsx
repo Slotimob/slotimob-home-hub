@@ -286,11 +286,11 @@ export function CockpitUtmTab() {
                       <TableCell className="text-xs text-muted-foreground">{h.created_by_email || '—'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copiar(h.full_url, h.id)}>
-                            {copiedId === h.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          <Button aria-label="Copiar link" variant="ghost" size="icon" className="h-8 w-8" onClick={() => copiar(h.full_url, h.id)}>
+                            {copiedId === h.id ? <Check aria-hidden="true" className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteMutation.mutate(h.id)}>
-                            <Trash2 className="h-4 w-4" />
+                          <Button aria-label="Excluir link" variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteMutation.mutate(h.id)}>
+                            <Trash2 aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

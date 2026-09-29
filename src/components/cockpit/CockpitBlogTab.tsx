@@ -311,20 +311,20 @@ export function CockpitBlogTab() {
                       <TableCell className="text-center text-sm">{post.views_count}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8"
+                          <Button aria-label="Publicar ou despublicar post" variant="ghost" size="icon" className="h-8 w-8"
                             onClick={() => togglePublish.mutate(post)}
                             title={post.is_published ? 'Despublicar' : 'Publicar'}>
-                            {post.is_published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {post.is_published ? <EyeOff aria-hidden="true" className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8"
+                          <Button aria-label="Editar post" variant="ghost" size="icon" className="h-8 w-8"
                             onClick={() => openEditor(post)} title="Editar">
-                            <Pencil className="h-4 w-4" />
+                            <Pencil aria-hidden="true" className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
+                          <Button aria-label="Excluir post" variant="ghost" size="icon" className="h-8 w-8 text-destructive"
                             onClick={() => {
                               if (confirm('Excluir este post?')) deleteMutation.mutate(post.id);
                             }} title="Excluir">
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

@@ -206,8 +206,8 @@ export function UploadSignedContractDialog({
                     Assinado
                   </Badge>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleDownloadExisting}>
-                  <Download className="h-4 w-4" />
+                <Button aria-label="Baixar contrato assinado" variant="ghost" size="sm" onClick={handleDownloadExisting}>
+                  <Download aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </div>
             </Card>

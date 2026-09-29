@@ -40,15 +40,15 @@ export function QuickMessagesPopover({ onSelect }: QuickMessagesPopoverProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
-          <Zap className="h-5 w-5" />
+        <Button aria-label="Mensagens rápidas" variant="ghost" size="icon" className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9">
+          <Zap aria-hidden="true" className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="start" side="top">
         <div className="p-3 border-b flex items-center justify-between">
           <h4 className="font-semibold text-sm">Respostas Rápidas</h4>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowAdd(!showAdd)}>
-            {showAdd ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+          <Button aria-label={showAdd ? "Cancelar nova mensagem rápida" : "Nova mensagem rápida"} variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowAdd(!showAdd)}>
+            {showAdd ? <X aria-hidden="true" className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
           </Button>
         </div>
 

@@ -436,8 +436,8 @@ export const PipelineFilters = ({
         {/* Filter Sheet */}
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="relative flex-shrink-0">
-              <Filter className="h-4 w-4" />
+            <Button aria-label="Abrir filtros" variant="outline" size="icon" className="relative flex-shrink-0">
+              <Filter aria-hidden="true" className="h-4 w-4" />
               {activeFiltersCount > 0 && (
                 <Badge 
                   variant="destructive" 

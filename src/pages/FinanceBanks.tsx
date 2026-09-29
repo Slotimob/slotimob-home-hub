@@ -198,13 +198,13 @@ export default function FinanceBanks() {
                             </Tooltip>
                           )}
                           {canEdit && (
-                            <Button
+                            <Button aria-label={`Editar conta ${account.name}`}
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
                               onClick={() => handleEdit(account)}
                             >
-                              <Edit className="h-3.5 w-3.5" />
+                              <Edit aria-hidden="true" className="h-3.5 w-3.5" />
                             </Button>
                           )}
                         </div>

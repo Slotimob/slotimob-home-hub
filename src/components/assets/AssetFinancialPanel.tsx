@@ -804,14 +804,14 @@ function ImprovementsBlock({
                             {findTransaction(imp.financial_transaction_id)?.description || 'Lançamento vinculado'}
                           </span>
                           {!disabled && (
-                            <Button
+                            <Button aria-label="Desfazer conciliação"
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 text-muted-foreground"
                               title="Desvincular"
                               onClick={() => handleReconcile(imp, null)}
                             >
-                              <Link2Off className="h-3.5 w-3.5" />
+                              <Link2Off aria-hidden="true" className="h-3.5 w-3.5" />
                             </Button>
                           )}
                         </div>
@@ -837,11 +837,11 @@ function ImprovementsBlock({
                     </td>
                     {!disabled && (
                       <td className="py-2 text-right whitespace-nowrap">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(imp)}>
-                          <Pencil className="h-3.5 w-3.5" />
+                        <Button aria-label="Editar imposto" variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(imp)}>
+                          <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(imp)}>
-                          <Trash2 className="h-3.5 w-3.5" />
+                        <Button aria-label="Excluir imposto" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(imp)}>
+                          <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
                         </Button>
                       </td>
                     )}

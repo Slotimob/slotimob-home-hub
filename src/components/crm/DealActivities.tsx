@@ -207,8 +207,8 @@ export const DealActivities = ({ dealId }: DealActivitiesProps) => {
                   {(canEdit || canDelete) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
+                      <Button aria-label="Mais ações da atividade" variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

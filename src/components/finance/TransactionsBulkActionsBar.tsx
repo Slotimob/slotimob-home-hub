@@ -129,13 +129,13 @@ export function TransactionsBulkActionsBar({
               <Trash2 className="h-4 w-4" />
               <span className="hidden sm:inline">Excluir</span>
             </Button>
-            <Button
+            <Button aria-label="Limpar seleção"
               variant="ghost"
               size="icon"
               onClick={onClearSelection}
               className="h-8 w-8 shrink-0"
             >
-              <X className="h-4 w-4" />
+              <X aria-hidden="true" className="h-4 w-4" />
             </Button>
           </div>
         </div>

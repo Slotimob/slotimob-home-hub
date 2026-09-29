@@ -219,7 +219,7 @@ const FinanceReconciliation = () => {
                   <History className="h-3.5 w-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">Histórico</span>
                 </Button>
-                <Button 
+                <Button aria-label="Atualizar conciliação" 
                   variant="ghost" 
                   size="sm" 
                   onClick={handleRefreshAll}
@@ -227,7 +227,7 @@ const FinanceReconciliation = () => {
                   className="h-8 text-xs"
                   title="Atualizar tudo"
                 >
-                  <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+                  <RefreshCw aria-hidden="true" className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
                 </Button>
               </div>
             </div>
