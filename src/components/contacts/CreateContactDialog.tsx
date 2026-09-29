@@ -105,6 +105,7 @@ export const CreateContactDialog = ({
     interest_type: [] as string[],
     website: '',
     contact_person: '',
+    nacionalidade: '',
   }), []);
   
   const [formData, setFormData] = useState(getInitialFormData);
@@ -231,6 +232,7 @@ export const CreateContactDialog = ({
     try {
       // Build metadata based on categories
       const metadata: Record<string, any> = {};
+      if (formData.nacionalidade?.trim()) metadata.nacionalidade = formData.nacionalidade.trim();
       
       if (formData.categories.includes('Lead')) {
         if (formData.budget_min) metadata.budget_min = parseFloat(formData.budget_min);
@@ -377,6 +379,15 @@ export const CreateContactDialog = ({
               {formData.email && !isValidEmail(formData.email) && (
                 <p className="text-xs text-destructive">Email inválido</p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nacionalidade">Nacionalidade (opcional)</Label>
+              <Input
+                id="nacionalidade"
+                value={formData.nacionalidade}
+                onChange={(e) => setFormData(prev => ({ ...prev, nacionalidade: e.target.value }))}
+                placeholder="brasileiro(a)"
+              />
             </div>
           </div>
 

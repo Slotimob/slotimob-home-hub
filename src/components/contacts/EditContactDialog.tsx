@@ -80,6 +80,7 @@ const INITIAL_FORM_DATA = {
   origin: '',
   website: '',
   contact_person: '',
+  nacionalidade: '',
 };
 
 
@@ -129,6 +130,7 @@ export const EditContactDialog = ({
         origin: metadata.origin || '',
         website: metadata.website || '',
         contact_person: metadata.contact_person || '',
+        nacionalidade: metadata.nacionalidade || '',
       });
       lastLoadedIdRef.current = contact.id;
     }
@@ -213,6 +215,8 @@ export const EditContactDialog = ({
     try {
       // Build metadata based on categories
       const metadata: Record<string, any> = { ...(contact.metadata || {}) };
+      if (formData.nacionalidade.trim()) metadata.nacionalidade = formData.nacionalidade.trim();
+      else delete metadata.nacionalidade;
       
       if (formData.categories.includes('Lead')) {
         metadata.budget_min = formData.budget_min ? parseFloat(formData.budget_min) : null;
@@ -324,6 +328,15 @@ export const EditContactDialog = ({
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_nacionalidade">Nacionalidade (opcional)</Label>
+                <Input
+                  id="edit_nacionalidade"
+                  value={formData.nacionalidade}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nacionalidade: e.target.value }))}
+                  placeholder="brasileiro(a)"
                 />
               </div>
             </div>
