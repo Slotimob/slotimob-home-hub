@@ -16,7 +16,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { useUnitOptions, unitLabel, type UnitOption } from './UnitSelector';
+import { useUnitOptions, unitLabel, unitOccupancyTag, type UnitOption } from './UnitSelector';
 
 interface UnitMultiSelectorProps {
   value: UnitOption[];
@@ -107,9 +107,9 @@ export const UnitMultiSelector = ({
                         <Building2 className="mr-2 h-4 w-4 text-muted-foreground flex-shrink-0" />
                       )}
                       <span className="flex-1 truncate">{unitLabel(u)}</span>
-                      {u.tenant_contact_id && !selected && (
+                      {unitOccupancyTag(u) && !selected && (
                         <span className="ml-2 text-[10px] text-amber-700 dark:text-amber-400 flex-shrink-0">
-                          ocupado
+                          {unitOccupancyTag(u)}
                         </span>
                       )}
                     </CommandItem>
