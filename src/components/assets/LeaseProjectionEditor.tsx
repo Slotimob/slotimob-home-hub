@@ -442,7 +442,7 @@ export const LeaseProjectionEditor = forwardRef<
       rentProRata && first && !first.isGrace && !postAdjustment && lease.start_date &&
       first.competencyPeriod === lease.start_date.slice(0, 7)
     ) {
-      const pr = proRataFirstMonth(parseISO(lease.start_date), first.meta?.kind === "grace" ? first.amount : cfg.amount);
+      const pr = proRataFirstMonth(parseISO(lease.start_date), first.amount);
       list[0] = { ...first, amount: pr.amount, description: `${first.description} (pró-rata ${pr.days} de ${pr.totalDays} dias)` };
     }
     return list;
