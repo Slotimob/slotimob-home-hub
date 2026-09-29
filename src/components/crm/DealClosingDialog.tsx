@@ -64,21 +64,25 @@ export const DealClosingDialog = ({
 
   // Intent type da unidade (desempate quando o deal não tem business_type explícito)
   const [unitIntentType, setUnitIntentType] = useState<string | null>(null);
+  const [unitHasSubdivisions, setUnitHasSubdivisions] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const unitId = deal?.unit?.id;
     if (!open || !unitId) {
       setUnitIntentType(null);
+      setUnitHasSubdivisions(false);
       return;
     }
     supabase
       .from('units')
-      .select('intent_type')
+      .select('intent_type, has_subdivisions')
       .eq('id', unitId)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled) setUnitIntentType((data as any)?.intent_type ?? null);
+        if (cancelled) return;
+        setUnitIntentType((data as any)?.intent_type ?? null);
+        setUnitHasSubdivisions(!!(data as any)?.has_subdivisions);
       });
     return () => {
       cancelled = true;
@@ -98,6 +102,10 @@ export const DealClosingDialog = ({
   // Check if this deal can be converted to a lease
   const canCreateLease = businessType === 'rental' && deal?.unit?.id;
   const leaseConversionContext = deal && canCreateLease ? createContextFromDeal(deal) : null;
+  // CRM16: com contrato a criar, o contrato já ocupa o imóvel/fração; imóvel com frações
+  // nunca é marcado inteiro como alugado por este diálogo.
+  const hideStatusUpdate = isRentalDeal && (shouldCreateLease || unitHasSubdivisions);
+  const effectiveUpdateStatus = shouldUpdatePropertyStatus && !hideStatusUpdate;
 
   // Trigger confetti on open
   useEffect(() => {
@@ -148,7 +156,7 @@ export const DealClosingDialog = ({
       if (!user) throw new Error('Usuário não autenticado');
 
       // 1. Update property/unit status if requested
-      if (shouldUpdatePropertyStatus && deal.unit?.id) {
+      if (effectiveUpdateStatus && deal.unit?.id) {
         // Update status AND set is_occupied = true for rental deals
         const updatePayload: Record<string, unknown> = { 
           status: statusValue as 'available' | 'rented' | 'reserved' | 'sold'
@@ -276,6 +284,13 @@ export const DealClosingDialog = ({
           </div>
 
           {/* Action 1: Update Property Status */}
+          {hideStatusUpdate ? (
+            <p className="text-sm text-muted-foreground">
+              {shouldCreateLease
+                ? 'O status do imóvel será atualizado pelo contrato de locação.'
+                : 'Imóvel com frações: o status é atualizado pelo contrato de cada fração.'}
+            </p>
+          ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -303,6 +318,7 @@ export const DealClosingDialog = ({
               </p>
             )}
           </div>
+          )}
 
           <Separator />
 
