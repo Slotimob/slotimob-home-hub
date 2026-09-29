@@ -367,13 +367,13 @@ export default function NovoContrato() {
     enabled: !!user && !!effectiveUnitId,
   });
 
-  const { data: subdivisions = [] } = useUnitSubdivisions(
+  const { data: subdivisions = [], isSuccess: subdivisionsLoaded } = useUnitSubdivisions(
     unitSubdivisionFlag ? effectiveUnitId : ""
   );
   const showSubdivisionSelect = !!unitSubdivisionFlag && subdivisions.length > 0;
 
   // Contratos vivos (active/pending) no imóvel principal — o próprio contrato não conta na edição
-  const { wholeUnitBusy, busySubdivisionIds } = useLiveLeaseRefs(effectiveUnitId || null, editLeaseId);
+  const { wholeUnitBusy, busySubdivisionIds, isLoading: liveRefsLoading } = useLiveLeaseRefs(effectiveUnitId || null, editLeaseId);
   const anyFractionBusy = subdivisions.some((s) => busySubdivisionIds.has(s.id));
   const wholeOptionBusy = wholeUnitBusy || anyFractionBusy;
   const primarySelectionBusy = !effectiveUnitId
@@ -610,6 +610,56 @@ export default function NovoContrato() {
     },
     enabled: !!user && !!dealIdParam,
   });
+
+  // CRM18: aberto com unitId sem fração — escolhe a fração livre certa (uma vez só)
+  const [askFraction, setAskFraction] = useState(false);
+  const autoFractionRef = useRef(false);
+  const { data: wholeUnitRent } = useQuery({
+    queryKey: ["unit-rent-price", effectiveUnitId],
+    queryFn: async () => {
+      const { data } = await supabase.from("units").select("rent_price").eq("id", effectiveUnitId).maybeSingle();
+      return (data as any)?.rent_price != null ? Number((data as any).rent_price) : null;
+    },
+    enabled: !!user && !!effectiveUnitId && !!dealIdParam && !isEditMode && !subdivisionIdParam,
+  });
+  useEffect(() => {
+    if (autoFractionRef.current || isEditMode || !unitIdParam || subdivisionIdParam) return;
+    if (unitSubdivisionFlag === undefined) return;
+    if (unitSubdivisionFlag && !subdivisionsLoaded) return;
+    if (liveRefsLoading) return;
+    if (!showSubdivisionSelect) {
+      autoFractionRef.current = true;
+      if (wholeUnitBusy) setStep("unit");
+      return;
+    }
+    if (dealIdParam && (!crmDeal || wholeUnitRent === undefined)) return;
+    autoFractionRef.current = true;
+    // Rascunho ou escolha manual com fração: não sobrescreve
+    if (formData.unit_subdivision_id) return;
+    const free = subdivisions.filter((s) => !busySubdivisionIds.has(s.id));
+    const anyBusy = free.length < subdivisions.length;
+    if (free.length === 0) {
+      setStep("unit");
+      return;
+    }
+    if (anyBusy && free.length === 1) {
+      const f = free[0];
+      setFormData((prev) => ({
+        ...prev,
+        unit_subdivision_id: f.id,
+        rent_amount: f.rent_price != null ? Number(f.rent_price) : prev.rent_amount,
+      }));
+      return;
+    }
+    const dealValue = Number(crmDeal?.estimated_value) || 0;
+    const dealDiffers = !!dealIdParam && dealValue > 0 && dealValue !== (wholeUnitRent ?? 0);
+    if (free.length > 1 && (anyBusy || dealDiffers)) {
+      setAskFraction(true);
+      setStep("unit");
+    }
+  }, [isEditMode, unitIdParam, subdivisionIdParam, unitSubdivisionFlag, subdivisionsLoaded, liveRefsLoading,
+    showSubdivisionSelect, wholeUnitBusy, busySubdivisionIds, subdivisions, dealIdParam, crmDeal, wholeUnitRent,
+    formData.unit_subdivision_id]);
 
   const [crmContact, setCrmContact] = useState<{ id: string; name: string; categories: string[] } | null>(null);
   const [crmUsingTenant, setCrmUsingTenant] = useState(false);
@@ -999,7 +1049,12 @@ export default function NovoContrato() {
   const canProceed = () => {
     switch (step) {
       case "unit":
-        return !!effectiveUnitId && !leaseSharesError && !primarySelectionBusy;
+        return (
+          !!effectiveUnitId &&
+          !leaseSharesError &&
+          !primarySelectionBusy &&
+          !(showSubdivisionSelect && anyFractionBusy && !formData.unit_subdivision_id)
+        );
       case "tenant":
         return !!formData.tenant_contact_id;
       case "financial": {
@@ -1644,6 +1699,9 @@ export default function NovoContrato() {
                 showSubdivisionSelect ? (
                   <div className="space-y-2">
                     <Label htmlFor="wizard-fraction">Fração do imóvel principal</Label>
+                    {askFraction && !formData.unit_subdivision_id && (
+                      <p className="text-sm font-medium text-foreground">Escolha a fração deste contrato.</p>
+                    )}
                     <Select
                       value={primarySelectionBusy ? "" : formData.unit_subdivision_id ?? "none"}
                       onValueChange={(v) => {
