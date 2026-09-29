@@ -1,3 +1,4 @@
+import { useUnitStatusLabels } from '@/hooks/useUnitsAvailability';
 import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -165,6 +166,7 @@ const RealEstate = () => {
     },
     enabled: !!user,
   });
+  const statusLabelFor = useUnitStatusLabels(realEstateUnits as any[]);
 
   const reloadRealEstateUnits = () => {
     queryClient.invalidateQueries({ queryKey: ['units'] });
@@ -606,7 +608,7 @@ const RealEstate = () => {
                           </TableCell>
                           <TableCell className="py-2 sm:py-4">
                             <Badge className={`text-[10px] px-1.5 sm:px-2 py-0.5 whitespace-nowrap ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}>
-                              {STATUS_LABELS[unit.status]}
+                              {statusLabelFor(unit as any, STATUS_LABELS[unit.status])}
                             </Badge>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell py-2 sm:py-4">
@@ -683,7 +685,7 @@ const RealEstate = () => {
                       }}
                     />
                     <Badge className={`absolute top-2 right-2 ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}>
-                      {STATUS_LABELS[unit.status]}
+                      {statusLabelFor(unit as any, STATUS_LABELS[unit.status])}
                     </Badge>
                     {/* Share button overlay */}
                     <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">

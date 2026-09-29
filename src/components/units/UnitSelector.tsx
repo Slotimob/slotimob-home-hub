@@ -1,3 +1,4 @@
+import { unitAvailability, type UnitAvailabilityKind } from '@/lib/unit-availability';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,16 @@ export interface UnitOption {
   tenant_contact_id: string | null;
   property_id: string | null;
   property_name: string | null;
+  /** Disponibilidade considerando frações (opcional para fontes externas). */
+  availability_kind?: UnitAvailabilityKind;
+}
+
+/** Selo de ocupação exibido ao lado do imóvel nos seletores. */
+export function unitOccupancyTag(u: UnitOption): string | null {
+  if (u.availability_kind === 'partial') return 'parcialmente alugado';
+  if (u.availability_kind === 'available') return null;
+  if (u.tenant_contact_id || u.availability_kind === 'rented') return 'ocupado';
+  return null;
 }
 
 export function useUnitOptions(opts: { enabled?: boolean } = {}) {
@@ -36,7 +47,7 @@ export function useUnitOptions(opts: { enabled?: boolean } = {}) {
     setLoading(true);
     supabase
       .from('units')
-      .select('id, unit_number, is_standalone, tenant_contact_id, property_id, property:properties(name)')
+      .select('id, unit_number, is_standalone, tenant_contact_id, property_id, status, has_subdivisions, property:properties(name), unit_subdivisions(status, tenant_contact_id)')
       .order('unit_number')
       .then(({ data, error }) => {
         if (cancelled) return;
@@ -50,6 +61,7 @@ export function useUnitOptions(opts: { enabled?: boolean } = {}) {
             tenant_contact_id: u.tenant_contact_id,
             property_id: u.property_id ?? null,
             property_name: u.property?.name ?? null,
+            availability_kind: unitAvailability(u, u.unit_subdivisions).kind,
           }))
         );
       });
@@ -134,8 +146,8 @@ export const UnitSelector = ({ value, onChange, placeholder = 'Buscar unidade...
                     <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
                   )}
                   {unitLabel(u)}
-                  {u.tenant_contact_id && (
-                    <span className="ml-auto text-[10px] text-amber-700 dark:text-amber-400">ocupado</span>
+                  {unitOccupancyTag(u) && (
+                    <span className="ml-auto text-[10px] text-amber-700 dark:text-amber-400">{unitOccupancyTag(u)}</span>
                   )}
                 </CommandItem>
               ))}
