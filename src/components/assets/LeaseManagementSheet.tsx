@@ -1019,6 +1019,8 @@ export function LeaseManagementSheet({
             onOpenChange={setShowObligationsDialog}
             unitId={asset.unitId}
             unitName={asset.unitNumber}
+            leaseId={lease?.id ?? null}
+            billingRemindersEnabled={lease ? (lease as any).billing_automation?.enabled === true : undefined}
           />
         )}
 
