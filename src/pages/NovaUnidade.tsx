@@ -110,7 +110,7 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
     : 'Cadastre uma nova unidade para o empreendimento';
 
   return (
-    <AppLayout title="Nova Unidade">
+    <AppLayout title={title}>
       <SEOHead title={title} description={subtitle} noIndex />
 
       <div className="max-w-4xl mx-auto space-y-6">

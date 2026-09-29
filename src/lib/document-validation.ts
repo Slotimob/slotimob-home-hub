@@ -47,3 +47,11 @@ export function cpfCnpjError(value: string | null | undefined, type?: "CPF" | "C
   const t = type === "CPF" || type === "CNPJ" ? type : d.length === 14 ? "CNPJ" : "CPF";
   return isValidCpfCnpj(d, t) ? null : `${t} inválido: confira os dígitos`;
 }
+
+/** Máscara de exibição: 529.982.247-25 (CPF) / 00.000.000/0000-00 (CNPJ); outros valores ficam como estão. */
+export function formatCpfCnpj(value: string | null | undefined): string {
+  const d = onlyDigits(value);
+  if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+  return value || "";
+}
