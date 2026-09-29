@@ -58,6 +58,7 @@ import { useLeaseByUnitId, generateBillingMessage, useUpdateLease, BillingLog } 
 import { useNavigate } from "react-router-dom";
 import { AssetHealth } from "@/hooks/useAssetHealth";
 import { useToast } from "@/hooks/use-toast";
+import { RegisterRentReceiptButton } from "@/components/assets/RegisterRentReceiptButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { TenantStatementDialog } from "./TenantStatementDialog";
@@ -257,22 +258,12 @@ export function LeaseManagementSheet({
               <span className="truncate">Gerar PDF</span>
             </Button>
             
-            {/* Register Payment */}
-            <Button
-              variant="outline"
-              size="sm"
+            {/* Registrar recebimento: baixa o aluguel pendente mais antigo */}
+            <RegisterRentReceiptButton
+              lease={lease}
               className="gap-1.5 h-9 justify-start"
-              onClick={() => {
-                if (lease && asset) {
-                  navigate(`/finance/transactions?unitId=${asset.unitId}&action=new`);
-                  onOpenChange(false);
-                }
-              }}
-              disabled={!lease}
-            >
-              <Receipt className="h-4 w-4" />
-              <span className="truncate">Registrar Pagamento</span>
-            </Button>
+              labelClassName="truncate"
+            />
             
             {/* Upload Signed Contract */}
             <Button
