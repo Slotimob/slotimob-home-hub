@@ -1287,11 +1287,9 @@ export default function NovoContrato() {
 
         if (resultId && leaseUnitRefs.length > 1) {
           const unitsError = await saveLeaseUnits(resultId);
-          if (unitsError && unitsError.includes(LIVE_LEASE_ERR)) {
-            handleLiveLeaseError(unitsError);
-          } else if (unitsError) {
+          if (unitsError) {
             // O contrato já existe: segue em modo edição, na etapa Imóvel, para corrigir
-            toast({
+            if (!handleLiveLeaseError(unitsError)) toast({
               title: "Contrato criado, mas os imóveis adicionais não foram salvos",
               description: unitsError,
               variant: "destructive",
