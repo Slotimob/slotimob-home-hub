@@ -18,3 +18,14 @@ export function orderDueDateGroups<T>(
       return a.date.localeCompare(b.date);
     });
 }
+
+/** Data de referência na conciliação: pago → data do pagamento; pendente → vencimento. */
+export function reconciliationRefDate(t: {
+  status?: string | null;
+  paid_date?: string | null;
+  due_date?: string | null;
+  transaction_date?: string | null;
+}): string | null {
+  if (t.status === "paid" && t.paid_date) return t.paid_date.slice(0, 10);
+  return (t.due_date || t.transaction_date || null)?.slice(0, 10) ?? null;
+}

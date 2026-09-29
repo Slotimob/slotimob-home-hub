@@ -1,3 +1,4 @@
+import { reconciliationRefDate } from "@/lib/reconciliation-order";
 import { orderDueDateGroups } from "@/lib/reconciliation-order";
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +46,7 @@ interface Transaction {
   description: string;
   transaction_date: string;
   due_date?: string | null;
+  paid_date?: string | null;
   amount: number;
   type: string;
   status?: string | null;
@@ -161,8 +163,8 @@ export function ReconciliationPendingListGrouped({
 
     const groups: Record<string, Transaction[]> = {};
     filtered.forEach((tx) => {
-      // RC7: agrupado pelo vencimento
-      const date = tx.due_date || tx.transaction_date;
+      // RC11: pagos pela data do pagamento; pendentes pelo vencimento
+      const date = reconciliationRefDate(tx) || tx.transaction_date;
       if (!groups[date]) {
         groups[date] = [];
       }
@@ -180,7 +182,11 @@ export function ReconciliationPendingListGrouped({
       })),
       from,
       to,
-    ).map((g) => ({ date: g.date, items: g.items, isOverdue: isBefore(parseISO(g.date), today) }));
+    ).map((g) => ({
+      date: g.date,
+      items: g.items,
+      isOverdue: isBefore(parseISO(g.date), today) && g.items.some((t) => t.status !== "paid"),
+    }));
 
     return result;
   }, [transactions, searchTerm, today, entries, dateFrom, dateTo]);
@@ -197,6 +203,7 @@ export function ReconciliationPendingListGrouped({
       status: "paid",
       bankAccountId: bankAccountId,
       paidDate: entry.entry_date,
+      transactionDate: entry.entry_date,
       requireCategory: true,
     });
     setEntryForCreate(entry);
@@ -406,6 +413,11 @@ export function ReconciliationPendingListGrouped({
       {selectedTransaction === transaction.id && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" aria-hidden />}
       <div className="flex-1 min-w-0 overflow-hidden">
         <p className="font-medium truncate text-xs leading-tight">{transaction.description}</p>
+        {transaction.status === "paid" && transaction.paid_date && (
+          <p className="text-[10px] text-muted-foreground leading-tight">
+            pago em {format(parseISO(transaction.paid_date.slice(0, 10)), "dd/MM")}
+          </p>
+        )}
       </div>
       {transaction.settlement_summary && (
         <Badge

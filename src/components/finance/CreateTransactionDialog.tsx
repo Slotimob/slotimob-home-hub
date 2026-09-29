@@ -40,6 +40,8 @@ export interface TransactionPrefill {
   bankAccountId?: string;
   /** Data do pagamento (ex.: data da linha do extrato). */
   paidDate?: string;
+  /** Data de emissão (ex.: data da linha do extrato). */
+  transactionDate?: string;
   /** Torna a categoria obrigatória (ex.: lançamento criado pela conciliação). */
   requireCategory?: boolean;
 }
@@ -87,7 +89,7 @@ export function CreateTransactionDialog({
     amount: editTransaction?.amount?.toString() || prefill?.amount?.toString() || "",
     categoryId: editTransaction?.category_id || prefill?.categoryId || "",
     bankAccountId: editTransaction?.bank_account_id || prefill?.bankAccountId || "",
-    transactionDate: editTransaction?.transaction_date || todayDateOnly(),
+    transactionDate: editTransaction?.transaction_date || prefill?.transactionDate || todayDateOnly(),
     dueDate: editTransaction?.due_date || prefill?.dueDate || "",
     status: editTransaction?.status || prefill?.status || "pending",
     paymentMethod: editTransaction?.payment_method || "",
@@ -143,6 +145,7 @@ export function CreateTransactionDialog({
         amount: prefill.amount?.toString() || prev.amount,
         categoryId: prefill.categoryId || prev.categoryId,
         dueDate: prefill.dueDate || prev.dueDate,
+        transactionDate: prefill.transactionDate || prev.transactionDate,
         status: prefill.status || prev.status,
         unitId: prefill.unitId || prev.unitId,
         bankAccountId: prefill.bankAccountId || prev.bankAccountId,

@@ -1,3 +1,4 @@
+import { reconciliationRefDate } from "@/lib/reconciliation-order";
 import { useMemo, useState } from "react";
 import { useSettlementGroups, settlementBreakdown, settlementAnchor, describeSettlement } from "@/lib/settlement-group";
 import { Card, CardContent } from "@/components/ui/card";
@@ -207,7 +208,8 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
           const typeMatch = entry.is_credit ? t.type === "income" : t.type === "expense";
           if (!typeMatch) return false;
           if (Math.abs(Math.abs(Number(entry.amount)) - Math.abs(Number(t.amount))) >= 0.01) return false;
-          const refDate = t.due_date ?? t.transaction_date;
+          // Pago → data do pagamento; pendente → vencimento. Baixa conjunta já vem com o líquido do grupo.
+          const refDate = reconciliationRefDate(t);
           if (!refDate) return false;
           return Math.abs(differenceInDays(entryDate, parseISO(refDate))) <= 3;
         });
