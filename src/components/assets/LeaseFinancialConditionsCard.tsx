@@ -15,6 +15,7 @@ import { todayInSaoPauloDateOnly } from "@/lib/date-only";
 import { resolveObligationLabel } from "@/lib/obligation-labels";
 import { useCustomObligationTypes } from "@/hooks/useCustomObligationTypes";
 import { buildRentInstallments } from "@/lib/lease-projection";
+import { useLeaseNextDue } from "@/hooks/useLeaseNextDue";
 import {
   buildRentDeductionInstallments,
   buildWithholdingInstallments,
@@ -110,18 +111,10 @@ export function LeaseFinancialConditionsCard({
   );
   const currentGraceFree = resolveGraceSchedule(lease.rent_grace as any, lease.start_date || todayInSaoPauloDateOnly())
     .get(currentCompetency)?.mode === "free";
-  // Competência do próximo vencimento (dia de vencimento com teto no fim do mês).
-  const nextCompetency = useMemo(() => {
-    const today = todayInSaoPauloDateOnly();
-    const dueDay = Number((lease as any).due_day) || 10;
-    const [y, m] = currentCompetency.split("-").map(Number);
-    const last = new Date(y, m, 0).getDate();
-    const dueThisMonth = `${currentCompetency}-${String(Math.min(dueDay, last)).padStart(2, "0")}`;
-    let comp = dueThisMonth >= today ? currentCompetency : format(new Date(y, m, 1), "yyyy-MM");
-    const start = (lease.start_date || "").slice(0, 7);
-    if (start && comp < start) comp = start;
-    return comp;
-  }, [lease, currentCompetency]);
+  // Próximo vencimento: aluguel pendente mais antigo; sem lançamento, pela
+  // configuração pulando competências isentas de carência.
+  const nextDue = useLeaseNextDue(lease as any);
+  const nextCompetency = nextDue?.competency || currentCompetency;
   const { data: nextActuals } = useLeaseMonthActuals(lease.id, nextCompetency);
   const nextMonth = useMemo(
     () => nextActuals ?? computeLeaseMonthFromConfig(lease, nextCompetency),
@@ -223,9 +216,11 @@ export function LeaseFinancialConditionsCard({
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Carência</p>
                 {grace.lastCompetency && (
                   <Badge variant={inGrace ? "default" : "secondary"} className="text-[10px]">
-                    {inGrace
-                      ? `Em carência até ${competencyLabel(grace.lastCompetency)}`
-                      : `Carência encerrada em ${competencyLabel(grace.lastCompetency)}`}
+                    {grace.lastCompetency < currentCompetency
+                      ? `Carência encerrada em ${competencyLabel(grace.lastCompetency)}`
+                      : graceSchedule && graceSchedule.size > 1
+                        ? `Carência de ${competencyLabel(Array.from(graceSchedule.keys())[0])} a ${competencyLabel(grace.lastCompetency)}`
+                        : `Carência até ${competencyLabel(grace.lastCompetency)}`}
                   </Badge>
                 )}
               </div>
@@ -286,7 +281,10 @@ export function LeaseFinancialConditionsCard({
         <div className="rounded-md bg-primary/10 px-3 py-2 space-y-1.5">
           <span className="text-sm font-semibold block">Líquido esperado do inquilino</span>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs">Próximo vencimento ({competencyLabel(nextCompetency)})</span>
+            <span className="text-xs">
+              Próximo vencimento ({competencyLabel(nextCompetency)}
+              {nextDue ? ` · ${format(parseISO(nextDue.dueDate), "dd/MM/yyyy")}` : ""})
+            </span>
             <span className="text-base font-bold text-primary tabular-nums">{formatCurrency(nextMonth.net)}</span>
           </div>
           <p className="text-[11px] text-muted-foreground">
