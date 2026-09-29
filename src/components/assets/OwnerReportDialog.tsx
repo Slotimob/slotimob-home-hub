@@ -261,7 +261,7 @@ export function OwnerReportDialog({ open, onOpenChange, lease }: OwnerReportDial
               {lease.is_dimob_deductible && (
                 <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3">
                   <p className="text-xs text-amber-700 dark:text-amber-400">
-                    <strong>DIMOB:</strong> Imóvel dedutível para declaração DIMOB.
+                    <strong>DIMOB:</strong> Imóvel declarado na DIMOB.
                     {lease.cib && <span className="ml-1">CIB: {lease.cib}</span>}
                   </p>
                 </div>

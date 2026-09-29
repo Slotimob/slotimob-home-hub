@@ -473,6 +473,11 @@ export function LeaseSpecialConditionsCard({
               <p className="text-sm">
                 Valor mensal estimado: <span className="font-semibold">{formatCurrency(irrfEstimate)}</span>
               </p>
+              {rentWithholding.mode === "table" && irrfEstimate <= 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Pela tabela de 2026 este aluguel fica na faixa de isenção: nada a reter.
+                </p>
+              )}
 
               <Alert>
                 <Info className="h-4 w-4" />
