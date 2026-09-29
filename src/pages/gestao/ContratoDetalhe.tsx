@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { formatDateOnly, toDateOnly } from "@/lib/date-only";
+import { RegisterRentReceiptButton } from "@/components/assets/RegisterRentReceiptButton";
 import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -410,14 +411,7 @@ export default function ContratoDetalhe() {
                 <FileSignature className="h-4 w-4 mr-1.5" />
                 Gerar PDF
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/finance/transactions?unitId=${lease.unit_id}&action=new`)}
-              >
-                <Receipt className="h-4 w-4 mr-1.5" />
-                Registrar Pagamento
-              </Button>
+              <RegisterRentReceiptButton lease={lease} />
               {canEdit && (
                 <Button variant="outline" size="sm" onClick={() => navigate(`/gestao/contratos/novo?edit=${lease.id}`)}>
                   <Edit3 className="h-4 w-4 mr-1.5" />
