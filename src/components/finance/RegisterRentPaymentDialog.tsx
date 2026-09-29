@@ -143,7 +143,7 @@ export function RegisterRentPaymentDialog({ open, onOpenChange, transaction, onD
                   <Label htmlFor="rp-date">Data do pagamento</Label>
                   <Input id="rp-date" type="date" className="text-base sm:text-sm" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} />
                   {isFutureDate && (
-                    <p role="alert" className="flex items-start gap-1.5 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 text-xs text-warning-foreground">
+                    <p role="alert" className="flex items-start gap-1.5 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 text-xs text-foreground">
                       <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-warning" />
                       A data do pagamento é futura. Confirme se o dinheiro já entrou.
                     </p>
