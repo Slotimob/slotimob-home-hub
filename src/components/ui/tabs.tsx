@@ -2,6 +2,7 @@ import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "@/lib/utils";
+import { useAriaControlsGuard } from "@/hooks/useAriaControlsGuard";
 
 const Tabs = TabsPrimitive.Root;
 
@@ -24,25 +25,7 @@ const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(({ className, ...props }, forwardedRef) => {
-  // O Radix aponta aria-controls para o painel mesmo quando ele não está montado
-  // (aba inativa). Remove o atributo enquanto a aba estiver inativa.
-  const innerRef = React.useRef<HTMLButtonElement | null>(null);
-  React.useEffect(() => {
-    const el = innerRef.current;
-    if (!el) return;
-    const sync = () => {
-      const id = el.getAttribute("aria-controls") || el.dataset.ariaControls;
-      if (!id) return;
-      el.dataset.ariaControls = id;
-      const exists = !!document.getElementById(id);
-      if (exists && !el.hasAttribute("aria-controls")) el.setAttribute("aria-controls", id);
-      if (!exists && el.hasAttribute("aria-controls")) el.removeAttribute("aria-controls");
-    };
-    sync();
-    const obs = new MutationObserver(() => requestAnimationFrame(sync));
-    obs.observe(el, { attributes: true, attributeFilter: ["data-state", "aria-controls"] });
-    return () => obs.disconnect();
-  }, []);
+  const innerRef = useAriaControlsGuard<HTMLButtonElement>();
   const setRef = (node: HTMLButtonElement | null) => {
     innerRef.current = node;
     if (typeof forwardedRef === "function") forwardedRef(node);
