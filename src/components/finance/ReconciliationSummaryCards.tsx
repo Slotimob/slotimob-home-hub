@@ -5,12 +5,16 @@ interface ReconciliationSummaryCardsProps {
   totalImported: number;
   totalReconciled: number;
   totalPending: number;
+  totalIn?: number;
+  totalOut?: number;
 }
 
 export function ReconciliationSummaryCards({
   totalImported,
   totalReconciled,
   totalPending,
+  totalIn,
+  totalOut,
 }: ReconciliationSummaryCardsProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -21,8 +25,9 @@ export function ReconciliationSummaryCards({
 
   const cards = [
     {
-      title: "Total Extrato",
+      title: "Saldo do Extrato (período)",
       value: totalImported,
+      sub: totalIn != null && totalOut != null ? `entradas ${formatCurrency(totalIn)} · saídas ${formatCurrency(totalOut)}` : null,
       icon: FileText,
       color: "text-primary",
       bgColor: "bg-primary/10",
@@ -57,6 +62,9 @@ export function ReconciliationSummaryCards({
                 <p className={`text-base sm:text-lg font-bold ${card.color} break-words`}>
                   {formatCurrency(card.value)}
                 </p>
+                {(card as any).sub && (
+                  <p className="text-xs text-muted-foreground">{(card as any).sub}</p>
+                )}
               </div>
             </div>
           </CardContent>

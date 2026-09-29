@@ -232,13 +232,15 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
       if (matched > 0 || failed > 0) {
         invalidateReconciliationQueries(queryClient);
         toast({
-          title: `${matched} conciliado(s), ${failed} com erro`,
+          title: failed > 0
+            ? `${matched} conciliados automaticamente, ${failed} com erro`
+            : `${matched} conciliados automaticamente`,
           variant: failed > 0 && matched === 0 ? "destructive" : undefined,
         });
       } else {
         toast({
-          title: "Nenhuma correspondência encontrada",
-          description: "Tente conciliar manualmente",
+          title: "Nenhuma correspondência exata encontrada",
+          description: "Concilie manualmente selecionando o extrato e o lançamento.",
         });
       }
     } finally {
