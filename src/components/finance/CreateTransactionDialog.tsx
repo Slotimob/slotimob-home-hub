@@ -382,6 +382,7 @@ export function CreateTransactionDialog({
   };
 
   const resetForm = () => {
+    setFieldErrors({});
     setFormData({
       description: "",
       amount: "",
