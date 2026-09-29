@@ -256,7 +256,7 @@ function ResponsibleField({
 
   return (
     <div className="space-y-2 sm:col-span-2">
-      <Label htmlFor={`${idPrefix}>Responsável</Label>
+      <Label htmlFor={`${idPrefix}-responsible`}>Responsável</Label>
       <Select value={chargeTo} onValueChange={(v) => handleChargeTo(v as LeaseChargeResponsible)}>
         <SelectTrigger id={`${idPrefix}-responsible`}>
           <SelectValue />
@@ -961,8 +961,8 @@ export function LeaseFinancialStep({
                 {cfg.enabled && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="leasefinancialstep-valor-mensal">Valor mensal</Label>
-                      <CurrencyInput id="leasefinancialstep-valor-mensal"
+                      <Label htmlFor={`leasefinancialstep-valor-mensal-${meta.type}`}>Valor mensal</Label>
+                      <CurrencyInput id={`leasefinancialstep-valor-mensal-${meta.type}`}
                         value={(cfg.installment_amount || 0).toString()}
                         onChange={(v) =>
                           updateAdditional(meta.type, {
@@ -973,8 +973,8 @@ export function LeaseFinancialStep({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="leasefinancialstep-primeiro-vencimento-3">Primeiro vencimento</Label>
-                      <Input id="leasefinancialstep-primeiro-vencimento-3"
+                      <Label htmlFor={`leasefinancialstep-primeiro-vencimento-3-${meta.type}`}>Primeiro vencimento</Label>
+                      <Input id={`leasefinancialstep-primeiro-vencimento-3-${meta.type}`}
                         type="date"
                         value={cfg.first_due_date || ""}
                         onChange={(e) =>
@@ -986,8 +986,8 @@ export function LeaseFinancialStep({
                     </div>
                     {isUncategorizedObligation(meta.type) && (
                       <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="leasefinancialstep-descricao">Descrição</Label>
-                        <Input id="leasefinancialstep-descricao"
+                        <Label htmlFor={`leasefinancialstep-descricao-${meta.type}`}>Descrição</Label>
+                        <Input id={`leasefinancialstep-descricao-${meta.type}`}
                           value={cfg.label || ""}
                           onChange={(e) =>
                             updateAdditional(meta.type, { label: e.target.value || null })
