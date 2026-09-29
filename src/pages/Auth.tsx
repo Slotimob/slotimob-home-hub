@@ -434,7 +434,7 @@ const Auth = () => {
       setGoogleLoading(true);
       setPopupBlocked(false);
       const redirectUrl = pendingPlan && ['essencial', 'pro', 'business'].includes(pendingPlan)
-        ? `${SITE_URL}/?checkout_plan=${pendingPlan}` : `${SITE_URL}/`;
+        ? `${SITE_URL}/?checkout_plan=${pendingPlan}&checkout_cycle=${searchParams.get('cycle') === 'annual' ? 'annual' : 'monthly'}` : `${SITE_URL}/`;
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl } });
       if (error) throw error;
     } catch (error: any) {

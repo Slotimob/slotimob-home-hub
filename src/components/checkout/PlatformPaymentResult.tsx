@@ -9,9 +9,10 @@ export type PlatformPaymentResultData =
 interface PlatformPaymentResultProps {
   result: PlatformPaymentResultData;
   title?: string;
+  billingType?: 'PIX' | 'CREDIT_CARD';
 }
 
-export function PlatformPaymentResult({ result, title }: PlatformPaymentResultProps) {
+export function PlatformPaymentResult({ result, title, billingType }: PlatformPaymentResultProps) {
   if (result.type === 'pix') {
     return (
       <div className="space-y-4">
@@ -79,10 +80,12 @@ export function PlatformPaymentResult({ result, title }: PlatformPaymentResultPr
           'w-full h-auto min-h-12 whitespace-normal text-center bg-accent hover:bg-accent/90 text-accent-foreground',
         )}
       >
-        Pagar com cartão no ambiente seguro do Asaas
+        {billingType === 'PIX' ? 'Abrir fatura para pagar com PIX' : 'Pagar com cartão no ambiente seguro do Asaas'}
       </a>
       <p className="text-sm text-muted-foreground">
-        Abra a fatura, informe o cartão e volte para esta aba. Liberamos o acesso assim que o Asaas confirmar.
+        {billingType === 'PIX'
+          ? 'Abra a fatura do Asaas, pague com PIX e volte para esta aba. Liberamos o acesso assim que o pagamento cair.'
+          : 'Abra a fatura, informe o cartão e volte para esta aba. Liberamos o acesso assim que o Asaas confirmar.'}
       </p>
     </div>
   );
