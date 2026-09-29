@@ -385,13 +385,13 @@ export const UnitMediaGallery = ({ unitId }: UnitMediaGalleryProps) => {
                     />
                   </div>
                 )}
-                <Button
+                <Button aria-label="Excluir arquivo"
                   variant="destructive"
                   size="icon"
                   className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => setDeleteFile(file)}
                 >
-                  <X className="h-4 w-4" />
+                  <X aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>

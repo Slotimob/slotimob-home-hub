@@ -109,13 +109,13 @@ export function BlogImageUpload({
             className="w-full aspect-video object-cover"
           />
           <div className="absolute top-2 right-2 flex gap-1">
-            <Button type="button" variant="secondary" size="icon" className="h-7 w-7"
+            <Button aria-label="Enviar imagem" type="button" variant="secondary" size="icon" className="h-7 w-7"
               onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              <Upload className="h-3.5 w-3.5" />
+              <Upload aria-hidden="true" className="h-3.5 w-3.5" />
             </Button>
-            <Button type="button" variant="destructive" size="icon" className="h-7 w-7"
+            <Button aria-label="Remover imagem" type="button" variant="destructive" size="icon" className="h-7 w-7"
               onClick={handleRemove} disabled={uploading}>
-              <X className="h-3.5 w-3.5" />
+              <X aria-hidden="true" className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>

@@ -388,8 +388,8 @@ export default function WhatsApp() {
         ) : undefined
       }
       headerActions={
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/integrations"><Settings className="h-4 w-4" /></Link>
+        <Button aria-label="Vincular conversa" variant="ghost" size="icon" asChild>
+          <Link aria-hidden="true" to="/integrations"><Settings className="h-4 w-4" /></Link>
         </Button>
       }
     >
@@ -492,13 +492,13 @@ export default function WhatsApp() {
 
       {/* Mobile CRM floating button */}
       {isMobile && selectedConversation && mobileView === 'chat' && (
-        <Button
+        <Button aria-label="Abrir painel do CRM"
           size="icon"
           variant="secondary"
           className="fixed bottom-20 right-4 z-40 h-10 w-10 rounded-full shadow-lg"
           onClick={() => setMobileCrmOpen(true)}
         >
-          <PanelRightOpen className="h-5 w-5" />
+          <PanelRightOpen aria-hidden="true" className="h-5 w-5" />
         </Button>
       )}
 

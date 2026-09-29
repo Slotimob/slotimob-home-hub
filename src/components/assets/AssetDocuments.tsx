@@ -390,28 +390,28 @@ export const AssetDocuments = ({ assetType, assetId, userId }: AssetDocumentsPro
                     <div className="flex gap-1">
                       {isExternal ? (
                         safeExternalUrl && (
-                          <Button size="icon" variant="ghost" onClick={() => window.open(safeExternalUrl, '_blank', 'noopener,noreferrer')} title="Abrir">
-                            <ExternalLink className="h-4 w-4" />
+                          <Button aria-label={`Abrir documento ${doc.title}`} size="icon" variant="ghost" onClick={() => window.open(safeExternalUrl, '_blank', 'noopener,noreferrer')} title="Abrir">
+                            <ExternalLink aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         )
                       ) : (
                         <>
-                          <Button size="icon" variant="ghost" onClick={() => openDocument(doc, false)} title="Visualizar">
-                            <Eye className="h-4 w-4" />
+                          <Button aria-label={`Visualizar documento ${doc.title}`} size="icon" variant="ghost" onClick={() => openDocument(doc, false)} title="Visualizar">
+                            <Eye aria-hidden="true" className="h-4 w-4" />
                           </Button>
-                          <Button size="icon" variant="ghost" onClick={() => openDocument(doc, true)} title="Baixar">
-                            <Download className="h-4 w-4" />
+                          <Button aria-label={`Baixar documento ${doc.title}`} size="icon" variant="ghost" onClick={() => openDocument(doc, true)} title="Baixar">
+                            <Download aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         </>
                       )}
-                      <Button
+                      <Button aria-label={`Excluir documento ${doc.title}`}
                         size="icon"
                         variant="ghost"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setDeleteDoc(doc)}
                         title="Excluir"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </div>
                   </CardContent>

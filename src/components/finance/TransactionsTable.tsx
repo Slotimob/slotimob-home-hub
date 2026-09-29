@@ -210,7 +210,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
                   <TableCell className="text-center">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
+                        <Button aria-label="Conciliar lançamento"
                           variant="ghost"
                           size="icon"
                           className={cn(
@@ -223,7 +223,7 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
                           disabled={isCurrentlyReconciling || isReconciling}
                         >
                           {isCurrentlyReconciling ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                           ) : transaction.is_reconciled ? (
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           ) : (
@@ -290,8 +290,8 @@ export function TransactionsTable({ transactions, isLoading, onTransactionUpdate
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button aria-label="Mais ações do lançamento" variant="ghost" size="icon">
+                          <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

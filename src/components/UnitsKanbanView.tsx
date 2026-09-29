@@ -128,13 +128,13 @@ const SortableUnitCard = ({
               <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
+                    <Button aria-label="Compartilhar imóvel"
                       variant="secondary"
                       size="icon"
                       className="h-6 w-6 shadow-md"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Share2 className="h-3 w-3" />
+                      <Share2 aria-hidden="true" className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">

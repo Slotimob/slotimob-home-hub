@@ -348,18 +348,18 @@ const AtivosEmGestao = () => {
                   </DropdownMenu>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-9 w-9" onClick={handleRefresh}>
-                        <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+                      <Button aria-label="Atualizar lista" variant="outline" size="icon" className="h-9 w-9" onClick={handleRefresh}>
+                        <RefreshCw aria-hidden="true" className={cn("h-4 w-4", isLoading && "animate-spin")} />
                       </Button>
                     </TooltipTrigger>
                     {!isMobile && <TooltipContent><p>Atualizar dados</p></TooltipContent>}
                   </Tooltip>
                   <div className="flex rounded-md border h-9">
-                    <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="icon" className="rounded-r-none h-full w-9" onClick={() => setViewMode("grid")}>
-                      <LayoutGrid className="h-4 w-4" />
+                    <Button aria-label="Ver em grade" variant={viewMode === "grid" ? "secondary" : "ghost"} size="icon" className="rounded-r-none h-full w-9" onClick={() => setViewMode("grid")}>
+                      <LayoutGrid aria-hidden="true" className="h-4 w-4" />
                     </Button>
-                    <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="rounded-l-none h-full w-9" onClick={() => setViewMode("list")}>
-                      <List className="h-4 w-4" />
+                    <Button aria-label="Ver em lista" variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="rounded-l-none h-full w-9" onClick={() => setViewMode("list")}>
+                      <List aria-hidden="true" className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

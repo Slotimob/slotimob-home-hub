@@ -239,7 +239,7 @@ export function ReconciliationPendingList({
         {formatCurrency(Math.abs(entry.amount))}
       </span>
       {showCreateButton && (
-        <Button
+        <Button aria-label="Criar lançamento a partir desta linha do extrato"
           variant="ghost"
           size="icon"
           className="h-8 w-8 flex-shrink-0"
@@ -249,7 +249,7 @@ export function ReconciliationPendingList({
           }}
           title="Criar Lançamento"
         >
-          <Plus className="h-4 w-4" />
+          <Plus aria-hidden="true" className="h-4 w-4" />
         </Button>
       )}
     </div>
@@ -292,7 +292,7 @@ export function ReconciliationPendingList({
         {transaction.type === "income" ? "+" : "-"}
         {formatCurrency(transaction.amount)}
       </span>
-      <Button
+      <Button aria-label="Excluir linha do extrato"
         variant="ghost"
         size="icon"
         className="h-9 w-9 sm:h-8 sm:w-8 flex-shrink-0 text-muted-foreground hover:text-destructive"
@@ -302,7 +302,7 @@ export function ReconciliationPendingList({
         }}
         title="Excluir Lançamento"
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 aria-hidden="true" className="h-4 w-4" />
       </Button>
     </div>
   );
@@ -444,14 +444,14 @@ export function ReconciliationPendingList({
                 </CardDescription>
               </div>
               {onRefreshTransactions && (
-                <Button
+                <Button aria-label="Atualizar lançamentos"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
                   onClick={onRefreshTransactions}
                   title="Atualizar lançamentos"
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw aria-hidden="true" className="h-4 w-4" />
                 </Button>
               )}
             </div>

@@ -78,14 +78,14 @@ export function DashboardDateFilter({
         </PopoverContent>
       </Popover>
 
-      <Button
+      <Button aria-label="Atualizar dados do painel"
         variant="outline"
         size="icon"
         className="h-9 w-9"
         onClick={onRefresh}
         disabled={isRefreshing}
       >
-        <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+        <RefreshCw aria-hidden="true" className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
       </Button>
     </div>
   );

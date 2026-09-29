@@ -265,23 +265,23 @@ export function RentEvolutionTimeline({
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button
+                              <Button aria-label="Editar reajuste"
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7"
                                 onClick={() => setEditing({ adj, isLatest })}
                               >
-                                <Pencil className="h-3.5 w-3.5" />
+                                <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
                               </Button>
                               {isLatest && (
-                                <Button
+                                <Button aria-label="Excluir reajuste"
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={() => setDeleteConfirm(adj)}
                                   disabled={deleteAdjustment.isPending}
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                             </div>

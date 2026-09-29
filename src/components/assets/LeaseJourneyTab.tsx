@@ -577,13 +577,13 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
             Acompanhe cada etapa do ciclo de vida do contrato. Ao fazer upload de um arquivo PDF ou imagem, o status da etapa será automaticamente marcado como concluído.
            </p>
          </div>
-         <Button
+         <Button aria-label="Atualizar jornada"
            variant="ghost"
            size="icon"
            className="h-8 w-8"
            onClick={handleRefresh}
          >
-           <RefreshCw className="h-4 w-4" />
+           <RefreshCw aria-hidden="true" className="h-4 w-4" />
          </Button>
        </div>
 

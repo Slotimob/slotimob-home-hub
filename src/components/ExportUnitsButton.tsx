@@ -91,8 +91,8 @@ export const ExportUnitsButton = ({ units, propertyName }: ExportUnitsButtonProp
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 lg:h-9 lg:w-auto lg:px-3">
-          <Download className="h-4 w-4" />
+        <Button aria-label="Exportar imóveis" variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 lg:h-9 lg:w-auto lg:px-3">
+          <Download aria-hidden="true" className="h-4 w-4" />
           <span className="hidden lg:inline lg:ml-2">Exportar</span>
         </Button>
       </DropdownMenuTrigger>

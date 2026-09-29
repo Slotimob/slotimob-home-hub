@@ -277,8 +277,8 @@ export function ChatArea({
       <div className="px-3 py-2 border-b bg-card flex-shrink-0">
         <div className="flex items-center gap-2">
           {onBack && (
-            <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0 h-8 w-8" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4" />
+            <Button aria-label="Voltar para conversas" variant="ghost" size="icon" className="md:hidden flex-shrink-0 h-8 w-8" onClick={onBack}>
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             </Button>
           )}
           <Avatar className="h-9 w-9 flex-shrink-0">
@@ -388,14 +388,14 @@ export function ChatArea({
             ) : null}
 
             {showCrmToggle && (
-              <Button variant="ghost" size="icon" onClick={onToggleCrm} className="hidden lg:flex h-8 w-8">
-                <ChevronRight className="h-4 w-4" />
+              <Button aria-label="Mostrar ou ocultar painel do CRM" variant="ghost" size="icon" onClick={onToggleCrm} className="hidden lg:flex h-8 w-8">
+                <ChevronRight aria-hidden="true" className="h-4 w-4" />
               </Button>
             )}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
+                <Button aria-label="Mais ações da conversa" variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-1" align="end" side="bottom">
@@ -518,14 +518,14 @@ export function ChatArea({
                 e.target.value = '';
               }}
             />
-            <Button
+            <Button aria-label="Anexar arquivo"
               variant="ghost"
               size="icon"
               className="flex-shrink-0 text-muted-foreground hover:text-foreground h-9 w-9"
               onClick={() => fileInputRef.current?.click()}
               disabled={!onSendMedia}
             >
-              <Paperclip className="h-5 w-5" />
+              <Paperclip aria-hidden="true" className="h-5 w-5" />
             </Button>
 
             <QuickMessagesPopover onSelect={handleQuickReply} />
@@ -553,13 +553,13 @@ export function ChatArea({
               />
             </div>
 
-            <Button
+            <Button aria-label="Enviar mensagem"
               onClick={handleSend}
               disabled={!messageText.trim() || sending}
               size="icon"
               className="flex-shrink-0 h-9 w-9 rounded-full"
             >
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
         )}

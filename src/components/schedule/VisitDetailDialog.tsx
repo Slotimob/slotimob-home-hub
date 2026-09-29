@@ -134,7 +134,7 @@ export function VisitDetailDialog({ visit, open, onOpenChange, onSuccess }: Visi
                 Detalhes da Visita
               </DialogTitle>
               {canDelete && (
-                <Button
+                <Button aria-label="Excluir visita"
                   type="button"
                   variant="ghost"
                   size="icon"
@@ -142,7 +142,7 @@ export function VisitDetailDialog({ visit, open, onOpenChange, onSuccess }: Visi
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={loading !== null}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 aria-hidden="true" className="h-4 w-4" />
                 </Button>
               )}
             </div>

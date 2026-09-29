@@ -367,7 +367,7 @@ export function ReconciliationPendingListGrouped({
         {formatCurrency(entry.is_credit ? entry.amount : -Math.abs(entry.amount))}
       </span>
       {showCreateButton && (
-        <Button
+        <Button aria-label="Criar lançamento a partir desta linha do extrato"
           variant="ghost"
           size="icon"
           className="h-5 w-5 flex-shrink-0"
@@ -377,7 +377,7 @@ export function ReconciliationPendingListGrouped({
           }}
           title="Criar Lançamento"
         >
-          <Plus className="h-3 w-3" />
+          <Plus aria-hidden="true" className="h-3 w-3" />
         </Button>
       )}
     </div>

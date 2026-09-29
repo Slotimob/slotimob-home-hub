@@ -742,14 +742,14 @@ export function ContractsTab() {
         </Select>
         
         {/* Refresh Button */}
-        <Button 
+        <Button aria-label="Atualizar contratos" 
           variant="outline" 
           size="icon" 
           onClick={() => refetch()}
           className="shrink-0"
           title="Atualizar lista"
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw aria-hidden="true" className="h-4 w-4" />
         </Button>
         
         {/* Create Contract Button */}
@@ -992,14 +992,14 @@ export function ContractsTab() {
                             <div className="flex items-center justify-center">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button
+                                  <Button aria-label="Mais ações do contrato"
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8"
                                     onClick={(e) => e.stopPropagation()}
                                     title="Ações"
                                   >
-                                    <MoreVertical className="h-4 w-4" />
+                                    <MoreVertical aria-hidden="true" className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-52">

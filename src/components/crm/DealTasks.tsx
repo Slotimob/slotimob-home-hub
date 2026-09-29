@@ -230,8 +230,8 @@ export const DealTasks = ({ dealId }: DealTasksProps) => {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
+                          <Button aria-label="Mais ações da tarefa" variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -279,8 +279,8 @@ export const DealTasks = ({ dealId }: DealTasksProps) => {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
+                        <Button aria-label="Mais ações da tarefa" variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical aria-hidden="true" className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

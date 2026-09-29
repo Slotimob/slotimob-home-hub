@@ -404,9 +404,9 @@ export function LeaseBoletos({ leaseId, brokerId, rentAmount, amountBreakdown, s
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button aria-label="Mais ações da cobrança" variant="ghost" size="icon" className="h-8 w-8">
                             {actionLoading?.startsWith(b.id) ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                             ) : (
                               <MoreHorizontal className="h-4 w-4" />
                             )}

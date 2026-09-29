@@ -240,8 +240,8 @@ const TermsAdmin = () => {
     <AppLayout
       title="Administração de Termos"
       headerActions={
-        <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button aria-label="Voltar para configurações" variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+          <ArrowLeft aria-hidden="true" className="h-5 w-5" />
         </Button>
       }
     >

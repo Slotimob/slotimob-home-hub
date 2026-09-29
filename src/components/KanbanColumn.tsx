@@ -154,13 +154,13 @@ export const KanbanColumn = ({
                 {isCustomStage && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
+                      <Button aria-label="Mais ações da coluna"
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
                         onPointerDown={(e) => e.stopPropagation()}
                       >
-                        <MoreVertical className="h-4 w-4" />
+                        <MoreVertical aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

@@ -159,14 +159,14 @@ export function ChatSidebar({ conversations, selectedId, onSelect, loading, conn
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
+                    <Button aria-label="Sincronizar conversas"
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7"
                       onClick={handleSync}
                       disabled={syncing}
                     >
-                      <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+                      <RefreshCw aria-hidden="true" className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Sincronizar conversas</TooltipContent>

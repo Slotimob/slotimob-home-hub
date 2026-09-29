@@ -308,12 +308,12 @@ export function EmitirCobrancaDialog({
                     <Label className="text-xs">Código copia e cola</Label>
                     <div className="flex gap-2">
                       <Input value={result.pix_copy_paste} readOnly className="text-xs font-mono" />
-                      <Button
+                      <Button aria-label="Copiar código PIX"
                         size="icon"
                         variant="outline"
                         onClick={() => copyToClipboard(result.pix_copy_paste!, "Código PIX")}
                       >
-                        <Copy className="h-4 w-4" />
+                        <Copy aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

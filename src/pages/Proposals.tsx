@@ -565,9 +565,9 @@ function RowActions({
     <div className="flex items-center justify-end">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button aria-label="Mais ações da proposta" variant="ghost" size="icon" className="h-8 w-8">
             {isDownloading
-              ? <Loader2 className="h-4 w-4 animate-spin" />
+              ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
               : <MoreHorizontal className="h-4 w-4" />}
           </Button>
         </DropdownMenuTrigger>

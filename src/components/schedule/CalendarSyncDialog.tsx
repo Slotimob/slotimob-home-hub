@@ -127,14 +127,14 @@ export function CalendarSyncDialog() {
               className="font-mono text-xs"
               onClick={(e) => (e.target as HTMLInputElement).select()}
             />
-            <Button
+            <Button aria-label="Copiar link do calendário"
               variant="outline"
               size="icon"
               onClick={handleCopy}
               disabled={isLoading || !feedUrl}
             >
               {copied ? (
-                <Check className="h-4 w-4 text-green-700 dark:text-green-400" />
+                <Check aria-hidden="true" className="h-4 w-4 text-green-700 dark:text-green-400" />
               ) : (
                 <Copy className="h-4 w-4" />
               )}

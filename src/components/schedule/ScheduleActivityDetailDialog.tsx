@@ -161,14 +161,14 @@ export function ScheduleActivityDetailDialog({
                 {canEdit ? 'Editar Atividade' : 'Detalhes da Atividade'}
               </DialogTitle>
               {canDelete && (
-                <Button
+                <Button aria-label="Excluir atividade"
                   type="button"
                   variant="ghost"
                   size="icon"
                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => setShowDeleteConfirm(true)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 aria-hidden="true" className="h-4 w-4" />
                 </Button>
               )}
             </div>

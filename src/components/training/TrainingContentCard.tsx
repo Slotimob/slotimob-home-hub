@@ -103,11 +103,11 @@ export function TrainingContentCard({
         {/* Admin Controls */}
         {isAdmin && (
           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button size="icon" variant="secondary" className="h-8 w-8" onClick={onEdit}>
-              <Pencil className="h-4 w-4" />
+            <Button aria-label="Editar conteúdo" size="icon" variant="secondary" className="h-8 w-8" onClick={onEdit}>
+              <Pencil aria-hidden="true" className="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="destructive" className="h-8 w-8" onClick={onDelete}>
-              <Trash2 className="h-4 w-4" />
+            <Button aria-label="Excluir conteúdo" size="icon" variant="destructive" className="h-8 w-8" onClick={onDelete}>
+              <Trash2 aria-hidden="true" className="h-4 w-4" />
             </Button>
           </div>
         )}

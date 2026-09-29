@@ -389,17 +389,17 @@ const AdminCockpit = () => {
                                   <div className="flex items-center justify-end gap-1">
                                     {isAdmin && (
                                       <>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Alterar Plano"
+                                        <Button aria-label="Alterar plano" variant="ghost" size="icon" className="h-8 w-8" title="Alterar Plano"
                                           onClick={() => openPlanDialog(org)}>
-                                          <Crown className="h-4 w-4" />
+                                          <Crown aria-hidden="true" className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Adicionar Créditos"
+                                        <Button aria-label="Adicionar créditos" variant="ghost" size="icon" className="h-8 w-8" title="Adicionar Créditos"
                                           onClick={() => { setCreditAmount(''); setCreditReason(''); setCreditType('ai'); setCreditsDialog(org); }}>
-                                          <Plus className="h-4 w-4" />
+                                          <Plus aria-hidden="true" className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Ajustar Limites"
+                                        <Button aria-label="Ajustar limites" variant="ghost" size="icon" className="h-8 w-8" title="Ajustar Limites"
                                           onClick={() => openLimitsDialog(org)}>
-                                          <Settings2 className="h-4 w-4" />
+                                          <Settings2 aria-hidden="true" className="h-4 w-4" />
                                         </Button>
                                       </>
                                     )}
@@ -475,9 +475,9 @@ const AdminCockpit = () => {
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" title="Gerenciar Roles"
+                                <Button aria-label="Alterar papel" variant="ghost" size="icon" className="h-8 w-8" title="Gerenciar Roles"
                                   onClick={() => setRoleDialog(org)}>
-                                  <UserCog className="h-4 w-4" />
+                                  <UserCog aria-hidden="true" className="h-4 w-4" />
                                 </Button>
                               </TableCell>
                             </TableRow>

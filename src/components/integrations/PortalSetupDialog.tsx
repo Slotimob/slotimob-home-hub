@@ -67,8 +67,8 @@ export function PortalSetupDialog({ open, onOpenChange, feedUrl, publishedCount 
                 readOnly
                 className="font-mono text-xs bg-muted"
               />
-              <Button variant="outline" size="icon" onClick={handleCopy} disabled={!feedUrl} className="shrink-0">
-                {copied ? <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-400" /> : <Copy className="h-4 w-4" />}
+              <Button aria-label="Copiar link do feed" variant="outline" size="icon" onClick={handleCopy} disabled={!feedUrl} className="shrink-0">
+                {copied ? <CheckCircle aria-hidden="true" className="h-4 w-4 text-green-700 dark:text-green-400" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
           </div>
