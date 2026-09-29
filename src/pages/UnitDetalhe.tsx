@@ -267,7 +267,7 @@ export default function UnitDetalhe() {
     }
 
     if (formData.intent_type === 'rental' || formData.intent_type === 'both') {
-      if (!formData.rent_price) {
+      if (!formData.rent_price && !formData.has_subdivisions) {
         toast({
           title: 'Campo obrigatório',
           description: 'Informe o Preço de Locação para imóveis com objetivo de locação.',
