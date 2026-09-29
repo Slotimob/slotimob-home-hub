@@ -325,7 +325,7 @@ export function PropertyInfoFields({
               </Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Ative para monitorar a rentabilidade (Yield) e a vacância deste empreendimento no seu painel de controle, além de acompanhar as obrigações mensais na página de Gestão.
+              Com a gestão ligada, o imóvel aparece em Aluguéis com status mensal, obrigações e contratos.
             </p>
           </div>
           <Switch
