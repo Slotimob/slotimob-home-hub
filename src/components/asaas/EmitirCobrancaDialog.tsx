@@ -1,4 +1,4 @@
-import { formatCurrencyBRL } from "@/lib/formatters";
+import { formatCurrencyBRL } from "@/utils/unitPricing";
 import { computeLeaseMonthFromConfig, type LeaseMonthFigures } from "@/lib/lease-special-conditions";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
