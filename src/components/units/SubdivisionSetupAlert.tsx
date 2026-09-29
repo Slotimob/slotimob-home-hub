@@ -37,10 +37,6 @@ export function SubdivisionSetupAlert({
 }: SubdivisionSetupAlertProps) {
   if (total > 0 && missing === 0) return null;
 
-  const message =
-    total === 0
-      ? 'Nenhuma fração cadastrada ainda. Enquanto isso, nenhum contrato é criado para este imóvel.'
-      : `${missing} de ${total} ${total === 1 ? 'fração ainda está' : 'frações ainda estão'} sem inquilino. Enquanto isso, ${missing === 1 ? 'ela não gera' : 'elas não geram'} contrato.`;
 
   return (
     <Alert
@@ -52,8 +48,7 @@ export function SubdivisionSetupAlert({
       </AlertTitle>
       <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-amber-900 dark:text-amber-100" style={{ textWrap: 'pretty' } as any}>
-          {message} O contrato de cada inquilino só é criado depois que a fração dele for
-          cadastrada com o inquilino vinculado.
+          Cadastre as frações. Para alugar uma fração, crie o contrato pelo assistente e escolha a fração no passo Imóvel.
         </span>
         {onAction && (
           <Button size="sm" variant="outline" className="shrink-0" onClick={onAction}>
@@ -96,13 +91,11 @@ export function SubdivisionFormHint({ onAction, actionLabel }: BaseProps) {
     <Alert className="border-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
       <AlertTriangle className="h-4 w-4 text-amber-600" />
       <AlertTitle className="text-amber-900 dark:text-amber-100">
-        Cadastre as frações para gerar os contratos
+        Frações pendentes de cadastro
       </AlertTitle>
       <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-amber-900 dark:text-amber-100" style={{ textWrap: 'pretty' } as any}>
-          Imóveis subdivididos não geram um contrato próprio. O contrato de cada inquilino só é
-          criado depois que a fração dele for cadastrada, na aba <strong>Frações</strong>, com o
-          inquilino vinculado.
+          Cadastre as frações. Para alugar uma fração, crie o contrato pelo assistente e escolha a fração no passo Imóvel.
         </span>
         {onAction && (
           <Button size="sm" variant="outline" className="shrink-0" onClick={onAction}>

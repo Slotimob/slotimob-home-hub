@@ -25,6 +25,15 @@ interface Contact {
   phone: string | null;
   whatsapp: string | null;
   categories: string[];
+  document_number?: string | null;
+}
+
+/** "CPF •••.•••.•47-25" / "CNPJ ••.•••.•••/••01-25" — só os 4 últimos dígitos. */
+export function maskDocumentTail(doc: string | null | undefined): string | null {
+  const d = (doc || "").replace(/\D/g, "");
+  if (d.length === 11) return `CPF •••.•••.•${d.slice(7, 9)}-${d.slice(9)}`;
+  if (d.length === 14) return `CNPJ ••.•••.•••/••${d.slice(10, 12)}-${d.slice(12)}`;
+  return null;
 }
 
 interface ContactSelectorProps {
@@ -40,6 +49,8 @@ interface ContactSelectorProps {
   showCreateButton?: boolean;
   /** Callback when create button is clicked */
   onCreateClick?: () => void;
+  /** Segunda linha com os 4 últimos dígitos do CPF/CNPJ (ou e-mail), para distinguir homônimos. */
+  showDocumentHint?: boolean;
 }
 
 export function ContactSelector({ 
@@ -51,6 +62,7 @@ export function ContactSelector({
   autoAddCategory,
   showCreateButton = false,
   onCreateClick,
+  showDocumentHint = false,
 }: ContactSelectorProps) {
   const [open, setOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -71,7 +83,7 @@ export function ContactSelector({
       try {
         const { data, error } = await supabase
           .from('contacts')
-          .select('id, name, email, phone, whatsapp, categories')
+          .select('id, name, email, phone, whatsapp, categories, document_number')
           .eq('id', value)
           .maybeSingle();
 
@@ -97,7 +109,7 @@ export function ContactSelector({
     try {
       const { data, error } = await supabase
         .from('contacts')
-        .select('id, name, email, phone, whatsapp, categories')
+        .select('id, name, email, phone, whatsapp, categories, document_number')
         .order('name');
 
       if (error) throw error;
@@ -263,6 +275,11 @@ export function ContactSelector({
                       <span className="truncate">{contact.name}</span>
                       {getCategoryBadge(contact.categories)}
                     </div>
+                    {showDocumentHint && (maskDocumentTail(contact.document_number) || contact.email) && (
+                      <span className="text-xs text-muted-foreground truncate">
+                        {maskDocumentTail(contact.document_number) || contact.email}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {contact.phone && <span>{contact.phone}</span>}
                       {!contact.phone && contact.whatsapp && <span>{contact.whatsapp} (WA)</span>}

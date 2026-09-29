@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ export const CreateUnitDialog = ({
   standalone = false 
 }: CreateUnitDialogProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { createUnit, saving } = useCreateUnit(standalone);
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState<UnitFormData>(() => {
@@ -61,12 +63,18 @@ export const CreateUnitDialog = ({
     e.preventDefault();
 
     const effectivePropertyId = standalone ? null : (propertyId || formData.property_id || null);
-    const ok = await createUnit(formData, effectivePropertyId);
+    const created = await createUnit(formData, effectivePropertyId);
 
-    if (ok) {
+    if (created) {
       onOpenChange(false);
       setFormData(getInitialFormData());
       onSuccess();
+      // I7: sempre abre o detalhe do imóvel criado
+      navigate(
+        (standalone ? '/real-estate' : '/units') +
+          `?id=${created.id}` +
+          (!standalone && effectivePropertyId ? `&propertyId=${effectivePropertyId}` : ''),
+      );
     }
   };
 

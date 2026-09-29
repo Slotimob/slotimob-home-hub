@@ -357,7 +357,7 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="subdivision-label">Label *</Label>
+              <Label htmlFor="subdivision-label">Nome da fração *</Label>
               <Input
                 id="subdivision-label"
                 value={form.label}
@@ -404,7 +404,7 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="subdivision-rent">Valor do aluguel</Label>
+                <Label htmlFor="subdivision-rent">Valor do aluguel (R$/mês)</Label>
                 <div className={rentExcess > 0 ? 'rounded-md ring-1 ring-amber-500' : undefined}>
                   <CurrencyInput
                     id="subdivision-rent"

@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -16,13 +17,15 @@ interface CreatePropertyDialogProps {
 }
 
 export const CreatePropertyDialog = ({ open, onOpenChange, onSuccess }: CreatePropertyDialogProps) => {
+  const navigate = useNavigate();
   const { createProperty, saving } = useCreateProperty();
 
   const handleSubmit = async (payload: PropertyPayload) => {
-    const ok = await createProperty(payload);
-    if (ok) {
+    const newId = await createProperty(payload);
+    if (newId) {
       onOpenChange(false);
       onSuccess();
+      navigate(`/properties?id=${newId}`);
     }
   };
 

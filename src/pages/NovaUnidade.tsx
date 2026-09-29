@@ -90,14 +90,12 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
 
     clearDraft();
 
-    if (formData.has_subdivisions && created.intent_type !== 'sale') {
-      // Sem frações cadastradas não existe contrato: leva direto para o cadastro delas.
-      navigate((standalone ? '/real-estate' : '/units') + '?id=' + created.id);
-    } else if (created.intent_type !== 'sale' && created.tenant_contact_id) {
-      navigate('/gestao/contratos/novo?unitId=' + created.id);
-    } else {
-      navigate(backTo);
-    }
+    // I7: criar unidade/imóvel avulso sempre abre o detalhe do imóvel criado.
+    navigate(
+      (standalone ? '/real-estate' : '/units') +
+        `?id=${created.id}` +
+        (!standalone && effectivePropertyId ? `&propertyId=${effectivePropertyId}` : ''),
+    );
   };
 
   const handleCancel = () => {

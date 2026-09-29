@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { leaseUnitFilter } from '@/hooks/useLeases';
 import { MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -118,7 +119,7 @@ export const getInitialFormData = (): UnitFormData => ({
   iptu: '',
   furnished: '',
   solar_orientation: '',
-  is_financeable: true,
+  is_financeable: false,
   registration_number: '',
   has_no_registration: false,
   iptu_number: '',
@@ -212,6 +213,22 @@ export const UnitFormFields = ({
 
   // Determine which financial fields to show based on intent
   const showSaleFields = formData.intent_type === 'sale' || formData.intent_type === 'both';
+  // I1: contrato ativo neste imóvel (para avisar ao desligar a gestão)
+  const [hasActiveLease, setHasActiveLease] = useState(false);
+  useEffect(() => {
+    if (!unitId) return;
+    let cancelled = false;
+    (async () => {
+      const { count } = await supabase
+        .from('leases')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .or(await leaseUnitFilter(unitId));
+      if (!cancelled) setHasActiveLease((count || 0) > 0);
+    })();
+    return () => { cancelled = true; };
+  }, [unitId]);
+
   const showRentalFields = formData.intent_type === 'rental' || formData.intent_type === 'both';
   const showMarketValueForRentalOnly = formData.intent_type === 'rental';
 
@@ -240,7 +257,7 @@ export const UnitFormFields = ({
               type="button"
               variant={formData.intent_type === 'rental' ? 'default' : 'outline'}
               className="w-full text-sm px-2"
-              onClick={() => setFormData({ ...formData, intent_type: 'rental', is_managed: true })}
+              onClick={() => setFormData({ ...formData, intent_type: 'rental', is_managed: true, is_financeable: false })}
             >
               Locação
             </Button>
@@ -265,8 +282,13 @@ export const UnitFormFields = ({
               </Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Ative para monitorar a rentabilidade (Yield) e a vacância deste imóvel no seu painel de controle, além de acompanhar as obrigações mensais na página de Gestão.
+              Com a gestão ligada, o imóvel aparece em Aluguéis com status mensal, obrigações e contratos.
             </p>
+            {!formData.is_managed && hasActiveLease && (
+              <p className="text-xs font-medium text-destructive" role="alert">
+                Este imóvel tem contrato ativo; sem gestão ele some de Aluguéis.
+              </p>
+            )}
           </div>
           <Switch
             id="is_managed"
@@ -692,7 +714,7 @@ export const UnitFormFields = ({
         {showRentalFields && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="rent_price">Preço de Locação (R$/mês) *</Label>
+              <Label htmlFor="rent_price">Preço de Locação (R$/mês){formData.has_subdivisions ? '' : ' *'}</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -710,6 +732,9 @@ export const UnitFormFields = ({
               onChange={(value) => setFormData({ ...formData, rent_price: value })}
               placeholder="0,00"
             />
+            {formData.has_subdivisions && (
+              <p className="text-xs text-muted-foreground">Com frações, o preço é por fração.</p>
+            )}
           </div>
         )}
 
@@ -833,6 +858,7 @@ export const UnitFormFields = ({
               Não possui matrícula
             </Label>
           </div>
+          {(formData.intent_type === 'sale' || formData.intent_type === 'both') && (
           <div className="flex items-center gap-2">
             <Checkbox
               id="is_financeable"
@@ -845,6 +871,7 @@ export const UnitFormFields = ({
               Aceita financiamento
             </Label>
           </div>
+          )}
         </div>
 
         {/* Owner Contact */}
@@ -856,6 +883,7 @@ export const UnitFormFields = ({
             placeholder="Buscar proprietário..."
             filterCategories={['Proprietário']}
             autoAddCategory="Proprietário"
+            showDocumentHint
             showCreateButton
             onCreateClick={() => handleCreateContactClick('owner')}
           />
