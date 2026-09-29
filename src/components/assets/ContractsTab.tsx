@@ -172,6 +172,62 @@ interface LeaseWithAdjustment extends LeaseWithDetails {
 
 type ContractStatusFilter = "all" | keyof typeof LEASE_STATUS_LABELS;
 
+/** Lançamentos do contrato: pagos/conciliados bloqueiam a exclusão (preservar histórico). */
+export function useLeaseDeleteGuard(leaseId: string | null | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["lease-delete-guard", leaseId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financial_transactions")
+        .select("id, status, is_reconciled")
+        .or(`lease_id.eq.${leaseId},reference.eq.lease:${leaseId}`);
+      if (error) throw error;
+      const rows = data || [];
+      const paid = rows.filter((t: any) => t.status === "paid" || t.is_reconciled === true);
+      return {
+        paid: paid.length,
+        reconciled: rows.filter((t: any) => t.is_reconciled === true).length,
+        pending: rows.length - paid.length,
+      };
+    },
+    enabled: enabled && !!leaseId,
+    staleTime: 0,
+  });
+}
+
+export function LeaseDeleteGuardNotice({
+  guard,
+  loading,
+  onTerminate,
+}: {
+  guard: { paid: number; reconciled: number; pending: number } | undefined;
+  loading: boolean;
+  onTerminate: () => void;
+}) {
+  if (loading || !guard) {
+    return <span className="block text-sm text-muted-foreground">Verificando lançamentos do contrato...</span>;
+  }
+  if (guard.paid > 0) {
+    return (
+      <span className="block p-3 bg-muted border rounded-md text-sm text-foreground space-y-2">
+        <span className="block">
+          Este contrato tem {guard.paid} lançamento{guard.paid > 1 ? "s" : ""} pago{guard.paid > 1 ? "s" : ""} ({guard.reconciled} conciliado{guard.reconciled === 1 ? "" : "s"} com extrato). Para preservar o histórico financeiro, use Encerrar Locação.
+        </span>
+        <Button type="button" size="sm" variant="outline" onClick={onTerminate}>
+          Encerrar Locação
+        </Button>
+      </span>
+    );
+  }
+  return (
+    <span className="block text-sm text-muted-foreground">
+      {guard.pending > 0
+        ? `${guard.pending} lançamento${guard.pending > 1 ? "s" : ""} pendente${guard.pending > 1 ? "s" : ""} deste contrato ser${guard.pending > 1 ? "ão" : "á"} apagado${guard.pending > 1 ? "s" : ""}.`
+        : "Este contrato não tem lançamentos."}
+    </span>
+  );
+}
+
 export function ContractsTab() {
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
@@ -222,6 +278,7 @@ export function ContractsTab() {
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingLease, setDeletingLease] = useState<LeaseWithDetails | null>(null);
+  const { data: deleteGuard, isLoading: deleteGuardLoading } = useLeaseDeleteGuard(deletingLease?.id, deleteDialogOpen);
   const [projectionLease, setProjectionLease] = useState<LeaseForProjection | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -1264,13 +1321,22 @@ export function ContractsTab() {
                 <strong>{deletingLease?.unit?.unit_number}</strong> com o inquilino{" "}
                 <strong>{deletingLease?.tenant_contact?.name}</strong>.
               </p>
+              <LeaseDeleteGuardNotice
+                guard={deleteGuard}
+                loading={deleteGuardLoading}
+                onTerminate={() => {
+                  const l = deletingLease;
+                  setDeleteDialogOpen(false);
+                  if (l) handleTerminateContract(l);
+                }}
+              />
               <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md">
                 <p className="text-sm font-medium text-destructive">
                   ⚠️ Atenção: Esta ação é irreversível!
                 </p>
                 <ul className="text-sm text-muted-foreground mt-2 space-y-1">
                   <li>• O registro será excluído permanentemente do banco de dados</li>
-                  <li>• Todas as transações financeiras vinculadas serão removidas</li>
+                  <li>• Os lançamentos pendentes do contrato serão removidos</li>
                   <li>• O imóvel será liberado para novas locações</li>
                   <li>• Os dados não poderão ser recuperados</li>
                 </ul>
@@ -1283,7 +1349,7 @@ export function ContractsTab() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteLease}
-              disabled={isDeleting}
+              disabled={isDeleting || deleteGuardLoading || !deleteGuard || deleteGuard.paid > 0}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? (

@@ -83,6 +83,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useUpdateLease } from "@/hooks/useLeases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLeaseDeleteGuard, LeaseDeleteGuardNotice } from "@/components/assets/ContractsTab";
+import { computeOwnerReport } from "@/lib/owner-report";
 import { getLeaseUnitRefs, releaseLeaseUnits } from "@/lib/unit-status-sync";
 import { cn } from "@/lib/utils";
 import { toast as sonnerToast } from "sonner";
@@ -119,6 +121,7 @@ export default function ContratoDetalhe() {
   const [showEditStartDateDialog, setShowEditStartDateDialog] = useState(false);
   const [terminateDialogOpen, setTerminateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { data: deleteGuard, isLoading: deleteGuardLoading } = useLeaseDeleteGuard(id, deleteDialogOpen);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [projectionOpen, setProjectionOpen] = useState(false);
@@ -173,16 +176,19 @@ export default function ContratoDetalhe() {
     queryKey: ["recent-lease-transactions", lease?.id, effectiveBrokerId],
     queryFn: async () => {
       if (!lease) return [];
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const nowSp = todayInSaoPauloDateOnly();
+      const [yy, mm] = nowSp.split("-").map(Number);
+      const rangeStart = toDateOnly(new Date(yy, mm - 3, 1));
+      const rangeEnd = toDateOnly(new Date(yy, mm, 0));
       const { data, error } = await supabase
         .from("financial_transactions")
         .select("id, amount, due_date, paid_date, status, description, type, obligation_type, settlement_group_id, competency_period, lease_id")
         .eq("broker_id", effectiveBrokerId || user!.id)
         .or(`lease_id.eq.${lease.id},reference.like.lease:${lease.id}%`)
         .neq("status", "cancelled")
-        .gte("due_date", toDateOnly(threeMonthsAgo))
-        .order("due_date", { ascending: false })
+        .gte("due_date", rangeStart)
+        .lte("due_date", rangeEnd)
+        .order("due_date", { ascending: true })
         .limit(60);
       if (error) throw error;
       // Baixa conjunta: o grupo vira UMA linha (âncora = receita de aluguel) com o líquido.
@@ -200,6 +206,29 @@ export default function ContratoDetalhe() {
       });
     },
     enabled: !!user && !!lease,
+  });
+
+  // Relatório do proprietário do mês corrente: mesmo cálculo do "Relatório Completo".
+  const { data: ownerMonthTx } = useQuery({
+    queryKey: ["contract-owner-month", lease?.id, lease?.unit_id],
+    queryFn: async () => {
+      const nowSp = todayInSaoPauloDateOnly();
+      const [yy, mm] = nowSp.split("-").map(Number);
+      const { data, error } = await supabase
+        .from("financial_transactions")
+        .select("*")
+        .eq("unit_id", lease!.unit_id)
+        .eq("status", "paid")
+        .gte("paid_date", toDateOnly(new Date(yy, mm - 1, 1)))
+        .lte("paid_date", toDateOnly(new Date(yy, mm, 0)));
+      if (error) throw error;
+      const rows = data || [];
+      return {
+        income: rows.filter((t: any) => t.type === "income"),
+        expenses: rows.filter((t: any) => t.type === "expense"),
+      };
+    },
+    enabled: !!user && !!lease?.unit_id,
   });
 
   const { data: brokerProfile } = useQuery({
@@ -650,50 +679,37 @@ export default function ContratoDetalhe() {
             </CardHeader>
             <CardContent className="py-2 px-4">
               {(() => {
-                const rent = Number(lease.rent_amount) || 0;
+                const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
                 const feePct = Number(lease.admin_fee_percentage) || 0;
-                const typical = computeLeaseMonthFromConfig(lease as any);
-                const fee = rent * feePct / 100;
-                const lateFee = billingStatus.overdue ? rent * 0.1 : 0; // 10% multa padrão
-                const net = rent - typical.deductions - typical.irrf - fee;
+                const hasTx = !!ownerMonthTx && (ownerMonthTx.income.length > 0 || ownerMonthTx.expenses.length > 0);
+                const cfg = computeLeaseMonthFromConfig(lease as any, todayInSaoPauloDateOnly().slice(0, 7));
+                const rep = hasTx
+                  ? computeOwnerReport({ income: ownerMonthTx!.income as any, expenses: ownerMonthTx!.expenses as any, adminFeePercentage: feePct })
+                  : (() => {
+                      const gross = Math.max(0, cfg.gross - cfg.grace);
+                      const adminFee = Math.round(gross * feePct) / 100;
+                      return {
+                        rentGross: gross, rentAdditions: 0, rentIrrf: cfg.irrf, rentDeductions: cfg.deductions,
+                        rentDiscounts: 0, rentNet: cfg.net, otherIncome: 0, adminFee, totalExpenses: 0,
+                        netTransfer: Math.round((cfg.net - adminFee) * 100) / 100,
+                      };
+                    })();
+                const line = (label: string, v: number, sign: "+" | "-" | "", cls = "") => (
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className={cn("font-medium", cls)}>{sign}{fmt(v)}</span>
+                  </div>
+                );
                 return (
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Aluguel bruto</span>
-                      <span className="font-medium">
-                        {rent.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                      </span>
-                    </div>
-                    {typical.deductions > 0 && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-muted-foreground">Abatimentos do mês</span>
-                        <span className="font-medium text-destructive">
-                          -{typical.deductions.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                        </span>
-                      </div>
-                    )}
-                    {typical.irrf > 0 && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-muted-foreground">IRRF retido</span>
-                        <span className="font-medium text-destructive">
-                          -{typical.irrf.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Taxa Administração ({feePct}%)</span>
-                      <span className="font-medium text-destructive">
-                        -{fee.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                      </span>
-                    </div>
-                    {lateFee > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Multa por atraso (estimada)</span>
-                        <span className="font-medium text-amber-600">
-                          +{lateFee.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                        </span>
-                      </div>
-                    )}
+                    {line("Aluguel bruto", rep.rentGross, "")}
+                    {rep.rentAdditions > 0 && line("Multa/juros e acréscimos", rep.rentAdditions, "+")}
+                    {rep.rentDeductions > 0 && line("Abatimentos do mês", rep.rentDeductions, "-", "text-destructive")}
+                    {rep.rentIrrf > 0 && line("IRRF retido", rep.rentIrrf, "-", "text-destructive")}
+                    {rep.rentDiscounts > 0 && line("Descontos", rep.rentDiscounts, "-", "text-destructive")}
+                    {rep.otherIncome > 0 && line("Outras receitas", rep.otherIncome, "+")}
+                    {line(`Taxa Administração (${feePct}%)`, rep.adminFee, "-", "text-destructive")}
+                    {rep.totalExpenses > 0 && line("Outras despesas", rep.totalExpenses, "-", "text-destructive")}
                     {nextDueDate && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Próximo vencimento</span>
@@ -704,11 +720,12 @@ export default function ContratoDetalhe() {
                     )}
                     <Separator />
                     <div className="flex justify-between">
-                      <span className="font-medium">Repasse Líquido Estimado</span>
-                      <span className="font-bold text-emerald-600 text-base">
-                        {net.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                      </span>
+                      <span className="font-medium">{hasTx ? "Repasse líquido" : "Repasse Líquido Estimado"}</span>
+                      <span className="font-bold text-emerald-600 text-base">{fmt(rep.netTransfer)}</span>
                     </div>
+                    {!hasTx && (
+                      <p className="text-[11px] text-muted-foreground">Estimado pela configuração (sem lançamentos pagos no mês).</p>
+                    )}
                   </div>
                 );
               })()}
@@ -863,13 +880,21 @@ export default function ContratoDetalhe() {
                 Você está prestes a excluir o contrato do imóvel{" "}
                 <strong>{unit?.unit_number}</strong> com o inquilino <strong>{tenant?.name}</strong>.
               </span>
+              <LeaseDeleteGuardNotice
+                guard={deleteGuard}
+                loading={deleteGuardLoading}
+                onTerminate={() => {
+                  setDeleteDialogOpen(false);
+                  setTerminateDialogOpen(true);
+                }}
+              />
               <span className="block p-3 bg-destructive/10 border border-destructive/30 rounded-md">
                 <span className="block text-sm font-medium text-destructive">
                   ⚠️ Atenção: Esta ação é irreversível!
                 </span>
                 <span className="block text-sm text-muted-foreground mt-2">
                   • O registro será excluído permanentemente do banco de dados<br />
-                  • Todas as transações financeiras vinculadas serão removidas<br />
+                  • Os lançamentos pendentes do contrato serão removidos<br />
                   • O imóvel será liberado para novas locações<br />
                   • Os dados não poderão ser recuperados
                 </span>
@@ -880,7 +905,7 @@ export default function ContratoDetalhe() {
             <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteLease}
-              disabled={isDeleting}
+              disabled={isDeleting || deleteGuardLoading || !deleteGuard || deleteGuard.paid > 0}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? (

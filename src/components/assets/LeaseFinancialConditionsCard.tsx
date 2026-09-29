@@ -108,7 +108,27 @@ export function LeaseFinancialConditionsCard({
     () => computeLeaseMonthFromConfig(lease, currentCompetency),
     [lease, currentCompetency]
   );
-  const month = actuals ?? configured;
+  const currentGraceFree = resolveGraceSchedule(lease.rent_grace as any, lease.start_date || todayInSaoPauloDateOnly())
+    .get(currentCompetency)?.mode === "free";
+  // Competência do próximo vencimento (dia de vencimento com teto no fim do mês).
+  const nextCompetency = useMemo(() => {
+    const today = todayInSaoPauloDateOnly();
+    const dueDay = Number((lease as any).due_day) || 10;
+    const [y, m] = currentCompetency.split("-").map(Number);
+    const last = new Date(y, m, 0).getDate();
+    const dueThisMonth = `${currentCompetency}-${String(Math.min(dueDay, last)).padStart(2, "0")}`;
+    let comp = dueThisMonth >= today ? currentCompetency : format(new Date(y, m, 1), "yyyy-MM");
+    const start = (lease.start_date || "").slice(0, 7);
+    if (start && comp < start) comp = start;
+    return comp;
+  }, [lease, currentCompetency]);
+  const { data: nextActuals } = useLeaseMonthActuals(lease.id, nextCompetency);
+  const nextMonth = useMemo(
+    () => nextActuals ?? computeLeaseMonthFromConfig(lease, nextCompetency),
+    [nextActuals, lease, nextCompetency]
+  );
+  const typicalMonth = useMemo(() => computeLeaseMonthFromConfig(lease), [lease]);
+  void actuals; void configured;
 
   const feePct = Number(lease.admin_fee_percentage) || 0;
   const charges: { key: string; label: string; amount: number; chargeTo: string }[] = [
@@ -263,17 +283,27 @@ export function LeaseFinancialConditionsCard({
         )}
 
         <Separator />
-        <div className="rounded-md bg-primary/10 px-3 py-2 space-y-1">
+        <div className="rounded-md bg-primary/10 px-3 py-2 space-y-1.5">
+          <span className="text-sm font-semibold block">Líquido esperado do inquilino</span>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold">Líquido esperado do inquilino</span>
-            <span className="text-base font-bold text-primary tabular-nums">{formatCurrency(month.net)}</span>
+            <span className="text-xs">Próximo vencimento ({competencyLabel(nextCompetency)})</span>
+            <span className="text-base font-bold text-primary tabular-nums">{formatCurrency(nextMonth.net)}</span>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            {competencyLabel(currentCompetency)} · {actuals ? "valores lançados" : "calculado pela configuração"}
-            {month.deductions > 0 ? ` · abatimentos ${formatCurrency(month.deductions)}` : ""}
-            {month.irrf > 0 ? ` · IRRF ${formatCurrency(month.irrf)}` : ""}
-            {month.grace > 0 ? ` · carência ${formatCurrency(month.grace)}` : ""}
+            {nextActuals ? "valores lançados" : "calculado pela configuração"}
+            {nextMonth.deductions > 0 ? ` · abatimentos ${formatCurrency(nextMonth.deductions)}` : ""}
+            {nextMonth.irrf > 0 ? ` · IRRF ${formatCurrency(nextMonth.irrf)}` : ""}
+            {nextMonth.grace > 0 ? ` · carência ${formatCurrency(nextMonth.grace)}` : ""}
           </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs">Mês típico</span>
+            <span className="text-sm font-semibold tabular-nums">{formatCurrency(typicalMonth.net)}</span>
+          </div>
+          {currentGraceFree && (
+            <p className="text-[11px] text-muted-foreground">
+              {format(parseISO(`${currentCompetency}-01`), "MMM/yyyy", { locale: ptBR })} isento
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
