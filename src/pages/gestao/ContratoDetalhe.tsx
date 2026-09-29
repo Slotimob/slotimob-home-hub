@@ -829,6 +829,8 @@ export default function ContratoDetalhe() {
         }}
         unitId={lease.unit_id}
         unitName={unit?.unit_number ?? ""}
+        leaseId={lease.id}
+        billingRemindersEnabled={(lease as any).billing_automation?.enabled === true}
         onSaved={async () => {
           try {
             await supabase

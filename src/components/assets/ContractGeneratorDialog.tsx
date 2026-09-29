@@ -1,7 +1,7 @@
 import { leaseUnitFilter } from "@/hooks/useLeases";
 import { resolveLeasePurpose, leaseTermMonths } from "@/lib/lease-purpose";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -392,11 +392,26 @@ import {
     return { data: contractData, fileName };
   };
 
+  const queryClient = useQueryClient();
   const runGeneration = async (data: LegalContractData, fileName: string) => {
     setIsGenerating(true);
     try {
       await generateLegalContractPDF(data, fileName);
       toast.success("Contrato jurídico gerado com sucesso!");
+      // Jornada: marca o PDF como gerado (merge no metadata, sem apagar outras chaves).
+      const stampId = activeLease?.lease?.id;
+      if (stampId) {
+        try {
+          const { data: cur } = await supabase.from("leases").select("metadata").eq("id", stampId).maybeSingle();
+          const merged = { ...((cur?.metadata as Record<string, unknown>) || {}), contract_pdf_generated_at: new Date().toISOString() };
+          await supabase.from("leases").update({ metadata: merged as any }).eq("id", stampId);
+          queryClient.invalidateQueries({ queryKey: ["lease"] });
+          queryClient.invalidateQueries({ queryKey: ["leases"] });
+          queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
+        } catch (e) {
+          console.warn("[contract-pdf] não foi possível marcar metadata", e);
+        }
+      }
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {

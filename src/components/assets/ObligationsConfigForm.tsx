@@ -107,6 +107,8 @@ interface ObligationsConfigFormProps {
   onSaved?: () => void;
   /** Show save button (default true) */
   showSaveButton?: boolean;
+  /** Avisos automáticos do contrato ligados? Padrão: lido do contrato ativo. */
+  billingRemindersEnabled?: boolean;
 }
 
 export function ObligationsConfigForm({
@@ -114,6 +116,7 @@ export function ObligationsConfigForm({
   unitName,
   onSaved,
   showSaveButton = true,
+  billingRemindersEnabled,
 }: ObligationsConfigFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -121,6 +124,9 @@ export function ObligationsConfigForm({
   const { data: customTypes, isLoading: isLoadingCustom } = useCustomObligationTypes();
   const { data: activeLease } = useLeaseByUnitId(unitId);
   const { data: unitContacts, isLoading: isLoadingContacts } = useUnitContacts(unitId);
+  const remindersOn =
+    billingRemindersEnabled ?? ((activeLease as any)?.billing_automation?.enabled === true);
+  const REMINDERS_OFF_TEXT = "Avisos automáticos desligados neste contrato (aba Cobrança). O WhatsApp é manual.";
 
   const [config, setConfig] = useState<ExtendedObligationsConfig>({});
   const [meta, setMeta] = useState<ObligationsConfigMeta | null>(null);
@@ -272,7 +278,7 @@ export function ObligationsConfigForm({
     const tenantName = tenantInfo?.name || "o inquilino";
     const ownerName = ownerInfo?.name || "o proprietário";
     switch (role) {
-      case "tenant": return `O sistema enviará lembretes de cobrança para ${tenantName}`;
+      case "tenant": return remindersOn ? `O sistema enviará lembretes de cobrança para ${tenantName}` : REMINDERS_OFF_TEXT;
       case "owner": return `Despesa deduzida do repasse ou paga diretamente por ${ownerName}`;
       case "agency": return "A imobiliária é responsável pelo pagamento direto";
       default: return "";
@@ -369,6 +375,7 @@ export function ObligationsConfigForm({
             const Icon = getIcon(icon);
             return (
               <ObligationResponsibilityCard
+                remindersOn={remindersOn}
                 key={type}
                 type={type}
                 label={label}
@@ -401,6 +408,7 @@ export function ObligationsConfigForm({
                 const Icon = getIcon(icon);
                 return (
                   <ObligationResponsibilityCard
+                remindersOn={remindersOn}
                     key={type}
                     type={type}
                     label={label}
@@ -495,10 +503,11 @@ interface ObligationResponsibilityCardProps {
   onAgencyContactChange: (type: ObligationType, contactId: string | null) => void;
   onControlTypeChange: (type: ObligationType, controlType: ControlType) => void;
   getResponsibleFeedback: (role: ResponsibleRole, label: string) => string;
+  remindersOn?: boolean;
 }
 
 function ObligationResponsibilityCard({
-  type, label, icon, config, ownerInfo, tenantInfo, isVacant,
+  type, label, icon, config, ownerInfo, tenantInfo, isVacant, remindersOn,
   onToggle, onDueDayChange, onResponsibleChange, onAgencyContactChange,
   onControlTypeChange, getResponsibleFeedback,
 }: ObligationResponsibilityCardProps) {
@@ -646,7 +655,7 @@ function ObligationResponsibilityCard({
                       </Label>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent>{isVacant ? "Imóvel vago - não há inquilino" : "O sistema enviará lembretes de cobrança"}</TooltipContent>
+                  <TooltipContent>{isVacant ? "Imóvel vago - não há inquilino" : (remindersOn ? "O sistema enviará lembretes de cobrança" : "Avisos automáticos desligados neste contrato (aba Cobrança). O WhatsApp é manual.")}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 

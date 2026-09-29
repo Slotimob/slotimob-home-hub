@@ -49,7 +49,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { isLeaseDocumentKey, registerLeaseDocument, unregisterLeaseDocument } from "@/lib/lease-documents";
  import { toast } from "sonner";
- import { useQueryClient } from "@tanstack/react-query";
+ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUpdateLease } from "@/hooks/useLeases";
@@ -76,6 +76,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
     key_return_path?: string;
     key_return_date?: string;
      obligations_configured?: boolean;
+    contract_pdf_generated_at?: string;
     obligations_inherited_at?: string;
     obligations_pending_review?: boolean;
      last_adjustment_year?: number;
@@ -160,6 +161,27 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
    const [startDateValue, setStartDateValue] = useState("");
    const [savingStartDate, setSavingStartDate] = useState(false);
    const updateLease = useUpdateLease();
+  const { data: monitoredLabels } = useQuery({
+    queryKey: ["unit-obligations-config", unitId, "journey"],
+    queryFn: async () => {
+      const { data } = await supabase.from("units").select("obligations_config").eq("id", unitId).maybeSingle();
+      const cfg = ((data as any)?.obligations_config || {}) as Record<string, any>;
+      const LABELS: Record<string, string> = {
+        rent: "Aluguel", condominium: "Condomínio", iptu: "IPTU", energy: "Energia", water: "Água",
+        gas: "Gás", garbage_fee: "Taxa de Lixo", insurance: "Seguro", other: "Outros",
+      };
+      return Object.entries(cfg)
+        .filter(([k, v]) => k !== "__meta" && v && (v as any).active)
+        .map(([k]) => LABELS[k] ?? "Outra despesa");
+    },
+    enabled: !!unitId,
+  });
+  const monitoredText = (() => {
+    const l = Array.from(new Set(monitoredLabels || []));
+    if (l.length === 0) return "Nenhuma despesa monitorada";
+    if (l.length === 1) return `${l[0]} monitorado`;
+    return `${l.slice(0, -1).join(", ")} e ${l[l.length - 1]} monitorados`;
+  })();
  
    const currentYear = new Date().getFullYear();
    const isTerminating = lease?.status === "terminated" || !!lease?.termination_date;
@@ -196,9 +218,13 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
        {
          id: "contract-pdf",
          title: "Contrato de Locação",
-         description: "Gere o PDF do contrato com todos os dados preenchidos",
+         description: metadata.contract_pdf_generated_at
+           ? `PDF gerado em ${format(new Date(metadata.contract_pdf_generated_at), "dd/MM/yyyy")}`
+           : lease.signature_status === "signed"
+             ? "Contrato assinado"
+             : "Gere o PDF do contrato",
          icon: FileText,
-         status: "completed", // Always completed if lease exists
+         status: (metadata.contract_pdf_generated_at || lease.signature_status === "signed" ? "completed" : "pending") as StepStatus,
          action: onEditContract,
         actionLabel: "Editar",
         secondaryAction: onDownloadPdf,
@@ -227,7 +253,7 @@ import { RentEvolutionTimeline } from "./RentEvolutionTimeline";
            description: pendingReview
              ? `Herdada do contrato${inheritedAt ? ` em ${inheritedAt}` : ""} — pendente de revisão`
              : metadata.obligations_configured
-               ? "IPTU, Condomínio e outras despesas configuradas"
+               ? monitoredText
                : "Configure as despesas recorrentes do imóvel",
            icon: Settings,
            status: (metadata.obligations_configured && !pendingReview
