@@ -313,7 +313,7 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground">Sem contrato</span>
                         <Link
-                          to={`/gestao/contratos/novo?unitId=${unitId}`}
+                          to={`/gestao/contratos/novo?unitId=${unitId}&subdivisionId=${item.id}`}
                           className="text-xs text-primary hover:underline"
                         >
                           Criar contrato
