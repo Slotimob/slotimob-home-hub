@@ -50,6 +50,7 @@ import {
   type ObligationConfig,
   type ObligationsConfig,
   type ObligationStatus,
+  calculateObligationStatus,
   type ObligationType,
 } from "@/hooks/useAssetHealth";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +72,7 @@ import { MonthYearPicker } from "@/components/schedule/MonthYearPicker";
 import { AssetMetricsCards } from "@/components/assets/AssetMetricsCards";
 import { ObligationsConfigForm } from "@/components/assets/ObligationsConfigForm";
 import { DimobStatusCard } from "@/components/assets/DimobStatusCard";
+import { ConfirmLeaseProjectionDialog, type LeaseForProjection } from "@/components/assets/ConfirmLeaseProjectionDialog";
 import { ContractGeneratorDialog } from "@/components/assets/ContractGeneratorDialog";
 import { EditUnitDialog } from "@/components/units/EditUnitDialog";
 
@@ -125,6 +127,12 @@ const STATUS_CONFIG: Record<
     icon: CalendarClock,
     className: "text-sky-600",
     bgClassName: "bg-sky-500/15 text-sky-600 border-sky-500/30",
+  },
+  not_launched: {
+    label: "Não lançado",
+    icon: MoreHorizontal,
+    className: "text-muted-foreground",
+    bgClassName: "bg-muted text-muted-foreground",
   },
   ignored: {
     label: "Desativado",
@@ -286,6 +294,7 @@ const AlugueiDetalhe = () => {
 
   const { data: activeLease } = useLeaseByUnitId(unitId);
   // Imóvel ADICIONAL de um contrato: o aluguel é lançado no imóvel principal (lease_id).
+  const [projectionOpen, setProjectionOpen] = useState(false);
   const isAdditionalUnit = !!activeLease && (activeLease as any).unit_id !== unitId;
   const { data: leaseRentTx = [] } = useQuery({
     queryKey: ["lease-rent-tx", activeLease?.id, competencyPeriod],
@@ -362,10 +371,6 @@ const AlugueiDetalhe = () => {
 
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
     if (!unitConfig) return [];
-    const today = new Date();
-    const isCurrentMonth = format(today, "yyyy-MM") === competencyPeriod;
-    const currentDay = today.getDate();
-
     const fixedTypes = Object.keys(OBLIGATION_LABELS) as ObligationType[];
     const extraTypes = Object.keys(unitConfig).filter(
       (k) => !fixedTypes.includes(k as ObligationType) && (k === "other" || !!customObligationTypeId(k))
@@ -398,25 +403,11 @@ const AlugueiDetalhe = () => {
             );
           });
 
-        let status: ObligationStatus = "ignored";
-        if (config.active) {
-          if (transaction) {
-            if (transaction.is_reconciled === true) {
-              status = "paid";
-            } else if (transaction.status === "paid") {
-              status = "paid";
-            } else if (transaction.status === "overdue") {
-              status = "overdue";
-            } else {
-              const dueDay = config.due_day || 10;
-              status =
-                isCurrentMonth && currentDay > dueDay ? "overdue" : "pending";
-            }
-          } else {
-            const dueDay = config.due_day || 10;
-            status = isCurrentMonth && currentDay > dueDay ? "overdue" : "pending";
-          }
-        }
+        let status: ObligationStatus = calculateObligationStatus(
+          config,
+          (transaction as any) ?? null,
+          currentMonth
+        );
 
         let net: MonthlyObligation["net"] = null;
         if (type === "rent" && config.active) {
@@ -949,6 +940,21 @@ const AlugueiDetalhe = () => {
                                       )}
                                     </p>
                                   </div>
+                                ) : obligation.type === "rent" &&
+                                  obligation.status === "not_launched" &&
+                                  activeLease &&
+                                  (activeLease as any).status === "active" &&
+                                  canCreate ? (
+                                  <div className="flex gap-2 mt-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 text-xs flex-1"
+                                      onClick={() => setProjectionOpen(true)}
+                                    >
+                                      <Plus className="h-3 w-3 mr-1" /> Gerar lançamentos
+                                    </Button>
+                                  </div>
                                 ) : (
                                   obligation.status !== "ignored" && obligation.status !== "grace" && !obligation.viaLease && canCreate && (
                                     <div className="flex gap-2 mt-2">
@@ -1136,7 +1142,15 @@ const AlugueiDetalhe = () => {
             formatLabel="PDF"
           />
         )}
-      </AppLayout>
+        <ConfirmLeaseProjectionDialog
+        open={projectionOpen}
+        onOpenChange={setProjectionOpen}
+        lease={(activeLease as unknown as LeaseForProjection) ?? null}
+        onConfirmed={() => {
+          queryClient.invalidateQueries();
+        }}
+      />
+    </AppLayout>
     </>
   );
 };
