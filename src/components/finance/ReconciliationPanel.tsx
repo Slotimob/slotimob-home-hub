@@ -332,6 +332,8 @@ export function ReconciliationPanel({ bankAccountId, bankAccountName, initialBal
             onRefreshTransactions={() => refetchTransactions()}
             bankAccountId={bankAccountId}
             auditedDates={auditedDates}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
           />
         </TabsContent>
 

@@ -1,3 +1,4 @@
+import { orderDueDateGroups } from "@/lib/reconciliation-order";
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ interface Transaction {
   id: string;
   description: string;
   transaction_date: string;
+  due_date?: string | null;
   amount: number;
   type: string;
   status?: string | null;
@@ -67,6 +69,9 @@ interface ReconciliationPendingListGroupedProps {
   onRefreshTransactions?: () => void;
   bankAccountId?: string;
   auditedDates?: string[];
+  /** Período do extrato (para ordenar lançamentos pela proximidade do vencimento). */
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export function ReconciliationPendingListGrouped({
@@ -81,6 +86,8 @@ export function ReconciliationPendingListGrouped({
   onRefreshTransactions,
   bankAccountId,
   auditedDates = [],
+  dateFrom,
+  dateTo,
 }: ReconciliationPendingListGroupedProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -153,27 +160,29 @@ export function ReconciliationPendingListGrouped({
 
     const groups: Record<string, Transaction[]> = {};
     filtered.forEach((tx) => {
-      const date = tx.transaction_date;
+      // RC7: agrupado pelo vencimento
+      const date = tx.due_date || tx.transaction_date;
       if (!groups[date]) {
         groups[date] = [];
       }
       groups[date].push(tx);
     });
 
-    const result: GroupedItem<Transaction>[] = Object.entries(groups)
-      .map(([date, items]) => ({
+    const entryDates = entries.map((e) => e.entry_date).sort();
+    const todayStr = format(today, "yyyy-MM-dd");
+    const from = dateFrom || entryDates[0] || todayStr;
+    const to = dateTo || entryDates[entryDates.length - 1] || todayStr;
+    const result: GroupedItem<Transaction>[] = orderDueDateGroups(
+      Object.entries(groups).map(([date, items]) => ({
         date,
         items: items.sort((a, b) => b.amount - a.amount),
-        isOverdue: isBefore(parseISO(date), today),
-      }))
-      .sort((a, b) => {
-        if (a.isOverdue && !b.isOverdue) return -1;
-        if (!a.isOverdue && b.isOverdue) return 1;
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      });
+      })),
+      from,
+      to,
+    ).map((g) => ({ date: g.date, items: g.items, isOverdue: isBefore(parseISO(g.date), today) }));
 
     return result;
-  }, [transactions, searchTerm, today]);
+  }, [transactions, searchTerm, today, entries, dateFrom, dateTo]);
 
   const overdueEntriesCount = groupedEntries.filter((g) => g.isOverdue).reduce((sum, g) => sum + g.items.length, 0);
   const overdueTransactionsCount = groupedTransactions.filter((g) => g.isOverdue).reduce((sum, g) => sum + g.items.length, 0);
@@ -317,8 +326,10 @@ export function ReconciliationPendingListGrouped({
     <div
       className={cn(
         "flex items-center gap-1.5 p-2 rounded-md border transition-colors cursor-pointer text-xs",
-        selectedEntry === entry.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+        selectedEntry === entry.id ? "border-primary bg-accent text-accent-foreground ring-1 ring-primary" : "hover:bg-muted/50"
       )}
+      role="button"
+      aria-pressed={selectedEntry === entry.id}
       onClick={() => {
         onSelectEntry(entry.id === selectedEntry ? null : entry.id);
         if (entry.id !== selectedEntry && isMobile) {
@@ -334,6 +345,7 @@ export function ReconciliationPendingListGrouped({
       >
         {entry.is_credit ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
       </div>
+      {selectedEntry === entry.id && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" aria-hidden />}
       <div className="flex-1 min-w-0 overflow-hidden">
         <p className="font-medium truncate text-xs leading-tight">{entry.description}</p>
       </div>
@@ -368,8 +380,10 @@ export function ReconciliationPendingListGrouped({
     <div
       className={cn(
         "flex items-center gap-1.5 p-2 rounded-md border transition-colors cursor-pointer text-xs",
-        selectedTransaction === transaction.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+        selectedTransaction === transaction.id ? "border-primary bg-accent text-accent-foreground ring-1 ring-primary" : "hover:bg-muted/50"
       )}
+      role="button"
+      aria-pressed={selectedTransaction === transaction.id}
       onClick={() =>
         onSelectTransaction(transaction.id === selectedTransaction ? null : transaction.id)
       }
@@ -388,6 +402,7 @@ export function ReconciliationPendingListGrouped({
           <TrendingDown className="h-2.5 w-2.5" />
         )}
       </div>
+      {selectedTransaction === transaction.id && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" aria-hidden />}
       <div className="flex-1 min-w-0 overflow-hidden">
         <p className="font-medium truncate text-xs leading-tight">{transaction.description}</p>
       </div>
@@ -417,20 +432,7 @@ export function ReconciliationPendingListGrouped({
         {transaction.type === "income" ? "+" : "-"}
         {formatCurrency(transaction.amount)}
       </span>
-      {canDelete && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5 flex-shrink-0 text-muted-foreground hover:text-destructive"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDeleteClick(transaction);
-          }}
-          title="Excluir"
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      )}
+      {/* RC7: exclusão de lançamento fica em /finance/transactions */}
     </div>
   );
 
