@@ -399,7 +399,7 @@ import {
       await generateLegalContractPDF(data, fileName);
       toast.success("Contrato jurídico gerado com sucesso!");
       // Jornada: marca o PDF como gerado (merge no metadata, sem apagar outras chaves).
-      const stampId = activeLease?.id;
+      const stampId = activeLease?.lease?.id;
       if (stampId) {
         try {
           const { data: cur } = await supabase.from("leases").select("metadata").eq("id", stampId).maybeSingle();
