@@ -52,8 +52,13 @@ export function leaseUnitRefsFor(primary: LeaseUnitRef, state: LeaseExtraUnitsSt
   push(primary);
   if (state.enabled) {
     for (const u of state.units) {
-      if (u.id === primary.unit_id) continue;
       const fr = state.fractions?.[u.id];
+      if (u.id === primary.unit_id) {
+        // Principal é fração: o mesmo imóvel só entra por outras frações (nunca inteiro).
+        if (!primary.unit_subdivision_id || !Array.isArray(fr)) continue;
+        fr.filter((s) => s !== primary.unit_subdivision_id).forEach((s) => push({ unit_id: u.id, unit_subdivision_id: s }));
+        continue;
+      }
       if (Array.isArray(fr) && fr.length) fr.forEach((s) => push({ unit_id: u.id, unit_subdivision_id: s }));
       else if (!Array.isArray(fr)) push({ unit_id: u.id, unit_subdivision_id: null });
     }
@@ -79,7 +84,10 @@ export function validateExtraUnits(
 ): string | null {
   if (state.enabled) {
     const empty = state.units.find(
-      (u) => u.id !== primary.unit_id && Array.isArray(state.fractions?.[u.id]) && state.fractions[u.id]!.length === 0,
+      (u) =>
+        (u.id !== primary.unit_id || !!primary.unit_subdivision_id) &&
+        Array.isArray(state.fractions?.[u.id]) &&
+        state.fractions[u.id]!.filter((x) => x !== primary.unit_subdivision_id).length === 0,
     );
     if (empty) return `Escolha ao menos uma fração de ${(labelOf || unitLabel)(empty)}.`;
   }
@@ -116,6 +124,7 @@ interface SubRow {
 
 export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange, brokerId, editLeaseId }: Props) {
   const primaryUnitId = primary.unit_id;
+  const primaryIsFraction = !!primary.unit_subdivision_id;
   const { data: rawOptions = [], isLoading } = useQuery({
     queryKey: ["lease-extra-unit-options", brokerId],
     queryFn: async () => {
@@ -136,13 +145,13 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
     () =>
       rawOptions.map((u) => ({
         id: u.id,
-        unit_number: u.unit_number,
+        unit_number: primaryIsFraction && u.id === primaryUnitId ? `${u.unit_number} (outras frações)` : u.unit_number,
         is_standalone: u.is_standalone,
         tenant_contact_id: u.tenant_contact_id,
         property_id: u.property_id ?? null,
         property_name: u.property?.name ?? null,
       })) as UnitOption[],
-    [rawOptions],
+    [rawOptions, primaryIsFraction, primaryUnitId],
   );
   const hasSubs = useMemo(() => {
     const m = new Map<string, boolean>();
@@ -150,7 +159,7 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
     return m;
   }, [rawOptions]);
 
-  const extraUnits = value.units.filter((u) => u.id !== primaryUnitId);
+  const extraUnits = value.units.filter((u) => primaryIsFraction || u.id !== primaryUnitId);
   const subUnitIds = extraUnits.filter((u) => hasSubs.get(u.id) || Array.isArray(value.fractions?.[u.id])).map((u) => u.id);
 
   const { data: subs = [] } = useQuery({
@@ -220,6 +229,8 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
         if (k === u.id || k.startsWith(`${u.id}:`)) delete shares[k];
       });
     });
+    // Principal é fração: o próprio imóvel entra sempre no modo "frações".
+    if (primaryIsFraction && ids.has(primaryUnitId) && !Array.isArray(fractions[primaryUnitId])) fractions[primaryUnitId] = [];
     onChange({ ...value, units, fractions, shares });
   };
 
@@ -264,7 +275,7 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
               onChange={handleUnitsChange}
               options={options}
               optionsLoading={isLoading}
-              excludeIds={primaryUnitId ? [primaryUnitId] : []}
+              excludeIds={primaryUnitId && !primaryIsFraction ? [primaryUnitId] : []}
               placeholder="Buscar imóveis adicionais..."
             />
             <p className="text-[11px] text-muted-foreground">
@@ -275,15 +286,19 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
           {extraUnits.length > 0 && (
             <div className="space-y-2">
               {extraUnits.map((u) => {
-                const unitSubs = subs.filter((s) => s.unit_id === u.id);
+                const isPrimaryUnit = primaryIsFraction && u.id === primaryUnitId;
+                const unitSubs = subs.filter((s) => s.unit_id === u.id && s.id !== primary.unit_subdivision_id);
                 const fr = value.fractions?.[u.id];
-                const isFractions = Array.isArray(fr);
+                const isFractions = isPrimaryUnit || Array.isArray(fr);
                 const withSubs = hasSubs.get(u.id) || unitSubs.length > 0 || isFractions;
                 return (
                   <div key={u.id} className="bg-card border rounded-md p-2 space-y-2">
                     <p className="text-sm font-medium truncate">{unitLabel(u)}</p>
                     {withSubs ? (
                       <>
+                        {isPrimaryUnit ? (
+                          <p className="text-xs text-muted-foreground">Escolha as outras frações deste imóvel que entram no contrato.</p>
+                        ) : (
                         <RadioGroup
                           value={isFractions ? "fractions" : "whole"}
                           onValueChange={(v) => setMode(u.id, v as "whole" | "fractions")}
@@ -298,10 +313,11 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
                             <Label htmlFor={`fr-${u.id}`} className="text-sm font-normal">Frações</Label>
                           </div>
                         </RadioGroup>
+                        )}
                         {isFractions && (
                           <div className="space-y-1.5 pl-1">
                             {unitSubs.length === 0 && (
-                              <p className="text-xs text-muted-foreground">Carregando frações...</p>
+                              <p className="text-xs text-muted-foreground">{isPrimaryUnit && subs.length ? "Nenhuma outra fração neste imóvel." : "Carregando frações..."}</p>
                             )}
                             {unitSubs.map((s) => (
                               <div key={s.id} className="flex items-center gap-2">
