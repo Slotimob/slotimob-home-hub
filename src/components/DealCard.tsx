@@ -180,7 +180,6 @@ export const DealCard = ({
                   <button
                     type="button"
                     className="block w-full truncate text-left font-inherit rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onPointerDown={(e) => e.stopPropagation()}
                   >
                     {(deal as any).title || deal.lead?.name || 'Sem título'}
                   </button>
