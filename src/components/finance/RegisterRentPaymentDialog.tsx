@@ -70,6 +70,10 @@ export function RegisterRentPaymentDialog({ open, onOpenChange, transaction, onD
   const [accountId, setAccountId] = useState<string>(NO_ACCOUNT);
   const [received, setReceived] = useState("");
   const [kind, setKind] = useState<DifferenceKind | "">("");
+  const [futureConfirmed, setFutureConfirmed] = useState(false);
+  const isFutureDate = !!paidDate && paidDate > todayDateOnly();
+  const isBalance = transaction?.obligation_type === "rent_balance";
+  useEffect(() => { setFutureConfirmed(false); }, [paidDate, open]);
 
   useEffect(() => {
     if (!open || !transaction) return;
@@ -91,6 +95,10 @@ export function RegisterRentPaymentDialog({ open, onOpenChange, transaction, onD
 
   const handleConfirm = async () => {
     if (!transaction) return;
+    if (isFutureDate && !futureConfirmed) {
+      setFutureConfirmed(true);
+      return;
+    }
     if (!(receivedNum > 0)) {
       toast({ title: "Informe o valor recebido", variant: "destructive" });
       return;
@@ -134,6 +142,12 @@ export function RegisterRentPaymentDialog({ open, onOpenChange, transaction, onD
                 <div className="space-y-1.5">
                   <Label htmlFor="rp-date">Data do pagamento</Label>
                   <Input id="rp-date" type="date" className="text-base sm:text-sm" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} />
+                  {isFutureDate && (
+                    <p role="alert" className="flex items-start gap-1.5 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 text-xs text-foreground">
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-warning" />
+                      A data do pagamento é futura. Confirme se o dinheiro já entrou.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Conta</Label>
@@ -155,7 +169,7 @@ export function RegisterRentPaymentDialog({ open, onOpenChange, transaction, onD
               </div>
 
               <div className="rounded-md border bg-card p-3 space-y-1.5">
-                <Row label="Aluguel bruto" value={f(breakdown.rent)} />
+                <Row label={isBalance ? "Saldo em aberto" : "Aluguel bruto"} value={f(breakdown.rent)} />
                 {breakdown.additions > 0 && <Row label="+ Multa/juros e acréscimos" value={f(breakdown.additions)} />}
                 {breakdown.deductions > 0 && <Row label="− Abatimentos" value={f(breakdown.deductions)} />}
                 {breakdown.irrf > 0 && <Row label="− IRRF retido" value={f(breakdown.irrf)} />}
@@ -210,7 +224,7 @@ export function RegisterRentPaymentDialog({ open, onOpenChange, transaction, onD
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleConfirm} disabled={isLoading || settle.isPending}>
             {settle.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Confirmar
+            {isFutureDate && futureConfirmed ? "Confirmar mesmo assim" : "Confirmar"}
           </Button>
         </DialogFooter>
       </DialogContent>

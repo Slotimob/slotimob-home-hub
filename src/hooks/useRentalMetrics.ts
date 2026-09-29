@@ -55,27 +55,40 @@ export function useRentalMetrics(params: {
         if (data && Array.isArray(data) && data.length > 0) brokerIds = data;
       }
 
-      // 2. Fetch rental income transactions in period
-      const { data: txns = [] } = await supabase
-        .from('financial_transactions')
-        .select('id, description, amount, due_date, status, property_id, unit_id, contact_id, asset_expense_category, settlement_group_id, obligation_type')
-        .in('broker_id', brokerIds)
-        .eq('type', 'income')
-        .gte('due_date', fmt(from))
-        .lte('due_date', fmt(to));
+      // 2. Fetch rental income transactions: por vencimento (a receber/atraso)
+      //    e por data do recebimento (recebido no período).
+      const SEL = 'id, description, amount, due_date, paid_date, status, property_id, unit_id, contact_id, asset_expense_category, settlement_group_id, obligation_type';
+      const [{ data: txns = [] }, { data: paidTxns = [] }] = await Promise.all([
+        supabase
+          .from('financial_transactions')
+          .select(SEL)
+          .in('broker_id', brokerIds)
+          .eq('type', 'income')
+          .gte('due_date', fmt(from))
+          .lte('due_date', fmt(to)),
+        supabase
+          .from('financial_transactions')
+          .select(SEL)
+          .in('broker_id', brokerIds)
+          .eq('type', 'income')
+          .eq('status', 'paid')
+          .gte('paid_date', fmt(from))
+          .lte('paid_date', fmt(to)),
+      ]);
 
-      // Filter to rental-related
-      const rentalRaw = txns.filter((t: any) =>
+      const isRental = (t: any) =>
         t.asset_expense_category === 'rental_income' ||
-        (!t.asset_expense_category && t.description?.toLowerCase().includes('aluguel'))
-      );
+        (!t.asset_expense_category && t.description?.toLowerCase().includes('aluguel'));
 
       // Baixa conjunta: o grupo é UM recebimento, representado pela âncora
       // (receita de aluguel). As demais linhas só entram no líquido da âncora.
       const isAnchor = (t: any) =>
         !t.obligation_type || t.obligation_type === 'rent' || t.obligation_type === 'rent_balance';
-      const anchorsOnly = rentalRaw.filter((t: any) => !t.settlement_group_id || isAnchor(t));
-      const groupIds = anchorsOnly
+      const anchorsOf = (list: any[]) =>
+        list.filter(isRental).filter((t: any) => !t.settlement_group_id || isAnchor(t));
+      const dueAnchors = anchorsOf(txns as any[]);
+      const paidAnchors = anchorsOf(paidTxns as any[]);
+      const groupIds = [...dueAnchors, ...paidAnchors]
         .filter((t: any) => t.settlement_group_id)
         .map((t: any) => t.settlement_group_id as string);
       const groups = groupIds.length ? await fetchSettlementGroups(groupIds) : {};
@@ -85,10 +98,12 @@ export function useRentalMetrics(params: {
         const v = Number(t.amount) || 0;
         return { rent: v, additions: 0, deductions: 0, irrf: 0, discounts: 0, otherExpenses: 0, net: v };
       };
-      const rentalTxns = anchorsOnly.map((t: any) => {
-        const b = breakdownOf(t);
-        return { ...t, amount: b.net > 0 ? b.net : t.amount, _breakdown: b };
-      });
+      const withNet = (list: any[]) =>
+        list.map((t: any) => {
+          const b = breakdownOf(t);
+          return { ...t, amount: b.net > 0 ? b.net : t.amount, _breakdown: b };
+        });
+      const rentalTxns = withNet(dueAnchors);
 
       // 3. Aggregate
       const today = new Date();
@@ -96,15 +111,20 @@ export function useRentalMetrics(params: {
       const receivable = { amount: 0, count: 0 };
       const overdueItems: typeof rentalTxns = [];
 
+      // Recebido: pela data do recebimento (paid_date no período).
+      for (const t of withNet(paidAnchors)) {
+        received.amount += Number(t.amount) || 0;
+        received.count++;
+        const b = t._breakdown as SettlementBreakdown;
+        const rb = received.breakdown as any;
+        for (const k of Object.keys(rb)) rb[k] += Number((b as any)[k]) || 0;
+      }
+
+      // A receber / em atraso: pelo vencimento.
       for (const t of rentalTxns) {
         const amt = Number(t.amount) || 0;
-        if (t.status === 'paid') {
-          received.amount += amt;
-          received.count++;
-          const b = t._breakdown as SettlementBreakdown;
-          const rb = received.breakdown as any;
-          for (const k of Object.keys(rb)) rb[k] += Number((b as any)[k]) || 0;
-        } else if (t.status === 'overdue' || (t.status === 'pending' && t.due_date && t.due_date < todayDateOnly())) {
+        if (t.status === 'paid') continue;
+        if (t.status === 'overdue' || (t.status === 'pending' && t.due_date && t.due_date < todayDateOnly())) {
           overdueItems.push(t);
         } else if (t.status === 'pending') {
           receivable.amount += amt;

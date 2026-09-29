@@ -44,7 +44,7 @@ interface EditLine {
   amount: string;
 }
 
-const SELECT = "id, type, amount, obligation_type, status, bank_account_id, settlement_group_id, description, is_reconciled";
+const SELECT = "id, type, amount, obligation_type, status, bank_account_id, settlement_group_id, description, is_reconciled, metadata";
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const num = (v: string) => round2(parseFloat(parseInputValue(v || "0")) || 0);
 const isRent = (l: any) => l.type === "income" && (!l.obligation_type || ["rent", "rent_balance"].includes(l.obligation_type));
@@ -165,6 +165,18 @@ export function RentCompositionDialog({ open, onOpenChange, transactionId, onDon
               <div className="space-y-1.5">
                 <Label htmlFor="rc-rent">Aluguel bruto</Label>
                 <CurrencyInput id="rc-rent" className="text-base sm:text-sm" value={rent} onChange={setRent} />
+                {(() => {
+                  const md = (data?.anchor?.metadata || {}) as Record<string, any>;
+                  const gross = Number(md.gross_amount) || 0;
+                  const monthValue = Number(md.original_amount) || Number(data?.anchor?.amount) || 0;
+                  if (!(gross > monthValue + 0.004)) return null;
+                  const pct = Math.round((1 - monthValue / gross) * 100);
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      Contratual {f(gross)} − carência {pct}% = {f(monthValue)}
+                    </p>
+                  );
+                })()}
               </div>
 
               <div className="space-y-2">

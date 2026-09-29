@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreateTransactionDialog } from "./CreateTransactionDialog";
 import { TransactionCard } from "./TransactionCard";
-import { useSettlementGroups, settlementBreakdown, describeSettlement, markPaidWithSettlement, settlementAnchor } from "@/lib/settlement-group";
+import { useSettlementGroups, useRentBalanceLines, rentMonthSummary, collectRentMonthLines, settlementBreakdown, describeSettlement, markPaidWithSettlement, settlementAnchor } from "@/lib/settlement-group";
 import { rentSettlementLabel } from "@/lib/obligation-labels";
 import { SettlementBreakdownPopover } from "./SettlementBreakdownPopover";
 import { RegisterRentPaymentDialog } from "./RegisterRentPaymentDialog";
@@ -277,8 +277,16 @@ export function TransactionsTableInfinite({
     (!t.obligation_type || ["rent", "rent_balance"].includes(t.obligation_type)) &&
     (!!t.lease_id || String(t.reference || "").startsWith("lease:"));
   const canRentComposition = (t: any) => isRentLeaseLine(t) || !!t.settlement_group_id;
+  const partialAnchorIds = transactions
+    .filter((t: any) => t.type === "income" && (t.metadata as any)?.partial_payment)
+    .map((t) => t.id);
+  const { data: rentBalances = {} } = useRentBalanceLines(partialAnchorIds);
   const anchorBreakdownFor = (t: any) => {
     const lines = groupLinesOf(t);
+    const extra = rentBalances[t.id];
+    if (extra?.length) {
+      return rentMonthSummary(t, collectRentMonthLines(t, lines || [], extra));
+    }
     if (!lines || lines.length < 2 || settlementAnchor(lines)?.id !== t.id) return null;
     return settlementBreakdown(lines);
   };

@@ -17,10 +17,12 @@ export interface SettlementLine {
   bank_account_id?: string | null;
   settlement_group_id?: string | null;
   description?: string | null;
+  paid_date?: string | null;
+  metadata?: Record<string, any> | null;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
-const SELECT = "id, type, amount, obligation_type, status, bank_account_id, settlement_group_id, description";
+const SELECT = "id, type, amount, obligation_type, status, bank_account_id, settlement_group_id, description, paid_date, metadata";
 
 /** Σ receitas − Σ despesas (linhas canceladas são ignoradas). */
 export function settlementNet(lines: SettlementLine[]): number {
@@ -186,4 +188,101 @@ export async function markPaidWithSettlement(
     .select("id");
   if (error) throw error;
   return { count: data?.length || 0, grouped: groupCount > 0 };
+}
+
+// ---------------------------------------------------------------------------
+// Mês de aluguel completo: grupo da âncora + saldos de pagamento parcial
+// (`rent_balance` com metadata.balance_of = âncora) + grupos desses saldos.
+// ---------------------------------------------------------------------------
+
+export interface RentMonthReceipt {
+  date: string;
+  amount: number;
+}
+
+export interface RentMonthSummary extends SettlementBreakdown {
+  /** Bruto do mês: metadata.original_amount da âncora (parcial) ou soma do aluguel. */
+  gross: number;
+  /** Recebimentos agrupados por paid_date (líquido), em ordem crescente. */
+  receipts: RentMonthReceipt[];
+  /** Líquido ainda pendente. */
+  openBalance: number;
+  /** Houve saldo/pagamento parcial neste mês. */
+  hasBalance: boolean;
+}
+
+/** Linhas de saldo da âncora e as linhas dos grupos desses saldos (sem duplicar). */
+export function collectRentMonthLines(
+  anchor: SettlementLine,
+  anchorGroup: SettlementLine[],
+  balanceLines: SettlementLine[]
+): SettlementLine[] {
+  const map = new Map<string, SettlementLine>();
+  [anchor, ...anchorGroup, ...balanceLines].forEach((l) => l && map.set(l.id, l));
+  return Array.from(map.values());
+}
+
+export function rentMonthSummary(anchor: SettlementLine, lines: SettlementLine[]): RentMonthSummary {
+  const active = lines.filter((l) => l.status !== "cancelled");
+  const b = settlementBreakdown(active);
+  const original = Number(anchor.metadata?.original_amount);
+  const gross = anchor.metadata?.partial_payment && original > 0 ? round2(original) : b.rent;
+  const byDate = new Map<string, number>();
+  let open = 0;
+  for (const l of active) {
+    const v = (l.type === "income" ? 1 : -1) * (Number(l.amount) || 0);
+    if (l.status === "paid") {
+      const d = l.paid_date || "";
+      byDate.set(d, (byDate.get(d) || 0) + v);
+    } else {
+      open += v;
+    }
+  }
+  const receipts = Array.from(byDate.entries())
+    .map(([date, amount]) => ({ date, amount: round2(amount) }))
+    .filter((r) => Math.abs(r.amount) >= 0.005)
+    .sort((a, b2) => a.date.localeCompare(b2.date));
+  return {
+    ...b,
+    gross,
+    receipts,
+    openBalance: round2(open),
+    hasBalance: active.some((l) => l.obligation_type === "rent_balance"),
+  };
+}
+
+/**
+ * Busca de uma vez (2 queries no máximo) os saldos das âncoras e os grupos
+ * desses saldos. Retorna { [anchorId]: linhas extras }.
+ */
+export async function fetchRentBalanceLines(anchorIds: string[]): Promise<Record<string, SettlementLine[]>> {
+  const ids = Array.from(new Set(anchorIds.filter(Boolean)));
+  if (ids.length === 0) return {};
+  const { data, error } = await supabase
+    .from("financial_transactions")
+    .select(SELECT)
+    .eq("obligation_type", "rent_balance")
+    .in("metadata->>balance_of", ids)
+    .neq("status", "cancelled");
+  if (error) throw error;
+  const balances = (data || []) as SettlementLine[];
+  const groups = await fetchSettlementGroups(balances.map((b) => b.settlement_group_id as string));
+  const out: Record<string, SettlementLine[]> = {};
+  for (const bl of balances) {
+    const key = bl.metadata?.balance_of as string;
+    const extra = bl.settlement_group_id ? groups[bl.settlement_group_id] || [bl] : [bl];
+    (out[key] ||= []).push(...extra);
+    if (!extra.some((l) => l.id === bl.id)) out[key].push(bl);
+  }
+  return out;
+}
+
+export function useRentBalanceLines(anchorIds: (string | null | undefined)[]) {
+  const ids = Array.from(new Set(anchorIds.filter(Boolean) as string[])).sort();
+  return useQuery({
+    queryKey: ["settlement-groups", "rent-balances", ids.join(",")],
+    queryFn: () => fetchRentBalanceLines(ids),
+    enabled: ids.length > 0,
+    staleTime: 30_000,
+  });
 }
