@@ -40,7 +40,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
  
- interface ContractGeneratorDialogProps {
+ /** P4: nacionalidade de contacts.metadata.nacionalidade (padrão 'brasileiro(a)'). */
+const nationalityOf = (metadata: any): string => {
+  const v = metadata && typeof metadata === 'object' ? String(metadata.nacionalidade || '').trim() : '';
+  return v || 'brasileiro(a)';
+};
+
+interface ContractGeneratorDialogProps {
    open: boolean;
    onOpenChange: (open: boolean) => void;
    unitId: string;
@@ -81,7 +87,7 @@ import {
        if (!unitData?.owner_contact_id) return null;
        const { data } = await supabase
          .from("contacts")
-         .select("name, document_number, address, city, state, phone, email, postal_code")
+         .select("name, document_number, address, city, state, phone, email, postal_code, metadata")
          .eq("id", unitData.owner_contact_id)
          .single();
        return data;
@@ -134,7 +140,7 @@ import {
        
        const { data: tenant } = await supabase
          .from("contacts")
-         .select("name, document_number, address, city, state, phone, email, postal_code")
+         .select("name, document_number, address, city, state, phone, email, postal_code, metadata")
          .eq("id", lease.tenant_contact_id)
          .single();
        
@@ -294,7 +300,7 @@ import {
         cep: ownerContact?.postal_code || '',
         telefone: ownerContact?.phone || '',
         email: ownerContact?.email || '',
-        nacionalidade: 'brasileiro(a)',
+        nacionalidade: nationalityOf((ownerContact as any)?.metadata),
       },
       locatario: {
         nome: activeLease?.tenant?.name || '',
@@ -305,7 +311,7 @@ import {
         cep: activeLease?.tenant?.postal_code || '',
         telefone: activeLease?.tenant?.phone || '',
         email: activeLease?.tenant?.email || '',
-        nacionalidade: 'brasileiro(a)',
+        nacionalidade: nationalityOf((activeLease?.tenant as any)?.metadata),
       },
       fiador: guaranteeType === 'fiador' && savedGuarantorData?.nome ? {
         nome: savedGuarantorData.nome || '',
@@ -315,7 +321,7 @@ import {
         cidade: savedGuarantorData.cidade || '',
         estado: savedGuarantorData.estado || '',
         profissao: savedGuarantorData.profissao || '',
-        nacionalidade: 'brasileiro(a)',
+        nacionalidade: (savedGuarantorData.nacionalidade || '').trim() || 'brasileiro(a)',
         estadoCivil: savedGuarantorData.estadoCivil || '',
       } : undefined,
       imovel: {
