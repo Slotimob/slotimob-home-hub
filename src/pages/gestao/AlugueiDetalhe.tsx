@@ -1,3 +1,4 @@
+import { PROPERTY_TYPE_LABELS } from "@/utils/uiConstants";
 import { useSettlementGroups, useRentBalanceLines, collectRentMonthLines, rentMonthSummary, compositionKindOf } from "@/lib/settlement-group";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -766,7 +767,7 @@ const AlugueiDetalhe = () => {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground text-xs">Tipo</p>
-                    <p className="font-medium">{unitData?.property_type || "—"}</p>
+                    <p className="font-medium">{unitData?.property_type ? (PROPERTY_TYPE_LABELS[unitData.property_type] ?? unitData.property_type) : "—"}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Área</p>
