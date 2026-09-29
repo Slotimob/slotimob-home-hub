@@ -1,3 +1,5 @@
+import { useUnitsAvailability } from '@/hooks/useUnitsAvailability';
+import { unitAvailability, freeFractionsLabel } from '@/lib/unit-availability';
 import { useDraggable } from '@dnd-kit/core';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -113,7 +115,15 @@ export const DealCard = ({
   const timeLabel = getTimeInStageLabel();
   const isRotting = isLeadRotting();
   const hasNoTasks = pendingTasksCount === 0 && overdueTasksCount === 0;
-  const isUnitUnavailable = unitStatus && (unitStatus === 'sold' || unitStatus === 'rented');
+  // W19/CRM15: imóvel com frações só é "indisponível" quando todas estão ocupadas
+  const dealUnitId = (deal as any).unit_id || (deal as any).unit?.id;
+  const { data: subsByUnit } = useUnitsAvailability(unitStatus === 'rented' ? [dealUnitId] : []);
+  const dealSubs = dealUnitId ? subsByUnit?.[dealUnitId] : undefined;
+  const availability = unitStatus
+    ? unitAvailability({ status: unitStatus, has_subdivisions: !!dealSubs?.length }, dealSubs)
+    : null;
+  const isUnitUnavailable = !!availability && (availability.kind === 'sold' || availability.kind === 'rented');
+  const isUnitPartial = availability?.kind === 'partial';
 
   // Temperature
   const temperature = (deal as any).temperature as 'hot' | 'warm' | 'cold' | undefined;
@@ -149,6 +159,11 @@ export const DealCard = ({
             <AlertCircle className="h-3 w-3 flex-shrink-0" />
             <span className="font-medium">Imóvel não disponível</span>
           </div>
+        )}
+        {isUnitPartial && (
+          <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-normal" title={availability.label}>
+            {freeFractionsLabel(availability)}
+          </Badge>
         )}
 
         {/* Header: name + temp badge */}
