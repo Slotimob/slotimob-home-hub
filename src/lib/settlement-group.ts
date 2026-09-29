@@ -1,4 +1,4 @@
-import { useQuery , keepPreviousData} from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrencyBRL } from "@/utils/unitPricing";
 
