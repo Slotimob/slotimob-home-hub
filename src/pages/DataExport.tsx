@@ -418,8 +418,8 @@ const DataExport = () => {
                                 </Button>
                               )}
                               {canCancel && (
-                                <Button size="sm" variant="ghost" className="text-xs h-7 text-destructive" onClick={() => setCancelId(r.id)}>
-                                  <XCircle className="h-3 w-3" />
+                                <Button aria-label="Cancelar exportação" size="sm" variant="ghost" className="text-xs h-7 text-destructive" onClick={() => setCancelId(r.id)}>
+                                  <XCircle aria-hidden="true" className="h-3 w-3" />
                                 </Button>
                               )}
                             </div>

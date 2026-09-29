@@ -364,8 +364,8 @@ export default function DocumentTemplateEditor() {
     <AppLayout title="Editor de Modelo">
       <div className="flex flex-col h-[calc(100vh-8rem)] min-h-0">
         <div className="flex items-center gap-3 px-1 pb-3 shrink-0">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/documents/templates')}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button aria-label="Voltar para modelos" variant="ghost" size="sm" onClick={() => navigate('/documents/templates')}>
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </Button>
           <FileText className="h-5 w-5 text-primary shrink-0" />
           <h2 className="text-base sm:text-lg font-semibold truncate">{template.name}</h2>

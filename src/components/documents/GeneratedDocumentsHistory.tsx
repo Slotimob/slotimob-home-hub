@@ -416,29 +416,29 @@ export function GeneratedDocumentsHistory() {
                       <FileEdit className="mr-1 h-3 w-3" />
                       Continuar
                     </Button>
-                    <Button
+                    <Button aria-label="Baixar documento"
                       variant="outline"
                       size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => handleDownload(doc)}
                     >
-                      <Download className="h-3 w-3" />
+                      <Download aria-hidden="true" className="h-3 w-3" />
                     </Button>
-                    <Button
+                    <Button aria-label="Enviar documento"
                       variant="outline"
                       size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => setSendDoc(doc)}
                     >
-                      <Send className="h-3 w-3" />
+                      <Send aria-hidden="true" className="h-3 w-3" />
                     </Button>
-                    <Button
+                    <Button aria-label="Excluir documento"
                       variant="destructive"
                       size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => setDeleteDoc(doc)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 aria-hidden="true" className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardContent>

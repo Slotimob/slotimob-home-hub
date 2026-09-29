@@ -429,14 +429,14 @@ const AfazeresEmGestao = () => {
                               {brl(r.amount)}
                             </span>
                             {canEdit && (
-                              <Button
+                              <Button aria-label="Cobrar via WhatsApp"
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 w-7 p-0"
                                 title="Cobrar via WhatsApp"
                                 onClick={() => collectReceivable(r)}
                               >
-                                <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+                                <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 text-emerald-600" />
                               </Button>
                             )}
                           </>
@@ -647,7 +647,7 @@ const AfazeresEmGestao = () => {
                         danger={item.stage === "overdue"}
                         right={
                           canEdit ? (
-                            <Button
+                            <Button aria-label="Cobrar via WhatsApp"
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0"
@@ -658,7 +658,7 @@ const AfazeresEmGestao = () => {
                                 )
                               }
                             >
-                              <Send className="h-3.5 w-3.5 text-emerald-600" />
+                              <Send aria-hidden="true" className="h-3.5 w-3.5 text-emerald-600" />
                             </Button>
                           ) : undefined
                         }
