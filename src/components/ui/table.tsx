@@ -2,9 +2,15 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto bg-card">
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement> & { /** Nome da região rolável: torna o contêiner focável por teclado. */ containerLabel?: string }
+>(
+  ({ className, containerLabel, ...props }, ref) => (
+    <div
+      className="relative w-full overflow-auto bg-card"
+      {...(containerLabel ? { tabIndex: 0, role: "region", "aria-label": containerLabel } : {})}
+    >
       <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   ),

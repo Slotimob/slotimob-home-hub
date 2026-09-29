@@ -809,8 +809,8 @@ export function ContractsTab() {
         ) : (
           // Desktop: Table View
           <Card>
-            <ScrollArea className="w-full">
-              <Table>
+            <div className="w-full">
+              <Table containerLabel="Lista de contratos">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px]">Imóvel</TableHead>
@@ -1115,7 +1115,7 @@ export function ContractsTab() {
                   )}
                 </TableBody>
               </Table>
-            </ScrollArea>
+            </div>
           </Card>
         )}
       </TableErrorBoundary>
