@@ -2723,6 +2723,7 @@ export default function NovoContrato() {
         open={createTenantOpen}
         onOpenChange={setCreateTenantOpen}
         defaultCategory={"Inquilino" as any}
+        hideUnitLink
         onSuccess={async (c) => {
           await queryClient.invalidateQueries({ queryKey: ["contacts-tenants"] });
           if (c?.id) setFormData((prev) => ({ ...prev, tenant_contact_id: c.id }));

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { focusFirstInvalid } from "@/lib/form-errors";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +65,8 @@ export function CreateTransactionDialog({
 }: CreateTransactionDialogProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ description?: boolean; amount?: boolean; category?: boolean }>({});
+  const formContentRef = useRef<HTMLDivElement>(null);
   const { effectiveBrokerId } = useWorkspace();
   const { isOwner, hasPermission } = usePermissions();
   
@@ -182,6 +185,27 @@ export function CreateTransactionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode !== "transfer") {
+      const missing = {
+        description: !formData.description.trim(),
+        amount: !(parseFloat(formData.amount) > 0),
+        category: !editTransaction && !formData.categoryId,
+      };
+      if (missing.description || missing.amount || missing.category) {
+        setFieldErrors(missing);
+        focusFirstInvalid(formContentRef.current);
+        toast({
+          title: missing.description
+            ? "Informe a descrição do lançamento"
+            : missing.amount
+              ? "Informe o valor do lançamento"
+              : "Escolha a categoria para criar o lançamento",
+          variant: "destructive",
+        });
+        return;
+      }
+      setFieldErrors({});
+    }
     setIsLoading(true);
 
     try {
@@ -358,6 +382,7 @@ export function CreateTransactionDialog({
   };
 
   const resetForm = () => {
+    setFieldErrors({});
     setFormData({
       description: "",
       amount: "",
@@ -391,7 +416,7 @@ export function CreateTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+      <DialogContent ref={formContentRef} className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle>
             {editTransaction 
@@ -416,7 +441,7 @@ export function CreateTransactionDialog({
             </Alert>
           )}
 
-          <form id="transaction-form" onSubmit={handleSubmit} className="space-y-6">
+          <form id="transaction-form" onSubmit={handleSubmit} noValidate className="space-y-6">
             <fieldset disabled={!canEdit || isReconciled} className="space-y-6">
               {/* Type Selector - 3 tabs */}
               <Tabs value={mode} onValueChange={(v) => setMode(v as "income" | "expense" | "transfer")}>
@@ -455,9 +480,15 @@ export function CreateTransactionDialog({
                     id="description"
                     placeholder="Ex: Comissão venda apt 101"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, description: e.target.value });
+                      if (fieldErrors.description) setFieldErrors((p) => ({ ...p, description: false }));
+                    }}
                     required
+                    aria-invalid={!!fieldErrors.description}
+                    className={fieldErrors.description ? "border-destructive" : undefined}
                   />
+                  {fieldErrors.description && <p className="text-xs text-destructive">Informe a descrição.</p>}
                 </div>
 
                 {/* Amount + Unit - 2 col grid, aligned by input base */}
@@ -468,10 +499,15 @@ export function CreateTransactionDialog({
                       id="amount"
                       placeholder="0,00"
                       value={formData.amount}
-                      onChange={(value) => setFormData({ ...formData, amount: value })}
+                      onChange={(value) => {
+                        setFormData({ ...formData, amount: value });
+                        if (fieldErrors.amount) setFieldErrors((p) => ({ ...p, amount: false }));
+                      }}
                       disabled={isReconciled}
-                      className={cn("h-10", isReconciled ? "bg-muted cursor-not-allowed" : "")}
+                      aria-invalid={!!fieldErrors.amount}
+                      className={cn("h-10", isReconciled ? "bg-muted cursor-not-allowed" : "", fieldErrors.amount && "border-destructive")}
                     />
+                    {fieldErrors.amount && <p className="text-xs text-destructive">Informe o valor.</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -582,12 +618,19 @@ export function CreateTransactionDialog({
                     </div>
                     <Select
                       value={formData.categoryId}
-                      onValueChange={(v) => setFormData({ ...formData, categoryId: v })}
+                      onValueChange={(v) => {
+                        setFormData({ ...formData, categoryId: v });
+                        if (fieldErrors.category) setFieldErrors((p) => ({ ...p, category: false }));
+                      }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger
+                        aria-label="Categoria"
+                        aria-invalid={!!fieldErrors.category}
+                        className={fieldErrors.category ? "border-destructive" : undefined}
+                      >
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
+                      <SelectContent className="max-h-[min(60vh,320px)] overflow-y-auto">
                         {categories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             <div className="flex items-center gap-2">
@@ -602,6 +645,7 @@ export function CreateTransactionDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    {fieldErrors.category && <p className="text-xs text-destructive">Escolha a categoria.</p>}
                     {formData.categoryId && categories.find(c => c.id === formData.categoryId)?.name?.toLowerCase().includes("repasse") && (
                       <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         <HelpCircle className="h-3 w-3 flex-shrink-0" />
