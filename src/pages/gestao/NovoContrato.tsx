@@ -2413,7 +2413,7 @@ export default function NovoContrato() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label>CIB (Cadastro Imobiliário Brasileiro)</Label>
+                  <Label htmlFor="novocontrato-cib">CIB (Cadastro Imobiliário Brasileiro)</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2429,6 +2429,7 @@ export default function NovoContrato() {
                   </TooltipProvider>
                 </div>
                 <Input
+                  id="novocontrato-cib"
                   value={formData.cib}
                   onChange={(e) => setFormData({ ...formData, cib: e.target.value })}
                   placeholder="Ex: 0000.0000.0000.0000-00"
