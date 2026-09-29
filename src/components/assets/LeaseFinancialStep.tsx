@@ -321,6 +321,7 @@ export function LeaseFinancialStep({
   ownerContact,
   header,
   adjustmentLocked = false,
+  tenantDocument,
 }: LeaseFinancialStepProps) {
   const [adjustmentTouched, setAdjustmentTouched] = useState(adjustmentLocked);
   const suggestedRef = useRef<string>("");
