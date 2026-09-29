@@ -88,6 +88,7 @@ import { defaultLeasePurpose, type LeasePurpose } from "@/lib/lease-purpose";
 import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
 import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
+import { useLiveLeaseRefs } from "@/hooks/useLiveLeaseRefs";
 import { supabase } from "@/integrations/supabase/client";
 import { parseDateOnly, formatDateOnly } from "@/lib/date-only";
 import { formatCurrencyBRL } from "@/utils/unitPricing";
@@ -370,6 +371,23 @@ export default function NovoContrato() {
     unitSubdivisionFlag ? effectiveUnitId : ""
   );
   const showSubdivisionSelect = !!unitSubdivisionFlag && subdivisions.length > 0;
+
+  // Contratos vivos (active/pending) no imóvel principal — o próprio contrato não conta na edição
+  const { wholeUnitBusy, busySubdivisionIds } = useLiveLeaseRefs(effectiveUnitId || null, editLeaseId);
+  const anyFractionBusy = subdivisions.some((s) => busySubdivisionIds.has(s.id));
+  const wholeOptionBusy = wholeUnitBusy || anyFractionBusy;
+  const primarySelectionBusy = !effectiveUnitId
+    ? false
+    : showSubdivisionSelect
+      ? formData.unit_subdivision_id
+        ? busySubdivisionIds.has(formData.unit_subdivision_id) || wholeUnitBusy
+        : wholeOptionBusy
+      : wholeUnitBusy || (!!formData.unit_subdivision_id && busySubdivisionIds.has(formData.unit_subdivision_id));
+  // Fração ocupada selecionada (ex.: veio do link): limpa a seleção
+  useEffect(() => {
+    const id = formData.unit_subdivision_id;
+    if (id && busySubdivisionIds.has(id)) setFormData((prev) => ({ ...prev, unit_subdivision_id: null }));
+  }, [busySubdivisionIds, formData.unit_subdivision_id]);
 
   // Link "Criar contrato" de uma fração: ?unitId=<id>&subdivisionId=<id>
   const subdivisionIdParam = searchParams.get("subdivisionId");
@@ -966,10 +984,22 @@ export default function NovoContrato() {
     return null;
   };
 
+  const LIVE_LEASE_ERR = "já tem contrato ativo";
+  const handleLiveLeaseError = (msg: string | null | undefined) => {
+    if (!msg || !msg.includes(LIVE_LEASE_ERR)) return false;
+    toast({
+      title: "Imóvel ou fração já tem contrato ativo",
+      description: "Escolha uma fração livre ou encerre o contrato atual antes.",
+      variant: "destructive",
+    });
+    setStep("unit");
+    return true;
+  };
+
   const canProceed = () => {
     switch (step) {
       case "unit":
-        return !!effectiveUnitId && !leaseSharesError;
+        return !!effectiveUnitId && !leaseSharesError && !primarySelectionBusy;
       case "tenant":
         return !!formData.tenant_contact_id;
       case "financial": {
@@ -1200,6 +1230,7 @@ export default function NovoContrato() {
 
         const unitsError = await saveLeaseUnits(editLease.id);
         if (unitsError) {
+          if (handleLiveLeaseError(unitsError)) return;
           toast({ title: "Erro nos imóveis do contrato", description: unitsError, variant: "destructive" });
           setStep("unit");
           return;
@@ -1258,7 +1289,7 @@ export default function NovoContrato() {
           const unitsError = await saveLeaseUnits(resultId);
           if (unitsError) {
             // O contrato já existe: segue em modo edição, na etapa Imóvel, para corrigir
-            toast({
+            if (!handleLiveLeaseError(unitsError)) toast({
               title: "Contrato criado, mas os imóveis adicionais não foram salvos",
               description: unitsError,
               variant: "destructive",
@@ -1365,6 +1396,7 @@ export default function NovoContrato() {
         navigate("/gestao/contratos");
       }
     } catch (error) {
+      if (handleLiveLeaseError(error instanceof Error ? error.message : (error as any)?.message)) return;
       toast({
         title: isEditMode ? "Erro ao atualizar contrato" : "Erro ao criar contrato",
         description: error instanceof Error ? error.message : (error as any)?.message || "Verifique os campos e tente novamente",
@@ -1613,7 +1645,7 @@ export default function NovoContrato() {
                   <div className="space-y-2">
                     <Label htmlFor="wizard-fraction">Fração do imóvel principal</Label>
                     <Select
-                      value={formData.unit_subdivision_id ?? "none"}
+                      value={primarySelectionBusy ? "" : formData.unit_subdivision_id ?? "none"}
                       onValueChange={(v) => {
                         const id = v === "none" ? null : v;
                         const fraction = subdivisions.find((s) => s.id === id);
@@ -1631,20 +1663,32 @@ export default function NovoContrato() {
                         <SelectValue placeholder="Imóvel inteiro" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
+                        <SelectItem value="none" disabled={wholeOptionBusy}>
+                          Imóvel inteiro (sem fração){wholeOptionBusy ? " (há frações alugadas)" : ""}
+                        </SelectItem>
                         {subdivisions.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
+                          <SelectItem key={s.id} value={s.id} disabled={busySubdivisionIds.has(s.id) || wholeUnitBusy}>
                             {s.label}
                             {s.area != null ? ` — ${s.area}m²` : ""}
+                            {busySubdivisionIds.has(s.id) ? " (alugada)" : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {primarySelectionBusy && (
+                      <p className="text-xs text-destructive" role="alert">
+                        Esta fração/imóvel já tem contrato ativo. Escolha uma fração livre ou encerre o contrato atual.
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       Opcional. Selecione a fração quando o contrato for de apenas uma parte do
                       imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
                     </p>
                   </div>
+                ) : primarySelectionBusy ? (
+                  <p className="text-xs text-destructive" role="alert">
+                    Esta fração/imóvel já tem contrato ativo. Escolha uma fração livre ou encerre o contrato atual.
+                  </p>
                 ) : null
               )}
 

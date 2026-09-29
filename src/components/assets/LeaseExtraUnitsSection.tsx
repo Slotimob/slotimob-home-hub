@@ -194,7 +194,10 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
     enabled: value.enabled && extraRefs.length > 0,
   });
 
-  const shareError = validateExtraUnits(primary, value);
+  const shareError =
+    busyKeys.length > 0
+      ? "Imóveis ou frações com contrato ativo não podem entrar em outro contrato."
+      : validateExtraUnits(primary, value);
   const total = round2(keys.reduce((s, k) => s + (Number(value.shares[k]) || 0), 0));
   const unitName = (id: string) => {
     if (id === primaryUnitId) return primaryLabel;
@@ -304,6 +307,7 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
                               <div key={s.id} className="flex items-center gap-2">
                                 <Checkbox
                                   id={`sub-${s.id}`}
+                                  disabled={s.occupied && !(fr || []).includes(s.id)}
                                   checked={(fr || []).includes(s.id)}
                                   onCheckedChange={(c) => toggleFraction(u.id, s, c === true)}
                                 />
@@ -333,7 +337,7 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
               <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
               <AlertDescription className="text-xs">
                 Já possui outro contrato ativo ou pendente:{" "}
-                {extraRefs.filter((r) => busyKeys.includes(leaseUnitRefKey(r))).map(refLabel).join(", ")}. Você pode continuar mesmo assim.
+                {extraRefs.filter((r) => busyKeys.includes(leaseUnitRefKey(r))).map(refLabel).join(", ")}. Imóveis ou frações com contrato ativo não podem entrar em outro contrato.
               </AlertDescription>
             </Alert>
           )}
