@@ -21,7 +21,7 @@ async function asaasRequest(path: string, method = "GET", body?: unknown) {
   const data = await res.json();
   if (!res.ok) {
     const errMsg = data?.errors?.[0]?.description || `Asaas API error ${res.status}`;
-    console.error("[Asaas]", path, errMsg, JSON.stringify(data));
+    console.error("[create-checkout-session] Asaas", path, errMsg, JSON.stringify(data));
     throw new AsaasApiError(errMsg);
   }
   return data;
@@ -147,11 +147,11 @@ serve(async (req) => {
       .gte("window_start", rlWindowStart);
 
     if (rlError) {
-      console.error("[checkout] erro ao consultar rate_limits:", rlError.message);
+      console.error("[create-checkout-session] erro ao consultar rate_limits:", rlError.message);
     }
 
     if ((recentAttempts?.length ?? 0) >= 5) {
-      console.log("[checkout] rate limit atingido");
+      console.log("[create-checkout-session] rate limit atingido");
       return new Response(JSON.stringify({
         error: "Muitas tentativas de pagamento. Aguarde alguns minutos."
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -167,7 +167,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const { product_type, plan_id, billing_cycle, billing_type, addon_id, credit_pack_id } = body;
-    console.log("[checkout] body recebido:", JSON.stringify({ product_type, plan_id, billing_cycle, billing_type }));
+    console.log("[create-checkout-session] body recebido:", JSON.stringify({ product_type, plan_id, billing_cycle, billing_type }));
 
     // Só PIX ou cartão de crédito (ausente → PIX)
     const billingType: "PIX" | "CREDIT_CARD" | null =
@@ -261,7 +261,7 @@ serve(async (req) => {
 
       const planName = plan_id.charAt(0).toUpperCase() + plan_id.slice(1);
       const asaasBillingType = billingType;
-      console.log("[checkout] billing_type recebido:", billing_type, "→ usando:", asaasBillingType);
+      console.log("[create-checkout-session] billing_type recebido:", billing_type, "→ usando:", asaasBillingType);
       // ── Troca de plano (qualquer direção): cancelar subscription Asaas anterior ──
       const isPlanChange = !!subscription?.asaas_subscription_id && subscription?.plan_id !== plan_id;
 
@@ -387,7 +387,7 @@ serve(async (req) => {
 
 
       if (subUpdateError) {
-        console.error("[checkout] falha ao salvar assinatura local:", subUpdateError);
+        console.error("[create-checkout-session] falha ao salvar assinatura local:", subUpdateError);
       }
 
       // PIX: buscar QR code inline
@@ -422,11 +422,11 @@ serve(async (req) => {
           const paymentsData = await asaasRequest(`/subscriptions/${sub.id}/payments`);
           const firstPayment = paymentsData?.data?.[0];
           if (firstPayment) {
-            invoiceUrl = firstPayment.invoiceUrl || firstPayment.bankSlipUrl || null;
+            invoiceUrl = firstPayment.invoiceUrl || null;
             if (invoiceUrl) break;
           }
         } catch (payErr) {
-          console.warn("[checkout] falha ao buscar pagamento da assinatura:", payErr instanceof Error ? payErr.message : payErr);
+          console.warn("[create-checkout-session] falha ao buscar pagamento da assinatura:", payErr instanceof Error ? payErr.message : payErr);
         }
         if (attempt < 4) await new Promise(r => setTimeout(r, 1500));
       }
