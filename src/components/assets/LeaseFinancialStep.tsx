@@ -570,7 +570,7 @@ export function LeaseFinancialStep({
   const typicalNetRent = typicalSettlement?.net ?? typicalGross;
 
   const totalTenant = round2(typicalNetRent + tenantCharges);
-  const netToOwner = round2(typicalGross - typicalDeductions - typicalIrrf - adminFeeAmount + ownerCharges);
+  const netToOwner = round2(typicalNetRent - adminFeeAmount - ownerCharges);
 
   return (
     <div className="space-y-4">
@@ -1031,85 +1031,83 @@ export function LeaseFinancialStep({
         onChange={onChange}
       />
 
-      {/* Resumo — mês típico (1ª competência sem carência) */}
-      <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-        {typicalRent && (
-          <p className="text-[11px] text-muted-foreground pb-0.5">Mês típico: {typicalRent.competencyLabel}</p>
-        )}
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Aluguel bruto</span>
-          <span className="font-medium">{formatCurrency(typicalGross)}</span>
-        </div>
-        {rentGrace.enabled && graceInfo.label && (
-          <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">(−) Carência ({graceInfo.label})</span>
-            <span className="font-medium text-destructive whitespace-nowrap">
-              −{formatCurrency(graceDiscountTotal)} no período
-            </span>
-          </div>
-        )}
-        {typicalDeductions > 0 && (
+      {/* Resumo — mês típico (1ª competência sem carência), separado por parte */}
+      <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-3">
+        <div className="space-y-1">
+          <p className="font-semibold">
+            O inquilino paga (mês típico{typicalRent ? `: ${typicalRent.competencyLabel}` : ""})
+          </p>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">(−) Abatimentos do mês</span>
-            <span className="font-medium text-destructive">−{formatCurrency(typicalDeductions)}</span>
+            <span className="text-muted-foreground">Aluguel bruto</span>
+            <span className="font-medium">{formatCurrency(typicalGross)}</span>
           </div>
-        )}
-        {typicalIrrf > 0 && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">(−) IRRF retido</span>
-            <span className="font-medium text-destructive">−{formatCurrency(typicalIrrf)}</span>
+          {typicalDeductions > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">(−) Abatimentos do mês</span>
+              <span className="font-medium text-destructive">−{formatCurrency(typicalDeductions)}</span>
+            </div>
+          )}
+          {typicalIrrf > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">(−) IRRF retido</span>
+              <span className="font-medium text-destructive">−{formatCurrency(typicalIrrf)}</span>
+            </div>
+          )}
+          {chargeLines
+            .filter((l) => l.charge_to === "tenant")
+            .map((line) => (
+              <div key={line.key} className="flex justify-between">
+                <span className="text-muted-foreground">(+) {line.label}</span>
+                <span className="font-medium">+{formatCurrency(line.amount)}</span>
+              </div>
+            ))}
+          <div className="flex justify-between items-center rounded-md bg-primary/10 px-2 py-1.5">
+            <span className="font-semibold">= Líquido a receber do inquilino</span>
+            <span className="font-bold text-primary text-base">{formatCurrency(totalTenant)}</span>
           </div>
-        )}
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">
-            Taxa de Administração ({(value.admin_fee_percentage || 0).toLocaleString("pt-BR")}% sobre aluguel)
-          </span>
-          <span className="font-medium text-destructive">
-            −{formatCurrency(adminFeeAmount)}
-          </span>
         </div>
 
-        {chargeLines.map((line) => (
-          <div key={line.key} className="flex justify-between">
-            <span className="text-muted-foreground">
-              {line.label}{" "}
-              {line.charge_to === "owner"
-                ? "(repassado ao proprietário)"
-                : line.charge_to === "tenant"
-                  ? "(cobrado do inquilino)"
-                  : "(custo da imobiliária)"}
-            </span>
-            <span
-              className={
-                line.charge_to === "agency"
-                  ? "font-medium text-muted-foreground"
-                  : "font-medium text-emerald-600"
-              }
-            >
-              {line.charge_to === "agency" ? "" : "+"}
-              {formatCurrency(line.amount)}
-            </span>
+        <Separator />
+
+        <div className="space-y-1">
+          <p className="font-semibold">O proprietário recebe (mês típico)</p>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Aluguel líquido do inquilino</span>
+            <span className="font-medium">{formatCurrency(typicalNetRent)}</span>
           </div>
-        ))}
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">
+              (−) Taxa de administração ({(value.admin_fee_percentage || 0).toLocaleString("pt-BR")}%)
+            </span>
+            <span className="font-medium text-destructive">−{formatCurrency(adminFeeAmount)}</span>
+          </div>
+          {chargeLines
+            .filter((l) => l.charge_to === "owner")
+            .map((line) => (
+              <div key={line.key} className="flex justify-between">
+                <span className="text-muted-foreground">(−) {line.label}</span>
+                <span className="font-medium text-destructive">−{formatCurrency(line.amount)}</span>
+              </div>
+            ))}
+          <div className="flex justify-between items-center rounded-md bg-primary/10 px-2 py-1.5">
+            <span className="font-semibold">= Repasse estimado ao proprietário</span>
+            <span className="font-bold text-primary text-base">{formatCurrency(netToOwner)}</span>
+          </div>
+        </div>
 
         {agencyCharges > 0 && (
-          <p className="text-[11px] text-muted-foreground pt-0.5">
-            Encargos sob responsabilidade da imobiliária não são cobrados do inquilino nem
-            repassados ao proprietário.
+          <p className="text-[11px] text-muted-foreground">
+            Encargos sob responsabilidade da imobiliária ({formatCurrency(agencyCharges)}) não são cobrados do
+            inquilino nem descontados do proprietário.
           </p>
         )}
 
-        <Separator className="my-1" />
-        <div className="flex justify-between items-center rounded-md bg-primary/10 px-2 py-1.5">
-          <span className="font-semibold">= Líquido a receber do inquilino</span>
-          <span className="font-bold text-primary text-base">{formatCurrency(totalTenant)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">
-            Repasse líquido ao proprietário (estimado{typicalDeductions > 0 || typicalIrrf > 0 ? ", já com abatimentos e IRRF" : ""})
-          </span>
-          <span className="font-semibold text-primary">{formatCurrency(netToOwner)}</span>
-        </div>
+        {rentGrace.enabled && graceInfo.label && (
+          <p className="text-xs text-muted-foreground border-t pt-2">
+            <span className="font-medium text-foreground">Carência:</span> {graceInfo.label} (−
+            {formatCurrency(graceDiscountTotal)} no período)
+          </p>
+        )}
       </div>
     </div>
   );
