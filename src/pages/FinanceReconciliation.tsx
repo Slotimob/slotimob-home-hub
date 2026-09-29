@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,7 @@ const FinanceReconciliation = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { dateRange, setDateRange, resetToDefault } = useReconciliationDateRange();
+  const { dateRange, setDateRange, resetToDefault, expandToCover } = useReconciliationDateRange();
 
   const handleRefreshAll = async () => {
     setIsRefreshing(true);
@@ -273,15 +274,22 @@ const FinanceReconciliation = () => {
                   dateRange={dateRange}
                   onDateRangeChange={setDateRange}
                 />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetToDefault}
-                  className="h-9 px-2 text-xs shrink-0"
-                  title="Limpar período (últimos 30 dias)"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetToDefault}
+                        className="h-9 px-2 text-xs shrink-0"
+                        aria-label="Voltar ao período padrão"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Voltar ao período padrão (últimos 30 dias)</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>
@@ -328,7 +336,10 @@ const FinanceReconciliation = () => {
             onOpenChange={setIsImportOpen}
             bankAccountId={selectedAccountId}
             onSuccess={handleStatementImported}
-            onImported={(id) => setSelectedAccountId(id)}
+            onImported={(id, span) => {
+              setSelectedAccountId(id);
+              if (span) expandToCover(span.min, span.max);
+            }}
           />
 
           {selectedAccountId && (

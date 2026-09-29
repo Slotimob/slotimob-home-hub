@@ -19,7 +19,8 @@ interface ImportStatementDialogProps {
   onOpenChange: (open: boolean) => void;
   bankAccountId?: string;
   onSuccess: () => void;
-  onImported?: (bankAccountId: string) => void;
+  /** dateSpan: menor e maior data ("yyyy-MM-dd") das linhas do arquivo. */
+  onImported?: (bankAccountId: string, dateSpan?: { min: string; max: string }) => void;
 }
 
 interface ParsedEntry {
@@ -406,7 +407,11 @@ export function ImportStatementDialog({
       });
       setImportComplete(true);
       setImportedAccountId(selectedBankAccountId);
-      onImported?.(selectedBankAccountId);
+      const fileDates = (newEntries as any[]).map((e) => String(e.entry_date || "").slice(0, 10)).filter(Boolean).sort();
+      onImported?.(
+        selectedBankAccountId,
+        fileDates.length ? { min: fileDates[0], max: fileDates[fileDates.length - 1] } : undefined,
+      );
     } catch (error: any) {
       toast({
         title: "Erro ao importar",
