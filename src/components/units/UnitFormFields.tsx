@@ -856,6 +856,7 @@ export const UnitFormFields = ({
             placeholder="Buscar proprietário..."
             filterCategories={['Proprietário']}
             autoAddCategory="Proprietário"
+            showDocumentHint
             showCreateButton
             onCreateClick={() => handleCreateContactClick('owner')}
           />
