@@ -9,6 +9,7 @@ describe("lease-contract-clauses", () => {
         abatimentos: [{ id: "a", enabled: true, label: "condomínio extra", reason: "condominium_extra", amount: 300, recurrence: "installments", installments: 2, first_competency: "2026-09" }],
         retencaoIrrf: { enabled: true, tax: "irrf", mode: "percent", percent: 5, base_deductions: { iptu: false, condominium: false, admin_fee: false } },
         rateio: [{ imovel: "Casa", percentual: 60 }, { imovel: "Galpão — Loja B", percentual: 40 }],
+        locatarioTipoDocumento: "CNPJ",
       },
       "2026-09-01"
     );
@@ -18,6 +19,12 @@ describe("lease-contract-clauses", () => {
     expect(c[1]).toContain("2 parcelas a partir de 09/2026");
     expect(c[2]).toContain("(5%)");
     expect(c[3]).toContain("Casa 60%; Galpão — Loja B 40%");
+  });
+  it("IRRF não entra com locatário pessoa física ou sem documento", () => {
+    const w = { enabled: true, tax: "irrf", mode: "percent", percent: 5, base_deductions: { iptu: false, condominium: false, admin_fee: false } } as any;
+    expect(buildSpecialConditionsClauses({ retencaoIrrf: w, locatarioTipoDocumento: "CPF" }, "2026-09-01")).toEqual([]);
+    expect(buildSpecialConditionsClauses({ retencaoIrrf: w }, "2026-09-01")).toEqual([]);
+    expect(buildSpecialConditionsClauses({ retencaoIrrf: w, locatarioTipoDocumento: "CNPJ" }, "2026-09-01")).toHaveLength(1);
   });
   it("sem condições", () => {
     expect(buildSpecialConditionsClauses({}, "2026-09-01")).toEqual([]);
