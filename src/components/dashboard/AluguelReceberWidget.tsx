@@ -56,7 +56,7 @@ export function AluguelReceberWidget({ dateRange: _dateRange, refreshKey }: Alug
               <div className="flex items-center justify-between rounded-md bg-muted/30 border-l-2 border-l-amber-500 p-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-amber-500" />
-                  <span className="text-sm text-foreground">A receber</span>
+                  <span className="text-sm text-foreground">A receber <span className="block text-[10px] text-muted-foreground">pelo vencimento</span></span>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-amber-600">{fmtCurrency(receivable.amount)}</p>
@@ -67,7 +67,7 @@ export function AluguelReceberWidget({ dateRange: _dateRange, refreshKey }: Alug
               <div className="flex items-center justify-between rounded-md bg-muted/30 border-l-2 border-l-emerald-500 p-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span className="text-sm text-foreground">Recebido</span>
+                  <span className="text-sm text-foreground">Recebido <span className="block text-[10px] text-muted-foreground">pela data do recebimento</span></span>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-emerald-600">{fmtCurrency(received.amount)}</p>
@@ -85,7 +85,7 @@ export function AluguelReceberWidget({ dateRange: _dateRange, refreshKey }: Alug
               <div className="flex items-center justify-between rounded-md bg-muted/30 border-l-2 border-l-destructive p-2.5">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-destructive" />
-                  <span className="text-sm text-foreground">Em atraso</span>
+                  <span className="text-sm text-foreground">Em atraso <span className="block text-[10px] text-muted-foreground">pelo vencimento</span></span>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-destructive">{fmtCurrency(overdue.amount)}</p>
