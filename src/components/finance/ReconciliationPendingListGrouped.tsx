@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   Calendar,
   FileText,
-  Receipt
+  Receipt,
+  Check
 } from "lucide-react";
 import { format, isBefore, startOfDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
