@@ -5,16 +5,44 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, FileText, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { DimobQuickResolveDialog, ResolveType } from './DimobQuickResolveDialog';
 import { formatDateOnly } from "@/lib/date-only";
 
+type UnitAddressRow = {
+  id: string; unit_number: string | null; cib: string | null;
+  address: string | null; city: string | null; state: string | null; postal_code: string | null;
+  property?: { name: string | null; address: string | null; city: string | null; state: string | null; postal_code: string | null; cib: string | null } | null;
+};
+
+const UNIT_ADDRESS_SELECT = 'id, unit_number, cib, address, city, state, postal_code, property:properties(name, address, city, state, postal_code, cib)';
+
+/** Endereço DIMOB por imóvel: logradouro, cidade, UF e CEP (unidade, com fallback no empreendimento). */
+export function dimobAddressOf(u: UnitAddressRow) {
+  const p = u.property || null;
+  const address = u.address || p?.address || null;
+  const city = u.city || p?.city || null;
+  const state = u.state || p?.state || null;
+  const postal = u.postal_code || p?.postal_code || null;
+  const missing: string[] = [];
+  if (!address) missing.push('logradouro');
+  if (!city) missing.push('cidade');
+  if (!state) missing.push('UF');
+  if (!postal) missing.push('CEP');
+  const name = [p?.name, u.unit_number].filter(Boolean).join(' — ') || 'Imóvel';
+  return { address, city, state, postal, missing, name, cib: u.cib || p?.cib || null };
+}
+
+const missingText = (m: string[]) =>
+  m.length === 1 ? `${m[0]} não informado` : `${m.slice(0, -1).join(', ')} e ${m[m.length - 1]} não informados`;
+
 interface DimobValidation {
   id: string;
   label: string;
-  status: 'ok' | 'pending' | 'error';
+  /** 'info' = informação opcional: não conta como pendência nem em "X de Y". */
+  status: 'ok' | 'pending' | 'error' | 'info';
   message: string;
   resolveType?: ResolveType;
   contactId?: string | null;
@@ -63,7 +91,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
       // 1. Fetch unit data with CIB
       const { data: unit, error: unitError } = await supabase
         .from('units')
-        .select('id, cib, owner_contact_id, tenant_contact_id, registration_number, iptu_number, address, neighborhood, city, state, unit_number')
+        .select(`id, cib, owner_contact_id, tenant_contact_id, registration_number, iptu_number, address, neighborhood, city, state, postal_code, unit_number, property:properties(name, address, city, state, postal_code, cib)`)
         .eq('id', unitId)
         .single();
 
@@ -95,23 +123,24 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
       // Check Registration Number
       checks.push({
         id: 'registration',
-        label: 'Matrícula do Imóvel',
-        status: unit.registration_number ? 'ok' : 'pending',
+        // F2: matrícula não é campo da DIMOB — só informação opcional
+        label: 'Matrícula do Imóvel (opcional)',
+        status: 'info',
         message: unit.registration_number 
           ? `Matrícula: ${unit.registration_number}` 
-          : 'Número de matrícula não informado',
+          : 'Não informada (não é exigida pela DIMOB)',
         resolveType: 'registration',
       });
 
       // Check complete address
-      const hasFullAddress = !!(unit.address && unit.city && unit.state && unit.neighborhood);
+      const mainAddr = dimobAddressOf(unit as any);
       checks.push({
         id: 'address',
         label: 'Endereço Completo',
-        status: hasFullAddress ? 'ok' : 'pending',
-        message: hasFullAddress
-          ? `${unit.address}, ${unit.neighborhood} - ${unit.city}/${unit.state}`
-          : 'Endereço incompleto (logradouro, bairro, cidade e UF obrigatórios)',
+        status: mainAddr.missing.length === 0 ? 'ok' : 'pending',
+        message: mainAddr.missing.length === 0
+          ? `${mainAddr.address} - ${mainAddr.city}/${mainAddr.state} - CEP ${mainAddr.postal}`
+          : `${mainAddr.name}: ${missingText(mainAddr.missing)}`,
         resolveType: 'address',
       });
 
@@ -174,6 +203,33 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
         .maybeSingle();
 
       if (activeLease) {
+        // F2: contrato com vários imóveis — endereço e CIB de cada imóvel adicional
+        const { data: extraLinks } = await supabase
+          .from('lease_units')
+          .select('unit_id')
+          .eq('lease_id', activeLease.id);
+        const extraIds = Array.from(new Set(((extraLinks as any[]) || []).map((l) => l.unit_id).filter((id: string) => id && id !== unitId)));
+        if (extraIds.length) {
+          const { data: extraUnits } = await supabase.from('units').select(UNIT_ADDRESS_SELECT).in('id', extraIds);
+          for (const eu of ((extraUnits as any[]) || []) as UnitAddressRow[]) {
+            const a = dimobAddressOf(eu);
+            checks.push({
+              id: `address-${eu.id}`,
+              label: `Endereço — ${a.name}`,
+              status: a.missing.length === 0 ? 'ok' : 'pending',
+              message: a.missing.length === 0
+                ? `${a.address} - ${a.city}/${a.state} - CEP ${a.postal}`
+                : `${a.name}: ${missingText(a.missing)} (edite o cadastro desse imóvel)`,
+            });
+            checks.push({
+              id: `cib-${eu.id}`,
+              label: `Número CIB — ${a.name}`,
+              status: a.cib ? 'ok' : 'pending',
+              message: a.cib ? `CIB cadastrado: ${a.cib}` : `${a.name}: CIB não informado (edite o cadastro desse imóvel)`,
+            });
+          }
+        }
+
         // Check tenant document
         if (activeLease.tenant_contact_id) {
           const { data: tenant } = await supabase
@@ -280,8 +336,10 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
     checkDimobCompliance();
   };
 
-  const getStatusIcon = (status: 'ok' | 'pending' | 'error') => {
+  const getStatusIcon = (status: DimobValidation['status']) => {
     switch (status) {
+      case 'info':
+        return <Info className="h-4 w-4 text-muted-foreground" />;
       case 'ok':
         return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
       case 'pending':
@@ -304,6 +362,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
 
   const pendingCount = validations.filter(v => v.status === 'pending').length;
   const okCount = validations.filter(v => v.status === 'ok').length;
+  const requiredCount = validations.filter(v => v.status !== 'info').length;
 
   if (isLoading) {
     return (
@@ -383,7 +442,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
 
           <div className="pt-3 border-t space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{okCount} de {validations.length} requisitos atendidos</span>
+              <span>{okCount} de {requiredCount} requisitos atendidos</span>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -394,7 +453,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
               </Button>
             </div>
             <Progress
-              value={validations.length > 0 ? (okCount / validations.length) * 100 : 0}
+              value={requiredCount > 0 ? (okCount / requiredCount) * 100 : 0}
               className="h-1.5"
             />
           </div>
