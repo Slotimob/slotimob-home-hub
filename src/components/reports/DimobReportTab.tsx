@@ -632,7 +632,7 @@ export const DimobReportTab = () => {
                     </TableRow>
                     {expanded.has(record.rowKey) && (
                       <TableRow>
-                        <TableCell colSpan={7} className="bg-muted/30 p-2">
+                        <TableCell colSpan={8} className="bg-muted/30 p-2">
                           <div className="max-w-full overflow-x-auto">
                             <table className="w-full text-[11px] tabular-nums">
                               <thead>
