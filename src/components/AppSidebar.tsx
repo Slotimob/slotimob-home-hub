@@ -358,7 +358,6 @@ export function AppSidebar() {
                           <NavLink 
                             to={item.url!} 
                             className="flex items-center gap-3 transition-all duration-200" 
-                            activeClassName="bg-primary/10 text-primary font-medium"
                             onClick={() => isMobile && setOpenMobile(false)}
                           >
                             <item.icon className="h-4 w-4 shrink-0 transition-transform duration-200" />
@@ -450,7 +449,6 @@ export function AppSidebar() {
                                         <NavLink 
                                           to={subItem.nestedItems[0].url}
                                           className="transition-colors duration-200"
-                                          activeClassName="bg-primary/10 text-primary font-medium"
                                           onClick={() => {
                                             setOpenGroups(prev => ({ ...prev, [nestedKey]: true }));
                                             if (isMobile) setOpenMobile(false);
@@ -512,7 +510,6 @@ export function AppSidebar() {
                                   <NavLink 
                                     to={subItem.url} 
                                     className="transition-colors duration-200"
-                                    activeClassName="bg-primary/10 text-primary font-medium"
                                     onClick={() => isMobile && setOpenMobile(false)}
                                   >
                                     {subItem.title}
@@ -545,7 +542,6 @@ export function AppSidebar() {
                     <NavLink 
                       to="/admin/cockpit" 
                       className="flex items-center gap-3" 
-                      activeClassName="bg-primary/10 text-primary font-medium"
                       onClick={() => isMobile && setOpenMobile(false)}
                     >
                       <Shield className="h-4 w-4 shrink-0" />
@@ -564,7 +560,6 @@ export function AppSidebar() {
                 <NavLink 
                   to="/admin/approvals" 
                   className="flex items-center gap-3" 
-                  activeClassName="bg-primary/10 text-primary font-medium"
                   onClick={() => isMobile && setOpenMobile(false)}
                 >
                   <ShieldCheck className="h-4 w-4 shrink-0" />
@@ -580,7 +575,6 @@ export function AppSidebar() {
               <NavLink 
                 to="/settings" 
                 className="flex items-center gap-3" 
-                activeClassName="bg-primary/10 text-primary font-medium"
                 onClick={() => isMobile && setOpenMobile(false)}
               >
                 <Settings className="h-4 w-4 shrink-0" />
