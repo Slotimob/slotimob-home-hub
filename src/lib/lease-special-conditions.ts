@@ -1,7 +1,7 @@
 import { addMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { RentDeductionConfig, RentGraceConfig, RentWithholdingConfig } from "@/hooks/useLeases";
-import { buildRentInstallments, monthLabel, type PlannedInstallment } from "./lease-projection";
+import { buildRentInstallments, calculateDueDate, firstDueOnOrAfter, monthLabel, type PlannedInstallment } from "./lease-projection";
 import { todayInSaoPauloDateOnly } from "./date-only";
 import { estimateIrrfMonthly } from "./irrf";
 
@@ -397,6 +397,31 @@ export function computeLeaseMonthFromConfig(
     irrf: s?.irrf ?? 0,
     net: s?.net ?? rent,
   };
+}
+
+/**
+ * Próximo vencimento pela configuração: parcela i vence em firstDue + i meses
+ * (competência = mês do início + i), pulando competências isentas de carência.
+ * @param today "yyyy-MM-dd"
+ */
+export function nextDueFromConfig(
+  lease: { start_date?: string | null; due_day?: number | null; rent_grace?: RentGraceConfig | null },
+  today: string
+): { competency: string; dueDate: string } | null {
+  if (!lease.start_date) return null;
+  const start = lease.start_date.slice(0, 10);
+  const dueDay = Number(lease.due_day) || 10;
+  const first = firstDueOnOrAfter(parseISO(start), dueDay);
+  const firstMonth = new Date(first.getFullYear(), first.getMonth(), 1);
+  const grace = resolveGraceSchedule(lease.rent_grace, start);
+  for (let i = 0; i < 600; i++) {
+    const competency = shiftCompetency(start.slice(0, 7), i);
+    const dueDate = format(calculateDueDate(addMonths(firstMonth, i), dueDay), "yyyy-MM-dd");
+    if (dueDate < today) continue;
+    if (grace.get(competency)?.mode === "free") continue;
+    return { competency, dueDate };
+  }
+  return null;
 }
 
 function monthsBetween(a: string, b: string): number {
