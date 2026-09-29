@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { useAICredits } from '@/hooks/useAICredits';
 import { useAICreditPacks } from '@/hooks/useAICreditPacks';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PaymentMethodSelector, type PlatformBillingType } from '@/components/checkout/PaymentMethodSelector';
+import { PlatformPaymentResult, type PlatformPaymentResultData } from '@/components/checkout/PlatformPaymentResult';
 
 interface BuyAICreditsDialogProps {
   open: boolean;
@@ -26,6 +28,13 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
   const { credits } = useAICredits();
   const { data: packs, isLoading: isLoadingPacks } = useAICreditPacks();
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
+  const [billingType, setBillingType] = useState<PlatformBillingType>('PIX');
+  const [result, setResult] = useState<PlatformPaymentResultData | null>(null);
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setResult(null);
+    onOpenChange(next);
+  };
 
   const handlePurchase = async (pack: { id: string }) => {
     setLoadingPack(pack.id);
@@ -34,16 +43,20 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
         body: {
           product_type: 'ai_credits',
           credit_pack_id: pack.id,
+          billing_type: billingType,
         },
       });
 
       if (error) throw error;
 
-      if (data?.url) {
-        window.open(data.url, '_blank', 'noopener,noreferrer');
-        onOpenChange(false);
+      if (data?.error === 'cpf_cnpj_obrigatorio') {
+        toast.error(data.message || 'Informe seu CPF ou CNPJ para gerar o pagamento.');
       } else if (data?.error) {
-        toast.error(data.error);
+        toast.error(data.message || data.error);
+      } else if ((data?.type === 'pix' && data?.pix?.encodedImage) || (data?.type === 'redirect' && data?.url)) {
+        setResult(data as PlatformPaymentResultData);
+      } else {
+        toast.error('Erro ao processar compra. Tente novamente.');
       }
     } catch (err) {
       console.error('Purchase error:', err);
@@ -56,7 +69,7 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
   const bestValueId = packs && packs.length > 0 ? packs[packs.length - 1].id : null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -83,6 +96,17 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
           </div>
         )}
 
+        {result ? (
+          <div className="space-y-4">
+            <PlatformPaymentResult result={result} billingType={billingType} />
+            <p className="text-sm text-muted-foreground">Os créditos entram no seu saldo assim que o pagamento for confirmado.</p>
+            <Button variant="outline" className="w-full" onClick={() => setResult(null)}>
+              Voltar aos pacotes
+            </Button>
+          </div>
+        ) : (
+        <>
+        <PaymentMethodSelector value={billingType} onChange={setBillingType} disabled={!!loadingPack} />
         {isLoadingPacks ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
@@ -141,8 +165,10 @@ export const BuyAICreditsDialog = ({ open, onOpenChange }: BuyAICreditsDialogPro
         )}
 
         <p className="text-xs text-muted-foreground text-center">
-          Pagamento via Asaas (Boleto, PIX ou Cartão). Créditos adicionados após confirmação.
+          Pagamento via Asaas (PIX ou cartão de crédito). Créditos adicionados após confirmação.
         </p>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Check, Rocket, Building2, Zap, ArrowRight, Loader2 } from 'lucide-react';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useWorkspace } from '@/hooks/useWorkspace';
-import { useAddonCheckout } from '@/hooks/useAddonCheckout';
+import { useState } from 'react';
+import { AddonPurchaseDialog } from '@/components/checkout/AddonPurchaseDialog';
 import { useNavigate } from 'react-router-dom';
 import { MemberFeatureDenied } from './MemberFeatureDenied';
 
@@ -53,7 +54,7 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
   const { plan: currentPlan } = useSubscriptionLimits();
   const { isMember, isLoading: isWorkspaceLoading } = useWorkspace();
   const navigate = useNavigate();
-  const { buyAddon, loadingAddonId } = useAddonCheckout();
+  const [buyOpen, setBuyOpen] = useState(false);
 
 
   // Enquanto o workspace ainda está carregando, isMember default é `false` —
@@ -85,7 +86,8 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
   // Usuário já é Business e bateu no limite: a expansão é via add-on, não upgrade
   if (currentPlan === 'business' && resolvedTarget === 'business') {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <>
+      <Dialog open={open && !buyOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
@@ -131,23 +133,27 @@ export const UpgradeModal = ({ open, onOpenChange, targetPlan: targetPlanProp, f
               </Button>
               <Button
                 className="flex-1 bg-purple-500 hover:opacity-90 gap-2"
-                disabled={!!loadingAddonId}
-                onClick={async () => {
-                  const url = await buyAddon('extra-units-50', 1);
-                  if (url) onOpenChange(false);
-                }}
+                onClick={() => setBuyOpen(true)}
               >
-                {loadingAddonId === 'extra-units-50' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Zap className="h-4 w-4" />
-                )}
+                <Zap className="h-4 w-4" />
                 Adicionar +50 unidades
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+      <AddonPurchaseDialog
+        open={buyOpen}
+        onOpenChange={(o) => {
+          setBuyOpen(o);
+          if (!o) onOpenChange(false);
+        }}
+        addonId="extra-units-50"
+        quantity={1}
+        label="Pack de Unidades (+50)"
+        priceLabel="R$ 39,90/mês"
+      />
+      </>
     );
   }
 
