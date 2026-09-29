@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 import { useAuth } from '@/hooks/useAuth';
 import { AgentSelector } from '@/components/shared/AgentSelector';
