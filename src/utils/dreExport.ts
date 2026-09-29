@@ -53,8 +53,8 @@ interface DRELineConfig {
 
 export async function exportDREtoPDF(dre: DREData, periodLabel: string, unitName?: string): Promise<void> {
   const { default: jsPDF } = await import('jspdf');
-  const regimeSuffix = dre.regime === 'gerencial' ? 'Gerencial' : 'Contábil';
-  const regimeLabel = dre.regime === 'gerencial' ? 'Gerencial (por vencimento)' : 'Contábil (por data de emissão)';
+  const regimeSuffix = dre.regime === 'caixa' ? 'Caixa' : dre.regime === 'gerencial' ? 'Gerencial' : 'Contábil';
+  const regimeLabel = dre.regime === 'caixa' ? 'Caixa (por data do recebimento/pagamento)' : dre.regime === 'gerencial' ? 'Gerencial (por vencimento)' : 'Contábil (por data de emissão)';
   const fullPeriodLabel = unitName ? `${periodLabel} - ${pdfSafeLabel(unitName)}` : periodLabel;
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -95,6 +95,9 @@ export async function exportDREtoPDF(dre: DREData, periodLabel: string, unitName
     { operator: '=', label: 'LUCRO OPERACIONAL', value: dre.operatingProfit, isTotal: true },
     { operator: '+', label: 'RECEITAS FINANCEIRAS', value: dre.financialRevenue.total, items: dre.financialRevenue.items },
     { operator: '-', label: 'DISTRIBUIÇÃO DE LUCROS', value: dre.profitDistribution.total, items: dre.profitDistribution.items },
+    ...(dre.uncategorizedRevenue ? [{ operator: '+' as const, label: 'NÃO CATEGORIZADO (receitas)', value: dre.uncategorizedRevenue }] : []),
+    ...(dre.uncategorizedExpense ? [{ operator: '-' as const, label: 'NÃO CATEGORIZADO (despesas)', value: dre.uncategorizedExpense }] : []),
+    { operator: '-', label: 'IRRF RETIDO NA FONTE (antecipação do IR)', value: dre.irrfWithheld.total, items: dre.irrfWithheld.items },
   ];
   
   lines.forEach((line) => {
@@ -182,8 +185,8 @@ export async function exportDREtoPDF(dre: DREData, periodLabel: string, unitName
 }
 
 export function exportDREtoCSV(dre: DREData, periodLabel: string, unitName?: string): void {
-  const regimeSuffix = dre.regime === 'gerencial' ? 'Gerencial' : 'Contábil';
-  const regimeLabel = dre.regime === 'gerencial' ? 'Gerencial (por vencimento)' : 'Contábil (por data de emissão)';
+  const regimeSuffix = dre.regime === 'caixa' ? 'Caixa' : dre.regime === 'gerencial' ? 'Gerencial' : 'Contábil';
+  const regimeLabel = dre.regime === 'caixa' ? 'Caixa (por data do recebimento/pagamento)' : dre.regime === 'gerencial' ? 'Gerencial (por vencimento)' : 'Contábil (por data de emissão)';
   const fullPeriodLabel = unitName ? `${periodLabel} - ${unitName}` : periodLabel;
   const lines: string[] = [];
   
@@ -219,6 +222,9 @@ export function exportDREtoCSV(dre: DREData, periodLabel: string, unitName?: str
   
   addSection('+', 'RECEITAS FINANCEIRAS', dre.financialRevenue.total, dre.financialRevenue.items);
   addSection('-', 'DISTRIBUIÇÃO DE LUCROS', dre.profitDistribution.total, dre.profitDistribution.items);
+  if (dre.uncategorizedRevenue) addSection('+', 'NÃO CATEGORIZADO (receitas)', dre.uncategorizedRevenue, []);
+  if (dre.uncategorizedExpense) addSection('-', 'NÃO CATEGORIZADO (despesas)', dre.uncategorizedExpense, []);
+  addSection('-', 'IRRF RETIDO NA FONTE (antecipação do IR)', dre.irrfWithheld.total, dre.irrfWithheld.items);
   
   lines.push('');
   lines.push(`(=);RESULTADO LÍQUIDO;${dre.netResult.toFixed(2).replace('.', ',')}`);

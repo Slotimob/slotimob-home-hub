@@ -237,10 +237,17 @@ export const formatDate = (date: string | Date): string => {
   return format(date, 'dd/MM/yyyy', { locale: ptBR });
 };
 
-// Helper to calculate penalty and interest (2% + 0.033% per day - approximately 1% per month)
-export const calculatePenaltyAndInterest = (originalValue: number, daysOverdue: number): { penalty: number; interest: number; total: number } => {
-  const penalty = originalValue * 0.02; // 2% fixed penalty
-  const dailyInterestRate = 0.00033; // 0.033% per day (approximately 1% per month)
+/**
+ * Multa e juros de atraso. Sem percentuais do contrato: multa 2% e juros 1% a.m.
+ * (0,033% ao dia, pro-rata). Com contrato: multa X% e juros Y% a.m. / 30 ao dia.
+ */
+export const calculatePenaltyAndInterest = (
+  originalValue: number,
+  daysOverdue: number,
+  rates?: { multaPercent: number; jurosPercent: number } | null,
+): { penalty: number; interest: number; total: number } => {
+  const penalty = originalValue * (rates ? rates.multaPercent / 100 : 0.02);
+  const dailyInterestRate = rates ? rates.jurosPercent / 100 / 30 : 0.00033;
   const interest = originalValue * dailyInterestRate * daysOverdue;
   return {
     penalty,

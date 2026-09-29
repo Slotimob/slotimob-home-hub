@@ -92,7 +92,8 @@ export default function FinanceDRE() {
   const [selectedYears, setSelectedYears] = useState<string[]>([String(currentYear)]);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
-  const regime: DRERegime = searchParams.get("regime") === "gerencial" ? "gerencial" : "contabil";
+  const regimeParam = searchParams.get("regime");
+  const regime: DRERegime = regimeParam === "gerencial" || regimeParam === "caixa" ? regimeParam : "contabil";
 
   const handleRegimeChange = (next: DRERegime) => {
     const params = new URLSearchParams(searchParams);
@@ -230,6 +231,16 @@ export default function FinanceDRE() {
                 DRE Contábil
               </Button>
               <HelpTooltip featureKey="finance.dre_accounting" />
+              <Button
+                type="button"
+                size="sm"
+                variant={regime === "caixa" ? "default" : "outline"}
+                className="h-8 px-3 text-xs"
+                onClick={() => handleRegimeChange("caixa")}
+                title="Só lançamentos pagos, pela data do recebimento/pagamento"
+              >
+                DRE Caixa
+              </Button>
             </div>
 
             {/* Year multi-select */}
@@ -299,7 +310,7 @@ export default function FinanceDRE() {
             <CardDescription className="text-center">
               Período: {periodLabel}
               {unitDisplayName && ` | Unidade: ${unitDisplayName}`}
-              {` · Regime: ${dre?.regime === "gerencial" ? "Gerencial (por vencimento)" : "Contábil (por data de emissão)"}`}
+              {` · Regime: ${dre?.regime === "caixa" ? "Caixa (por data do recebimento/pagamento)" : dre?.regime === "gerencial" ? "Gerencial (por vencimento)" : "Contábil (por data de emissão)"}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="py-6 space-y-4">
@@ -324,6 +335,16 @@ export default function FinanceDRE() {
                 <DRELine operator="=" label="LUCRO OPERACIONAL" value={dre.operatingProfit} isTotal isPositive />
                 <DRELine operator="+" label="RECEITAS FINANCEIRAS" value={dre.financialRevenue.total} items={dre.financialRevenue.items} isPositive />
                 <DRELine operator="-" label="DISTRIBUIÇÃO DE LUCROS" value={dre.profitDistribution.total} items={dre.profitDistribution.items} isNegative />
+                {dre.uncategorizedRevenue > 0 && (
+                  <DRELine operator="+" label="NÃO CATEGORIZADO (receitas)" value={dre.uncategorizedRevenue} isPositive />
+                )}
+                {dre.uncategorizedExpense > 0 && (
+                  <DRELine operator="-" label="NÃO CATEGORIZADO (despesas)" value={dre.uncategorizedExpense} isNegative />
+                )}
+                {(dre.uncategorizedRevenue > 0 || dre.uncategorizedExpense > 0) && (
+                  <p className="text-xs text-muted-foreground pl-6">Lançamentos sem categoria. Categorize-os em Lançamentos para que entrem na linha certa.</p>
+                )}
+                <DRELine operator="-" label="IRRF RETIDO NA FONTE (antecipação do IR)" value={dre.irrfWithheld.total} items={dre.irrfWithheld.items} isNegative />
                 <div className="border-t-2 border-foreground pt-3">
                   <DRELine operator="=" label="RESULTADO LÍQUIDO" value={dre.netResult} isTotal isPositive={dre.netResult >= 0} />
                 </div>
