@@ -1,3 +1,4 @@
+import { leaseUnitFilter } from '@/hooks/useLeases';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +33,7 @@ import { Loader2, Search, X, Paperclip, Building2, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
 import { todayDateOnly } from "@/lib/date-only";
+import { useFinancialCategories } from '@/hooks/useFinancialCategories';
 
 export { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@/lib/activity-types';
 
@@ -93,6 +95,15 @@ export function ActivityFormDialog({
   const [files, setFiles] = useState<File[]>([]);
   const [estimatedCost, setEstimatedCost] = useState('');
   const [createTransaction, setCreateTransaction] = useState(false);
+  // M3: quem paga e categoria do lançamento gerado
+  const [payer, setPayer] = useState<'owner' | 'tenant' | 'agency'>('owner');
+  const [txCategoryId, setTxCategoryId] = useState<string>('');
+  const { categories: expenseCategories } = useFinancialCategories('expense');
+  useEffect(() => {
+    if (txCategoryId || !expenseCategories?.length) return;
+    const maint = expenseCategories.find((c: any) => /manuten/i.test(c.name));
+    if (maint) setTxCategoryId(maint.id);
+  }, [expenseCategories, txCategoryId]);
   const [saving, setSaving] = useState(false);
 
   // Reset when opening
@@ -281,7 +292,25 @@ export function ActivityFormDialog({
 
       // Optional financial transaction (one per asset), linked back to the activity
       if (createTransaction && estimatedCostNumber && estimatedCostNumber > 0) {
+        // M3: contato de quem paga (dono do imóvel ou inquilino do contrato ativo)
+        const payerContactFor = async (unitId: string | null): Promise<string | null> => {
+          if (!unitId || payer === 'agency') return null;
+          if (payer === 'owner') {
+            const { data } = await supabase.from('units').select('owner_contact_id').eq('id', unitId).maybeSingle();
+            return (data as any)?.owner_contact_id ?? null;
+          }
+          const { data } = await supabase
+            .from('leases')
+            .select('tenant_contact_id')
+            .or(await leaseUnitFilter(unitId))
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          return (data as any)?.tenant_contact_id ?? null;
+        };
         for (const act of activities) {
+          const payerContactId = await payerContactFor(act.unit_id);
           const { data: tx, error: txError } = await supabase
             .from('financial_transactions')
             .insert({
@@ -295,6 +324,9 @@ export function ActivityFormDialog({
               property_id: act.property_id,
               unit_id: act.unit_id,
               notes: description.trim() || null,
+              contact_id: payerContactId,
+              category_id: txCategoryId || null,
+              metadata: { payer, source: 'property_activity' },
             } as any)
             .select('id')
             .single();
@@ -376,30 +408,6 @@ export function ActivityFormDialog({
           <div className="space-y-2">
             <Label className="text-sm">Imóveis / Unidades</Label>
 
-            {selectedAssets.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {selectedAssets.map((a) => (
-                  <Badge key={`${a.type}:${a.id}`} variant="secondary" className="gap-1">
-                    {a.type === 'unit' ? (
-                      <Home className="h-3 w-3" />
-                    ) : (
-                      <Building2 className="h-3 w-3" />
-                    )}
-                    {a.label}
-                    {!lockAsset && (
-                      <button
-                        type="button"
-                        onClick={() => toggleAsset(a)}
-                        className="ml-0.5 hover:text-destructive"
-                        aria-label={`Remover ${a.label}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </Badge>
-                ))}
-              </div>
-            )}
 
             {!lockAsset && (
               <>
@@ -452,6 +460,31 @@ export function ActivityFormDialog({
                   })}
                 </div>
               </>
+            )}
+            {/* M1: chips abaixo da lista, para a lista não se mover ao marcar */}
+            {selectedAssets.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedAssets.map((a) => (
+                  <Badge key={`${a.type}:${a.id}`} variant="secondary" className="gap-1">
+                    {a.type === 'unit' ? (
+                      <Home className="h-3 w-3" />
+                    ) : (
+                      <Building2 className="h-3 w-3" />
+                    )}
+                    {a.label}
+                    {!lockAsset && (
+                      <button
+                        type="button"
+                        onClick={() => toggleAsset(a)}
+                        className="ml-0.5 hover:text-destructive"
+                        aria-label={`Remover ${a.label}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </Badge>
+                ))}
+              </div>
             )}
           </div>
 
@@ -534,6 +567,37 @@ export function ActivityFormDialog({
               </label>
             </div>
           </div>
+
+          {createTransaction && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="activity-payer" className="text-sm">Quem paga</Label>
+                <Select value={payer} onValueChange={(v) => setPayer(v as any)}>
+                  <SelectTrigger id="activity-payer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="owner">Proprietário</SelectItem>
+                    <SelectItem value="tenant">Inquilino</SelectItem>
+                    <SelectItem value="agency">Imobiliária</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="activity-category" className="text-sm">Categoria</Label>
+                <Select value={txCategoryId} onValueChange={setTxCategoryId}>
+                  <SelectTrigger id="activity-category">
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(expenseCategories || []).map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
           {/* Attachments */}
           {!isEditing && (
