@@ -1,3 +1,4 @@
+import { invalidateLeaseQueries } from "@/lib/query-invalidation";
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateReconciliationQueries } from "@/hooks/useReconciliation";
@@ -73,10 +74,13 @@ export async function setRentComposition(
 
 export function invalidateRentSettlementQueries(queryClient: QueryClient) {
   invalidateReconciliationQueries(queryClient);
+  // Lista de lançamentos e contratos (fonte única: LEASE_QUERY_KEYS)
+  void invalidateLeaseQueries(queryClient);
   for (const key of [
-    "leases",
-    "lease",
-    "asset-health",
+    "rent-payment-group",
+    "rent-composition",
+    "lease-next-pending-rent",
+    "dashboard",
     "recent-lease-transactions",
     "lease-transactions",
     "dre-report",
