@@ -73,6 +73,8 @@ export interface ProjectionBlockProps {
   amountOverrides?: Record<string, number>;
   /** Quando presente, o valor das linhas selecionáveis fica editável (null = restaurar). */
   onAmountOverride?: (key: string, amount: number | null) => void;
+  /** Opção "Cobrar o 1º mês proporcional" (só aluguel; ausente = escondida). */
+  proRata?: { checked: boolean; onChange: (v: boolean) => void; days: number; totalDays: number };
   /** Atalho "Editar no mês" nas linhas já lançadas. */
   onEditExisting?: (i: PlannedInstallment) => void;
 }

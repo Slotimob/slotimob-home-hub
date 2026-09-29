@@ -29,6 +29,8 @@ import {
   buildRentInstallments,
   calculateDueDate,
   calculateProjectionWindow,
+  firstDueOnOrAfter,
+  proRataFirstMonth,
   resolveFirstAdjustedDueDate,
   resolveRentDueOffset,
   type PlannedInstallment,
@@ -276,6 +278,7 @@ export const LeaseProjectionEditor = forwardRef<
 
   // --- Estado editável, um BlockConfig por bloco ---
   const [blocks, setBlocks] = useState<Record<string, BlockConfig>>({});
+  const [rentProRata, setRentProRata] = useState(false);
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [obligationsRevealed, setObligationsRevealed] = useState(true);
@@ -419,7 +422,7 @@ export const LeaseProjectionEditor = forwardRef<
   const rentInstallments = useMemo(() => {
     const cfg = blocks.rent;
     if (!lease || !window || window.blocked || !cfg) return [];
-    return buildRentInstallments({
+    const list = buildRentInstallments({
       startDate: `${competencyPeriodOf(cfg.competency)}-01`,
       months: Math.max(0, cfg.months),
       amount: cfg.amount,
@@ -433,7 +436,25 @@ export const LeaseProjectionEditor = forwardRef<
         ? undefined
         : resolveGraceSchedule(lease.rent_grace, lease.start_date),
     });
-  }, [lease, window, blocks.rent, existingCompetencies, existingRentCompetencies, postAdjustment]);
+    // Pró-rata do 1º mês: só na competência do início do contrato
+    const first = list[0];
+    if (
+      rentProRata && first && !first.isGrace && !postAdjustment && lease.start_date &&
+      first.competencyPeriod === lease.start_date.slice(0, 7)
+    ) {
+      const pr = proRataFirstMonth(parseISO(lease.start_date), first.meta?.kind === "grace" ? first.amount : cfg.amount);
+      list[0] = { ...first, amount: pr.amount, description: `${first.description} (pró-rata ${pr.days} de ${pr.totalDays} dias)` };
+    }
+    return list;
+  }, [lease, window, blocks.rent, existingCompetencies, existingRentCompetencies, postAdjustment, rentProRata]);
+
+  const rentProRataInfo = useMemo(() => {
+    const first = rentInstallments[0];
+    if (!lease?.start_date || postAdjustment || !first || first.isGrace) return null;
+    if (first.competencyPeriod !== lease.start_date.slice(0, 7)) return null;
+    const pr = proRataFirstMonth(parseISO(lease.start_date), blocks.rent?.amount || 0);
+    return pr.days === pr.totalDays ? null : pr;
+  }, [lease, postAdjustment, rentInstallments, blocks.rent]);
 
   const insuranceInstallments = useMemo(() => {
     const cfg = blocks.fire_insurance;
@@ -822,6 +843,11 @@ export const LeaseProjectionEditor = forwardRef<
               installments={rentInstallments}
               config={blocks.rent}
               onConfigChange={(patch) => patchBlock("rent", patch)}
+              proRata={
+                rentProRataInfo
+                  ? { checked: rentProRata, onChange: setRentProRata, days: rentProRataInfo.days, totalDays: rentProRataInfo.totalDays }
+                  : undefined
+              }
               enabled={!!enabled.rent}
               onEnabledChange={(v) => setEnabled((p) => ({ ...p, rent: v }))}
               selected={selected}
