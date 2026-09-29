@@ -121,22 +121,8 @@ export default function LandingPage() {
         const checkoutPlan = searchParams.get('checkout_plan');
 
         if (checkoutPlan && ['essencial', 'pro', 'business'].includes(checkoutPlan)) {
-          try {
-            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-              body: { plan_id: checkoutPlan }
-            });
-
-            if (!error && data?.url) {
-              window.location.href = data.url;
-            } else if (error) {
-              console.error('Post-OAuth checkout error:', error);
-              toast.error('Erro ao iniciar checkout. Tente novamente na página de planos.');
-            }
-          } catch (err) {
-            console.error('Post-OAuth checkout error:', err);
-          }
-
-          navigate('/dashboard', { replace: true });
+          const cycle = searchParams.get('checkout_cycle') === 'annual' ? 'annual' : 'monthly';
+          navigate(`/checkout?plan=${checkoutPlan}&cycle=${cycle}`, { replace: true });
           return;
         }
 

@@ -1163,7 +1163,7 @@ export default function Checkout() {
                   </div>
                 ) : (
                   <>
-                    <PlatformPaymentResult result={paymentResult} />
+                    <PlatformPaymentResult result={paymentResult} billingType={billingType} />
 
                     {addonResults.length > 0 && (
                       <div className="space-y-2 border-t pt-3">

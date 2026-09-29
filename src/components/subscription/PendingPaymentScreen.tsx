@@ -4,6 +4,7 @@ import { Clock, Loader2, LogOut, MessageCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SlotiLogo } from '@/components/SlotiLogo';
 import { buildWhatsAppLink } from '@/lib/constants';
@@ -27,7 +28,7 @@ export const PendingPaymentScreen = () => {
       if (!user?.id) return null;
       const { data: sub } = await supabase
         .from('subscriptions')
-        .select('plan_id, billing_cycle')
+        .select('plan_id, billing_cycle, last_payment_error, last_payment_error_at')
         .eq('user_id', user.id)
         .maybeSingle();
       if (!sub) return null;
@@ -42,6 +43,8 @@ export const PendingPaymentScreen = () => {
         planId: sub.plan_id,
         billingCycle: sub.billing_cycle,
         planName: plan?.name ?? sub.plan_id,
+        lastPaymentError: sub.last_payment_error ?? null,
+        lastPaymentErrorAt: sub.last_payment_error_at ?? null,
         price: sub.billing_cycle === 'annual' ? plan?.price_annual : plan?.price_original,
       };
     },
@@ -92,8 +95,14 @@ export const PendingPaymentScreen = () => {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Pagou por boleto? A compensação leva até 3 dias úteis e o acesso é liberado automaticamente.
+            No PIX a confirmação costuma ser imediata. No cartão pode levar alguns minutos. O acesso é liberado sozinho.
           </p>
+
+          {data?.lastPaymentError && (
+            <Alert variant="destructive">
+              <AlertDescription>{data.lastPaymentError}</AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-2">
             <Button className="w-full" onClick={handleCheck} disabled={isChecking}>
@@ -111,7 +120,7 @@ export const PendingPaymentScreen = () => {
                   )
                 }
               >
-                Ver a cobrança de novo
+                {data.lastPaymentError ? 'Pagar de novo com PIX ou outro cartão' : 'Ver a cobrança de novo'}
               </Button>
             )}
 

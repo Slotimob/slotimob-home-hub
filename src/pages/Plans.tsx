@@ -340,7 +340,7 @@ function AddonsSection() {
 function PricingFaq() {
   const faqs = [
     { q: 'Posso mudar de plano depois?', a: 'Sim. Você pode fazer upgrade ou downgrade a qualquer momento. No upgrade, a diferença de valor é cobrada proporcionalmente.' },
-    { q: 'Quais formas de pagamento são aceitas?', a: 'Cartão de crédito, boleto bancário e PIX — todos processados pela Asaas, parceiro financeiro homologado pelo Banco Central.' },
+    { q: 'Quais formas de pagamento são aceitas?', a: 'PIX ou cartão de crédito, processados pelo Asaas, parceiro financeiro homologado pelo Banco Central. A 1ª cobrança vence no dia da contratação e as seguintes seguem o ciclo do plano: todo mês no mensal ou todo ano no anual.' },
     { q: 'O plano anual tem desconto?', a: 'No plano anual você tem 15% de desconto sobre o valor de 12 mensalidades, pago de uma vez.' },
     { q: 'Os add-ons são cobrados junto com a assinatura?', a: 'Sim. Os add-ons são cobrados mensalmente e cancelados individualmente a qualquer momento, sem afetar o plano principal.' },
     { q: 'Como funciona o período de 7 dias grátis?', a: 'Ao assinar qualquer plano pago, você tem 7 dias com acesso ao Pro sem cobrança. Após o período, a cobrança normal do plano escolhido se inicia.' },
