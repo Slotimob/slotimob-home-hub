@@ -6403,6 +6403,10 @@ export type Database = {
       }
       is_crm_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
+      lease_live_conflict: {
+        Args: { p_lease_id: string; p_sub_id: string; p_unit_id: string }
+        Returns: string
+      }
       maintain_audit_partitions: { Args: never; Returns: undefined }
       mark_overdue_access_reviews: { Args: never; Returns: Json }
       open_access_review_cycles: { Args: never; Returns: Json }
