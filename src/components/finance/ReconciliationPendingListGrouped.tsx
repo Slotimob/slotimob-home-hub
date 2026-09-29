@@ -203,6 +203,7 @@ export function ReconciliationPendingListGrouped({
       status: "paid",
       bankAccountId: bankAccountId,
       paidDate: entry.entry_date,
+      transactionDate: entry.entry_date,
       requireCategory: true,
     });
     setEntryForCreate(entry);
