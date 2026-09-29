@@ -344,6 +344,12 @@ export const LeaseProjectionEditor = forwardRef<
     const withIssueDay = (yyyyMm: string) =>
       format(calculateDueDate(parseISO(`${yyyyMm}-01`), issueDay), "yyyy-MM-dd");
 
+    // Encargos: 1º vencimento nunca antes do início (fora do pós-reajuste)
+    const chargeFirstDue = (from: Date, day: number) =>
+      postAdjustment
+        ? calculateDueDate(from, day)
+        : firstDueOnOrAfter(from.getTime() < base.getTime() ? base : from, day);
+
     const next: Record<string, BlockConfig> = {
       rent: {
         competency: withIssueDay(windowMonth),
@@ -360,7 +366,7 @@ export const LeaseProjectionEditor = forwardRef<
         firstDueDate:
           lease.fire_insurance.first_due_date ||
           format(
-            calculateDueDate(parseISO(`${competency}-01`), unitDueDay("insurance") ?? dueDay),
+            chargeFirstDue(parseISO(`${competency}-01`), unitDueDay("insurance") ?? dueDay),
             "yyyy-MM-dd"
           ),
         months: insuranceCount,
@@ -375,7 +381,7 @@ export const LeaseProjectionEditor = forwardRef<
         firstDueDate:
           lease.iptu_charge.first_due_date ||
           format(
-            calculateDueDate(parseISO(`${competency}-01`), unitDueDay("iptu") ?? dueDay),
+            chargeFirstDue(parseISO(`${competency}-01`), unitDueDay("iptu") ?? dueDay),
             "yyyy-MM-dd"
           ),
         months: iptuCount,
@@ -388,7 +394,7 @@ export const LeaseProjectionEditor = forwardRef<
         competency: withIssueDay(windowMonth),
         firstDueDate:
           (cfg.first_due_date as string) ||
-          format(calculateDueDate(base, unitDueDay(cfg.type) ?? dueDay), "yyyy-MM-dd"),
+          format(chargeFirstDue(base, unitDueDay(cfg.type) ?? dueDay), "yyyy-MM-dd"),
         months: Math.max(1, window.months),
         amount: cfg.installment_amount || 0,
       };
