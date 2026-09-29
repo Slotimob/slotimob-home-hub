@@ -21,9 +21,9 @@ export const UNIT_STATUS_STYLES: Record<UnitStatus, {
     label: 'Disponível',
     hex: '#22c55e',
     rgb: '34, 197, 94',
-    badgeClasses: 'bg-green-500/15 text-green-600 border-green-500/30',
+    badgeClasses: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30',
     cardClasses: 'border-green-500/30 bg-gradient-to-br from-green-500/20 to-transparent',
-    textClass: 'text-green-600',
+    textClass: 'text-green-700 dark:text-green-400',
   },
   reserved: {
     label: 'Reservado',
@@ -45,9 +45,9 @@ export const UNIT_STATUS_STYLES: Record<UnitStatus, {
     label: 'Vendido',
     hex: '#ef4444',
     rgb: '239, 68, 68',
-    badgeClasses: 'bg-red-500/15 text-red-600 border-red-500/30',
+    badgeClasses: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30',
     cardClasses: 'border-red-500/30 bg-gradient-to-br from-red-500/20 to-transparent',
-    textClass: 'text-red-600',
+    textClass: 'text-red-700 dark:text-red-400',
   },
 };
 

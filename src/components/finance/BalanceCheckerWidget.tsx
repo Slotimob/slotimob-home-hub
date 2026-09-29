@@ -288,7 +288,7 @@ export function BalanceCheckerWidget({
       return {
         icon: TrendingDown,
         message: `Verifique se esqueceu de lançar uma despesa de ${formatCurrency(Math.abs(difference))}.`,
-        color: "text-red-600",
+        color: "text-red-700 dark:text-red-400",
       };
     }
   };
@@ -367,7 +367,7 @@ export function BalanceCheckerWidget({
                 </p>
                 <p className={cn(
                   "text-2xl font-bold mt-2",
-                  calculatedFromEntries && calculatedFromEntries.netFlow >= 0 ? "text-emerald-600" : "text-red-600"
+                  calculatedFromEntries && calculatedFromEntries.netFlow >= 0 ? "text-emerald-600" : "text-red-700 dark:text-red-400"
                 )}>
                   {calculatedFromEntries && calculatedFromEntries.netFlow >= 0 ? "+" : ""}
                   {formatCurrency(calculatedFromEntries?.netFlow || 0)}
@@ -524,7 +524,7 @@ export function BalanceCheckerWidget({
               ) : difference !== null ? (
                 <div className="flex items-center justify-center gap-1.5">
                   <AlertTriangle className="h-5 w-5 text-red-500" />
-                  <span className="text-lg font-bold text-red-600">
+                  <span className="text-lg font-bold text-red-700 dark:text-red-400">
                     {formatCurrency(Math.abs(difference))}
                   </span>
                 </div>

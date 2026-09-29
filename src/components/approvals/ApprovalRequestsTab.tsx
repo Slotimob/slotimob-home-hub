@@ -195,7 +195,7 @@ export function ApprovalRequestsTab() {
                             locale: ptBR,
                           })}
                           {r.status === 'pending' && isRecent(r.created_at) && (
-                            <AlertTriangle className="h-3 w-3 text-amber-500" />
+                            <AlertTriangle className="h-3 w-3 text-amber-700 dark:text-amber-400" />
                           )}
                         </div>
                       </TableCell>

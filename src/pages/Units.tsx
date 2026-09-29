@@ -479,7 +479,7 @@ const Units = () => {
               <CardTitle className="text-xs font-medium text-muted-foreground">Disponíveis</CardTitle>
             </CardHeader>
             <CardContent className="pb-3 px-3">
-              <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.available}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-400">{stats.available}</div>
             </CardContent>
           </Card>
           <Card 
@@ -533,7 +533,7 @@ const Units = () => {
               <CardTitle className="text-xs font-medium text-muted-foreground">Vendidas</CardTitle>
             </CardHeader>
             <CardContent className="pb-3 px-3">
-              <div className="text-xl sm:text-2xl font-bold text-red-600">{stats.sold}</div>
+              <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400">{stats.sold}</div>
             </CardContent>
           </Card>
         </div>

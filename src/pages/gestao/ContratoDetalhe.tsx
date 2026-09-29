@@ -562,7 +562,7 @@ export default function ContratoDetalhe() {
                 <CardTitle className="text-sm font-medium">Status de Ocupação</CardTitle>
                 <Badge
                   variant="default"
-                  className="bg-green-500/15 text-green-600 border-green-500/30"
+                  className="bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30"
                 >
                   Ocupado
                 </Badge>
@@ -622,7 +622,7 @@ export default function ContratoDetalhe() {
                 {billingStatus.overdue ? (
                   <>
                     <AlertCircle className="h-5 w-5 text-red-500" />
-                    <span className="text-sm text-red-600 font-medium">Em atraso</span>
+                    <span className="text-sm text-red-700 dark:text-red-400 font-medium">Em atraso</span>
                   </>
                 ) : billingStatus.dueDay ? (
                   <>
@@ -631,8 +631,8 @@ export default function ContratoDetalhe() {
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span className="text-sm text-green-600 font-medium">Em dia</span>
+                    <CheckCircle2 className="h-5 w-5 text-green-700 dark:text-green-400" />
+                    <span className="text-sm text-green-700 dark:text-green-400 font-medium">Em dia</span>
                   </>
                 )}
               </div>

@@ -274,7 +274,7 @@ const Integrations = () => {
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
-                  <MessageSquare className="h-6 w-6 text-green-500" />
+                  <MessageSquare className="h-6 w-6 text-green-700 dark:text-green-400" />
                 </div>
                 <div className="flex-1">
                   <CardTitle className="text-xl">WhatsApp</CardTitle>
@@ -303,7 +303,7 @@ const Integrations = () => {
               {canManageWhatsApp && instancesLimit > 0 && (
                 <div className="flex items-center gap-2">
                   {isConnected ? (
-                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                    <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
                       <Wifi className="h-3 w-3 mr-1" />
                       Conectado
                     </Badge>
@@ -524,7 +524,7 @@ const Integrations = () => {
                 isConnected ? (
                   <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4 space-y-3">
                     <div className="flex items-center gap-2">
-                      <ShieldCheck className="h-5 w-5 text-green-600" />
+                      <ShieldCheck className="h-5 w-5 text-green-700 dark:text-green-400" />
                       <p className="text-sm font-medium text-foreground">WhatsApp da Imobiliária ativo e sincronizado</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => navigate('/whatsapp')}>
@@ -569,7 +569,7 @@ const Integrations = () => {
               {/* Status summary */}
               <div className="flex items-center gap-2">
                 <Badge className={publishedCount > 0
-                  ? 'bg-green-500/10 text-green-600 border-green-500/20'
+                  ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
                   : 'bg-muted text-muted-foreground'
                 }>
                   {publishedCount > 0 ? (

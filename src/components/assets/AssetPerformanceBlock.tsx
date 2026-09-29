@@ -76,7 +76,7 @@ function Metric({
           tone === 'positive'
             ? 'text-emerald-600'
             : tone === 'negative'
-            ? 'text-red-600'
+            ? 'text-red-700 dark:text-red-400'
             : 'text-foreground'
         }`}
       >
@@ -399,13 +399,13 @@ export function AssetPerformanceBlock({
               <div className="grid grid-cols-3 gap-2">
                 <div className="p-2 rounded-lg bg-green-500/10 text-center">
                   <p className="text-xs text-muted-foreground">Receita</p>
-                  <p className="text-sm font-bold text-green-600">
+                  <p className="text-sm font-bold text-green-700 dark:text-green-400">
                     {brlCompact(cashflowTotals.receita)}
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-red-500/10 text-center">
                   <p className="text-xs text-muted-foreground">Despesa</p>
-                  <p className="text-sm font-bold text-red-600">
+                  <p className="text-sm font-bold text-red-700 dark:text-red-400">
                     {brlCompact(cashflowTotals.despesa)}
                   </p>
                 </div>

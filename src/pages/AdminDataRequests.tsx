@@ -298,7 +298,7 @@ const AdminDataRequests = () => {
           </Card>
           <Card>
             <CardContent className="pt-4 pb-3 text-center">
-              <CheckCircle className="h-5 w-5 mx-auto mb-1 text-green-500" />
+              <CheckCircle className="h-5 w-5 mx-auto mb-1 text-green-700 dark:text-green-400" />
               <p className="text-2xl font-bold">{kpis.deliveredMonth}</p>
               <p className="text-xs text-muted-foreground">Entregues no mês</p>
             </CardContent>

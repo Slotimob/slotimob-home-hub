@@ -138,7 +138,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
     const isOverdue = isBefore(due, today) && status !== 'paid';
 
     if (status === 'paid') {
-      return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5">Pago</Badge>;
+      return <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30 text-[10px] px-1.5">Pago</Badge>;
     }
     if (isOverdue) {
       return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 text-[10px] px-1.5">Atrasado</Badge>;
@@ -208,13 +208,13 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
             <div className="rounded-lg border p-3 lg:p-4 bg-green-500/5 border-green-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-500" />
+                  <TrendingUp className="h-4 w-4 text-green-700 dark:text-green-500" />
                 </div>
                 <span className="text-xs text-muted-foreground">Receitas</span>
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="text-lg md:text-xl lg:text-2xl font-bold text-green-600 dark:text-green-500 cursor-help break-words">
+                  <p className="text-lg md:text-xl lg:text-2xl font-bold text-green-700 dark:text-green-500 cursor-help break-words">
                     <SmartCurrency value={data.totalRevenue} showTooltip={false} />
                   </p>
                 </TooltipTrigger>
@@ -227,13 +227,13 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
             <div className="rounded-lg border p-3 lg:p-4 bg-red-500/5 border-red-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                  <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-500" />
+                  <TrendingDown className="h-4 w-4 text-red-700 dark:text-red-500" />
                 </div>
                 <span className="text-xs text-muted-foreground">Despesas</span>
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="text-lg md:text-xl lg:text-2xl font-bold text-red-600 dark:text-red-500 cursor-help break-words">
+                  <p className="text-lg md:text-xl lg:text-2xl font-bold text-red-700 dark:text-red-500 cursor-help break-words">
                     <SmartCurrency value={data.totalExpenses} showTooltip={false} />
                   </p>
                 </TooltipTrigger>
@@ -254,8 +254,8 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                 <TooltipTrigger asChild>
                   <p className={`text-lg md:text-xl lg:text-2xl font-bold cursor-help break-words ${
                     (data.totalRevenue - data.totalExpenses) >= 0 
-                      ? 'text-green-600 dark:text-green-500' 
-                      : 'text-red-600 dark:text-red-500'
+                      ? 'text-green-700 dark:text-green-500' 
+                      : 'text-red-700 dark:text-red-500'
                   }`}>
                     <SmartCurrency value={data.totalRevenue - data.totalExpenses} showTooltip={false} />
                   </p>
@@ -273,7 +273,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
             {/* Contas a Receber */}
             <div className="rounded-lg border">
               <div className="px-2 lg:px-3 py-1.5 lg:py-2 border-b flex items-center gap-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                <TrendingUp className="h-3.5 w-3.5 text-green-700 dark:text-green-400 flex-shrink-0" />
                 <span className="text-[11px] lg:text-sm font-medium truncate">A Receber</span>
                 <Badge variant="secondary" className="ml-auto text-[10px] px-1.5">
                   {data.receivables.length}
@@ -300,7 +300,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                           </span>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="text-[10px] lg:text-xs font-medium text-green-600 cursor-help">
+                              <span className="text-[10px] lg:text-xs font-medium text-green-700 dark:text-green-400 cursor-help">
                                 <SmartCurrency value={Number(item.amount)} forceCompact showTooltip={false} />
                               </span>
                             </TooltipTrigger>
@@ -346,7 +346,7 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
                           </span>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="text-[10px] lg:text-xs font-medium text-red-600 cursor-help">
+                              <span className="text-[10px] lg:text-xs font-medium text-red-700 dark:text-red-400 cursor-help">
                                 <SmartCurrency value={Number(item.amount)} forceCompact showTooltip={false} />
                               </span>
                             </TooltipTrigger>

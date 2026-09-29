@@ -118,7 +118,7 @@ export function AssetsWidget({ isLoading: externalLoading }: AssetsWidgetProps) 
       shortLabel: 'Unidades',
       value: data.unitsInProperties,
       icon: Building2,
-      color: 'text-green-600 dark:text-green-500',
+      color: 'text-green-700 dark:text-green-500',
       bgColor: 'bg-green-500/10',
     },
     {

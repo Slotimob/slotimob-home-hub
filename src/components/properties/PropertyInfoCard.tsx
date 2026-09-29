@@ -336,7 +336,7 @@ export const PropertyInfoCard = ({ property, compact = false }: PropertyInfoCard
               )}
               {property.sustainability_features && (
                 <div className="flex gap-2">
-                  <Leaf className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <Leaf className="h-4 w-4 text-green-700 dark:text-green-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-medium">Sustentabilidade</p>
                     <p className="text-xs text-muted-foreground">{property.sustainability_features}</p>

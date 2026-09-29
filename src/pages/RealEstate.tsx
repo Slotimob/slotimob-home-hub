@@ -433,7 +433,7 @@ const RealEstate = () => {
             >
               <CardContent className="pb-3 pt-3 px-3">
                 <p className="text-xs font-medium text-muted-foreground">Disponível</p>
-                <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.available}</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-400">{stats.available}</p>
               </CardContent>
             </Card>
             <Card 
@@ -481,7 +481,7 @@ const RealEstate = () => {
             >
               <CardContent className="pb-3 pt-3 px-3">
                 <p className="text-xs font-medium text-muted-foreground">Vendido</p>
-                <p className="text-xl sm:text-2xl font-bold text-red-600">{stats.sold}</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400">{stats.sold}</p>
               </CardContent>
             </Card>
           </div>

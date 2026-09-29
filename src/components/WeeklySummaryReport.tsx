@@ -441,7 +441,7 @@ export const WeeklySummaryReport = () => {
               <TrendingUp className="h-4 w-4" />
               Comissões
             </div>
-            <p className="mt-2 text-2xl font-bold text-green-600">
+            <p className="mt-2 text-2xl font-bold text-green-700 dark:text-green-400">
               R$ {weeklyData.totalCommissions.toLocaleString('pt-BR')}
             </p>
           </div>
@@ -474,7 +474,7 @@ export const WeeklySummaryReport = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Realizadas</span>
-                <span className="font-medium text-green-600">{weeklyData.visitsCompleted}</span>
+                <span className="font-medium text-green-700 dark:text-green-400">{weeklyData.visitsCompleted}</span>
               </div>
             </div>
           </div>
@@ -486,7 +486,7 @@ export const WeeklySummaryReport = () => {
             <div className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fechados</span>
-                <span className="font-medium text-green-600">{weeklyData.dealsWon}</span>
+                <span className="font-medium text-green-700 dark:text-green-400">{weeklyData.dealsWon}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Em andamento</span>

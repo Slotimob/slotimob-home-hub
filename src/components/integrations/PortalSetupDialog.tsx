@@ -51,7 +51,7 @@ export function PortalSetupDialog({ open, onOpenChange, feedUrl, publishedCount 
               </p>
             </div>
             <Badge className={publishedCount > 0
-              ? 'bg-green-500/10 text-green-600 border-green-500/20'
+              ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
               : 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20'
             }>
               {publishedCount > 0 ? 'Ativo' : 'Sem imóveis'}
@@ -68,7 +68,7 @@ export function PortalSetupDialog({ open, onOpenChange, feedUrl, publishedCount 
                 className="font-mono text-xs bg-muted"
               />
               <Button variant="outline" size="icon" onClick={handleCopy} disabled={!feedUrl} className="shrink-0">
-                {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                {copied ? <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-400" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
           </div>

@@ -100,7 +100,7 @@ export function AssetManagementGuide({ open, onOpenChange }: AssetManagementGuid
             ))}
 
             <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-              <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+              <CheckCircle2 className="h-5 w-5 text-green-700 dark:text-green-400 shrink-0" />
               <p className="text-xs text-green-700">
                 <strong>Dica:</strong> Quanto mais lançamentos vinculados, mais preciso fica o semáforo de saúde do ativo.
               </p>

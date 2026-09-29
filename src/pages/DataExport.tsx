@@ -197,7 +197,7 @@ const DataExport = () => {
 
         {undownloadedRecent && (
           <Alert className="border-green-300 bg-green-50 dark:bg-green-950 dark:border-green-800">
-            <Download className="h-4 w-4 text-green-600" />
+            <Download className="h-4 w-4 text-green-700 dark:text-green-400" />
             <AlertDescription className="text-green-800 dark:text-green-300">
               Sua exportação está pronta para download! Clique em "Baixar" na tabela abaixo.
             </AlertDescription>

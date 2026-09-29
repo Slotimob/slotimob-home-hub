@@ -55,8 +55,8 @@ const STAGE_LABELS: Record<string, string> = {
 function getActivityIcon(type: string) {
   switch (type) {
     case 'visit': case 'Visita': return <Calendar className="h-3.5 w-3.5 text-primary" />;
-    case 'note': case 'Anotação': return <StickyNote className="h-3.5 w-3.5 text-amber-500" />;
-    case 'call': case 'Ligação': return <PhoneCall className="h-3.5 w-3.5 text-green-500" />;
+    case 'note': case 'Anotação': return <StickyNote className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />;
+    case 'call': case 'Ligação': return <PhoneCall className="h-3.5 w-3.5 text-green-700 dark:text-green-400" />;
     case 'proposal': case 'Proposta': return <FileSignature className="h-3.5 w-3.5 text-blue-500" />;
     case 'message': case 'Mensagem': return <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />;
     default: return <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />;
@@ -350,7 +350,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
               <p className="text-xs font-medium text-amber-800">Contato não identificado</p>
               <p className="text-[10px] text-amber-700 dark:text-amber-400">Toque para vincular a um contato existente</p>
             </div>
-            <Link2 className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+            <Link2 className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400 flex-shrink-0" />
           </button>
         )}
 
@@ -364,14 +364,14 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
           {/* STEP 1: Contact */}
           <div className="flex items-start gap-3">
-            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${contact ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${contact ? 'bg-green-100 text-green-700 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
               {contact ? <CheckCircle2 className="h-4 w-4" /> : <span className="text-xs font-bold">1</span>}
             </div>
             <div className="flex-1 min-w-0">
               {contact ? (
                 <div className="p-2 rounded-md bg-green-50 border border-green-200">
                   <p className="text-xs font-medium text-green-800">{contact.name || 'Contato criado'}</p>
-                  <p className="text-[10px] text-green-600">Contato vinculado</p>
+                  <p className="text-[10px] text-green-700 dark:text-green-400">Contato vinculado</p>
                 </div>
               ) : (
                 <div>
@@ -394,7 +394,7 @@ export function CrmContextPanel({ conversation, contact, contactLoading, onCreat
 
           {/* STEP 2: Deal */}
           <div className="flex items-start gap-3">
-            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${activeDeal ? 'bg-green-100 text-green-600' : contact ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${activeDeal ? 'bg-green-100 text-green-700 dark:text-green-400' : contact ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
               {activeDeal ? <CheckCircle2 className="h-4 w-4" /> : <span className="text-xs font-bold">2</span>}
             </div>
             <div className="flex-1 min-w-0">

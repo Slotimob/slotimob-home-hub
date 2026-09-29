@@ -280,7 +280,7 @@ export const EditPropertyDialog = ({ property, open, onOpenChange, onSuccess, de
               {/* Draft recovery notice */}
               {hasDraft && !loadingProperty && (
                 <Alert className="border-amber-500/50 bg-amber-500/10 mb-4">
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
                   <AlertDescription className="flex items-center justify-between">
                     <span className="text-sm">Rascunho recuperado. Você tinha alterações não salvas.</span>
                     <Button 

@@ -199,7 +199,7 @@ export function NegotiationScheduleCard({ item, onClick }: NegotiationScheduleCa
             <Button
               size="sm"
               variant="outline"
-              className="w-full mt-2 gap-1.5 text-xs border-green-500/40 text-green-600 hover:bg-green-500/10 dark:text-green-400"
+              className="w-full mt-2 gap-1.5 text-xs border-green-500/40 text-green-700 hover:bg-green-500/10 dark:text-green-400"
               onClick={handleSendWhatsAppConfirmation}
               disabled={sendingWhatsApp}
             >

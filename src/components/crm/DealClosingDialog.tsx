@@ -251,7 +251,7 @@ export const DealClosingDialog = ({
 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <PartyPopper className="h-5 w-5 text-green-500" />
+            <PartyPopper className="h-5 w-5 text-green-700 dark:text-green-400" />
             Parabéns! Negócio fechado!
           </DialogTitle>
           <DialogDescription>
@@ -266,12 +266,12 @@ export const DealClosingDialog = ({
           <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
             <div className="flex items-center gap-3">
               {deal.unit ? (
-                <Home className="h-5 w-5 text-green-600" />
+                <Home className="h-5 w-5 text-green-700 dark:text-green-400" />
               ) : (
-                <Building2 className="h-5 w-5 text-green-600" />
+                <Building2 className="h-5 w-5 text-green-700 dark:text-green-400" />
               )}
               <div>
-                <p className="font-medium text-green-600 dark:text-green-400">
+                <p className="font-medium text-green-700 dark:text-green-400">
                   {deal.lead?.name || 'Lead'}
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -308,7 +308,7 @@ export const DealClosingDialog = ({
             </div>
             {shouldUpdatePropertyStatus && deal.unit?.id && (
               <p className="text-sm text-muted-foreground pl-6">
-                O imóvel será marcado como <strong className="text-green-600">{statusLabel}</strong> e 
+                O imóvel será marcado como <strong className="text-green-700 dark:text-green-400">{statusLabel}</strong> e 
                 removido da disponibilidade do sistema.
               </p>
             )}

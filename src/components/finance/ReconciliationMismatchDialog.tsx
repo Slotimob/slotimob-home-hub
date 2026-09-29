@@ -40,7 +40,7 @@ export function ReconciliationMismatchDialog({
         <AlertDialogHeader>
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-full bg-amber-500/10">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-400" />
             </div>
             <AlertDialogTitle>Divergência Detectada</AlertDialogTitle>
           </div>

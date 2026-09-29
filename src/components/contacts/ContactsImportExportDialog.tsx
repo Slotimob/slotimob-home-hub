@@ -317,9 +317,9 @@ export const ContactsImportExportDialog = ({
             {importResult && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
                 {importResult.errors === 0 ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <CheckCircle2 className="h-5 w-5 text-green-700 dark:text-green-400" />
                 ) : (
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
+                  <AlertCircle className="h-5 w-5 text-amber-700 dark:text-amber-400" />
                 )}
                 <div className="text-sm">
                   <p>{importResult.success} registros importados com sucesso.</p>

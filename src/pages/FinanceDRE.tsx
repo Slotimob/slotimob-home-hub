@@ -48,7 +48,7 @@ function DRELine({ label, value, items, isTotal, isPositive, isNegative, operato
             <span className={cn(
               "w-5 text-center text-sm font-mono",
               operator === '+' && "text-emerald-600",
-              operator === '-' && "text-red-600"
+              operator === '-' && "text-red-700 dark:text-red-400"
             )}>
               ({operator})
             </span>
@@ -57,9 +57,9 @@ function DRELine({ label, value, items, isTotal, isPositive, isNegative, operato
         </div>
         <span className={cn(
           isPositive && value > 0 && "text-emerald-600",
-          isNegative && value > 0 && "text-red-600",
+          isNegative && value > 0 && "text-red-700 dark:text-red-400",
           isTotal && value > 0 && isPositive && "text-emerald-600",
-          isTotal && value < 0 && "text-red-600"
+          isTotal && value < 0 && "text-red-700 dark:text-red-400"
         )}>
           {formatCurrency(value)}
         </span>
@@ -363,7 +363,7 @@ export default function FinanceDRE() {
               <p className="text-sm text-muted-foreground mb-1">Resultado do Período</p>
               <p className={cn(
                 "text-3xl font-bold",
-                dre.netResult >= 0 ? "text-emerald-600" : "text-red-600"
+                dre.netResult >= 0 ? "text-emerald-600" : "text-red-700 dark:text-red-400"
               )}>
                 {formatCurrency(dre.netResult)}
               </p>

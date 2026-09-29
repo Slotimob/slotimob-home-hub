@@ -205,7 +205,7 @@ export default function AIChat() {
     const total = credits.limit;
     const pct = total > 0 ? Math.round((used / total) * 100) : 100;
     const remaining = credits.remaining + credits.bonus_credits;
-    const badgeColor = pct > 90 ? 'border-red-500/50 text-red-500 bg-red-500/5' : pct >= 70 ? 'border-amber-500/50 text-amber-500 bg-amber-500/5' : 'border-emerald-500/50 text-emerald-500 bg-emerald-500/5';
+    const badgeColor = pct > 90 ? 'border-red-500/50 text-red-500 bg-red-500/5' : pct >= 70 ? 'border-amber-500/50 text-amber-700 dark:text-amber-400 bg-amber-500/5' : 'border-emerald-500/50 text-emerald-500 bg-emerald-500/5';
 
     return (
       <Popover>

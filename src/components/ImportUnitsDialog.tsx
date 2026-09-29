@@ -792,7 +792,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
           {/* Import Summary (shown after successful import) */}
           {importSummary && (
             <Alert className="border-green-500/50 bg-green-500/5">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-400" />
               <AlertDescription>
                 <div className="space-y-2 text-green-700 dark:text-green-400">
                   <p className="font-semibold">Importação concluída com sucesso!</p>
@@ -1015,7 +1015,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
                 <label htmlFor="file-upload-import" className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
                   {selectedFile ? (
                     <div className="flex flex-col items-center">
-                      <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
+                      <CheckCircle className="h-8 w-8 text-green-700 dark:text-green-400 mb-2" />
                       <p className="text-sm font-medium">{selectedFile.name}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Clique para trocar o arquivo
@@ -1085,7 +1085,7 @@ export const ImportUnitsDialog = ({ propertyId, open, onOpenChange, onSuccess, s
 
               {validationResult.isValid && (
                 <Alert className="border-green-500/50 bg-green-500/5">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-400" />
                   <AlertDescription className="text-green-700 dark:text-green-400">
                     Arquivo válido! {previewData.length > 0 && `${previewData.length}+ unidades prontas para importar.`}
                   </AlertDescription>

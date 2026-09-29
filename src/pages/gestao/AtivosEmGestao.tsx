@@ -254,8 +254,8 @@ const AtivosEmGestao = () => {
                 key: "healthy" as StatusFilter,
                 label: "Saudáveis",
                 value: stats.healthy,
-                icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-                valueClass: "text-green-600",
+                icon: <CheckCircle2 className="h-5 w-5 text-green-700 dark:text-green-400" />,
+                valueClass: "text-green-700 dark:text-green-400",
                 ringClass: "ring-green-500",
                 bgClass: "",
               },
@@ -273,7 +273,7 @@ const AtivosEmGestao = () => {
                 label: "Críticos",
                 value: stats.critical,
                 icon: <XCircle className="h-5 w-5 text-red-500" />,
-                valueClass: "text-red-600",
+                valueClass: "text-red-700 dark:text-red-400",
                 ringClass: "ring-red-500",
                 bgClass: "",
               },
@@ -332,7 +332,7 @@ const AtivosEmGestao = () => {
                             <Download className="h-4 w-4" />
                             <span className="hidden sm:inline">Exportar Pendências</span>
                             {overdueCount > 0 && (
-                              <span className="ml-1 px-1.5 py-0.5 text-[10px] font-medium bg-red-500/15 text-red-600 rounded-full">{overdueCount}</span>
+                              <span className="ml-1 px-1.5 py-0.5 text-[10px] font-medium bg-red-500/15 text-red-700 dark:text-red-400 rounded-full">{overdueCount}</span>
                             )}
                           </Button>
                         </DropdownMenuTrigger>

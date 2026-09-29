@@ -293,10 +293,10 @@ export function BalanceComparisonGrid({
         ) : difference !== null ? (
           <div className="text-center space-y-2">
             <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
-            <p className="text-lg font-bold text-red-600">
+            <p className="text-lg font-bold text-red-700 dark:text-red-400">
               {difference > 0 ? "Faltam" : "Sobram"} {formatCurrency(Math.abs(difference))}
             </p>
-            <p className="text-xs text-red-600/80">
+            <p className="text-xs text-red-700 dark:text-red-400/80">
               {difference > 0
                 ? "O banco tem mais do que o sistema registrou"
                 : "O sistema registrou mais do que o banco mostra"}

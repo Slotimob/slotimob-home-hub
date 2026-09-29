@@ -34,12 +34,12 @@ function getValueColor(value: number, type?: "income" | "expense" | "balance", i
   }
   
   if (type === "balance") {
-    if (value > 0) return "text-green-600 dark:text-green-400";
-    if (value < 0) return "text-red-600 dark:text-red-400";
+    if (value > 0) return "text-green-700 dark:text-green-400";
+    if (value < 0) return "text-red-700 dark:text-red-400";
     return "text-muted-foreground";
   }
-  if (type === "income") return "text-green-600 dark:text-green-400";
-  if (type === "expense") return "text-red-600 dark:text-red-400";
+  if (type === "income") return "text-green-700 dark:text-green-400";
+  if (type === "expense") return "text-red-700 dark:text-red-400";
   return "";
 }
 
@@ -52,13 +52,13 @@ function getCashStatus(
   if ((totalBalanceReal + totalIncomePending) < totalExpensePending) {
     return {
       text: "Atenção: Risco de Inadimplência",
-      className: "text-red-600 dark:text-red-400 font-bold"
+      className: "text-red-700 dark:text-red-400 font-bold"
     };
   }
   if (totalBalanceReal < 0) {
     return {
       text: "Atenção: Problema de Caixa",
-      className: "text-red-600 dark:text-red-400 font-bold"
+      className: "text-red-700 dark:text-red-400 font-bold"
     };
   }
   return {

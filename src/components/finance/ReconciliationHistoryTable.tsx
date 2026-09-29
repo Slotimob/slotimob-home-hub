@@ -161,7 +161,7 @@ export function ReconciliationHistoryTable({
                     </div>
                     <span className={cn(
                       "text-xs font-semibold whitespace-nowrap flex-shrink-0",
-                      entry.is_credit ? "text-emerald-600" : "text-red-600"
+                      entry.is_credit ? "text-emerald-600" : "text-red-700 dark:text-red-400"
                     )}>
                       {entry.is_credit ? "+" : "-"}{formatCurrency(Math.abs(entry.amount))}
                     </span>
@@ -303,7 +303,7 @@ export function ReconciliationHistoryTable({
                       </span>
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap text-xs">
-                      <span className={entry.is_credit ? "text-emerald-600" : "text-red-600"}>
+                      <span className={entry.is_credit ? "text-emerald-600" : "text-red-700 dark:text-red-400"}>
                         {entry.is_credit ? "+" : "-"}
                         {formatCurrency(Math.abs(entry.amount))}
                       </span>

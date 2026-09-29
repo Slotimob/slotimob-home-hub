@@ -555,7 +555,7 @@ export const ChannelPerformanceDashboard = () => {
           <CardContent>
             <div className={cn(
               "text-2xl font-bold",
-              totals.totalROI !== null && totals.totalROI >= 0 ? "text-green-600" : totals.totalROI !== null ? "text-red-600" : ""
+              totals.totalROI !== null && totals.totalROI >= 0 ? "text-green-700 dark:text-green-400" : totals.totalROI !== null ? "text-red-700 dark:text-red-400" : ""
             )}>
               {totals.totalROI !== null ? `${totals.totalROI.toFixed(0)}%` : 'N/A'}
             </div>

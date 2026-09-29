@@ -34,8 +34,8 @@ export const MetricChange = ({ current, previous, format = 'number', showPeriodF
   return (
     <div className={cn(
       "flex items-center gap-1 text-xs font-medium",
-      isPositive && "text-green-600 dark:text-green-500",
-      isNegative && "text-red-600 dark:text-red-500",
+      isPositive && "text-green-700 dark:text-green-500",
+      isNegative && "text-red-700 dark:text-red-500",
       isNeutral && "text-muted-foreground"
     )}>
       {isPositive && <TrendingUp className="h-3 w-3" />}

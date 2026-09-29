@@ -448,7 +448,7 @@ export const DimobReportTab = () => {
         <Card className="border-green-200 bg-green-50/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-green-700 dark:text-green-400" />
               Aptos para DIMOB
             </CardTitle>
           </CardHeader>

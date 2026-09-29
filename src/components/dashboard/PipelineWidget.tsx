@@ -213,10 +213,10 @@ export function PipelineWidget({
             </div>
             <div className="rounded-lg border bg-green-500/5 border-green-500/20 p-3">
               <div className="flex items-center gap-1.5 mb-1">
-                <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                <TrendingUp className="h-3.5 w-3.5 text-green-700 dark:text-green-500" />
                 <span className="text-xs text-muted-foreground">Em Negociação</span>
               </div>
-              <p className="text-xl font-bold text-green-600 dark:text-green-500">
+              <p className="text-xl font-bold text-green-700 dark:text-green-500">
                 <SmartCurrency value={data.totalDealsValue} />
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">excluindo ganhos/perdidos</p>

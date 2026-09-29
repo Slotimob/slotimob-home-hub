@@ -21,13 +21,13 @@ All colors MUST be HSL.
     --primary-rgb: 23, 0, 117;
     --primary-foreground: 0 0% 100%;
     --secondary: 170 62% 49%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary-foreground: 246 100% 15%;
     --muted: 246 18% 89%;
     --muted-foreground: 246 25% 38%;
     --section: 246 20% 97%;
     --section-foreground: 246 100% 23%;
     --accent: 170 85% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 246 100% 15%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 246 20% 76%;
@@ -45,7 +45,7 @@ All colors MUST be HSL.
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 246 100% 15%;
     --info: 170 62% 49%;
     --info-foreground: 0 0% 100%;
     --gradient-primary: linear-gradient(135deg, hsl(246, 100%, 23%), hsl(170, 62%, 49%));
