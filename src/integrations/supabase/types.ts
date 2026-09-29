@@ -568,6 +568,33 @@ export type Database = {
           },
         ]
       }
+      asaas_webhook_events: {
+        Row: {
+          created_at: string
+          effect: string | null
+          event: string
+          event_id: string
+          payment_id: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          effect?: string | null
+          event: string
+          event_id: string
+          payment_id?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          effect?: string | null
+          event?: string
+          event_id?: string
+          payment_id?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: []
+      }
       asset_improvements: {
         Row: {
           affects_market_value: boolean
@@ -4786,6 +4813,8 @@ export type Database = {
           id: string
           is_early_adopter: boolean | null
           last_modified_by_admin: string | null
+          last_payment_error: string | null
+          last_payment_error_at: string | null
           plan_id: string
           price_locked: number | null
           status: string
@@ -4817,6 +4846,8 @@ export type Database = {
           id?: string
           is_early_adopter?: boolean | null
           last_modified_by_admin?: string | null
+          last_payment_error?: string | null
+          last_payment_error_at?: string | null
           plan_id?: string
           price_locked?: number | null
           status?: string
@@ -4848,6 +4879,8 @@ export type Database = {
           id?: string
           is_early_adopter?: boolean | null
           last_modified_by_admin?: string | null
+          last_payment_error?: string | null
+          last_payment_error_at?: string | null
           plan_id?: string
           price_locked?: number | null
           status?: string
