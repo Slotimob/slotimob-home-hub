@@ -92,7 +92,7 @@ const FinanceReconciliation = () => {
   const { data: totals } = useQuery({
     queryKey: ["reconciliation-totals", selectedAccountId, dateFromStr, dateToStr],
     queryFn: async () => {
-      if (!selectedAccountId) return { totalImported: 0, totalReconciled: 0, totalPending: 0 };
+      if (!selectedAccountId) return { totalImported: 0, totalReconciled: 0, totalPending: 0, totalIn: 0, totalOut: 0 };
 
       const { data: allEntries, error: allError } = await supabase
         .from("bank_statement_entries")
@@ -103,7 +103,12 @@ const FinanceReconciliation = () => {
 
       if (allError) throw allError;
 
-      const totalImported = allEntries?.reduce((sum, entry) => sum + Math.abs(Number(entry.amount)), 0) || 0;
+      // RC2: saldo líquido com sinal (créditos − débitos)
+      const signed = (e: { amount: any; is_credit: boolean | null }) =>
+        e.is_credit ? Math.abs(Number(e.amount)) : -Math.abs(Number(e.amount));
+      const totalIn = (allEntries || []).filter((e) => e.is_credit).reduce((s, e) => s + Math.abs(Number(e.amount)), 0);
+      const totalOut = (allEntries || []).filter((e) => !e.is_credit).reduce((s, e) => s + Math.abs(Number(e.amount)), 0);
+      const totalImported = totalIn - totalOut;
 
       const { data: reconciledEntries, error: reconciledError } = await supabase
         .from("bank_statement_entries")
@@ -115,7 +120,7 @@ const FinanceReconciliation = () => {
 
       if (reconciledError) throw reconciledError;
 
-      const totalReconciled = reconciledEntries?.reduce((sum, entry) => sum + Math.abs(Number(entry.amount)), 0) || 0;
+      const totalReconciled = (reconciledEntries || []).reduce((sum, entry) => sum + signed(entry), 0);
 
       const { data: pendingEntries, error: pendingError } = await supabase
         .from("bank_statement_entries")
@@ -127,9 +132,9 @@ const FinanceReconciliation = () => {
 
       if (pendingError) throw pendingError;
 
-      const totalPending = pendingEntries?.reduce((sum, entry) => sum + Math.abs(Number(entry.amount)), 0) || 0;
+      const totalPending = (pendingEntries || []).reduce((sum, entry) => sum + signed(entry), 0);
 
-      return { totalImported, totalReconciled, totalPending };
+      return { totalImported, totalReconciled, totalPending, totalIn, totalOut };
     },
     enabled: !!selectedAccountId,
   });
@@ -287,6 +292,8 @@ const FinanceReconciliation = () => {
               totalImported={totals.totalImported}
               totalReconciled={totals.totalReconciled}
               totalPending={totals.totalPending}
+              totalIn={totals.totalIn}
+              totalOut={totals.totalOut}
             />
           )}
 

@@ -1,3 +1,5 @@
+import { formatCurrencyBRL } from '@/utils/unitPricing';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useMemo, useState } from 'react';
 import type { DateRange as RDPRange } from 'react-day-picker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -163,6 +165,23 @@ export function AssetActivitiesPanel({
   const [editingAsset, setEditingAsset] = useState<AssetOption | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ActivityRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // M2: lançamento gerado pela atividade
+  const [deleteLinkedTx, setDeleteLinkedTx] = useState(true);
+  const { data: linkedTx } = useQuery({
+    queryKey: ['activity-linked-tx', deleteTarget?.financial_transaction_id],
+    enabled: !!deleteTarget?.financial_transaction_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('financial_transactions')
+        .select('id, description, amount, status')
+        .eq('id', deleteTarget!.financial_transaction_id!)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const linkedTxPaid = linkedTx?.status === 'paid';
+  const linkedTxStatusLabel = (st?: string | null) =>
+    st === 'paid' ? 'pago' : st === 'cancelled' ? 'cancelado' : st === 'overdue' ? 'atrasado' : 'pendente';
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -335,7 +354,21 @@ export function AssetActivitiesPanel({
         .delete()
         .eq('id', deleteTarget.id);
       if (error) throw error;
-      toast({ title: 'Atividade excluída' });
+      let txDeleted = false;
+      if (linkedTx && !linkedTxPaid && deleteLinkedTx) {
+        const { error: txErr } = await supabase.from('financial_transactions').delete().eq('id', linkedTx.id);
+        if (txErr) throw txErr;
+        txDeleted = true;
+        queryClient.invalidateQueries({ queryKey: ['infinite-transactions'] });
+      }
+      toast({
+        title: 'Atividade excluída',
+        description: txDeleted
+          ? 'O lançamento pendente também foi excluído.'
+          : linkedTx
+            ? 'O lançamento gerado continua no financeiro.'
+            : undefined,
+      });
       queryClient.invalidateQueries({ queryKey: ['activities-list'] });
       queryClient.invalidateQueries({ queryKey: ['asset-manual-notes'] });
       setDeleteTarget(null);
@@ -416,7 +449,7 @@ export function AssetActivitiesPanel({
         )}
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
-          onClick={() => setDeleteTarget(row)}
+          onClick={() => { setDeleteLinkedTx(true); setDeleteTarget(row); }}
         >
           <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
         </DropdownMenuItem>
@@ -740,6 +773,27 @@ export function AssetActivitiesPanel({
               atividades do mesmo grupo não serão afetadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {linkedTx && (
+            <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-2">
+              <p>
+                Esta atividade gerou o lançamento <strong>{linkedTx.description}</strong>{' '}
+                {formatCurrencyBRL(Number(linkedTx.amount))} ({linkedTxStatusLabel(linkedTx.status)}).
+              </p>
+              {linkedTxPaid ? (
+                <p className="text-muted-foreground">
+                  Como já está pago, o lançamento não será excluído e continua no financeiro.
+                </p>
+              ) : (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={deleteLinkedTx}
+                    onCheckedChange={(v) => setDeleteLinkedTx(!!v)}
+                  />
+                  Excluir também o lançamento pendente
+                </label>
+              )}
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction

@@ -458,15 +458,15 @@ export function ImportStatementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90dvh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
           <DialogTitle>Importar Extrato</DialogTitle>
           <DialogDescription>
             Importe um arquivo CSV ou OFX do seu banco
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 flex-1 min-h-0 overflow-y-auto px-6 pb-4">
           {/* Bank Account Selector */}
           <div className="space-y-2">
             <Label>Conta Bancária</Label>
@@ -592,7 +592,7 @@ export function ImportStatementDialog({
           )}
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-2 shrink-0 border-t px-6 py-4">
           {importComplete ? (
             <>
               <Button variant="outline" onClick={handleClose}>
