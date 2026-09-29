@@ -10,6 +10,7 @@ import {
 } from '@/components/asaas/AsaasFinancialSeal';
 import {
   Loader2,
+  CheckCircle2,
   Check,
   Zap,
   Rocket,
@@ -27,7 +28,13 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { usePlanPricing } from '@/hooks/usePlanPricing';
 
-import { trackStartTrial, trackSubscriptionPaid } from '@/components/TrackingProvider';
+import { trackStartTrial, trackSubscriptionPaid, trackInitiateCheckout } from '@/components/TrackingProvider';
+import { PaymentMethodSelector, type PlatformBillingType } from '@/components/checkout/PaymentMethodSelector';
+import { PlatformPaymentResult, type PlatformPaymentResultData } from '@/components/checkout/PlatformPaymentResult';
+import { usePlatformPaymentStatus } from '@/hooks/usePlatformPaymentStatus';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { buttonVariants } from '@/components/ui/button';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils';
 import { useCepSearch } from '@/hooks/useCepSearch';
@@ -43,11 +50,9 @@ import { useEmailVerifiedStatus } from '@/hooks/useEmailVerification';
 type PaidPlan = 'essencial' | 'pro' | 'business';
 type AnyPlan = 'start' | PaidPlan;
 
-type PaymentResult =
-  | { type: 'pix'; pix: { encodedImage: string; payload: string; expirationDate: string } }
-  | { type: 'boleto'; boleto: { bankSlipUrl: string; barCode?: string | null; dueDate?: string } }
-  | { type: 'redirect'; url: string }
-  | null;
+type PaymentResult = PlatformPaymentResultData | null;
+
+type AddonResult = { addonId: string; label: string; url?: string; error?: string };
 
 interface PlanMeta {
   id: PaidPlan;
@@ -178,8 +183,45 @@ export default function Checkout() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [fiscalDuplicateAccountError, setFiscalDuplicateAccountError] = useState(false);
   const [cpfError, setCpfError] = useState<string | null>(null);
-  const [billingType, setBillingType] = useState<'PIX' | 'BOLETO' | 'CREDIT_CARD'>('PIX');
+  const [billingType, setBillingType] = useState<PlatformBillingType>('PIX');
   const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
+  const [addonResults, setAddonResults] = useState<AddonResult[]>([]);
+  const [baselinePeriodEnd, setBaselinePeriodEnd] = useState<string | null>(null);
+  const [paymentSince, setPaymentSince] = useState<string | null>(null);
+  const [paymentUserId, setPaymentUserId] = useState<string | null>(null);
+  const paidTrackedRef = useRef(false);
+  const queryClient = useQueryClient();
+
+  const {
+    confirmed: paymentConfirmedRaw,
+    paymentError,
+    timedOut: paymentTimedOut,
+    refetch: refetchPaymentStatus,
+  } = usePlatformPaymentStatus({
+    userId: paymentUserId ?? user?.id,
+    expectedPlanId: selectedPlan,
+    baselinePeriodEnd,
+    since: paymentSince,
+    enabled: !!paymentResult && !paidTrackedRef.current,
+  });
+  const paymentConfirmed = !!paymentResult && (paymentConfirmedRaw || paidTrackedRef.current);
+
+  useEffect(() => {
+    if (paymentResult && paymentConfirmedRaw && !paidTrackedRef.current) {
+      paidTrackedRef.current = true;
+      trackSubscriptionPaid(selectedPlan, billingType);
+      queryClient.invalidateQueries();
+    }
+  }, [paymentResult, paymentConfirmedRaw, selectedPlan, billingType, queryClient]);
+
+  const resetPayment = () => {
+    setPaymentResult(null);
+    setAddonResults([]);
+    setPaymentSince(null);
+    setBaselinePeriodEnd(null);
+    paidTrackedRef.current = false;
+    setBillingType('PIX');
+  };
 
   const { data: pricing, isLoading: pricingLoading } = usePlanPricing();
 
@@ -493,6 +535,7 @@ export default function Checkout() {
 
     // 3. Paid: call create-checkout-session
     setIsCheckingOut(true);
+    const sinceIso = new Date().toISOString();
     try {
       const { data, error: fnError } = await supabase.functions.invoke('create-checkout-session', {
         body: {
@@ -520,6 +563,14 @@ export default function Checkout() {
         return;
       }
 
+      if (data?.error === 'cpf_cnpj_obrigatorio') {
+        const msg = data.message || 'Informe seu CPF ou CNPJ para gerar o pagamento.';
+        setCpfError(msg);
+        toast.error(msg);
+        resetCaptcha();
+        return;
+      }
+
       if (data?.error) {
         setCheckoutError(data.error);
         toast.error(data.error);
@@ -527,60 +578,63 @@ export default function Checkout() {
         return;
       }
 
-      if (data?.type === 'redirect' && data?.url) {
-        window.open(data.url, '_blank');
-        setPaymentResult(data as PaymentResult);
-        trackSubscriptionPaid(selectedPlan, billingType);
-        // Após processar o resultado principal da subscription:
-        if (Object.values(addonQuantities).some((q) => q > 0)) {
-          for (const [addonId, qty] of Object.entries(addonQuantities)) {
-            if (qty <= 0) continue;
-            const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
-              body: {
-                product_type: 'addon',
-                addon_id: addonId,
-                quantity: qty,
-                billing_type: billingType,
-              },
-            });
-            if (addonData?.error) {
-              console.warn('[addon] erro no add-on:', addonId, addonData.error);
-            } else if (addonData?.url) {
-              window.open(addonData.url, '_blank');
-            }
-          }
-        }
-      } else if (data?.type === 'pix' || data?.type === 'boleto') {
-        setPaymentResult(data as PaymentResult);
-        trackSubscriptionPaid(selectedPlan, billingType);
-        // Após processar o resultado principal da subscription:
-        if (Object.values(addonQuantities).some((q) => q > 0)) {
-          for (const [addonId, qty] of Object.entries(addonQuantities)) {
-            if (qty <= 0) continue;
-            const { data: addonData } = await supabase.functions.invoke('create-checkout-session', {
-              body: {
-                product_type: 'addon',
-                addon_id: addonId,
-                quantity: qty,
-                billing_type: billingType,
-              },
-            });
-            if (addonData?.error) {
-              console.warn('[addon] erro no add-on:', addonId, addonData.error);
-            } else if (addonData?.url) {
-              window.open(addonData.url, '_blank');
-            }
-          }
-        }
-        toast.success('Pagamento gerado! Siga as instruções abaixo.');
-      } else if (data?.url) {
-        // backwards compat
-        window.open(data.url, '_blank');
-      } else {
+      const isPix = data?.type === 'pix' && data?.pix?.encodedImage;
+      const isRedirect = data?.type === 'redirect' && data?.url;
+      if (!isPix && !isRedirect) {
         setCheckoutError('Resposta inesperada do servidor.');
         toast.error('Resposta inesperada do servidor.');
         resetCaptcha();
+        return;
       }
+
+      trackInitiateCheckout(selectedPlan, billingType);
+
+      // Referência para detectar a confirmação (novo current_period_end)
+      let baseline: string | null = null;
+      const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id ?? null;
+      if (uid) {
+        const { data: subRow } = await supabase
+          .from('subscriptions')
+          .select('current_period_end')
+          .eq('user_id', uid)
+          .maybeSingle();
+        baseline = subRow?.current_period_end ?? null;
+      }
+      setPaymentUserId(uid);
+      setBaselinePeriodEnd(baseline);
+      setPaymentSince(sinceIso);
+      paidTrackedRef.current = false;
+      setPaymentResult(data as PlatformPaymentResultData);
+
+      // Add-ons: cada um tem sua própria cobrança
+      const results: AddonResult[] = [];
+      for (const [addonId, qty] of Object.entries(addonQuantities)) {
+        if (qty <= 0) continue;
+        const label = ADDONS.find((a) => a.id === addonId)?.label ?? addonId;
+        try {
+          const { data: addonData, error: addonErr } = await supabase.functions.invoke('create-checkout-session', {
+            body: {
+              product_type: 'addon',
+              addon_id: addonId,
+              quantity: qty,
+              billing_type: billingType,
+            },
+          });
+          if (addonErr || addonData?.error) {
+            results.push({
+              addonId,
+              label,
+              error: addonData?.message || (typeof addonData?.error === 'string' ? addonData.error : null) || 'Não foi possível gerar a cobrança deste add-on.',
+            });
+          } else {
+            results.push({ addonId, label, url: addonData?.url });
+          }
+        } catch {
+          results.push({ addonId, label, error: 'Não foi possível gerar a cobrança deste add-on.' });
+        }
+      }
+      setAddonResults(results);
+      toast.success('Pagamento gerado! Siga as instruções abaixo.');
     } catch (err) {
       const captchaMessage = translateCaptchaError(err);
       const msg = captchaMessage || (err instanceof Error ? err.message : 'Erro inesperado.');
@@ -1077,142 +1131,89 @@ export default function Checkout() {
             </div>
 
 
-            {selectedPlan !== 'start' && (
+            {selectedPlan !== 'start' && !paymentResult && (
               <div className="mb-4">
                 <p className="text-sm font-medium text-foreground mb-2">Forma de pagamento</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['PIX', 'BOLETO', 'CREDIT_CARD'] as const).map((type) => {
-                    const labels: Record<typeof type, string> = {
-                      PIX: 'PIX',
-                      BOLETO: 'Boleto',
-                      CREDIT_CARD: 'Cartão',
-                    };
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setBillingType(type)}
-                        className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
-                          billingType === type
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border text-muted-foreground hover:border-primary/50'
-                        }`}
-                      >
-                        {labels[type]}
-                      </button>
-                    );
-                  })}
-                </div>
+                <PaymentMethodSelector value={billingType} onChange={setBillingType} disabled={isCheckingOut} />
+                <p className="text-xs text-muted-foreground mt-2">
+                  A 1ª cobrança vence hoje. Depois, renova automaticamente {isAnnual ? 'todo ano' : 'todo mês'} no mesmo dia.
+                </p>
                 <AsaasFinancialSeal size="sm" className="mt-3" />
               </div>
             )}
 
-            {/* Resultado do pagamento (PIX / Boleto / Cartão) */}
+            {/* Resultado do pagamento (PIX / Cartão) */}
             {paymentResult ? (
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                {paymentResult.type === 'pix' && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">✅</span>
-                      <h3 className="font-semibold text-foreground">PIX gerado!</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Escaneie o QR code ou copie o código para pagar.
-                    </p>
-                    <div className="flex justify-center">
-                      <img
-                        src={`data:image/png;base64,${paymentResult.pix.encodedImage}`}
-                        alt="QR Code PIX"
-                        className="w-48 h-48 rounded-lg border border-border"
-                      />
+                {paymentConfirmed ? (
+                  <div className="space-y-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <CheckCircle2 className="h-6 w-6 text-primary" />
+                      <h3 className="font-semibold text-foreground">
+                        Pagamento confirmado! Seu plano {planNameSelected} está ativo.
+                      </h3>
                     </div>
                     <Button
-                      variant="outline"
-                      className="w-full gap-2"
-                      onClick={() => {
-                        navigator.clipboard.writeText(paymentResult.pix.payload);
-                        toast.success('Código PIX copiado!');
-                      }}
+                      size="lg"
+                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                      onClick={() => navigate('/dashboard')}
                     >
-                      📋 Copiar código PIX (Copia e Cola)
+                      Ir para o painel
                     </Button>
-                    {paymentResult.pix.expirationDate && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Válido até{' '}
-                        {new Date(paymentResult.pix.expirationDate).toLocaleString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg p-3">
-                      💡 Sua assinatura é ativada automaticamente após a confirmação do PIX (geralmente instantâneo).
-                    </p>
-                  </>
-                )}
-
-                {paymentResult.type === 'boleto' && (
+                  </div>
+                ) : (
                   <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">✅</span>
-                      <h3 className="font-semibold text-foreground">Boleto gerado!</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Abra o PDF e efetue o pagamento até a data de vencimento.
-                    </p>
-                    <Button
-                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
-                      onClick={() => window.open(paymentResult.boleto.bankSlipUrl, '_blank')}
-                    >
-                      Abrir boleto em PDF →
-                    </Button>
-                    {paymentResult.boleto.barCode && (
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2"
-                        onClick={() => {
-                          navigator.clipboard.writeText(paymentResult.boleto.barCode as string);
-                          toast.success('Linha digitável copiada!');
-                        }}
-                      >
-                        📋 Copiar linha digitável
-                      </Button>
-                    )}
-                    {paymentResult.boleto.dueDate && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Vencimento:{' '}
-                        {new Date(paymentResult.boleto.dueDate).toLocaleDateString('pt-BR')}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg p-3">
-                      💡 Sua assinatura é ativada após a compensação do boleto (1 a 3 dias úteis).
-                    </p>
-                  </>
-                )}
+                    <PlatformPaymentResult result={paymentResult} />
 
-                {paymentResult.type === 'redirect' && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">✅</span>
-                      <h3 className="font-semibold text-foreground">Redirecionado para pagamento seguro</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Uma nova aba foi aberta com a página segura do Asaas. Se não abriu,{' '}
-                      <a
-                        href={paymentResult.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-accent underline"
-                      >
-                        clique aqui
-                      </a>.
-                    </p>
-                    <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg p-3">
-                      💡 Sua assinatura é ativada após a confirmação do pagamento pelo cartão.
-                    </p>
+                    {addonResults.length > 0 && (
+                      <div className="space-y-2 border-t pt-3">
+                        <p className="text-sm font-medium text-foreground">Cada add-on tem sua própria cobrança:</p>
+                        {addonResults.map((a) => (
+                          <div key={a.addonId} className="flex flex-wrap items-center gap-2">
+                            {a.url ? (
+                              <a
+                                href={a.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                              >
+                                Pagar {a.label}
+                              </a>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">{a.label}</span>
+                            )}
+                            {a.error && <span className="text-xs text-destructive">{a.error}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {paymentError ? (
+                      <Alert variant="destructive">
+                        <AlertDescription className="space-y-3">
+                          <p>{paymentError}</p>
+                          <Button variant="outline" size="sm" onClick={resetPayment}>
+                            Tentar de novo
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="space-y-2 border-t pt-3">
+                        {paymentTimedOut ? (
+                          <p className="text-sm text-muted-foreground">
+                            Ainda não recebemos a confirmação. Assim que o Asaas confirmar, o acesso é liberado sozinho.
+                          </p>
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Aguardando a confirmação do pagamento...
+                          </div>
+                        )}
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => refetchPaymentStatus()}>
+                          Já paguei, verificar
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
                 <div className="border-t pt-3">
@@ -1252,9 +1253,7 @@ export default function Checkout() {
                         ? 'Criando sua conta...'
                         : billingType === 'PIX'
                         ? 'Gerando PIX...'
-                        : billingType === 'BOLETO'
-                        ? 'Gerando boleto...'
-                        : 'Preparando...'}
+                        : 'Gerando link de pagamento...'}
                     </>
                   ) : selectedPlan === 'start' ? (
                     'Começar grátis com 7 dias de Pro →'
@@ -1269,10 +1268,8 @@ export default function Checkout() {
                     {selectedPlan === 'start'
                       ? 'Grátis · sem cartão · 7 dias de Pro para testar, depois vira Start (5 imóveis)'
                       : billingType === 'CREDIT_CARD'
-                      ? 'Você será redirecionado para o ambiente seguro do Asaas'
-                      : billingType === 'BOLETO'
-                      ? 'O boleto será gerado e exibido aqui'
-                      : 'O QR code PIX será gerado e exibido aqui'}
+                      ? 'Você paga no ambiente seguro do Asaas (https://www.asaas.com)'
+                      : 'O QR code PIX aparece aqui e vence hoje'}
                   </span>
                 </div>
               </div>
