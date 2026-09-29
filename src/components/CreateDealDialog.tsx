@@ -118,9 +118,6 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [leadInvalid, setLeadInvalid] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (formData.lead_id || newLeadData.name.trim()) setLeadInvalid(false);
-  }, [formData.lead_id, newLeadData.name]);
   const [leadOpen, setLeadOpen] = useState(false);
   const [unitOpen, setUnitOpen] = useState(false);
   const [leadSearch, setLeadSearch] = useState('');
@@ -159,6 +156,9 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
     phone: '',
     origin: '',
   });
+  useEffect(() => {
+    if (formData.lead_id || newLeadData.name.trim()) setLeadInvalid(false);
+  }, [formData.lead_id, newLeadData.name]);
 
   useEffect(() => {
     if (open) {
