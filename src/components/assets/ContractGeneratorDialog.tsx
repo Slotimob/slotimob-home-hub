@@ -1,7 +1,7 @@
 import { leaseUnitFilter } from "@/hooks/useLeases";
 import { resolveLeasePurpose, leaseTermMonths } from "@/lib/lease-purpose";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -392,6 +392,7 @@ import {
     return { data: contractData, fileName };
   };
 
+  const queryClient = useQueryClient();
   const runGeneration = async (data: LegalContractData, fileName: string) => {
     setIsGenerating(true);
     try {
@@ -406,6 +407,7 @@ import {
           await supabase.from("leases").update({ metadata: merged as any }).eq("id", stampId);
           queryClient.invalidateQueries({ queryKey: ["lease"] });
           queryClient.invalidateQueries({ queryKey: ["leases"] });
+          queryClient.invalidateQueries({ queryKey: ["lease-detail"] });
         } catch (e) {
           console.warn("[contract-pdf] não foi possível marcar metadata", e);
         }
