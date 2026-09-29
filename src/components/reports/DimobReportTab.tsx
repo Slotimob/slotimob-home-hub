@@ -39,7 +39,10 @@ interface DimobRecord {
   months: DimobMonth[];
   commissionEstimated: boolean;
   /** Sem lançamentos de aluguel pagos no ano: bruto calculado pelo contrato. */
+  /** Sem pagamento no ano: valor declarado 0; `forecastRent` é só referência. */
   isEstimated: boolean;
+  /** Previsto pelo contrato (não declarar, não entra em totais/CSV). */
+  forecastRent: number;
   isComplete: boolean;
   missingFields: string[];
 }
@@ -217,22 +220,16 @@ export const DimobReportTab = () => {
           administrationFeeValue: lease.administration_fee_value,
         });
         const isEstimated = !built.hasRent;
-        let months = built.months;
-        let commissionEstimated = built.commissionEstimated;
+        // DM4: DIMOB é por caixa — sem pagamento no ano, declara 0; a previsão fica à parte.
+        const months = built.months;
+        const commissionEstimated = built.commissionEstimated;
+        let forecastTotal = 0;
         if (isEstimated) {
-          // Fallback: valor do contrato distribuído nos meses ativos
-          const adminFee = lease.administration_fee_value ||
-            (monthlyRent * (lease.admin_fee_percentage || 10) / 100);
-          months = months.map((m, i) => {
+          months.forEach((_, i) => {
             const active = monthsActive > 0 && i >= activeStart.getMonth() && i <= activeEnd.getMonth()
               && activeStart.getFullYear() === Number(selectedYear);
-            return {
-              rent: active ? monthlyRent : 0,
-              commission: active ? Math.round(adminFee * 100) / 100 : 0,
-              tax: m.tax,
-            };
+            if (active) forecastTotal += monthlyRent;
           });
-          commissionEstimated = true;
         }
         const deductions = built.deductions;
 
@@ -252,6 +249,7 @@ export const DimobReportTab = () => {
           shares.forEach((_, idx) => monthParts[idx].push({ rent: rp[idx], commission: cp[idx], tax: tp[idx] }));
         });
         const dedParts = split(deductions);
+        const forecastParts = split(Math.round(forecastTotal * 100) / 100);
 
         shares.forEach((x, idx) => {
           const unit = unitById.get(x.unit_id);
@@ -282,6 +280,7 @@ export const DimobReportTab = () => {
             commissionEstimated,
             deductions: dedParts[idx],
             isEstimated,
+            forecastRent: isEstimated ? forecastParts[idx] : 0,
             isComplete: missingFields.length === 0,
             missingFields
           });
@@ -291,11 +290,12 @@ export const DimobReportTab = () => {
       setRecords(dimobRecords);
       
       // Calculate summary
-      const completeUnits = dimobRecords.filter(r => r.isComplete).length;
+      // "Aptos" = dados completos e com pagamento no ano
+      const completeUnits = dimobRecords.filter(r => r.isComplete && !r.isEstimated).length;
       setSummary({
         totalUnits: dimobRecords.length,
         completeUnits,
-        incompleteUnits: dimobRecords.length - completeUnits,
+        incompleteUnits: dimobRecords.filter(r => !r.isComplete).length,
         totalGrossRent: dimobRecords.reduce((sum, r) => sum + r.grossAnnualRent, 0),
         totalCommission: dimobRecords.reduce((sum, r) => sum + r.annualCommission, 0)
       });
@@ -348,7 +348,9 @@ export const DimobReportTab = () => {
       r.grossAnnualRent.toFixed(2),
       r.annualCommission.toFixed(2),
       r.taxWithheld.toFixed(2),
-      r.isComplete ? 'Completo' : `Pendente: ${r.missingFields.join(', ')}`,
+      !r.isComplete
+        ? `Pendente: ${r.missingFields.join(', ')}`
+        : r.isEstimated ? 'Sem pagamento no ano' : 'Completo',
       ...r.months.map((m) => m.rent.toFixed(2)),
       ...r.months.map((m) => m.commission.toFixed(2)),
       ...r.months.map((m) => m.tax.toFixed(2)),
@@ -535,6 +537,7 @@ export const DimobReportTab = () => {
                     <TableHead>Locador</TableHead>
                     <TableHead>Locatário</TableHead>
                     <TableHead className="text-right">Valor Bruto</TableHead>
+                    <TableHead className="text-right">Previsto (não declarar)</TableHead>
                     <TableHead className="text-right">Comissão</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -579,7 +582,7 @@ export const DimobReportTab = () => {
                       >
                         {formatCurrency(record.grossAnnualRent)}
                         {record.isEstimated && (
-                          <p className="text-[10px] text-amber-700 dark:text-amber-400">estimado (sem lançamentos)</p>
+                          <div><Badge variant="outline" className="text-[10px] mt-1">sem pagamento no ano</Badge></div>
                         )}
                         {!record.isEstimated && (record.taxWithheld > 0 || record.deductions > 0) && (
                           <p className="text-[10px] text-muted-foreground">
@@ -588,6 +591,9 @@ export const DimobReportTab = () => {
                             {record.deductions > 0 ? `abat. ${formatCurrency(record.deductions)}` : ''}
                           </p>
                         )}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {record.isEstimated && record.forecastRent > 0 ? formatCurrency(record.forecastRent) : '—'}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(record.annualCommission)}
@@ -626,7 +632,7 @@ export const DimobReportTab = () => {
                     </TableRow>
                     {expanded.has(record.rowKey) && (
                       <TableRow>
-                        <TableCell colSpan={7} className="bg-muted/30 p-2">
+                        <TableCell colSpan={8} className="bg-muted/30 p-2">
                           <div className="max-w-full overflow-x-auto">
                             <table className="w-full text-[11px] tabular-nums">
                               <thead>

@@ -1,3 +1,5 @@
+import { formatCurrencyBRL } from "@/utils/unitPricing";
+import { computeLeaseMonthFromConfig, type LeaseMonthFigures } from "@/lib/lease-special-conditions";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +41,7 @@ interface EmitirCobrancaDialogProps {
 interface LeaseOption {
   id: string;
   rent_amount: number;
+  typical?: LeaseMonthFigures;
   due_day: number | null;
   tenant_name: string;
   unit_name: string;
@@ -98,7 +101,7 @@ export function EmitirCobrancaDialog({
       const { data, error } = await supabase
         .from("leases")
         .select(`
-          id, rent_amount, due_day,
+          *,
           tenant_contact:contacts!leases_tenant_contact_id_fkey (name),
           unit:units!leases_unit_id_fkey (unit_number)
         `)
@@ -112,6 +115,8 @@ export function EmitirCobrancaDialog({
           due_day: l.due_day,
           tenant_name: l.tenant_contact?.name || "Sem inquilino",
           unit_name: l.unit?.unit_number || "",
+          // B4: líquido do mês típico (aluguel − abatimentos − IRRF), mesmo cálculo do contrato
+          typical: computeLeaseMonthFromConfig(l),
         }))
         .sort((a, b) => a.tenant_name.localeCompare(b.tenant_name));
     },
@@ -143,7 +148,8 @@ export function EmitirCobrancaDialog({
   // When lease selection resolves, pre-fill amount + due date
   useEffect(() => {
     if (selectedLease) {
-      setAmount(String(selectedLease.rent_amount || ""));
+      const net = selectedLease.typical?.net;
+      setAmount(String(net && net > 0 ? net : selectedLease.rent_amount || ""));
       setDueDate(computeDefaultDueDate(selectedLease.due_day));
     }
   }, [selectedLease?.id]);
@@ -390,6 +396,14 @@ export function EmitirCobrancaDialog({
                   value={amount}
                   onChange={setAmount}
                 />
+                {selectedLease?.typical &&
+                  (selectedLease.typical.deductions > 0 || selectedLease.typical.irrf > 0) && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Sugerido: líquido do mês típico · bruto {formatCurrencyBRL(selectedLease.typical.gross)}
+                      {selectedLease.typical.deductions > 0 && <> − abatimentos {formatCurrencyBRL(selectedLease.typical.deductions)}</>}
+                      {selectedLease.typical.irrf > 0 && <> − IRRF {formatCurrencyBRL(selectedLease.typical.irrf)}</>}
+                    </p>
+                  )}
               </div>
             </div>
 
