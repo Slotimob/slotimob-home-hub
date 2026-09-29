@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Info, Plus, Trash2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,8 @@ interface LeaseSpecialConditionsCardProps {
   rentGrace: RentGraceConfig;
   rentDeductions: RentDeductionConfig[];
   rentWithholding: RentWithholdingConfig;
+  /** Documento do inquilino (CPF/CNPJ, com ou sem máscara) — IRRF só com CNPJ. */
+  tenantDocument?: string | null;
   onChange: (patch: {
     rent_grace?: RentGraceConfig;
     rent_deductions?: RentDeductionConfig[];
@@ -74,15 +77,39 @@ export function LeaseSpecialConditionsCard({
   rentGrace,
   rentDeductions,
   rentWithholding,
+  tenantDocument,
   onChange,
 }: LeaseSpecialConditionsCardProps) {
   const defaultCompetency = startCompetency(startDate);
+  const tenantIsPF = (tenantDocument || "").replace(/\D/g, "").length === 11;
+
+  // W15: carência acompanha a data de início enquanto o usuário não mexer na competência
+  const prevDefaultRef = useRef(defaultCompetency);
+  useEffect(() => {
+    const prev = prevDefaultRef.current;
+    prevDefaultRef.current = defaultCompetency;
+    if (prev === defaultCompetency) return;
+    if (rentGrace.enabled && rentGrace.first_competency === prev) {
+      onChange({ rent_grace: { ...rentGrace, first_competency: defaultCompetency } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCompetency]);
+  const graceBeforeStart =
+    rentGrace.enabled && !!rentGrace.first_competency && !!startDate && rentGrace.first_competency < defaultCompetency;
+  const startMonthLabel = (() => {
+    const [y, m] = defaultCompetency.split("-").map(Number);
+    const l = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    return l.charAt(0).toUpperCase() + l.slice(1);
+  })();
 
   /* ─── Carência ─── */
   const updateGrace = (patch: Partial<RentGraceConfig>) => onChange({ rent_grace: { ...rentGrace, ...patch } });
   const updateTier = (index: number, patch: Partial<RentGraceTier>) =>
     updateGrace({ tiers: rentGrace.tiers.map((t, i) => (i === index ? { ...t, ...patch } : t)) });
-  const grace = graceSummary(rentGrace, startDate || `${defaultCompetency}-01`);
+  const grace = graceSummary(
+    graceBeforeStart ? { ...rentGrace, first_competency: defaultCompetency } : rentGrace,
+    startDate || `${defaultCompetency}-01`,
+  );
 
   /* ─── Abatimentos ─── */
   const updateDeduction = (id: string, patch: Partial<RentDeductionConfig>) =>
@@ -154,6 +181,11 @@ export function LeaseSpecialConditionsCard({
                   value={rentGrace.first_competency || defaultCompetency}
                   onChange={(e) => updateGrace({ first_competency: e.target.value || defaultCompetency })}
                 />
+                {graceBeforeStart && (
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    A carência começa antes do início do contrato ({startMonthLabel}).
+                  </p>
+                )}
               </div>
 
               {rentGrace.tiers.map((tier, index) => (
@@ -401,6 +433,12 @@ export function LeaseSpecialConditionsCard({
               onCheckedChange={(checked) => updateWithholding({ enabled: checked, tax: "irrf" })}
             />
           </div>
+
+          {tenantIsPF && (
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              Retenção de IRRF só se aplica quando o inquilino é pessoa jurídica (CNPJ). Com inquilino pessoa física, o locador recolhe pelo carnê-leão.
+            </p>
+          )}
 
           {rentWithholding.enabled && (
             <div className="space-y-3">
