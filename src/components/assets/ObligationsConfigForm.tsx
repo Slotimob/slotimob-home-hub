@@ -507,7 +507,7 @@ interface ObligationResponsibilityCardProps {
 }
 
 function ObligationResponsibilityCard({
-  type, label, icon, config, ownerInfo, tenantInfo, isVacant,
+  type, label, icon, config, ownerInfo, tenantInfo, isVacant, remindersOn,
   onToggle, onDueDayChange, onResponsibleChange, onAgencyContactChange,
   onControlTypeChange, getResponsibleFeedback,
 }: ObligationResponsibilityCardProps) {
